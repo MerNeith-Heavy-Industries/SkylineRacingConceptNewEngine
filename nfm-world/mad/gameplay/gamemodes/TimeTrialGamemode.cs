@@ -43,6 +43,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     private PowerDamageBars _pdBars = new PowerDamageBars();
     private Node _lapAndTimer = new Node()
     {
+        Name = "LapAndTimer",
         FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
         AlignItems = Yoga.YGAlign.YGAlignFlexStart,
         JustifyContent = Yoga.YGJustify.YGJustifyCenter,
@@ -53,15 +54,18 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         {
             new Node()
             {
+                Name = "LapDisplay",
                 FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
                 Children =
                 {
                     new Image()
                     {
+                        Name = "LapIcon",
                         ImageData = IBackend.Backend.LoadImage(new NFMWorld.Util.File("data/images/lap.gif")),
                     },
                     new TextBlock()
                     {
+                        Name = "LapText",
                         Flex = 1,
                         Text = ""
                     }
