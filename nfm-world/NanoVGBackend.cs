@@ -165,7 +165,7 @@ internal class NanoVGBackend(NvgContext context) : IBackend
 
         public IFontMetrics GetFontMetrics()
         {
-            throw new NotImplementedException();
+            return new NanoVGFontMetrics(_font);
         }
 
         public void DrawString(string text, int x, int y)
@@ -280,6 +280,19 @@ internal class NanoVGBackend(NvgContext context) : IBackend
     }
 
     public Vector2 Viewport => new(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);
+}
+
+internal struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetrics
+{
+    public float StringWidth(string astring)
+    {
+        return font.MeasureString(astring).X;
+    }
+
+    public int Height(string astring)
+    {
+        return font.LineHeight;
+    }
 }
 
 public enum BreakType
