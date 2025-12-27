@@ -62,12 +62,16 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                     {
                         Name = "LapIcon",
                         ImageData = IBackend.Backend.LoadImage(new NFMWorld.Util.File("data/images/lap.gif")),
+                        Scale = 1.5f
                     },
                     new TextBlock()
                     {
                         Name = "LapText",
+                        Color = new Color(255, 255, 255),
+                        StrokeColor = new Color(0, 0, 0),
                         Flex = 1,
-                        Text = ""
+                        Text = "",
+                        MarginLeft = 5
                     }
                 }
             },

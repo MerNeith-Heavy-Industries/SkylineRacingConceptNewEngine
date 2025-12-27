@@ -15,6 +15,17 @@ public class Image : Node
         }
     }
 
+    public float Scale
+    {
+        get;
+        set
+        {
+            field = value;
+            Width = (int)(field * Width.InternalValue.value);
+            Height = (int)(field * Height.InternalValue.value);
+        }
+    }
+
     public override void RenderContent(Vector2 position, Vector2 size)
     {
         if(ImageData != null)
