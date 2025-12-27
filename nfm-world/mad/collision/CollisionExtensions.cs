@@ -1,4 +1,5 @@
-﻿using SoftFloat;
+﻿using System.Diagnostics.CodeAnalysis;
+using SoftFloat;
 
 namespace nfm_world.mad.collision;
 
@@ -24,25 +25,32 @@ public static class CollisionExtensions
             );
         }
 
-        public (fix64 x1, fix64 x2) coefficients(f64Vector3 v1, f64Vector3 v2) {
+        public (fix64 x1, fix64 x2) Coefficients(f64Vector3 v1, f64Vector3 v2) {
             // A^T A terms
             var a11 = f64Vector3.Dot(v1, v1);
-            var a12 = v1.dot(v2);
-            var a22 = v2.dot(v2);
+            var a12 = f64Vector3.Dot(v1, v2);
+            var a22 = f64Vector3.Dot(v2, v2);
 
             // A^T b terms
-            var b1 = v1.dot(this);
-            var b2 = v2.dot(this);
+            var b1 = f64Vector3.Dot(v1, vec);
+            var b2 = f64Vector3.Dot(v2, vec);
 
             var det = a11 * a22 - a12 * a12;
-            if (Math.abs(det) < 1e-9) {
-                throw new IllegalArgumentException("v1 and v2 are linearly dependent");
+            if (fix64.Abs(det) < (fix64)1e-9)
+            {
+                ThrowArgumentException();
             }
 
             var x1 = ( a22 * b1 - a12 * b2) / det;
             var x2 = (-a12 * b1 + a11 * b2) / det;
 
             return (x1, x2);
+
+            [DoesNotReturn]
+            static void ThrowArgumentException()
+            {
+                throw new ArgumentException("v1 and v2 are linearly dependent");
+            }
         }
     }
 }

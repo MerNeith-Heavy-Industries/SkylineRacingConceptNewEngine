@@ -55,7 +55,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, BaseRace
 
         foreach (var car in carsInRace)
         {
-            car.Drive();
+            car.Drive(baseRacePhase.CurrentStage);
         }
     }
 

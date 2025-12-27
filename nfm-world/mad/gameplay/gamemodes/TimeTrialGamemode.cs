@@ -128,11 +128,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         {
             carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? Nibble<byte>.AllZeros);
 
-            carsInRace[playerCarIndex + 1].Drive();
+            carsInRace[playerCarIndex + 1].Drive(baseRacePhase.CurrentStage);
         }
 
         currentTimeTrial.RecordTick(carsInRace[playerCarIndex].Control);
-        carsInRace[playerCarIndex].Drive();
+        carsInRace[playerCarIndex].Drive(baseRacePhase.CurrentStage);
 
         if (currentStage.checkpoints.Count == 0)
         {
@@ -222,7 +222,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
 
         carsInRace[playerCarIndex].Mad.Halted = true;
-        carsInRace[playerCarIndex].Drive();
+        carsInRace[playerCarIndex].Drive(baseRacePhase.CurrentStage);
     }
 
     private void CountdownTick()
