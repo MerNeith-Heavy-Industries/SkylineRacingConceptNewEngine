@@ -305,15 +305,15 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
         {
             var word = text.AsSpan(wordRange);
             
-            var wordWidth = font.MeasureString(word).X;
+            var wordSize = font.MeasureString(word);
 
-            if (lineWidth + wordWidth > bounds.X &&
-                (textHeight + font.LineHeight < bounds.Y || overflowBehavior == OverflowBehavior.ContinueVertically))
+            if (lineWidth + wordSize.X > bounds.X &&
+                (textHeight + (wordSize.Y * 2) < bounds.Y || overflowBehavior == OverflowBehavior.ContinueVertically))
             {
                 if (breakType == BreakType.Word)
                 {
                     sb.Append('\n');
-                    textHeight += font.LineHeight;
+                    textHeight += wordSize.Y;
                     lineWidth = 0.0f;
                 }
                 else if (breakType == BreakType.Character)
@@ -324,7 +324,7 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
                         if (lineWidth + charWidth > bounds.X)
                         {
                             sb.Append('\n');
-                            textHeight += font.LineHeight;
+                            textHeight += wordSize.Y;
                             lineWidth = 0.0f;
                         }
                         sb.Append(ch);
@@ -337,7 +337,7 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
             }
 
             sb.Append(word).Append(' ');
-            lineWidth += wordWidth + spaceWidth;
+            lineWidth += wordSize.X + spaceWidth;
         }
 
         return sb.ToString().TrimEnd();
