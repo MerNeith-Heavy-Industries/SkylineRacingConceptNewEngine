@@ -2,6 +2,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using Maxine.Extensions;
+using nfm_world.mad.collision;
 using NFMWorld.DriverInterface;
 using NFMWorld.Mad;
 using NFMWorld.Mad.gamemodes;
@@ -143,38 +144,27 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         CheckPoint nextCheckpoint = currentStage.checkpoints[currentCheckpoint];
         Vector3 carPos = carsInRace[playerCarIndex].CarRef.Position;
 
-        if (nextCheckpoint.CheckPointRot == CheckPoint.CheckPointRotation.None)
+        var mad = carsInRace[playerCarIndex].Mad;
+        var position = new f64Vector3((fix64)carPos.X, (fix64)carPos.Y, (fix64)carPos.Z);
+        f64Vector3 velocity = new f64Vector3(
+            mad.Scx[0] + mad.Scx[1] + mad.Scx[2] + mad.Scx[3],
+            mad.Scy[0] + mad.Scy[1] + mad.Scy[2] + mad.Scy[3],
+            mad.Scz[0] + mad.Scz[1] + mad.Scz[2] + mad.Scz[3]) / 4;
+        f64Vector3 zDir = new f64Vector3(0, 0, 1);
+        f64Vector3 rad = new f64Vector3(700, 450, 60 + fix64.Abs(f64Vector3.Dot(velocity, zDir.RotateXz(nextCheckpoint.Rotation.Xz.DegreesSFloat))));
+        f64Vector3 trackersPosition = new f64Vector3(0, -350, 0);
+        f64Vector3 checkpointsPosition = new f64Vector3((fix64)nextCheckpoint.Position.X, (fix64)nextCheckpoint.Position.Y, (fix64)nextCheckpoint.Position.Z);
+        var box = new CollisionBox(rad, trackersPosition, nextCheckpoint.Rotation.Xz.DegreesSFloat, checkpointsPosition);
+
+        if (box.ResolveCollision(position) is not null)
         {
-            if (fix64.Abs((fix64)carPos.Z - (fix64)nextCheckpoint.Position.Z) <
-                (fix64)60.0F + fix64.Abs(carsInRace[playerCarIndex].Mad.Scz[0] + carsInRace[playerCarIndex].Mad.Scz[1] + carsInRace[playerCarIndex].Mad.Scz[2] + carsInRace[playerCarIndex].Mad.Scz[3]) / (fix64)4.0F &&
-                fix64.Abs((fix64)carsInRace[playerCarIndex].CarRef.Position.X - (fix64)nextCheckpoint.Position.X) < 700 &&
-                fix64.Abs((fix64)carsInRace[playerCarIndex].CarRef.Position.Y - (fix64)nextCheckpoint.Position.Y + 350) < 450)
+            currentTimeTrial.RecordSplit(raceTimer.ElapsedMilliseconds);
+            currentCheckpoint++;
+            SfxLibrary.checkpoint?.Play();
+            if (currentCheckpoint >= currentStage.checkpoints.Count)
             {
-                currentTimeTrial.RecordSplit(raceTimer.ElapsedMilliseconds);
-                currentCheckpoint++;
-                SfxLibrary.checkpoint?.Play();
-                if (currentCheckpoint >= currentStage.checkpoints.Count)
-                {
-                    currentCheckpoint = 0;
-                    currentLap++;
-                }
-            }
-        }
-        else // None
-        {
-            if (fix64.Abs((fix64)carPos.X - (fix64)nextCheckpoint.Position.X) <
-                (fix64)60.0F + fix64.Abs(carsInRace[playerCarIndex].Mad.Scx[0] + carsInRace[playerCarIndex].Mad.Scx[1] + carsInRace[playerCarIndex].Mad.Scx[2] + carsInRace[playerCarIndex].Mad.Scx[3]) / (fix64)4.0F &&
-                fix64.Abs((fix64)carPos.Z - (fix64)nextCheckpoint.Position.Z) < 700 &&
-                fix64.Abs((fix64)carPos.Y - (fix64)nextCheckpoint.Position.Y + 350) < 450)
-            {
-                currentTimeTrial.RecordSplit(raceTimer.ElapsedMilliseconds);
-                SfxLibrary.checkpoint?.Play();
-                currentCheckpoint++;
-                if (currentCheckpoint >= currentStage.checkpoints.Count)
-                {
-                    currentCheckpoint = 0;
-                    currentLap++;
-                }
+                currentCheckpoint = 0;
+                currentLap++;
             }
         }
 

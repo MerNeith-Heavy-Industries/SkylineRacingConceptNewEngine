@@ -2,7 +2,7 @@
 
 namespace nfm_world.mad.collision;
 
-public struct BoxRamp {
+public readonly struct BoxRamp {
     private readonly f64Vector3 rad;
     private readonly fix64 trackersZy;
     private readonly fix64 trackersXz;
