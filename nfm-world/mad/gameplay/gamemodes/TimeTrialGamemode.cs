@@ -41,6 +41,17 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     private SavedTimeTrial currentTimeTrial = null!;
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
+
+    private static TextBlock _lapText = new TextBlock()
+    {
+        Text = "",
+    };
+
+    private static TextBlock _timerText = new TextBlock()
+    {
+        Text = "",
+    };
+
     private Node _lapAndTimer = new Node()
     {
         Name = "LapAndTimer",
@@ -58,29 +69,63 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                 FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
                 Children =
                 {
-                    new Image()
+                    new TextRun()
                     {
                         Name = "LapIcon",
-                        ImageData = IBackend.Backend.LoadImage(new NFMWorld.Util.File("data/images/lap.gif")),
-                        Scale = 1.5f
+                        Font = new Font(FontFamily.Adventure, 1, 24),
+                        Color = new Color(255, 255, 255),
+                        StrokeColor = new Color(0, 0, 0),
+                        Text = "Lap: ",
+                        Flex = 1
                     },
                     new TextBlock()
                     {
+                        Ref = textBlock => _lapText = textBlock,
+                        StrokeColor = new Color(0, 0, 0),
                         Name = "LapText",
                         Color = new Color(255, 255, 255),
-                        StrokeColor = new Color(0, 0, 0),
+                        Font = new Font(FontFamily.DroidSans, 1, 24),
                         Flex = 1,
-                        Text = "",
-                        MarginLeft = 5
                     }
                 }
             },
+            new Node()
+            {
+                Name = "TimeDisplay",
+                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
+                Children =
+                {
+                    new TextRun()
+                    {
+                        Name = "TimeIcon",
+                        Font = new Font(FontFamily.Adventure, 1, 24),
+                        Color = new Color(255, 255, 255),
+                        StrokeColor = new Color(0, 0, 0),
+                        Text = "Time: ",
+                        Flex = 1
+                    },
+                    new TextBlock()
+                    {
+                        Ref = textBlock => _timerText = textBlock,
+                        StrokeColor = new Color(0, 0, 0),
+                        Name = "TimeText",
+                        Color = new Color(255, 255, 255),
+                        Font = new Font(FontFamily.DroidSans, 1, 24),
+                        Flex = 1,
+                    }
+                }
+            }
         }
     };
 
     public void SetLapText(int currentLap)
     {
-        ((TextBlock)_lapAndTimer.Children[0].Children[1]).Text = $"{currentLap}/{currentStage.nlaps}";
+        _lapText.Text = $"{currentLap}/{currentStage.nlaps}";
+    }
+
+    public void SetTimeText()
+    {
+        _timerText.Text = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
     }
 
     public override void Enter()
@@ -163,6 +208,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     private void TimeTrialInRace()
     {
         SetLapText(currentLap);
+        SetTimeText();
 
         _pdBars.SetDamageBarFill(carsInRace[playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
         _pdBars.UpdateDamageBarColor();
@@ -307,13 +353,6 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (_currentState == TimeTrialState.InProgress)
         {
-            G.SetColor(new Color(255, 255, 255));
-            G.DrawString($"Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds / 10:D2}", 100, 200);
-            G.DrawString($"Lap: {currentLap}/{currentStage.nlaps}", 100, 250);
-            G.SetColor(new Color(0, 0, 0));
-            G.DrawStringStroke($"Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds / 10:D2}", 100, 200);
-            G.DrawStringStroke($"Lap: {currentLap}/{currentStage.nlaps}", 100, 250);
-
             if ((currentCheckpoint != 0 || currentLap != 1) && bestTimeTrial != null)
             {
                 long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1);

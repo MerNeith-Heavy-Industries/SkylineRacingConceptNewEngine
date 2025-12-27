@@ -173,6 +173,11 @@ public class Node : IDisposable
         set => NodeInternal.FlexShrink = value;
     }
 
+    public Action<Node> Ref
+    {
+        set => value(this);
+    }
+
     public struct MeasurementFlexBasis
     {
         public YGValue InternalValue;

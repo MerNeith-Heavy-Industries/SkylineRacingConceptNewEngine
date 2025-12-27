@@ -69,4 +69,9 @@ public class TextRun : Node
         G.SetColor(Color);
         G.DrawStringAligned(Text, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
     }
+
+    public new Action<TextRun> Ref
+    {
+        set => value(this);
+    }
 }

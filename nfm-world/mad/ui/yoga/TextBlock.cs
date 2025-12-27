@@ -85,4 +85,9 @@ public class TextBlock : Node
         G.SetColor(Color);
         G.DrawStringAligned(_formattedText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
     }
+
+    public new Action<TextBlock> Ref
+    {
+        set => value(this);
+    }
 }
