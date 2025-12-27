@@ -161,13 +161,15 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
             context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
-        public void DrawStringAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
+        public void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
             context.FillPaint(_paint);
 
-            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, out var x, out var y);
+            float xFloat = x;
+            float yFloat = y;
+            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, ref xFloat, ref yFloat);
 
-            context.Text(_font, text, x, y, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
+            context.Text(_font, text, xFloat, yFloat, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
         public void DrawStringStroke(string text, int x, int y, int effectAmount = 1)
@@ -176,27 +178,28 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
             context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
-        public void DrawStringStrokeAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        public void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
             context.StrokePaint(_paint);
 
-            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, out var x, out var y);
+            float xFloat = x;
+            float yFloat = y;
+            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, ref xFloat, ref yFloat);
 
-            context.Text(_font, text, x, y, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
+            context.Text(_font, text, xFloat, yFloat, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
-        public string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word)
+        public string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
         {
-            return new TextLayout(_font, text, new Vector2(width, height), breakType).LaidOutText;
+            return new TextLayout(_font, text, new Vector2(width, height), breakType, overflowBehavior).LaidOutText;
         }
 
-        private void AlignText(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, out float x, out float y)
+        private void AlignText(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, ref float x, ref float y)
         {
-            x = areaWidth / 2f;
-            y = areaHeight / 2f;
-
             if (hAlign != TextHorizontalAlignment.Left)
             {
+                x += areaWidth / 2f;
+
                 var sz = _font.MeasureString(text);
                 if (hAlign == TextHorizontalAlignment.Center)
                 {
@@ -206,6 +209,11 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
                 {
                     x -= sz.X;
                 }
+            }
+            
+            if (vAlign != TextVerticalAlignment.Top)
+            {
+                y += areaHeight / 2f;
             }
 
             if (vAlign == TextVerticalAlignment.Center)
@@ -271,11 +279,17 @@ public enum BreakType
     Character
 }
 
-public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType = BreakType.Word)
+public enum OverflowBehavior
 {
-    public string LaidOutText { get; } = LayoutText(font, text, bounds, breakType);
+    ContinueVertically,
+    ContinueHorizontally
+}
 
-    private static string LayoutText(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType)
+public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
+{
+    public string LaidOutText { get; } = LayoutText(font, text, bounds, breakType, overflowBehavior);
+
+    private static string LayoutText(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType, OverflowBehavior overflowBehavior)
     {
         if (breakType == BreakType.None)
         {
@@ -285,6 +299,8 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
         var sb = new StringBuilder(text.Length);
         var spaceWidth = font.MeasureString(" ").X;
         var lineWidth = 0.0f;
+        
+        var textHeight = 0f;
 
         foreach (var wordRange in text.AsSpan().Split(' '))
         {
@@ -292,11 +308,13 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
             
             var wordWidth = font.MeasureString(word).X;
 
-            if (lineWidth + wordWidth > bounds.X)
+            if (lineWidth + wordWidth > bounds.X &&
+                (textHeight + font.LineHeight < bounds.Y || overflowBehavior == OverflowBehavior.ContinueVertically))
             {
                 if (breakType == BreakType.Word)
                 {
                     sb.Append('\n');
+                    textHeight += font.LineHeight;
                     lineWidth = 0.0f;
                 }
                 else if (breakType == BreakType.Character)
@@ -307,6 +325,7 @@ public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 b
                         if (lineWidth + charWidth > bounds.X)
                         {
                             sb.Append('\n');
+                            textHeight += font.LineHeight;
                             lineWidth = 0.0f;
                         }
                         sb.Append(ch);

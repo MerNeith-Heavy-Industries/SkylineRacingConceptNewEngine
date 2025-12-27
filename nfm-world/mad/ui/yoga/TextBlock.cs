@@ -5,6 +5,7 @@ namespace NFMWorld.Mad.UI.yoga;
 
 public class TextBlock : Node
 {
+    public Color Color { get; set; } = new Color(255, 255, 255);
     public Font Font
     {
         get;
@@ -13,9 +14,9 @@ public class TextBlock : Node
             field = value;
             _invalidated = true;
         }
-    }
+    } = new Font("Arial", 0, 18);
 
-    public string Text
+    public string? Text
     {
         get;
         set
@@ -35,6 +36,16 @@ public class TextBlock : Node
         }
     } = BreakType.Word;
     
+    public OverflowBehavior OverflowBehavior
+    {
+        get;
+        set
+        {
+            field = value;
+            _invalidated = true;
+        }
+    } = OverflowBehavior.ContinueHorizontally;
+    
     public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
     public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
 
@@ -44,15 +55,21 @@ public class TextBlock : Node
     public override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
+
+        if (Text == null)
+        {
+            return;
+        }
         
+        G.SetFont(Font);
         if (HasNewLayout || _invalidated || _formattedText == null)
         {
-            _formattedText = G.LayoutText(Text, size.X, size.Y, BreakType);
+            _formattedText = G.LayoutText(Text, size.X, size.Y, BreakType, OverflowBehavior);
             _invalidated = false;
             HasNewLayout = false;
         }
         
-        G.SetFont(Font);
-        G.DrawStringAligned(_formattedText, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
+        G.SetColor(Color);
+        G.DrawStringAligned(_formattedText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
     }
 }

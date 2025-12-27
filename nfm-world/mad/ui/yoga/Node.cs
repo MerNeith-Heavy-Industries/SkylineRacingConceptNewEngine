@@ -732,7 +732,7 @@ public class Node : IDisposable
 
     public virtual void Render()
     {
-        RenderBackground(LayoutMarginPosition, LayoutMarginSize);
+        RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
         RenderBorder(LayoutBorderPosition, LayoutBorderSize);
         RenderContent(LayoutContentPosition, LayoutContentSize);
     }
