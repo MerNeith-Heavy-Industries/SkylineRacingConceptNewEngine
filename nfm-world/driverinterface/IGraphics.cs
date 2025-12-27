@@ -27,6 +27,10 @@ public interface IGraphics
     void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei);
     void DrawRect(int x1, int y1, int width, int height);
     void DrawImage(IImage image, int x, int y, int width, int height);
+    string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word)
+    {
+        return text;
+    }
 
     void SetAntialiasing(bool useAntialias)
     {

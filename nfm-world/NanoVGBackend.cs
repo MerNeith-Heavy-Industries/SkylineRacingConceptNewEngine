@@ -1,10 +1,14 @@
-﻿using FontStashSharp;
+﻿using System.Globalization;
+using System.Text;
+using FontStashSharp;
+using FontStashSharp.RichText;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.SkiaDriver;
 using NFMWorld.Util;
 using NvgSharp;
 using File = NFMWorld.Util.File;
+using TextHorizontalAlignment = NFMWorld.DriverInterface.TextHorizontalAlignment;
 
 namespace NFMWorld;
 
@@ -64,7 +68,7 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
 
     public class NvgGraphics(NvgContext context, FontSystem fontSystem) : IGraphics
     {
-        private Paint _paint = new();
+        private Paint _paint;
         private DynamicSpriteFont _font = fontSystem.GetFont(18);
         private float layerDepth = 0.0f;
         private float characterSpacing = 0.0f;
@@ -153,31 +157,7 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
         {
             context.FillPaint(_paint);
 
-            float x = areaWidth / 2;
-            float y = areaHeight / 2;
-
-            if (hAlign != TextHorizontalAlignment.Left)
-			{
-				var sz = _font.MeasureString(text);
-				if (hAlign == TextHorizontalAlignment.Center)
-				{
-					x -= sz.X / 2.0f;
-				}
-				else if (hAlign == TextHorizontalAlignment.Right)
-				{
-					x -= sz.X;
-				}
-			}
-
-
-			if (vAlign == TextVerticalAlignment.Center)
-			{
-				y -= _font.LineHeight / 2.0f;
-			}
-			else if (vAlign == TextVerticalAlignment.Bottom)
-			{
-				y -= _font.LineHeight;
-			}
+            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, out var x, out var y);
 
             context.Text(_font, text, x, y, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
@@ -192,33 +172,42 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
         {
             context.StrokePaint(_paint);
 
-            float x = areaWidth / 2;
-            float y = areaHeight / 2;
-
-            if (hAlign != TextHorizontalAlignment.Left)
-			{
-				var sz = _font.MeasureString(text);
-				if (hAlign == TextHorizontalAlignment.Center)
-				{
-					x -= sz.X / 2.0f;
-				}
-				else if (hAlign == TextHorizontalAlignment.Right)
-				{
-					x -= sz.X;
-				}
-			}
-
-
-			if (vAlign == TextVerticalAlignment.Center)
-			{
-				y -= _font.LineHeight / 2.0f;
-			}
-			else if (vAlign == TextVerticalAlignment.Bottom)
-			{
-				y -= _font.LineHeight;
-			}
+            AlignText(text, areaWidth, areaHeight, hAlign, vAlign, out var x, out var y);
 
             context.Text(_font, text, x, y, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
+        }
+
+        public string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word)
+        {
+            return new TextLayout(_font, text, new Vector2(width, height), breakType).LaidOutText;
+        }
+
+        private void AlignText(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, out float x, out float y)
+        {
+            x = areaWidth / 2f;
+            y = areaHeight / 2f;
+
+            if (hAlign != TextHorizontalAlignment.Left)
+            {
+                var sz = _font.MeasureString(text);
+                if (hAlign == TextHorizontalAlignment.Center)
+                {
+                    x -= sz.X / 2.0f;
+                }
+                else if (hAlign == TextHorizontalAlignment.Right)
+                {
+                    x -= sz.X;
+                }
+            }
+
+            if (vAlign == TextVerticalAlignment.Center)
+            {
+                y -= _font.LineHeight / 2.0f;
+            }
+            else if (vAlign == TextVerticalAlignment.Bottom)
+            {
+                y -= _font.LineHeight;
+            }
         }
 
         public void FillOval(int p0, int p1, int p2, int p3)
@@ -253,5 +242,67 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
     public void SetAllVolumes(float vol)
     {
         SoundClip.SetAllVolumes(vol);
+    }
+}
+
+public enum BreakType
+{
+    None,
+    Word,
+    Character
+}
+
+public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType = BreakType.Word)
+{
+    public string LaidOutText { get; } = LayoutText(font, text, bounds, breakType);
+
+    private static string LayoutText(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType)
+    {
+        if (breakType == BreakType.None)
+        {
+            return text;
+        }
+        
+        var sb = new StringBuilder(text.Length);
+        var spaceWidth = font.MeasureString(" ").X;
+        var lineWidth = 0.0f;
+
+        foreach (var wordRange in text.AsSpan().Split(' '))
+        {
+            var word = text.AsSpan(wordRange);
+            
+            var wordWidth = font.MeasureString(word).X;
+
+            if (lineWidth + wordWidth > bounds.X)
+            {
+                if (breakType == BreakType.Word)
+                {
+                    sb.Append('\n');
+                    lineWidth = 0.0f;
+                }
+                else if (breakType == BreakType.Character)
+                {
+                    foreach (var ch in word)
+                    {
+                        var charWidth = font.MeasureString([ch]).X;
+                        if (lineWidth + charWidth > bounds.X)
+                        {
+                            sb.Append('\n');
+                            lineWidth = 0.0f;
+                        }
+                        sb.Append(ch);
+                        lineWidth += charWidth;
+                    }
+                    sb.Append(' ');
+                    lineWidth += spaceWidth;
+                    continue;
+                }
+            }
+
+            sb.Append(word).Append(' ');
+            lineWidth += wordWidth + spaceWidth;
+        }
+
+        return sb.ToString().TrimEnd();
     }
 }
