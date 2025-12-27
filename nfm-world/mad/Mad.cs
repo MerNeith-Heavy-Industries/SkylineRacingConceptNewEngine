@@ -1416,7 +1416,8 @@ public class Mad
             }
         }
 
-        OmarTrackPieceCollision(control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
+        // OmarTrackPieceCollision(control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
+        PhyTrackPieceCollision(control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
 
         // sparks and scrapes
         for (var i79 = 0; i79 < 4; i79++)
@@ -2280,6 +2281,47 @@ public class Mad
 
     public static int SafeAbs(int value) => value >= 0 ? value : (value == int.MinValue ? int.MaxValue : -value);
     public static fix64 SafeAbs(fix64 value) => value >= 0 ? value : (value == fix64.MinValue ? fix64.MaxValue : -value);
+
+    
+    // input: number of grounded wheels to medium
+    // output: hitVertical when colliding against a wall
+    private void OmarTrackPieceCollision(Stage stage, Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
+        fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch,
+        int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, DeterministicRandom random)
+    {
+        hitVertical = false;
+
+        Span<bool> isWheelTouchingPiece = [false, false, false, false]; // nwheels
+
+        int nWheelsRoadRamp = 0;
+        int nWheelsDirtRamp = 0;
+        for (int k = 0; k < 4; k++)
+        {
+            foreach (var piece in stage.pieces)
+            {
+                if (piece is CollisionObject collisionObject)
+                {
+                    foreach (var box in collisionObject.Boxes)
+                    {
+                        if (!isWheelTouchingPiece[k])
+                        {
+                            var rad = box.Radius;
+                            var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);
+                            var trackersPosition = box.Translation;
+                            var contoXz = piece.Rotation.Xz.DegreesSFloat;
+                            var contoPosition = new f64Vector3((fix64)piece.Position.X, (fix64)piece.Position.Y, (fix64)piece.Position.Z);
+                            var position = new f64Vector3(wheelx[k], wheely[k] - wheelGround, wheelz[k]);
+                            var velocity = new f64Vector3(Scx[k], Scy[k], Scz[k]);
+                            if (box.Xy == 0 && box.Zy == 0)
+                            {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // input: number of grounded wheels to medium
     // output: hitVertical when colliding against a wall
