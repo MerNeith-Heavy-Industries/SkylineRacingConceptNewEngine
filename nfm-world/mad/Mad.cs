@@ -2397,6 +2397,59 @@ public class Mad
                                     }
                                 }
                             }
+                            else if ((box.Zy != 0 && box.Zy != 90 && box.Zy != -90) || (box.Xy != 0 && box.Xy != 90 && box.Xy != -90))
+                            {
+                                BoxRamp boxRamp;
+                                if (box.Zy != 0) {
+                                    boxRamp = new BoxRamp(rad, box.Zy, 0, trackersPosition, contoXz, contoPosition);
+                                } else {
+                                    boxRamp = new BoxRamp(radFlipped, box.Xy, -90, trackersPosition, contoXz, contoPosition);
+                                }
+
+                                if (boxRamp.ResolveCollision(position) is { } collision)
+                                {
+                                    var liftDivider = (fix64)1.0F + (50 - Math.Abs(box.Zy)) / (fix64)30;
+                                    if (liftDivider < 1)
+                                        liftDivider = 1;
+                                    if (collision.zTmp > 0 && collision.zTmp < 200) {
+                                        Scy[k] -= collision.zTmp / liftDivider;
+                                    }
+
+                                    if (collision.zTmp > -30)
+                                    {
+                                        if (box.Skid == 2)
+                                            nWheelsDirtRamp++;
+                                        else
+                                            nWheelsRoadRamp++;
+                                        
+                                        Wtouch = true;
+                                        Gtouch = false;
+
+                                        // sparks and scrape
+                                        if (BadLanding && (box.Skid == 0 || box.Skid == 1))
+                                        {
+                                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
+                                            //if (Im == /*this.xt.im*/ 0)
+                                            SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                        }
+
+                                        if (!wasMtouch && surfaceType != 0)
+                                        {
+                                            fix64 dustMag = (fix64)1.4F;
+                                            conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
+                                        }
+                                    }
+                                    
+                                    wheelx[k] = collision.newPosition.X;
+                                    wheely[k] = collision.newPosition.Y + wheelGround;
+                                    wheelz[k] = collision.newPosition.Z;
+                                    isWheelTouchingPiece[k] = true;
+                                }
+                            }
+                            else
+                            {
+                                
+                            }
                         }
                     }
                 }
