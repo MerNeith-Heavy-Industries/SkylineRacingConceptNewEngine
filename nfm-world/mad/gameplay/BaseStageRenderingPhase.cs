@@ -8,7 +8,7 @@ namespace NFMWorld.Mad;
 public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : BasePhase
 {
     protected int? FovOverride = null;
-    protected bool ShadowmapDisplay = true;
+    public static bool DebugDisplay = false;
 
     private readonly SpriteBatch _spriteBatch = new(graphicsDevice);
 
@@ -16,17 +16,17 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public PerspectiveCamera camera = new();
     public Camera[] lightCameras = [
-        new OrthoCamera
+        new OrthoLightCamera
         {
             Width = 3000,
             Height = 3000
         },
-        new OrthoCamera
+        new OrthoLightCamera
         {
             Width = 16384,
             Height = 16384
         },
-        new OrthoCamera
+        new OrthoLightCamera
         {
             Width = 65536,
             Height = 65536
@@ -116,7 +116,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
         current_scene.Render(true);
 
-        if (ShadowmapDisplay)
+        if (DebugDisplay)
         {
             // DISPLAY SHADOW MAP
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);

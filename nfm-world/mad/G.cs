@@ -73,9 +73,9 @@ public static class G
     }
 
     public static void SetAntialiasing(bool useAntialias) => Graphics.SetAntialiasing(useAntialias);
-
     public static string LayoutText(string text, float width, float height, BreakType breakType)
     {
         Graphics.LayoutText(text, width, height, breakType);
     }
+    public static Vector2 Viewport() => IBackend.Backend.Viewport();
 }
