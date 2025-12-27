@@ -44,6 +44,7 @@ public class TextRun : Node
             SetFontMetrics();
         }
         Width = _fontMetrics!.StringWidth(Text ?? string.Empty);
+        Height = _fontMetrics!.Height(Text ?? string.Empty);
     }
 
     public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;

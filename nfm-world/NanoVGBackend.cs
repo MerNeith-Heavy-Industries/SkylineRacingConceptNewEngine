@@ -289,9 +289,9 @@ internal struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetrics
         return font.MeasureString(astring).X;
     }
 
-    public int Height(string astring)
+    public float Height(string astring)
     {
-        return font.LineHeight;
+        return font.MeasureString(astring).Y;
     }
 }
 
