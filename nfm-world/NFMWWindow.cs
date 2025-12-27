@@ -241,6 +241,7 @@ public unsafe class Program : Game
             // _skia.RemakeRenderTarget(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
+            G.Scale = Window.ClientBounds.Height / 720f;
         };
     }
 

@@ -14,7 +14,7 @@ public class TextBlock : Node
             field = value;
             _invalidated = true;
         }
-    } = new Font("Arial", 0, 18);
+    } = new Font(FontFamily.DroidSans, 0, 18);
 
     public string? Text
     {
@@ -51,7 +51,13 @@ public class TextBlock : Node
 
     private bool _invalidated = true;
     private string? _formattedText;
-    
+
+    protected override void OnScaleChanged()
+    {
+        base.OnScaleChanged();
+        _invalidated = true;
+    }
+
     public override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
@@ -61,7 +67,7 @@ public class TextBlock : Node
             return;
         }
         
-        G.SetFont(Font);
+        G.SetFont(Font with { Size = Font.Size * G.Scale });
         if (HasNewLayout || _invalidated || _formattedText == null)
         {
             _formattedText = G.LayoutText(Text, size.X, size.Y, BreakType, OverflowBehavior);

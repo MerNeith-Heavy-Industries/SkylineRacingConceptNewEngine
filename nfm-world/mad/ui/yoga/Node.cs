@@ -167,7 +167,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -182,39 +182,42 @@ public class Node : IDisposable
         {
             return value.InternalValue;
         }
-        public static MeasurementFlexBasis Auto()
+
+        public static MeasurementFlexBasis Undefined = new MeasurementFlexBasis
         {
-            return new MeasurementFlexBasis
+            InternalValue = new YGValue()
+            {
+                unit = YGUnit.YGUnitUndefined
+            }
+        };
+
+        public static MeasurementFlexBasis Auto =>
+            new()
             {
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
             };
-        }
 
-        public static MeasurementFlexBasis MaxContent()
-        {
-            return new MeasurementFlexBasis
+        public static MeasurementFlexBasis MaxContent =>
+            new()
             {
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitMaxContent
                 }
             };
-        }
-        
-        public static MeasurementFlexBasis Stretch()
-        {
-            return new MeasurementFlexBasis
+
+        public static MeasurementFlexBasis Stretch =>
+            new()
             {
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitStretch
                 }
             };
-        }
-        
+
         public static MeasurementFlexBasis Percent(float value)
         {
             return new MeasurementFlexBasis
@@ -234,28 +237,40 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
-        
-        public static MeasurementFlexBasis FitContent()
-        {
-            return new MeasurementFlexBasis
+
+        public static MeasurementFlexBasis FitContent =>
+            new()
             {
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
             };
+
+        public MeasurementFlexBasis Scale(float scale)
+        {
+            if (InternalValue.unit == YGUnit.YGUnitPoint)
+            {
+                return Point(InternalValue.value * scale);
+            }
+
+            return this;
         }
     }
-    
+
     public MeasurementFlexBasis FlexBasis
     {
-        get => NodeInternal.FlexBasis;
-        set => NodeInternal.FlexBasis = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.FlexBasis = value.Scale(G.Scale);
+        }
+    } = MeasurementFlexBasis.Undefined;
 
     public struct MeasurementMarginPosition
     {
@@ -268,7 +283,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -283,16 +298,24 @@ public class Node : IDisposable
         {
             return value.InternalValue;
         }
-        public static MeasurementMarginPosition Auto()
-        {
-            return new MeasurementMarginPosition
+
+        public static MeasurementMarginPosition Auto =>
+            new()
             {
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitAuto
                 }
             };
-        }
+
+        public static MeasurementMarginPosition Undefined => new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue()
+            {
+                unit = YGUnit.YGUnitUndefined
+            }
+        };
+
         public static MeasurementMarginPosition Percent(float value)
         {
             return new MeasurementMarginPosition
@@ -311,59 +334,101 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
+        }
+
+        public MeasurementMarginPosition Scale(float scale)
+        {
+            if (InternalValue.unit == YGUnit.YGUnitPoint)
+            {
+                return Point(InternalValue.value * scale);
+            }
+
+            return this;
         }
     }
 
     public MeasurementMarginPosition Left
     {
-        get => NodeInternal.Left;
-        set => NodeInternal.Left = value;
-    }
-    
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Left = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
+
     public MeasurementMarginPosition Top
     {
-        get => NodeInternal.Top;
-        set => NodeInternal.Top = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Top = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
     
     public MeasurementMarginPosition Right
     {
-        get => NodeInternal.Right;
-        set => NodeInternal.Right = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Right = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
     
     public MeasurementMarginPosition Bottom
     {
-        get => NodeInternal.Bottom;
-        set => NodeInternal.Bottom = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Bottom = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     public MeasurementMarginPosition MarginTop
     {
-        get => NodeInternal.MarginTop;
-        set => NodeInternal.MarginTop = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginTop = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     public MeasurementMarginPosition MarginBottom
     {
-        get => NodeInternal.MarginBottom;
-        set => NodeInternal.MarginBottom = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginBottom = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     public MeasurementMarginPosition MarginLeft
     {
-        get => NodeInternal.MarginLeft;
-        set => NodeInternal.MarginLeft = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginLeft = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     public MeasurementMarginPosition MarginRight
     {
-        get => NodeInternal.MarginRight;
-        set => NodeInternal.MarginRight = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginRight = value.Scale(G.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     public struct MeasurementPadding
     {
@@ -376,7 +441,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -391,6 +456,15 @@ public class Node : IDisposable
         {
             return value.InternalValue;
         }
+
+        public static MeasurementPadding Undefined => new MeasurementPadding
+        {
+            InternalValue = new YGValue()
+            {
+                unit = YGUnit.YGUnitUndefined
+            }
+        };
+
         public static MeasurementPadding Percent(float value)
         {
             return new MeasurementPadding
@@ -409,9 +483,19 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
+        }
+
+        public MeasurementPadding Scale(float scale)
+        {
+            if (InternalValue.unit == YGUnit.YGUnitPoint)
+            {
+                return Point(InternalValue.value * scale);
+            }
+
+            return this;
         }
     }
     
@@ -425,29 +509,46 @@ public class Node : IDisposable
             PaddingBottom = value;
         }
     }
+
     public MeasurementPadding PaddingTop
     {
-        get => NodeInternal.PaddingTop;
-        set => NodeInternal.PaddingTop = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingTop = value.Scale(G.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     public MeasurementPadding PaddingBottom
     {
-        get => NodeInternal.PaddingBottom;
-        set => NodeInternal.PaddingBottom = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingBottom = value.Scale(G.Scale);
+        }
+    } = MeasurementPadding.Undefined;
     
     public MeasurementPadding PaddingLeft
     {
-        get => NodeInternal.PaddingLeft;
-        set => NodeInternal.PaddingLeft = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingLeft = value.Scale(G.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     public MeasurementPadding PaddingRight
     {
-        get => NodeInternal.PaddingRight;
-        set => NodeInternal.PaddingRight = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingRight = value.Scale(G.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     public float Border
     {
@@ -459,25 +560,43 @@ public class Node : IDisposable
             BorderBottom = value;
         }
     }
-    public float BorderTop
+
+    public float? BorderTop
     {
-        get => NodeInternal.BorderTop;
-        set => NodeInternal.BorderTop = value * G.Scale;
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderTop = value ?? YG.YGUndefined;
+        }
     }
-    public float BorderBottom
+
+    public float? BorderBottom
     {
-        get => NodeInternal.BorderBottom;
-        set => NodeInternal.BorderBottom = value * G.Scale;
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderBottom = value ?? YG.YGUndefined;
+        }
     }
-    public float BorderLeft
+    public float? BorderLeft
     {
-        get => NodeInternal.BorderLeft;
-        set => NodeInternal.BorderLeft = value * G.Scale;
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderLeft = value ?? YG.YGUndefined;
+        }
     }
-    public float BorderRight
+    public float? BorderRight
     {
-        get => NodeInternal.BorderRight;
-        set => NodeInternal.BorderRight = value * G.Scale;
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderRight = value ?? YG.YGUndefined;
+        }
     }
     
     public struct MeasurementGap
@@ -491,7 +610,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -506,6 +625,15 @@ public class Node : IDisposable
         {
             return value.InternalValue;
         }
+
+        public static MeasurementGap Undefined => new MeasurementGap
+        {
+            InternalValue = new YGValue()
+            {
+                unit = YGUnit.YGUnitUndefined
+            }
+        };
+
         public static MeasurementGap Percent(float value)
         {
             return new MeasurementGap
@@ -524,9 +652,19 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
+        }
+
+        public MeasurementGap Scale(float scale)
+        {
+            if (InternalValue.unit == YGUnit.YGUnitPoint)
+            {
+                return Point(InternalValue.value * scale);
+            }
+
+            return this;
         }
     }
 
@@ -541,15 +679,23 @@ public class Node : IDisposable
 
     public MeasurementGap GapColumn
     {
-        get => NodeInternal.GapColumn;
-        set => NodeInternal.GapColumn = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.GapColumn = value;
+        }
+    } = MeasurementGap.Undefined;
     
     public MeasurementGap GapRow
     {
-        get => NodeInternal.GapRow;
-        set => NodeInternal.GapRow = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.GapRow = value;
+        }
+    } = MeasurementGap.Undefined;
     
     public YGBoxSizing BoxSizing
     {
@@ -568,7 +714,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -583,6 +729,15 @@ public class Node : IDisposable
         {
             return value.InternalValue;
         }
+
+        public static MeasurementWidthHeight Undefined => new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue()
+            {
+                unit = YGUnit.YGUnitUndefined
+            }
+        };
+
         public static MeasurementWidthHeight Auto()
         {
             return new MeasurementWidthHeight
@@ -611,7 +766,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value * G.Scale
+                    value = value
                 }
             };
         }
@@ -647,43 +802,77 @@ public class Node : IDisposable
                 }
             };
         }
+
+        public MeasurementWidthHeight Scale(float scale)
+        {
+            if (InternalValue.unit == YGUnit.YGUnitPoint)
+            {
+                return Point(InternalValue.value * scale);
+            }
+
+            return this;
+        }
     }
-    
+
     public MeasurementWidthHeight Width
     {
-        get => NodeInternal.Width;
-        set => NodeInternal.Width = value;
-    }
-    
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Width = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
+
     public MeasurementWidthHeight Height
     {
-        get => NodeInternal.Height;
-        set => NodeInternal.Height = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Height = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
     
     public MeasurementWidthHeight MinWidth
     {
-        get => NodeInternal.MinWidth;
-        set => NodeInternal.MinWidth = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MinWidth = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
     
     public MeasurementWidthHeight MinHeight
     {
-        get => NodeInternal.MinHeight;
-        set => NodeInternal.MinHeight = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MinHeight = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
     
     public MeasurementWidthHeight MaxWidth
     {
-        get => NodeInternal.MaxWidth;
-        set => NodeInternal.MaxWidth = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MaxWidth = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
     
     public MeasurementWidthHeight MaxHeight
     {
-        get => NodeInternal.MaxHeight;
-        set => NodeInternal.MaxHeight = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MaxHeight = value.Scale(G.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
     
     public float AspectRatio
     {
@@ -692,6 +881,8 @@ public class Node : IDisposable
     }
 
     #endregion
+
+    private float _lastScale = 1f;
 
     ~Node()
     {
@@ -716,6 +907,63 @@ public class Node : IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    private bool Rescale()
+    {
+        if (Math.Abs(_lastScale - G.Scale) > 0.001f)
+        {
+            // Update all size related properties to trigger re-calculation with new scale
+#pragma warning disable CA2245
+            Width = Width;
+            Height = Height;
+            MinWidth = MinWidth;
+            MinHeight = MinHeight;
+            MaxWidth = MaxWidth;
+            MaxHeight = MaxHeight;
+            MarginTop = MarginTop;
+            MarginBottom = MarginBottom;
+            MarginLeft = MarginLeft;
+            MarginRight = MarginRight;
+            PaddingTop = PaddingTop;
+            PaddingBottom = PaddingBottom;
+            PaddingLeft = PaddingLeft;
+            PaddingRight = PaddingRight;
+            BorderTop = BorderTop;
+            BorderBottom = BorderBottom;
+            BorderLeft = BorderLeft;
+            BorderRight = BorderRight;
+            GapColumn = GapColumn;
+            GapRow = GapRow;
+            FlexBasis = FlexBasis;
+            Left = Left;
+            Top = Top;
+            Right = Right;
+            Bottom = Bottom;
+#pragma warning restore CA2245
+            
+            _lastScale = G.Scale;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected virtual void OnScaleChanged()
+    {
+    }
+    
+    private void RescaleRecursive()
+    {
+        if (Rescale())
+        {
+            OnScaleChanged();
+            foreach (var child in Children)
+            {
+                child.RescaleRecursive();
+            }
+        }
     }
     
     public virtual void RenderBackground(Vector2 position, Vector2 size)
@@ -745,13 +993,14 @@ public class Node : IDisposable
             child.RenderRecursive();
         }
     }
-    
+
     public virtual void GameTick()
     {
     }
 
     public void LayoutAndRender(Vector2 availableSize)
     {
+        RescaleRecursive();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
         RenderRecursive();
     }

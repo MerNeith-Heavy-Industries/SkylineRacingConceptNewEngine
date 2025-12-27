@@ -211,7 +211,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             }
         }
 
-        G.SetFont(new Font("Arial", 1, 48));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 48));
         G.SetColor(new Color(0, 0, 0));
         G.DrawStringStrokeAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
@@ -452,7 +452,7 @@ internal class GarageDynamicStatBar
         }
 
         G.SetColor(new Color(0, 0, 0));
-        G.SetFont(new Font("Arial", 1, 20));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 20));
         G.DrawStringStroke(_name, x, y - 5);
         G.SetColor(new Color(255, 255, 255));
         G.DrawString(_name, x, y - 5);
@@ -473,7 +473,7 @@ internal class GarageDynamicStatBar
         G.FillRect(x, y, barRatio, height);
 
         G.SetColor(new Color(255, 255, 255));
-        G.SetFont(new Font("Arial", 1, 12));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 12));
         G.DrawString(((int)currentValue).ToString(), x + 5, y + height);
 
         DrawDividers();
