@@ -48,9 +48,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private static TextRun _splitsText = null!;
 
-    private Node _lapAndTimer = new Node()
+    private Node _lapTimerSplits = new Node()
     {
-        Name = "LapAndTimer",
+        Name = "LapTimerSplits",
         FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
         AlignItems = Yoga.YGAlign.YGAlignFlexStart,
         JustifyContent = Yoga.YGJustify.YGJustifyCenter,
@@ -111,14 +111,52 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                     }
                 }
             },
-            new TextRun()
+            new Node()
             {
-                Ref = textBlock => _splitsText = textBlock,
-                Name = "SplitsText",
-                StrokeColor = new Color(0, 0, 0),
-                Color = new Color(255, 255, 255),
-                Font = new Font(FontFamily.DroidSans, 1, 24),
+              Children =
+                {
+                    new TextRun()
+                    {
+                        Ref = textBlock => _splitsText = textBlock,
+                        Name = "SplitsText",
+                        StrokeColor = new Color(0, 0, 0),
+                        Color = new Color(255, 255, 255),
+                        Font = new Font(FontFamily.DroidSans, 1, 24),
+                        Flex = 1,
+                    }
+                }
+            }
+        }
+    };
+
+    private static TextRun _centerText = null!;
+    private Node _centralTextNode = new Node()
+    {
+        Name = "CentralText",
+        AlignItems = Yoga.YGAlign.YGAlignCenter,
+        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
+
+        Children =
+        {
+            new Node()
+            {
+                AlignItems = Yoga.YGAlign.YGAlignCenter,
                 Flex = 1,
+                Children = {
+                    new TextRun()
+                    {
+                        Ref = textBlock => _centerText = textBlock,
+                        Text = "",
+                        Color = new Color(0, 0, 0, 0),
+                        Font = new Font(FontFamily.Adventure, 1, 24),
+                        Display = Yoga.YGDisplay.YGDisplayNone
+                    },
+                }
+            },
+
+            new Node()
+            {
+                Flex = 1
             }
         }
     };
@@ -333,6 +371,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;
+                _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
                 raceTimer.Start();
             }
         }
@@ -355,7 +394,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     public override void Render()
     {
         _pdBars.Render();
-        _lapAndTimer.LayoutAndRender(G.Viewport);
+        _lapTimerSplits.LayoutAndRender(G.Viewport);
+        _centralTextNode.LayoutAndRender(G.Viewport);
 
         if (_currentState == TimeTrialState.InProgress)
         {
@@ -382,21 +422,25 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
         else if (_currentState == TimeTrialState.Countdown)
         {
-            G.SetColor(new Color(255, 255, 255));
-            G.DrawString($"Starting in {_countdownTime}", 400, 300);
-            G.SetColor(new Color(0, 0, 0));
-            G.DrawStringStroke($"Starting in {_countdownTime}", 400, 300);
+            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
+            _centerText.Color = new Color(255, 255, 255);
+            _centerText.StrokeColor = new Color(0, 0, 0);
+            _centerText.Text = $"Starting in {_countdownTime}";
         }
         else if (_currentState == TimeTrialState.Finished)
         {
-            G.SetColor(new Color(128, 255, 128));
-            G.DrawString($"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D2}", 300, 200);
-            G.DrawString($"Press R to restart", 300, 250);
-            G.SetColor(new Color(0, 0, 0));
-            G.DrawStringStroke($"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D2}", 300, 200);
-            G.DrawStringStroke($"Press R to restart", 300, 250);
+            string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
+            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Color = new Color(128, 255, 128);
+            _centerText.StrokeColor = new Color(0, 0, 0);
+            _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
+            _centerText.Text = $"Finished! Time: {finalTime}";
 
             bool newBest = bestTimeTrial == null || (bestTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1) < 0);
+
+            if(newBest)
+                _centerText.Text += "\nNew best time!";
 
             if (bestTimeTrial != null || newBest)
             {
@@ -409,11 +453,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                             t.Seconds,
                             t.Milliseconds);
 
-                G.SetColor(new Color(128, 255, 128));
-                G.DrawString("Best time: " + time, 300, 225);
-                G.SetColor(new Color(0, 0, 0));
-                G.DrawStringStroke("Best time: " + time, 300, 225);
+                _centerText.Text += $"\nBest time: {time}";
             }
+            
+            _centerText.Text += "\nPress R to restart";
         }
     }
 }
