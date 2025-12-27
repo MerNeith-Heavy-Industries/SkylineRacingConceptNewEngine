@@ -265,11 +265,8 @@ internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBacke
     {
         SoundClip.SetAllVolumes(vol);
     }
-    
-    public Vector2 Viewport()
-    {
-        return new Vector2(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);
-    }
+
+    public Vector2 Viewport => new(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);
 }
 
 public enum BreakType

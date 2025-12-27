@@ -82,5 +82,6 @@ public static class G
     {
         return Graphics.LayoutText(text, width, height, breakType);
     }
-    public static Vector2 Viewport() => IBackend.Backend.Viewport();
+
+    public static Vector2 Viewport => IBackend.Backend.Viewport;
 }

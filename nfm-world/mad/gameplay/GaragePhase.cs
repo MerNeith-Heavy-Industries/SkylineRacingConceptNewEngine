@@ -142,7 +142,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void Render()
     {
         base.Render();
-        _ui.LayoutAndRender(G.Viewport());
+        _ui.LayoutAndRender(G.Viewport);
     }
 
     public override void RenderImgui()
