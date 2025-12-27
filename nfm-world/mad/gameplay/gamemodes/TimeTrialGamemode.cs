@@ -42,15 +42,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextBlock _lapText = new TextBlock()
-    {
-        Text = "",
-    };
+    private static TextBlock _lapText = null!;
 
-    private static TextBlock _timerText = new TextBlock()
-    {
-        Text = "",
-    };
+    private static TextBlock _timerText = null!;
+
+    private static TextRun _splitsText = null!;
 
     private Node _lapAndTimer = new Node()
     {
@@ -114,6 +110,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                         Flex = 1,
                     }
                 }
+            },
+            new TextRun()
+            {
+                Ref = textBlock => _splitsText = textBlock,
+                Name = "SplitsText",
+                StrokeColor = new Color(0, 0, 0),
+                Color = new Color(255, 255, 255),
+                Font = new Font(FontFamily.DroidSans, 1, 24),
+                Flex = 1,
             }
         }
     };
@@ -181,6 +186,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
 
         SetLapText(1);
+        _splitsText.Display = Yoga.YGDisplay.YGDisplayNone;
 
         _currentState = TimeTrialState.Countdown;
     }
@@ -355,14 +361,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         {
             if ((currentCheckpoint != 0 || currentLap != 1) && bestTimeTrial != null)
             {
+                _splitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
                 long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1);
                 if (diff > 0)
                 {
-                    G.SetColor(new Color(255, 128, 128));
+                    _splitsText.Color = new Color(255, 128, 128);
                 }
                 else if (diff < 0)
                 {
-                    G.SetColor(new Color(128, 255, 128));
+                    _splitsText.Color = new Color(128, 255, 128);
                 }
 
                 long diffSeconds = Math.Abs(diff / 1000);
@@ -370,7 +377,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
                 string fmt = $"{(diff > 0 ? "+" : "-")}{diffSeconds}s {diffMs}ms";
 
-                G.DrawString("This Split: " + fmt, 100, 350);
+                _splitsText.Text = $"This Split: {fmt}";
             }
         }
         else if (_currentState == TimeTrialState.Countdown)
