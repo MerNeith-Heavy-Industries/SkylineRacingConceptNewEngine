@@ -167,7 +167,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -234,7 +234,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -268,7 +268,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -311,7 +311,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -376,7 +376,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -409,7 +409,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -462,22 +462,22 @@ public class Node : IDisposable
     public float BorderTop
     {
         get => NodeInternal.BorderTop;
-        set => NodeInternal.BorderTop = value;
+        set => NodeInternal.BorderTop = value * G.Scale;
     }
     public float BorderBottom
     {
         get => NodeInternal.BorderBottom;
-        set => NodeInternal.BorderBottom = value;
+        set => NodeInternal.BorderBottom = value * G.Scale;
     }
     public float BorderLeft
     {
         get => NodeInternal.BorderLeft;
-        set => NodeInternal.BorderLeft = value;
+        set => NodeInternal.BorderLeft = value * G.Scale;
     }
     public float BorderRight
     {
         get => NodeInternal.BorderRight;
-        set => NodeInternal.BorderRight = value;
+        set => NodeInternal.BorderRight = value * G.Scale;
     }
     
     public struct MeasurementGap
@@ -491,7 +491,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -524,7 +524,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -568,7 +568,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }
@@ -611,7 +611,7 @@ public class Node : IDisposable
                 InternalValue = new YGValue()
                 {
                     unit = YGUnit.YGUnitPoint,
-                    value = value
+                    value = value * G.Scale
                 }
             };
         }

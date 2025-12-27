@@ -7,6 +7,12 @@ public static class G
 {
     private static IGraphics Graphics => IBackend.Backend.Graphics;
 
+    public static float Scale
+    {
+        get => IBackend.Backend.Scale;
+        set => IBackend.Backend.Scale = value;
+    }
+
     public static void SetColor(Color c) => Graphics.SetColor(c);
 
     public static void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos) => Graphics.SetLinearGradient(x, y, width, height, colors, colorPos);

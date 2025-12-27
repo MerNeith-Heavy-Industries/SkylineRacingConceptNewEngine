@@ -568,6 +568,7 @@ public unsafe class Program : Game
 public class DummyBackend : IBackend
 {
     public Vector2 Viewport => new();
+    public float Scale { get; set; } = 1;
 
     public IRadicalMusic LoadMusic(File file, double tempomul)
     {

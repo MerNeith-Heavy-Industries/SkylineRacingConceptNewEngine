@@ -39,6 +39,8 @@ public class NanoVGRenderer : IDisposable
 
 internal class NanoVGBackend(NvgContext context, FontSystem fontSystem) : IBackend
 {
+    public float Scale { get; set; } = 1;
+
     public IRadicalMusic LoadMusic(File file, double tempomul)
     {
         return new RadicalMusic(file, tempomul);
