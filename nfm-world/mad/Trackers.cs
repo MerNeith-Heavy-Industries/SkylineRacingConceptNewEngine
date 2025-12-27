@@ -63,6 +63,12 @@ internal class Trackers
         }
 
         TrackersQuadTree = new QuadTree<TempTracker>(sx, sz, ncx, ncz);
+        
+        // stage walls trackers
+        for (var i = 0; i < Nt; i++)
+        {
+            TrackersQuadTree.Insert(new TempTracker(i, X[i], Z[i], Radx[i], Radz[i]));
+        }
 
         foreach (var element in elements)
         {
