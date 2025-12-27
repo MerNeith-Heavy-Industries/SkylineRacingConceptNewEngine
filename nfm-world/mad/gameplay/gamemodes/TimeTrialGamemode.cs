@@ -41,6 +41,39 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     private SavedTimeTrial currentTimeTrial = null!;
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
+    private Node _lapAndTimer = new Node()
+    {
+        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
+        AlignItems = Yoga.YGAlign.YGAlignFlexStart,
+        JustifyContent = Yoga.YGJustify.YGJustifyCenter,
+        Gap = 10,
+        Padding = 10,
+
+        Children =
+        {
+            new Node()
+            {
+                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
+                Children =
+                {
+                    new Image()
+                    {
+                        ImageData = IBackend.Backend.LoadImage(new NFMWorld.Util.File("data/images/lap.gif")),
+                    },
+                    new TextBlock()
+                    {
+                        Flex = 1,
+                        Text = ""
+                    }
+                }
+            },
+        }
+    };
+
+    public void SetLapText(int currentLap)
+    {
+        ((TextBlock)_lapAndTimer.Children[0].Children[1]).Text = $"{currentLap}/{currentStage.nlaps}";
+    }
 
     public override void Enter()
     {
@@ -94,6 +127,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             cp.Glow = false;
         }
 
+        SetLapText(1);
+
         _currentState = TimeTrialState.Countdown;
     }
 
@@ -119,6 +154,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private void TimeTrialInRace()
     {
+        SetLapText(currentLap);
+
         _pdBars.SetDamageBarFill(carsInRace[playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
         _pdBars.UpdateDamageBarColor();
         _pdBars.SetPowerBarFill((float)carsInRace[playerCarIndex].Mad.Power);
@@ -258,6 +295,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     public override void Render()
     {
         _pdBars.Render();
+        _lapAndTimer.LayoutAndRender(G.Viewport);
 
         if (_currentState == TimeTrialState.InProgress)
         {

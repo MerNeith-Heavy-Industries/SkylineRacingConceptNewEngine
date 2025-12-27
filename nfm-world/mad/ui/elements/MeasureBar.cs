@@ -25,8 +25,8 @@ public class MeasureBar : Node
 
     public override void RenderContent(Vector2 position, Vector2 size)
     {
-        G.DrawImage(BarImage, (int)position.X, (int)position.Y);
+        G.DrawImage(BarImage, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y);
         G.SetColor(BarColor);
-        G.FillRect((int)(position.X + 63), (int)(position.Y + 4), (int)(BarFillAmount * 99), 9);
+        G.FillRect((int)(position.X + (63*G.Scale)), (int)(position.Y + (4*G.Scale)), (int)(BarFillAmount * 99 * G.Scale), (int)(9*G.Scale));
     }
 }
