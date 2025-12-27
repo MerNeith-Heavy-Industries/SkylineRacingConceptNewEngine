@@ -1016,10 +1016,13 @@ public class Node : IDisposable
     private void RenderRecursive(Vector2 root)
     {
         _root = root;
-        Render();
-        foreach (var child in Children)
+        if (Display != YGDisplay.YGDisplayNone)
         {
-            child.RenderRecursive(root + new Vector2(LayoutX, LayoutY)); // todo should this be LayoutContentPosition
+            Render();
+            foreach (var child in Children)
+            {
+                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY)); // todo should this be LayoutContentPosition
+            }
         }
     }
 
