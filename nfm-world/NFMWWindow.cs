@@ -300,7 +300,6 @@ public unsafe class Program : Game
             {
                 shadowRenderTarget.Dispose();
             }
-            _nvg.Dispose();
             _imguiRenderer.Dispose();
         }
     }
