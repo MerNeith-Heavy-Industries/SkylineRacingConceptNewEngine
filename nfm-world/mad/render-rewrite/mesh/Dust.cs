@@ -119,32 +119,33 @@ public class Dust
                     baseColor[i] = 0;
                 }
             }
-            foreach (var tracker in Trackers.RetrievePoint((fix64)Sx[dust], (fix64)Sz[dust]))
-            {
-                int idx = tracker.Index;
-                if (Math.Abs(Trackers.Zy[idx]) != 90 && Math.Abs(Trackers.Xy[idx]) != 90 &&
-                    Math.Abs(Sx[dust] - Trackers.X[idx]) < Trackers.Radx[idx] &&
-                    Math.Abs(Sz[dust] - Trackers.Z[idx]) < Trackers.Radz[idx])
-                {
-                    if (Trackers.Skd[idx] == 0)
-                    {
-                        _sbln[dust] = 0.2F;
-                    }
-                    if (Trackers.Skd[idx] == 1)
-                    {
-                        _sbln[dust] = 0.4F;
-                    }
-                    if (Trackers.Skd[idx] == 2)
-                    {
-                        _sbln[dust] = 0.45F;
-                    }
-                    for (var i214 = 0; i214 < 3; i214++)
-                    {
-                        _srgb[dust, i214] = (Trackers.C[idx][i214] + baseColor[i214]) / 2;
-                    }
-                    trackersColor = true;
-                }
-            }
+            // TODO dust color from trackers
+            // foreach (var tracker in Trackers.RetrievePoint((fix64)Sx[dust], (fix64)Sz[dust]))
+            // {
+            //     int idx = tracker.Index;
+            //     if (Math.Abs(Trackers.Zy[idx]) != 90 && Math.Abs(Trackers.Xy[idx]) != 90 &&
+            //         Math.Abs(Sx[dust] - Trackers.X[idx]) < Trackers.Radx[idx] &&
+            //         Math.Abs(Sz[dust] - Trackers.Z[idx]) < Trackers.Radz[idx])
+            //     {
+            //         if (Trackers.Skd[idx] == 0)
+            //         {
+            //             _sbln[dust] = 0.2F;
+            //         }
+            //         if (Trackers.Skd[idx] == 1)
+            //         {
+            //             _sbln[dust] = 0.4F;
+            //         }
+            //         if (Trackers.Skd[idx] == 2)
+            //         {
+            //             _sbln[dust] = 0.45F;
+            //         }
+            //         for (var i214 = 0; i214 < 3; i214++)
+            //         {
+            //             _srgb[dust, i214] = (Trackers.C[idx][i214] + baseColor[i214]) / 2;
+            //         }
+            //         trackersColor = true;
+            //     }
+            // }
             if (!trackersColor)
             {
                 for (var i215 = 0; i215 < 3; i215++)

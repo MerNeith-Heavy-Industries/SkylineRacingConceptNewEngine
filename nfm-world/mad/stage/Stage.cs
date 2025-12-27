@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Mad;
 using NFMWorld.Util;
+using SoftFloat;
 using Stride.Core.Extensions;
 
 /**
@@ -37,6 +38,15 @@ public class Stage : GameObject
     private bool reverseChkY = false;
 
     public readonly string Path;
+    
+    // left
+    internal int Sx;
+    // top
+    internal int Sz;
+    // width
+    internal int Ncx;
+    // height
+    internal int Ncz;
 
     /**
      * Loads stage currently set by checkpoints.stage onto stageContos
@@ -47,7 +57,6 @@ public class Stage : GameObject
 
         Path = stageName;
         World.ResetValues();
-        Trackers.Nt = 0;
         // Medium.Noelec = 0;
         // Medium.Ground = 250;
         // Medium.Trk = 0;
@@ -472,18 +481,19 @@ public class Stage : GameObject
                             Euler.Identity                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.X[Trackers.Nt] = o + 500;
-                    Trackers.Radx[Trackers.Nt] = 600;
-                    Trackers.Z[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radz[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Xy[Trackers.Nt] = 90;
-                    Trackers.Zy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(o + 500, -5000, n * 4800 / 2 + p - 2400),
+                            Radius: new f64Vector3(600, 7100, n * 4800 / 2),
+                            Xy: 90,
+                            Zy: 0,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxl"))
                 {
@@ -499,18 +509,18 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(180), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.X[Trackers.Nt] = o - 500;
-                    Trackers.Radx[Trackers.Nt] = 600;
-                    Trackers.Z[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radz[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Xy[Trackers.Nt] = -90;
-                    Trackers.Zy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(o - 500, -5000, n * 4800 / 2 + p - 2400),
+                            Radius: new f64Vector3(600, 7100, n * 4800 / 2),
+                            Xy: -90,
+                            Zy: 0,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxt"))
                 {
@@ -526,18 +536,19 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.Z[Trackers.Nt] = o + 500;
-                    Trackers.Radz[Trackers.Nt] = 600;
-                    Trackers.X[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radx[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Zy[Trackers.Nt] = 90;
-                    Trackers.Xy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(n * 4800 / 2 + p - 2400, -5000, o + 500),
+                            Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
+                            Xy: 0,
+                            Zy: 90,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxb"))
                 {
@@ -553,18 +564,18 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(-90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.Z[Trackers.Nt] = o - 500;
-                    Trackers.Radz[Trackers.Nt] = 600;
-                    Trackers.X[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radx[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Zy[Trackers.Nt] = -90;
-                    Trackers.Xy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(n * 4800 / 2 + p - 2400, -5000, o - 500),
+                            Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
+                            Xy: 180,
+                            Zy: -90,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
             }
 
@@ -577,7 +588,7 @@ public class Stage : GameObject
             // Medium.Newmountains(maxl, maxr, maxb, maxt);
             // Medium.Newclouds(maxl, maxr, maxb, maxt);
             // Medium.Newstars();
-            Trackers.LoadTrackers(pieces, maxl, maxr - maxl, maxb, maxt - maxb);
+            SetBounds(maxl, maxr - maxl, maxb, maxt - maxb);
 
             if (World.DrawPolys)
             {
@@ -602,6 +613,22 @@ public class Stage : GameObject
         }
         sky = new Sky(graphicsDevice);
         ground = new Ground(graphicsDevice);
+    }
+
+    private void SetBounds(int sx, int ncx, int sz, int ncz)
+    {
+        Sx = sx;
+        Sz = sz;
+        Ncx = ncx;
+        if (Ncx <= 0)
+        {
+            Ncx = 1;
+        }
+        Ncz = ncz;
+        if (Ncz <= 0)
+        {
+            Ncz = 1;
+        }
     }
 
     private static bool TryGetPieceToPlace(string setstring, out PlaceableObjectInfo mesh)

@@ -176,33 +176,34 @@ public class Environment
             {
                 cgpx[i41] = sgpx + i39 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
                 cgpz[i41] = sgpz + i40 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
-                for (var i42 = 0; i42 < Trackers.Nt; i42++)
-                {
-                    if (Trackers.Zy[i42] == 0 && Trackers.Xy[i42] == 0)
-                    {
-                        if (Trackers.Radx[i42] < Trackers.Radz[i42] &&
-                            Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42])
-                        {
-                            for (;
-                                 Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42];
-                                 cgpx[i41] +=
-                                     (int)(random.NextDouble() * Trackers.Radx[i42] * 2.0 - Trackers.Radx[i42]))
-                            {
-                            }
-                        }
-
-                        if (Trackers.Radz[i42] < Trackers.Radx[i42] &&
-                            Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42])
-                        {
-                            for (;
-                                 Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42];
-                                 cgpz[i41] +=
-                                     (int)(random.NextDouble() * Trackers.Radz[i42] * 2.0 - Trackers.Radz[i42]))
-                            {
-                            }
-                        }
-                    }
-                }
+                // TODO maxine: re-implement tracker avoidance
+                // for (var i42 = 0; i42 < Trackers.Nt; i42++)
+                // {
+                //     if (Trackers.Zy[i42] == 0 && Trackers.Xy[i42] == 0)
+                //     {
+                //         if (Trackers.Radx[i42] < Trackers.Radz[i42] &&
+                //             Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42])
+                //         {
+                //             for (;
+                //                  Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42];
+                //                  cgpx[i41] +=
+                //                      (int)(random.NextDouble() * Trackers.Radx[i42] * 2.0 - Trackers.Radx[i42]))
+                //             {
+                //             }
+                //         }
+                //
+                //         if (Trackers.Radz[i42] < Trackers.Radx[i42] &&
+                //             Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42])
+                //         {
+                //             for (;
+                //                  Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42];
+                //                  cgpz[i41] +=
+                //                      (int)(random.NextDouble() * Trackers.Radz[i42] * 2.0 - Trackers.Radz[i42]))
+                //             {
+                //             }
+                //         }
+                //     }
+                // }
 
                 if (++i39 == nrw)
                 {

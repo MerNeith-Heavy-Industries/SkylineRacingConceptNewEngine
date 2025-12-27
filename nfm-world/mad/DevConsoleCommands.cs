@@ -324,9 +324,7 @@ namespace NFMWorld.Mad
 
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                var mesh = inRacePhase.CurrentStage.CreateObject(objectName, x, y, z, r);
-                if (mesh is CollisionObject obj)
-                    Trackers.LoadTracker(obj);
+                inRacePhase.CurrentStage.CreateObject(objectName, x, y, z, r);
             }
             else
             {

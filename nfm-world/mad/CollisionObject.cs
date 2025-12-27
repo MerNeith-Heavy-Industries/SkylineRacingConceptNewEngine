@@ -1,6 +1,6 @@
 ﻿using NFMWorld.Mad;
 
-public class CollisionObject : MeshedGameObject
+public class CollisionObject : MeshedGameObject, ICollidable
 {
     public PlaceableObjectInfo PlaceableObjectInfo;
 

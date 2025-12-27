@@ -468,35 +468,6 @@ public class Mad
             // Scy[wi] -= Scy[wi] * rebound; // don't need the abs, both are always positive
             Scy[wi] = (fix64)(-1) * Scy[wi] * (rebound - (fix64)1);
     }
-
-    public void bounceReboundZ(int ti, int wi, ContO conto, bool wasMtouch/*, Trackers trackers, CheckPoints checkpoints*/, DeterministicRandom random)
-    {
-        fix64 rebound = fix64.Abs(Cos(Pxy)) + fix64.Abs(Cos(Pzy)) / 4;
-        fix64 maxAngleRebound = (fix64)0.3F;
-        rebound = fix64.Min(rebound, maxAngleRebound);
-        //        if (wasMtouch)
-        //            rebound = 0;
-        rebound += Stat.Bounce - (fix64)0.2F;
-        fix64 minRebound = (fix64)1.1F;
-        rebound = fix64.Max(rebound, minRebound);
-        Regz(wi, -1 * Scz[wi] * rebound * Trackers.Dam[ti] /** checkpoints.dam*/, conto, random);
-        Scz[wi] = -1 * Scz[wi] * (rebound - 1);
-    }
-
-    public void bounceReboundX(int ti, int wi, ContO conto, bool wasMtouch/*, Trackers trackers, CheckPoints checkpoints*/, DeterministicRandom random)
-    {
-        fix64 rebound = fix64.Abs(Cos(Pxy)) + fix64.Abs(Cos(Pzy)) / 4;
-        fix64 maxAngleRebound = (fix64)0.3F;
-        rebound = fix64.Min(rebound, maxAngleRebound);
-        //        if (wasMtouch)
-        //            rebound = 0;
-        rebound += Stat.Bounce - (fix64)0.2F;
-        fix64 minRebound = (fix64)1.1F;
-        rebound = fix64.Max(rebound, minRebound);
-        Regx(wi, -1 * Scx[wi] * rebound * Trackers.Dam[ti]/* * checkpoints.dam*/, conto, random);
-        Scx[wi] = -1 * Scx[wi] * (rebound - 1);
-    }
-
     int Mtcount = 0;
     fix64 py = 0;
 
@@ -1156,14 +1127,28 @@ public class Mad
         } //
 
         var surfaceType = 1;
-        foreach (var tracker in Trackers.RetrievePoint(conto.X, conto.Z))
+        foreach (var piece in stage.pieces)
         {
-            var i = tracker.Index;
-            if (fix64.Abs(Trackers.Zy[i]) != 90 && fix64.Abs(Trackers.Xy[i]) != 90 &&
-                fix64.Abs(conto.X - Trackers.X[i]) < Trackers.Radx[i] &&
-                fix64.Abs(conto.Z - Trackers.Z[i]) < Trackers.Radz[i])
+            if (piece is ICollidable collisionObject)
             {
-                surfaceType = Trackers.Skd[i];
+                foreach (var box in collisionObject.Boxes)
+                {
+                    // bumps don't have rady defined so it is 0
+                    // the collision check that was here only checks x and z and allows y to be anything
+                    // this means if there is a floating road over a bumpy side road, you still hit the bumps on the road above
+                    // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
+                    var rad = new f64Vector3(box.Radius.X, 1000000000, box.Radius.Z);
+                    var trackersPosition = box.Translation;
+                    var contoXz = piece.Rotation.Xz.DegreesSFloat;
+                    var contoPosition = new f64Vector3((fix64)piece.Position.X, (fix64)piece.Position.Y, (fix64)piece.Position.Z);
+                    var position = new f64Vector3(conto.X, conto.Y, conto.Z);
+                    CollisionBox theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
+                    var collision = theBox.ResolveCollision(position);
+                    if (collision is not null)
+                    {
+                        surfaceType = box.Skid;
+                    }
+                }
             }
         }
 
@@ -2301,7 +2286,7 @@ public class Mad
         {
             foreach (var piece in stage.pieces)
             {
-                if (piece is CollisionObject collisionObject)
+                if (piece is ICollidable collisionObject)
                 {
                     foreach (var box in collisionObject.Boxes)
                     {
@@ -2384,7 +2369,7 @@ public class Mad
 
                                     // z rebound CHK5
                                     f64Vector3 reboundVelocityDelta = collision.impactComponent * (-GetReboundMul(wasMtouch));
-                                    Regz(k, -1 * Scz[k] * reboundVelocityDelta.Length() * box.Damage, conto, random);
+                                    Regz(k, reboundVelocityDelta.Length() * box.Damage, conto, random);
                                     Scx[k] += reboundVelocityDelta.X;
                                     Scy[k] += reboundVelocityDelta.Y;
                                     Scz[k] += reboundVelocityDelta.Z;
@@ -2469,334 +2454,6 @@ public class Mad
         if (reboundMul < (fix64)1.1f)
             reboundMul = (fix64)1.1F;
         return reboundMul;
-    }
-
-    // input: number of grounded wheels to medium
-    // output: hitVertical when colliding against a wall
-    private void OmarTrackPieceCollision(Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
-        fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch, int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, DeterministicRandom random)
-    {
-        hitVertical = false;
-
-        Span<bool> isWheelTouchingPiece = [false, false, false, false]; // nwheels
-
-        int nWheelsRoadRamp = 0;
-        int nWheelsDirtRamp = 0;
-        for (int k = 0; k < 4; k++)
-        {
-            foreach (var tracker in Trackers.RetrievePoint(wheelx[k], wheelz[k]))
-            {
-                var j = tracker.Index;
-
-                // the part below just makes sparks and scrape noises
-                // this looks wrong though? there is no rady check
-                if (isWheelGrounded[k] && BadLanding && (Trackers.Skd[j] == 0 || Trackers.Skd[j] == 1) && wheelx[k] > (fix64) (Trackers.X[j] - Trackers.Radx[j]) && wheelx[k] < (fix64) (Trackers.X[j] + Trackers.Radx[j]) && wheelz[k] > (fix64) (Trackers.Z[j] - Trackers.Radz[j]) && wheelz[k] < (fix64) (Trackers.Z[j] + Trackers.Radz[j])) {
-                    conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
-                    SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                }
-
-                // find the first piece that I am colliding with, snap wheel to it and stop
-                if ( // CHK3
-                    !isWheelTouchingPiece[k] &&
-                    pointInBox(wheelx[k], wheely[k] - wheelGround, wheelz[k], Trackers.X[j], Trackers.Y[j], Trackers.Z[j], Trackers.Radx[j], Trackers.Rady[j], Trackers.Radz[j])
-                   )
-                {
-                    // ignore y == groundY because those are likely road pieces, which could make us break the loop early and miss a ramp
-                    // this is also the reason why on the ground road and ramp ordering does not matter
-                    // but when using floating pieces, you have to make sure the ramp comes first in the code
-                    if (Trackers.Xy[j] == 0 && Trackers.Zy[j] == 0 && Trackers.Y[j] != groundY - wheelGround && wheely[k] - wheelGround > Trackers.Y[j] - wheelYThreshold)
-                    {
-                        ++nGroundedWheels;
-                        Wtouch = true;
-                        Gtouch = true;
-
-                        // more dust stuff
-                        if (!wasMtouch && Scy[k] != (fix64)(7.0F) /* * checkpoints.gravity */ * _tickRate)
-                        { //Phy-addons: Recharged mode
-                            fix64 f_59 = Scy[k] / (fix64)(333.33F);
-                            if (f_59 > (fix64)(0.3F))
-                                f_59 = (fix64)(0.3F);
-                            if (surfaceType == 0)
-                                f_59 += (fix64)1.1f;
-                            else
-                                f_59 += (fix64)1.2f;
-                            conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], f_59 * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                        }
-
-                        wheely[k] = Trackers.Y[j] + wheelGround; // snap wheel to the surface
-
-                        // sparks and scrape
-                        if (BadLanding && (Trackers.Skd[j] == 0 || Trackers.Skd[j] == 1))
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
-                            //if (Im == /*this.xt.im*/ 0)
-                            SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        bounceRebound(k, conto, random);
-                        isWheelTouchingPiece[k] = true;
-                    } // CHK4
-                    // here we handle cases where zy is -90
-                    // we are checking that we are approaching the surface from the "solid" side
-                    // remember that surfaces in NFM are only 1 sided, going the other way doesnt
-                    // result in a collision
-                    // I don't know why the radz 287 part is there, this smells like there is some
-                    // particular piece with radz 287 with special behavior
-                    if (Trackers.Zy[j] == -90 && wheelz[k] < Trackers.Z[j] + Trackers.Radz[j] && (Scz[k] < (fix64)(0.0F) /*|| Trackers.radz[j] == 287*/))
-                    {
-                        // this next part looks like we are moving all wheels away from the wall
-                        for (int l = 0; l < 4 /* nwheels */; l++)
-                        {
-                            if (k != l && wheelz[l] >= Trackers.Z[j] + Trackers.Radz[j])
-                                wheelz[l] -= wheelz[k] - (Trackers.Z[j] + Trackers.Radz[j]);
-                        }
-                        wheelz[k] = Trackers.Z[j] + Trackers.Radz[j];
-
-                        // sparks and scrapes
-                        if (Trackers.Skd[j] != 2)
-                            _crank[0, k]++;
-                        if (Trackers.Skd[j] == 5 && random.NextSFloat() > (fix64)0.5f)
-                            _crank[0, k]++;
-                        if (_crank[0, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
-                            //if (Im == /*this.xt.im*/ 0)
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        // z rebound CHK5
-                        bounceReboundZ(j, k, conto, wasMtouch/*, Trackers, checkpoints*/, random);
-
-                        Skid = 2;
-                        hitVertical = true;
-                        isWheelTouchingPiece[k] = true;
-                        if (!Trackers.Notwall[j]) {
-                            control.Wall = j;
-                        }
-                    }
-                    if (Trackers.Zy[j] == 90 && wheelz[k] > Trackers.Z[j] - Trackers.Radz[j] && (Scz[k] > (fix64)(0.0F) /*|| Trackers.radz[j] == 287*/))
-                    {
-                        //
-                        for (int l = 0; l < 4 /* nwheels */; l++)
-                        {
-                            if (k != l && wheelz[l] <= Trackers.Z[j] - Trackers.Radz[j])
-                                wheelz[l] -= wheelz[k] - (Trackers.Z[j] - Trackers.Radz[j]);
-                        }
-                        wheelz[k] = Trackers.Z[j] - Trackers.Radz[j];
-
-                        //
-                        if (Trackers.Skd[j] != 2)
-                            _crank[1, k]++;
-                        if (Trackers.Skd[j] == 5 && random.NextSFloat() > (fix64)0.5f)
-                            _crank[1, k]++;
-                        if (_crank[1, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
-                            //if (this.im == this.xt.im)
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        bounceReboundZ(j, k, conto, wasMtouch/*, Trackers, checkpoints*/, random);
-
-                        Skid = 2;
-                        hitVertical = true;
-                        isWheelTouchingPiece[k] = true;
-                        if (!Trackers.Notwall[j]) {
-                            control.Wall = j;
-                        }
-                    } // CHK6
-                    if (Trackers.Xy[j] == -90 && wheelx[k] < Trackers.X[j] + Trackers.Radx[j] && (Scx[k] < (fix64)(0.0F) /*|| Trackers.radx[j] == 287*/))
-                    {
-                        //
-                        for (int l = 0; l < 4 /* nwheels */; l++)
-                        {
-                            if (k != l && wheelx[l] >= Trackers.X[j] + Trackers.Radx[j])
-                                wheelx[l] -= wheelx[k] - (Trackers.X[j] + Trackers.Radx[j]);
-                        }
-                        wheelx[k] = Trackers.X[j] + Trackers.Radx[j];
-
-                        //
-                        if (Trackers.Skd[j] != 2)
-                            _crank[2, k]++;
-                        if (Trackers.Skd[j] == 5 && random.NextSFloat() > (fix64)0.5f)
-                            _crank[2, k]++;
-                        if (_crank[2, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
-                            //if (this.im == this.xt.im)
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        bounceReboundX(j, k, conto, wasMtouch/*, Trackers, checkpoints*/, random);
-
-                        Skid = 2;
-                        hitVertical = true;
-                        isWheelTouchingPiece[k] = true;
-                        if (!Trackers.Notwall[j]) {
-                            control.Wall = j;
-                        }
-                    } // CHK7
-                    if (Trackers.Xy[j] == 90 && wheelx[k] > Trackers.X[j] - Trackers.Radx[j] && (Scx[k] > (fix64)(0.0F) /*|| Trackers.radx[j] == 287*/))
-                    {
-                        //
-                        for (int l = 0; l < 4 /* nwheels */; l++)
-                        {
-                            if (k != l && wheelx[l] <= Trackers.X[j] - Trackers.Radx[j])
-                                wheelx[l] -= wheelx[k] - (Trackers.X[j] - Trackers.Radx[j]);
-                        }
-                        wheelx[k] = Trackers.X[j] - Trackers.Radx[j];
-
-                        //
-                        if (Trackers.Skd[j] != 2)
-                            _crank[3, k]++;
-                        if (Trackers.Skd[j] == 5 && random.NextSFloat() > (fix64)0.5f)
-                            _crank[3, k]++;
-                        if (_crank[3, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
-                            //if (this.im == this.xt.im)
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        bounceReboundX(j, k, conto, wasMtouch/*, Trackers, checkpoints*/, random);
-
-                        Skid = 2;
-                        hitVertical = true;
-                        isWheelTouchingPiece[k] = true;
-                        if (!Trackers.Notwall[j])
-                            control.Wall = j;
-                    } // CHK8
-                    if (Trackers.Zy[j] != 0 && Trackers.Zy[j] != 90 && Trackers.Zy[j] != -90)
-                    {
-                        // perpendicular angle
-                        int pAngle = 90 + Trackers.Zy[j];
-
-                        // this looks like it might be a failed attempt at calculating where a normal vector
-                        // from the wheel would intersect the surface of the ramp?
-                        // if that's what this is then it is incorrect
-                        // what this actually does is it creates a vector that is the vector
-                        // from (tz, ty) to (wz, wy) but rotated by (zy + 90) degrees around (tz, ty)
-                        // https://www.geogebra.org/geometry/vhaznznv
-                        // let's call this rotated vector (rz, ry)
-                        fix64 ry = Trackers.Y[j] + wheelGround + ((wheely[k] - Trackers.Y[j] - wheelGround) * Cos(pAngle) - (wheelz[k] - Trackers.Z[j]) * Sin(pAngle));
-                        fix64 rz = Trackers.Z[j] + ((wheely[k] - Trackers.Y[j] - wheelGround) * Sin(pAngle) + (wheelz[k] - Trackers.Z[j]) * Cos(pAngle));
-
-                        // commenting this whole if and its body out makes us phase through ramps
-                        // making this always true makes us snap to ramps even when we are airborne
-                        // on two way ramps and high low ramps for example
-                        // this logic surely is not correct, it's just some random nonsense that happens
-                        // to work for the limited set of trackpieces that we currently have
-
-                        // upon further inspection, it makes sense we check that rz > Trackers.Z
-                        // because further down, we do scy -= (rz - Trackers.Z), implying
-                        // rz - Trackers.Z should be positive in order to lift the other,
-                        // otherwise, we would drag it downwards instead
-                        // I don't understand why the second check against z + 200 is here
-                        // I tried removing it and I don't see a difference
-                        if (rz > (Trackers.Z[j] /*&& rz < Trackers.Z[j] + 200*/))
-                        {
-                            fix64 maxZy = 50;
-                            fix64 liftDivider = (fix64)(1.0F) + (maxZy - fix64.Abs(Trackers.Zy[j])) / (fix64)(30.0F);
-                            liftDivider = fix64.Max(liftDivider, (fix64)(1.0F)); // this implies we shouldn't make ramps with surfaces steeper than 50
-                            Scy[k] -= (rz - Trackers.Z[j]) / liftDivider; // this is what actually causes us to lift off
-                            rz = Trackers.Z[j];
-                        }
-
-                        // this if also smells like shit
-                        // it doesn't make sense that this should be the condition for this code
-                        // worth noting that if we hit the previous if statement, we are guaranteed to hit this one
-                        // because the previous block sets rz = Trackers.Z
-                        // still, removing this causes stunts to lock up sometimes after taking a ramp
-                        if (rz > Trackers.Z[j] - 30)
-                        {
-                            // could probably change this to something cleaner
-                            // we could use something other than the surface type to decide if all 4 wheels are on
-                            // the same piece
-                            // (this is later used to decide if we should be driving or sliding)
-                            if (Trackers.Skd[j] == 2)
-                                nWheelsDirtRamp++;
-                            else
-                                nWheelsRoadRamp++;
-
-                            Wtouch = true;
-                            Gtouch = false;
-
-                            // sparks and scrapes
-                            if (BadLanding && (Trackers.Skd[j] == 0 || Trackers.Skd[j] == 1))
-                            {
-                                conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
-                                //if (this.im == this.xt.im)
-                                SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                            }
-
-                            // dust
-                            if (!wasMtouch && surfaceType != 0)
-                            {
-                                fix64 f_73 = (fix64)1.4F;
-                                conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], f_73 * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                            }
-                        }
-
-                        // interestingly if ry and rz are what they were on initialization, these assignments do nothing
-                        // it seems the intention with this whole block was to rotate the t -> w vector, manipulate it
-                        // then rotate back. If the surface being intersected is not ramping us up, then no changes are
-                        // made to the vector and the rotation back just reverses the previous operation, making no changes
-                        wheely[k] = Trackers.Y[j] + wheelGround + ((ry - Trackers.Y[j] - wheelGround) * Cos(-pAngle) - (rz - Trackers.Z[j]) * Sin(-pAngle));
-                        wheelz[k] = Trackers.Z[j] + ((ry - Trackers.Y[j] - wheelGround) * Sin(-pAngle) + (rz - Trackers.Z[j]) * Cos(-pAngle));
-
-                        isWheelTouchingPiece[k] = true;
-                    } // CHK9
-                    if (Trackers.Xy[j] != 0 && Trackers.Xy[j] != 90 && Trackers.Xy[j] != -90)
-                    {
-                        int pAngle = 90 + Trackers.Xy[j];
-
-                        fix64 ry = Trackers.Y[j] + wheelGround + ((wheely[k] - Trackers.Y[j] - wheelGround) * Cos(pAngle) - (wheelx[k] - Trackers.X[j]) * Sin(pAngle));
-                        fix64 rx = Trackers.X[j] + ((wheely[k] - Trackers.Y[j] - wheelGround) * Sin(pAngle) + (wheelx[k] - Trackers.X[j]) * Cos(pAngle));
-                        if (rx > Trackers.X[j] /*&& rx < Trackers.X[j] + 200*/)
-                        {
-                            fix64 maxXy = 50;
-                            fix64 liftDivider = (fix64)(1.0F) + (maxXy - fix64.Abs(Trackers.Xy[j])) / (fix64)(30.0F);
-                            liftDivider = fix64.Max(liftDivider, (fix64)(1.0F));
-                            Scy[k] -= (rx - Trackers.X[j]) / liftDivider;
-                            rx = Trackers.X[j];
-                        }
-                        if (rx > Trackers.X[j] - 30)
-                        {
-                            if (Trackers.Skd[j] == 2)
-                                nWheelsDirtRamp++;
-                            else
-                                nWheelsRoadRamp++;
-
-                            Wtouch = true;
-                            Gtouch = false;
-
-                            if (BadLanding && (Trackers.Skd[j] == 0 || Trackers.Skd[j] == 1))
-                            {
-                                conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
-                                //if (this.im == this.xt.im)
-                                SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                            }
-
-                            if (!wasMtouch && surfaceType != 0)
-                            {
-                                fix64 f_78 = (fix64)1.4F;
-                                conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], f_78 * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                            }
-                        }
-
-                        wheely[k] = Trackers.Y[j] + wheelGround + ((ry - Trackers.Y[j] - wheelGround) * Cos(-pAngle) - (rx - Trackers.X[j]) * Sin(-pAngle));
-                        wheelx[k] = Trackers.X[j] + ((ry - Trackers.Y[j] - wheelGround) * Sin(-pAngle) + (rx - Trackers.X[j]) * Cos(-pAngle));
-
-                        isWheelTouchingPiece[k] = true;
-                    }
-                }
-            }
-        }
-
-        // CHK10
-        // if all wheels are on the same style of surface, then we have grip on ramps
-        if (nWheelsDirtRamp == 4 /* nwheels */ || nWheelsRoadRamp == 4 /* nwheels */)
-            Mtouch = true;
     }
 
     private int Regx(int i, fix64 f, ContO conto, DeterministicRandom random)
