@@ -6,7 +6,7 @@
 	url = https://github.com/uwx/FNA
 [submodule "FontStashSharp"]
 	path = FontStashSharp
-	url = https://github.com/FontStashSharp/FontStashSharp
+	url = https://github.com/uwx/FontStashSharp
 [submodule "NvgSharp"]
 	path = NvgSharp
 	url = https://github.com/uwx/NvgSharp
@@ -16,3 +16,6 @@
 [submodule "Maxine.Extensions"]
 	path = Maxine.Extensions
 	url = https://github.com/uwx/Maxine.Extensions
+[submodule "FontStashSharp.Base"]
+	path = FontStashSharp.Base
+	url = https://github.com/uwx/FontStashSharp.Base

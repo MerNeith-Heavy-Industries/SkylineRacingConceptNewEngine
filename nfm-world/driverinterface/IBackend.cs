@@ -6,7 +6,8 @@ public interface IBackend
 {
     public static IBackend Backend { get; set; }
 
-    Vector2 Viewport();
+    float Scale { get; set; }
+    Vector2 Viewport { get; }
     IRadicalMusic LoadMusic(File file, double tempomul);
     IImage LoadImage(File file);
     IImage LoadImage(ReadOnlySpan<byte> file);

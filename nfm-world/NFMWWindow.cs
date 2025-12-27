@@ -241,6 +241,7 @@ public unsafe class Program : Game
             // _skia.RemakeRenderTarget(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
+            G.Scale = Window.ClientBounds.Height / 720f;
         };
     }
 
@@ -567,10 +568,9 @@ public unsafe class Program : Game
 
 public class DummyBackend : IBackend
 {
-    public Vector2 Viewport()
-    {
-        return new Vector2();
-    }
+    public Vector2 Viewport => new();
+    public float Scale { get; set; } = 1;
+
     public IRadicalMusic LoadMusic(File file, double tempomul)
     {
         return new RadicalMusic(file, tempomul);
@@ -644,11 +644,11 @@ public class DummyBackend : IBackend
         public void DrawString(string text, int x, int y)
         {
         }
-        public void DrawStringAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
+        public void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
         }
 
-        public void DrawStringStrokeAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        public void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
         }
 

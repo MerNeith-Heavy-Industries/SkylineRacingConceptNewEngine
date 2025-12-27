@@ -47,13 +47,13 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         BackgroundColor = new Color(255, 0, 0),
         Width = 250,
         Height = 250,
-        Padding = 20,
+        Padding = 80,
 
         Children =
         {
-            new Box()
+            new TextBlock()
             {
-                BackgroundColor = new Color(0, 255, 0),
+                Text = "This is a really long text that should be trimmed weeeeee",
                 Flex = 1
             }
         }
@@ -142,6 +142,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void Render()
     {
         base.Render();
+        _ui.LayoutAndRender(G.Viewport);
     }
 
     public override void RenderImgui()
@@ -210,11 +211,11 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             }
         }
 
-        G.SetFont(new Font("Arial", 1, 48));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 48));
         G.SetColor(new Color(0, 0, 0));
-        G.DrawStringStrokeAligned(_cars[_selectedCarIdx].Stats.Name, graphicsDevice.Viewport.Width, 120, TextHorizontalAlignment.Center);
+        G.DrawStringStrokeAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
-        G.DrawStringAligned(_cars[_selectedCarIdx].Stats.Name, graphicsDevice.Viewport.Width, 120, TextHorizontalAlignment.Center);
+        G.DrawStringAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
 
         DrawCarStats();
     }
@@ -451,7 +452,7 @@ internal class GarageDynamicStatBar
         }
 
         G.SetColor(new Color(0, 0, 0));
-        G.SetFont(new Font("Arial", 1, 20));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 20));
         G.DrawStringStroke(_name, x, y - 5);
         G.SetColor(new Color(255, 255, 255));
         G.DrawString(_name, x, y - 5);
@@ -472,7 +473,7 @@ internal class GarageDynamicStatBar
         G.FillRect(x, y, barRatio, height);
 
         G.SetColor(new Color(255, 255, 255));
-        G.SetFont(new Font("Arial", 1, 12));
+        G.SetFont(new Font(FontFamily.DroidSans, 1, 12));
         G.DrawString(((int)currentValue).ToString(), x + 5, y + height);
 
         DrawDividers();

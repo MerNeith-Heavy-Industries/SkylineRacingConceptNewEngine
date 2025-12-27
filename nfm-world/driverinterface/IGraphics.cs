@@ -17,8 +17,8 @@ public interface IGraphics
     void SetFont(Font font);
     IFontMetrics GetFontMetrics();
     void DrawString(string text, int x, int y);
-    void DrawStringAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
-    void DrawStringStrokeAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
+    void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
+    void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
     void DrawStringStroke(string text, int x, int y, int effectAmount = 1)
     {
     }
@@ -27,6 +27,10 @@ public interface IGraphics
     void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei);
     void DrawRect(int x1, int y1, int width, int height);
     void DrawImage(IImage image, int x, int y, int width, int height);
+    string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
+    {
+        return text;
+    }
 
     void SetAntialiasing(bool useAntialias)
     {

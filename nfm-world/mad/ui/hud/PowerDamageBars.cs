@@ -186,6 +186,6 @@ public class PowerDamageBars
 
     public void Render()
     {
-        _pdNode.LayoutAndRender(G.Viewport());
+        _pdNode.LayoutAndRender(G.Viewport);
     }
 }

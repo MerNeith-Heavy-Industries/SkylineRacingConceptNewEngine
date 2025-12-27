@@ -7,6 +7,12 @@ public static class G
 {
     private static IGraphics Graphics => IBackend.Backend.Graphics;
 
+    public static float Scale
+    {
+        get => IBackend.Backend.Scale;
+        set => IBackend.Backend.Scale = value;
+    }
+
     public static void SetColor(Color c) => Graphics.SetColor(c);
 
     public static void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos) => Graphics.SetLinearGradient(x, y, width, height, colors, colorPos);
@@ -37,10 +43,15 @@ public static class G
 
     public static void DrawString(string text, int x, int y) => Graphics.DrawString(text, x, y);
     public static void DrawStringAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
-        => Graphics.DrawStringAligned(text, areaWidth, areaHeight, hAlign, vAlign);
+        => Graphics.DrawStringAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign);
+    public static void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
+        => Graphics.DrawStringAligned(text, x, y, areaWidth, areaHeight, hAlign, vAlign);
     
     public static void DrawStringStrokeAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
-        => Graphics.DrawStringStrokeAligned(text, areaWidth, areaHeight, hAlign, vAlign, effectAmount);
+        => Graphics.DrawStringStrokeAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign, effectAmount);
+
+    public static void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        => Graphics.DrawStringStrokeAligned(text, x, y, areaWidth, areaHeight, hAlign, vAlign, effectAmount);
 
     public static void DrawStringStroke(string text, int x, int y, int effectAmount = 1) => Graphics.DrawStringStroke(text, x, y, effectAmount);
 
@@ -73,5 +84,10 @@ public static class G
     }
 
     public static void SetAntialiasing(bool useAntialias) => Graphics.SetAntialiasing(useAntialias);
-    public static Vector2 Viewport() => IBackend.Backend.Viewport();
+    public static string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
+    {
+        return Graphics.LayoutText(text, width, height, breakType);
+    }
+
+    public static Vector2 Viewport => IBackend.Backend.Viewport;
 }
