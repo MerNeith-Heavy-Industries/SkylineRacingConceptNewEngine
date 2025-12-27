@@ -78,10 +78,17 @@ internal class NanoVGBackend(NvgContext context) : IBackend
         {
             _context = context;
             
+            _fontSystems[FontFamily.DroidSans] = LoadFont("./data/fonts/DroidSans.ttf");
+            _fontSystems[FontFamily.AdventureHollow] = LoadFont("./data/fonts/AdventureHollow.otf");
+            _fontSystems[FontFamily.Adventure] = LoadFont("./data/fonts/Adventure.otf");
+            _font = _fontSystems[FontFamily.DroidSans].GetFont(18);
+        }
+
+        private FontSystem LoadFont(string fontFile)
+        {
             var fontSystem = new FontSystem();
-            fontSystem.AddFont(System.IO.File.ReadAllBytes("./data/fonts/DroidSans.ttf"));
-            _fontSystems[FontFamily.DroidSans] = fontSystem;
-            _font = fontSystem.GetFont(18);
+            fontSystem.AddFont(System.IO.File.ReadAllBytes(fontFile));
+            return fontSystem;
         }
 
         public void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos)
