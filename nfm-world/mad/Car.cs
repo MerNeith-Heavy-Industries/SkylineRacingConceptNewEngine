@@ -48,13 +48,13 @@ public class Car : MeshedGameObject
         Rotation = rotation;
     }
 
-    public override void GameTick()
+    public override void GameTick(Stage? stage = null)
     {
         Flames.GameTick();
-        Dust.GameTick();
+        Dust.GameTick(stage);
         Chips.GameTick();
         Sparks.GameTick();
-        base.GameTick();
+        base.GameTick(stage);
     }
 
     public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
