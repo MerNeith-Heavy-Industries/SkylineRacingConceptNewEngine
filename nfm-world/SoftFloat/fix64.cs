@@ -30,8 +30,8 @@ using FixedMathSharp;
 
 namespace SoftFloat;
 
-// Internal representation is identical to IEEE binary32 floating point numbers
 [DebuggerDisplay("{ToString()}")]
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)] 
 public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, IComparable<fix64>, IComparable, IFormattable
 {
     public const int FRACTION_BITS = FixedMath.SHIFT_AMOUNT_I;
@@ -46,16 +46,17 @@ public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, ICompar
     public static fix64 MaxValue => new(Fixed64.MAX_VALUE);
     public long Raw => Value.m_rawValue;
 
-    public string ToString(string? format, IFormatProvider? formatProvider) => Value.ToString(format!);
-    public bool Equals(fix64 other) => Value.Equals(other.Value);
-    public int CompareTo(fix64 other) => Value.CompareTo(other.Value);
-    public override string ToString() => Value.ToString();
-    public int CompareTo(object? obj) => obj is fix64 other ? Value.CompareTo(other.Value) : 0;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public string ToString(string? format, IFormatProvider? formatProvider) => Value.ToString(format!);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public bool Equals(fix64 other) => Value.Equals(other.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public int CompareTo(fix64 other) => Value.CompareTo(other.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public override string ToString() => Value.ToString();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public int CompareTo(object? obj) => obj is fix64 other ? Value.CompareTo(other.Value) : 0;
         
-    public static explicit operator fix64(float value) => new(new Fixed64(value));
-    public static explicit operator float(fix64 value) => value.Value.ToPreciseFloat();
-    public static implicit operator fix64(int value) => new(new Fixed64(value));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static explicit operator fix64(float value) => new(new Fixed64(value));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static explicit operator float(fix64 value) => value.Value.ToPreciseFloat();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static implicit operator fix64(int value) => new(new Fixed64(value));
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(fix64 value)
     {
         // truncation toward zero. regularly casting fixed64 to int doesn't do that
@@ -65,23 +66,23 @@ public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, ICompar
             return value.Value.CeilToInt();
     }
 
-    public static fix64 operator +(fix64 a, fix64 b) => new(a.Value + b.Value);
-    public static fix64 operator -(fix64 a, fix64 b) => new(a.Value - b.Value);
-    public static fix64 operator *(fix64 a, fix64 b) => new(a.Value * b.Value);
-    public static fix64 operator /(fix64 a, fix64 b) => new(a.Value / b.Value);
-    public static fix64 operator %(fix64 a, fix64 b) => new(a.Value % b.Value);
-    public static fix64 operator -(fix64 a) => new(-a.Value);
-    public static bool operator ==(fix64 a, fix64 b) => a.Value == b.Value;
-    public static bool operator !=(fix64 a, fix64 b) => a.Value != b.Value;
-    public static bool operator <(fix64 a, fix64 b) => a.Value < b.Value;
-    public static bool operator <=(fix64 a, fix64 b) => a.Value <= b.Value;
-    public static bool operator >(fix64 a, fix64 b) => a.Value > b.Value;
-    public static bool operator >=(fix64 a, fix64 b) => a.Value >= b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator +(fix64 a, fix64 b) => new(a.Value + b.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator -(fix64 a, fix64 b) => new(a.Value - b.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator *(fix64 a, fix64 b) => new(a.Value * b.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator /(fix64 a, fix64 b) => new(a.Value / b.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator %(fix64 a, fix64 b) => new(a.Value % b.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 operator -(fix64 a) => new(-a.Value);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator ==(fix64 a, fix64 b) => a.Value == b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator !=(fix64 a, fix64 b) => a.Value != b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator <(fix64 a, fix64 b) => a.Value < b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator <=(fix64 a, fix64 b) => a.Value <= b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator >(fix64 a, fix64 b) => a.Value > b.Value;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator >=(fix64 a, fix64 b) => a.Value >= b.Value;
 
-    public static fix64 Abs(fix64 a) => new(a.Value.Abs());
-    public int Sign() => Value.Sign();
-    public static fix64 Min(fix64 a, fix64 b) => a < b ? a : b;
-    public static fix64 Max(fix64 a, fix64 b) => a > b ? a : b;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 Abs(fix64 a) => new(a.Value.Abs());
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public int Sign() => Value.Sign();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 Min(fix64 a, fix64 b) => a < b ? a : b;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 Max(fix64 a, fix64 b) => a > b ? a : b;
 
-    public static fix64 FromRaw(long raw) => new(new(raw));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 FromRaw(long raw) => new(new(raw));
 }

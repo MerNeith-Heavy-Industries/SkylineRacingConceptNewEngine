@@ -1,6 +1,10 @@
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
+using nfm_world.mad.collision;
+using NFMWorld;
 using NFMWorld.Mad;
 using NFMWorld.Util;
+using SoftFloat;
 using Stride.Core.Extensions;
 
 /**
@@ -37,6 +41,15 @@ public class Stage : GameObject
     private bool reverseChkY = false;
 
     public readonly string Path;
+    
+    // left
+    internal int Sx;
+    // top
+    internal int Sz;
+    // width
+    internal int Ncx;
+    // height
+    internal int Ncz;
 
     /**
      * Loads stage currently set by checkpoints.stage onto stageContos
@@ -47,7 +60,6 @@ public class Stage : GameObject
 
         Path = stageName;
         World.ResetValues();
-        Trackers.Nt = 0;
         // Medium.Noelec = 0;
         // Medium.Ground = 250;
         // Medium.Trk = 0;
@@ -472,18 +484,19 @@ public class Stage : GameObject
                             Euler.Identity                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.X[Trackers.Nt] = o + 500;
-                    Trackers.Radx[Trackers.Nt] = 600;
-                    Trackers.Z[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radz[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Xy[Trackers.Nt] = 90;
-                    Trackers.Zy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(o + 500, -5000, n * 4800 / 2 + p - 2400),
+                            Radius: new f64Vector3(600, 7100, n * 4800 / 2),
+                            Xy: 90,
+                            Zy: 0,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxl"))
                 {
@@ -499,18 +512,18 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(180), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.X[Trackers.Nt] = o - 500;
-                    Trackers.Radx[Trackers.Nt] = 600;
-                    Trackers.Z[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radz[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Xy[Trackers.Nt] = -90;
-                    Trackers.Zy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(o - 500, -5000, n * 4800 / 2 + p - 2400),
+                            Radius: new f64Vector3(600, 7100, n * 4800 / 2),
+                            Xy: -90,
+                            Zy: 0,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxt"))
                 {
@@ -526,18 +539,19 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.Z[Trackers.Nt] = o + 500;
-                    Trackers.Radz[Trackers.Nt] = 600;
-                    Trackers.X[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radx[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Zy[Trackers.Nt] = 90;
-                    Trackers.Xy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(n * 4800 / 2 + p - 2400, -5000, o + 500),
+                            Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
+                            Xy: 0,
+                            Zy: 90,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
                 if (line.StartsWith("maxb"))
                 {
@@ -553,18 +567,18 @@ public class Stage : GameObject
                             new Euler(AngleSingle.FromDegrees(-90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
                         );
                     }
-                    Trackers.Y[Trackers.Nt] = -5000;
-                    Trackers.Rady[Trackers.Nt] = 7100;
-                    Trackers.Z[Trackers.Nt] = o - 500;
-                    Trackers.Radz[Trackers.Nt] = 600;
-                    Trackers.X[Trackers.Nt] = n * 4800 / 2 + p - 2400;
-                    Trackers.Radx[Trackers.Nt] = n * 4800 / 2;
-                    Trackers.Zy[Trackers.Nt] = -90;
-                    Trackers.Xy[Trackers.Nt] = 0;
-                    Trackers.Dam[Trackers.Nt] = 167;
-                    Trackers.Decor[Trackers.Nt] = false;
-                    Trackers.Skd[Trackers.Nt] = 0;
-                    Trackers.Nt++;
+                    pieces[stagePartCount] = new WallCollision([
+                        new Rad3dBoxDef(
+                            Translation: new f64Vector3(n * 4800 / 2 + p - 2400, -5000, o - 500),
+                            Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
+                            Xy: 180,
+                            Zy: -90,
+                            Skid: 0,
+                            NotWall: false,
+                            Color: new Color3(),
+                            Damage: 1
+                        )
+                    ]);
                 }
             }
 
@@ -577,11 +591,11 @@ public class Stage : GameObject
             // Medium.Newmountains(maxl, maxr, maxb, maxt);
             // Medium.Newclouds(maxl, maxr, maxb, maxt);
             // Medium.Newstars();
-            Trackers.LoadTrackers(pieces, maxl, maxr - maxl, maxb, maxt - maxb);
+            SetBounds(maxl, maxr - maxl, maxb, maxt - maxb);
 
             if (World.DrawPolys)
             {
-                polys = NFMWorld.Mad.Environment.MakePolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount, graphicsDevice);
+                polys = NFMWorld.Mad.Environment.MakePolys(this, maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount, graphicsDevice);
             }
 
             if (World.DrawClouds)
@@ -602,6 +616,32 @@ public class Stage : GameObject
         }
         sky = new Sky(graphicsDevice);
         ground = new Ground(graphicsDevice);
+    }
+
+    private void SetBounds(int sx, int ncx, int sz, int ncz)
+    {
+        Sx = sx;
+        Sz = sz;
+        Ncx = ncx;
+        if (Ncx <= 0)
+        {
+            Ncx = 1;
+        }
+        Ncz = ncz;
+        if (Ncz <= 0)
+        {
+            Ncz = 1;
+        }
+        
+        CollisionQuadTree = new QuadTree<CollisionBoxRef>(sx, sz, ncx, ncz);
+        foreach (var piece in pieces)
+        {
+            if (piece is ICollidable collidable)
+            {
+                AddToQuadTree(collidable);
+            }
+        }
+        CollisionQuadTree.TrimExcess();
     }
 
     private static bool TryGetPieceToPlace(string setstring, out PlaceableObjectInfo mesh)
@@ -649,10 +689,134 @@ public class Stage : GameObject
             new Euler(AngleSingle.FromDegrees(r), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)
         );
 
-
         GameSparker.devConsole.Log($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}", "info");
 
+        AddToQuadTree((mesh as ICollidable)!);
+
         return mesh;
+    }
+
+    // A struct for this would be ideal, but it's a very large object so it would cause enormous stack allocations
+    public class CollisionBoxRef : IQuadObject
+    {
+        private readonly f64Bounds _bounds;
+        
+        // Box and GameObject position and rotation in world space
+        public readonly f64Vector3 GameObjectPosition;
+        public readonly fix64 GameObjectXz;
+        public readonly Rad3dBoxDef Box;
+        
+        // Precomputed BoxRoad/BoxWall/BoxRamp for faster collision checks
+        public readonly BoxRoad? BoxRoad;
+        public readonly BoxWall? BoxWall;
+        public readonly BoxRamp? BoxRamp;
+
+        public CollisionBoxRef(
+            fix64 gameObjectX,
+            fix64 gameObjectY,
+            fix64 gameObjectZ,
+            fix64 gameObjectRotXz,
+            Rad3dBoxDef box,
+            fix64 x,
+            fix64 z,
+            fix64 radx,
+            fix64 radz)
+        {
+            GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
+            GameObjectXz = gameObjectRotXz;
+
+            Box = box;
+            
+            var rad = box.Radius;
+            var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);
+            var trackersPosition = box.Translation;
+
+            if (box is { Xy: 0, Zy: 0 })
+            {
+                BoxRoad = new BoxRoad(rad, trackersPosition, gameObjectRotXz, GameObjectPosition);
+            }
+            else if (box.Zy == 90 || box.Zy == -90 || box.Xy == 90 || box.Xy == -90)
+            {
+                if (box.Zy == -90)
+                {
+                    BoxWall = new BoxWall(rad, 0, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+                else if (box.Xy == 90)
+                {
+                    BoxWall = new BoxWall(radFlipped, 90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+                else if (box.Zy == 90)
+                {
+                    BoxWall = new BoxWall(rad, 180, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+                else
+                {
+                    BoxWall = new BoxWall(radFlipped, -90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+            }
+            else if ((box.Zy != 0 && box.Zy != 90 && box.Zy != -90) || (box.Xy != 0 && box.Xy != 90 && box.Xy != -90))
+            {
+                if (box.Zy != 0)
+                {
+                    BoxRamp = new BoxRamp(rad, box.Zy, 0, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+                else
+                {
+                    BoxRamp = new BoxRamp(radFlipped, box.Xy, -90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                }
+            }
+
+            _bounds = new f64Bounds(
+                x - radx,
+                z - radz,
+                radx * 2,
+                radz * 2
+            );
+        }
+
+        public f64Bounds Bounds => _bounds;
+    }
+    
+    private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);
+
+    private void AddToQuadTree(ICollidable mesh)
+    {
+        fix64 x = 0;
+        fix64 y = 0;
+        fix64 z = 0;
+        fix64 xz = 0;
+        if (mesh is GameObject gameObject)
+        {
+            x = (fix64)gameObject.Position.X;
+            y = (fix64)gameObject.Position.Y;
+            z = (fix64)gameObject.Position.Z;
+            xz = gameObject.Rotation.Xz.DegreesSFloat;
+        }
+        
+        foreach (var box in mesh.Boxes)
+        {
+            fix64 maxR = fix64.Max(fix64.Max(fix64.Abs(box.Radius.X), fix64.Abs(box.Radius.Z)), fix64.Abs(box.Radius.Y));
+            CollisionQuadTree.Insert(new CollisionBoxRef(
+                gameObjectX: x,
+                gameObjectY: y,
+                gameObjectZ: z,
+                gameObjectRotXz: xz,
+                box: box,
+                x: (x + box.Translation.X),
+                z: (z + box.Translation.Z),
+                // xz rotation affects the box extents, so we add some padding
+                radx: maxR * (fix64)2f,
+                radz: maxR * (fix64)2f
+            ));
+        }
+    }
+    
+    private List<CollisionBoxRef> _tempTrackers = new();
+    public ReadOnlySpan<CollisionBoxRef> RetrievePointCollidables(fix64 x, fix64 z)
+    {
+        _tempTrackers.Clear();
+        CollisionQuadTree.RetrievePoint(_tempTrackers, x, z);
+        return CollectionsMarshal.AsSpan(_tempTrackers);
     }
 
     public override void Render(Camera camera, Lighting? lighting)

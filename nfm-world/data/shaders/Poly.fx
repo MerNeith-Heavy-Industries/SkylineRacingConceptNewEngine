@@ -102,10 +102,10 @@ VertexShaderOutput MainVS(
             CameraPosition,
             EnvironmentLight
         );
-	}
 
-	// Apply snap
-    VS_Snap(color, SnapColor);
+        // Apply snap
+        VS_Snap(color, SnapColor);
+	}
 
     VS_ApplyFog(color, viewPos.xyz, FogColor, FogDistance, FogDensity);
 

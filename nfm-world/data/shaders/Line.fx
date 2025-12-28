@@ -118,10 +118,10 @@ VertexShaderOutput MainVS(
             CameraPosition,
             EnvironmentLight
         );
-	}
 
-	// Apply snap
-    VS_Snap(color, SnapColor);
+        // Apply snap
+        VS_Snap(color, SnapColor);
+	}
 
     if (ChargedBlinkAmount > 0.0f)
     {

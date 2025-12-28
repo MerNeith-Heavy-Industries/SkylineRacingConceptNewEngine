@@ -1984,7 +1984,7 @@ public class StageEditorPhase : BasePhase
                                 // Recreate polys, clouds, and mountains based on tab settings
                                 if (ActiveTab.PolysEnabled)
                                 {
-                                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(-10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                                 }
                                 else
                                 {
@@ -2179,7 +2179,7 @@ public class StageEditorPhase : BasePhase
                         (short)(_editPolysColor.Y * 255),
                         (short)(_editPolysColor.Z * 255)
                     );
-                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(-10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                 }
                 else if (!_editPolysEnabled && ActiveTab?.Stage != null)
                 {
@@ -2199,7 +2199,7 @@ public class StageEditorPhase : BasePhase
                     );
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(-10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                        ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                     }
                 }
             }

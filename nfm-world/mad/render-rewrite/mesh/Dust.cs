@@ -87,7 +87,7 @@ public class Dust
         }
     }
 
-    public void GameTick()
+    public void GameTick(Stage? stage)
     {
         _vertexCount = 0;
         _indexCount = 0;
@@ -95,12 +95,12 @@ public class Dust
         {
             if (Stg[dust] != 0)
             {
-                TickDust(dust);
+                TickDust(stage, dust);
             }
         }
     }
 
-    private void TickDust(int dust)
+    private void TickDust(Stage? stage, int dust)
     {
         Span<int> baseColor = stackalloc int[3];
         if (Stg[dust] == 1)
@@ -119,32 +119,37 @@ public class Dust
                     baseColor[i] = 0;
                 }
             }
-            foreach (var tracker in Trackers.RetrievePoint((fix64)Sx[dust], (fix64)Sz[dust]))
+            if (stage != null)
             {
-                int idx = tracker.Index;
-                if (Math.Abs(Trackers.Zy[idx]) != 90 && Math.Abs(Trackers.Xy[idx]) != 90 &&
-                    Math.Abs(Sx[dust] - Trackers.X[idx]) < Trackers.Radx[idx] &&
-                    Math.Abs(Sz[dust] - Trackers.Z[idx]) < Trackers.Radz[idx])
+                var sx = (fix64)Sx[dust];
+                var sz = (fix64)Sz[dust];
+                foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
                 {
-                    if (Trackers.Skd[idx] == 0)
+                    var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
+                    var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
+                    if (tracker.BoxRoad is not null &&
+                        fix64.Abs(sx - x) < tracker.Box.Radius.X &&
+                        fix64.Abs(sz - z) < tracker.Box.Radius.Z)
                     {
-                        _sbln[dust] = 0.2F;
+                        _sbln[dust] = tracker.Box.Skid switch
+                        {
+                            0 => 0.2F,
+                            1 => 0.4F,
+                            2 => 0.45F,
+                            _ => _sbln[dust]
+                        };
+
+                        for (var rgb = 0; rgb < 3; rgb++)
+                        {
+                            _srgb[dust, rgb] = (tracker.Box.Color[rgb] + baseColor[rgb]) / 2;
+                        }
+
+                        trackersColor = true;
+                        break;
                     }
-                    if (Trackers.Skd[idx] == 1)
-                    {
-                        _sbln[dust] = 0.4F;
-                    }
-                    if (Trackers.Skd[idx] == 2)
-                    {
-                        _sbln[dust] = 0.45F;
-                    }
-                    for (var i214 = 0; i214 < 3; i214++)
-                    {
-                        _srgb[dust, i214] = (Trackers.C[idx][i214] + baseColor[i214]) / 2;
-                    }
-                    trackersColor = true;
                 }
             }
+
             if (!trackersColor)
             {
                 for (var i215 = 0; i215 < 3; i215++)

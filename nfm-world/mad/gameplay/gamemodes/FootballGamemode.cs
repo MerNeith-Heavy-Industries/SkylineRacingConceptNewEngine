@@ -55,7 +55,7 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRac
 
         foreach (var car in carsInRace)
         {
-            car.Drive();
+            car.Drive(baseRacePhase.CurrentStage);
         }
     }
 

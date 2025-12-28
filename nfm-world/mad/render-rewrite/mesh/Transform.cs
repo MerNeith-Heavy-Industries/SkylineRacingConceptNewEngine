@@ -59,7 +59,7 @@ public class Transform
         set;
     } = true;
 
-    public virtual void GameTick()
+    public virtual void GameTick(Stage? stage = null)
     {
     }
 }
