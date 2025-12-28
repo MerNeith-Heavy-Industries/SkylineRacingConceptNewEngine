@@ -11,6 +11,11 @@ lightson()
 
 nlaps(1)
 
+name(The 45 Degree Gun Run)
+nlaps(1)
+
+soundtrack(nfm2,stage14.radq)
+
 set(48,0,0,45)p
 set(15,-3960,3959,45)p
 set(15,-7920,7919,45)p
