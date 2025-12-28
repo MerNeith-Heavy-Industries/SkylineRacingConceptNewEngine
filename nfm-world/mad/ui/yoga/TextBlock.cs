@@ -6,6 +6,7 @@ namespace NFMWorld.Mad.UI.yoga;
 public class TextBlock : Node
 {
     public Color Color { get; set; } = new Color(255, 255, 255);
+    public Color? StrokeColor { get; set; } = null;
     public Font Font
     {
         get;
@@ -75,7 +76,18 @@ public class TextBlock : Node
             HasNewLayout = false;
         }
         
+        if(StrokeColor != null)
+        {
+            G.SetColor((Color)StrokeColor);
+            G.DrawStringStrokeAligned(_formattedText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
+        }
+
         G.SetColor(Color);
         G.DrawStringAligned(_formattedText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
+    }
+
+    public new Action<TextBlock> Ref
+    {
+        set => value(this);
     }
 }

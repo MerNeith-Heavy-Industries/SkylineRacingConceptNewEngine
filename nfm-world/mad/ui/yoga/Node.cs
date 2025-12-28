@@ -1,14 +1,14 @@
 ﻿using System.Collections;
+using System.Diagnostics;
+using System.Text;
 using Yoga;
 
 namespace NFMWorld.Mad.UI.yoga;
 
+[DebuggerDisplay("{DebugToString()}")]
 public class Node : IDisposable
 {
-    internal static readonly YGConfigPtr Config = new()
-    {
-        UseWebDefaults = true
-    };
+    internal static readonly YGConfigPtr Config;
 
     internal YGNodePtr NodeInternal = new(Config);
 
@@ -18,17 +18,34 @@ public class Node : IDisposable
     }
 
     public NodeChildCollection Children { get; }
+    
+    public string? Name { get; set; }
+
+    public string DebugToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append($"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})");
+        foreach (var child in Children)
+        {
+            sb.AppendLine();
+            sb.Append('{');
+            sb.Append(child.DebugToString().Replace("\n", "\n  "));
+            sb.Append('}');
+        }
+        return sb.ToString();
+    }
 
     #region Layout
 
     // https://www.w3schools.com/css/css_boxmodel.asp
-    public Vector2 LayoutMarginPosition => new(LayoutX, LayoutY);
+    private Vector2 _root;
+    public Vector2 LayoutMarginPosition => _root + new Vector2(LayoutX, LayoutY);
     public Vector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
-    public Vector2 LayoutBorderPosition => new(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
+    public Vector2 LayoutBorderPosition => _root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
     public Vector2 LayoutBorderSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom));
-    public Vector2 LayoutPaddingPosition => new(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
+    public Vector2 LayoutPaddingPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
     public Vector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
-    public Vector2 LayoutContentPosition => new(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
+    public Vector2 LayoutContentPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
     public Vector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
     
     public Vector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
@@ -154,6 +171,11 @@ public class Node : IDisposable
     {
         get => NodeInternal.FlexShrink;
         set => NodeInternal.FlexShrink = value;
+    }
+
+    public Action<Node> Ref
+    {
+        set => value(this);
     }
 
     public struct MeasurementFlexBasis
@@ -884,6 +906,12 @@ public class Node : IDisposable
 
     private float _lastScale = 1f;
 
+    static Node()
+    {
+        Config = YGConfigPtr.GetDefault();
+        Config.UseWebDefaults = true;
+    }
+
     ~Node()
     {
         Dispose(false);
@@ -985,12 +1013,16 @@ public class Node : IDisposable
         RenderContent(LayoutContentPosition, LayoutContentSize);
     }
 
-    private void RenderRecursive()
+    private void RenderRecursive(Vector2 root)
     {
-        Render();
-        foreach (var child in Children)
+        _root = root;
+        if (Display != YGDisplay.YGDisplayNone)
         {
-            child.RenderRecursive();
+            Render();
+            foreach (var child in Children)
+            {
+                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY)); // todo should this be LayoutContentPosition
+            }
         }
     }
 
@@ -998,11 +1030,11 @@ public class Node : IDisposable
     {
     }
 
-    public void LayoutAndRender(Vector2 availableSize)
+    public void LayoutAndRender(Vector2 availableSize, Vector2? origin = null)
     {
         RescaleRecursive();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
-        RenderRecursive();
+        RenderRecursive(origin ?? Vector2.Zero);
     }
 
     public void Update()

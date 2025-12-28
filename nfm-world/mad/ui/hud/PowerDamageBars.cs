@@ -25,7 +25,8 @@ public class PowerDamageBars
                 BarImage = _damage,
                 BarFillAmount = 0f,
                 Width = _damage.Width,
-                Height = _damage.Height
+                Height = _damage.Height,
+                Scale = 1.2f
             },
             new MeasureBar()
             {
@@ -33,7 +34,8 @@ public class PowerDamageBars
                 BarFillAmount = 0.98f,
                 BarImage = _power,
                 Width = _power.Width,
-                Height = _power.Height
+                Height = _power.Height,
+                Scale = 1.2f
             }
         }
     };
