@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO.Compression;
 using Maxine.Extensions;
 using MessagePack;
 using NFMWorld.Mad;
@@ -42,14 +43,9 @@ public class SavedTimeTrial
     {
         if (System.IO.File.Exists(GetPathName(carName, stageName)))
         {
-            using var compressedStream = new System.IO.Compression.DeflateStream(
-                System.IO.File.OpenRead(GetPathName(carName, stageName)),
-                System.IO.Compression.CompressionMode.Decompress
-            );
-            using var memoryStream = new MemoryStream();
-            compressedStream.CopyTo(memoryStream);
-            byte[] data = memoryStream.ToArray();
-            return MessagePackSerializer.Deserialize<SavedTimeTrial>(data, MsgPackHelpers.Options);
+            using var fileStream = System.IO.File.OpenRead(GetPathName(carName, stageName));
+            using var compressedStream = new DeflateStream(fileStream, CompressionMode.Decompress);
+            return MessagePackSerializer.Deserialize<SavedTimeTrial>(compressedStream, MsgPackHelpers.Options);
         }
         return null;
     }
@@ -63,12 +59,10 @@ public class SavedTimeTrial
 
         // compress file using DeflateStream
 
-        byte[] data = MessagePackSerializer.Serialize(this, MsgPackHelpers.Options);
-        using var compressedStream = new System.IO.Compression.DeflateStream(
-            System.IO.File.OpenWrite(GetPathName(CarName, StageName)),
-            System.IO.Compression.CompressionMode.Compress
-        );
-        compressedStream.Write(data, 0, data.Length);
+        using var fileStream = System.IO.File.OpenWrite(GetPathName(CarName, StageName));
+        using var deflateStream = new DeflateStream(fileStream, CompressionMode.Compress);
+
+        MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
     }
 
     public void RecordTick(InGameCar car, int checkpointInLap, int lap)
