@@ -9,5 +9,7 @@ public readonly record struct Font(FontFamily FontFamily, int Flags, float Size)
 
 public enum FontFamily : byte
 {
-    DroidSans
+    DroidSans,
+    Adventure,
+    AdventureHollow
 }

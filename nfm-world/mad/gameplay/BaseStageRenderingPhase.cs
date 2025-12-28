@@ -98,6 +98,8 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     {
         base.WindowSizeChanged(width, height);
 
+        G.Scale = 1280f/width;
+
         camera.Width = width;
         camera.Height = height;
     }
