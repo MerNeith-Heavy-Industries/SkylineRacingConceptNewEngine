@@ -738,7 +738,7 @@ public class Stage : GameObject
         
         foreach (var box in mesh.Boxes)
         {
-            fix64 maxR = fix64.Max(box.Radius.X, box.Radius.Z);
+            fix64 maxR = fix64.Max(fix64.Max(fix64.Abs(box.Radius.X), fix64.Abs(box.Radius.Z)), fix64.Abs(box.Radius.Y));
             CollisionQuadTree.Insert(new CollisionBoxRef(
                 gameObjectX: x,
                 gameObjectY: y,
@@ -748,8 +748,8 @@ public class Stage : GameObject
                 x: (x + box.Translation.X),
                 z: (z + box.Translation.Z),
                 // xz rotation affects the box extents, so we add some padding
-                radx: maxR * (fix64)1.5f,
-                radz: maxR * (fix64)1.5f
+                radx: maxR * (fix64)2f,
+                radz: maxR * (fix64)2f
             ));
         }
     }
