@@ -206,8 +206,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         carsInRace[playerCarIndex + 1] = new InGameCar(carsInRace[playerCarIndex], 0, false);
         carsInRace[playerCarIndex + 1].Sfx.Mute = true;
 
-        SavedTimeTrial bestTimeDemo = new SavedTimeTrial(player.CarName, currentStage.Path);
-        if (bestTimeDemo.Load())
+        SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(player.CarName, currentStage.Path);
+        if (bestTimeDemo != null && PlaybackOnReset)
         {
             bestTimeTrial = bestTimeDemo;
             carsInRace[playerCarIndex + 1].CarRef.AlphaOverride = 0.2f;
@@ -267,13 +267,13 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (bestTimeTrial != null)
         {
-            carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? Nibble<byte>.AllZeros);
+            carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? (false, false, false, false, false));
 
             carsInRace[playerCarIndex + 1].Drive(baseRacePhase.CurrentStage);
         }
 
-        currentTimeTrial.RecordTick(carsInRace[playerCarIndex].Control);
-        carsInRace[playerCarIndex].Drive(baseRacePhase.CurrentStage);
+        currentTimeTrial.RecordTick(carsInRace[playerCarIndex], currentCheckpoint, currentLap);
+        carsInRace[playerCarIndex].Drive(currentStage);
 
         if (currentStage.checkpoints.Count == 0)
         {
@@ -345,7 +345,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         if (!writtenData)
         {
             writtenData = true;
-            if (bestTimeTrial == null || (currentTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1) < 0))
+            if (bestTimeTrial == null || (currentTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0))
             {
                 currentTimeTrial.Save();
             }
@@ -397,7 +397,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             if ((currentCheckpoint != 0 || currentLap != 1) && bestTimeTrial != null)
             {
                 _splitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
-                long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1);
+                long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
                 if (diff > 0)
                 {
                     _splitsText.Color = new Color(255, 128, 128);
@@ -432,14 +432,14 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
             _centerText.Text = $"Finished! Time: {finalTime}";
 
-            bool newBest = bestTimeTrial == null || (bestTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.Count - 1) < 0);
+            bool newBest = bestTimeTrial == null || (bestTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
 
             if(newBest)
                 _centerText.Text += "\nNew best time!";
 
             if (bestTimeTrial != null || newBest)
             {
-                long bestTimeMs = Math.Min(currentTimeTrial.Splits[^1], bestTimeTrial != null ? bestTimeTrial.Splits[^1] : long.MaxValue);
+                long bestTimeMs = Math.Min(currentTimeTrial.Splits.SplitTimes[^1], bestTimeTrial != null ? bestTimeTrial.Splits.SplitTimes[^1] : long.MaxValue);
 
                 TimeSpan t = TimeSpan.FromMilliseconds(bestTimeMs);
 

@@ -14,6 +14,8 @@ using SoftFloat;
 [assembly: MessagePackAssumedFormattable(typeof(AngleSingle))]
 [assembly: MessagePackAssumedFormattable(typeof(fix64))]
 [assembly: MessagePackAssumedFormattable(typeof(f64Vector3))]
+[assembly: MessagePackAssumedFormattable(typeof(DemoEntry))]
+[assembly: MessagePackAssumedFormattable(typeof(List<DemoEntry>))]
 
 namespace NFMWorld.Mad;
 
