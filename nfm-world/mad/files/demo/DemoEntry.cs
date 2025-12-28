@@ -9,6 +9,7 @@ using SoftFloat;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct DemoEntry
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BitFlags
     {
         public Nibble<uint> Values;
