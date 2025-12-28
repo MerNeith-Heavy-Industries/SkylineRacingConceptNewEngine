@@ -6,6 +6,17 @@ using nfm_world.mad.collision;
 using NFMWorld.Util;
 using SoftFloat;
 
+/*************************************
+ *
+ *************************************
+ *
+ * IF YOU CHANGE ANYTHING HERE RELATING TO PHYSICS, MAKE SURE TO UPDATE THE VERSION NUMBER OF SAVED DEMOS
+ * AS ALL DEMOS WILL DESYNC IF THE COLLISIONS OR PHYSICS ARE UPDATED.
+ *
+ *************************************
+ *
+**************************************/
+
 namespace NFMWorld.Mad;
 
 public class Mad

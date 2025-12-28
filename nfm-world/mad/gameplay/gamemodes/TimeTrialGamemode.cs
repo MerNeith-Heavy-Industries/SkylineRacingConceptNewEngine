@@ -224,6 +224,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             cp.Glow = false;
         }
 
+        SetTimeText();
+
+        _pdBars.Reset();
+        IBackend.Backend.StopAllSounds();
+
         SetLapText(1);
         _splitsText.Display = Yoga.YGDisplay.YGDisplayNone;
 
