@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
+using NFMWorld;
 using NFMWorld.Mad;
 using NFMWorld.Util;
 using SoftFloat;
@@ -629,6 +631,16 @@ public class Stage : GameObject
         {
             Ncz = 1;
         }
+        
+        CollisionQuadTree = new QuadTree<CollisionBoxRef>(sx, sz, ncx, ncz);
+        foreach (var piece in pieces)
+        {
+            if (piece is ICollidable collidable)
+            {
+                AddToQuadTree(collidable);
+            }
+        }
+        CollisionQuadTree.TrimExcess();
     }
 
     private static bool TryGetPieceToPlace(string setstring, out PlaceableObjectInfo mesh)
@@ -676,10 +688,81 @@ public class Stage : GameObject
             new Euler(AngleSingle.FromDegrees(r), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)
         );
 
-
         GameSparker.devConsole.Log($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}", "info");
 
+        AddToQuadTree((mesh as ICollidable)!);
+
         return mesh;
+    }
+
+    public readonly struct CollisionBoxRef(
+        fix64 gameObjectX,
+        fix64 gameObjectY,
+        fix64 gameObjectZ,
+        fix64 gameObjectRotXz,
+        Rad3dBoxDef box,
+        fix64 x,
+        fix64 z,
+        fix64 radx,
+        fix64 radz) : IQuadObject
+    {
+        public readonly Rad3dBoxDef Box = box;
+        public readonly f64Vector3 GameObjectPosition = new(gameObjectX, gameObjectY, gameObjectZ);
+        public readonly fix64 GameObjectRotXz = gameObjectRotXz;
+
+        private readonly f64Bounds _bounds = new(
+            x - radx,
+            z - radz,
+            radx * 2,
+            radz * 2
+        );
+        
+        public f64Bounds GetBounds()
+        {
+            return _bounds;
+        }
+    }
+    
+    private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);
+
+    private void AddToQuadTree(ICollidable mesh)
+    {
+        fix64 x = 0;
+        fix64 y = 0;
+        fix64 z = 0;
+        fix64 xz = 0;
+        if (mesh is GameObject gameObject)
+        {
+            x = (fix64)gameObject.Position.X;
+            y = (fix64)gameObject.Position.Y;
+            z = (fix64)gameObject.Position.Z;
+            xz = gameObject.Rotation.Xz.DegreesSFloat;
+        }
+        
+        foreach (var box in mesh.Boxes)
+        {
+            fix64 maxR = fix64.Max(box.Radius.X, box.Radius.Z);
+            CollisionQuadTree.Insert(new CollisionBoxRef(
+                gameObjectX: x,
+                gameObjectY: y,
+                gameObjectZ: z,
+                gameObjectRotXz: xz,
+                box: box,
+                x: (x + box.Translation.X),
+                z: (z + box.Translation.Z),
+                // xz rotation affects the box extents, so we add some padding
+                radx: maxR * (fix64)1.5f,
+                radz: maxR * (fix64)1.5f
+            ));
+        }
+    }
+    
+    private List<CollisionBoxRef> _tempTrackers = new();
+    public ReadOnlySpan<CollisionBoxRef> RetrievePointCollidables(fix64 x, fix64 z)
+    {
+        _tempTrackers.Clear();
+        CollisionQuadTree.RetrievePoint(_tempTrackers, x, z);
+        return CollectionsMarshal.AsSpan(_tempTrackers);
     }
 
     public override void Render(Camera camera, Lighting? lighting)
