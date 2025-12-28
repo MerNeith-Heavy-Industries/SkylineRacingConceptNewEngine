@@ -26,10 +26,8 @@ public readonly struct BoxWall
     }
 
     public Collision? ResolveCollision(f64Vector3 position, f64Vector3 velocity) {
-        f64Vector3 localPosition = ((position + (contoPosition * -1))
-                                        .RotateXz(-contoXz)
-                                        + (trackersPosition * -1))
-                                        .RotateXz(-trackersXz);
+        f64Vector3 localPosition = ((position + (contoPosition * -1)).RotateXz(-contoXz)
+                                    + (trackersPosition * -1)).RotateXz(-trackersXz);
         if (fix64.Abs(localPosition.X) > rad.X || fix64.Abs(localPosition.Y) > rad.Y || fix64.Abs(localPosition.Z) > rad.Z) { // Inside?
             return null;
         }
