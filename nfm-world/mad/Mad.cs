@@ -2378,7 +2378,7 @@ public class Mad
                                     hitVertical = true;
                                     isWheelTouchingPiece[k] = true;
                                     if (!box.NotWall) {
-                                        control.Wall = -1; // TODO set to wall index?
+                                        control.Wall = 9999;
                                     }
                                 }
                             }
