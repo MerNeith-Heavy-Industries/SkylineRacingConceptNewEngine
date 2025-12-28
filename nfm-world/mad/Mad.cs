@@ -1136,12 +1136,11 @@ public class Mad
             // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
             var rad = new f64Vector3(box.Radius.X, 1000000000, box.Radius.Z);
             var trackersPosition = box.Translation;
-            var contoXz = collidable.GameObjectRotXz;
+            var contoXz = collidable.GameObjectXz;
             var contoPosition = collidable.GameObjectPosition;
             var position = new f64Vector3(conto.X, conto.Y, conto.Z);
-            CollisionBox theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
-            var collision = theBox.ResolveCollision(position);
-            if (collision is not null)
+            var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
+            if (theBox.ResolveCollision(position) is not null)
             {
                 surfaceType = box.Skid;
             }
@@ -2284,19 +2283,11 @@ public class Mad
 
             foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
             {
-                var box = collidable.Box;
                 if (!isWheelTouchingPiece[k])
                 {
-                    var rad = box.Radius;
-                    var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);
-                    var trackersPosition = box.Translation;
-                    var contoXz = collidable.GameObjectRotXz;
-                    var contoPosition = collidable.GameObjectPosition;
-                    if (box is { Xy: 0, Zy: 0 })
+                    if (collidable.BoxRoad is {} boxRoad)
                     {
-                        var boxRoad = new BoxRoad(rad, trackersPosition, contoXz, contoPosition);
-                        var collision = boxRoad.ResolveCollision(position);
-                        if (collision is not null)
+                        if (boxRoad.ResolveCollision(position) is { } collision)
                         {
                             touching |= 1 << k;
                             ++nGroundedWheels;
@@ -2314,10 +2305,10 @@ public class Mad
                                     dustMag += (fix64)1.2f;
                                 conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
                             }
-                            wheely[k] = collidable.GameObjectPosition.Y + box.Translation.Y + wheelGround; // snap wheel to the surface
+                            wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
                             
                             // sparks and scrape
-                            if (BadLanding && (box.Skid == 0 || box.Skid == 1))
+                            if (BadLanding && (collidable.Box.Skid == 0 || collidable.Box.Skid == 1))
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
@@ -2328,19 +2319,8 @@ public class Mad
                             isWheelTouchingPiece[k] = true;
                         }
                     }
-                    else if (box.Zy == 90 || box.Zy == -90 || box.Xy == 90 || box.Xy == -90)
+                    else if (collidable.BoxWall is {} boxWall)
                     {
-                        BoxWall boxWall;
-                        if (box.Zy == -90) {
-                            boxWall = new BoxWall(rad,0, trackersPosition, contoXz, contoPosition);
-                        } else if (box.Xy == 90) {
-                            boxWall = new BoxWall(radFlipped, 90, trackersPosition, contoXz, contoPosition);
-                        } else if (box.Zy == 90) {
-                            boxWall = new BoxWall(rad,180, trackersPosition, contoXz, contoPosition);
-                        } else {
-                            boxWall = new BoxWall(radFlipped,-90, trackersPosition, contoXz, contoPosition);
-                        }
-
                         if (boxWall.ResolveCollision(position, velocity) is { } collision)
                         {
                             for (int w = 0; w < 4; w++) {
@@ -2350,9 +2330,9 @@ public class Mad
                             }
                             
                             // sparks and scrapes
-                            if (box.Skid != 2)
+                            if (collidable.Box.Skid != 2)
                                 _crank[0, k]++;
-                            if (box.Skid == 5 && random.NextSFloat() > (fix64)0.5f)
+                            if (collidable.Box.Skid == 5 && random.NextSFloat() > (fix64)0.5f)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2363,7 +2343,7 @@ public class Mad
 
                             // z rebound CHK5
                             f64Vector3 reboundVelocityDelta = collision.impactComponent * (-GetReboundMul(wasMtouch));
-                            Regz(k, reboundVelocityDelta.Length() * box.Damage, conto, random);
+                            Regz(k, reboundVelocityDelta.Length() * collidable.Box.Damage, conto, random);
                             Scx[k] += reboundVelocityDelta.X;
                             Scy[k] += reboundVelocityDelta.Y;
                             Scz[k] += reboundVelocityDelta.Z;
@@ -2371,23 +2351,16 @@ public class Mad
                             Skid = 2;
                             hitVertical = true;
                             isWheelTouchingPiece[k] = true;
-                            if (!box.NotWall) {
+                            if (!collidable.Box.NotWall) {
                                 control.Wall = 9999;
                             }
                         }
                     }
-                    else if ((box.Zy != 0 && box.Zy != 90 && box.Zy != -90) || (box.Xy != 0 && box.Xy != 90 && box.Xy != -90))
+                    else if (collidable.BoxRamp is {} boxRamp)
                     {
-                        BoxRamp boxRamp;
-                        if (box.Zy != 0) {
-                            boxRamp = new BoxRamp(rad, box.Zy, 0, trackersPosition, contoXz, contoPosition);
-                        } else {
-                            boxRamp = new BoxRamp(radFlipped, box.Xy, -90, trackersPosition, contoXz, contoPosition);
-                        }
-
                         if (boxRamp.ResolveCollision(position) is { } collision)
                         {
-                            var liftDivider = (fix64)1.0F + (50 - Math.Abs(box.Zy)) / (fix64)30;
+                            var liftDivider = (fix64)1.0F + (50 - Math.Abs(collidable.Box.Zy)) / (fix64)30;
                             if (liftDivider < 1)
                                 liftDivider = 1;
                             if (collision.zTmp > 0 && collision.zTmp < 200) {
@@ -2396,7 +2369,7 @@ public class Mad
 
                             if (collision.zTmp > -30)
                             {
-                                if (box.Skid == 2)
+                                if (collidable.Box.Skid == 2)
                                     nWheelsDirtRamp++;
                                 else
                                     nWheelsRoadRamp++;
@@ -2405,7 +2378,7 @@ public class Mad
                                 Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && (box.Skid == 0 || box.Skid == 1))
+                                if (BadLanding && (collidable.Box.Skid == 0 || collidable.Box.Skid == 1))
                                 {
                                     conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                     //if (Im == /*this.xt.im*/ 0)

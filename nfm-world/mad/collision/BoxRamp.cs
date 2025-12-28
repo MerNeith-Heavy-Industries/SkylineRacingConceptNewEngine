@@ -2,23 +2,14 @@
 
 namespace nfm_world.mad.collision;
 
-public readonly struct BoxRamp {
-    private readonly f64Vector3 rad;
-    private readonly fix64 trackersZy;
-    private readonly fix64 trackersXz;
-    private readonly f64Vector3 trackersPosition;
-    private readonly fix64 contoXz;
-    private readonly f64Vector3 contoPosition;
-
-    public BoxRamp(f64Vector3 rad, fix64 trackersZy, fix64 trackersXz, f64Vector3 trackersPosition, fix64 contoXz, f64Vector3 contoPosition) {
-        this.rad = rad;
-        this.trackersZy = trackersZy;
-        this.trackersXz = trackersXz;
-        this.trackersPosition = trackersPosition;
-        this.contoXz = contoXz;
-        this.contoPosition = contoPosition;
-    }
-
+public readonly struct BoxRamp(
+    f64Vector3 rad,
+    fix64 trackersZy,
+    fix64 trackersXz,
+    f64Vector3 trackersPosition,
+    fix64 contoXz,
+    f64Vector3 contoPosition)
+{
     public readonly struct Collision(fix64 zTmp, f64Vector3 newPosition)
     {
         public readonly fix64 zTmp = zTmp;

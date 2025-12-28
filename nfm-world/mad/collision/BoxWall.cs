@@ -1,23 +1,17 @@
-﻿using SoftFloat;
+﻿using System.Diagnostics.CodeAnalysis;
+using SoftFloat;
 
 namespace nfm_world.mad.collision;
 
-public readonly struct BoxWall
+public readonly struct BoxWall(
+    f64Vector3 rad,
+    fix64 trackersXz,
+    f64Vector3 trackersPosition,
+    fix64 contoXz,
+    f64Vector3 contoPosition)
 {
-    private readonly f64Vector3 rad;
-    private readonly fix64 trackersXz;
-    private readonly f64Vector3 trackersPosition;
-    private readonly fix64 contoXz;
-    private readonly f64Vector3 contoPosition;
-    private readonly f64Vector3 zDir = new f64Vector3(0, 0, 1); // We push toward +Z
-
-    public BoxWall(f64Vector3 rad, fix64 trackersXz, f64Vector3 trackersPosition, fix64 contoXz, f64Vector3 contoPosition) {
-        this.rad = rad;
-        this.trackersXz = trackersXz;
-        this.trackersPosition = trackersPosition;
-        this.contoXz = contoXz;
-        this.contoPosition = contoPosition;
-    }
+    private static f64Vector3 zDir { get; } = new f64Vector3(0, 0, 1); // We push toward +Z
+    private readonly f64Vector3 pushDir = zDir.RotateXz(trackersXz).RotateXz(contoXz);
 
     public readonly struct Collision(f64Vector3 positionDelta, f64Vector3 impactComponent)
     {
@@ -31,8 +25,7 @@ public readonly struct BoxWall
         if (fix64.Abs(localPosition.X) > rad.X || fix64.Abs(localPosition.Y) > rad.Y || fix64.Abs(localPosition.Z) > rad.Z) { // Inside?
             return null;
         }
-
-        f64Vector3 pushDir = zDir.RotateXz(trackersXz).RotateXz(contoXz);
+        
         if (f64Vector3.Dot(velocity, pushDir) >= 0) { // Moving into the wall?
             return null;
         }
@@ -46,6 +39,7 @@ public readonly struct BoxWall
         f64Vector3 impactComponent = pushDir * (f64Vector3.Dot(pushDir, velocity));
         return new Collision(positionDelta, impactComponent);
 
+        [DoesNotReturn]
         static void ThrowInvalidOperationException(fix64 penetration)
         {
             throw new InvalidOperationException("Expected non-negative penetration, got: " + penetration);
