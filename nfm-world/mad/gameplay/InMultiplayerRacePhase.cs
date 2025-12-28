@@ -15,7 +15,7 @@ public class InMultiplayerRacePhase(
 {
     protected BaseGamemode? gamemodeInstance { get; set; }
     private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
-    private UnlimitedArray<int> _lastTick = [];
+    private UnlimitedArray<uint> _lastTick = [];
     
     public override void Enter()
     {
@@ -88,6 +88,7 @@ public class InMultiplayerRacePhase(
                     var car = CarsInRace[carIndex];
                     if (playerState.State.Ticks <= _lastTick[carIndex])
                         break;
+                    _lastTick[carIndex] = playerState.State.Ticks;
                     PlayerState.ApplyTo(playerState.State, car);
                     break;
             }
