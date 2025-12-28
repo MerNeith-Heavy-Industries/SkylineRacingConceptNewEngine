@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.DriverInterface;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Util;
 
@@ -13,10 +14,14 @@ public class InMultiplayerRacePhase(
     : BaseRacePhase(graphicsDevice)
 {
     protected BaseGamemode? gamemodeInstance { get; set; }
-
+    private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
+    private UnlimitedArray<uint> _lastTick = [];
+    
     public override void Enter()
     {
         base.Enter();
+
+        raceState = RaceState.WaitingToStart;
 
         var player = session.Players
             .Select(c => (KeyValuePair<byte, S2C_RaceStarted.PlayerInfo>?) c)
@@ -30,7 +35,7 @@ public class InMultiplayerRacePhase(
             spectating = true;
         }
 
-        LoadStage("nfm2/15_dwm");
+        LoadStage(session.StageName);
 
         var parameters = new BaseGamemodeParameters()
         {
@@ -52,6 +57,8 @@ public class InMultiplayerRacePhase(
             _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
         };;
         gamemodeInstance.Enter();
+        
+        transport.SendPacketToServer(new C2S_RaceLoaded());
     }
 
     public override void Exit()
@@ -64,6 +71,29 @@ public class InMultiplayerRacePhase(
     {
         base.GameTick();
         
+        FrameTrace.AddMessage($"race state: {raceState}, player car index: {playerCarIndex}, spectating: {spectating}");
+        
+        foreach (var packet in transport.GetNewPackets())
+        {
+            switch (packet)
+            {
+                case S2C_RaceCanStart raceCanStart:
+                    raceState = RaceState.InProgress;
+                    break;
+                case S2C_RaceFailedToStart raceFailedToStart:
+                    raceState = RaceState.FailedToStart;
+                    break;
+                case S2C_PlayerState playerState:
+                    var carIndex = session.Players.First(e => e.Value.Id == playerState.PlayerClientId).Key;
+                    var car = CarsInRace[carIndex];
+                    if (playerState.State.Ticks <= _lastTick[carIndex])
+                        break;
+                    _lastTick[carIndex] = playerState.State.Ticks;
+                    PlayerState.ApplyTo(playerState.State, car);
+                    break;
+            }
+        }
+
         gamemodeInstance!.GameTick();
 
         switch (currentViewMode)
@@ -80,13 +110,16 @@ public class InMultiplayerRacePhase(
         
         foreach (var element in CurrentStage.pieces)
         {
-            element.GameTick();
+            element.GameTick(CurrentStage);
         }
-        
-        transport.SendPacketToServer(new C2S_PlayerState()
+
+        if (raceState == RaceState.InProgress)
         {
-            State = PlayerState.CreateFrom(CarsInRace[playerCarIndex])
-        });
+            transport.SendPacketToServer(new C2S_PlayerState()
+            {
+                State = PlayerState.CreateFrom(_ticks++, CarsInRace[playerCarIndex])
+            });
+        }
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
@@ -105,5 +138,14 @@ public class InMultiplayerRacePhase(
     {
         base.Render();
         gamemodeInstance?.Render();
+        if (raceState == RaceState.WaitingToStart)
+        {
+            G.SetFont(new Font(FontFamily.DroidSans, 0, 26));
+            G.SetColor(new Color(255, 255, 255));
+            G.DrawStringAligned("Waiting for other players to load...", 0, 150, (int)G.Viewport.X, (int)G.Viewport.Y, TextHorizontalAlignment.Center);
+            
+            G.SetColor(new Color(0, 0, 0));
+            G.DrawStringStrokeAligned("Waiting for other players to load...", 0, 150, (int)G.Viewport.X, (int)G.Viewport.Y, TextHorizontalAlignment.Center);
+        }
     }
 }

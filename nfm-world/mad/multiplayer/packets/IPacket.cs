@@ -109,6 +109,6 @@ public interface IReadableWritable<out TSelf>
 
     public static virtual TSelf Read(ReadOnlyMemory<byte> data)
     {
-        return MessagePackSerializer.Deserialize<TSelf>(data);
+        return MessagePackSerializer.Deserialize<TSelf>(data, MsgPackHelpers.Options);
     }
 }

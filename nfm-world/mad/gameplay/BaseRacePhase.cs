@@ -7,6 +7,18 @@ namespace NFMWorld.Mad;
 
 public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice)
 {
+    public RaceState raceState
+    {
+        get;
+        set
+        {
+            field = value;
+            RaceStateChanged?.Invoke(this, value);
+        }
+    } = RaceState.InProgress;
+    
+    public event EventHandler<RaceState>? RaceStateChanged;
+
     protected FollowCamera PlayerFollowCamera = new();
 
     public bool spectating = false;

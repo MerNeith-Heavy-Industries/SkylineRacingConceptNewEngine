@@ -3,55 +3,63 @@
 ## Lobby
 
 ### Joining
-* Player sends C2S_PlayerIdentity
-* Server periodically sends S2C_LobbyState
+* Player sends C2S_PlayerIdentity - done c/s
+* Server periodically sends S2C_LobbyState * done c/s
 
 ### Chatting
-* Player sends C2S_LobbyChatMessage
-* Lobby broadcasts S2C_LobbyChatMessage
+* Player sends C2S_LobbyChatMessage - done c/s
+* Lobby broadcasts S2C_LobbyChatMessage - done c/s
 
 ### Creating Games
-* Player sends C2S_CreateSession
-* Server broadcasts S2C_LobbyState
+* Player sends C2S_CreateSession - done c/s
+* Server broadcasts S2C_LobbyState - done c/s
 
 ### Joining Games
-* Player sends C2S_JoinSession
-* Server broadcasts S2C_LobbyState
+* Player sends C2S_JoinSession - done c/s
+* Server broadcasts S2C_LobbyState - done c/s
 
 ### Leaving Games
-* Player sends C2S_LeaveSession
-* Server broadcasts S2C_LobbyState
+* Player sends C2S_LeaveSession - done c/s
+* Server broadcasts S2C_LobbyState - done c/s
 
 ### Ready Up
 * Player sends C2S_LobbyPlayerReadyState
 * Server broadcasts S2C_LobbyState
 
 ### Starting Games
-* Room creator client sends C2S_LobbyStartRace
-* Server sends S2C_RaceStarted to joined clients
+* Room creator client sends C2S_LobbyStartRace - done c/s
+* Server sends S2C_RaceStarted to joined clients - done c/s
 
 
-* Server waits 20 seconds for all players to send C2S_RaceLoaded
-* Server sends S2C_RaceCanStart
-* Enter in-game state
+* Server waits 20 seconds for all players to send C2S_RaceLoaded - done c/s
+* Server sends S2C_RaceCanStart - done c/s
+* If timeout, server sends S2C_RaceFailedToStart - done c/s
+* Enter in-game state - done c/s
 
 ### Spectating
 * Player sends C2S_JoinAsSpectator
 * Enter in-game state as spectator (only receives S2C_PlayerState updates)
+
+### Cleaning up finished sessions
+* Server periodically removes sessions that have been finished for more than 5 minutes
 
 ## In-Game (Netcode v1 non-deterministic)
 V1 is a dumb relay without rollback. The client just sends
 positional and state updates to the server, which relays
 them to all other clients.
 
-* Clients send C2S_PlayerState
-* Server broadcasts S2C_PlayerState
+* Clients send C2S_PlayerState - done c/s
+* Server broadcasts S2C_PlayerState - done c/s
 
 #### Finishing Game
 * Client sends C2S_GameFinished
   * First-come first-served full trust basis
 * Server broadcasts S2C_GameFinished
 * Return to lobby state
+
+#### Disconnecting
+* Client sends C2S_SelfDisconnect
+* Server broadcasts S2C_PlayerState with disconnect=true
 
 ### In-Game (Netcode v2 deterministic with rollback)
 V2 is a deterministic lockstep netcode with rollback.

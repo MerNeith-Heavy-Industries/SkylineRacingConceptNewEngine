@@ -1,6 +1,6 @@
-﻿namespace NFMWorld.Mad;
+﻿using MessagePack;
 
-public class C2S_RaceLoaded : IPacketClientToServer<C2S_RaceLoaded>
-{
-    
-}
+namespace NFMWorld.Mad;
+
+[MessagePackObject]
+public struct C2S_RaceLoaded : IPacketClientToServer<C2S_RaceLoaded>;

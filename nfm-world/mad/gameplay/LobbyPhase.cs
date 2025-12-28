@@ -1,10 +1,11 @@
 ﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Util;
 
 namespace NFMWorld.Mad;
 
-public class LobbyPhase(IMultiplayerClientTransport transport) : BasePhase
+public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTransport transport) : BasePhase
 {
     private Player _player = new();
     
@@ -45,6 +46,7 @@ public class LobbyPhase(IMultiplayerClientTransport transport) : BasePhase
             switch (packet)
             {
                 case S2C_LobbyChatMessage chatMessage:
+                {
                     _chatMessages.Add(new ChatMessage 
                     {
                         PlayerId = chatMessage.SenderClientId,
@@ -56,11 +58,28 @@ public class LobbyPhase(IMultiplayerClientTransport transport) : BasePhase
                             ?.Color ?? new Color3(255, 255, 255)
                     });
                     break;
+                }
                 case S2C_LobbyState lobbyState:
+                {
                     _player.ClientId = lobbyState.PlayerClientId;
                     _players = lobbyState.Players.ToList();
                     _activeSessions = lobbyState.ActiveSessions.ToList();
                     break;
+                }
+                case S2C_RaceStarted raceStarted:
+                {
+                    // Transition to race phase
+                    var phase = new InMultiplayerRacePhase(graphicsDevice, transport, raceStarted.Session, _player.ClientId);
+                    phase.RaceStateChanged += (sender, state) =>
+                    {
+                        if (state is RaceState.Finished or RaceState.FailedToStart)
+                        {
+                            GameSparker.CurrentPhase = this;
+                        }
+                    };
+                    GameSparker.CurrentPhase = phase;
+                    break;
+                }
             }
         }
     }
@@ -143,6 +162,17 @@ public class LobbyPhase(IMultiplayerClientTransport transport) : BasePhase
         if (ImGui.Button(_player.IsReady ? "Unready" : "Ready", new Vector2(-1, 0)))
         {
             // TODO: Toggle ready status
+        }
+        
+        if (_activeSessions.FirstOrDefault(e => e.PlayerClientIds.Any(e1 => e1.Value == _player.ClientId)) is {} session)
+        {
+            if (ImGui.Button("Start Race", new Vector2(-1, 0)))
+            {
+                transport.SendPacketToServer(new C2S_LobbyStartRace
+                {
+                    SessionId = session.Id 
+                });
+            }
         }
 
         ImGui.EndChild();
@@ -247,9 +277,25 @@ public class LobbyPhase(IMultiplayerClientTransport transport) : BasePhase
                     // TODO: Spectate game session
                 }
             }
-            else if (ImGui.Button($"Join##{i}"))
+            else if (session.PlayerClientIds.Any(e => e.Value == _player.ClientId))
             {
-                // TODO: Join game session
+                if (ImGui.Button($"Leave##{i}"))
+                {
+                    transport.SendPacketToServer(new C2S_LeaveSession
+                    {
+                        SessionId = session.Id
+                    });
+                }
+            }
+            else
+            {
+                if (ImGui.Button($"Join##{i}"))
+                {
+                    transport.SendPacketToServer(new C2S_JoinSession
+                    {
+                        SessionId = session.Id
+                    });
+                }
             }
             
             if (session.PlayerCount >= session.MaxPlayers)

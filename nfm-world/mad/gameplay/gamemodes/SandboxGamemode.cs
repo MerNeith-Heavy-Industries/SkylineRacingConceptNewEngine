@@ -37,25 +37,28 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, BaseRace
     {
         FrameTrace.AddMessage($"contox: {carsInRace[0].CarRef.Position.X:0.00}, contoz: {carsInRace[0].CarRef.Position.Z:0.00}, contoy: {carsInRace[0].CarRef.Position.Y:0.00}");
 
-        // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
-        // We round this up to 3 ticks per 63TPS tick.
-        if (++_newTick == GameSparker.OriginalTicksPerNewTick)
+        if (baseRacePhase.raceState == RaceState.InProgress)
         {
-            for (int i = 0; i < carsInRace.Count; i++)
-            for (int j = 0; j < carsInRace.Count; j++)
+            // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
+            // We round this up to 3 ticks per 63TPS tick.
+            if (++_newTick == GameSparker.OriginalTicksPerNewTick)
             {
-                if (i != j)
+                for (int i = 0; i < carsInRace.Count; i++)
+                for (int j = 0; j < carsInRace.Count; j++)
                 {
-                    carsInRace[i].Collide(carsInRace[j]);
+                    if (i != j)
+                    {
+                        carsInRace[i].Collide(carsInRace[j]);
+                    }
                 }
+
+                _newTick = 0;
             }
 
-            _newTick = 0;
-        }
-
-        foreach (var car in carsInRace)
-        {
-            car.Drive(baseRacePhase.CurrentStage);
+            foreach (var car in carsInRace)
+            {
+                car.Drive(baseRacePhase.CurrentStage);
+            }
         }
     }
 

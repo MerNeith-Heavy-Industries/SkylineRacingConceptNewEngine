@@ -36,9 +36,14 @@ public class InGameCar : GameObject
         Sfx = new MadSfx(Mad);
     }
 
+    public override void GameTick(Stage? stage = null)
+    {
+        base.GameTick(stage);
+        CarRef.GameTick(stage);
+    }
+
     public void Drive(Stage stage)
     {
-        CarRef.GameTick(stage);
         Mad.Drive(Control, CarRef, stage);
         Sfx.Tick(Control, Mad, CarRef.Stats);
     }

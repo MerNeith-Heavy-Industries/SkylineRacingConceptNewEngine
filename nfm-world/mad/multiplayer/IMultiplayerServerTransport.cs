@@ -15,4 +15,5 @@ public interface IMultiplayerServerTransport
     void BroadcastPacket<T>(T packet, bool reliable = true) where T : IPacketServerToClient<T>;
 
     void Stop();
+    void Start();
 }

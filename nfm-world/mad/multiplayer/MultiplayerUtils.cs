@@ -13,6 +13,9 @@ public static class MultiplayerUtils
         [3] = (typeof(C2S_LobbyStartRace), static data => DeserializePacket<C2S_LobbyStartRace>(data)),
         [4] = (typeof(C2S_PlayerIdentity), static data => DeserializePacket<C2S_PlayerIdentity>(data)),
         [5] = (typeof(C2S_CreateSession), static data => DeserializePacket<C2S_CreateSession>(data)),
+        [6] = (typeof(C2S_JoinSession), static data => DeserializePacket<C2S_JoinSession>(data)),
+        [7] = (typeof(C2S_LeaveSession), static data => DeserializePacket<C2S_LeaveSession>(data)),
+        [8] = (typeof(C2S_RaceLoaded), static data => DeserializePacket<C2S_RaceLoaded>(data)),
     }.ToFrozenDictionary();
     
     public static FrozenDictionary<sbyte, (Type Type, Func<ReadOnlyMemory<byte>, IPacketServerToClient> Deserialize)> OpcodesS2C { get; } = new Dictionary<sbyte, (Type Type, Func<ReadOnlyMemory<byte>, IPacketServerToClient>)>
@@ -21,6 +24,8 @@ public static class MultiplayerUtils
         [-2] = (typeof(S2C_LobbyChatMessage), static data => DeserializePacket<S2C_LobbyChatMessage>(data)),
         [-3] = (typeof(S2C_LobbyState), static data => DeserializePacket<S2C_LobbyState>(data)),
         [-4] = (typeof(S2C_RaceStarted), static data => DeserializePacket<S2C_RaceStarted>(data)),
+        [-5] = (typeof(S2C_RaceCanStart), static data => DeserializePacket<S2C_RaceCanStart>(data)),
+        [-6] = (typeof(S2C_RaceFailedToStart), static data => DeserializePacket<S2C_RaceFailedToStart>(data)),
     }.ToFrozenDictionary();
     
     public static FrozenDictionary<Type, sbyte> OpcodesC2SReverse { get; } = OpcodesC2S.ToFrozenDictionary(static kv => kv.Value.Type, static kv => kv.Key);
