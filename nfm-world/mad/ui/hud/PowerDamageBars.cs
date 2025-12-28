@@ -71,6 +71,20 @@ public class PowerDamageBars
         _powerFlickerTicks = (int)(45*(1/GameSparker.PHYSICS_MULTIPLIER));
     }
 
+    public void Reset()
+    {
+        SetPowerBarFill(98f);
+        SetDamageBarFill(0, 1);
+        _damageFlickerTicks = 0;
+        _damageFlicker = false;
+        _damageFlickerInnerTicks = 0;
+        _powerFlicker = false;
+        _powerFlickerTicks = 0;
+        _powerFlickerInnerTicks = 0;
+        UpdateDamageBarColor();
+        UpdatePowerBarColor();
+    }
+
     private static int _damageFlickerTicks = 0;
     private static int _damageFlickerInnerTicks = 0;
     private static bool _damageFlicker = false;
