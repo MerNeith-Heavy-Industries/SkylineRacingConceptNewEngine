@@ -29,6 +29,8 @@ namespace NFMWorld.Mad
             console.RegisterCommand("waste", WastePlayer);
             console.RegisterCommand("startserver", StartServer);
             console.RegisterCommand("connect", Connect);
+            console.RegisterCommand("startserversteam", StartServerSteam);
+            console.RegisterCommand("connectsteam", ConnectSteam);
             
             // rendering
             console.RegisterCommand("r_frametrace", SetFrameTrace);
@@ -125,9 +127,28 @@ namespace NFMWorld.Mad
 
         private static void Connect(DevConsole console, string[] args)
         {
+            ENetMultiplayer.Init();
+            
+            if (args.Length < 1)
+            {
+                console.Log("Usage: connect <host> <port>");
+                return;
+            }
+            
+            if (args.Length < 2 || !ushort.TryParse(args[1], out ushort port))
+            {
+                port = 7000;
+            }
+
+            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport(args[0], port));
+        }
+        private static void ConnectSteam(DevConsole console, string[] args)
+        {
+            SteamMultiplayer.Init();
+
             if (args.Length < 1 || !ulong.TryParse(args[0], out ulong steamid))
             {
-                console.Log("Usage: connect <steamid> <port>");
+                console.Log("Usage: connectsteam <steamid> <port>");
                 return;
             }
             
@@ -136,19 +157,34 @@ namespace NFMWorld.Mad
                 port = 0;
             }
 
-            GameSparker.CurrentPhase = new LobbyPhase(new SteamMultiplayerClientTransport(steamid, port));
+            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(steamid, port));
         }
 
-        private static void StartServer(DevConsole console, string[] args)
+        private static void StartServerSteam(DevConsole console, string[] args)
         {
+            SteamMultiplayer.Init();
+            
             if (args.Length < 1 || !int.TryParse(args[0], out int port))
             {
                 port = 0;
             }
             
-            Multiplayer.StartServer(port);
-            GameSparker.CurrentPhase = new LobbyPhase(new SteamMultiplayerClientTransport(SteamClient.SteamId, port));
-		}
+            SteamMultiplayer.StartServer(port);
+            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port));
+        }
+
+        private static void StartServer(DevConsole console, string[] args)
+        {
+            ENetMultiplayer.Init();
+            
+            if (args.Length < 1 || !ushort.TryParse(args[0], out ushort port))
+            {
+                port = 7000;
+            }
+            
+            ENetMultiplayer.StartServer(port);
+            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport("localhost", port));
+        }
 
         private static void BreakX(DevConsole console, string[] args)
         {

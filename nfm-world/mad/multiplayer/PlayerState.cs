@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using MessagePack;
 using NFMWorld.Mad;
 using SoftFloat;
@@ -8,38 +9,47 @@ namespace NFMWorld.Mad;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PlayerState
 {
-    [Key(0)] public required bool Left;
-    [Key(1)] public required bool Right;
-    [Key(2)] public required bool Up;
-    [Key(3)] public required bool Down;
-    [Key(4)] public required bool Handb;
-    [Key(5)] public required bool Newcar;
-    [Key(6)] public required bool Mtouch;
-    [Key(7)] public required bool Wtouch;
-    [Key(8)] public required bool Pushed;
-    [Key(9)] public required bool Gtouch;
-    [Key(10)] public required bool pl;
-    [Key(11)] public required bool pr;
-    [Key(12)] public required bool pd;
-    [Key(13)] public required bool pu;
-    [Key(14)] public required bool dest;
-    [Key(29)] public required fix64 x;
-    [Key(30)] public required fix64 y;
-    [Key(31)] public required fix64 z;
-    [Key(32)] public required fix64 xz;
-    [Key(33)] public required fix64 xy;
-    [Key(34)] public required fix64 zy;
-    [Key(35)] public required fix64 speed;
-    [Key(36)] public required fix64 power;
-    [Key(37)] public required fix64 mxz;
-    [Key(38)] public required fix64 pzy;
-    [Key(39)] public required fix64 pxy;
-    [Key(40)] public required fix64 txz;
-    [Key(27)] public required int loop;
-    [Key(28)] public required int wxz;
-    [Key(41)] public required int pcleared;
-    [Key(42)] public required int clear;
-    [Key(43)] public required int nlaps;
+    public required bool Left;
+    public required bool Right;
+    public required bool Up;
+    public required bool Down;
+    public required bool Handb;
+    public required bool Newcar;
+    public required bool Mtouch;
+    public required bool Wtouch;
+    public required bool Pushed;
+    public required bool Gtouch;
+    public required bool pl;
+    public required bool pr;
+    public required bool pd;
+    public required bool pu;
+    public required bool dest;
+    public required fix64 x;
+    public required fix64 y;
+    public required fix64 z;
+    public required fix64 xz;
+    public required fix64 xy;
+    public required fix64 zy;
+    public required fix64 speed;
+    public required fix64 power;
+    public required fix64 mxz;
+    public required fix64 pzy;
+    public required fix64 pxy;
+    public required fix64 txz;
+    public required int loop;
+    public required int wxz;
+    public required int pcleared;
+    public required int clear;
+    public required int nlaps;
+    public required uint Ticks;
+    private ulong _currentTimeInMs;
+
+    [IgnoreMember]
+    public required DateTimeOffset CurrentTime
+    {
+        readonly get => DateTimeOffset.FromUnixTimeMilliseconds((long)_currentTimeInMs);
+        set => _currentTimeInMs = (ulong)value.ToUnixTimeMilliseconds();
+    }
     
     public static void ApplyTo(PlayerState state, InGameCar c)
     {
@@ -72,7 +82,7 @@ public struct PlayerState
         c.Mad.Nlaps = state.nlaps;
     }
     
-    public static PlayerState CreateFrom(InGameCar car)
+    public static PlayerState CreateFrom(uint ticks, InGameCar car)
     {
         return new PlayerState
         {
@@ -107,7 +117,9 @@ public struct PlayerState
             pcleared = car.Mad.Pcleared,
             clear = car.Mad.Clear,
             nlaps = car.Mad.Nlaps,
-            dest = false
+            dest = false,
+            Ticks = ticks,
+            CurrentTime = DateTimeOffset.UtcNow
         };
     }
 }

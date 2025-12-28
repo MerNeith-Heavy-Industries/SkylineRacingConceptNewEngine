@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Maxine.Extensions;
 using NFMWorld.Util;
 
 namespace NFMWorld.Mad;
@@ -6,7 +7,7 @@ namespace NFMWorld.Mad;
 public class GameOrchestrator
 {
     private ConcurrentDictionary<uint, ClientInfo> _connectedClients = new();
-    private readonly Thread _lobbyThread;
+    private Thread _lobbyThread;
     private bool _lobbyIsRunning = true;
     private readonly IMultiplayerServerTransport _transport;
     
@@ -21,7 +22,11 @@ public class GameOrchestrator
         transport.ClientConnected += TransportOnClientConnected;
         transport.ClientDisconnected += TransportOnClientDisconnected;
         transport.ClientConnecting += TransportOnClientConnecting;
+    }
 
+    public void Start()
+    {
+        _transport.Start();
         _lobbyThread = new Thread(LobbyExec) { IsBackground = true };
         _lobbyThread.Start();
     }
@@ -37,6 +42,25 @@ public class GameOrchestrator
         while (_lobbyIsRunning)
         {
             UpdateLobbyStates();
+            
+            foreach (var (id, session) in _activeSessions)
+            {
+                if (session.State == SessionState.WaitingToLoad &&
+                    session.StartTime is {} startTime &&
+                    DateTimeOffset.Now >= startTime)
+                {
+                    session.State = SessionState.Finished;
+                    _transport.SendPacketToClients(session.PlayerClientIds.Values.ToArray(), new S2C_RaceFailedToStart(), false);
+                    foreach (var (index, clientId) in session.PlayerClientIds)
+                    {
+                        if (_connectedClients.TryGetValue(clientId, out var client))
+                        {
+                            client.InSession = null;
+                            client.IsInGame = false;
+                        }
+                    }
+                }
+            }
 
             Thread.Sleep(1000);
         }
@@ -140,12 +164,20 @@ public class GameOrchestrator
         switch (e.Packet)
         {
             case C2S_LobbyStartRace startRace:
+            {
                 if (_activeSessions.TryGetValue(startRace.SessionId, out var session) && 
-                    session.PlayerClientIds.Any(e1 => e1.Value == e.ClientIndex))
+                    session.PlayerClientIds.Any(e1 => e1.Value == e.ClientIndex) &&
+                    session.State == SessionState.NotStarted)
                 {
-                    session.State = SessionState.Started;
+                    session.State = SessionState.WaitingToLoad;
+                    session.StartTime = DateTimeOffset.Now.AddSeconds(20);
                     BroadcastSystemMessage($"{session.CreatorName} has started the race on {session.StageName}!");
                     UpdateLobbyStates();
+                    
+                    foreach (var (index, id) in session.PlayerClientIds)
+                    {
+                        _connectedClients[id].IsInGame = true;
+                    }
                     
                     _transport.SendPacketToClients(session.PlayerClientIds.Values.ToArray(), new S2C_RaceStarted
                     {
@@ -167,35 +199,79 @@ public class GameOrchestrator
                     });
                 }
                 break;
-            case C2S_PlayerState playerState:
+            }
+            case C2S_RaceLoaded raceLoaded:
+            {
                 if (_connectedClients.TryGetValue(e.ClientIndex, out var client) &&
-                    client.InSession is {} inSession &&
-                    _activeSessions.TryGetValue(inSession.SessionIndex, out session))
+                    client.InSession is { } inSession &&
+                    _activeSessions.TryGetValue(inSession.SessionIndex, out var session) &&
+                    session.State == SessionState.WaitingToLoad)
                 {
-                    _transport.SendPacketToClients(session.PlayerClientIds.Values.ToArray(), new S2C_PlayerState()
+                    var allLoaded = true;
+                    foreach (var id in session.PlayerClientIds.Values)
+                    {
+                        if (!_connectedClients.TryGetValue(id, out var ci) || !ci.IsInGame)
+                        {
+                            allLoaded = false;
+                            break;
+                        }
+                    }
+
+                    if (allLoaded)
+                    {
+                        session.State = SessionState.Started;
+                        _transport.SendPacketToClients(session.PlayerClientIds.Values.ToArray(), new S2C_RaceCanStart(), false);
+                    }
+                }
+
+                break;
+            }
+            case C2S_PlayerState playerState:
+            {
+                if (_connectedClients.TryGetValue(e.ClientIndex, out var client) &&
+                    client.InSession is { } inSession &&
+                    _activeSessions.TryGetValue(inSession.SessionIndex, out var session) &&
+                    session.State == SessionState.Started)
+                {
+                    _transport.SendPacketToClients(session.PlayerClientIds.Values.Except(e.ClientIndex).ToArray(), new S2C_PlayerState
                     {
                         PlayerClientId = e.ClientIndex,
-                        State = playerState.State
+                        State = playerState.State,
+                        CurrentServerTime = DateTimeOffset.UtcNow
                     }, false);
                 }
                 break;
+            }
             case C2S_LobbyChatMessage chatMessage:
-                _transport.BroadcastPacket(new S2C_LobbyChatMessage()
+            {
+                if (_connectedClients.TryGetValue(e.ClientIndex, out var clientInfo) &&
+                    !clientInfo.IsInGame)
                 {
-                    SenderClientId = e.ClientIndex,
-                    Sender = _connectedClients.TryGetValue(e.ClientIndex, out var clientInfo) ? clientInfo.Name : "Unknown",
-                    Message = chatMessage.Message
-                });
+                    _transport.BroadcastPacket(new S2C_LobbyChatMessage()
+                    {
+                        SenderClientId = e.ClientIndex,
+                        Sender = clientInfo.Name,
+                        Message = chatMessage.Message
+                    });
+                }
                 break;
+            }
             case C2S_PlayerIdentity playerIdentity:
-                if (_connectedClients.TryGetValue(e.ClientIndex, out clientInfo))
+            {
+                if (_connectedClients.TryGetValue(e.ClientIndex, out var clientInfo))
                 {
                     clientInfo.Name = playerIdentity.PlayerName;
                     clientInfo.Vehicle = playerIdentity.SelectedVehicle;
                     clientInfo.Color = playerIdentity.Color;
                 }
                 break;
+            }
             case C2S_CreateSession createSession:
+            {
+                if (!_connectedClients.TryGetValue(e.ClientIndex, out var connectedClient))
+                {
+                    break;
+                }
                 var newSession = new GameSession()
                 {
                     Id = ++_maxSessionId,
@@ -208,12 +284,64 @@ public class GameOrchestrator
                         [0] = e.ClientIndex
                     }
                 };
+                connectedClient.InSession = (0, newSession.Id);
                 _activeSessions.TryAdd(newSession.Id, newSession);
                 BroadcastSystemMessage($"{newSession.CreatorName} has started a session for {newSession.StageName}!");
                 UpdateLobbyStates();
                 break;
+            }
+            case C2S_JoinSession joinSession:
+            {
+                if (!_connectedClients.TryGetValue(e.ClientIndex, out var connectedClient))
+                {
+                    break;
+                }
+                if (connectedClient.InSession is { } inSession &&
+                    _activeSessions.TryGetValue(inSession.SessionIndex, out var leavingSession))
+                {
+                    leavingSession.PlayerClientIds.TryRemove(KeyValuePair.Create(inSession.PlayerIndex, e.ClientIndex));
+                    connectedClient.InSession = null;
+                    BroadcastSystemMessage($"{connectedClient.Name} has left {leavingSession.CreatorName}'s session!");
+                }
+                
+                if (_activeSessions.TryGetValue(joinSession.SessionId, out var sessionInfo))
+                {
+                    if (sessionInfo.PlayerClientIds.Count < sessionInfo.MaxPlayers)
+                    {
+                        byte playerIndex = 0;
+                        while (sessionInfo.PlayerClientIds.ContainsKey(playerIndex))
+                        {
+                            playerIndex++;
+                        }
+
+                        sessionInfo.PlayerClientIds[playerIndex] = e.ClientIndex;
+                        _connectedClients[e.ClientIndex].InSession = (playerIndex, sessionInfo.Id);
+                        BroadcastSystemMessage($"{_connectedClients[e.ClientIndex].Name} has joined {sessionInfo.CreatorName}'s session!");
+                    }
+                }
+
+                UpdateLobbyStates();
+
+                break;
+            }
+            case C2S_LeaveSession leaveSession:
+            {
+                if (_connectedClients.TryGetValue(e.ClientIndex, out var leavingClient) &&
+                    leavingClient.InSession is { } leaveInSession &&
+                    _activeSessions.TryGetValue(leaveInSession.SessionIndex, out var leavingSession) &&
+                    leaveSession.SessionId == leavingSession.Id)
+                {
+                    leavingSession.PlayerClientIds.TryRemove(KeyValuePair.Create(leaveInSession.PlayerIndex, e.ClientIndex));
+                    leavingClient.InSession = null;
+                    BroadcastSystemMessage($"{leavingClient.Name} has left {leavingSession.CreatorName}'s session!");
+                    UpdateLobbyStates();
+                }
+                break;
+            }
             default:
+            {
                 throw new ArgumentOutOfRangeException();
+            }
         }
     }
 
@@ -226,6 +354,7 @@ public class GameOrchestrator
         public int MaxPlayers { get; set; }
         
         public ConcurrentDictionary<byte, uint> PlayerClientIds { get; set; } = [];
+        public DateTimeOffset? StartTime { get; set; }
         public SessionState State { get; set; } = SessionState.NotStarted;
         public GameModes Gamemode { get; set; } = GameModes.Sandbox;
     }
@@ -237,5 +366,6 @@ public class GameOrchestrator
         public string Vehicle { get; set; } = "nfmm/radicalone";
         public Color3 Color { get; set; } = new Color3();
         public (byte PlayerIndex, uint SessionIndex)? InSession { get; set; }
+        public bool IsInGame { get; set; }
     }
 }

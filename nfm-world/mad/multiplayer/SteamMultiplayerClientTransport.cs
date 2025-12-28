@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
 using Maxine.Extensions;
@@ -8,11 +9,10 @@ using Steamworks.Data;
 
 namespace NFMWorld.Mad;
 
-public class SteamMultiplayerClientTransport : IMultiplayerClientTransport, IConnectionManager
+public class SteamMultiplayerClientTransport : BaseMultiplayerClientTransport, IConnectionManager
 {
     private readonly ConnectionManager _client;
     public ClientState State { get; private set; } = ClientState.Connecting;
-    private ConcurrentQueue<IPacketServerToClient> _receivedPacketQueue = new();
     private bool _isRunning = true;
     private readonly Thread _receiveThread;
 
@@ -55,38 +55,15 @@ public class SteamMultiplayerClientTransport : IMultiplayerClientTransport, ICon
         using var messageData = new UnmanagedMemoryManager<byte>((byte*)data, size);
 
         var memory = messageData.Memory;
-        var opcode = (sbyte)memory.Span[0];
-        var message = memory[1..];
-
-        if (MultiplayerUtils.TryDeserializeS2CPacket(opcode, message) is {} packet)
-        {
-            _receivedPacketQueue.Enqueue(packet);
-        }
-        else
-        {
-            Console.WriteLine($"Client received a message with unknown opcode {opcode}");
-        }
+        ReceivePacket(memory);
     }
-    
-    public IPacketServerToClient[] GetNewPackets()
+
+    protected override void SendRawPacketToServer(ReadOnlySpan<byte> span, bool reliable)
     {
-        var packets = new List<IPacketServerToClient>();
-        while (_receivedPacketQueue.TryDequeue(out var packet))
-        {
-            packets.Add(packet);
-        }
-        return packets.Count > 0 ? packets.ToArray() : [];
+        _client.Connection.SendMessage(span, reliable ? SendType.Reliable : SendType.Unreliable);
     }
 
-    public void SendPacketToServer<T>(T packet, bool reliable = true) where T : IPacketClientToServer<T>
-    {
-        using var arr = new ArrayPoolBufferWriter<byte>();
-        arr.Write(MultiplayerUtils.OpcodesC2SReverse[typeof(T)]);
-        packet.Write(arr);
-        _client.Connection.SendMessage(arr.WrittenSpan, reliable ? SendType.Reliable : SendType.Unreliable);
-    }
-
-    public void Stop()
+    public override void Stop()
     {
         _isRunning = false;
         _client.Close();

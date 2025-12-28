@@ -9,19 +9,24 @@ using Steamworks.Data;
 
 namespace NFMWorld.Mad;
 
-public class SteamMultiplayerServerTransport : IMultiplayerServerTransport, ISocketManager
+public class SteamMultiplayerServerTransport : BaseMultiplayerServerTransport, ISocketManager
 {
     private readonly SocketManager _server;
     private bool _isRunning = true;
-    private readonly Thread _receiveThread;
+    private Thread _receiveThread;
+    private readonly ConcurrentDictionary<uint, Connection> _connectedClients = [];
 
-    public IReadOnlyCollection<uint> Connections { get; }
+    public override IReadOnlyCollection<uint> Connections { get; }
+    
+    public override event EventHandler<uint>? ClientConnecting;
+    public override event EventHandler<uint>? ClientConnected;
+    public override event EventHandler<uint>? ClientDisconnected;
 
     private class ConnectionsList(SteamMultiplayerServerTransport parent) : IReadOnlyCollection<uint>
     {
         public IEnumerator<uint> GetEnumerator()
         {
-            foreach (var client in parent.ConnectedClients)
+            foreach (var client in parent._connectedClients)
             {
                 yield return client.Key;
             }
@@ -32,21 +37,14 @@ public class SteamMultiplayerServerTransport : IMultiplayerServerTransport, ISoc
             return GetEnumerator();
         }
 
-        public int Count => parent.ConnectedClients.Count;
+        public int Count => parent._connectedClients.Count;
     }
-
-    public event EventHandler<(uint ClientIndex, IPacketClientToServer Packet)>? PacketReceived;
-    public event EventHandler<uint>? ClientConnecting;
-    public event EventHandler<uint>? ClientConnected;
-    public event EventHandler<uint>? ClientDisconnected;
 
     public SteamMultiplayerServerTransport(int virtualport = 0)
     {
         Connections = new ConnectionsList(this);
         _server = SteamNetworkingSockets.CreateRelaySocket<SocketManager>(virtualport);
         _server.Interface = this;
-        _receiveThread = new Thread(ReceiveLoop) { IsBackground = true };
-        _receiveThread.Start();
         Console.WriteLine($"SteamID: {SteamClient.SteamId}");
     }
 
@@ -58,8 +56,6 @@ public class SteamMultiplayerServerTransport : IMultiplayerServerTransport, ISoc
         }
     }
 
-    public ConcurrentDictionary<uint, Connection> ConnectedClients { get; } = [];
-    
     public void OnConnecting(Connection connection, ConnectionInfo info)
     {
         connection.Accept();
@@ -70,75 +66,41 @@ public class SteamMultiplayerServerTransport : IMultiplayerServerTransport, ISoc
     public void OnConnected(Connection connection, ConnectionInfo info)
     {
         Console.WriteLine($"{info.Identity} has joined the game");
-        ConnectedClients.TryAdd(connection, connection);
+        _connectedClients.TryAdd(connection, connection);
     }
 
     public void OnDisconnected(Connection connection, ConnectionInfo info)
     {
-        ConnectedClients.TryRemove(connection, out _);
+        _connectedClients.TryRemove(connection, out _);
         Console.WriteLine($"{info.Identity} has left the game");
     }
-
+    
     public unsafe void OnMessage(Connection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
     {
         using var messageData = new UnmanagedMemoryManager<byte>((byte*)data, size);
-
-        var memory = messageData.Memory;
-        var opcode = (sbyte)memory.Span[0];
-        var message = memory[1..];
-
-        if (MultiplayerUtils.TryDeserializeC2SPacket(opcode, message) is { } packet)
-        {
-            PacketReceived?.Invoke(this, (connection.Id, packet));
-        }
-        else
-        {
-            Console.WriteLine($"{identity} has received a message with unknown opcode {opcode}");
-        }
+        ReceivePacket(connection.Id, messageData.Memory);
     }
 
-    public void SendPacketToClient<T>(uint clientIndex, T packet, bool reliable = true) where T : IPacketServerToClient<T>
+    public override void SendRawPacketToClients(ReadOnlySpan<uint> clientIndices, ReadOnlySpan<byte> span, bool reliable)
     {
-        if (ConnectedClients.TryGetValue(clientIndex, out var connection))
-        {
-            using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-            arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
-            packet.Write(arrayWriter);
-            connection.SendMessage(arrayWriter.WrittenSpan, reliable ? SendType.Reliable : SendType.Unreliable);
-        }
-    }
-    public void SendPacketToClients<T>(ReadOnlySpan<uint> clientIndices, T packet, bool reliable = true) where T : IPacketServerToClient<T>
-    {
-        using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-        arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
-        packet.Write(arrayWriter);
-        var messageSpan = arrayWriter.WrittenSpan;
-        
         foreach (var clientIndex in clientIndices)
         {
-            if (ConnectedClients.TryGetValue(clientIndex, out var connection))
+            if (_connectedClients.TryGetValue(clientIndex, out var connection))
             {
-                connection.SendMessage(messageSpan, reliable ? SendType.Reliable : SendType.Unreliable);
+                connection.SendMessage(span, reliable ? SendType.Reliable : SendType.Unreliable);
             }
         }
     }
 
-    public void BroadcastPacket<T>(T packet, bool reliable = true) where T : IPacketServerToClient<T>
-    {
-        using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-        arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
-        packet.Write(arrayWriter);
-        var messageSpan = arrayWriter.WrittenSpan;
-
-        foreach (var (id, connection) in ConnectedClients)
-        {
-            connection.SendMessage(messageSpan, reliable ? SendType.Reliable : SendType.Unreliable);
-        }
-    }
-
-    public void Stop()
+    public override void Stop()
     {
         _isRunning = false;
         _server.Close();
+    }
+
+    public override void Start()
+    {
+        _receiveThread = new Thread(ReceiveLoop) { IsBackground = true };
+        _receiveThread.Start();
     }
 }
