@@ -716,11 +716,8 @@ public class Stage : GameObject
             radx * 2,
             radz * 2
         );
-        
-        public f64Bounds GetBounds()
-        {
-            return _bounds;
-        }
+
+        public f64Bounds Bounds => _bounds;
     }
     
     private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);

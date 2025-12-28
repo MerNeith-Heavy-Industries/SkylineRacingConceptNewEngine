@@ -41,7 +41,7 @@ public struct f64Bounds(fix64 x, fix64 y, fix64 width, fix64 height)
 /// </summary>
 public interface IQuadObject
 {
-    f64Bounds GetBounds();
+    f64Bounds Bounds { get; }
 }
 
 /// <summary>
@@ -138,8 +138,8 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
     [MemberNotNull(nameof(_nodes))]
     private QuadNodeArray Split()
     {
-        fix64 subWidth = _bounds.Width / fix64.Two;
-        fix64 subHeight = _bounds.Height / fix64.Two;
+        fix64 subWidth = _bounds.Width * fix64.Half;
+        fix64 subHeight = _bounds.Height * fix64.Half;
         fix64 x = _bounds.X;
         fix64 y = _bounds.Y;
 
@@ -157,8 +157,8 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
     private int GetIndex(f64Bounds objBounds)
     {
         int index = -1;
-        fix64 verticalMidpoint = _bounds.X + (_bounds.Width / fix64.Two);
-        fix64 horizontalMidpoint = _bounds.Y + (_bounds.Height / fix64.Two);
+        fix64 verticalMidpoint = _bounds.X + (_bounds.Width * fix64.Half);
+        fix64 horizontalMidpoint = _bounds.Y + (_bounds.Height * fix64.Half);
 
         bool topQuadrant = (objBounds.Y < horizontalMidpoint && objBounds.Bottom < horizontalMidpoint);
         bool bottomQuadrant = (objBounds.Y > horizontalMidpoint);
@@ -186,7 +186,7 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
         {
             if (_nodes is { } nodes)
             {
-                int index = GetIndex(obj.GetBounds());
+                int index = GetIndex(obj.Bounds);
 
                 if (index != -1)
                 {
@@ -207,7 +207,7 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
             while (i < Count)
             {
                 var entry = this[i];
-                int index = GetIndex(entry.GetBounds());
+                int index = GetIndex(entry.Bounds);
                 if (index != -1)
                 {
                     nodes[index].Insert(entry);
