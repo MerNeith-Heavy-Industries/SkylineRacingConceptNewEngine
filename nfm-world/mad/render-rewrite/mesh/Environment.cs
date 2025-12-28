@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Util;
+using SoftFloat;
 
 namespace NFMWorld.Mad;
 
@@ -8,6 +9,7 @@ using URandom = Util.Random;
 public class Environment
 {
     public static GroundPolys MakePolys(
+        Stage stage,
         int sx, int ncx, int sz, int ncz, int stagePartCount, // newpolys
         GraphicsDevice graphicsDevice
     )
@@ -176,34 +178,32 @@ public class Environment
             {
                 cgpx[i41] = sgpx + i39 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
                 cgpz[i41] = sgpz + i40 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
-                // TODO maxine: re-implement tracker avoidance
-                // for (var i42 = 0; i42 < Trackers.Nt; i42++)
-                // {
-                //     if (Trackers.Zy[i42] == 0 && Trackers.Xy[i42] == 0)
-                //     {
-                //         if (Trackers.Radx[i42] < Trackers.Radz[i42] &&
-                //             Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42])
-                //         {
-                //             for (;
-                //                  Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42];
-                //                  cgpx[i41] +=
-                //                      (int)(random.NextDouble() * Trackers.Radx[i42] * 2.0 - Trackers.Radx[i42]))
-                //             {
-                //             }
-                //         }
-                //
-                //         if (Trackers.Radz[i42] < Trackers.Radx[i42] &&
-                //             Math.Abs(cgpx[i41] - Trackers.X[i42]) < Trackers.Radx[i42])
-                //         {
-                //             for (;
-                //                  Math.Abs(cgpz[i41] - Trackers.Z[i42]) < Trackers.Radz[i42];
-                //                  cgpz[i41] +=
-                //                      (int)(random.NextDouble() * Trackers.Radz[i42] * 2.0 - Trackers.Radz[i42]))
-                //             {
-                //             }
-                //         }
-                //     }
-                // }
+
+                foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
+                {
+                    if (tracker.BoxRoad is not null)
+                    {
+                        var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
+                        var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
+                        
+                        if (tracker.Box.Radius.X < tracker.Box.Radius.Z &&
+                            fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
+                        {
+                            while (fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
+                            {
+                                cgpx[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.X * 2 - tracker.Box.Radius.X);
+                            }
+                        }
+                        else if (tracker.Box.Radius.Z < tracker.Box.Radius.X &&
+                                 fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
+                        {
+                            while (fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
+                            {
+                                cgpz[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.Z * 2 - tracker.Box.Radius.Z);
+                            }
+                        }
+                    }
+                }
 
                 if (++i39 == nrw)
                 {

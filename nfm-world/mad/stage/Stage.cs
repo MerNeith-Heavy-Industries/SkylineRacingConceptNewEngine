@@ -595,7 +595,7 @@ public class Stage : GameObject
 
             if (World.DrawPolys)
             {
-                polys = NFMWorld.Mad.Environment.MakePolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount, graphicsDevice);
+                polys = NFMWorld.Mad.Environment.MakePolys(this, maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount, graphicsDevice);
             }
 
             if (World.DrawClouds)
