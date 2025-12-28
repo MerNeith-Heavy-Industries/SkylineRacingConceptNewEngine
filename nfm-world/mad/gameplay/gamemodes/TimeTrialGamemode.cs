@@ -209,7 +209,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         if (bestTimeDemo.Load())
         {
             bestTimeTrial = bestTimeDemo;
-            carsInRace[playerCarIndex + 1].CarRef.AlphaOverride = 0.05f;
+            carsInRace[playerCarIndex + 1].CarRef.AlphaOverride = 0.2f;
         }
         else
         {
