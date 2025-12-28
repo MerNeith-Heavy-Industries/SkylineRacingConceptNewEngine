@@ -267,7 +267,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (bestTimeTrial != null)
         {
-            carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? Nibble<byte>.AllZeros);
+            carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? (false, false, false, false, false));
 
             carsInRace[playerCarIndex + 1].Drive(baseRacePhase.CurrentStage);
         }

@@ -102,4 +102,13 @@ public class Control
         Down = enc[3];
         Handb = enc[4];
     }
+
+    public void Decode((bool Up, bool Down, bool Left, bool Right, bool Handb) enc)
+    {
+        Right = enc.Right;
+        Left = enc.Left;
+        Up = enc.Up;
+        Down = enc.Down;
+        Handb = enc.Handb;
+    }
 }
