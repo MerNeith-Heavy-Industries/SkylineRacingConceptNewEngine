@@ -50,6 +50,13 @@ namespace NFMWorld.Mad
                     inRacePhase.gamemode = GameModes.TimeTrial;
                 }
             });
+            console.RegisterCommand("go_race", (c, args) =>
+            {
+                if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
+                {
+                    inRacePhase.gamemode = GameModes.Racing;
+                }
+            });
             console.RegisterCommand("go_sbox", (c, args) =>
             {
                 if (GameSparker.CurrentPhase is InRacePhase inRacePhase)

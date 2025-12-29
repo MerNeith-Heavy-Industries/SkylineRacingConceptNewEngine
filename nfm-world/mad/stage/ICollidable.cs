@@ -1,6 +1,6 @@
 ﻿using NFMWorld.Mad;
 
-public interface ICollidable
+public interface ICollidable : ITransform
 {
     public Rad3dBoxDef[] Boxes { get; }
 }

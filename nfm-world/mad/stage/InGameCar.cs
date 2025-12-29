@@ -1,4 +1,5 @@
-﻿using SoftFloat;
+﻿using NFMWorld.Mad.ai;
+using SoftFloat;
 
 namespace NFMWorld.Mad;
 
@@ -9,6 +10,13 @@ public class InGameCar : GameObject
     public Mad Mad;
     public Control Control;
     public MadSfx Sfx;
+    public ushort currentCheckpoint;
+    public byte currentLap; // mad.nlaps
+    public int totalCheckpoint; // mad.clear
+    public int currentCheckpointNode; // mad.pcleared
+    public int closestNode; // mad.point
+    public BaseAi? Bot;
+    public int placement; // cp.pos
 
     public CarStats Stats => CarRef.Stats;
     public bool Wasted => Mad.Wasted;

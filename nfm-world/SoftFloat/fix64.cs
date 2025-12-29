@@ -112,4 +112,9 @@ public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, ICompar
 
         return remainder;
     }
+
+    public static fix64 Atan(fix64 value)
+    {
+        return new(FixedMath.Atan(value.Value));
+    }
 }

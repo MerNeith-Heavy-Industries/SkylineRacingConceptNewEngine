@@ -41,11 +41,12 @@ public class InMultiplayerRacePhase(
         {
             PlayerCarIndex = playerCarIndex,
             Players = session.Players
-                .Select(c => new PlayerParameters()
+                .Select(c => new PlayerParameters
                 {
                     CarName = c.Value.Vehicle,
                     Color = c.Value.Color,
-                    PlayerName = c.Value.Name
+                    PlayerName = c.Value.Name,
+                    IsBot = false
                 })
                 .ToArray()
         };

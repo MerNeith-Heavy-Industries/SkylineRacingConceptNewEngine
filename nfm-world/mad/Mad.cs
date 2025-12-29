@@ -35,7 +35,6 @@ public class Mad
     internal bool BadLanding;
     internal readonly UnlimitedArray<bool> _caught = [];
     internal CarStats Stat;
-    internal int Clear;
     internal int Cn;
     internal int Cntdest;
     internal int _cntouch;
@@ -62,7 +61,7 @@ public class Mad
     internal int Im;
     internal int Lastcolido;
     internal fix64 Lcomp;
-    internal int Loop;
+    internal sbyte Loop;
     internal fix64 _lxz;
     internal int Missedcp;
     internal bool Mtouch;
@@ -70,11 +69,9 @@ public class Mad
     internal int _nbsq;
     internal bool Newcar;
     internal int Newedcar;
-    internal int Nlaps;
     internal int _nmlt = 1;
     internal bool Nofocus;
     internal int Outshakedam = 0;
-    internal int Pcleared;
     internal bool Pd;
     internal bool Pl;
     internal int _pmlt = 1;
@@ -1209,7 +1206,7 @@ public class Mad
                 // maxine: maybe this should be scaled to tickrate?
                 if (traction < Stat.Grip)
                 {
-                    if (Txz != conto.Xz)
+                    if (!UMath.EqEpsilon(Txz, conto.Xz))
                     {
                         _dcnt++;
                     }
@@ -2634,8 +2631,6 @@ public class Mad
             }
         }
         //Pcleared = CheckPoints.Pcs;
-        Clear = 0;
-        Nlaps = 0;
         _focus = -1;
         Missedcp = 0;
         Nofocus = false;

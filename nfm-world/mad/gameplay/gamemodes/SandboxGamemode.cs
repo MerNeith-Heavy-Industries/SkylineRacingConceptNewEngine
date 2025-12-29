@@ -9,8 +9,10 @@ using Stride.Core.Mathematics;
 public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
     : BaseGamemode(gamemodeParameters, baseRacePhase)
 {
+    public override event EventHandler<byte[]>? RaceFinished;
+
     private int _newTick = 0;
-    
+
     public override void Enter()
     {
         foreach (var (idx, player) in players.WithIndex())

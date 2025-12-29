@@ -3,9 +3,11 @@ using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
 
-public class Transform
+public class Transform : ITransform
 {
     public IReadOnlyList<GameObject> Children { get; set; } = [];
+    
+    IReadOnlyList<ITransform> ITransform.Children => Children;
 
     public f64Vector3 Position {
         get;
@@ -33,6 +35,8 @@ public class Transform
             field = value;
         }
     }
+
+    ITransform? ITransform.Parent => Parent;
 
     public Matrix MatrixWorld
     {

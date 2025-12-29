@@ -1,9 +1,10 @@
-﻿using SoftFloat;
+﻿using System.Runtime.CompilerServices;
+using SoftFloat;
 
 namespace NFMWorld.Mad;
 
 // temp conto for nfmm compatibility
-public class ContO
+public struct ContO
 {
     private readonly Car _car;
         
@@ -58,8 +59,8 @@ public class ContO
     }
     
     // wheel position
-    public int[] Keyx { get; }
-    public int[] Keyz { get; }
+    public InlineArray4<int> Keyx;
+    public InlineArray4<int> Keyz;
     
     public bool Wasted
     {
@@ -74,8 +75,11 @@ public class ContO
     {
         _car = car;
 
-        Keyx = Array.ConvertAll(car.Wheels, static e => (int)e.Position.X);
-        Keyz = Array.ConvertAll(car.Wheels, static e => (int)e.Position.Z);
+        for (var i = 0; i < 4; i++)
+        {
+            Keyx[i] = (int)car.Wheels[i].Position.X;
+            Keyz[i] = (int)car.Wheels[i].Position.Z;
+        }
     }
 
     public static implicit operator ContO(Car car) => new ContO(car);

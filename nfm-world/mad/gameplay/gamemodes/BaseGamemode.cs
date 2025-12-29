@@ -12,6 +12,11 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, Ba
     public Scene current_scene => baseRacePhase.current_scene;
     public int NumPlayers => players.Count;
 
+    /// <summary>
+    /// Arguments: byte[] player standings indexed by player index
+    /// </summary>
+    public abstract event EventHandler<byte[]>? RaceFinished;
+
     public virtual void Enter()
     {
         

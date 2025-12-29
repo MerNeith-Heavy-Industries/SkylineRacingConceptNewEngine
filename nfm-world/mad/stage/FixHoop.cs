@@ -31,7 +31,10 @@ public class FixHoop : CollisionObject
             TextureEnabled = false,
             VertexColorEnabled = true
         };
+        Kind = AiNodeKind.FixHoop;
     }
+
+    public bool IsSpecial { get; set; }
 
     private void RenderFixHoop(Camera camera)
     {

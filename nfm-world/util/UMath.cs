@@ -258,7 +258,7 @@ public static class UMath
         return cos;
     }
 
-    private static bool EqEpsilon(fix64 a, fix64 b)
+    internal static bool EqEpsilon(fix64 a, fix64 b)
     {
         var epsilon = (fix64)0.00001F;
         return fix64.Abs(a - b) < epsilon;

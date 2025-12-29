@@ -8,8 +8,10 @@ using Stride.Core.Mathematics;
 public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
     : BaseGamemode(gamemodeParameters, baseRacePhase)
 {
+    public override event EventHandler<byte[]>? RaceFinished;
+
     private int _newTick = 0;
-    
+
     public override void Enter()
     {
         carsInRace[playerCarIndex] = new InGameCar(playerCarIndex, GameSparker.GetCar(player.CarName).Car!, 500, 0, true);

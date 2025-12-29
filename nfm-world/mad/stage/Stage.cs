@@ -14,7 +14,9 @@ using Stride.Core.Extensions;
 public class Stage : GameObject
 {
     public UnlimitedArray<GameObject> pieces = [];
+    public UnlimitedArray<IAiNode> nodes = [];
     public UnlimitedArray<CheckPoint> checkpoints = [];
+    public UnlimitedArray<FixHoop> fixHoops = [];
 
     public int nlaps = 3;
 
@@ -273,38 +275,31 @@ public class Stage : GameObject
                         rotPlace = 4;
                     }
 
-                    pieces[stagePartCount] = new CollisionObject(
+                    var obj = new CollisionObject(
                         mesh,
                         new f64Vector3(Utility.GetInt("set", line, 1), setheight, Utility.GetInt("set", line, 2)),
                         new f64Euler(f64AngleSingle.FromDegrees(Utility.GetInt("set", line, rotPlace)), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle));
+                    pieces[stagePartCount] = obj;
                     if (line.Contains(")p"))     //AI tags
                     {
-                        // CheckPoints.X[CheckPoints.N] = Utility.GetInt("set", astring, 1);
-                        // CheckPoints.Z[CheckPoints.N] = Utility.GetInt("set", astring, 2);
-                        // CheckPoints.Y[CheckPoints.N] = 0;
-                        // CheckPoints.Typ[CheckPoints.N] = 0;
-                        // if (astring.Contains(")pt"))
-                        // {
-                        //     CheckPoints.Typ[CheckPoints.N] = -1;
-                        // }
-                        // if (astring.Contains(")pr"))
-                        // {
-                        //     CheckPoints.Typ[CheckPoints.N] = -2;
-                        // }
-                        // if (astring.Contains(")po"))
-                        // {
-                        //     CheckPoints.Typ[CheckPoints.N] = -3;
-                        // }
-                        // if (astring.Contains(")ph"))
-                        // {
-                        //     CheckPoints.Typ[CheckPoints.N] = -4;
-                        // }
-                        // if (astring.Contains("aout"))
-                        // {
-                        //     Console.WriteLine("aout: " + CheckPoints.N);
-                        // }
-                        // CheckPoints.N++;
-                        // _notb = _nob + 1;
+                        nodes[nodes.Count] = obj;
+                        obj.Kind = AiNodeKind.Road;
+                        if (line.Contains(")pt"))
+                        {
+                            obj.Kind = AiNodeKind.Road; // we do not include turns
+                        }
+                        if (line.Contains(")pr"))
+                        {
+                            obj.Kind = AiNodeKind.Ramp;
+                        }
+                        if (line.Contains(")po"))
+                        {
+                            obj.Kind = AiNodeKind.FixRoadStart;
+                        }
+                        if (line.Contains(")ph"))
+                        {
+                            obj.Kind = AiNodeKind.Halfpipe;
+                        }
                     }
                     // if (Medium.Loadnew)
                     // {
@@ -335,7 +330,6 @@ public class Stage : GameObject
                     // Check if optional Y coordinate is provided (5 parameters instead of 4)
                     var hasCustomY = line.Split(',').Length >= 5;
 
-
                     if (hasCustomY)
                     {
 
@@ -347,23 +341,16 @@ public class Stage : GameObject
                         {
                             chkheight = Utility.GetInt("chk", line, 4) * ymult;
                         }
+                    }
 
-                        pieces[stagePartCount] = new CheckPoint(
-                            mesh,
-                            new f64Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
-                            new f64Euler(rotation, f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
-                        );
-                        checkpoints[checkpoints.Count] = (CheckPoint)pieces[stagePartCount - 1];
-                    }
-                    else
-                    {
-                        pieces[stagePartCount] = new CheckPoint(
-                            mesh,
-                            new f64Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
-                            new f64Euler(rotation, f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
-                        );
-                        checkpoints[checkpoints.Count] = (CheckPoint)pieces[stagePartCount - 1];
-                    }
+                    var obj = new CheckPoint(
+                        mesh,
+                        new f64Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
+                        new f64Euler(rotation, f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
+                    );
+                    pieces[stagePartCount] = obj;
+                    nodes[nodes.Count] = obj;
+                    checkpoints[checkpoints.Count] = obj;
                     
                     // CheckPoints.X[CheckPoints.N] = Utility.GetInt("chk", astring, 1);
                     // CheckPoints.Z[CheckPoints.N] = Utility.GetInt("chk", astring, 2);
@@ -385,25 +372,22 @@ public class Stage : GameObject
                 {
                     if (!TryGetPieceToPlace(Utility.GetString("set", line, 0), out var mesh)) continue;
 
-                    pieces[stagePartCount] = new FixHoop(
+                    var fix = new FixHoop(
                         mesh,
                         new f64Vector3(Utility.GetInt("fix", line, 1), Utility.GetInt("fix", line, 3), Utility.GetInt("fix", line, 2)),
                         new f64Euler(f64AngleSingle.FromDegrees(Utility.GetInt("fix", line, 4)), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                     );
-                    // CheckPoints.Fx[CheckPoints.Fn] = Utility.GetInt("fix", astring, 1);
-                    // CheckPoints.Fz[CheckPoints.Fn] = Utility.GetInt("fix", astring, 2);
-                    // CheckPoints.Fy[CheckPoints.Fn] = Utility.GetInt("fix", astring, 3);
+                    pieces[stagePartCount] = fix;
                     if (Utility.GetInt("fix", line, 4) != 0)
                     {
-                        //CheckPoints.Roted[CheckPoints.Fn] = true;
-                        ((FixHoop)pieces[stagePartCount - 1]).Rotated = true;
+                        fix.Rotated = true;
                     }
-                    else
+
+                    fixHoops[fixHoops.Count] = fix;
+                    if (line.EndsWith(")s"))
                     {
-                        //CheckPoints.Roted[CheckPoints.Fn] = false;
+                        fix.IsSpecial = true;
                     }
-                    //CheckPoints.Special[CheckPoints.Fn] = astring.IndexOf(")s") != -1;
-                    //CheckPoints.Fn++;
                 }
                 // oteek: FUCK PILES IM NGL
                 // if (!CheckPoints.Notb && astring.StartsWith("pile"))
