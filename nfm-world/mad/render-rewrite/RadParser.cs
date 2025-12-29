@@ -158,7 +158,7 @@ public class RadParser
         }
 
         else if (line.StartsWith("swits(")) _stats = _stats with { Swits = Int3.FromSpan(BracketParser.GetNumbers(line, stackalloc int[3])) };
-        else if (line.StartsWith("acelf(")) _stats = _stats with { Acelf = Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc float[3])) };
+        else if (line.StartsWith("acelf(")) _stats = _stats with { Acelf = f64Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc fix64[3])) };
         else if (line.StartsWith("handb(")) _stats = _stats with { Handb = BracketParser.GetNumber<int>(line) };
         else if (line.StartsWith("airs(")) _stats = _stats with { Airs = BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("airc(")) _stats = _stats with { Airc = BracketParser.GetNumber<int>(line) };

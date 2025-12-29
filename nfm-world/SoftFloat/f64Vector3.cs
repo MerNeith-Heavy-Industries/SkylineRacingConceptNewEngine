@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Xna.Framework.Design;
 
@@ -1494,4 +1496,9 @@ public struct f64Vector3 : IEquatable<f64Vector3>
 		=> new((float)value.X, (float)value.Y, (float)value.Z);
 	public static explicit operator f64Vector3(Vector3 value)
 		=> new((fix64)value.X, (fix64)value.Y, (fix64)value.Z);
+
+	public Span<fix64> AsSpan()
+	{
+		return MemoryMarshal.CreateSpan(ref Unsafe.As<f64Vector3, fix64>(ref this), 3);
+	}
 }

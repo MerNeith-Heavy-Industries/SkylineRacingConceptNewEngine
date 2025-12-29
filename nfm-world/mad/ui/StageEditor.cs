@@ -3,6 +3,7 @@ using NFMWorld.Util;
 using Stride.Core.Mathematics;
 using System.Numerics;
 using Microsoft.Xna.Framework.Graphics;
+using SoftFloat;
 
 namespace NFMWorld.Mad.UI;
 
@@ -23,8 +24,8 @@ public class StagePieceInstance
     
     public string Name { get; set; } = "";
     public CollisionObject? MeshRef { get; set; }
-    public Vector3 Position { get; set; } = Vector3.Zero;
-    public Vector3 Rotation { get; set; } = Vector3.Zero;
+    public f64Vector3 Position { get; set; } = f64Vector3.Zero;
+    public f64Vector3 Rotation { get; set; } = f64Vector3.Zero;
     public int Id { get; set; }
     public PieceTypeEnum PieceType { get; set; } = PieceTypeEnum.Set;
     public string Tags { get; set; } = ""; // AI waypoint tags like p, pr, pt, ph, etc.
@@ -325,30 +326,30 @@ public class StageEditorPhase : BasePhase
                     
                     for (int q = 0; q < n; q++)
                     {
-                        Vector3 position;
-                        Euler rotation;
+                        f64Vector3 position;
+                        f64Euler rotation;
                         
                         switch (wall.Direction)
                         {
                             case StageWall.WallDirection.Right:
-                                position = new Vector3(o, World.Ground, q * 4800 + p);
-                                rotation = Euler.Identity;
+                                position = new f64Vector3(o, World.Ground, q * 4800 + p);
+                                rotation = f64Euler.Identity;
                                 break;
                             case StageWall.WallDirection.Left:
-                                position = new Vector3(o, World.Ground, q * 4800 + p);
-                                rotation = new Euler(AngleSingle.FromDegrees(180), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                                position = new f64Vector3(o, World.Ground, q * 4800 + p);
+                                rotation = new f64Euler(f64AngleSingle.FromDegrees(180), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                                 break;
                             case StageWall.WallDirection.Top:
-                                position = new Vector3(q * 4800 + p, World.Ground, o);
-                                rotation = new Euler(AngleSingle.FromDegrees(90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                                position = new f64Vector3(q * 4800 + p, World.Ground, o);
+                                rotation = new f64Euler(f64AngleSingle.FromDegrees(90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                                 break;
                             case StageWall.WallDirection.Bottom:
-                                position = new Vector3(q * 4800 + p, World.Ground, o);
-                                rotation = new Euler(AngleSingle.FromDegrees(-90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                                position = new f64Vector3(q * 4800 + p, World.Ground, o);
+                                rotation = new f64Euler(f64AngleSingle.FromDegrees(-90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                                 break;
                             default:
-                                position = Vector3.Zero;
-                                rotation = Euler.Identity;
+                                position = f64Vector3.Zero;
+                                rotation = f64Euler.Identity;
                                 break;
                         }
                         
@@ -430,13 +431,13 @@ public class StageEditorPhase : BasePhase
         
         // Ensure the user stages directory exists
         var userStagesDir = "data/stages/user";
-        System.IO.Directory.CreateDirectory(userStagesDir);
+        Directory.CreateDirectory(userStagesDir);
         
         var filePath = $"{userStagesDir}/{ActiveTab.StageFileName}.txt";
         
         try
         {
-            using var writer = new System.IO.StreamWriter(filePath);
+            using var writer = new StreamWriter(filePath);
             
             // Write stage parameters from active tab's stored values
             writer.WriteLine($"name({ActiveTab.TabName})");
@@ -599,15 +600,15 @@ public class StageEditorPhase : BasePhase
         _availableStages.Clear();
         
         var userStagesDir = "data/stages/user";
-        if (!System.IO.Directory.Exists(userStagesDir))
+        if (!Directory.Exists(userStagesDir))
         {
             return;
         }
         
-        var files = System.IO.Directory.GetFiles(userStagesDir, "*.txt");
+        var files = Directory.GetFiles(userStagesDir, "*.txt");
         foreach (var file in files)
         {
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(file);
+            var fileName = Path.GetFileNameWithoutExtension(file);
             _availableStages.Add(fileName);
         }
         
@@ -806,20 +807,20 @@ public class StageEditorPhase : BasePhase
                 // For aircheckpoints loaded from file, Stage.cs uses ymult=1 which doesn't negate the Y
                 // But the file has negative Y values, so we need to negate them to get the correct position
                 bool isAirCheckpoint = pieceName.Contains("nfmm/aircheckpoint");
-                float loadedY = piece.Position.Y;
+                var loadedY = piece.Position.Y;
                 if (isAirCheckpoint && instance.PieceType == StagePieceInstance.PieceTypeEnum.Chk)
                 {
                     loadedY = -loadedY;
                 }
                 
-                instance.Position = new Vector3(
+                instance.Position = new f64Vector3(
                     piece.Position.X,
                     loadedY,
                     piece.Position.Z
                 );
                 
                 var euler = piece.Rotation;
-                instance.Rotation = new Vector3(
+                instance.Rotation = new f64Vector3(
                     euler.Pitch.Degrees,
                     euler.Yaw.Degrees,
                     euler.Roll.Degrees
@@ -1042,30 +1043,30 @@ public class StageEditorPhase : BasePhase
             
             for (int q = 0; q < n; q++)
             {
-                Vector3 position;
-                Euler rotation;
+                f64Vector3 position;
+                f64Euler rotation;
                 
                 switch (wall.Direction)
                 {
                     case StageWall.WallDirection.Right:
-                        position = new Vector3(o, World.Ground, q * 4800 + p);
-                        rotation = Euler.Identity;
+                        position = new f64Vector3(o, World.Ground, q * 4800 + p);
+                        rotation = f64Euler.Identity;
                         break;
                     case StageWall.WallDirection.Left:
-                        position = new Vector3(o, World.Ground, q * 4800 + p);
-                        rotation = new Euler(AngleSingle.FromDegrees(180), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                        position = new f64Vector3(o, World.Ground, q * 4800 + p);
+                        rotation = new f64Euler(f64AngleSingle.FromDegrees(180), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                         break;
                     case StageWall.WallDirection.Top:
-                        position = new Vector3(q * 4800 + p, World.Ground, o);
-                        rotation = new Euler(AngleSingle.FromDegrees(90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                        position = new f64Vector3(q * 4800 + p, World.Ground, o);
+                        rotation = new f64Euler(f64AngleSingle.FromDegrees(90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                         break;
                     case StageWall.WallDirection.Bottom:
-                        position = new Vector3(q * 4800 + p, World.Ground, o);
-                        rotation = new Euler(AngleSingle.FromDegrees(-90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle);
+                        position = new f64Vector3(q * 4800 + p, World.Ground, o);
+                        rotation = new f64Euler(f64AngleSingle.FromDegrees(-90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
                         break;
                     default:
-                        position = Vector3.Zero;
-                        rotation = Euler.Identity;
+                        position = f64Vector3.Zero;
+                        rotation = f64Euler.Identity;
                         break;
                 }
                 
@@ -1087,7 +1088,7 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
         
         // Draw wireframe box using BasicEffect
-        var effect = new Microsoft.Xna.Framework.Graphics.BasicEffect(_graphicsDevice);
+        var effect = new BasicEffect(_graphicsDevice);
         effect.View = camera.ViewMatrix;
         effect.Projection = camera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
@@ -1096,38 +1097,38 @@ public class StageEditorPhase : BasePhase
         
         // Get rotation from piece only - match game engine's rotation order
         // Negate yaw to match game engine's coordinate system
-        var yaw = -piece.Rotation.Y * (float)Math.PI / 180f;
-        var pitch = piece.Rotation.X * (float)Math.PI / 180f;
-        var roll = piece.Rotation.Z * (float)Math.PI / 180f;
+        var yaw = -piece.Rotation.Y * (fix64)Math.PI / 180;
+        var pitch = piece.Rotation.X * (fix64)Math.PI / 180;
+        var roll = piece.Rotation.Z * (fix64)Math.PI / 180;
         
         var rotationMatrix = 
-            Microsoft.Xna.Framework.Matrix.CreateRotationY(yaw) *
-            Microsoft.Xna.Framework.Matrix.CreateRotationX(pitch) *
-            Microsoft.Xna.Framework.Matrix.CreateRotationZ(roll);
+            Matrix.CreateRotationY((float)yaw) *
+            Matrix.CreateRotationX((float)pitch) *
+            Matrix.CreateRotationZ((float)roll);
         
-        var totalPosition = new Microsoft.Xna.Framework.Vector3(
+        var totalPosition = new f64Vector3(
             piece.Position.X,
             piece.Position.Y,
             piece.Position.Z
         );
         
         // Collect all polygon edges for wireframe rendering
-        var edgeVertices = new List<Microsoft.Xna.Framework.Graphics.VertexPositionColor>();
+        var edgeVertices = new List<VertexPositionColor>();
         
         foreach (var poly in mesh.Mesh.Polys)
         {
             if (poly.Points.Length < 2) continue;
             
             // Transform all points
-            var transformedPoints = new Microsoft.Xna.Framework.Vector3[poly.Points.Length];
+            var transformedPoints = new Vector3[poly.Points.Length];
             for (int i = 0; i < poly.Points.Length; i++)
             {
-                var localVert = new Microsoft.Xna.Framework.Vector3(
+                var localVert = new Vector3(
                     poly.Points[i].X,
                     poly.Points[i].Y,
                     poly.Points[i].Z
                 );
-                transformedPoints[i] = Microsoft.Xna.Framework.Vector3.Transform(localVert, rotationMatrix) + totalPosition;
+                transformedPoints[i] = Vector3.Transform(localVert, rotationMatrix) + (Vector3)totalPosition;
             }
             
             // Add edges
@@ -1145,17 +1146,17 @@ public class StageEditorPhase : BasePhase
             // Draw the lines multiple times with slight offsets to make them thicker
             var offsets = new[] 
             { 
-                new Microsoft.Xna.Framework.Vector3(0, 0, 0),
-                new Microsoft.Xna.Framework.Vector3(0.5f, 0, 0),
-                new Microsoft.Xna.Framework.Vector3(-0.5f, 0, 0),
-                new Microsoft.Xna.Framework.Vector3(0, 0.5f, 0),
-                new Microsoft.Xna.Framework.Vector3(0, -0.5f, 0)
+                new Vector3(0, 0, 0),
+                new Vector3(0.5f, 0, 0),
+                new Vector3(-0.5f, 0, 0),
+                new Vector3(0, 0.5f, 0),
+                new Vector3(0, -0.5f, 0)
             };
             
             foreach (var offset in offsets)
             {
                 var offsetVertices = edgeVertices.Select(v => 
-                    new Microsoft.Xna.Framework.Graphics.VertexPositionColor(
+                    new VertexPositionColor(
                         v.Position + offset, 
                         v.Color
                     )
@@ -1165,7 +1166,7 @@ public class StageEditorPhase : BasePhase
                 {
                     pass.Apply();
                     _graphicsDevice.DrawUserPrimitives(
-                        Microsoft.Xna.Framework.Graphics.PrimitiveType.LineList,
+                        PrimitiveType.LineList,
                         offsetVertices,
                         0,
                         offsetVertices.Length / 2
@@ -1193,14 +1194,14 @@ public class StageEditorPhase : BasePhase
         
         // Transform to view space
         var projMatrix = camera.ProjectionMatrix;
-        Microsoft.Xna.Framework.Matrix.Invert(ref projMatrix, out var invProj);
+        Matrix.Invert(ref projMatrix, out var invProj);
         var rayEye = Microsoft.Xna.Framework.Vector4.Transform(rayClip, invProj);
         rayEye.Z = -1.0f;
         rayEye.W = 0.0f;
         
         // Transform to world space
         var viewMatrix = camera.ViewMatrix;
-        Microsoft.Xna.Framework.Matrix.Invert(ref viewMatrix, out var invView);
+        Matrix.Invert(ref viewMatrix, out var invView);
         var rayWorld4 = Microsoft.Xna.Framework.Vector4.Transform(rayEye, invView);
         var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
         rayDirection.Normalize();
@@ -1220,15 +1221,15 @@ public class StageEditorPhase : BasePhase
             // Create rotation matrix matching the game engine's order
             // Rotation is stored as (Pitch, Yaw, Roll) in degrees
             // Negate yaw to match game engine's coordinate system  
-            var yaw = -piece.Rotation.Y * (float)Math.PI / 180f;
-            var pitch = piece.Rotation.X * (float)Math.PI / 180f;
-            var roll = piece.Rotation.Z * (float)Math.PI / 180f;
+            var yaw = -piece.Rotation.Y * (fix64)Math.PI / 180;
+            var pitch = piece.Rotation.X * (fix64)Math.PI / 180;
+            var roll = piece.Rotation.Z * (fix64)Math.PI / 180;
             
             // Create individual rotation matrices and combine them
             var rotationMatrix = 
-                Microsoft.Xna.Framework.Matrix.CreateRotationY(yaw) *
-                Microsoft.Xna.Framework.Matrix.CreateRotationX(pitch) *
-                Microsoft.Xna.Framework.Matrix.CreateRotationZ(roll);
+                Matrix.CreateRotationY((float)yaw) *
+                Matrix.CreateRotationX((float)pitch) *
+                Matrix.CreateRotationZ((float)roll);
             
             // Test each polygon
             foreach (var poly in mesh.Mesh.Polys)
@@ -1239,18 +1240,18 @@ public class StageEditorPhase : BasePhase
                 var worldVerts = new Vector3[poly.Points.Length];
                 for (int i = 0; i < poly.Points.Length; i++)
                 {
-                    var localVert = new Microsoft.Xna.Framework.Vector3(
+                    var localVert = new Vector3(
                         poly.Points[i].X,
                         poly.Points[i].Y,
                         poly.Points[i].Z
                     );
                     
                     // Apply rotation then translation
-                    var rotated = Microsoft.Xna.Framework.Vector3.Transform(localVert, rotationMatrix);
+                    var rotated = Vector3.Transform(localVert, rotationMatrix);
                     worldVerts[i] = new Vector3(
-                        rotated.X + piece.Position.X,
-                        rotated.Y + piece.Position.Y,
-                        rotated.Z + piece.Position.Z
+                        rotated.X + (float)piece.Position.X,
+                        rotated.Y + (float)piece.Position.Y,
+                        rotated.Z + (float)piece.Position.Z
                     );
                 }
                 
@@ -1602,7 +1603,7 @@ public class StageEditorPhase : BasePhase
             {
                 if (piece.MeshRef != null)
                 {
-                    piece.MeshRef.Position = new Microsoft.Xna.Framework.Vector3(
+                    piece.MeshRef.Position = new f64Vector3(
                         piece.Position.X,
                         piece.Position.Y,
                         piece.Position.Z
@@ -1610,10 +1611,10 @@ public class StageEditorPhase : BasePhase
                     
                     // Euler constructor is (Yaw, Pitch, Roll)
                     // piece.Rotation is stored as (Pitch, Yaw, Roll) for display consistency
-                    piece.MeshRef.Rotation = new Euler(
-                        Stride.Core.Mathematics.AngleSingle.FromRadians(piece.Rotation.Y * (float)Math.PI / 180f), // Yaw
-                        Stride.Core.Mathematics.AngleSingle.FromRadians(piece.Rotation.X * (float)Math.PI / 180f), // Pitch
-                        Stride.Core.Mathematics.AngleSingle.FromRadians(piece.Rotation.Z * (float)Math.PI / 180f)  // Roll
+                    piece.MeshRef.Rotation = new f64Euler(
+                        f64AngleSingle.FromRadians(piece.Rotation.Y * (fix64)Math.PI / 180), // Yaw
+                        f64AngleSingle.FromRadians(piece.Rotation.X * (fix64)Math.PI / 180), // Pitch
+                        f64AngleSingle.FromRadians(piece.Rotation.Z * (fix64)Math.PI / 180)  // Roll
                     );
                 }
             }
@@ -1984,7 +1985,7 @@ public class StageEditorPhase : BasePhase
                                 // Recreate polys, clouds, and mountains based on tab settings
                                 if (ActiveTab.PolysEnabled)
                                 {
-                                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                                    ActiveTab.Stage.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                                 }
                                 else
                                 {
@@ -1993,7 +1994,7 @@ public class StageEditorPhase : BasePhase
                                 
                                 if (ActiveTab.CloudsEnabled)
                                 {
-                                    ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                                    ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                                 }
                                 else
                                 {
@@ -2002,7 +2003,7 @@ public class StageEditorPhase : BasePhase
                                 
                                 if (ActiveTab.MountainsEnabled)
                                 {
-                                    ActiveTab.Stage.mountains = NFMWorld.Mad.Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
+                                    ActiveTab.Stage.mountains = Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
                                 }
                                 else
                                 {
@@ -2179,7 +2180,7 @@ public class StageEditorPhase : BasePhase
                         (short)(_editPolysColor.Y * 255),
                         (short)(_editPolysColor.Z * 255)
                     );
-                    ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                    ActiveTab.Stage.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                 }
                 else if (!_editPolysEnabled && ActiveTab?.Stage != null)
                 {
@@ -2199,7 +2200,7 @@ public class StageEditorPhase : BasePhase
                     );
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.polys = NFMWorld.Mad.Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+                        ActiveTab.Stage.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
                     }
                 }
             }
@@ -2222,7 +2223,7 @@ public class StageEditorPhase : BasePhase
                         _editCloudsHeight 
                     };
                     World.CloudCoverage = _editCloudCoverage;
-                    ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                    ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                 }
                 else if (!_editCloudsEnabled && ActiveTab?.Stage != null)
                 {
@@ -2240,7 +2241,7 @@ public class StageEditorPhase : BasePhase
                     World.Clouds[2] = (int)(_editCloudsColor.Z * 255);
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                        ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                     }
                 }
                 
@@ -2252,7 +2253,7 @@ public class StageEditorPhase : BasePhase
                     World.Clouds[4] = _editCloudsHeight;
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                        ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                     }
                 }
                 
@@ -2264,7 +2265,7 @@ public class StageEditorPhase : BasePhase
                     World.Clouds[3] = _editCloudsParam4;
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                        ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                     }
                 }
                 
@@ -2276,7 +2277,7 @@ public class StageEditorPhase : BasePhase
                     World.CloudCoverage = _editCloudCoverage;
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.clouds = NFMWorld.Mad.Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+                        ActiveTab.Stage.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
                     }
                 }
             }
@@ -2288,7 +2289,7 @@ public class StageEditorPhase : BasePhase
                 if (_editMountainsEnabled && ActiveTab?.Stage != null)
                 {
                     World.MountainSeed = _editMountainsSeed;
-                    ActiveTab.Stage.mountains = NFMWorld.Mad.Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
+                    ActiveTab.Stage.mountains = Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
                 }
                 else if (!_editMountainsEnabled && ActiveTab?.Stage != null)
                 {
@@ -2305,7 +2306,7 @@ public class StageEditorPhase : BasePhase
                     World.MountainSeed = _editMountainsSeed;
                     if (ActiveTab?.Stage != null)
                     {
-                        ActiveTab.Stage.mountains = NFMWorld.Mad.Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
+                        ActiveTab.Stage.mountains = Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
                     }
                 }
             }
@@ -2646,13 +2647,13 @@ public class StageEditorPhase : BasePhase
             
             var rayClip = new Microsoft.Xna.Framework.Vector4(ndcX, ndcY, -1.0f, 1.0f);
             var projMatrix = camera.ProjectionMatrix;
-            Microsoft.Xna.Framework.Matrix.Invert(ref projMatrix, out var invProj);
+            Matrix.Invert(ref projMatrix, out var invProj);
             var rayEye = Microsoft.Xna.Framework.Vector4.Transform(rayClip, invProj);
             rayEye.Z = -1.0f;
             rayEye.W = 0.0f;
             
             var viewMatrix = camera.ViewMatrix;
-            Microsoft.Xna.Framework.Matrix.Invert(ref viewMatrix, out var invView);
+            Matrix.Invert(ref viewMatrix, out var invView);
             var rayWorld4 = Microsoft.Xna.Framework.Vector4.Transform(rayEye, invView);
             var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
             rayDirection.Normalize();
@@ -2852,10 +2853,10 @@ public class StageEditorPhase : BasePhase
                 ImGui.Separator();
                 
                 // Position (Y is displayed with -250 offset, so 250 ground level shows as 0)
-                var displayPos = new System.Numerics.Vector3(piece.Position.X, piece.Position.Y - 250, piece.Position.Z);
+                var displayPos = new System.Numerics.Vector3((float)piece.Position.X, (float)piece.Position.Y - 250, (float)piece.Position.Z);
                 if (ImGui.DragFloat3("Position", ref displayPos, 10f))
                 {
-                    piece.Position = new Vector3(displayPos.X, displayPos.Y + 250, displayPos.Z);
+                    piece.Position = new f64Vector3((fix64)displayPos.X, (fix64)displayPos.Y + 250, (fix64)displayPos.Z);
                     ActiveTab!.HasUnsavedChanges = true;
                 }
                 if (ImGui.IsItemHovered())
@@ -2864,10 +2865,10 @@ public class StageEditorPhase : BasePhase
                 }
                 
                 // Rotation (Y only - Yaw)
-                var rotY = piece.Rotation.Y;
+                var rotY = (float)piece.Rotation.Y;
                 if (ImGui.DragFloat("Rotation (Yaw)", ref rotY, 1f, -180f, 180f))
                 {
-                    piece.Rotation = new Vector3(piece.Rotation.X, rotY, piece.Rotation.Z);
+                    piece.Rotation = new f64Vector3(piece.Rotation.X, (fix64)rotY, piece.Rotation.Z);
                     ActiveTab!.HasUnsavedChanges = true;
                 }
                 
@@ -2928,8 +2929,8 @@ public class StageEditorPhase : BasePhase
                 // Create a new mesh instance and add it to the stage (stage is guaranteed to exist here since we return early if null)
                 var newMesh = new CollisionObject(
                     part.Object!,
-                    Vector3.Zero,
-                    Euler.Identity
+                    f64Vector3.Zero,
+                    f64Euler.Identity
                 );
                 
                 var instance = new StagePieceInstance(

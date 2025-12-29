@@ -33,51 +33,51 @@ public class Mad
     internal bool Btab;
     internal int Capcnt;
     internal bool BadLanding;
-    private readonly UnlimitedArray<bool> _caught = [];
+    internal readonly UnlimitedArray<bool> _caught = [];
     internal CarStats Stat;
     internal int Clear;
     internal int Cn;
     internal int Cntdest;
-    private int _cntouch;
+    internal int _cntouch;
     
     /// <summary>
     /// Is colliding with the client player car
     /// </summary>
-    private bool _colidim;
-    private readonly int[,] _crank = new int[4, 4];
-    private readonly int[,] _lcrank = new int[4, 4];
+    internal bool _colidim;
+    internal readonly int[,] _crank = new int[4, 4];
+    internal readonly int[,] _lcrank = new int[4, 4];
     internal fix64 Cxz;
-    private int _dcnt;
+    internal int _dcnt;
     internal fix64 Dcomp;
     internal bool Wasted;
-    private readonly UnlimitedArray<bool> _dominate = [];
-    private readonly fix64 _drag = (fix64)(0.5F);
-    private int _fixes = -1;
-    private int _focus = -1;
-    private fix64 _forca;
+    internal readonly UnlimitedArray<bool> _dominate = [];
+    internal readonly fix64 _drag = (fix64)(0.5F);
+    internal int _fixes = -1;
+    internal int _focus = -1;
+    internal fix64 _forca;
     internal bool Ftab;
-    private fix64 _fxz;
+    internal fix64 _fxz;
     internal bool Gtouch;
     internal int Hitmag;
     internal int Im;
     internal int Lastcolido;
     internal fix64 Lcomp;
     internal int Loop;
-    private fix64 _lxz;
+    internal fix64 _lxz;
     internal int Missedcp;
     internal bool Mtouch;
     internal fix64 Mxz;
-    private int _nbsq;
+    internal int _nbsq;
     internal bool Newcar;
     internal int Newedcar;
     internal int Nlaps;
-    private int _nmlt = 1;
+    internal int _nmlt = 1;
     internal bool Nofocus;
     internal int Outshakedam = 0;
     internal int Pcleared;
     internal bool Pd;
     internal bool Pl;
-    private int _pmlt = 1;
+    internal int _pmlt = 1;
     internal int Point;
     internal fix64 Power = (fix64)(75.0F);
     internal fix64 Powerup;
@@ -88,7 +88,7 @@ public class Mad
     internal fix64 Pxy;
     internal fix64 Pzy;
     internal fix64 Rcomp;
-    private int _rpdcatch;
+    internal int _rpdcatch;
     internal bool Rtab;
     internal InlineArray4<fix64> Scx;
     internal InlineArray4<fix64> Scy;
@@ -97,9 +97,9 @@ public class Mad
     internal int Skid;
     internal fix64 Speed;
     internal int Squash;
-    private int _srfcnt;
+    internal int _srfcnt;
     internal bool Surfer;
-    private fix64 _tilt;
+    internal fix64 _tilt;
     internal fix64 Travxy;
     internal fix64 Travxz;
     internal fix64 Travzy;
@@ -107,9 +107,9 @@ public class Mad
     internal fix64 Txz;
     internal fix64 Ucomp;
     internal bool Wtouch;
-    private int _xtpower;
+    internal int _xtpower;
 
-    private bool IsClientPlayer;
+    internal bool IsClientPlayer;
 
     internal Mad(CarStats stat, int im, bool isClientPlayer)
     {
@@ -156,13 +156,14 @@ public class Mad
             otherwheely[i1] = otherconto.Y + bottomy;
             otherwheelz[i1] = otherconto.Z + otherconto.Keyz[i1];
         }
-        Rot(wheelx, wheely, conto.X, conto.Y, conto.Xy, 4);
-        Rot(wheely, wheelz, conto.Y, conto.Z, conto.Zy, 4);
-        Rot(wheelx, wheelz, conto.X, conto.Z, conto.Xz, 4);
-        Rot(otherwheelx, otherwheely, otherconto.X, otherconto.Y, otherconto.Xy, 4);
-        Rot(otherwheely, otherwheelz, otherconto.Y, otherconto.Z, otherconto.Zy, 4);
-        Rot(otherwheelx, otherwheelz, otherconto.X, otherconto.Z, otherconto.Xz, 4);
-        if (Rpy(conto.X, otherconto.X, conto.Y, otherconto.Y, conto.Z, otherconto.Z) <
+
+        UMath.Rot(wheelx, wheely, conto.X, conto.Y, conto.Xy, 4);
+        UMath.Rot(wheely, wheelz, conto.Y, conto.Z, conto.Zy, 4);
+        UMath.Rot(wheelx, wheelz, conto.X, conto.Z, conto.Xz, 4);
+        UMath.Rot(otherwheelx, otherwheely, otherconto.X, otherconto.Y, otherconto.Xy, 4);
+        UMath.Rot(otherwheely, otherwheelz, otherconto.Y, otherconto.Z, otherconto.Zy, 4);
+        UMath.Rot(otherwheelx, otherwheelz, otherconto.X, otherconto.Z, otherconto.Xz, 4);
+        if (UMath.Rpy(conto.X, otherconto.X, conto.Y, otherconto.Y, conto.Z, otherconto.Z) <
             (conto.MaxR * conto.MaxR + otherconto.MaxR * otherconto.MaxR) * (fix64)1.5f)
         {
             if (!_caught[othermad.Im] && (Speed != (fix64)0.0F || othermad.Speed != (fix64)0.0F))
@@ -205,7 +206,7 @@ public class Mad
             {
                 for (var otherwheel = 0; otherwheel < 4; otherwheel++)
                 {
-                    if (Rpy(wheelx[wheel], otherwheelx[otherwheel], wheely[wheel], otherwheely[otherwheel], wheelz[wheel], otherwheelz[otherwheel]) <
+                    if (UMath.Rpy(wheelx[wheel], otherwheelx[otherwheel], wheely[wheel], otherwheely[otherwheel], wheelz[wheel], otherwheelz[otherwheel]) <
                         (impactMagnitude + impactExtraRdius) * (othermad.Stat.Comprad + Stat.Comprad))
                     {
                         if (fix64.Abs(Scx[wheel] * Stat.Moment) > fix64.Abs(othermad.Scx[otherwheel] * othermad.Stat.Moment))
@@ -391,66 +392,10 @@ public class Mad
         conto.Wasted = true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(fix64 deg)
-    {
-        var sin = fix64.Sin(deg * fix64.DegToRad);
-        if (EqEpsilon(sin, 0))
-            return 0;
-        if (EqEpsilon(sin, -1))
-            return -1;
-        if (EqEpsilon(sin, 1))
-            return 1;
-        return sin;
-    }
-        
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(fix64 deg)
-    {
-        var cos = fix64.Cos(deg * fix64.DegToRad);
-        if (EqEpsilon(cos, 0))
-            return 0;
-        if (EqEpsilon(cos, -1))
-            return -1;
-        if (EqEpsilon(cos, 1))
-            return 1;
-        return cos;
-    }
-
-    private static bool EqEpsilon(fix64 a, fix64 b)
-    {
-        var epsilon = (fix64)0.00001F;
-        return fix64.Abs(a - b) < epsilon;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(int deg)
-    {
-        return Sin((fix64)deg);
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(float deg)
-    {
-        return Sin((fix64)deg);
-    }
-        
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(int deg)
-    {
-        return Cos((fix64)deg);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(float deg)
-    {
-        return Cos((fix64)deg);
-    }
-
     public void bounceRebound(int wi, ContO conto, DeterministicRandom random)
     {
         // part 1: the closer we are to 90/-90 in Pxy or Pzy, the bigger the bounce
-        fix64 rebound = (fix64.Abs(Sin(Pxy)) + fix64.Abs(Sin(Pzy))) / (fix64)3;
+        fix64 rebound = (fix64.Abs(UMath.Sin(Pxy)) + fix64.Abs(UMath.Sin(Pzy))) / (fix64)3;
         fix64 maxAngleRebound = (fix64)(0.4F); // capping at 0.4 doesn't do much, max is two thirds
         rebound = fix64.Min(rebound, maxAngleRebound);
 
@@ -479,8 +424,8 @@ public class Mad
             // Scy[wi] -= Scy[wi] * rebound; // don't need the abs, both are always positive
             Scy[wi] = (fix64)(-1) * Scy[wi] * (rebound - (fix64)1);
     }
-    int Mtcount = 0;
-    fix64 py = 0;
+    internal int Mtcount = 0;
+    internal fix64 py = 0;
 
     internal void Drive(Control control, ContO conto, Stage stage)
     {
@@ -662,8 +607,8 @@ public class Mad
                         Ucomp += (fix64)0.5f * Stat.Airs * _tickRate; //
                     }
 
-                    airx = -Stat.Airc * Sin(conto.Xz) * zneg * _tickRate;
-                    airz = Stat.Airc * Cos(conto.Xz) * zneg * _tickRate;
+                    airx = -Stat.Airc * UMath.Sin(conto.Xz) * zneg * _tickRate;
+                    airz = Stat.Airc * UMath.Cos(conto.Xz) * zneg * _tickRate;
                 }
                 else if (Ucomp != (fix64)(0.0F) && Ucomp > -(fix64)(2.0F))
                 {
@@ -712,8 +657,8 @@ public class Mad
                         Lcomp += (fix64)(2.0F) * Stat.Airs * _tickRate; //
                     }
 
-                    airx = -Stat.Airc * Cos(conto.Xz) * xneg * _tickRate;
-                    airz = -Stat.Airc * Sin(conto.Xz) * xneg * _tickRate;
+                    airx = -Stat.Airc * UMath.Cos(conto.Xz) * xneg * _tickRate;
+                    airz = -Stat.Airc * UMath.Sin(conto.Xz) * xneg * _tickRate;
                 }
                 else if (Lcomp > (fix64)(0.0F))
                 {
@@ -732,25 +677,25 @@ public class Mad
                         Rcomp += (fix64)(2.0F) * Stat.Airs * _tickRate;
                     }
 
-                    airx = Stat.Airc * Cos(conto.Xz) * xneg * _tickRate;
-                    airz = Stat.Airc * Sin(conto.Xz) * xneg * _tickRate;
+                    airx = Stat.Airc * UMath.Cos(conto.Xz) * xneg * _tickRate;
+                    airz = Stat.Airc * UMath.Sin(conto.Xz) * xneg * _tickRate;
                 }
                 else if (Rcomp > (fix64)(0.0F)) //
                 {
                     Rcomp -= (fix64)(2.0F) * Stat.Airs * _tickRate;
                 }
 
-                Pzy = QuantizeTowardsZero((Pzy + (Dcomp - Ucomp) * Cos(Pxy) * _tickRate), _tickRate); //
+                Pzy = UMath.QuantizeTowardsZero((Pzy + (Dcomp - Ucomp) * UMath.Cos(Pxy) * _tickRate), _tickRate); //
                 if (zyinv)
                 {
-                    conto.Xz = QuantizeTowardsZero(conto.Xz + ((Dcomp - Ucomp) * Sin(Pxy) * _tickRate), _tickRate);
+                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + ((Dcomp - Ucomp) * UMath.Sin(Pxy) * _tickRate), _tickRate);
                 }
                 else
                 {
-                    conto.Xz = QuantizeTowardsZero(conto.Xz - ((Dcomp - Ucomp) * Sin(Pxy) * _tickRate), _tickRate);
+                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - ((Dcomp - Ucomp) * UMath.Sin(Pxy) * _tickRate), _tickRate);
                 }
 
-                Pxy = QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
+                Pxy = UMath.QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
             }
             else
             {
@@ -932,17 +877,17 @@ public class Mad
                         Pd = false;
                     }
 
-                    Pzy = QuantizeTowardsZero((Pzy + ((Dcomp - Ucomp) * Cos(Pxy)) * _tickRate), _tickRate);
+                    Pzy = UMath.QuantizeTowardsZero((Pzy + ((Dcomp - Ucomp) * UMath.Cos(Pxy)) * _tickRate), _tickRate);
                     if (zyinv)
                     {
-                        conto.Xz = QuantizeTowardsZero(conto.Xz + (((Dcomp - Ucomp) * Sin(Pxy)) * _tickRate), _tickRate);
+                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + (((Dcomp - Ucomp) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
                     }
                     else
                     {
-                        conto.Xz = QuantizeTowardsZero(conto.Xz - (((Dcomp - Ucomp) * Sin(Pxy)) * _tickRate), _tickRate);
+                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - (((Dcomp - Ucomp) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
                     }
 
-                    Pxy = QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
+                    Pxy = UMath.QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
                 }
             }
         }
@@ -1056,7 +1001,7 @@ public class Mad
 
         if (Speed > (fix64)(30.0F) || Speed < -(fix64)(100.0F))
         {
-            while (SafeAbs(Mxz - Cxz) > 180)
+            while (UMath.SafeAbs(Mxz - Cxz) > 180)
             {
                 if (Cxz > Mxz)
                 {
@@ -1069,7 +1014,7 @@ public class Mad
             }
 
             //
-            if (SafeAbs(Mxz - Cxz) < 30)
+            if (UMath.SafeAbs(Mxz - Cxz) < 30)
             {
                 Cxz += (Mxz - Cxz) / (fix64)(4.0F) * _tickRate; //
             }
@@ -1099,9 +1044,9 @@ public class Mad
             Scy[i24] += (fix64)(7.0F) * _tickRate;
         }
 
-        Rot(wheelx, wheely, conto.X, conto.Y, Pxy, 4);
-        Rot(wheely, wheelz, conto.Y, conto.Z, Pzy, 4);
-        Rot(wheelx, wheelz, conto.X, conto.Z, conto.Xz, 4);
+        UMath.Rot(wheelx, wheely, conto.X, conto.Y, Pxy, 4);
+        UMath.Rot(wheely, wheelz, conto.Y, conto.Z, Pzy, 4);
+        UMath.Rot(wheelx, wheelz, conto.X, conto.Z, conto.Xz, 4);
         var wasMtouch = false;
         var i26 = ((Scx[0] + Scx[1] + Scx[2] + Scx[3]) / (fix64)(4.0F));
         var i27 = ((Scz[0] + Scz[1] + Scz[2] + Scz[3]) / (fix64)(4.0F));
@@ -1194,9 +1139,9 @@ public class Mad
                 traction *= (fix64)0.55f;
             }
 
-            var speedx = -(Speed * Sin(conto.Xz) * Cos(Pzy));
-            var speedz = (Speed * Cos(conto.Xz) * Cos(Pzy));
-            var speedy = -(Speed * Sin(Pzy));
+            var speedx = -(Speed * UMath.Sin(conto.Xz) * UMath.Cos(Pzy));
+            var speedz = (Speed * UMath.Cos(conto.Xz) * UMath.Cos(Pzy));
+            var speedy = -(Speed * UMath.Sin(Pzy));
             if (BadLanding || Wasted || Halted)
             {
                 speedx = 0;
@@ -1338,13 +1283,13 @@ public class Mad
             fix64 sczavg = sczsum / 4;
             fix64 scxz = fix64.Hypot(sczavg, scxavg);
 
-            Mxz = (int)(dAtan2(-scxsum, sczsum));
+            Mxz = (int)(UMath.dAtan2(-scxsum, sczsum));
 
             if (Skid == 2)
             {
                 if (!BadLanding)
                 {
-                    Speed = scxz * Cos(Mxz - conto.Xz) * (revspeed ? -1 : 1);
+                    Speed = scxz * UMath.Cos(Mxz - conto.Xz) * (revspeed ? -1 : 1);
                 }
 
                 Skid = 0;
@@ -1430,29 +1375,29 @@ public class Mad
         if (Scy[2] != Scy[0])
         {
             fix64 sgn = Scy[2] < Scy[0] ? -1 : 1;
-            fix64 ratio = Hypot3(wheelz[0] - wheelz[2], wheely[0] - wheely[2], wheelx[0] - wheelx[2]) / (Math.Abs(conto.Keyz[0]) + Math.Abs(conto.Keyz[2]));
-            i_81 = ratio >= 1 ? sgn : dAcos(ratio) * sgn; // the d > 1 ? 0 part was different in the original code, but this I think makes more sense
+            fix64 ratio = UMath.Hypot3(wheelz[0] - wheelz[2], wheely[0] - wheely[2], wheelx[0] - wheelx[2]) / (Math.Abs(conto.Keyz[0]) + Math.Abs(conto.Keyz[2]));
+            i_81 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn; // the d > 1 ? 0 part was different in the original code, but this I think makes more sense
         }
         fix64 i_82 = 0;
         if (Scy[3] != Scy[1])
         {
             fix64 sgn = Scy[3] < Scy[1] ? -1 : 1;
-            fix64 ratio = Hypot3(wheelz[1] - wheelz[3], wheely[1] - wheely[3], wheelx[1] - wheelx[3]) / (Math.Abs(conto.Keyz[1]) + Math.Abs(conto.Keyz[3]));
-            i_82 = ratio >= 1 ? sgn : dAcos(ratio) * sgn;
+            fix64 ratio = UMath.Hypot3(wheelz[1] - wheelz[3], wheely[1] - wheely[3], wheelx[1] - wheelx[3]) / (Math.Abs(conto.Keyz[1]) + Math.Abs(conto.Keyz[3]));
+            i_82 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
         }
         fix64 i_83 = 0;
         if (Scy[1] != Scy[0])
         {
             fix64 sgn = Scy[1] < Scy[0] ? -1 : 1;
-            fix64 ratio = Hypot3(wheelz[0] - wheelz[1], wheely[0] - wheely[1], wheelx[0] - wheelx[1]) / (Math.Abs(conto.Keyx[0]) + Math.Abs(conto.Keyx[1]));
-            i_83 = ratio >= 1 ? sgn : dAcos(ratio) * sgn;
+            fix64 ratio = UMath.Hypot3(wheelz[0] - wheelz[1], wheely[0] - wheely[1], wheelx[0] - wheelx[1]) / (Math.Abs(conto.Keyx[0]) + Math.Abs(conto.Keyx[1]));
+            i_83 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
         }
         fix64 i_84 = 0;
         if (Scy[3] != Scy[2])
         {
             fix64 sgn = Scy[3] < Scy[2] ? -1 : 1;
-            fix64 ratio = Hypot3(wheelz[2] - wheelz[3], wheely[2] - wheely[3], wheelx[2] - wheelx[3]) / (Math.Abs(conto.Keyx[2]) + Math.Abs(conto.Keyx[3]));
-            i_84 = ratio >= 1 ? sgn : dAcos(ratio) * sgn;
+            fix64 ratio = UMath.Hypot3(wheelz[2] - wheelz[3], wheely[2] - wheely[3], wheelx[2] - wheelx[3]) / (Math.Abs(conto.Keyx[2]) + Math.Abs(conto.Keyx[3]));
+            i_84 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
         }
 
         if (hitVertical)
@@ -1502,22 +1447,22 @@ public class Mad
             {
                 if (Pzy > 0) //Pzy can be negative, so this needs to be accounted for
                 {
-                    Pzy -= QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
+                    Pzy -= UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
                 }
                 else
                 {
-                    Pzy += QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
+                    Pzy += UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
                 }
             }
             if (zeroanglezy <= flipanglezy && zyangle >= 180 || flipanglezy < zeroanglezy && zyangle < 180) //similar to above, just in reverse
             {
                 if (Pzy > 0)
                 {
-                    Pzy += QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
+                    Pzy += UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
                 }
                 else
                 {
-                    Pzy -= QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
+                    Pzy -= UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
                 }
             }
             var zeroanglexy = fix64.Min(xyangle, 360 - xyangle); //distance from 0 degrees in the xy-plane
@@ -1526,22 +1471,22 @@ public class Mad
             {
                 if (Pxy > 0) //again, Pxy can be negative
                 {
-                    Pxy -= QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
+                    Pxy -= UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
                 }
                 else
                 {
-                    Pxy += QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
+                    Pxy += UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
                 }
             }
             if (zeroanglexy <= flipanglexy && xyangle >= 180 || flipanglexy < zeroanglexy && xyangle < 180)
             {
                 if (Pxy > 0)
                 {
-                    Pxy += QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
+                    Pxy += UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
                 }
                 else
                 {
-                    Pxy -= QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
+                    Pxy -= UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
                 }
             }
         }
@@ -1624,7 +1569,7 @@ public class Mad
             _cntouch = 0; // CHK12
                           //DS-addons: Bad landing hotfix
 
-        fix64 newy = ((wheely[0] + wheely[1] + wheely[2] + wheely[3]) / (fix64)4.0F - bottomy * Cos(Pzy) * Cos(Pxy) + airy);
+        fix64 newy = ((wheely[0] + wheely[1] + wheely[2] + wheely[3]) / (fix64)4.0F - bottomy * UMath.Cos(Pzy) * UMath.Cos(Pxy) + airy);
         py = conto.Y - newy;
         conto.Y = newy;
         //conto.y = (int) ((fs_23[0] + fs_23[1] + fs_23[2] + fs_23[3]) / (fix64)(4.0F) - (fix64) i_10 * Cos(this.Pzy) * Cos(this.Pxy) + f_12);
@@ -1634,21 +1579,21 @@ public class Mad
         else
             xneg = 1;
 
-        FrameTrace.AddMessage($"x: {airx:0.00}, z: {airz:0.00}, sum: {Sin(Pxy):0.00}, sum2: {Sin(Pzy):0.00}");
+        FrameTrace.AddMessage($"x: {airx:0.00}, z: {airz:0.00}, sum: {UMath.Sin(Pxy):0.00}, sum2: {UMath.Sin(Pzy):0.00}");
 
         // CHK13
         // car sliding fix by jacher: do not adjust to tickrate
-        conto.X = ((wheelx[0] - conto.Keyx[0] * Cos(conto.Xz) + xneg * conto.Keyz[0] * Sin(conto.Xz) +
-            wheelx[1] - conto.Keyx[1] * Cos(conto.Xz) + xneg * conto.Keyz[1] * Sin(conto.Xz) +
-            wheelx[2] - conto.Keyx[2] * Cos(conto.Xz) + xneg * conto.Keyz[2] * Sin(conto.Xz) +
-            wheelx[3] - conto.Keyx[3] * Cos(conto.Xz) + xneg * conto.Keyz[3] * Sin(conto.Xz)) / (fix64)4.0F
-            + bottomy * Sin(Pxy) * Cos(conto.Xz) - bottomy * Sin(Pzy) * Sin(conto.Xz) + airx);
+        conto.X = ((wheelx[0] - conto.Keyx[0] * UMath.Cos(conto.Xz) + xneg * conto.Keyz[0] * UMath.Sin(conto.Xz) +
+            wheelx[1] - conto.Keyx[1] * UMath.Cos(conto.Xz) + xneg * conto.Keyz[1] * UMath.Sin(conto.Xz) +
+            wheelx[2] - conto.Keyx[2] * UMath.Cos(conto.Xz) + xneg * conto.Keyz[2] * UMath.Sin(conto.Xz) +
+            wheelx[3] - conto.Keyx[3] * UMath.Cos(conto.Xz) + xneg * conto.Keyz[3] * UMath.Sin(conto.Xz)) / (fix64)4.0F
+            + bottomy * UMath.Sin(Pxy) * UMath.Cos(conto.Xz) - bottomy * UMath.Sin(Pzy) * UMath.Sin(conto.Xz) + airx);
 
-        conto.Z = ((wheelz[0] - xneg * conto.Keyz[0] * Cos(conto.Xz) - conto.Keyx[0] * Sin(conto.Xz)
-            + wheelz[1] - xneg * conto.Keyz[1] * Cos(conto.Xz) - conto.Keyx[1] * Sin(conto.Xz)
-            + wheelz[2] - xneg * conto.Keyz[2] * Cos(conto.Xz) - conto.Keyx[2] * Sin(conto.Xz)
-            + wheelz[3] - xneg * conto.Keyz[3] * Cos(conto.Xz) - conto.Keyx[3] * Sin(conto.Xz)) / (fix64)4.0F
-            + bottomy * Sin(Pxy) * Sin(conto.Xz) - bottomy * Sin(Pzy) * Cos(conto.Xz) + airz);
+        conto.Z = ((wheelz[0] - xneg * conto.Keyz[0] * UMath.Cos(conto.Xz) - conto.Keyx[0] * UMath.Sin(conto.Xz)
+            + wheelz[1] - xneg * conto.Keyz[1] * UMath.Cos(conto.Xz) - conto.Keyx[1] * UMath.Sin(conto.Xz)
+            + wheelz[2] - xneg * conto.Keyz[2] * UMath.Cos(conto.Xz) - conto.Keyx[2] * UMath.Sin(conto.Xz)
+            + wheelz[3] - xneg * conto.Keyz[3] * UMath.Cos(conto.Xz) - conto.Keyx[3] * UMath.Sin(conto.Xz)) / (fix64)4.0F
+            + bottomy * UMath.Sin(Pxy) * UMath.Sin(conto.Xz) - bottomy * UMath.Sin(Pzy) * UMath.Cos(conto.Xz) + airz);
 
         if (fix64.Abs(Speed) > (fix64)(10.0F) || !Mtouch)
         {
@@ -2251,29 +2196,7 @@ public class Mad
         }*/
     }
 
-    private static void Rot(Span<fix64> a, Span<fix64> b, fix64 offA, fix64 offB, fix64 angle, int len)
-    {
-        if (angle != 0)
-        {
-            var sin = Sin(angle);
-            var cos = Cos(angle);
-            
-            for (var i = 0; i < len; i++)
-            {
-                var pa = a[i];
-                var pb = b[i];
-                var oa = (pa - offA);
-                var ob = (pb - offB);
-                a[i] = offA + (oa * cos - ob * sin);
-                b[i] = offB + (oa * sin + ob * cos);
-            }
-        }
-    }
 
-    public static int SafeAbs(int value) => value >= 0 ? value : (value == int.MinValue ? int.MaxValue : -value);
-    public static fix64 SafeAbs(fix64 value) => value >= 0 ? value : (value == fix64.MinValue ? fix64.MaxValue : -value);
-
-    
     // input: number of grounded wheels to medium
     // output: hitVertical when colliding against a wall
     private void PhyTrackPieceCollision(Stage stage, Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
@@ -2416,7 +2339,7 @@ public class Mad
 
     private fix64 GetReboundMul(bool wasMtouch)
     {
-        var reboundMul = fix64.Abs(Cos(Pxy)) + fix64.Abs(Cos(Pzy));
+        var reboundMul = fix64.Abs(UMath.Cos(Pxy)) + fix64.Abs(UMath.Cos(Pzy));
         reboundMul /= 4;
         if (reboundMul > (fix64)0.3F)
             reboundMul = (fix64)0.3F;
@@ -2749,37 +2672,5 @@ public class Mad
         {
             _fixes = 1;
         }*/
-    }
-
-    private static int Rpy(fix64 x1, fix64 x2, fix64 y1, fix64 y2, fix64 z1, fix64 z2)
-    {
-        return (int)((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2));
-    }
-
-    public static fix64 Hypot3(fix64 x, fix64 y, fix64 z)
-    {
-        return fix64.Sqrt(x * x + y * y + z * z);
-    }
-
-    public static fix64 dAcos(fix64 a)
-    {
-        return fix64.Acos(a) * fix64.RadToDeg;
-    }
-
-    public static fix64 dAtan2(fix64 y, fix64 x)
-    {
-        return fix64.Atan2(y, x) * fix64.RadToDeg;
-    }
-
-    public static fix64 QuantizeTowardsZero(fix64 value, fix64 step)
-    {
-        // Scale by step size
-        fix64 scaled = value / step;
-
-        // Truncate towards zero
-        fix64 truncated = scaled > 0 ? fix64.Floor(scaled) : fix64.Ceiling(scaled);
-
-        // Scale back
-        return truncated * step;
     }
 }

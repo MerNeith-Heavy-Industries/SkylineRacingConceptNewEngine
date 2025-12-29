@@ -1,4 +1,5 @@
 ﻿using NFMWorld.Mad;
+using SoftFloat;
 
 public class CollisionObject : MeshedGameObject, ICollidable
 {
@@ -21,7 +22,7 @@ public class CollisionObject : MeshedGameObject, ICollidable
             };
         }
     }
-    public CollisionObject(PlaceableObjectInfo placeableObjectInfo, Vector3 position, Euler rotation) : this(placeableObjectInfo)
+    public CollisionObject(PlaceableObjectInfo placeableObjectInfo, f64Vector3 position, f64Euler rotation) : this(placeableObjectInfo)
     {
         Position = position;
         Rotation = rotation;

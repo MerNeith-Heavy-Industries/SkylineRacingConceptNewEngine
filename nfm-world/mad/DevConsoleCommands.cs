@@ -343,7 +343,7 @@ namespace NFMWorld.Mad
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 var mesh = inRacePhase.CarsInRace[0].CarRef;
-                mesh.Position = new Vector3(x, y, z);
+                mesh.Position = new f64Vector3(x, y, z);
                 console.Log($"Teleported player to ({x}, {y}, {z})");
             }
         }

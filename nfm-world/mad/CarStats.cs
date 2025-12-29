@@ -5,7 +5,7 @@ using SoftFloat;
 public record struct CarStats
 {
     [JsonPropertyName("swits")] public Int3 Swits { get; init; }
-    [JsonPropertyName("acelf")] public Vector3 Acelf { get; init; }
+    [JsonPropertyName("acelf")] public f64Vector3 Acelf { get; init; }
     [JsonPropertyName("handb")] public int Handb { get; init; }
     [JsonPropertyName("airs")] public fix64 Airs { get; init; }
     [JsonPropertyName("airc")] public int Airc { get; init; }
@@ -35,16 +35,16 @@ public record struct CarStats
     /// </summary>
     public static CarStats Default = new CarStats(
         new Int3(50, 185, 282),
-        new Vector3(11.0f, 5.0f, 3.0f),
+        new f64Vector3((fix64)11.0f, (fix64)5.0f, (fix64)3.0f),
         7,
-        1.0f,
+        (fix64)1.0f,
         70,
         6,
-        20.0f,
-        1.2f,
-        0.9f,
-        1.3f,
-        0.5f,
+        (fix64)20.0f,
+        (fix64)1.2f,
+        (fix64)0.9f,
+        (fix64)1.3f,
+        (fix64)0.5f,
         2,
         2,
         0,
@@ -53,10 +53,10 @@ public record struct CarStats
         -50,
         7,
         3300,
-        0.75f,
+        (fix64)0.75f,
         7600,
-        0.65f,
-        0.68f,
+        (fix64)0.65f,
+        (fix64)0.68f,
         "Tornado Shark",
         0
     );
@@ -67,54 +67,54 @@ public record struct CarStats
     
     public CarStats(
         Int3? Swits = null,
-        Vector3? Acelf = null,
+        f64Vector3? Acelf = null,
         int Handb = int.MinValue,
-        float Airs = float.NegativeInfinity,
+        fix64? Airs = null,
         int Airc = int.MinValue,
         int Turn = int.MinValue,
-        float Grip = float.NegativeInfinity,
-        float Bounce = float.NegativeInfinity,
-        float Simag = 1.3F,
-        float Moment = float.NegativeInfinity,
-        float Comprad = float.NegativeInfinity,
-        float Push = int.MinValue,
-        float Revpush = float.NegativeInfinity,
+        fix64? Grip = null,
+        fix64? Bounce = null,
+        fix64? Simag = null,
+        fix64? Moment = null,
+        fix64? Comprad = null,
+        fix64? Push = null,
+        fix64? Revpush = null,
         int Lift = int.MinValue,
         int Revlift = int.MinValue,
         int Powerloss = int.MinValue,
         int Flipy = -100,
         int Msquash = int.MinValue,
         int Clrad = int.MinValue,
-        float Dammult = float.NegativeInfinity,
+        fix64? Dammult = null,
         int Maxmag = 7,
-        float Dishandle = float.NegativeInfinity,
-        float Outdam = float.NegativeInfinity,
+        fix64? Dishandle = null,
+        fix64? Outdam = null,
         string Name = "",
         sbyte Enginsignature = 0)
     {
         this.Swits = Swits ?? new Int3(int.MinValue, int.MinValue, int.MinValue);
-        this.Acelf = Acelf ?? new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+        this.Acelf = Acelf ?? new f64Vector3(fix64.MinValue, fix64.MinValue, fix64.MinValue);
         this.Handb = Handb;
-        this.Airs = (fix64)Airs;
+        this.Airs = Airs ?? fix64.MinValue;
         this.Airc = Airc;
         this.Turn = Turn;
-        this.Grip = (fix64)Grip;
-        this.Bounce = (fix64)Bounce;
-        this.Simag = (fix64)Simag;
-        this.Moment = (fix64)Moment;
-        this.Comprad = (fix64)Comprad;
-        this.Push = (fix64)Push;
-        this.Revpush = (fix64)Revpush;
+        this.Grip = Grip ?? fix64.MinValue;
+        this.Bounce = Bounce ?? fix64.MinValue;
+        this.Simag = Simag ?? (fix64)1.3f;
+        this.Moment = Moment ?? fix64.MinValue;
+        this.Comprad = Comprad ?? fix64.MinValue;
+        this.Push = Push ?? fix64.MinValue;
+        this.Revpush = Revpush ?? fix64.MinValue;
         this.Lift = Lift;
         this.Revlift = Revlift;
         this.Powerloss = Powerloss;
         this.Flipy = Flipy;
         this.Msquash = Msquash;
         this.Clrad = Clrad;
-        this.Dammult = (fix64)Dammult;
+        this.Dammult = Dammult ?? fix64.MinValue;
         this.Maxmag = Maxmag;
-        this.Dishandle = (fix64)Dishandle;
-        this.Outdam = (fix64)Outdam;
+        this.Dishandle = Dishandle ?? fix64.MinValue;
+        this.Outdam = Outdam ?? fix64.MinValue;
         this.Name = Name;
         this.Enginsignature = Enginsignature;
     }
@@ -126,7 +126,7 @@ public record struct CarStats
     public string? Validate(string fileName)
     {
         if(Swits[0] == int.MinValue) return ValidateFail(nameof(Swits));
-        else if(Acelf.AsSpan()[0] == float.NegativeInfinity) return ValidateFail(nameof(Acelf));
+        else if(Acelf.AsSpan()[0] == fix64.MinValue) return ValidateFail(nameof(Acelf));
         else if(Handb == int.MinValue) return ValidateFail(nameof(Handb));
         else if(Airs == fix64.MinValue) return ValidateFail(nameof(Airs));
         else if(Airc == int.MinValue) return ValidateFail(nameof(Airc));

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using SoftFloat;
 using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
@@ -48,7 +49,7 @@ public class WheelMeshBuilder
     {
         return new MeshedGameObject(new Mesh(graphicsDevice, new Rad3d(_planes.ToArray(), true), "wheelMesh"))
         {
-            Position = (Vector3)_wheelDef.Position,
+            Position = _wheelDef.Position,
             Parent = parent
         };
     }

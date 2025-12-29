@@ -282,7 +282,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
 
         CheckPoint nextCheckpoint = currentStage.checkpoints[currentCheckpoint];
-        Vector3 carPos = carsInRace[playerCarIndex].CarRef.Position;
+        f64Vector3 carPos = carsInRace[playerCarIndex].CarRef.Position;
 
         var mad = carsInRace[playerCarIndex].Mad;
         var position = new f64Vector3((fix64)carPos.X, (fix64)carPos.Y, (fix64)carPos.Z);
@@ -291,10 +291,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             mad.Scy[0] + mad.Scy[1] + mad.Scy[2] + mad.Scy[3],
             mad.Scz[0] + mad.Scz[1] + mad.Scz[2] + mad.Scz[3]) / 4;
         f64Vector3 zDir = new f64Vector3(0, 0, 1);
-        f64Vector3 rad = new f64Vector3(700, 450, 60 + fix64.Abs(f64Vector3.Dot(velocity, zDir.RotateXz(nextCheckpoint.Rotation.Xz.DegreesSFloat))));
+        f64Vector3 rad = new f64Vector3(700, 450, 60 + fix64.Abs(f64Vector3.Dot(velocity, zDir.RotateXz(nextCheckpoint.Rotation.Xz.Degrees))));
         f64Vector3 trackersPosition = new f64Vector3(0, -350, 0);
         f64Vector3 checkpointsPosition = new f64Vector3((fix64)nextCheckpoint.Position.X, (fix64)nextCheckpoint.Position.Y, (fix64)nextCheckpoint.Position.Z);
-        var box = new CollisionBox(rad, trackersPosition, nextCheckpoint.Rotation.Xz.DegreesSFloat, checkpointsPosition);
+        var box = new CollisionBox(rad, trackersPosition, nextCheckpoint.Rotation.Xz.Degrees, checkpointsPosition);
 
         if (box.ResolveCollision(position) is not null)
         {

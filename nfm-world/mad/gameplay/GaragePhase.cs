@@ -104,7 +104,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         switsLevel = Math.Max(0.05f, switsLevel);
         statBars[0] = new GarageDynamicStatBar(switsLevel, _statsBarBaseX, _statsBarBaseY, "Top Speed");
 
-        float accel = _car.Stats.Acelf.X * _car.Stats.Acelf.Y * _car.Stats.Acelf.Z * (float)_car.Stats.Grip / 7700f;
+        float accel = (float)(_car.Stats.Acelf.X * _car.Stats.Acelf.Y * _car.Stats.Acelf.Z * _car.Stats.Grip / 7700);
         statBars[1] = new GarageDynamicStatBar(accel, _statsBarBaseX + _statsBarXGap, _statsBarBaseY, "Acceleration");
 
         statBars[2] = new GarageDynamicStatBar((float)_car.Stats.Dishandle, _statsBarBaseX + _statsBarXGap * 2, _statsBarBaseY, "Handling");

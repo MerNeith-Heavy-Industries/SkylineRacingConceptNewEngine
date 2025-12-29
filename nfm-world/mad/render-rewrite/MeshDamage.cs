@@ -1,4 +1,5 @@
 ﻿using NFMWorld.Util;
+using SoftFloat;
 using Random = NFMWorld.Util.Random;
 
 namespace NFMWorld.Mad;
@@ -40,10 +41,10 @@ public static class MeshDamage
                         ) < stat.Clrad)
                     {
                         breakFactor = damageFactor / 20.0f * Random.Single();
-                        car.Mesh.Polys[i].Points[j].Z -= breakFactor * UMath.Sin(car.Rotation.Xz.Degrees) *
-                                                     UMath.Cos(car.Rotation.Zy.Degrees); // z
-                        car.Mesh.Polys[i].Points[j].X += breakFactor * UMath.Cos(car.Rotation.Xz.Degrees) *
-                                                     UMath.Cos(car.Rotation.Xy.Degrees); // x
+                        car.Mesh.Polys[i].Points[j].Z -= (breakFactor * UMath.SinUnsafe((float)car.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)car.Rotation.Zy.Degrees)); // z
+                        car.Mesh.Polys[i].Points[j].X += (breakFactor * UMath.CosUnsafe((float)car.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)car.Rotation.Xy.Degrees)); // x
                     }
                 }
 
@@ -182,8 +183,8 @@ public static class MeshDamage
                             ) < stat.Clrad)
                         {
                             breakFactor = damageFactor / 20.0f * Random.Single();
-                            car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.Sin(zy); // z
-                            car.Mesh.Polys[i].Points[j].X -= breakFactor * UMath.Sin(xy); // x
+                            car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.SinUnsafe((float)zy); // z
+                            car.Mesh.Polys[i].Points[j].X -= breakFactor * UMath.SinUnsafe((float)xy); // x
                         }
                     }
 
@@ -322,10 +323,10 @@ public static class MeshDamage
                         ) < stat.Clrad)
                     {
                         breakFactor = damageFactor / 20.0f * Random.Single();
-                        car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.Cos(car.Rotation.Xz.Degrees) *
-                                                     UMath.Cos(car.Rotation.Zy.Degrees); // z
-                        car.Mesh.Polys[i].Points[j].X += breakFactor * UMath.Sin(car.Rotation.Xz.Degrees) *
-                                                     UMath.Cos(car.Rotation.Xy.Degrees); // x
+                        car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.CosUnsafe((float)car.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)car.Rotation.Zy.Degrees); // z
+                        car.Mesh.Polys[i].Points[j].X += breakFactor * UMath.SinUnsafe((float)car.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)car.Rotation.Xy.Degrees); // x
                     }
                 }
 

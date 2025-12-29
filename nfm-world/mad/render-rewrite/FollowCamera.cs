@@ -80,9 +80,9 @@ public class FollowCamera
         var followDistance = 800 + FollowZOffset;
         camera.Position = camera.Position with
         {
-            X = obj.Position.X + (followDistance * UMath.Sin(cxz)),
-            Z = obj.Position.Z - (followDistance * UMath.Cos(cxz)),
-            Y = obj.Position.Y - 250 - FollowYOffset,
+            X = (float)(obj.Position.X + (followDistance * UMath.Sin(cxz))),
+            Z = (float)(obj.Position.Z - (followDistance * UMath.Cos(cxz))),
+            Y = (float)(obj.Position.Y - 250 - FollowYOffset),
         };
         
         // Calculate the look direction by rotating the forward vector

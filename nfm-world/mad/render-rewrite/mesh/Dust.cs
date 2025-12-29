@@ -66,14 +66,14 @@ public class Dust
             if (!onRoof)
             {
                 var rand = URandom.Single();
-                Sx[_ust] = ((wheelx + _car.Position.X * rand) / (1.0F + rand));
-                Sz[_ust] = ((wheelz + _car.Position.Z * rand) / (1.0F + rand));
-                Sy[_ust] = ((wheely + (_car.Position.Y - wheelGround) * rand) / (1.0F + rand));
+                Sx[_ust] = ((wheelx + (float)_car.Position.X * rand) / (1.0F + rand));
+                Sz[_ust] = ((wheelz + (float)_car.Position.Z * rand) / (1.0F + rand));
+                Sy[_ust] = ((wheely + ((float)_car.Position.Y - wheelGround) * rand) / (1.0F + rand));
             }
             else
             {
-                Sx[_ust] = ((wheelx + (_car.Position.X + scx)) / 2.0F);
-                Sz[_ust] = ((wheelz + (_car.Position.Z + scz)) / 2.0F);
+                Sx[_ust] = ((wheelx + ((float)_car.Position.X + scx)) / 2.0F);
+                Sz[_ust] = ((wheelz + ((float)_car.Position.Z + scz)) / 2.0F);
                 Sy[_ust] = wheely;
             }
             if (Sy[wheelidx] > 250)

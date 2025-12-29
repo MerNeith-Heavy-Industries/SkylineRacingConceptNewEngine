@@ -75,9 +75,9 @@ public class Sparks
     {
         if (type != 1)
         {
-            Srx = (wheelx - _sprkat * UMath.Sin(_car.Rotation.Xz.Degrees));
-            Sry = (wheely - wheelGround - _sprkat * UMath.Cos(_car.Rotation.Zy.Degrees) * UMath.Cos(_car.Rotation.Xy.Degrees));
-            Srz = (wheelz + _sprkat * UMath.Cos(_car.Rotation.Xz.Degrees));
+            Srx = (wheelx - _sprkat * UMath.SinUnsafe((float)_car.Rotation.Xz.Degrees));
+            Sry = (wheely - wheelGround - _sprkat * UMath.CosUnsafe((float)_car.Rotation.Zy.Degrees) * UMath.CosUnsafe((float)_car.Rotation.Xy.Degrees));
+            Srz = (wheelz + _sprkat * UMath.CosUnsafe((float)_car.Rotation.Xz.Degrees));
             Sprk = 1;
         }
         else
@@ -85,9 +85,9 @@ public class Sparks
             Sprk++;
             if (Sprk == 4)
             {
-                Srx = (_car.Position.X + scx);
+                Srx = ((float)_car.Position.X + scx);
                 Sry = wheely - wheelGround;
-                Srz = (_car.Position.Z + scz);
+                Srz = ((float)_car.Position.Z + scz);
                 Sprk = 5;
             }
             else

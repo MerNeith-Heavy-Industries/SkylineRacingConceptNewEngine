@@ -67,8 +67,8 @@ public struct PlayerState
         c.Mad.Pr = state.pr;
         c.Mad.Pd = state.pd;
         c.Mad.Pu = state.pu;
-        c.CarRef.Position = new Vector3((float)state.x, (float)state.y, (float)state.z);
-        c.CarRef.Rotation = new Euler(AngleSingle.FromDegrees(state.xz), AngleSingle.FromDegrees(state.zy), AngleSingle.FromDegrees(state.xy));
+        c.CarRef.Position = new f64Vector3(state.x, state.y, state.z);
+        c.CarRef.Rotation = new f64Euler(f64AngleSingle.FromDegrees(state.xz), f64AngleSingle.FromDegrees(state.zy), f64AngleSingle.FromDegrees(state.xy));
         c.Mad.Speed = state.speed;
         c.Mad.Power = state.power;
         c.Mad.Mxz = state.mxz;
@@ -76,7 +76,7 @@ public struct PlayerState
         c.Mad.Pxy = state.pxy;
         c.Mad.Txz = state.txz;
         c.Mad.Loop = state.loop;
-        c.CarRef.TurningWheelAngle = c.CarRef.TurningWheelAngle with { Xz = AngleSingle.FromDegrees(state.wxz) };
+        c.CarRef.TurningWheelAngle = c.CarRef.TurningWheelAngle with { Xz = f64AngleSingle.FromDegrees(state.wxz) };
         c.Mad.Pcleared = state.pcleared;
         c.Mad.Clear = state.clear;
         c.Mad.Nlaps = state.nlaps;
@@ -103,9 +103,9 @@ public struct PlayerState
             x = (fix64)car.CarRef.Position.X,
             y = (fix64)car.CarRef.Position.Y,
             z = (fix64)car.CarRef.Position.Z,
-            xz = car.CarRef.Rotation.Xz.DegreesSFloat,
-            xy = car.CarRef.Rotation.Xy.DegreesSFloat,
-            zy = car.CarRef.Rotation.Zy.DegreesSFloat,
+            xz = car.CarRef.Rotation.Xz.Degrees,
+            xy = car.CarRef.Rotation.Xy.Degrees,
+            zy = car.CarRef.Rotation.Zy.Degrees,
             speed = car.Mad.Speed,
             power = car.Mad.Power,
             mxz = car.Mad.Mxz,
@@ -113,7 +113,7 @@ public struct PlayerState
             pxy = car.Mad.Pxy,
             txz = car.Mad.Txz,
             loop = car.Mad.Loop,
-            wxz = (int)car.CarRef.TurningWheelAngle.Xz.DegreesSFloat,
+            wxz = (int)car.CarRef.TurningWheelAngle.Xz.Degrees,
             pcleared = car.Mad.Pcleared,
             clear = car.Mad.Clear,
             nlaps = car.Mad.Nlaps,
