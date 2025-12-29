@@ -384,6 +384,7 @@ public class Stage : GameObject
                     }
 
                     fixHoops[fixHoops.Count] = fix;
+                    nodes[nodes.Count] = fix;
                     if (line.EndsWith(")s"))
                     {
                         fix.IsSpecial = true;
