@@ -1,4 +1,6 @@
-﻿namespace NFMWorld.Mad;
+﻿using SoftFloat;
+
+namespace NFMWorld.Mad;
 
 public class InGameCar : GameObject
 {
@@ -9,11 +11,12 @@ public class InGameCar : GameObject
     public MadSfx Sfx;
 
     public CarStats Stats => CarRef.Stats;
+    public bool Wasted => Mad.Wasted;
 
     public InGameCar(InGameCar copy, int im, bool isClientPlayer)
     {
         ClonedCarInfo = copy.CarRef.CarInfo;
-        CarRef = new Car(copy.CarRef.CarInfo, new Vector3(0f, World.Ground - copy.CarRef.GroundAt, 0f), Euler.Identity)
+        CarRef = new Car(copy.CarRef.CarInfo, new f64Vector3(fix64.Zero, World.Ground - copy.CarRef.GroundAt, fix64.Zero), f64Euler.Identity)
         {
             Parent = this
         };
@@ -26,7 +29,7 @@ public class InGameCar : GameObject
     public InGameCar(int im, CarInfo carInfo, int x, int z, bool isClientPlayer)
     {
         ClonedCarInfo = carInfo;
-        CarRef = new Car(carInfo, new Vector3(x, World.Ground - carInfo.GroundAt, z), Euler.Identity)
+        CarRef = new Car(carInfo, new f64Vector3(x, World.Ground - carInfo.GroundAt, z), f64Euler.Identity)
         {
             Parent = this
         };
@@ -80,7 +83,7 @@ public class InGameCar : GameObject
     public void ResetPosition()
     {
         Mad.Reseto(Mad.Im, CarRef);
-        CarRef.Position = new Vector3(0f, World.Ground - CarRef.GroundAt, 0f);
-        CarRef.Rotation = Euler.Identity;
+        CarRef.Position = new f64Vector3(fix64.Zero, World.Ground - CarRef.GroundAt, fix64.Zero);
+        CarRef.Rotation = f64Euler.Identity;
     }
 }

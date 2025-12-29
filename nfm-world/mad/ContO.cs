@@ -10,32 +10,32 @@ public class ContO
     public fix64 X 
     {
         get => (fix64) _car.Position.X;
-        set => _car.Position = _car.Position with { X = (float)value };
+        set => _car.Position = _car.Position with { X = value };
     }
     public fix64 Y 
     {
         get => (fix64) _car.Position.Y;
-        set => _car.Position = _car.Position with { Y = (float)value };
+        set => _car.Position = _car.Position with { Y = value };
     }
     public fix64 Z 
     {
         get => (fix64) _car.Position.Z;
-        set => _car.Position = _car.Position with { Z = (float)value };
+        set => _car.Position = _car.Position with { Z = value };
     }
     public fix64 Xz 
     {
-        get => _car.Rotation.Xz.DegreesSFloat;
-        set => _car.Rotation = _car.Rotation with { Xz = AngleSingle.FromDegrees(value) };
+        get => _car.Rotation.Xz.Degrees;
+        set => _car.Rotation = _car.Rotation with { Xz = f64AngleSingle.FromDegrees(value) };
     }
     public fix64 Xy 
     {
-        get => _car.Rotation.Xy.DegreesSFloat;
-        set => _car.Rotation = _car.Rotation with { Xy = AngleSingle.FromDegrees(value) };
+        get => _car.Rotation.Xy.Degrees;
+        set => _car.Rotation = _car.Rotation with { Xy = f64AngleSingle.FromDegrees(value) };
     }
     public fix64 Zy 
     {
-        get => _car.Rotation.Zy.DegreesSFloat;
-        set => _car.Rotation = _car.Rotation with { Zy = AngleSingle.FromDegrees(value) };
+        get => _car.Rotation.Zy.Degrees;
+        set => _car.Rotation = _car.Rotation with { Zy = f64AngleSingle.FromDegrees(value) };
     }
 
     public int Grat => _car.GroundAt;
@@ -43,18 +43,18 @@ public class ContO
     // wheel rotation
     public fix64 Wzy
     {
-        get => _car.TurningWheelAngle.Zy.DegreesSFloat;
+        get => _car.TurningWheelAngle.Zy.Degrees;
         set
         {
-            _car.TurningWheelAngle = _car.TurningWheelAngle with { Zy = AngleSingle.FromDegrees(value) };
-            _car.WheelAngle = _car.WheelAngle with { Zy = AngleSingle.FromDegrees(value) };
+            _car.TurningWheelAngle = _car.TurningWheelAngle with { Zy = f64AngleSingle.FromDegrees(value) };
+            _car.WheelAngle = _car.WheelAngle with { Zy = f64AngleSingle.FromDegrees(value) };
         }
     }
 
     public fix64 Wxz
     {
-        get => _car.TurningWheelAngle.Xz.DegreesSFloat;
-        set => _car.TurningWheelAngle = _car.TurningWheelAngle with { Xz = AngleSingle.FromDegrees(value) };
+        get => _car.TurningWheelAngle.Xz.Degrees;
+        set => _car.TurningWheelAngle = _car.TurningWheelAngle with { Xz = f64AngleSingle.FromDegrees(value) };
     }
     
     // wheel position

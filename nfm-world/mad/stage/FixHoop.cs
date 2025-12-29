@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Util;
+using SoftFloat;
 using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
@@ -21,7 +22,7 @@ public class FixHoop : CollisionObject
     private VertexPositionColor[] _vertices = new VertexPositionColor[8*CntLines];
     private short[] _indices = new short[18*CntLines];
 
-    public FixHoop(PlaceableObjectInfo placeableObjectInfo, Vector3 position, Euler rotation) : base(placeableObjectInfo, position, rotation)
+    public FixHoop(PlaceableObjectInfo placeableObjectInfo, f64Vector3 position, f64Euler rotation) : base(placeableObjectInfo, position, rotation)
     {
         _graphicsDevice = placeableObjectInfo.GraphicsDevice;
         _fixhoopEffect = new BasicEffect(_graphicsDevice)
@@ -38,7 +39,7 @@ public class FixHoop : CollisionObject
         {
             PrepareLine(i);
         }
-        _fixhoopEffect.World = Matrix.CreateTranslation(Position);
+        _fixhoopEffect.World = Matrix.CreateTranslation((Vector3)Position);
         _fixhoopEffect.View = camera.ViewMatrix;
         _fixhoopEffect.Projection = camera.ProjectionMatrix;
         
@@ -188,25 +189,25 @@ public class FixHoop : CollisionObject
 
     public override void GameTick(Stage? stage = null)
     {
-        if (!Rotated || Rotation.Xz != AngleSingle.ZeroAngle)
+        if (!Rotated || Rotation.Xz != f64AngleSingle.ZeroAngle)
         {
             var xy = Rotation.Xy.Degrees;
-            xy += 11 * GameSparker.PHYSICS_MULTIPLIER;
+            xy += 11 * GameSparker.PHYSICS_MULTIPLIER_F64;
             if (xy > 360)
             {
                 xy -= 360;
             }
-            Rotation = Rotation with { Xy = AngleSingle.FromDegrees(xy) };
+            Rotation = Rotation with { Xy = f64AngleSingle.FromDegrees(xy) };
         }
         else
         {
             var zy = Rotation.Zy.Degrees;
-            zy += 11 * GameSparker.PHYSICS_MULTIPLIER;
+            zy += 11 * GameSparker.PHYSICS_MULTIPLIER_F64;
             if (zy > 360)
             {
                 zy -= 360;
             }
-            Rotation = Rotation with { Zy = AngleSingle.FromDegrees(zy) };
+            Rotation = Rotation with { Zy = f64AngleSingle.FromDegrees(zy) };
         }
     }
 }

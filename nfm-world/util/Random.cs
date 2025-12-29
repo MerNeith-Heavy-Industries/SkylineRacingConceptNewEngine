@@ -56,4 +56,9 @@ public class Random(long seed)
     {
         return System.Random.Shared.Next(minInclusive, maxExclusive);
     }
+
+    public static fix64 SingleF64()
+    {
+        return (fix64)System.Random.Shared.NextSingle();
+    }
 }

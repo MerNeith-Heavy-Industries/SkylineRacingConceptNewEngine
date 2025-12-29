@@ -3,6 +3,7 @@ using NFMWorld.Util;
 using Stride.Core.Mathematics;
 using System.Text;
 using Microsoft.Xna.Framework.Graphics;
+using SoftFloat;
 
 namespace NFMWorld.Mad.UI;
 
@@ -18,8 +19,8 @@ public class ModelEditorTab
     public bool TextEditorExpanded { get; set; } = false;
     
     // Camera/view controls
-    public Vector3 ModelRotation { get; set; } = new Vector3(0, 0, 0);
-    public Vector3 ModelPosition { get; set; } = new Vector3(0, 0, 0);
+    public f64Vector3 ModelRotation { get; set; } = new f64Vector3(0, 0, 0);
+    public f64Vector3 ModelPosition { get; set; } = new f64Vector3(0, 0, 0);
     public float CameraDistance { get; set; } = 800f;
     public Vector3 CameraPosition { get; set; } = new Vector3(0, 0, -800);
     public float CameraYaw { get; set; } = 0f;
@@ -34,7 +35,7 @@ public class ModelEditorTab
     public int DragStartY { get; set; } = 0;
     public float DragStartCameraYaw { get; set; } = 0f;
     public float DragStartCameraPitch { get; set; } = 0f;
-    public Vector3 DragStartModelPosition { get; set; } = Vector3.Zero;
+    public f64Vector3 DragStartModelPosition { get; set; } = f64Vector3.Zero;
     
     // Text editor highlighting
     public int TextEditorSelectionStart { get; set; } = -1;
@@ -106,7 +107,7 @@ public class ModelEditorPhase : BasePhase
     
     // Camera control speeds
     private const float ORBIT_SPEED = 2.0f;  // degrees per frame
-    private const float PAN_SPEED = 3.0f;    // units per frame
+    private static fix64 PAN_SPEED { get; } = 3;    // units per frame
     private const float ZOOM_SPEED = 10.0f;  // units per frame
     
     // Mouse state (shared)
@@ -429,8 +430,8 @@ public class ModelEditorPhase : BasePhase
     
     private void ResetTabView(ModelEditorTab tab)
     {
-        tab.ModelRotation = new Vector3(0, 0, 0);
-        tab.ModelPosition = new Vector3(0, 0, 0);
+        tab.ModelRotation = new f64Vector3(0, 0, 0);
+        tab.ModelPosition = new f64Vector3(0, 0, 0);
         tab.CameraDistance = 800f;
         tab.CameraYaw = 0f;
         tab.CameraPitch = 10f;
@@ -449,7 +450,7 @@ public class ModelEditorPhase : BasePhase
         var z = tab.CameraDistance * (float)(Math.Cos(pitchRad) * Math.Cos(yawRad));
         
         // Camera position is relative to the model position
-        tab.CameraPosition = tab.ModelPosition + new Vector3(x, y, -z);
+        tab.CameraPosition = (Vector3)tab.ModelPosition + new Vector3(x, y, -z);
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
@@ -594,11 +595,11 @@ public class ModelEditorPhase : BasePhase
                 var upZ = -(float)(Math.Sin(pitchRad) * Math.Cos(yawRad));
                 
                 // Update model position based on pan (inverted for intuitive control)
-                var panX = (-rightX * deltaX + upX * deltaY) * sensitivity;
-                var panY = upY * deltaY * sensitivity;
-                var panZ = (-rightZ * deltaX + upZ * deltaY) * sensitivity;
+                var panX = (fix64)((-rightX * deltaX + upX * deltaY) * sensitivity);
+                var panY = (fix64)(upY * deltaY * sensitivity);
+                var panZ = (fix64)((-rightZ * deltaX + upZ * deltaY) * sensitivity);
                 
-                tab.ModelPosition = tab.DragStartModelPosition + new Vector3(panX, panY, panZ);
+                tab.ModelPosition = tab.DragStartModelPosition + new f64Vector3(panX, panY, panZ);
             }
             else
             {
@@ -744,11 +745,11 @@ public class ModelEditorPhase : BasePhase
         var originalRotation = tab.Object.Rotation;
         
         // Keep model at origin - ModelPosition is only for camera orbit center
-        tab.Object.Position = Vector3.Zero;
-        tab.Object.Rotation = new Euler(
-            AngleSingle.FromDegrees(tab.ModelRotation.Y),  // Yaw
-            AngleSingle.FromDegrees(-tab.ModelRotation.X), // Pitch (negated)
-            AngleSingle.FromDegrees(tab.ModelRotation.Z)   // Roll
+        tab.Object.Position = f64Vector3.Zero;
+        tab.Object.Rotation = new f64Euler(
+            f64AngleSingle.FromDegrees(tab.ModelRotation.Y),  // Yaw
+            f64AngleSingle.FromDegrees(-tab.ModelRotation.X), // Pitch (negated)
+            f64AngleSingle.FromDegrees(tab.ModelRotation.Z)   // Roll
         );
         
         // Get the ACTUAL MatrixWorld that will be used for rendering
@@ -763,7 +764,7 @@ public class ModelEditorPhase : BasePhase
         var tempCamera = new PerspectiveCamera
         {
             Position = tab.CameraPosition,
-            LookAt = tab.ModelPosition,  // Look at the orbit center, not origin
+            LookAt = (Vector3)tab.ModelPosition,  // Look at the orbit center, not origin
             Up = -Vector3.UnitY,
             Width = camera.Width,
             Height = camera.Height,
@@ -883,7 +884,7 @@ public class ModelEditorPhase : BasePhase
         var tempCamera = new PerspectiveCamera
         {
             Position = tab.CameraPosition,
-            LookAt = tab.ModelPosition,  // Look at the orbit center, not origin
+            LookAt = (Vector3)tab.ModelPosition,  // Look at the orbit center, not origin
             Up = -Vector3.UnitY,
             Width = camera.Width,
             Height = camera.Height,
@@ -1256,13 +1257,13 @@ public class ModelEditorPhase : BasePhase
             var pitchRad = MathUtil.DegreesToRadians(tab.CameraPitch);
             
             // Camera right vector (for horizontal panning)
-            var rightX = (float)Math.Cos(yawRad);
-            var rightZ = (float)Math.Sin(yawRad);
+            var rightX = (fix64)Math.Cos(yawRad);
+            var rightZ = (fix64)Math.Sin(yawRad);
             
             // Camera up vector (for vertical panning)
-            var upX = -(float)(Math.Sin(pitchRad) * Math.Sin(yawRad));
-            var upY = (float)Math.Cos(pitchRad);
-            var upZ = -(float)(Math.Sin(pitchRad) * Math.Cos(yawRad));
+            var upX = -(fix64)(Math.Sin(pitchRad) * Math.Sin(yawRad));
+            var upY = (fix64)Math.Cos(pitchRad);
+            var upZ = -(fix64)(Math.Sin(pitchRad) * Math.Cos(yawRad));
             
             var pos = tab.ModelPosition;
             
@@ -1697,34 +1698,34 @@ public class ModelEditorPhase : BasePhase
                     ImGui.NextColumn();
                     
                     // Right column - Sliders
-                    float rotX = activeTab.ModelRotation.X;
-                    float rotY = activeTab.ModelRotation.Y;
-                    float rotZ = activeTab.ModelRotation.Z;
-                    float posY = activeTab.ModelPosition.Y;
+                    float rotX = (float)activeTab.ModelRotation.X;
+                    float rotY = (float)activeTab.ModelRotation.Y;
+                    float rotZ = (float)activeTab.ModelRotation.Z;
+                    float posY = (float)activeTab.ModelPosition.Y;
                     
                     if (ImGui.SliderFloat("X (Pitch)", ref rotX, -180f, 180f))
                     {
                         var rot = activeTab.ModelRotation;
-                        rot.X = rotX;
+                        rot.X = (fix64)rotX;
                         activeTab.ModelRotation = rot;
                     }
                     if (ImGui.SliderFloat("Y (Yaw)", ref rotY, -180f, 180f))
                     {
                         var rot = activeTab.ModelRotation;
-                        rot.Y = rotY;
+                        rot.Y = (fix64)rotY;
                         activeTab.ModelRotation = rot;
                     }
                     if (ImGui.SliderFloat("Z (Roll)", ref rotZ, -180f, 180f))
                     {
                         var rot = activeTab.ModelRotation;
-                        rot.Z = rotZ;
+                        rot.Z = (fix64)rotZ;
                         activeTab.ModelRotation = rot;
                     }
                     
                     if (ImGui.SliderFloat("Height", ref posY, -500f, 500f))
                     {
                         var pos = activeTab.ModelPosition;
-                        pos.Y = posY;
+                        pos.Y = (fix64)posY;
                         activeTab.ModelPosition = pos;
                     }
                     
@@ -2365,7 +2366,7 @@ public class ModelEditorPhase : BasePhase
 
         // Set up camera to orbit around and look at the model position
         camera.Position = tab.CameraPosition;
-        camera.LookAt = tab.ModelPosition; // Look at the orbit center (which can be panned)
+        camera.LookAt = (Vector3)tab.ModelPosition; // Look at the orbit center (which can be panned)
         
         // Store original transform
         var originalPosition = tab.Object.Position;
@@ -2373,12 +2374,12 @@ public class ModelEditorPhase : BasePhase
         
         // Keep the model at the origin - don't apply ModelPosition
         // ModelPosition is used only for camera orbit center, not mesh position
-        tab.Object.Position = Vector3.Zero;
+        tab.Object.Position = f64Vector3.Zero;
         // Euler constructor is (yaw, pitch, roll)
-        tab.Object.Rotation = new Euler(
-            AngleSingle.FromDegrees(tab.ModelRotation.Y),  // Yaw (Y-axis rotation)
-            AngleSingle.FromDegrees(-tab.ModelRotation.X), // Pitch (X-axis rotation, negated for correct direction)
-            AngleSingle.FromDegrees(tab.ModelRotation.Z)   // Roll (Z-axis rotation)
+        tab.Object.Rotation = new f64Euler(
+            f64AngleSingle.FromDegrees(tab.ModelRotation.Y),  // Yaw (Y-axis rotation)
+            f64AngleSingle.FromDegrees(-tab.ModelRotation.X), // Pitch (X-axis rotation, negated for correct direction)
+            f64AngleSingle.FromDegrees(tab.ModelRotation.Z)   // Roll (Z-axis rotation)
         );
         
         scene.Objects.Clear();
@@ -2402,10 +2403,10 @@ public class ModelEditorPhase : BasePhase
 
                 // Position reference car at same location as main model
                 referenceCar.Position = tab.ModelPosition;
-                referenceCar.Rotation = new Euler(
-                    AngleSingle.FromDegrees(tab.ModelRotation.Y),
-                    AngleSingle.FromDegrees(-tab.ModelRotation.X),
-                    AngleSingle.FromDegrees(tab.ModelRotation.Z)
+                referenceCar.Rotation = new f64Euler(
+                    f64AngleSingle.FromDegrees(tab.ModelRotation.Y),
+                    f64AngleSingle.FromDegrees(-tab.ModelRotation.X),
+                    f64AngleSingle.FromDegrees(tab.ModelRotation.Z)
                 );
                 
                 // Enable alpha blending

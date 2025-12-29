@@ -1,4 +1,5 @@
 ﻿using NFMWorld.Mad;
+using SoftFloat;
 
 // This duplicates some code from CollisionObject, no workaround
 public class EditorObject : Car
@@ -20,7 +21,7 @@ public class EditorObject : Car
         }
     }
 
-    public EditorObject(EditorObjectInfo carInfo, Vector3 position, Euler rotation) : this(carInfo)
+    public EditorObject(EditorObjectInfo carInfo, f64Vector3 position, f64Euler rotation) : this(carInfo)
     {
         Position = position;
         Rotation = rotation;

@@ -11,6 +11,7 @@ using Path = System.IO.Path;
 using NFMWorld.Mad.UI;
 using NFMWorld.SkiaDriver;
 using NFMWorld.DriverInterface;
+using SoftFloat;
 
 namespace NFMWorld.Mad;
 
@@ -22,6 +23,7 @@ public class GameSparker
     public static Program _game;
     public static GraphicsDevice _graphicsDevice;
     public const float PHYSICS_MULTIPLIER = OriginalTps/TargetTps;
+    public static fix64 PHYSICS_MULTIPLIER_F64 { get; } = (fix64)(PHYSICS_MULTIPLIER);
 
     public static readonly string version = GetVersionString();
 

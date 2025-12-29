@@ -4,13 +4,13 @@ namespace SoftFloat;
 
 public partial struct fix64
 {
-    public static fix64 Pi { get; } = new fix64(FixedMath.PI);
-    public static fix64 HalfPi { get; } = new fix64(FixedMath.PiOver2);
-    public static fix64 TwoPi { get; } = new fix64(FixedMath.TwoPI);
-    public static fix64 PiOver4 { get; } = new fix64(FixedMath.PiOver4);
+    public static fix64 Pi => new(FixedMath.PI);
+    public static fix64 HalfPi => new(FixedMath.PiOver2);
+    public static fix64 TwoPi => new(FixedMath.TwoPI);
+    public static fix64 PiOver4 => new(FixedMath.PiOver4);
     
-    public static fix64 DegToRad { get; } = new(FixedMath.Deg2Rad);
-    public static fix64 RadToDeg { get; } = new(FixedMath.Rad2Deg);
+    public static fix64 DegToRad => new(FixedMath.Deg2Rad);
+    public static fix64 RadToDeg => new(FixedMath.Rad2Deg);
 
     public static bool operator <(fix64 f1, int f2) => f1 < (fix64)f2;
     public static bool operator >(fix64 f1, int f2) => f1 > (fix64)f2;

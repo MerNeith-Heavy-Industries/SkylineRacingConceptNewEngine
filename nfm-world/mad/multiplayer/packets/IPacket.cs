@@ -28,7 +28,9 @@ public static class MsgPackHelpers
             new UnsafeUnmanagedStructFormatter<fix64>(109),
             new UnsafeUnmanagedStructFormatter<f64Vector3>(110),
             new UnsafeUnmanagedStructFormatter<DemoEntry>(111),
-            new UnsafeUnmanagedStructListFormatter<DemoEntry>(112)
+            new UnsafeUnmanagedStructListFormatter<DemoEntry>(112),
+            new UnsafeUnmanagedStructFormatter<f64AngleSingle>(113),
+            new UnsafeUnmanagedStructFormatter<f64Euler>(114),
         ], [
             StandardResolver.Instance,
             MsgPackResolver.Instance

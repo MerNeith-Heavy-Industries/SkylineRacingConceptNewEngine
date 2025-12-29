@@ -1,10 +1,12 @@
-﻿namespace NFMWorld.Mad;
+﻿using SoftFloat;
+
+namespace NFMWorld.Mad;
 
 public class MeshedGameObject(Mesh mesh) : GameObject
 {
     public Mesh Mesh = mesh;
 
-    public MeshedGameObject(Mesh mesh, Vector3 position, Euler rotation) : this(mesh)
+    public MeshedGameObject(Mesh mesh, f64Vector3 position, f64Euler rotation) : this(mesh)
     {
         Position = position;
         Rotation = rotation;

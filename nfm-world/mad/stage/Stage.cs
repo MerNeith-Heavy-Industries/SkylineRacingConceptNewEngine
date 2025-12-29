@@ -275,8 +275,8 @@ public class Stage : GameObject
 
                     pieces[stagePartCount] = new CollisionObject(
                         mesh,
-                        new Vector3(Utility.GetInt("set", line, 1), setheight, Utility.GetInt("set", line, 2)),
-                        new Euler(AngleSingle.FromDegrees(Utility.GetInt("set", line, rotPlace)), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle));
+                        new f64Vector3(Utility.GetInt("set", line, 1), setheight, Utility.GetInt("set", line, 2)),
+                        new f64Euler(f64AngleSingle.FromDegrees(Utility.GetInt("set", line, rotPlace)), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle));
                     if (line.Contains(")p"))     //AI tags
                     {
                         // CheckPoints.X[CheckPoints.N] = Utility.GetInt("set", astring, 1);
@@ -330,7 +330,7 @@ public class Stage : GameObject
                         rotPlace = 4;
                     }
 
-                    AngleSingle rotation = AngleSingle.FromDegrees(Utility.GetInt("chk", line, rotPlace));
+                    f64AngleSingle rotation = f64AngleSingle.FromDegrees(Utility.GetInt("chk", line, rotPlace));
 
                     // Check if optional Y coordinate is provided (5 parameters instead of 4)
                     var hasCustomY = line.Split(',').Length >= 5;
@@ -350,8 +350,8 @@ public class Stage : GameObject
 
                         pieces[stagePartCount] = new CheckPoint(
                             mesh,
-                            new Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
-                            new Euler(rotation, AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)
+                            new f64Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
+                            new f64Euler(rotation, f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
                         );
                         checkpoints[checkpoints.Count] = (CheckPoint)pieces[stagePartCount - 1];
                     }
@@ -359,8 +359,8 @@ public class Stage : GameObject
                     {
                         pieces[stagePartCount] = new CheckPoint(
                             mesh,
-                            new Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
-                            new Euler(rotation, AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
+                            new f64Vector3(Utility.GetInt("chk", line, 1), chkheight, Utility.GetInt("chk", line, 2)),
+                            new f64Euler(rotation, f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                         );
                         checkpoints[checkpoints.Count] = (CheckPoint)pieces[stagePartCount - 1];
                     }
@@ -387,8 +387,8 @@ public class Stage : GameObject
 
                     pieces[stagePartCount] = new FixHoop(
                         mesh,
-                        new Vector3(Utility.GetInt("fix", line, 1), Utility.GetInt("fix", line, 3), Utility.GetInt("fix", line, 2)),
-                        new Euler(AngleSingle.FromDegrees(Utility.GetInt("fix", line, 4)), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
+                        new f64Vector3(Utility.GetInt("fix", line, 1), Utility.GetInt("fix", line, 3), Utility.GetInt("fix", line, 2)),
+                        new f64Euler(f64AngleSingle.FromDegrees(Utility.GetInt("fix", line, 4)), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                     );
                     // CheckPoints.Fx[CheckPoints.Fn] = Utility.GetInt("fix", astring, 1);
                     // CheckPoints.Fz[CheckPoints.Fn] = Utility.GetInt("fix", astring, 2);
@@ -480,8 +480,8 @@ public class Stage : GameObject
                     {
                         pieces[stagePartCount] = new CollisionObject(
                             wall.Mesh,
-                            new Vector3(o, World.Ground, q * 4800 + p),
-                            Euler.Identity                        
+                            new f64Vector3(o, World.Ground, q * 4800 + p),
+                            f64Euler.Identity                        
                         );
                     }
 
@@ -508,8 +508,8 @@ public class Stage : GameObject
                     {
                         pieces[stagePartCount] = new CollisionObject(
                             wall.Mesh,
-                            new Vector3(o, World.Ground, q * 4800 + p),
-                            new Euler(AngleSingle.FromDegrees(180), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
+                            new f64Vector3(o, World.Ground, q * 4800 + p),
+                            new f64Euler(f64AngleSingle.FromDegrees(180), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                         );
                     }
                     pieces[stagePartCount] = new WallCollision([
@@ -535,8 +535,8 @@ public class Stage : GameObject
                     {
                         pieces[stagePartCount] = new CollisionObject(
                             wall.Mesh,
-                            new Vector3(q * 4800 + p, World.Ground, o),
-                            new Euler(AngleSingle.FromDegrees(90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
+                            new f64Vector3(q * 4800 + p, World.Ground, o),
+                            new f64Euler(f64AngleSingle.FromDegrees(90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                         );
                     }
 
@@ -563,8 +563,8 @@ public class Stage : GameObject
                     {
                         pieces[stagePartCount] = new CollisionObject(
                             wall.Mesh,
-                            new Vector3(q * 4800 + p, World.Ground, o),
-                            new Euler(AngleSingle.FromDegrees(-90), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)                        
+                            new f64Vector3(q * 4800 + p, World.Ground, o),
+                            new f64Euler(f64AngleSingle.FromDegrees(-90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)                        
                         );
                     }
                     pieces[stagePartCount] = new WallCollision([
@@ -683,10 +683,10 @@ public class Stage : GameObject
 
         var mesh = pieces[stagePartCount] = new CollisionObject(
             part.Mesh,
-            new Vector3(x,
+            new f64Vector3(x,
             250 - y,
             z), 
-            new Euler(AngleSingle.FromDegrees(r), AngleSingle.ZeroAngle, AngleSingle.ZeroAngle)
+            new f64Euler(f64AngleSingle.FromDegrees(r), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
         );
 
         GameSparker.devConsole.Log($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}", "info");
@@ -790,7 +790,7 @@ public class Stage : GameObject
             x = (fix64)gameObject.Position.X;
             y = (fix64)gameObject.Position.Y;
             z = (fix64)gameObject.Position.Z;
-            xz = gameObject.Rotation.Xz.DegreesSFloat;
+            xz = gameObject.Rotation.Xz.Degrees;
         }
         
         foreach (var box in mesh.Boxes)

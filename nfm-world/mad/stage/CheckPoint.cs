@@ -1,8 +1,9 @@
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Mad;
+using SoftFloat;
 using Stride.Core.Mathematics;
 
-public class CheckPoint(PlaceableObjectInfo placeableObjectInfo, Vector3 position, Euler rotation) : CollisionObject(placeableObjectInfo, position, rotation)
+public class CheckPoint(PlaceableObjectInfo placeableObjectInfo, f64Vector3 position, f64Euler rotation) : CollisionObject(placeableObjectInfo, position, rotation)
 {
     public enum CheckPointRotation 
     {
@@ -14,7 +15,7 @@ public class CheckPoint(PlaceableObjectInfo placeableObjectInfo, Vector3 positio
     {
         get
         {
-            if (Rotation.Yaw == AngleSingle.ZeroAngle || Rotation.Yaw == AngleSingle.StraightAngle)
+            if (Rotation.Yaw == f64AngleSingle.ZeroAngle || Rotation.Yaw == f64AngleSingle.StraightAngle)
                 return CheckPointRotation.None;
             else
                 return CheckPointRotation.RightAngle;

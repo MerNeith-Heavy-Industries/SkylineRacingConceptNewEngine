@@ -1,4 +1,5 @@
 ﻿using NFMWorld.Mad;
+using SoftFloat;
 using Stride.Core.Mathematics;
 
 public class Car : MeshedGameObject
@@ -19,8 +20,8 @@ public class Car : MeshedGameObject
     internal readonly Chips Chips;
     internal readonly Sparks Sparks;
     
-    public Euler TurningWheelAngle { get; set; }
-    public Euler WheelAngle { get; set; }
+    public f64Euler TurningWheelAngle { get; set; }
+    public f64Euler WheelAngle { get; set; }
 
     public int GroundAt => Mesh.GroundAt;
     public int MaxRadius => Mesh.MaxRadius;
@@ -42,7 +43,7 @@ public class Car : MeshedGameObject
         Sparks = new Sparks(this, graphicsDevice);
     }
 
-    public Car(CarInfo carInfo, Vector3 position, Euler rotation) : this(carInfo)
+    public Car(CarInfo carInfo, f64Vector3 position, f64Euler rotation) : this(carInfo)
     {
         Position = position;
         Rotation = rotation;

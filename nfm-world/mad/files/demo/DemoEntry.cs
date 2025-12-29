@@ -106,10 +106,10 @@ public struct DemoEntry
         car.Control.Right = TheBitFlags.Right;
         car.Control.Handb = TheBitFlags.Handb;
 
-        Vector3 pos = new((float)CarPosition.X, (float)CarPosition.Y, (float)CarPosition.Z);
+        f64Vector3 pos = new(CarPosition.X, CarPosition.Y, CarPosition.Z);
         car.CarRef.Position = pos;
 
-        Euler rotation = new(AngleSingle.FromDegrees(CarRotation.Xz), AngleSingle.FromDegrees(CarRotation.Pxy), AngleSingle.FromDegrees(CarRotation.Pzy));
+        f64Euler rotation = new(f64AngleSingle.FromDegrees(CarRotation.Xz), f64AngleSingle.FromDegrees(CarRotation.Pxy), f64AngleSingle.FromDegrees(CarRotation.Pzy));
         car.CarRef.Rotation = rotation;
 
         car.Mad.Pxy = CarRotation.Pxy;

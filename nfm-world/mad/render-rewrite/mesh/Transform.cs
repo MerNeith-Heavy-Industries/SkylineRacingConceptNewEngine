@@ -1,4 +1,5 @@
-﻿using Stride.Core.Mathematics;
+﻿using SoftFloat;
+using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
 
@@ -6,15 +7,15 @@ public class Transform
 {
     public IReadOnlyList<GameObject> Children { get; set; } = [];
 
-    public Vector3 Position {
+    public f64Vector3 Position {
         get;
         set
         {
             MatrixWorldNeedsUpdate = true;
             field = value;
         }
-    } = Vector3.Zero;
-    public Euler Rotation {
+    } = f64Vector3.Zero;
+    public f64Euler Rotation {
         get;
         set
         {
@@ -39,7 +40,7 @@ public class Transform
         {
             if (MatrixWorldNeedsUpdate)
             {
-                var ownMatrixWorld = Matrix.CreateFromEuler(Rotation) * Matrix.CreateTranslation(Position);
+                var ownMatrixWorld = Matrix.CreateFromEuler((Euler)Rotation) * Matrix.CreateTranslation((Vector3)Position);
                 if (Parent != null)
                 {
                     ownMatrixWorld = ownMatrixWorld * Parent.MatrixWorld;

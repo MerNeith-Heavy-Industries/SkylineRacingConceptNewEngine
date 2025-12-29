@@ -69,6 +69,12 @@ public static class Extensions
             => new(span[0], span[1], span[2]);
     }
 
+    extension(f64Vector3 f64Vector3)
+    {
+        public static f64Vector3 FromSpan(ReadOnlySpan<fix64> span)
+            => new(span[0], span[1], span[2]);
+    }
+
     extension(Color3 color3)
     {
         public static Color3 FromSpan(ReadOnlySpan<short> span)
@@ -297,7 +303,7 @@ public static class Extensions2
 
     extension(ref DeterministicRandom random)
     {
-        public fix64 NextSFloat() => new(random.NextFixed64(Fixed64.One));
+        public fix64 NextSFloat() => new(random.NextFixed6401());
         public fix64 NextSFloat(fix64 maxExclusive) => new(random.NextFixed64(maxExclusive.Value));
         public fix64 NextSFloat(fix64 minInclusive, fix64 maxExclusive) => new(random.NextFixed64(minInclusive.Value, maxExclusive.Value));
     }
