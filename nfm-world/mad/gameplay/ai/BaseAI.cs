@@ -1348,51 +1348,52 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
                         }
                         if (stageFlags[16]) {
                             // Complex position-based waypoint selection
-                            if ((trfix != 2) && (trfix != 3)) {
-                                // Position-based waypoint overrides for optimal routing
-                                if ((pcleared == 152) && (car.Position.Z < 2700)) {
-                                    pnt = 5;
-                                }
-                                if ((pcleared == 10) && (car.Position.X < 700)) {
-                                    pnt = 13;
-                                }
-                                if (pcleared == 20) {
-                                    if ((car.Position.Z < 6200) && (car.Position.Z > 3400)) {
-                                        pnt = 126;
-                                    }
-                                    if (car.Position.Z < 3400) {
-                                        pnt = 35;
-                                    }
-                                }
-                                if ((pcleared == 35) && (car.Position.X < 6300) && (car.Position.X > 4000)) {
-                                    pnt = 116;
-                                }
-                                if ((pcleared == 55) && (car.Position.X < 4500)) {
-                                    pnt = 59;
-                                }
-                                // Sequential waypoint forcing for specific sections
-                                if (pcleared == 64) {
-                                    pnt = 74;
-                                }
-                                if (pcleared == 74) {
-                                    pnt = 82;
-                                }
-                                if (pcleared == 82) {
-                                    pnt = 92;
-                                }
-                                if (pcleared == 103) {
-                                    pnt = 112;
-                                }
-                                if ((pcleared == 112) && (car.Position.X > 3200)) {
-                                    pnt = 120;
-                                }
-                                if ((pcleared == 120) && (car.Position.X > 2800)) {
-                                    pnt = 129;
-                                }
-                                if ((pcleared == 129)) {
-                                    pnt = 152;
-                                }
-                            }
+                            // if ((trfix != 2) && (trfix != 3)) {
+                            //     // Position-based waypoint overrides for optimal routing
+                            //     if ((pcleared == 152) && (car.Position.Z < 2700)) {
+                            //         pnt = 5;
+                            //     }
+                            //     if ((pcleared == 10) && (car.Position.X < 700)) {
+                            //         pnt = 13;
+                            //     }
+                            //     if (pcleared == 20) {
+                            //         if ((car.Position.Z < 6200) && (car.Position.Z > 3400)) {
+                            //             pnt = 126;
+                            //         }
+                            //         if (car.Position.Z < 3400) {
+                            //             pnt = 35;
+                            //         }
+                            //     }
+                            //     if ((pcleared == 35) && (car.Position.X < 6300) && (car.Position.X > 4000)) {
+                            //         pnt = 116;
+                            //     }
+                            //     if ((pcleared == 55) && (car.Position.X < 4500)) {
+                            //         pnt = 59;
+                            //     }
+                            //     // Sequential waypoint forcing for specific sections
+                            //     if (pcleared == 64) {
+                            //         pnt = 74;
+                            //     }
+                            //     if (pcleared == 74) {
+                            //         pnt = 82;
+                            //     }
+                            //     if (pcleared == 82) {
+                            //         pnt = 92;
+                            //     }
+                            //     if (pcleared == 103) {
+                            //         pnt = 112;
+                            //     }
+                            //     if ((pcleared == 112) && (car.Position.X > 3200)) {
+                            //         pnt = 120;
+                            //     }
+                            //     if ((pcleared == 120) && (car.Position.X > 2800)) {
+                            //         pnt = 129;
+                            //     }
+                            //     if ((pcleared == 129)) {
+                            //         pnt = 152;
+                            //     }
+                            // }
+                            
                             // Avoidance behavior (TODO generalize to all cars)
                             // if (((cp.clear - cp.clear[0]) >= 2) && (pyo((car.x / 10), (car[0].x / 10), (car.z / 10), (car[0].z / 10)) < (1000 + avoidnlev))) {
                             //     var myxz = conto.Xz;
