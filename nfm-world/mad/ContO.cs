@@ -4,7 +4,7 @@ using SoftFloat;
 namespace NFMWorld.Mad;
 
 // temp conto for nfmm compatibility
-public struct ContO
+public readonly struct ContO
 {
     private readonly Car _car;
         
@@ -59,16 +59,20 @@ public struct ContO
     }
     
     // wheel position
-    public InlineArray4<int> Keyx;
-    public InlineArray4<int> Keyz;
+    public readonly InlineArray4<int> Keyx;
+    public readonly InlineArray4<int> Keyz;
     
     public bool Wasted
     {
         get => _car.Wasted;
         set => _car.Wasted = value;
     }
-    
-    public int Fcnt { get; set; } // TODO car fixed ticks
+
+    public int Fcnt
+    {
+        get => 0;
+        set { }
+    } // TODO car fixed ticks
     public int MaxR => _car.MaxRadius;
 
     public ContO(Car car)
