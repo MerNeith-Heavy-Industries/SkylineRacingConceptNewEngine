@@ -1206,7 +1206,7 @@ public class Mad
                 // maxine: maybe this should be scaled to tickrate?
                 if (traction < Stat.Grip)
                 {
-                    if (Txz != conto.Xz)
+                    if (fix64.Abs(Txz - conto.Xz) > fix64.Half)
                     {
                         _dcnt++;
                     }
