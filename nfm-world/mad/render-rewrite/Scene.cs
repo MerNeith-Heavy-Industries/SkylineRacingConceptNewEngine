@@ -247,4 +247,12 @@ public class Scene
             element.Render(_camera, lighting, buffer, instanceCount);
         }
     }
+
+    public void GameTick(Stage currentStage)
+    {
+        foreach (var obj in Objects)
+        {
+            obj.GameTick(currentStage);
+        }
+    }
 }

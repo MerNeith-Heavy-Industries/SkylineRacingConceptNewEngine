@@ -65,9 +65,9 @@ public class SavedTimeTrial
         MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
     }
 
-    public void RecordTick(InGameCar car, int checkpointInLap, int lap)
+    public void RecordTick(InGameCar car)
     {
-        DemoEntry entry = DemoEntry.Create(car, checkpointInLap, lap);
+        DemoEntry entry = DemoEntry.Create(car);
         DemoData.AddEntry(entry);
     }
     public (bool Up, bool Down, bool Left, bool Right, bool Handb)? GetTick(int tick)

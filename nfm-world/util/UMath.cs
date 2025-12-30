@@ -235,30 +235,18 @@ public static class UMath
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static fix64 Sin(fix64 deg)
     {
-        var sin = fix64.Sin(deg * fix64.DegToRad);
-        if (EqEpsilon(sin, 0))
-            return 0;
-        if (EqEpsilon(sin, -1))
-            return -1;
-        if (EqEpsilon(sin, 1))
-            return 1;
+        var sin = FixedTrigLUT.SinDeg(deg);
         return sin;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static fix64 Cos(fix64 deg)
     {
-        var cos = fix64.Cos(deg * fix64.DegToRad);
-        if (EqEpsilon(cos, 0))
-            return 0;
-        if (EqEpsilon(cos, -1))
-            return -1;
-        if (EqEpsilon(cos, 1))
-            return 1;
+        var cos = FixedTrigLUT.CosDeg(deg);
         return cos;
     }
 
-    private static bool EqEpsilon(fix64 a, fix64 b)
+    internal static bool EqEpsilon(fix64 a, fix64 b)
     {
         var epsilon = (fix64)0.00001F;
         return fix64.Abs(a - b) < epsilon;

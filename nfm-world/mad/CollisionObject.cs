@@ -1,7 +1,8 @@
-﻿using NFMWorld.Mad;
+﻿using NFMWorld;
+using NFMWorld.Mad;
 using SoftFloat;
 
-public class CollisionObject : MeshedGameObject, ICollidable
+public class CollisionObject : MeshedGameObject, ICollidable, IAiNode
 {
     public PlaceableObjectInfo PlaceableObjectInfo;
 
@@ -42,4 +43,6 @@ public class CollisionObject : MeshedGameObject, ICollidable
         base.Render(camera, lighting);
         _collisionDebugMesh?.Render(camera, lighting);
     }
+
+    public AiNodeKind Kind { get; set; } = AiNodeKind.Auto;
 }

@@ -39,13 +39,13 @@ public struct DemoEntry
     public int Damage;
     public (fix64 Ucomp, fix64 Dcomp, fix64 Lcomp, fix64 Rcomp) AngularVelocities;
     public (byte Lap, ushort CheckpointInlap) RacePosition;
-    public (byte StuntType, fix64 Travxz, fix64 Travxy, fix64 Travzy) StuntState;
+    public (sbyte StuntType, fix64 Travxz, fix64 Travxy, fix64 Travzy) StuntState;
     public fix64 Powerup;
     public fix64 Speed;
     public (fix64 Mxz, fix64 Txz) XzReadings;
     public BitFlags TheBitFlags;
 
-    public static DemoEntry Create(InGameCar car, int checkpointInLap, int lap)
+    public static DemoEntry Create(InGameCar car)
     {
         DemoEntry entry = new DemoEntry();
 
@@ -54,10 +54,10 @@ public struct DemoEntry
         entry.TheBitFlags.Left = car.Control.Left;
         entry.TheBitFlags.Right = car.Control.Right;
         entry.TheBitFlags.Handb = car.Control.Handb;
-        entry.CarPosition.X = (fix64)car.CarRef.Position.X;
-        entry.CarPosition.Y = (fix64)car.CarRef.Position.Y;
-        entry.CarPosition.Z = (fix64)car.CarRef.Position.Z;
-        entry.CarRotation.Xz = (fix64)car.CarRef.Rotation.Xz.Degrees;
+        entry.CarPosition.X = car.CarRef.Position.X;
+        entry.CarPosition.Y = car.CarRef.Position.Y;
+        entry.CarPosition.Z = car.CarRef.Position.Z;
+        entry.CarRotation.Xz = car.CarRef.Rotation.Xz.Degrees;
         entry.CarRotation.Pxy = car.Mad.Pxy;
         entry.CarRotation.Pzy = car.Mad.Pzy;
         for (var i = 0; i < 4; i++)
@@ -72,9 +72,9 @@ public struct DemoEntry
         entry.AngularVelocities.Dcomp = car.Mad.Dcomp;
         entry.AngularVelocities.Lcomp = car.Mad.Lcomp;
         entry.AngularVelocities.Rcomp = car.Mad.Rcomp;
-        entry.RacePosition.CheckpointInlap = (ushort)checkpointInLap;
-        entry.RacePosition.Lap = (byte)lap;
-        entry.StuntState.StuntType = (byte)car.Mad.Loop;
+        entry.RacePosition.CheckpointInlap = car.currentCheckpoint;
+        entry.RacePosition.Lap = car.currentLap;
+        entry.StuntState.StuntType = car.Mad.Loop;
         entry.StuntState.Travxz = car.Mad.Travxz;
         entry.StuntState.Travxy = car.Mad.Travxy;
         entry.StuntState.Travzy = car.Mad.Travzy;

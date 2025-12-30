@@ -41,11 +41,12 @@ public class InMultiplayerRacePhase(
         {
             PlayerCarIndex = playerCarIndex,
             Players = session.Players
-                .Select(c => new PlayerParameters()
+                .Select(c => new PlayerParameters
                 {
                     CarName = c.Value.Vehicle,
                     Color = c.Value.Color,
-                    PlayerName = c.Value.Name
+                    PlayerName = c.Value.Name,
+                    IsBot = false
                 })
                 .ToArray()
         };
@@ -108,10 +109,7 @@ public class InMultiplayerRacePhase(
         // camera.Position = new Vector3(0, 10000, 0);
         // camera.LookAt = new Vector3(1, 250, 0);
         
-        foreach (var element in CurrentStage.pieces)
-        {
-            element.GameTick(CurrentStage);
-        }
+        current_scene.GameTick(CurrentStage);
 
         if (raceState == RaceState.InProgress)
         {

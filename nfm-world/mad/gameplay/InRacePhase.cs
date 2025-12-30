@@ -31,11 +31,19 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         {
             Players =
             [
-                new PlayerParameters()
+                new PlayerParameters
                 {
                     CarName = playerCarName,
                     Color = new Color3(255, 0, 0),
-                    PlayerName = "Player"
+                    PlayerName = "Player",
+                    IsBot = false
+                },
+                new PlayerParameters()
+                {
+                    CarName = "nfmm/audir8",
+                    Color = new Color3(255, 0, 0),
+                    PlayerName = "Player2",
+                    IsBot = true
                 }
             ],
             PlayerCarIndex = playerCarIndex
@@ -55,11 +63,19 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         {
             Players =
             [
-                new PlayerParameters()
+                new PlayerParameters
                 {
                     CarName = playerCarName,
                     Color = new Color3(255, 0, 0),
-                    PlayerName = "Player"
+                    PlayerName = "Player",
+                    IsBot = false
+                },
+                new PlayerParameters()
+                {
+                    CarName = "nfmm/audir8",
+                    Color = new Color3(255, 0, 0),
+                    PlayerName = "Player2",
+                    IsBot = true
                 }
             ],
             PlayerCarIndex = playerCarIndex
@@ -84,11 +100,8 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         }
         // camera.Position = new Vector3(0, 10000, 0);
         // camera.LookAt = new Vector3(1, 250, 0);
-        
-        foreach (var element in CurrentStage.pieces)
-        {
-            element.GameTick();
-        }
+
+        current_scene.GameTick(CurrentStage);
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
@@ -116,6 +129,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
             GameModes.Sandbox => new SandboxGamemode(parameters, this),
             GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
             GameModes.Football => new FootballGamemode(parameters, this),
+            GameModes.Racing => new RaceGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(gamemode), gamemode, null)
         };
     }

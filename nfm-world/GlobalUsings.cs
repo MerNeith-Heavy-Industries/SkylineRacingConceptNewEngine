@@ -6,3 +6,5 @@ global using Matrix = Microsoft.Xna.Framework.Matrix;
 global using AngleSingle = Stride.Core.Mathematics.AngleSingle;
 global using Vector2 = Microsoft.Xna.Framework.Vector2;
 global using URandom = NFMWorld.Util.Random;
+global using LuaNET.LuaJIT;
+global using static LuaNET.LuaJIT.Lua;
