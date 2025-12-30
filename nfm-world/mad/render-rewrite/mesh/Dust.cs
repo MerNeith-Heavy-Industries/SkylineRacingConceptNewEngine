@@ -123,35 +123,31 @@ public class Dust
             {
                 var sx = (fix64)Sx[dust];
                 var sz = (fix64)Sz[dust];
-                foreach (var collidable in stage.RetrievePointCollidables(sx, sz))
+                foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
                 {
-                    foreach (var box in collidable.Boxes)
+                    var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
+                    var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
+                    if (tracker.BoxRoad is not null &&
+                        fix64.Abs(sx - x) < tracker.Box.Radius.X &&
+                        fix64.Abs(sz - z) < tracker.Box.Radius.Z)
                     {
-                        var x = collidable.GameObjectPosition.X + box.Translation.X;
-                        var z = collidable.GameObjectPosition.Z + box.Translation.Z;
-                        if (box.BoxRoad is not null &&
-                            fix64.Abs(sx - x) < box.Radius.X &&
-                            fix64.Abs(sz - z) < box.Radius.Z)
+                        _sbln[dust] = tracker.Box.Skid switch
                         {
-                            _sbln[dust] = box.Skid switch
-                            {
-                                0 => 0.2F,
-                                1 => 0.4F,
-                                2 => 0.45F,
-                                _ => _sbln[dust]
-                            };
+                            0 => 0.2F,
+                            1 => 0.4F,
+                            2 => 0.45F,
+                            _ => _sbln[dust]
+                        };
 
-                            for (var rgb = 0; rgb < 3; rgb++)
-                            {
-                                _srgb[dust, rgb] = (box.Color[rgb] + baseColor[rgb]) / 2;
-                            }
-
-                            trackersColor = true;
-                            goto loopEnd;
+                        for (var rgb = 0; rgb < 3; rgb++)
+                        {
+                            _srgb[dust, rgb] = (tracker.Box.Color[rgb] + baseColor[rgb]) / 2;
                         }
+
+                        trackersColor = true;
+                        break;
                     }
                 }
-                loopEnd: ;
             }
 
             if (!trackersColor)

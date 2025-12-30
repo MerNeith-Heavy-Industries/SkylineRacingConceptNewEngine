@@ -1079,22 +1079,20 @@ public class Mad
         var surfaceType = 1;
         foreach (var collidable in stage.RetrievePointCollidables(conto.X, conto.Z))
         {
-            foreach (var box in collidable.Boxes)
+            var box = collidable.Box;
+            // bumps don't have rady defined so it is 0
+            // the collision check that was here only checks x and z and allows y to be anything
+            // this means if there is a floating road over a bumpy side road, you still hit the bumps on the road above
+            // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
+            var rad = new f64Vector3(box.Radius.X, 1000000000, box.Radius.Z);
+            var trackersPosition = box.Translation;
+            var contoXz = collidable.GameObjectXz;
+            var contoPosition = collidable.GameObjectPosition;
+            var position = new f64Vector3(conto.X, conto.Y, conto.Z);
+            var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
+            if (theBox.ResolveCollision(position) is not null)
             {
-                // bumps don't have rady defined so it is 0
-                // the collision check that was here only checks x and z and allows y to be anything
-                // this means if there is a floating road over a bumpy side road, you still hit the bumps on the road above
-                // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
-                var rad = new f64Vector3(box.Radius.X, 1000000000, box.Radius.Z);
-                var trackersPosition = box.Translation;
-                var contoXz = collidable.GameObjectXz;
-                var contoPosition = collidable.GameObjectPosition;
-                var position = new f64Vector3(conto.X, conto.Y, conto.Z);
-                var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
-                if (theBox.ResolveCollision(position) is not null)
-                {
-                    surfaceType = box.Skid;
-                }
+                surfaceType = box.Skid;
             }
         }
 
@@ -2193,7 +2191,7 @@ public class Mad
     {
         hitVertical = false;
 
-        Span<bool> isWheelTouchingPiece = [false, false, false, false]; // nwheels
+        var isWheelTouchingPiece = new InlineArray4<bool>(); // nwheels
 
         int touching = 0; //Phy-addons: Fix sliding on floating pieces
         int nWheelsRoadRamp = 0;
@@ -2203,144 +2201,128 @@ public class Mad
             var position = new f64Vector3(wheelx[k], wheely[k] - wheelGround, wheelz[k]);
             var velocity = new f64Vector3(Scx[k], Scy[k], Scz[k]);
 
-            foreach (var collidable in stage.RetrievePointCollidables(conto.X, conto.Z))
+            if (!isWheelTouchingPiece[k])
             {
-                foreach (var box in collidable.Boxes)
+                foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
-                    if (!isWheelTouchingPiece[k])
+                    if (collidable.BoxRoad is {} boxRoad)
                     {
-                        if (box.BoxRoad is { } boxRoad)
+                        if (boxRoad.ResolveCollision(position) is { } collision)
                         {
-                            if (boxRoad.ResolveCollision(position) is { } collision)
+                            touching |= 1 << k;
+                            ++nGroundedWheels;
+                            Wtouch = true;
+                            Gtouch = true;
+
+                            if (!wasMtouch && Scy[k] != 7 /* * checkpoints.gravity */ * _tickRate)
                             {
-                                touching |= 1 << k;
-                                ++nGroundedWheels;
+                                fix64 dustMag = Scy[k] / (fix64)(333.33F);
+                                if (dustMag > (fix64)(0.3F))
+                                    dustMag = (fix64)(0.3F);
+                                if (surfaceType == 0)
+                                    dustMag += (fix64)1.1f;
+                                else
+                                    dustMag += (fix64)1.2f;
+                                conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
+                            }
+                            wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
+                            
+                            // sparks and scrape
+                            if (BadLanding && collidable.Box.Skid is 0 or 1)
+                            {
+                                conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
+                                //if (Im == /*this.xt.im*/ 0)
+                                SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                            }
+
+                            bounceRebound(k, conto, random);
+                            isWheelTouchingPiece[k] = true;
+                            break;
+                        }
+                    }
+                    else if (collidable.BoxWall is {} boxWall)
+                    {
+                        if (boxWall.ResolveCollision(position, velocity) is { } collision)
+                        {
+                            for (int w = 0; w < 4; w++) {
+                                wheelx[w] += collision.positionDelta.X;
+                                wheely[w] += collision.positionDelta.Y;
+                                wheelz[w] += collision.positionDelta.Z;
+                            }
+                            
+                            // sparks and scrapes
+                            if (collidable.Box.Skid != 2)
+                                _crank[0, k]++;
+                            if (collidable.Box.Skid == 5 && random.NextSFloat() > (fix64)0.5f)
+                                _crank[0, k]++;
+                            if (_crank[0, k] > 1)
+                            {
+                                conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
+                                //if (Im == /*this.xt.im*/ 0)
+                                SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                            }
+
+                            // z rebound CHK5
+                            f64Vector3 reboundVelocityDelta = collision.impactComponent * (-GetReboundMul(wasMtouch));
+                            Regz(k, reboundVelocityDelta.Length() * collidable.Box.Damage, conto, random);
+                            Scx[k] += reboundVelocityDelta.X;
+                            Scy[k] += reboundVelocityDelta.Y;
+                            Scz[k] += reboundVelocityDelta.Z;
+
+                            Skid = 2;
+                            hitVertical = true;
+                            isWheelTouchingPiece[k] = true;
+                            if (!collidable.Box.NotWall) {
+                                control.Wall = 9999;
+                            }
+                            break;
+                        }
+                    }
+                    else if (collidable.BoxRamp is {} boxRamp)
+                    {
+                        if (boxRamp.ResolveCollision(position) is { } collision)
+                        {
+                            var liftDivider = 1 + (50 - Math.Abs(collidable.Box.Zy)) / (fix64)30;
+                            if (liftDivider < 1)
+                                liftDivider = 1;
+                            if (collision.zTmp > 0 && collision.zTmp < 200) {
+                                Scy[k] -= collision.zTmp / liftDivider;
+                            }
+
+                            if (collision.zTmp > -30)
+                            {
+                                if (collidable.Box.Skid == 2)
+                                    nWheelsDirtRamp++;
+                                else
+                                    nWheelsRoadRamp++;
+                                
                                 Wtouch = true;
-                                Gtouch = true;
-
-                                if (!wasMtouch && Scy[k] != 7 /* * checkpoints.gravity */ * _tickRate)
-                                {
-                                    fix64 dustMag = Scy[k] / (fix64)(333.33F);
-                                    if (dustMag > (fix64)(0.3F))
-                                        dustMag = (fix64)(0.3F);
-                                    if (surfaceType == 0)
-                                        dustMag += (fix64)1.1f;
-                                    else
-                                        dustMag += (fix64)1.2f;
-                                    conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k],
-                                        dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                                }
-
-                                wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
+                                Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && (box.Skid == 0 || box.Skid == 1))
+                                if (BadLanding && (collidable.Box.Skid == 0 || collidable.Box.Skid == 1))
                                 {
-                                    conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1,
-                                        (int)wheelGround);
+                                    conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                     //if (Im == /*this.xt.im*/ 0)
                                     SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
                                 }
 
-                                bounceRebound(k, conto, random);
-                                isWheelTouchingPiece[k] = true;
-                                goto afterLoop;
+                                if (!wasMtouch && surfaceType != 0)
+                                {
+                                    fix64 dustMag = (fix64)1.4F;
+                                    conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
+                                }
                             }
-                        }
-                        else if (box.BoxWall is { } boxWall)
-                        {
-                            if (boxWall.ResolveCollision(position, velocity) is { } collision)
-                            {
-                                for (int w = 0; w < 4; w++)
-                                {
-                                    wheelx[w] += collision.positionDelta.X;
-                                    wheely[w] += collision.positionDelta.Y;
-                                    wheelz[w] += collision.positionDelta.Z;
-                                }
-
-                                // sparks and scrapes
-                                if (box.Skid != 2)
-                                    _crank[0, k]++;
-                                if (box.Skid == 5 && random.NextSFloat() > (fix64)0.5f)
-                                    _crank[0, k]++;
-                                if (_crank[0, k] > 1)
-                                {
-                                    conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
-                                        (int)wheelGround);
-                                    //if (Im == /*this.xt.im*/ 0)
-                                    SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                                }
-
-                                // z rebound CHK5
-                                f64Vector3 reboundVelocityDelta =
-                                    collision.impactComponent * (-GetReboundMul(wasMtouch));
-                                Regz(k, reboundVelocityDelta.Length() * box.Damage, conto, random);
-                                Scx[k] += reboundVelocityDelta.X;
-                                Scy[k] += reboundVelocityDelta.Y;
-                                Scz[k] += reboundVelocityDelta.Z;
-
-                                Skid = 2;
-                                hitVertical = true;
-                                isWheelTouchingPiece[k] = true;
-                                if (!box.NotWall)
-                                {
-                                    control.Wall = 9999;
-                                }
-
-                                goto afterLoop;
-                            }
-                        }
-                        else if (box.BoxRamp is { } boxRamp)
-                        {
-                            if (boxRamp.ResolveCollision(position) is { } collision)
-                            {
-                                var liftDivider = 1 + (50 - Math.Abs(box.Zy)) / (fix64)30;
-                                if (liftDivider < 1)
-                                    liftDivider = 1;
-                                if (collision.zTmp > 0 && collision.zTmp < 200)
-                                {
-                                    Scy[k] -= collision.zTmp / liftDivider;
-                                }
-
-                                if (collision.zTmp > -30)
-                                {
-                                    if (box.Skid == 2)
-                                        nWheelsDirtRamp++;
-                                    else
-                                        nWheelsRoadRamp++;
-
-                                    Wtouch = true;
-                                    Gtouch = false;
-
-                                    // sparks and scrape
-                                    if (BadLanding && (box.Skid == 0 || box.Skid == 1))
-                                    {
-                                        conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1,
-                                            (int)wheelGround);
-                                        //if (Im == /*this.xt.im*/ 0)
-                                        SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                                    }
-
-                                    if (!wasMtouch && surfaceType != 0)
-                                    {
-                                        fix64 dustMag = (fix64)1.4F;
-                                        conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k],
-                                            dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                                    }
-                                }
-
-                                wheelx[k] = collision.newPosition.X;
-                                wheely[k] = collision.newPosition.Y + wheelGround;
-                                wheelz[k] = collision.newPosition.Z;
-                                isWheelTouchingPiece[k] = true;
-                                goto afterLoop;
-                            }
+                            
+                            wheelx[k] = collision.newPosition.X;
+                            wheely[k] = collision.newPosition.Y + wheelGround;
+                            wheelz[k] = collision.newPosition.Z;
+                            isWheelTouchingPiece[k] = true;
+                            break;
                         }
                     }
                 }
             }
-            
-            afterLoop: ;
         }
     }
 
