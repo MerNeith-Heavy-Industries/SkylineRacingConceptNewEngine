@@ -14,10 +14,9 @@ public abstract class BaseAi
 }
 
 /// <summary>
-/// Re-Volt inspired AI implementation for racing vehicles.
 /// Handles AI decision making, path finding, and control inputs based on difficulty and race conditions.
 /// </summary>
-public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
+public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
 {
     /// <summary>
     /// Pythagorean distance squared calculation (integer version).
@@ -48,6 +47,12 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
     private int? targetFixRoadStartNode = null;
     private bool bouncing;
     private int _targetNode;
+    
+    // Obstacle avoidance state
+    private int _stuckCounter;
+    private fix64 _avoidanceAngle;
+    private int _avoidanceTimer;
+    private bool smallturn;
 
     /// <summary>
     /// Main AI update function. Called every frame to compute control inputs for the AI vehicle.
@@ -87,8 +92,104 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
 
         if (grounded)
         {
+            // Check if we're stuck against a wall
+            DetectAndAvoidObstacles(car, mad, racePhase.CurrentStage);
+            
             Steer(car, mad, u);
         }
+    }
+
+    /// <summary>
+    /// Detects when the car is stuck against a wall and applies avoidance steering.
+    /// Checks if the car has low speed despite throttle input, indicating a collision.
+    /// </summary>
+    private void DetectAndAvoidObstacles(InGameCar car, Mad mad, Stage stage)
+    {
+        // Decrease avoidance timer
+        if (_avoidanceTimer > 0)
+        {
+            _avoidanceTimer--;
+            // Override pan with avoidance angle while timer is active
+            pan = _avoidanceAngle;
+            FrameTrace.AddMessage($"Avoiding obstacle, timer: {_avoidanceTimer}, angle: {_avoidanceAngle}");
+            return;
+        }
+
+        // Check if car is stuck (low speed despite wanting to go forward)
+        var isThrottling = car.Control.Up;
+        var isStuck = isThrottling && mad.Speed < 20; // Speed threshold for "stuck"
+
+        if (isStuck)
+        {
+            _stuckCounter++;
+            
+            // If stuck for multiple frames, initiate avoidance
+            if (_stuckCounter > 10) // Stuck for ~0.16 seconds at 60fps
+            {
+                FrameTrace.AddMessage($"Car stuck! Speed: {mad.Speed}, initiating avoidance");
+                
+                // Check which direction to turn by sampling points to the left and right
+                var currentHeading = car.Rotation.Yaw.Degrees;
+                var leftAngle = currentHeading - 90;
+                var rightAngle = currentHeading + 90;
+                
+                // Sample points at 45 degrees left and right
+                var sampleDistance = (fix64)500; // Distance to check ahead
+                
+                var leftX = car.Position.X + fix64.Sin(leftAngle * fix64.Pi / 180) * sampleDistance;
+                var leftZ = car.Position.Z + fix64.Cos(leftAngle * fix64.Pi / 180) * sampleDistance;
+                
+                var rightX = car.Position.X + fix64.Sin(rightAngle * fix64.Pi / 180) * sampleDistance;
+                var rightZ = car.Position.Z + fix64.Cos(rightAngle * fix64.Pi / 180) * sampleDistance;
+                
+                // Check if there are walls in those directions by checking node distances
+                var leftClearance = GetClearanceInDirection(car, leftX, leftZ, stage);
+                var rightClearance = GetClearanceInDirection(car, rightX, rightZ, stage);
+                
+                FrameTrace.AddMessage($"Left clearance: {leftClearance}, Right clearance: {rightClearance}");
+                
+                // Turn toward the more open direction
+                if (leftClearance > rightClearance)
+                {
+                    _avoidanceAngle = leftAngle;
+                }
+                else
+                {
+                    _avoidanceAngle = rightAngle;
+                }
+                
+                // Set avoidance timer (about 1 second)
+                _avoidanceTimer = 60;
+                _stuckCounter = 0;
+            }
+        }
+        else
+        {
+            // Reset stuck counter if moving normally
+            _stuckCounter = 0;
+        }
+    }
+
+    /// <summary>
+    /// Estimates clearance in a given direction by finding the nearest node.
+    /// Higher values = more open space.
+    /// </summary>
+    private fix64 GetClearanceInDirection(InGameCar car, fix64 targetX, fix64 targetZ, Stage stage)
+    {
+        // Find closest node to the sample point
+        fix64 minDistSq = fix64.MaxValue;
+        
+        foreach (var node in stage.nodes)
+        {
+            var distSq = pyo(targetX, node.Position.X, targetZ, node.Position.Z);
+            if (distSq < minDistSq)
+            {
+                minDistSq = distSq;
+            }
+        }
+        
+        // Return the distance to nearest node (higher = more open)
+        return fix64.Sqrt(minDistSq);
     }
 
     private void FindDrivingTarget(InGameCar car, fix64 rubberbandingFactor, Mad mad, ref DeterministicRandom random)
@@ -104,7 +205,14 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
             }
         }
         // Sometimes there can be fix hoop nodes after the last checkpoint, so we need to skip those
-        if (targetNodeIndex > racePhase.CurrentStage.nodes.IndexOf(racePhase.CurrentStage.checkpoints[^1]))
+        var finalCheckpointNodeIndex = racePhase.CurrentStage.nodes.IndexOf(racePhase.CurrentStage.checkpoints[^1]);
+        if (targetNodeIndex > finalCheckpointNodeIndex)
+        {
+            targetNodeIndex = 0;
+        }
+
+        // Special case: if we've just crossed the final checkpoint and are starting a new lap
+        if (targetNodeIndex == finalCheckpointNodeIndex && car.lastCheckpointNode == -1)
         {
             targetNodeIndex = 0;
         }
@@ -321,17 +429,23 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
         if (angleDiff > 5)
         {
             u.Right = true;
-            u.Left = false;
         }
         else if (angleDiff < -5)
         {
             u.Left = true;
-            u.Right = false;
         }
         else
         {
-            u.Left = false;
-            u.Right = false;
+            if (angleDiff > 1)
+            {
+                u.Right = smallturn;
+                smallturn = !smallturn;
+            }
+            else if (angleDiff < 1)
+            {
+                u.Left = smallturn;
+                smallturn = !smallturn;
+            }
         }
 
         // Throttle and brake control logic

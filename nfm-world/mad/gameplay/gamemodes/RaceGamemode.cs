@@ -143,7 +143,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
             carsInRace[idx].currentLap = 0;
             if (player.IsBot)
             {
-                carsInRace[idx].Bot = new ReLitAi(this, baseRacePhase);
+                carsInRace[idx].Bot = new ElStupido(this, baseRacePhase);
             }
         }
         carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
