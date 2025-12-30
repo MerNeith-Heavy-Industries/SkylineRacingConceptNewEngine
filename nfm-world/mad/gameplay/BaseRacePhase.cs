@@ -23,6 +23,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
     public bool spectating = false;
     
+    // Track which keys are currently pressed to properly handle meta-bindings
+    private HashSet<Keys> _pressedKeys = new();
+    
     // View modes
     public enum ViewMode
     {
@@ -46,52 +49,14 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         if (imguiWantsKeyboard) return;
         
         var bindings = SettingsMenu.Bindings;
+        
+        // Track pressed keys
+        _pressedKeys.Add(key);
+        
+        // Update control state based on all currently pressed keys
+        UpdateControlState();
 
-        if (!spectating)
-        {
-            if (key == bindings.Accelerate)
-            {
-                CarsInRace[playerCarIndex].Control.Up = true;
-            }
-            if (key == bindings.AerialBounce)
-            {
-                CarsInRace[playerCarIndex].Control.Up = true;
-                CarsInRace[playerCarIndex].Control.Down = true;
-            }
-            if (key == bindings.AerialStrafe)
-            {
-                if (CarsInRace[playerCarIndex].Control.Up && CarsInRace[playerCarIndex].Control.Down)
-                {
-                    CarsInRace[playerCarIndex].Control.Left = true;
-                    CarsInRace[playerCarIndex].Control.Right = true;
-                }
-                if (CarsInRace[playerCarIndex].Control.Left)
-                    CarsInRace[playerCarIndex].Control.Right = true;
-                else if (CarsInRace[playerCarIndex].Control.Right)
-                    CarsInRace[playerCarIndex].Control.Left = true;
-            }
-
-            if (key == bindings.Brake)
-            {
-                CarsInRace[playerCarIndex].Control.Down = true;
-            }
-
-            if (key == bindings.TurnRight)
-            {
-                CarsInRace[playerCarIndex].Control.Right = true;
-            }
-
-            if (key == bindings.TurnLeft)
-            {
-                CarsInRace[playerCarIndex].Control.Left = true;
-            }
-
-            if (key == bindings.Handbrake)
-            {
-                CarsInRace[playerCarIndex].Control.Handb = true;
-            }
-        }
-
+        // Handle non-movement keys
         if (key == bindings.Enter)
         {
             CarsInRace[playerCarIndex].Control.Enter = true;
@@ -132,6 +97,55 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             currentViewMode = (ViewMode)(((int)currentViewMode + 1) % Enum.GetValues<ViewMode>().Length);
         }
     }
+    
+    private void UpdateControlState()
+    {
+        if (spectating) return;
+        
+        var bindings = SettingsMenu.Bindings;
+        var control = CarsInRace[playerCarIndex].Control;
+        
+        // determine base key states
+        bool acceleratePressed = _pressedKeys.Contains(bindings.Accelerate);
+        bool brakePressed = _pressedKeys.Contains(bindings.Brake);
+        bool turnLeftPressed = _pressedKeys.Contains(bindings.TurnLeft);
+        bool turnRightPressed = _pressedKeys.Contains(bindings.TurnRight);
+        bool aerialBouncePressed = _pressedKeys.Contains(bindings.AerialBounce);
+        bool aerialStrafePressed = _pressedKeys.Contains(bindings.AerialStrafe);
+        bool handbrakePressed = _pressedKeys.Contains(bindings.Handbrake);
+        
+        // apply Up/Down controls
+        control.Up = acceleratePressed || aerialBouncePressed;
+        control.Down = brakePressed || aerialBouncePressed;
+        
+        // apply Left/Right controls with AerialStrafe logic
+        bool baseLeft = turnLeftPressed;
+        bool baseRight = turnRightPressed;
+        
+        if (aerialStrafePressed)
+        {
+            // AerialStrafe enables smooth turning by activating both directions
+            if (control.Up && control.Down)
+            {
+                baseLeft = true;
+                baseRight = true;
+            }
+            else if (baseLeft)
+            {
+                // left is pressed - also enable right for smooth left turn
+                baseRight = true;
+            }
+            else if (baseRight)
+            {
+                // right is pressed - also enable left for smooth right turn
+                baseLeft = true;
+            }
+        }
+        
+        control.Left = baseLeft;
+        control.Right = baseRight;
+        control.Handb = handbrakePressed;
+    }
 
     public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
     {
@@ -139,44 +153,16 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
         var bindings = SettingsMenu.Bindings;
         
-        if (!spectating)
-        {
-            if (key == bindings.Accelerate)
-            {
-                CarsInRace[playerCarIndex].Control.Up = false;
-            }
-            if (key == bindings.AerialStrafe)
-            {
-                if (CarsInRace[playerCarIndex].Control.Up && CarsInRace[playerCarIndex].Control.Down)
-                {
-                    CarsInRace[playerCarIndex].Control.Left = false;
-                    CarsInRace[playerCarIndex].Control.Right = false;
-                }
-                if (CarsInRace[playerCarIndex].Control.Left)
-                    CarsInRace[playerCarIndex].Control.Right = false;
-                else if (CarsInRace[playerCarIndex].Control.Right)
-                    CarsInRace[playerCarIndex].Control.Left = false;
-            }
-            if (key == bindings.Brake)
-            {
-                CarsInRace[playerCarIndex].Control.Down = false;
-            }
-            if (key == bindings.TurnRight)
-            {
-                CarsInRace[playerCarIndex].Control.Right = false;
-            }
-            if (key == bindings.TurnLeft)
-            {
-                CarsInRace[playerCarIndex].Control.Left = false;
-            }
-            if (key == bindings.Handbrake)
-            {
-                CarsInRace[playerCarIndex].Control.Handb = false;
-            }
-        }
+        // track released keys
+        _pressedKeys.Remove(key);
+        
+        // update control state based on remaining pressed keys
+        UpdateControlState();
 
+        // handle special cases
         if (key == Keys.Escape)
         {
+            // this seems to be currently unused
             CarsInRace[playerCarIndex].Control.Exit = false;
         }
         if (key == bindings.LookBack || key == bindings.LookLeft || key == bindings.LookRight)
