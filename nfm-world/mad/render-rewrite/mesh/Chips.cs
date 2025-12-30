@@ -71,7 +71,7 @@ public class Chips
                     chip.V1.Z = (chip.V0.Z + chip.Ctmag * (10.0F - URandom.Single() * 20.0F));
                     chip.V2.Z = (chip.V0.Z + chip.Ctmag * (10.0F - URandom.Single() * 20.0F));
                     chip.Delta = new Vector3(0, 0, 0);
-                    if (!_car.Wasted)
+                    if (!_car.VisuallyWasted)
                     {
                         var vx = (chip.Ctmag * (30.0F - URandom.Single() * 60.0F));
                         var vz = (chip.Ctmag * (30.0F - URandom.Single() * 60.0F));
@@ -97,7 +97,7 @@ public class Chips
                     chip.State = 59;
                 }
 
-                if (!_car.Wasted)
+                if (!_car.VisuallyWasted)
                 {
                     var c = URandom.Int(0, 3);
 

@@ -74,7 +74,7 @@ public class CheckPointHelper
         if (currentStage.nodes.Count <= 0)
             return 0;
 
-        f64Vector3 carPos = car.CarRef.Position;
+        f64Vector3 carPos = car.Position;
         int closestNodeIndex = -1;
         fix64 closestDistanceSqr = fix64.MaxValue;
 
@@ -103,7 +103,7 @@ public class CheckPointHelper
             return false;
 
         CheckPoint nextCheckpoint = currentStage.checkpoints[car.currentCheckpoint];
-        f64Vector3 carPos = car.CarRef.Position;
+        f64Vector3 carPos = car.Position;
         var mad = car.Mad;
         f64Vector3 velocity = new f64Vector3(
             mad.Scx[0] + mad.Scx[1] + mad.Scx[2] + mad.Scx[3],

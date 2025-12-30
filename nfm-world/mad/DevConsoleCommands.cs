@@ -128,7 +128,7 @@ namespace NFMWorld.Mad
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.CarsInRace[inRacePhase.playerCarIndex].CarRef.Wasted = true;
+                inRacePhase.CarsInRace[inRacePhase.playerCarIndex].VisuallyWasted = true;
             }
         }
 
@@ -203,10 +203,10 @@ namespace NFMWorld.Mad
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
-                MeshDamage.DamageX(car.Stats, car.CarRef, 0, amount);
-                MeshDamage.DamageX(car.Stats, car.CarRef, 1, amount);
-                MeshDamage.DamageX(car.Stats, car.CarRef, 2, amount);
-                MeshDamage.DamageX(car.Stats, car.CarRef, 3, amount);
+                MeshDamage.DamageX(car.Stats, car, 0, amount);
+                MeshDamage.DamageX(car.Stats, car, 1, amount);
+                MeshDamage.DamageX(car.Stats, car, 2, amount);
+                MeshDamage.DamageX(car.Stats, car, 3, amount);
             }
         }
 
@@ -222,10 +222,10 @@ namespace NFMWorld.Mad
                 var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
                 var nbsq = 0;
                 var squash = car.Mad.Squash;
-                MeshDamage.DamageY(car.Stats, car.CarRef, 0, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car.CarRef, 1, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car.CarRef, 2, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car.CarRef, 3, amount, car.Mad.Mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 0, amount, car.Mad.Mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 1, amount, car.Mad.Mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 2, amount, car.Mad.Mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 3, amount, car.Mad.Mtouch, ref nbsq, ref squash);
             }
         }
 
@@ -239,10 +239,10 @@ namespace NFMWorld.Mad
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
-                MeshDamage.DamageZ(car.Stats, car.CarRef, 0, amount);
-                MeshDamage.DamageZ(car.Stats, car.CarRef, 1, amount);
-                MeshDamage.DamageZ(car.Stats, car.CarRef, 2, amount);
-                MeshDamage.DamageZ(car.Stats, car.CarRef, 3, amount);
+                MeshDamage.DamageZ(car.Stats, car, 0, amount);
+                MeshDamage.DamageZ(car.Stats, car, 1, amount);
+                MeshDamage.DamageZ(car.Stats, car, 2, amount);
+                MeshDamage.DamageZ(car.Stats, car, 3, amount);
             }
         }
 
@@ -349,7 +349,7 @@ namespace NFMWorld.Mad
 
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                var mesh = inRacePhase.CarsInRace[0].CarRef;
+                var mesh = inRacePhase.CarsInRace[0];
                 mesh.Position = new f64Vector3(x, y, z);
                 console.Log($"Teleported player to ({x}, {y}, {z})");
             }

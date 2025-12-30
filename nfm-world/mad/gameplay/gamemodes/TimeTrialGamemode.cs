@@ -212,7 +212,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         if (bestTimeDemo != null && PlaybackOnReset)
         {
             bestTimeTrial = bestTimeDemo;
-            carsInRace[playerCarIndex + 1].CarRef.AlphaOverride = 0.2f;
+            carsInRace[playerCarIndex + 1].AlphaOverride = 0.2f;
         }
         else
         {
@@ -239,7 +239,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].CarRef.Position.X:0.00}, contoz: {carsInRace[playerCarIndex].CarRef.Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].CarRef.Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].Position.X:0.00}, contoz: {carsInRace[playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].Position.Y:0.00}");
         switch (_currentState)
         {
             case TimeTrialState.NotStarted:

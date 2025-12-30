@@ -3,10 +3,9 @@ using SoftFloat;
 
 namespace NFMWorld.Mad;
 
-public class InGameCar : GameObject
+public class InGameCar : Car
 {
     public CarInfo ClonedCarInfo;
-    public Car CarRef;
     public Mad Mad;
     public Control Control;
     public MadSfx Sfx;
@@ -17,81 +16,44 @@ public class InGameCar : GameObject
     public int closestNode; // mad.point
     public BaseAi? Bot;
     public int placement; // cp.pos
-
-    public CarStats Stats => CarRef.Stats;
+    
     public bool Wasted => Mad.Wasted;
 
     public InGameCar(InGameCar copy, int im, bool isClientPlayer)
+        : base(copy.CarInfo, new f64Vector3(fix64.Zero, World.Ground - copy.GroundAt, fix64.Zero), f64Euler.Identity)
     {
-        ClonedCarInfo = copy.CarRef.CarInfo;
-        CarRef = new Car(copy.CarRef.CarInfo, new f64Vector3(fix64.Zero, World.Ground - copy.CarRef.GroundAt, fix64.Zero), f64Euler.Identity)
-        {
-            Parent = this
-        };
+        ClonedCarInfo = copy.CarInfo;
         Mad = new Mad(copy.Stats, im, isClientPlayer);
-        Mad.Reseto(im, CarRef);
+        Mad.Reseto(im, this);
         Control = new Control();
         Sfx = new MadSfx(Mad);
     }
 
     public InGameCar(int im, CarInfo carInfo, int x, int z, bool isClientPlayer)
+        : base(carInfo, new f64Vector3(x, World.Ground - carInfo.GroundAt, z), f64Euler.Identity)
     {
         ClonedCarInfo = carInfo;
-        CarRef = new Car(carInfo, new f64Vector3(x, World.Ground - carInfo.GroundAt, z), f64Euler.Identity)
-        {
-            Parent = this
-        };
-        Mad = new Mad(CarRef.Stats, im, isClientPlayer);
-        Mad.Reseto(im, CarRef);
+        Mad = new Mad(Stats, im, isClientPlayer);
+        Mad.Reseto(im, this);
         Control = new Control();
         Sfx = new MadSfx(Mad);
     }
 
-    public override void GameTick(Stage? stage = null)
-    {
-        base.GameTick(stage);
-        CarRef.GameTick(stage);
-    }
-
     public void Drive(Stage stage)
     {
-        Mad.Drive(Control, CarRef, stage);
-        Sfx.Tick(Control, Mad, CarRef.Stats);
+        Mad.Drive(Control, this, stage);
+        Sfx.Tick(Control, Mad, Stats);
     }
     
     public void Collide(InGameCar otherCar)
     {
-        Mad.Colide(CarRef, otherCar.Mad, otherCar.CarRef);
-    }
-
-    public override void OnBeforeRender()
-    {
-        base.OnBeforeRender();
-        CarRef.OnBeforeRender();
-    }
-
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
-    {
-        foreach (var renderData in base.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
-        foreach (var renderData in CarRef.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
-    }
-
-    public override void Render(Camera camera, Lighting? lighting)
-    {
-        base.Render(camera, lighting);
-        CarRef.Render(camera, lighting);
+        Mad.Colide(this, otherCar.Mad, otherCar);
     }
 
     public void ResetPosition()
     {
-        Mad.Reseto(Mad.Im, CarRef);
-        CarRef.Position = new f64Vector3(fix64.Zero, World.Ground - CarRef.GroundAt, fix64.Zero);
-        CarRef.Rotation = f64Euler.Identity;
+        Mad.Reseto(Mad.Im, this);
+        Position = new f64Vector3(fix64.Zero, World.Ground - GroundAt, fix64.Zero);
+        Rotation = f64Euler.Identity;
     }
 }

@@ -163,7 +163,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].CarRef.Position.X:0.00}, contoz: {carsInRace[playerCarIndex].CarRef.Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].CarRef.Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].Position.X:0.00}, contoz: {carsInRace[playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].Position.Y:0.00}");
 
         if (baseRacePhase.raceState != RaceState.InProgress)
         {
