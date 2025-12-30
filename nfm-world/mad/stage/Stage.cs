@@ -286,7 +286,7 @@ public class Stage : GameObject
                         obj.Kind = AiNodeKind.Road;
                         if (line.Contains(")pt"))
                         {
-                            obj.Kind = AiNodeKind.Road; // we do not include turns
+                            obj.Kind = AiNodeKind.Turn;
                         }
                         if (line.Contains(")pr"))
                         {
@@ -684,6 +684,7 @@ public class Stage : GameObject
     // A struct for this would be ideal, but it's a very large object so it would cause enormous stack allocations
     public class CollisionBoxRef : IQuadObject
     {
+        public readonly int Index;
         private readonly f64Bounds _bounds;
         
         // Box and GameObject position and rotation in world space
@@ -702,11 +703,10 @@ public class Stage : GameObject
             fix64 gameObjectZ,
             fix64 gameObjectRotXz,
             Rad3dBoxDef box,
-            fix64 x,
-            fix64 z,
-            fix64 radx,
-            fix64 radz)
+            fix64 radius,
+            int index)
         {
+            Index = index;
             GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
             GameObjectXz = gameObjectRotXz;
 
@@ -752,10 +752,10 @@ public class Stage : GameObject
             }
 
             _bounds = new f64Bounds(
-                x - radx,
-                z - radz,
-                radx * 2,
-                radz * 2
+                gameObjectX - radius,
+                gameObjectZ - radius,
+                radius * 2,
+                radius * 2
             );
         }
 
@@ -763,6 +763,7 @@ public class Stage : GameObject
     }
     
     private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);
+    private int _quadTreeInsertionIndex = 0;
 
     private void AddToQuadTree(ICollidable mesh)
     {
@@ -780,18 +781,24 @@ public class Stage : GameObject
         
         foreach (var box in mesh.Boxes)
         {
-            fix64 maxR = fix64.Max(fix64.Max(fix64.Abs(box.Radius.X), fix64.Abs(box.Radius.Z)), fix64.Abs(box.Radius.Y));
+            var maxR = fix64.Max(
+                mesh.MaxRadius,
+                fix64.Max(
+                    fix64.Max(
+                        fix64.Abs(box.Translation.X) + fix64.Abs(box.Radius.X),
+                        fix64.Abs(box.Translation.Z) + fix64.Abs(box.Radius.Z)
+                    ),
+                    fix64.Abs(box.Translation.Y) + fix64.Abs(box.Radius.Y)
+                )
+            );
             CollisionQuadTree.Insert(new CollisionBoxRef(
                 gameObjectX: x,
                 gameObjectY: y,
                 gameObjectZ: z,
                 gameObjectRotXz: xz,
                 box: box,
-                x: (x + box.Translation.X),
-                z: (z + box.Translation.Z),
-                // xz rotation affects the box extents, so we add some padding
-                radx: maxR * (fix64)2f,
-                radz: maxR * (fix64)2f
+                maxR,
+                index: _quadTreeInsertionIndex++
             ));
         }
     }
@@ -801,7 +808,9 @@ public class Stage : GameObject
     {
         _tempTrackers.Clear();
         CollisionQuadTree.RetrievePoint(_tempTrackers, x, z);
-        return CollectionsMarshal.AsSpan(_tempTrackers);
+        var span = CollectionsMarshal.AsSpan(_tempTrackers);
+        span.Sort(static (a, b) => a.Index.CompareTo(b.Index));
+        return span;
     }
 
     public override void Render(Camera camera, Lighting? lighting)

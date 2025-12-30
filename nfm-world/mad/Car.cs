@@ -28,7 +28,7 @@ public class Car : MeshedGameObject
     public string FileName => Mesh.FileName;
 
     // visually wasted
-    public bool Wasted;
+    public bool VisuallyWasted;
 
     public Car(CarInfo carInfo) : base(new Mesh(carInfo.Mesh))
     {

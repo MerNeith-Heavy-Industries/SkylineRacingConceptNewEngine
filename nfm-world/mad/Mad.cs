@@ -2191,7 +2191,7 @@ public class Mad
     {
         hitVertical = false;
 
-        Span<bool> isWheelTouchingPiece = [false, false, false, false]; // nwheels
+        var isWheelTouchingPiece = new InlineArray4<bool>(); // nwheels
 
         int touching = 0; //Phy-addons: Fix sliding on floating pieces
         int nWheelsRoadRamp = 0;
@@ -2201,9 +2201,9 @@ public class Mad
             var position = new f64Vector3(wheelx[k], wheely[k] - wheelGround, wheelz[k]);
             var velocity = new f64Vector3(Scx[k], Scy[k], Scz[k]);
 
-            foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
+            if (!isWheelTouchingPiece[k])
             {
-                if (!isWheelTouchingPiece[k])
+                foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
                     if (collidable.BoxRoad is {} boxRoad)
                     {
@@ -2228,7 +2228,7 @@ public class Mad
                             wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
                             
                             // sparks and scrape
-                            if (BadLanding && (collidable.Box.Skid == 0 || collidable.Box.Skid == 1))
+                            if (BadLanding && collidable.Box.Skid is 0 or 1)
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
@@ -2237,6 +2237,7 @@ public class Mad
 
                             bounceRebound(k, conto, random);
                             isWheelTouchingPiece[k] = true;
+                            break;
                         }
                     }
                     else if (collidable.BoxWall is {} boxWall)
@@ -2274,6 +2275,7 @@ public class Mad
                             if (!collidable.Box.NotWall) {
                                 control.Wall = 9999;
                             }
+                            break;
                         }
                     }
                     else if (collidable.BoxRamp is {} boxRamp)
@@ -2316,6 +2318,7 @@ public class Mad
                             wheely[k] = collision.newPosition.Y + wheelGround;
                             wheelz[k] = collision.newPosition.Z;
                             isWheelTouchingPiece[k] = true;
+                            break;
                         }
                     }
                 }

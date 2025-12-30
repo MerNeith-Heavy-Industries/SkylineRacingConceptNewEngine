@@ -64,8 +64,8 @@ public readonly struct ContO
     
     public bool Wasted
     {
-        get => _car.Wasted;
-        set => _car.Wasted = value;
+        get => _car.VisuallyWasted;
+        set => _car.VisuallyWasted = value;
     }
 
     public int Fcnt

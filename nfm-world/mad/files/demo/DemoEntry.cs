@@ -54,10 +54,10 @@ public struct DemoEntry
         entry.TheBitFlags.Left = car.Control.Left;
         entry.TheBitFlags.Right = car.Control.Right;
         entry.TheBitFlags.Handb = car.Control.Handb;
-        entry.CarPosition.X = car.CarRef.Position.X;
-        entry.CarPosition.Y = car.CarRef.Position.Y;
-        entry.CarPosition.Z = car.CarRef.Position.Z;
-        entry.CarRotation.Xz = car.CarRef.Rotation.Xz.Degrees;
+        entry.CarPosition.X = car.Position.X;
+        entry.CarPosition.Y = car.Position.Y;
+        entry.CarPosition.Z = car.Position.Z;
+        entry.CarRotation.Xz = car.Rotation.Xz.Degrees;
         entry.CarRotation.Pxy = car.Mad.Pxy;
         entry.CarRotation.Pzy = car.Mad.Pzy;
         for (var i = 0; i < 4; i++)
@@ -107,10 +107,10 @@ public struct DemoEntry
         car.Control.Handb = TheBitFlags.Handb;
 
         f64Vector3 pos = new(CarPosition.X, CarPosition.Y, CarPosition.Z);
-        car.CarRef.Position = pos;
+        car.Position = pos;
 
         f64Euler rotation = new(f64AngleSingle.FromDegrees(CarRotation.Xz), f64AngleSingle.FromDegrees(CarRotation.Pxy), f64AngleSingle.FromDegrees(CarRotation.Pzy));
-        car.CarRef.Rotation = rotation;
+        car.Rotation = rotation;
 
         car.Mad.Pxy = CarRotation.Pxy;
         car.Mad.Pzy = CarRotation.Pzy;

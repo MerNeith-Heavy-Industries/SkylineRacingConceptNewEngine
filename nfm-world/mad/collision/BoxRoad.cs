@@ -12,7 +12,7 @@ public readonly struct BoxRoad(f64Vector3 rad, f64Vector3 trackersPosition, fix6
         public readonly fix64 newY = newY;
     }
 
-    public Collision? ResolveCollision(f64Vector3 position) {
+    public Collision? ResolveCollision(in f64Vector3 position) {
         var localPosition = (position + (contoPosition * -1)).RotateXz(-contoXz) + (trackersPosition * -1);
         if (fix64.Abs(localPosition.X) > rad.X || fix64.Abs(localPosition.Y) > rad.Y || fix64.Abs(localPosition.Z) > rad.Z) { // Inside?
             return null;

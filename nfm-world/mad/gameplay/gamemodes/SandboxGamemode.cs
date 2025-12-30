@@ -37,7 +37,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, BaseRace
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[0].CarRef.Position.X:0.00}, contoz: {carsInRace[0].CarRef.Position.Z:0.00}, contoy: {carsInRace[0].CarRef.Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
 
         if (baseRacePhase.raceState == RaceState.InProgress)
         {

@@ -9,6 +9,7 @@ public class CollisionObject : MeshedGameObject, ICollidable, IAiNode
     public Rad3dBoxDef[] Boxes => PlaceableObjectInfo.Boxes;
     public Vector2[] Atp => PlaceableObjectInfo.Atp;
     public string FileName => Mesh.FileName;
+    public int MaxRadius => Mesh.MaxRadius;
 
     private readonly CollisionDebugMesh? _collisionDebugMesh;
     

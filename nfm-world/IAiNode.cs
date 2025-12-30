@@ -11,6 +11,7 @@ public enum AiNodeKind
 {
     CheckPoint,
     Road,
+    Turn,
     Auto,
     Ramp,
     Halfpipe,

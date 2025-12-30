@@ -35,7 +35,7 @@ public class Flames
 
     public void GameTick()
     {
-        if (_car.Wasted)
+        if (_car.VisuallyWasted)
         {
             if (++_tick == GameSparker.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
             {

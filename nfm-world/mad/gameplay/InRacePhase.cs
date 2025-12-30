@@ -19,7 +19,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
             field = value;
             ReloadGamemode();
         }
-    }
+    } = GameModes.Racing;
 
     public override void Enter()
     {
@@ -92,7 +92,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         switch (currentViewMode)
         {
             case ViewMode.Follow:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex].CarRef, (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
+                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
                 break;
             case ViewMode.Around:
                 // Medium.Around(CarsInRace[playerCarIndex].Conto, true);

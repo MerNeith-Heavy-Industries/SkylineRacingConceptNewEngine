@@ -33,7 +33,7 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRac
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[0].CarRef.Position.X:0.00}, contoz: {carsInRace[0].CarRef.Position.Z:0.00}, contoy: {carsInRace[0].CarRef.Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
 
         // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
         // We round this up to 3 ticks per 63TPS tick.

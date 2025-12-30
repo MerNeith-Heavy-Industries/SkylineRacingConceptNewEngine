@@ -16,7 +16,7 @@ public readonly struct BoxRamp(
         public readonly f64Vector3 newPosition = newPosition;
     }
 
-    public Collision? ResolveCollision(f64Vector3 position) {
+    public Collision? ResolveCollision(in f64Vector3 position) {
         fix64 zyPlus90 = trackersZy + 90;
         f64Vector3 localPosition = ((position + (contoPosition * -1)).RotateXz(-contoXz) +
                                     (trackersPosition * -1)).RotateXz(-trackersXz);
