@@ -95,7 +95,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
                 PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
                 break;
             case ViewMode.Around:
-                PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex].CarRef);
+                PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
                 break;
         }
         // camera.Position = new Vector3(0, 10000, 0);
