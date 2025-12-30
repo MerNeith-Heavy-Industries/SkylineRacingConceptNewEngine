@@ -280,8 +280,7 @@ public static class UMath
     {
         if (angle != 0)
         {
-            var sin = Sin(angle);
-            var cos = Cos(angle);
+            FixedTrigLUT.SinCosDeg(angle, out var sin, out var cos);
             
             for (var i = 0; i < len; i++)
             {
