@@ -20,6 +20,8 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     public event EventHandler<RaceState>? RaceStateChanged;
 
     protected FollowCamera PlayerFollowCamera = new();
+    protected AroundCamera PlayerAroundCamera = new();
+    protected AroundStageCamera StageAroundCamera = new();
 
     public bool spectating = false;
     

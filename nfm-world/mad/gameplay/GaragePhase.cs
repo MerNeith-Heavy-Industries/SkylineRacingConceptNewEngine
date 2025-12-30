@@ -173,7 +173,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
                 {
                     ImGui.CloseCurrentPopup();
                 }
-                ;
+                
 
                 ImGui.EndMenu();
             }

@@ -49,10 +49,10 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     {
         CurrentStage = new Stage(stageName, _graphicsDevice);
 
-        GameSparker.CurrentMusic?.Unload();
-
         if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath))))
         {
+            GameSparker.CurrentMusic?.Unload();
+
             bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath);
             // Dont shift pitch or tempo if using remastered
             string path = useRemastered ? CurrentStage.remasteredMusicPath : CurrentStage.musicPath;
@@ -64,11 +64,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();
         }
-        else
-        {
-            GameSparker.CurrentMusic?.Unload();
-        }
-
+        
         RecreateScene();
     }
 
