@@ -378,7 +378,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (_currentState == TimeTrialState.InProgress)
         {
-            if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 1) && bestTimeTrial != null)
+            if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && bestTimeTrial != null)
             {
                 _splitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
                 long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
