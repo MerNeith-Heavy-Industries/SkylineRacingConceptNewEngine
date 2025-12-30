@@ -22,7 +22,7 @@ namespace NFMWorld;
 /// This sample demonstrates how to load a Direct2D1 bitmap from a file.
 /// This method will be part of a future version of SharpDX API.
 /// </summary>
-public unsafe class Program : Game
+public class Program : Game
 {
     public GraphicsDeviceManager _graphics;
     public static SpriteBatch _spriteBatch { get; private set; }
@@ -218,6 +218,8 @@ public unsafe class Program : Game
 
     private Program()
     {
+        GameThreadContext.Install();
+        
         _graphics = new GraphicsDeviceManager(this);
         _graphics.GraphicsProfile = GraphicsProfile.Reach;
         Content.RootDirectory = "Content";
@@ -225,7 +227,7 @@ public unsafe class Program : Game
 
         _graphics.SynchronizeWithVerticalRetrace = true;
         IsFixedTimeStep = false;
-        TargetElapsedTime = TimeSpan.FromMilliseconds(1000 / 63f);
+        TargetElapsedTime = TimeSpan.FromMilliseconds(1000 / GameSparker.TargetTps);
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
         _graphics.PreferMultiSampling = false;
@@ -267,6 +269,8 @@ public unsafe class Program : Game
             GameSparker.CurrentPhase.GameTick();
             GameSparker.CurrentPhase.EndGameTick();
         }
+        
+        GameThreadContext.Current.ExecutePendingTasks();
 
         _lastTickCount = timesToTick;
         _lastTickTime = (int)tick.ElapsedMicroseconds;
