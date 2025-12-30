@@ -51,7 +51,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         var dirPath = Path.Combine("data/stages", collection);
         var entries = Directory.GetFiles(dirPath, "*.txt");
         // first sort alphabetically
-        Array.Sort(entries);
+        Array.Sort(entries, NaturalCompare.CompareNatural);
 
         foreach (var entry in entries)
         {
