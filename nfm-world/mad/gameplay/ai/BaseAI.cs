@@ -109,6 +109,32 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
             targetNodeIndex = 0;
         }
         
+        // Check if we're close to any node ahead of _targetNode but before the next checkpoint
+        // This allows the AI to naturally skip ahead when taking ramps or shortcuts
+        var nextCheckpointIndex = car.currentCheckpoint;
+        var nextCheckpointNodeIndex = racePhase.CurrentStage.nodes.IndexOf(racePhase.CurrentStage.checkpoints[nextCheckpointIndex]);
+        
+        for (int i = targetNodeIndex + 1; i <= nextCheckpointNodeIndex; i++)
+        {
+            var nodeIndex = i;
+            if (nodeIndex >= racePhase.CurrentStage.nodes.Count)
+            {
+                nodeIndex -= racePhase.CurrentStage.nodes.Count;
+            }
+            
+            var node = racePhase.CurrentStage.nodes[nodeIndex];
+            var distanceToNodeSq = pyo(car.Position.X, node.Position.X, car.Position.Z, node.Position.Z);
+            
+            // If we're close to this node (within speed-based threshold), advance target to it
+            if (distanceToNodeSq < (200 * mad.Speed * mad.Speed))
+            {
+                _targetNode = nodeIndex;
+                targetNodeIndex = nodeIndex;
+                Console.WriteLine($"Advanced _targetNode to {nodeIndex} (visited ahead of current target)");
+                break;
+            }
+        }
+        
         var targetNode = racePhase.CurrentStage.nodes[targetNodeIndex];
         if (targetNode.Kind is not AiNodeKind.CheckPoint)
         {
@@ -151,7 +177,7 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
             var nodesToSkip = (int)(difficulty * 3 * (1 - rubberbandingFactor));
             for (int i = 0; i < nodesToSkip; i++)
             {
-                if (racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Auto or AiNodeKind.Road)
+                if (racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Auto or AiNodeKind.Road or AiNodeKind.Ramp or AiNodeKind.Halfpipe)
                 {
                     // Do not skip ramps when low on power
                     if (mad.Power < 80 && racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Ramp or AiNodeKind.Halfpipe)
@@ -268,7 +294,8 @@ public class ReLitAi(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
             }
         }
 
-        FrameTrace.AddMessage($"Targeting checkpoint index: {targetNodeIndex}, Position: {racePhase.CurrentStage.nodes[targetNodeIndex].Position}, kind: {racePhase.CurrentStage.nodes[targetNodeIndex].Kind}");
+        FrameTrace.AddMessage($"Targeting node index: {targetNodeIndex}, Position: {racePhase.CurrentStage.nodes[targetNodeIndex].Position}, kind: {racePhase.CurrentStage.nodes[targetNodeIndex].Kind}");
+        FrameTrace.AddMessage($"Actual node target: {_targetNode}, Position: {racePhase.CurrentStage.nodes[_targetNode].Position}, kind: {racePhase.CurrentStage.nodes[_targetNode].Kind}");
         FrameTrace.AddMessage($"Sequence: {sequence}");
         FrameTrace.AddMessage($"targetFixRoadStartNode: {targetFixRoadStartNode}");
         Target(car, racePhase.CurrentStage.nodes[targetNodeIndex].Position);
