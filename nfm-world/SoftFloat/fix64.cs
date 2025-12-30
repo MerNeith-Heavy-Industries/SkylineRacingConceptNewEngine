@@ -84,7 +84,7 @@ public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, ICompar
     [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 Min(fix64 a, fix64 b) => a < b ? a : b;
     [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 Max(fix64 a, fix64 b) => a > b ? a : b;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 FromRaw(long raw) => new(new(raw));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] public static fix64 FromRaw(long raw) => new(Fixed64.FromRaw(raw));
 
     public static int FloorToInt(fix64 f64) => f64.Value.FloorToInt();
 

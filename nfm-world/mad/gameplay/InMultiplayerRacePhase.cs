@@ -109,10 +109,7 @@ public class InMultiplayerRacePhase(
         // camera.Position = new Vector3(0, 10000, 0);
         // camera.LookAt = new Vector3(1, 250, 0);
         
-        foreach (var element in CurrentStage.pieces)
-        {
-            element.GameTick(CurrentStage);
-        }
+        current_scene.GameTick(CurrentStage);
 
         if (raceState == RaceState.InProgress)
         {

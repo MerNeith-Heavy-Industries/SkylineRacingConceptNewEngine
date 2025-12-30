@@ -100,11 +100,8 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         }
         // camera.Position = new Vector3(0, 10000, 0);
         // camera.LookAt = new Vector3(1, 250, 0);
-        
-        foreach (var element in CurrentStage.pieces)
-        {
-            element.GameTick();
-        }
+
+        current_scene.GameTick(CurrentStage);
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)

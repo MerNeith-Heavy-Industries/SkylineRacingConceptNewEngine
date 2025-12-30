@@ -43,7 +43,7 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     /// <param name="type">The type of unit the angle argument is.</param>
     private f64AngleSingle(fix64 angle)
     {
-        Radians = angle;
+        Degrees = angle;
     }
 
     /// <summary>
@@ -59,12 +59,12 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
 
     public static f64AngleSingle FromRadians(fix64 radians)
     {
-        return new f64AngleSingle(radians);
+        return new f64AngleSingle(radians * fix64.RadToDeg);
     }
     
     public static f64AngleSingle FromDegrees(fix64 degrees)
     {
-        return new f64AngleSingle(degrees * fix64.DegToRad);
+        return new f64AngleSingle(degrees);
     }
 
     /// <summary>
@@ -72,14 +72,14 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     /// </summary>
     public void Wrap()
     {
-        fix64 newangle = fix64.IEEERemainder(Radians, fix64.TwoPi);
+        fix64 newangle = fix64.IEEERemainder(Degrees, 360);
 
-        if (newangle <= -fix64.Pi)
-            newangle += fix64.TwoPi;
-        else if (newangle > fix64.Pi)
-            newangle -= fix64.TwoPi;
+        if (newangle <= -180)
+            newangle += 360;
+        else if (newangle > 180)
+            newangle -= 360;
 
-        Radians = newangle;
+        Degrees = newangle;
     }
 
     /// <summary>
@@ -87,22 +87,18 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     /// </summary>
     public void WrapPositive()
     {
-        fix64 newangle = Radians % fix64.TwoPi;
+        fix64 newangle = Degrees % 360;
 
         if (newangle < 0)
-            newangle += fix64.TwoPi;
+            newangle += 360;
 
-        Radians = newangle;
+        Degrees = newangle;
     }
 
     /// <summary>
     /// Gets or sets the total number of degrees this Stride.Core.Mathematics.AngleSingle represents.
     /// </summary>
-    public fix64 Degrees
-    {
-        readonly get => Radians * fix64.RadToDeg;
-        set => Radians = value * fix64.DegToRad;
-    }
+    public fix64 Degrees { get; set; }
 
     /// <summary>
     /// Gets or sets the minutes component of the degrees this Stride.Core.Mathematics.AngleSingle represents.
@@ -114,7 +110,7 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     {
         readonly get
         {
-            fix64 degrees = Radians * fix64.RadToDeg;
+            fix64 degrees = Degrees;
 
             if (degrees < 0)
             {
@@ -129,11 +125,11 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
         }
         set
         {
-            fix64 degrees = Radians * fix64.RadToDeg;
+            fix64 degrees = Degrees;
             fix64 degreesfloor = fix64.Floor(degrees);
 
             degreesfloor += value / 60;
-            Radians = degreesfloor * fix64.DegToRad;
+            Degrees = degreesfloor;
         }
     }
 
@@ -147,7 +143,7 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     {
         readonly get
         {
-            fix64 degrees = Radians * fix64.RadToDeg;
+            fix64 degrees = Degrees;
 
             if (degrees < 0)
             {
@@ -170,7 +166,7 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
         }
         set
         {
-            fix64 degrees = Radians * fix64.RadToDeg;
+            fix64 degrees = Degrees;
             fix64 degreesfloor = fix64.Floor(degrees);
 
             fix64 minutes = (degrees - degreesfloor) * 60;
@@ -178,66 +174,70 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
 
             minutesfloor += value / 60;
             degreesfloor += minutesfloor / 60;
-            Radians = degreesfloor * fix64.DegToRad;
+            Degrees = degreesfloor;
         }
     }
 
     /// <summary>
     /// Gets or sets the total number of radians this Stride.Core.Mathematics.AngleSingle represents.
     /// </summary>
-    public fix64 Radians { get; set; }
+    public fix64 Radians
+    {
+        readonly get => Degrees * fix64.DegToRad;
+        set => Degrees = value * fix64.RadToDeg;
+    }
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is a right angle (i.e. 90° or π/2).
     /// </summary>
-    public readonly bool IsRight => Radians == fix64.HalfPi;
+    public readonly bool IsRight => Degrees == 90;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is a straight angle (i.e. 180° or π).
     /// </summary>
-    public readonly bool IsStraight => Radians == fix64.Pi;
+    public readonly bool IsStraight => Degrees == 180;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is a full rotation angle (i.e. 360° or 2π).
     /// </summary>
-    public readonly bool IsFullRotation => Radians == fix64.TwoPi;
+    public readonly bool IsFullRotation => Degrees == 360;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is an oblique angle (i.e. is not 90° or a multiple of 90°).
     /// </summary>
-    public readonly bool IsOblique => WrapPositive(this).Radians != fix64.HalfPi;
+    public readonly bool IsOblique => WrapPositive(this).Radians != 90;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is an acute angle (i.e. less than 90° but greater than 0°).
     /// </summary>
-    public readonly bool IsAcute => Radians > 0 && Radians < fix64.HalfPi;
+    public readonly bool IsAcute => Degrees > 0 && Degrees < 90;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is an obtuse angle (i.e. greater than 90° but less than 180°).
     /// </summary>
-    public readonly bool IsObtuse => Radians > fix64.HalfPi && Radians < fix64.Pi;
+    public readonly bool IsObtuse => Degrees > 90 && Degrees < 180;
 
     /// <summary>
     /// Gets a System.Boolean that determines whether this Stride.Core.Mathematics.Angle
     /// is a reflex angle (i.e. greater than 180° but less than 360°).
     /// </summary>
-    public readonly bool IsReflex => Radians > fix64.Pi && Radians < fix64.TwoPi;
+    public readonly bool IsReflex => Degrees > 180 && Degrees < 360;
 
     /// <summary>
     /// Gets a Stride.Core.Mathematics.AngleSingle instance that complements this angle (i.e. the two angles add to 90°).
     /// </summary>
-    public readonly f64AngleSingle Complement => new f64AngleSingle(fix64.HalfPi - Radians);
+    public readonly f64AngleSingle Complement => new f64AngleSingle(90 - Degrees);
 
     /// <summary>
     /// Gets a Stride.Core.Mathematics.AngleSingle instance that supplements this angle (i.e. the two angles add to 180°).
     /// </summary>
-    public readonly f64AngleSingle Supplement => new f64AngleSingle(fix64.Pi - Radians);
+    public readonly f64AngleSingle Supplement => new f64AngleSingle(180 - Degrees);
 
     /// <summary>
     /// Wraps the Stride.Core.Mathematics.AngleSingle given in the value argument to be in the range [π, -π].
@@ -511,12 +511,12 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
         if (other is not f64AngleSingle single)
             throw new ArgumentException("Argument must be of type Angle.", nameof(other));
 
-        fix64 radians = single.Radians;
+        fix64 degrees = single.Degrees;
 
-        if (Radians > radians)
+        if (Degrees > degrees)
             return 1;
 
-        if (Radians < radians)
+        if (Degrees < degrees)
             return -1;
 
         return 0;
@@ -537,10 +537,10 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     /// </returns>
     public readonly int CompareTo(f64AngleSingle other)
     {
-        if (this.Radians > other.Radians)
+        if (this.Degrees > other.Degrees)
             return 1;
 
-        if (this.Radians < other.Radians)
+        if (this.Degrees < other.Degrees)
             return -1;
 
         return 0;
