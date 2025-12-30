@@ -25,7 +25,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     {
         base.Enter();
 
-        LoadStage("nfm2/a15_dwm");
+        LoadStage("nfm2/15_dwm");
 
         gamemodeInstance ??= CreateGameMode(new BaseGamemodeParameters
         {
