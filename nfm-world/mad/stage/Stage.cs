@@ -618,7 +618,7 @@ public class Stage : GameObject
             Ncz = 1;
         }
         
-        CollisionQuadTree = new QuadTree<CollisionBoxRef>(sx, sz, ncx, ncz);
+        CollisionQuadTree = new QuadTree<QuadtreeObject>(sx, sz, ncx, ncz);
         foreach (var piece in pieces)
         {
             if (piece is ICollidable collidable)
@@ -682,13 +682,47 @@ public class Stage : GameObject
     }
 
     // A struct for this would be ideal, but it's a very large object so it would cause enormous stack allocations
-    public class CollisionBoxRef : IQuadObject
+    public struct QuadtreeObject : IQuadObject
     {
         private readonly f64Bounds _bounds;
         
         // Box and GameObject position and rotation in world space
         public readonly f64Vector3 GameObjectPosition;
         public readonly fix64 GameObjectXz;
+
+        public f64Bounds Bounds => _bounds;
+        
+        public QuadtreeBox[] Boxes;
+
+        public QuadtreeObject(
+            fix64 gameObjectX,
+            fix64 gameObjectY,
+            fix64 gameObjectZ,
+            fix64 gameObjectRotXz,
+            Rad3dBoxDef[] boxes,
+            fix64 radx,
+            fix64 radz)
+        {
+            var gameObjectPosition = GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
+            GameObjectXz = gameObjectRotXz;
+
+            Boxes = Array.ConvertAll(boxes, box => new QuadtreeBox(
+                gameObjectPosition,
+                gameObjectRotXz,
+                box
+            ));
+
+            _bounds = new f64Bounds(
+                gameObjectX - radx,
+                gameObjectZ - radz,
+                radx * 2,
+                radz * 2
+            );
+        }
+    }
+    
+    public struct QuadtreeBox
+    {
         public readonly Rad3dBoxDef Box;
         
         // Precomputed BoxRoad/BoxWall/BoxRamp for faster collision checks
@@ -696,20 +730,20 @@ public class Stage : GameObject
         public readonly BoxWall? BoxWall;
         public readonly BoxRamp? BoxRamp;
 
-        public CollisionBoxRef(
-            fix64 gameObjectX,
-            fix64 gameObjectY,
-            fix64 gameObjectZ,
-            fix64 gameObjectRotXz,
-            Rad3dBoxDef box,
-            fix64 x,
-            fix64 z,
-            fix64 radx,
-            fix64 radz)
-        {
-            GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
-            GameObjectXz = gameObjectRotXz;
+        public int Xy => Box.Xy;
+        public int Zy => Box.Zy;
+        public f64Vector3 Radius => Box.Radius;
+        public f64Vector3 Translation => Box.Translation;
+        public int Skid => Box.Skid;
+        public int Damage => Box.Damage;
+        public bool NotWall => Box.NotWall;
+        public Color3 Color => Box.Color;
 
+        public QuadtreeBox(
+            in f64Vector3 gameObjectPosition,
+            fix64 gameObjectRotXz,
+            in Rad3dBoxDef box)
+        {
             Box = box;
             
             var rad = box.Radius;
@@ -718,51 +752,42 @@ public class Stage : GameObject
 
             if (box is { Xy: 0, Zy: 0 })
             {
-                BoxRoad = new BoxRoad(rad, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                BoxRoad = new BoxRoad(rad, trackersPosition, gameObjectRotXz, gameObjectPosition);
             }
             else if (box.Zy == 90 || box.Zy == -90 || box.Xy == 90 || box.Xy == -90)
             {
                 if (box.Zy == -90)
                 {
-                    BoxWall = new BoxWall(rad, 0, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxWall = new BoxWall(rad, 0, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
                 else if (box.Xy == 90)
                 {
-                    BoxWall = new BoxWall(radFlipped, 90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxWall = new BoxWall(radFlipped, 90, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
                 else if (box.Zy == 90)
                 {
-                    BoxWall = new BoxWall(rad, 180, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxWall = new BoxWall(rad, 180, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
                 else
                 {
-                    BoxWall = new BoxWall(radFlipped, -90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxWall = new BoxWall(radFlipped, -90, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
             }
             else if ((box.Zy != 0 && box.Zy != 90 && box.Zy != -90) || (box.Xy != 0 && box.Xy != 90 && box.Xy != -90))
             {
                 if (box.Zy != 0)
                 {
-                    BoxRamp = new BoxRamp(rad, box.Zy, 0, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxRamp = new BoxRamp(rad, box.Zy, 0, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
                 else
                 {
-                    BoxRamp = new BoxRamp(radFlipped, box.Xy, -90, trackersPosition, gameObjectRotXz, GameObjectPosition);
+                    BoxRamp = new BoxRamp(radFlipped, box.Xy, -90, trackersPosition, gameObjectRotXz, gameObjectPosition);
                 }
             }
-
-            _bounds = new f64Bounds(
-                x - radx,
-                z - radz,
-                radx * 2,
-                radz * 2
-            );
         }
-
-        public f64Bounds Bounds => _bounds;
     }
     
-    private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);
+    private QuadTree<QuadtreeObject> CollisionQuadTree = new(0,0,0,0);
 
     private void AddToQuadTree(ICollidable mesh)
     {
@@ -777,27 +802,22 @@ public class Stage : GameObject
             z = (fix64)gameObject.Position.Z;
             xz = gameObject.Rotation.Xz.Degrees;
         }
-        
-        foreach (var box in mesh.Boxes)
-        {
-            fix64 maxR = fix64.Max(fix64.Max(fix64.Abs(box.Radius.X), fix64.Abs(box.Radius.Z)), fix64.Abs(box.Radius.Y));
-            CollisionQuadTree.Insert(new CollisionBoxRef(
-                gameObjectX: x,
-                gameObjectY: y,
-                gameObjectZ: z,
-                gameObjectRotXz: xz,
-                box: box,
-                x: (x + box.Translation.X),
-                z: (z + box.Translation.Z),
-                // xz rotation affects the box extents, so we add some padding
-                radx: maxR * (fix64)2f,
-                radz: maxR * (fix64)2f
-            ));
-        }
+
+        fix64 maxR = mesh.MaxRadius;
+        CollisionQuadTree.Insert(new QuadtreeObject(
+            gameObjectX: x,
+            gameObjectY: y,
+            gameObjectZ: z,
+            gameObjectRotXz: xz,
+            boxes: mesh.Boxes,
+            // xz rotation affects the box extents, so we add some padding
+            radx: maxR * (fix64)2f,
+            radz: maxR * (fix64)2f
+        ));
     }
     
-    private List<CollisionBoxRef> _tempTrackers = new();
-    public ReadOnlySpan<CollisionBoxRef> RetrievePointCollidables(fix64 x, fix64 z)
+    private List<QuadtreeObject> _tempTrackers = new();
+    public ReadOnlySpan<QuadtreeObject> RetrievePointCollidables(fix64 x, fix64 z)
     {
         _tempTrackers.Clear();
         CollisionQuadTree.RetrievePoint(_tempTrackers, x, z);

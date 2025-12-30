@@ -179,27 +179,30 @@ public class Environment
                 cgpx[i41] = sgpx + i39 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
                 cgpz[i41] = sgpz + i40 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
 
-                foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
+                foreach (var collidable in stage.RetrievePointCollidables(sx, sz))
                 {
-                    if (tracker.BoxRoad is not null)
+                    foreach (var box in collidable.Boxes)
                     {
-                        var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
-                        var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
+                        if (box.BoxRoad is not null)
+                        {
+                            var x = collidable.GameObjectPosition.X + box.Translation.X;
+                            var z = collidable.GameObjectPosition.Z + box.Translation.Z;
                         
-                        if (tracker.Box.Radius.X < tracker.Box.Radius.Z &&
-                            fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
-                        {
-                            while (fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
+                            if (box.Radius.X < box.Radius.Z &&
+                                fix64.Abs((fix64)cgpz[i41] - z) < box.Radius.Z)
                             {
-                                cgpx[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.X * 2 - tracker.Box.Radius.X);
+                                while (fix64.Abs((fix64)cgpx[i41] - x) < box.Radius.X)
+                                {
+                                    cgpx[i41] += (int)((fix64)random.NextDouble() * box.Radius.X * 2 - box.Radius.X);
+                                }
                             }
-                        }
-                        else if (tracker.Box.Radius.Z < tracker.Box.Radius.X &&
-                                 fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
-                        {
-                            while (fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
+                            else if (box.Radius.Z < box.Radius.X &&
+                                     fix64.Abs((fix64)cgpx[i41] - x) < box.Radius.X)
                             {
-                                cgpz[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.Z * 2 - tracker.Box.Radius.Z);
+                                while (fix64.Abs((fix64)cgpz[i41] - z) < box.Radius.Z)
+                                {
+                                    cgpz[i41] += (int)((fix64)random.NextDouble() * box.Radius.Z * 2 - box.Radius.Z);
+                                }
                             }
                         }
                     }

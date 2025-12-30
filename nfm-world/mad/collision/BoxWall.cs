@@ -19,7 +19,7 @@ public readonly struct BoxWall(
         public readonly f64Vector3 impactComponent = impactComponent; // the component of velocity pointing directly into the box
     }
 
-    public Collision? ResolveCollision(f64Vector3 position, f64Vector3 velocity) {
+    public Collision? ResolveCollision(in f64Vector3 position, in f64Vector3 velocity) {
         f64Vector3 localPosition = ((position + (contoPosition * -1)).RotateXz(-contoXz)
                                     + (trackersPosition * -1)).RotateXz(-trackersXz);
         if (fix64.Abs(localPosition.X) > rad.X || fix64.Abs(localPosition.Y) > rad.Y || fix64.Abs(localPosition.Z) > rad.Z) { // Inside?
