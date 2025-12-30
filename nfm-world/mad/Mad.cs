@@ -52,7 +52,6 @@ public class Mad
     internal readonly UnlimitedArray<bool> _dominate = [];
     internal readonly fix64 _drag = (fix64)(0.5F);
     internal int _fixes = -1;
-    internal int _focus = -1;
     internal fix64 _forca;
     internal bool Ftab;
     internal fix64 _fxz;
@@ -63,7 +62,6 @@ public class Mad
     internal fix64 Lcomp;
     internal sbyte Loop;
     internal fix64 _lxz;
-    internal int Missedcp;
     internal bool Mtouch;
     internal fix64 Mxz;
     internal int _nbsq;
@@ -85,13 +83,12 @@ public class Mad
     internal fix64 Pxy;
     internal fix64 Pzy;
     internal fix64 Rcomp;
-    internal int _rpdcatch;
     internal bool Rtab;
     internal InlineArray4<fix64> Scx;
     internal InlineArray4<fix64> Scy;
     internal InlineArray4<fix64> Scz;
     internal int Shakedam;
-    internal int Skid;
+    internal sbyte Skid;
     internal fix64 Speed;
     internal int Squash;
     internal int _srfcnt;
@@ -1697,14 +1694,6 @@ public class Mad
         var i89 = 0;
         var i90 = 0;
         var i91 = 0;
-        if (Nofocus)
-        {
-            zneg = 1;
-        }
-        else
-        {
-            zneg = 7;
-        }
         /*for (var i92 = 0; i92 < CheckPoints.N; i92++)
         {
             if (CheckPoints.Typ[i92] > 0)
@@ -2631,8 +2620,6 @@ public class Mad
             }
         }
         //Pcleared = CheckPoints.Pcs;
-        _focus = -1;
-        Missedcp = 0;
         Nofocus = false;
         Power = (fix64)(98.0F);
         Lastcolido = 0;
@@ -2648,7 +2635,6 @@ public class Mad
             // Medium.Checkpoint = -1;
             // Medium.Lastcheck = false;
         }
-        _rpdcatch = 0;
         Newedcar = 0;
         _fixes = -1;
         /*if (CheckPoints.Nfix == 1)
