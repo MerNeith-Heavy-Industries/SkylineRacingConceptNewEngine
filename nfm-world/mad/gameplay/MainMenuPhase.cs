@@ -431,7 +431,6 @@ public class MainMenuPhase: BasePhase
 
     private void OnGarageClicked()
     {
-        /*
         GaragePhase gp = new GaragePhase(_graphicsDevice);
         gp.Enter();
         gp.CarSelected += (sender, c) =>
@@ -445,15 +444,7 @@ public class MainMenuPhase: BasePhase
             GameSparker.CurrentPhase = this;
         };
 
-        GameSparker.CurrentPhase = gp;*/
-
-        StageSelectPhase ssp = new StageSelectPhase(_graphicsDevice);
-        ssp.StageSelected += (sender, stage) =>
-        {
-            GameSparker.CurrentPhase = this;
-        };
-
-        GameSparker.CurrentPhase = ssp;
+        GameSparker.CurrentPhase = gp;
     }
 
 
