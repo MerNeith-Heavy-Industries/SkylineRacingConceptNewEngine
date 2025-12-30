@@ -286,7 +286,7 @@ public class Stage : GameObject
                         obj.Kind = AiNodeKind.Road;
                         if (line.Contains(")pt"))
                         {
-                            obj.Kind = AiNodeKind.Road; // we do not include turns
+                            obj.Kind = AiNodeKind.Turn;
                         }
                         if (line.Contains(")pr"))
                         {

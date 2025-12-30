@@ -112,7 +112,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
     public void SetLapText(int currentLap)
     {
-        _lapText.Text = $"{currentLap}/{currentStage.nlaps}";
+        _lapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
     }
 
     public override void Enter()
@@ -138,9 +138,9 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
         
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new InGameCar(idx, GameSparker.GetCar(player.CarName).Car!, 0, 0, idx == playerCarIndex);
+            carsInRace[idx] = new InGameCar(idx, GameSparker.GetCar(player.CarName).Car!, -500 + (400 * idx), 0, idx == playerCarIndex);
             carsInRace[idx].currentCheckpoint = 0;
-            carsInRace[idx].currentLap = 1;
+            carsInRace[idx].currentLap = 0;
             if (player.IsBot)
             {
                 carsInRace[idx].Bot = new ReLitAi(this, baseRacePhase);
@@ -233,8 +233,6 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
         {
             FixHoopHelper.HandleFixHoops(currentStage, carsInRace[i]);
         
-            CheckPointHelper.FindClosestPoint(currentStage, carsInRace[i]);
-
             if (CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[i]))
             {
                 if (i == playerCarIndex)
@@ -244,7 +242,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
         
         CheckPointHelper.CalculatePositions(currentStage, carsInRace);
 
-        if (carsInRace[playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[playerCarIndex].currentLap == currentStage.nlaps)
+        if (carsInRace[playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[playerCarIndex].currentLap == currentStage.nlaps - 1)
         {
             currentStage.checkpoints[^1].Finish = true;
         }
@@ -269,7 +267,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
         for (var i = 0; i < carsInRace.Count; i++)
         {
-            if (carsInRace[i].currentLap > currentStage.nlaps)
+            if (carsInRace[i].currentLap >= currentStage.nlaps)
             {
                 _currentState = InnerRaceState.Finished;
                 _winner = i;

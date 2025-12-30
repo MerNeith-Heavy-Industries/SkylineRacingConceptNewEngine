@@ -67,34 +67,6 @@ public class CheckPointHelper
         }
     }
 
-    public static int FindClosestPoint(
-        Stage currentStage,
-        InGameCar car)
-    {
-        if (currentStage.nodes.Count <= 0)
-            return 0;
-
-        f64Vector3 carPos = car.Position;
-        int closestNodeIndex = -1;
-        fix64 closestDistanceSqr = fix64.MaxValue;
-
-        for (int i = 0; i < currentStage.nodes.Count; i++)
-        {
-            var node = currentStage.nodes[i];
-            f64Vector3 toCheckpoint = node.Position - carPos;
-            fix64 distanceSqr = f64Vector3.Dot(toCheckpoint, toCheckpoint);
-
-            if (distanceSqr < closestDistanceSqr)
-            {
-                closestDistanceSqr = distanceSqr;
-                closestNodeIndex = i;
-            }
-        }
-
-        car.closestNode = closestNodeIndex;
-        return closestNodeIndex;
-    }
-
     public static bool HandleCheckPoint(
         Stage currentStage,
         InGameCar car)
@@ -120,12 +92,16 @@ public class CheckPointHelper
             car.currentCheckpoint++;
             if (car.currentCheckpoint >= currentStage.checkpoints.Count)
             {
+                car.lastCheckpointNode = -1;
                 car.currentCheckpoint = 0;
                 car.currentLap++;
             }
+            else
+            {
+                car.lastCheckpointNode = currentStage.nodes.IndexOf(nextCheckpoint);
+            }
 
             car.totalCheckpoint = car.currentCheckpoint + car.currentLap * currentStage.checkpoints.Count;
-            car.currentCheckpointNode = currentStage.nodes.IndexOf(nextCheckpoint);
             return true;
         }
 

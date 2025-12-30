@@ -12,8 +12,7 @@ public class InGameCar : Car
     public ushort currentCheckpoint;
     public byte currentLap; // mad.nlaps
     public int totalCheckpoint; // mad.clear
-    public int currentCheckpointNode; // mad.pcleared
-    public int closestNode; // mad.point
+    public int lastCheckpointNode = -1; // resets on new lap
     public BaseAi? Bot;
     public int placement; // cp.pos
     
