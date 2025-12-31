@@ -35,7 +35,8 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             var stageName = dir.Replace("data/stages/", "").Replace("\\", "/");
             _stageCollections.Add(stageName);
         }
-        _selectedCollection = _stageCollections.FirstOrDefault() ?? "";
+        // randomly select collection
+        _selectedCollection = _stageCollections[new System.Random().Next(0, _stageCollections.Count)];
         LoadStagesInCollection(_selectedCollection);
         LoadStageInCollection();
 
