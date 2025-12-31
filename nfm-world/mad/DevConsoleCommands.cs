@@ -47,28 +47,28 @@ namespace NFMWorld.Mad
             {
                 if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
                 {
-                    inRacePhase.gamemode = GameModes.TimeTrial;
+                    inRacePhase.SetGamemode(GameModes.TimeTrial);
                 }
             });
             console.RegisterCommand("go_race", (c, args) =>
             {
                 if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
                 {
-                    inRacePhase.gamemode = GameModes.Racing;
+                    inRacePhase.SetGamemode(GameModes.Racing);
                 }
             });
             console.RegisterCommand("go_sbox", (c, args) =>
             {
                 if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
                 {
-                    inRacePhase.gamemode = GameModes.Sandbox;
+                    inRacePhase.SetGamemode(GameModes.Sandbox);
                 }
             });
             console.RegisterCommand("go_football", (c, args) =>
             {
                 if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
                 {
-                    inRacePhase.gamemode = GameModes.Football;
+                    inRacePhase.SetGamemode(GameModes.Football);
                 }
             });
 
@@ -147,7 +147,7 @@ namespace NFMWorld.Mad
                 port = 7000;
             }
 
-            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport(args[0], port));
+            GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport(args[0], port)));
         }
         private static void ConnectSteam(DevConsole console, string[] args)
         {
@@ -164,7 +164,7 @@ namespace NFMWorld.Mad
                 port = 0;
             }
 
-            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(steamid, port));
+            GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
         }
 
         private static void StartServerSteam(DevConsole console, string[] args)
@@ -177,7 +177,7 @@ namespace NFMWorld.Mad
             }
             
             SteamMultiplayer.StartServer(port);
-            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port));
+            GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port)));
         }
 
         private static void StartServer(DevConsole console, string[] args)
@@ -190,7 +190,7 @@ namespace NFMWorld.Mad
             }
             
             ENetMultiplayer.StartServer(port);
-            GameSparker.CurrentPhase = new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport("localhost", port));
+            GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport("localhost", port)));
         }
 
         private static void BreakX(DevConsole console, string[] args)
@@ -525,7 +525,7 @@ namespace NFMWorld.Mad
             }
 
             //GameSparker.MainMenu = new MainMenuPhase();
-            GameSparker.CurrentPhase = GameSparker.MainMenu;
+            GameSparker.SetPhase(GameSparker.MainMenu);
             IBackend.Backend.StopAllSounds();
             
             console.Log("Returned to main menu.");

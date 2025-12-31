@@ -53,13 +53,15 @@ public class GameSparker
     public static BasePhase CurrentPhase
     {
         get;
-        set
-        {
-            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-            field?.Exit();
-            field = value;
-            value.Enter();
-        }
+        set;
+    }
+
+    public static void SetPhase(BasePhase phase)
+    {
+        Console.WriteLine(phase.GetType().Name);
+        CurrentPhase?.Exit();
+        CurrentPhase = phase;
+        CurrentPhase?.Enter();
     }
 
     public static IRadicalMusic? CurrentMusic;
@@ -326,7 +328,7 @@ public class GameSparker
         SettingsMenu.LoadConfig();
 
         InRace = new InRacePhase(_graphicsDevice);
-        CurrentPhase = MainMenu;
+        SetPhase(MainMenu);
 
         // Initialize ModelEditor after cars are loaded
         ModelEditor = new ModelEditorPhase(_graphicsDevice);
@@ -348,29 +350,29 @@ public class GameSparker
 
     public static void StartModelViewer()
     {
-        CurrentPhase = ModelEditor;
+        SetPhase(ModelEditor);
     }
     
     public static void ExitEditor()
     {
-        CurrentPhase = MainMenu;
+        SetPhase(MainMenu);
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        CurrentPhase = StageEditor;
+        SetPhase(StageEditor);
     }
     
     public static void ReturnToMainMenu()
     {
-        CurrentPhase = MainMenu;
+        SetPhase(MainMenu);
     }
 
     public static void StartGame()
     {
         // temp
-        CurrentPhase = InRace;
+        SetPhase(InRace);
 
         Console.WriteLine("Game started!");
     }

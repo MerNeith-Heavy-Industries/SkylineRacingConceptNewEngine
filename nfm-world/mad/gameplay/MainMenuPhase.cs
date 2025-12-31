@@ -422,11 +422,8 @@ public class MainMenuPhase: BasePhase
 
     private void OnTTClicked()
     {
-        GameSparker.CurrentPhase = GameSparker.InRace;
-        if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
-        {
-            inRacePhase.gamemode = GameModes.TimeTrial;
-        }
+        GameSparker.InRace?.gamemode = GameModes.TimeTrial;
+        GameSparker.SetPhase(GameSparker.InRace);
     }
 
     private void OnGarageClicked()
@@ -436,15 +433,15 @@ public class MainMenuPhase: BasePhase
         gp.CarSelected += (sender, c) =>
         {
             garageSelectedCar = c;
-            GameSparker.CurrentPhase = this;
+            GameSparker.SetPhase(this);
         };
 
         gp.CarSelectionCancelled += (sender, _) =>
         {
-            GameSparker.CurrentPhase = this;
+            GameSparker.SetPhase(this);
         };
 
-        GameSparker.CurrentPhase = gp;
+        GameSparker.SetPhase(gp);
     }
 
 

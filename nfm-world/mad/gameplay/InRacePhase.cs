@@ -14,41 +14,47 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     public GameModes gamemode
     {
         get;
-        set
-        {
-            field = value;
-            ReloadGamemode();
-        }
+        set;
     } = GameModes.Racing;
+
+    public void SetGamemode(GameModes mode)
+    {
+        gamemode = mode;
+        ReloadGamemode();
+    }
 
     public override void Enter()
     {
         base.Enter();
 
-        LoadStage("nfm2/15_dwm");
-
-        gamemodeInstance ??= CreateGameMode(new BaseGamemodeParameters
+        StageSelectPhase ssp = new(GraphicsDevice);
+        ssp.StageSelected += (sender, stage) =>
         {
-            Players =
-            [
-                new PlayerParameters
-                {
-                    CarName = playerCarName,
-                    Color = new Color3(255, 0, 0),
-                    PlayerName = "Player",
-                    IsBot = false
-                },
-                new PlayerParameters()
-                {
-                    CarName = "nfmm/audir8",
-                    Color = new Color3(255, 0, 0),
-                    PlayerName = "Player2",
-                    IsBot = true
-                }
-            ],
-            PlayerCarIndex = playerCarIndex
-        });
-        gamemodeInstance.Enter();
+            LoadStage(stage.Path);
+            GameSparker.CurrentPhase = this;
+            CarSelection();
+        };
+
+        GameSparker.SetPhase(ssp);
+    }
+
+    public void CarSelection()
+    {
+        GaragePhase gp = new(GraphicsDevice);
+        gp.CarSelected += (sender, car) =>
+        {
+            GameSparker.CurrentPhase = this;
+            playerCarName = car.FileName;
+            ReloadGamemode();
+        };
+
+        gp.CarSelectionCancelled += (sender, _) =>
+        {
+            GameSparker.SetPhase(GameSparker.MainMenu);
+        };
+
+        gp.StageOverride = CurrentStage;
+        GameSparker.SetPhase(gp);
     }
 
     public override void Exit()

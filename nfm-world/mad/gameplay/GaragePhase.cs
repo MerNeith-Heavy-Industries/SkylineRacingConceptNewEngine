@@ -40,24 +40,10 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private CarInfo[] _autocompleteMatches = [];
     private bool _openSearchPopup = false;
     private int _searchKbFocus = 0;
+    public Stage? StageOverride;
+    private bool _loadedStageMusic = false;
 
     private PerspectiveCamera _camera = new();
-    private Node _ui = new Box()
-    {
-        BackgroundColor = new Color(255, 0, 0),
-        Width = 250,
-        Height = 250,
-        Padding = 80,
-
-        Children =
-        {
-            new TextBlock()
-            {
-                Text = "This is a really long text that should be trimmed weeeeee",
-                Flex = 1
-            }
-        }
-    };
 
     public GaragePhase(GraphicsDevice graphicsDevice, CarInfo currentCar) : this(graphicsDevice)
     {
@@ -77,18 +63,31 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void SetupCurrentCar()
     {
-        string[] stages = Directory.GetFiles("data/stages", "*.*", SearchOption.AllDirectories);
-        string stagePath = "";
-        while(stagePath.IsNullOrEmpty() || stagePath.Contains("rar2"))
+        if (StageOverride != null)
         {
-            stagePath = stages[(int)(URandom.Double() * stages.Length)];
+            CurrentStage = StageOverride;
+        }
+        else
+        {
+            string[] stages = Directory.GetFiles("data/stages", "*.*", SearchOption.AllDirectories);
+            string stagePath = "";
+            while (stagePath.IsNullOrEmpty() || stagePath.Contains("rar2"))
+            {
+                stagePath = stages[(int)(URandom.Double() * stages.Length)];
+            }
+
+            string dir = new FileInfo(stagePath).Directory?.Name ?? "";
+            if (dir == "stages") dir = "";
+            else dir += "/";
+
+            LoadStage(dir + Path.GetFileNameWithoutExtension(stagePath), false);
         }
 
-        string dir = new FileInfo(stagePath).Directory?.Name ?? "";
-        if(dir == "stages") dir = "";
-        else dir += "/";
-
-        LoadStage(dir + Path.GetFileNameWithoutExtension(stagePath), false);
+        if (!_loadedStageMusic)
+        {
+            LoadStageMusic(true);
+            _loadedStageMusic = true;
+        }
 
         _car = new Car(_cars[_selectedCarIdx]);
         CarsInRace[0] = new InGameCar(0, _car.CarInfo, 0, 0, false);
@@ -136,13 +135,11 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         {
             gb.Tick();
         }
-        _ui.Update();
     }
 
     public override void Render()
     {
         base.Render();
-        _ui.LayoutAndRender(G.Viewport);
     }
 
     public override void RenderImgui()
@@ -173,7 +170,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
                 {
                     ImGui.CloseCurrentPopup();
                 }
-                
+
 
                 ImGui.EndMenu();
             }
@@ -199,13 +196,14 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
                     _openSearchPopup = false;
                     open = false;
                     ImGui.CloseCurrentPopup();
-                };
+                }
+                ;
 
                 ImGui.End();
             }
 
             _openSearchPopup = open;
-            if(!_openSearchPopup)
+            if (!_openSearchPopup)
             {
                 _searchQuery = "";
             }
@@ -252,13 +250,14 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         if (_autocompleteMatches.Length > 0)
         {
             _inAutocomplete = true;
-            if(ImGui.ListBox("##AutocompleteEntries", ref _autocompleteIndex, _autocompleteMatchedNames, _autocompleteMatches.Length, _autocompleteMatches.Length))
+            if (ImGui.ListBox("##AutocompleteEntries", ref _autocompleteIndex, _autocompleteMatchedNames, _autocompleteMatches.Length, _autocompleteMatches.Length))
             {
                 _selectedCarIdx = _cars.ToList().FindIndex(c => c.Stats.Name == _autocompleteMatches[_autocompleteIndex].Stats.Name);
                 SetupCurrentCar();
                 _searchQuery = "";
                 return true;
-            };
+            }
+            ;
         }
 
         return false;

@@ -74,10 +74,10 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                     {
                         if (state is RaceState.Finished or RaceState.FailedToStart)
                         {
-                            GameSparker.CurrentPhase = this;
+                            GameSparker.SetPhase(this);
                         }
                     };
-                    GameSparker.CurrentPhase = phase;
+                    GameSparker.SetPhase(phase);
                     break;
                 }
             }

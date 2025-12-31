@@ -12,7 +12,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     private readonly SpriteBatch _spriteBatch = new(graphicsDevice);
 
-    protected readonly GraphicsDevice _graphicsDevice = graphicsDevice;
+    public readonly GraphicsDevice GraphicsDevice = graphicsDevice;
 
     public PerspectiveCamera camera = new();
     public Camera[] lightCameras = [
@@ -45,13 +45,16 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         GameSparker.CurrentMusic?.Unload();
     }
 
-    public virtual void LoadStage(string stageName, bool loadMusic = true)
+    public virtual void LoadStageMusic(bool reloadIfLoaded = false)
     {
-        CurrentStage = new Stage(stageName, _graphicsDevice);
-
-        if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath))))
+        if ((reloadIfLoaded && GameSparker.CurrentMusic != null) || GameSparker.CurrentMusic == null)
         {
-            GameSparker.CurrentMusic?.Unload();
+            if(reloadIfLoaded && GameSparker.CurrentMusic != null)
+            {
+                GameSparker.CurrentMusic?.Unload();
+            }
+
+            Console.WriteLine("playing stage music: " + CurrentStage.musicPath);
 
             bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath);
             // Dont shift pitch or tempo if using remastered
@@ -64,14 +67,24 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();
         }
-        
+    }
+
+    public virtual void LoadStage(string stageName, bool loadMusic = true)
+    {
+        CurrentStage = new Stage(stageName, GraphicsDevice);
+
+        if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath))))
+        {
+            LoadStageMusic(true);
+        }
+
         RecreateScene();
     }
 
     protected virtual void RecreateScene()
     {
         current_scene = new Scene(
-            _graphicsDevice,
+            GraphicsDevice,
             [CurrentStage, new GameObject() { Children = CarsInRace }],
             camera,
             lightCameras
@@ -94,7 +107,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     {
         base.WindowSizeChanged(width, height);
 
-        G.Scale = 1280f/width;
+        G.Scale = 1280f / width;
 
         camera.Width = width;
         camera.Height = height;
@@ -124,7 +137,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             _spriteBatch.End();
         }
 
-        _graphicsDevice.Textures[0] = null;
-        _graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+        GraphicsDevice.Textures[0] = null;
+        GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
     }
 }

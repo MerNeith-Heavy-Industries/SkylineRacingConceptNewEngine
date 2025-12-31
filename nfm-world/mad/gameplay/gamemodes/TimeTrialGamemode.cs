@@ -19,6 +19,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
+    private BaseRacePhase baseRacePhase = baseRacePhase;
+
     private enum TimeTrialState
     {
         NotStarted,
@@ -175,6 +177,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     public override void Enter()
     {
+        base.Enter();
+
         _currentState = TimeTrialState.NotStarted;
 
         Reset();

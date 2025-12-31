@@ -40,7 +40,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         LoadStageInCollection();
 
         GameSparker.CurrentMusic?.Unload();
-        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new NFMWorld.Util.File("data/music/interface/stages.mp3"), 0f);
+        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new NFMWorld.Util.File("data/music/nfm1/stageselectremastered.mp3"), 0f);
         GameSparker.CurrentMusic?.Play();
     }
 
