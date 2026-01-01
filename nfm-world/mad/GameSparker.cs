@@ -53,12 +53,11 @@ public class GameSparker
     public static BasePhase CurrentPhase
     {
         get;
-        set;
+        private set;
     }
 
     public static void SetPhase(BasePhase phase)
     {
-        Console.WriteLine(phase.GetType().Name);
         CurrentPhase?.Exit();
         CurrentPhase = phase;
         CurrentPhase?.Enter();

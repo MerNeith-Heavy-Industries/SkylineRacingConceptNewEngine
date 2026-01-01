@@ -27,37 +27,8 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     {
         base.Enter();
 
-        StageSelectPhase ssp = new(GraphicsDevice);
-        ssp.StageSelected += (sender, stage) =>
-        {
-            CurrentStage = stage;
-            CurrentStage.ReapplyFadeFrom();
-            RecreateScene();
-            LoadStageMusic(true);
-            GameSparker.CurrentPhase = this;
-            CarSelection();
-        };
-
-        GameSparker.SetPhase(ssp);
-    }
-
-    public void CarSelection()
-    {
-        GaragePhase gp = new(GraphicsDevice);
-        gp.CarSelected += (sender, car) =>
-        {
-            GameSparker.CurrentPhase = this;
-            playerCarName = car.FileName;
-            ReloadGamemode();
-        };
-
-        gp.CarSelectionCancelled += (sender, _) =>
-        {
-            GameSparker.SetPhase(GameSparker.MainMenu);
-        };
-
-        gp.StageOverride = CurrentStage;
-        GameSparker.SetPhase(gp);
+        RecreateScene();
+        ReloadGamemode();
     }
 
     public override void Exit()
