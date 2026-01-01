@@ -46,7 +46,7 @@ public class StageLoader
 
     public string Name = "hogan rewish";
 
-    public static int indexOffset = 10;
+    public int indexOffset = 10;
     private bool swapYandRot = false;
     private bool reverseChkY = false;
 
