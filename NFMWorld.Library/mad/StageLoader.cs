@@ -329,7 +329,7 @@ public class StageLoader
                     
                     if (!TryGetPieceToPlace(Utility.GetString("chk", line, 0), out var mesh)) continue;
 
-                    if ((mesh.HasName ? mesh.Name == "nfmm/aircheckpoint" : mesh.Id == 110) || reverseChkY)
+                    if ((mesh.HasName ? mesh.Name == "nfmm/aircheckpoint" : mesh.Id == 54) || reverseChkY)
                     {
                         ymult = 1; // default to inverted Y for stupid rollercoaster chks for compatibility reasons
                     }
