@@ -206,9 +206,9 @@ set(10,8640,13131,180)
 fix(41,8640,5451,-800,0)
 set(23,8640,5451,0)
 set(30,8640,7131,180)pl
-set(singlewallroad,18790,45910,-90)
-set(singlewallroad,29990,45910,-90)
-set(singlewallroad,29990,49410,90)
+set(world/singlewallroad,18790,45910,-90)
+set(world/singlewallroad,29990,45910,-90)
+set(world/singlewallroad,29990,49410,90)
 
 maxl(17,-4425,-26282)
 maxb(12,-28682,-2025)
