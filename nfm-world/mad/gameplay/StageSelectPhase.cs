@@ -32,7 +32,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             var entries = Directory.GetFiles(dir);
             if(entries.IsNullOrEmpty()) continue;
 
-            var stageName = dir.Replace("data/stages/", "").Replace("\\", "/");
+            var stageName = Path.GetFileName(dir);
             _stageCollections.Add(stageName);
         }
         // randomly select collection
