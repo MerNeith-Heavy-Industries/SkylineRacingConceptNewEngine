@@ -27,7 +27,7 @@ public class Stage : GameObject, IStage
     public GroundPolys? clouds;
     public Mountains? mountains;
 
-    private int _fadeFrom;
+    private int? _fadeFrom = null;
     public readonly string Path;
     public int nlaps;
 
@@ -52,7 +52,8 @@ public class Stage : GameObject, IStage
 
     public void ReapplyFadeFrom()
     {
-        World.FadeFrom = _fadeFrom;
+        if(_fadeFrom != null)
+            World.FadeFrom = (int)_fadeFrom;
     }
 
     /**

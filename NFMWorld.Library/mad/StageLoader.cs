@@ -32,7 +32,7 @@ public class StageLoader
 {
     public readonly string Path;
 
-    private int _fadeFrom = 0;
+    private int? _fadeFrom = null;
 
     public int nlaps = 3;
 
@@ -210,6 +210,12 @@ public class StageLoader
                 if (line.StartsWith("fadefrom"))
                 {
                     FadeFrom = Utility.GetInt("fadefrom", line, 0);
+                    _fadeFrom = World.FadeFrom;
+                }
+
+                if (line.StartsWith("distfog"))
+                {
+                    FadeFrom = Utility.GetInt("distfog", line, 0);
                     _fadeFrom = World.FadeFrom;
                 }
 
