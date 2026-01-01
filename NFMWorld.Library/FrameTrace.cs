@@ -1,4 +1,5 @@
-﻿using NFMWorld.Util;
+﻿using System.Runtime.InteropServices;
+using NFMWorld.Util;
 
 namespace NFMWorld.Mad;
 
@@ -15,22 +16,11 @@ public static class FrameTrace
         _messages.Add(message);
     }
 
-    public static void RenderMessages()
+    public static ReadOnlySpan<string> GetMessages()
     {
-        if (!IsEnabled) return;
-        
-        var y = 0f;
-        const float x = 250;
-        const float increment = 20;
-        
-        G.SetColor(new Color(0, 0, 0));
-        foreach (var message in _messages)
-        {
-            y += increment;
-            G.DrawString(message, (int)x, (int)y);
-        }
+        return CollectionsMarshal.AsSpan(_messages);
     }
-    
+
     public static void ClearMessages()
     {
         _messages.Clear();

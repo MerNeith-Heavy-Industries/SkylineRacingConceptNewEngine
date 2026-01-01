@@ -13,6 +13,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
+using NFMWorld.Library;
 using Environment = System.Environment;
 using NFMWorld.Util;
 
@@ -40,7 +41,7 @@ public class Program : Game
     private KeyboardState oldKeyState;
     private MouseState oldMouseState;
     private NanoVGRenderer _nvg;
-    private TimeStep _tickTimeStep = new((1000f / GameSparker.TargetTps) / 1000f);
+    private TimeStep _tickTimeStep = new((1000f / Physics.TargetTps) / 1000f);
     public const int NumCascades = 3;
 
     private static bool loaded;
@@ -227,7 +228,7 @@ public class Program : Game
 
         _graphics.SynchronizeWithVerticalRetrace = true;
         IsFixedTimeStep = false;
-        TargetElapsedTime = TimeSpan.FromMilliseconds(1000 / GameSparker.TargetTps);
+        TargetElapsedTime = TimeSpan.FromMilliseconds(1000 / Physics.TargetTps);
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
         _graphics.PreferMultiSampling = false;

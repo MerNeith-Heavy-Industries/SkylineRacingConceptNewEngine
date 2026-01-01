@@ -4,6 +4,7 @@ using System.Reflection.Metadata;
 using Maxine.Extensions;
 using nfm_world.mad.collision;
 using NFMWorld.DriverInterface;
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Mad.helpers;
@@ -410,7 +411,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         {
             _countdownTime--;
             SfxLibrary.countdown[_countdownTime].Play();
-            _innerCountdownTicks = (int)(10 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+            _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;

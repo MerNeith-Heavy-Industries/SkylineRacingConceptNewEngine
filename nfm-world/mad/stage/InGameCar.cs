@@ -55,4 +55,6 @@ public class InGameCar : Car
         Position = new f64Vector3(fix64.Zero, World.Ground - GroundAt, fix64.Zero);
         Rotation = f64Euler.Identity;
     }
+    
+    public static implicit operator ContO(InGameCar car) => new ContO(car);
 }

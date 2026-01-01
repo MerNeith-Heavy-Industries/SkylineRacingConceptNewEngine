@@ -1,39 +1,36 @@
-using System;
-using System.Collections;
 using Maxine.Extensions;
-
 
 namespace NFMWorld.Mad;
 
 public class Control
 {
-    internal bool Arrace;
+    public bool Arrace;
 
-    internal int Chatup;
-    internal bool Down;
-    internal bool Enter;
-    internal bool Exit;
+    public int Chatup;
+    public bool Down;
+    public bool Enter;
+    public bool Exit;
 
-    internal bool Handb;
+    public bool Handb;
 
-    internal int Multion;
+    public int Multion;
 
-    internal bool Mutem;
-    internal bool Mutes;
+    public bool Mutem;
+    public bool Mutes;
 
-    internal bool Radar;
+    public bool Radar;
 
-    internal bool Right;
-    internal bool Up;
-    internal bool Left;
-    internal int Lookback;
+    public bool Right;
+    public bool Up;
+    public bool Left;
+    public int Lookback;
 
-    internal int Wall = -1;
+    public int Wall = -1;
 
     /**
-     * Inverts the ZY angle. It ais true if the AI ais going backwards.
+     * Inverts the ZY angle. It is true if the AI axis is flipped.
      */
-    internal bool Zyinv = false;
+    public bool Zyinv = false;
 
     internal void Falseo(int i)
     {

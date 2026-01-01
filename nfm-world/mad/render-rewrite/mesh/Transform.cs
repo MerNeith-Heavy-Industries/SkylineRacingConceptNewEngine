@@ -1,13 +1,12 @@
-﻿using SoftFloat;
+﻿using NFMWorld.Library;
+using SoftFloat;
 using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
 
-public class Transform : ITransform
+public abstract class Transform : ITransform
 {
-    public IReadOnlyList<GameObject> Children { get; set; } = [];
-    
-    IReadOnlyList<ITransform> ITransform.Children => Children;
+    public abstract IReadOnlyList<ITransform> ChildTransforms { get; }
 
     public f64Vector3 Position {
         get;

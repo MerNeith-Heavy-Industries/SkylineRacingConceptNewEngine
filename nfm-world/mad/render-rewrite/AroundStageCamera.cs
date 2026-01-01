@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using NFMWorld.Util;
 
@@ -57,21 +58,21 @@ public class AroundStageCamera
         {
             if(_focus > _gofocus)
             {
-                _focus -= 0.005f * GameSparker.PHYSICS_MULTIPLIER;
+                _focus -= 0.005f * Physics.PHYSICS_MULTIPLIER;
             }
             else
             {
-                _focus += 0.005f * GameSparker.PHYSICS_MULTIPLIER;
+                _focus += 0.005f * Physics.PHYSICS_MULTIPLIER;
             }
         } else
         {
             _gofocus = 0.35f + (float)URandom.Double() * 1.3f;
         }
 
-        _targetX -= (_targetX - (float)stage.nodes[_point].Position.X) / 10f * GameSparker.PHYSICS_MULTIPLIER;
-        _targetZ -= (_targetZ - (float)stage.nodes[_point].Position.Z) / 10f * GameSparker.PHYSICS_MULTIPLIER;
+        _targetX -= (_targetX - (float)stage.nodes[_point].Position.X) / 10f * Physics.PHYSICS_MULTIPLIER;
+        _targetZ -= (_targetZ - (float)stage.nodes[_point].Position.Z) / 10f * Physics.PHYSICS_MULTIPLIER;
 
-        if (_pointCount >= 45 * GameSparker.PHYSICS_MULTIPLIER)
+        if (_pointCount >= 45 * Physics.PHYSICS_MULTIPLIER)
         {
             _point++;
             if (_point >= stage.nodes.Count)
@@ -85,7 +86,7 @@ public class AroundStageCamera
             _pointCount += 1;
         }
 
-        _yaw += 1f * GameSparker.PHYSICS_MULTIPLIER;
+        _yaw += 1f * Physics.PHYSICS_MULTIPLIER;
         if (_yaw >= 360)
         {
             _yaw -= 360;
@@ -101,19 +102,19 @@ public class AroundStageCamera
         }
 
         _hit -= _fallen;
-        _fallen += 7 * GameSparker.PHYSICS_MULTIPLIER;
+        _fallen += 7 * Physics.PHYSICS_MULTIPLIER;
 
-        _targetX += _startX * GameSparker.PHYSICS_MULTIPLIER;
-        _targetZ += _startZ * GameSparker.PHYSICS_MULTIPLIER;
+        _targetX += _startX * Physics.PHYSICS_MULTIPLIER;
+        _targetZ += _startZ * Physics.PHYSICS_MULTIPLIER;
 
         if (_hit < 17600)
         {
-            _pitch -= 2 * GameSparker.PHYSICS_MULTIPLIER;
+            _pitch -= 2 * Physics.PHYSICS_MULTIPLIER;
         }
 
-        if (_fallen > 500 * GameSparker.PHYSICS_MULTIPLIER)
+        if (_fallen > 500 * Physics.PHYSICS_MULTIPLIER)
         {
-            _fallen = 500 * GameSparker.PHYSICS_MULTIPLIER;
+            _fallen = 500 * Physics.PHYSICS_MULTIPLIER;
         }
 
         if (_hit < 5000f)
@@ -122,7 +123,7 @@ public class AroundStageCamera
             _fallen = 0f;
         }
 
-        _yaw += 3 * GameSparker.PHYSICS_MULTIPLIER;
+        _yaw += 3 * Physics.PHYSICS_MULTIPLIER;
         if (_yaw >= 360)
         {
             _yaw -= 360;

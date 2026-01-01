@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.Library;
 
 namespace NFMWorld.Mad;
 
@@ -87,11 +88,11 @@ public class Chips
                     }
                 }
 
-                chip.V0 += chip.Delta * GameSparker.PHYSICS_MULTIPLIER;
-                chip.V1 += chip.Delta * GameSparker.PHYSICS_MULTIPLIER;
-                chip.V2 += chip.Delta * GameSparker.PHYSICS_MULTIPLIER;
-                chip.Delta += chip.Velocity * GameSparker.PHYSICS_MULTIPLIER;
-                chip.Velocity.Y += 7 * GameSparker.PHYSICS_MULTIPLIER;
+                chip.V0 += chip.Delta * Physics.PHYSICS_MULTIPLIER;
+                chip.V1 += chip.Delta * Physics.PHYSICS_MULTIPLIER;
+                chip.V2 += chip.Delta * Physics.PHYSICS_MULTIPLIER;
+                chip.Delta += chip.Velocity * Physics.PHYSICS_MULTIPLIER;
+                chip.Velocity.Y += 7 * Physics.PHYSICS_MULTIPLIER;
                 if (chip.V0.Y > World.Ground)
                 {
                     chip.State = 59;

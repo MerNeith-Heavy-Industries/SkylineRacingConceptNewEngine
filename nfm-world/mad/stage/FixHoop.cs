@@ -2,6 +2,7 @@
 using NFMWorld.Util;
 using SoftFloat;
 using Stride.Core.Mathematics;
+using NFMWorld.Library;
 
 namespace NFMWorld.Mad;
 
@@ -195,7 +196,7 @@ public class FixHoop : CollisionObject
         if (!Rotated || Rotation.Xz != f64AngleSingle.ZeroAngle)
         {
             var xy = Rotation.Xy.Degrees;
-            xy += 11 * GameSparker.PHYSICS_MULTIPLIER_F64;
+            xy += 11 * Physics.PHYSICS_MULTIPLIER_F64;
             if (xy > 360)
             {
                 xy -= 360;
@@ -205,7 +206,7 @@ public class FixHoop : CollisionObject
         else
         {
             var zy = Rotation.Zy.Degrees;
-            zy += 11 * GameSparker.PHYSICS_MULTIPLIER_F64;
+            zy += 11 * Physics.PHYSICS_MULTIPLIER_F64;
             if (zy > 360)
             {
                 zy -= 360;
