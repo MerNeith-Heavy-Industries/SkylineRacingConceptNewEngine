@@ -86,4 +86,19 @@ public class SavedTimeTrial
     {
         return Splits.SplitTimes[sample] - other.Splits.SplitTimes[sample];
     }
+
+    public long GetLapTime(int checkpointsInLap, int lap)
+    {
+        if (checkpointsInLap <= 0) return 0;
+        int startIndex = lap * checkpointsInLap;
+        int endIndex = startIndex + checkpointsInLap;
+
+        Console.WriteLine(lap);
+        if (startIndex >= Splits.SplitTimes.Count) return 0;
+
+        long startTime = startIndex == 0 ? 0 : Splits.SplitTimes[startIndex - 1];
+        long endTime = endIndex - 1 < Splits.SplitTimes.Count ? Splits.SplitTimes[endIndex - 1] : Splits.SplitTimes[^1];
+
+        return endTime - startTime;
+    }
 }

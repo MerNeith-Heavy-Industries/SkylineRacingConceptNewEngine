@@ -30,7 +30,10 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         StageSelectPhase ssp = new(GraphicsDevice);
         ssp.StageSelected += (sender, stage) =>
         {
-            LoadStage(stage.Path);
+            CurrentStage = stage;
+            CurrentStage.ReapplyFadeFrom();
+            RecreateScene();
+            LoadStageMusic(true);
             GameSparker.CurrentPhase = this;
             CarSelection();
         };

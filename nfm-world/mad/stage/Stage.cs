@@ -18,6 +18,8 @@ public class Stage : GameObject
     public UnlimitedArray<CheckPoint> checkpoints = [];
     public UnlimitedArray<FixHoop> fixHoops = [];
 
+    private int _fadeFrom = 0;
+
     public int nlaps = 3;
 
     public int stagePartCount => pieces.Count;
@@ -52,6 +54,11 @@ public class Stage : GameObject
     internal int Ncx;
     // height
     internal int Ncz;
+
+    public void ReapplyFadeFrom()
+    {
+        World.FadeFrom = _fadeFrom;
+    }
 
     /**
      * Loads stage currently set by checkpoints.stage onto stageContos
@@ -199,6 +206,7 @@ public class Stage : GameObject
                 if (line.StartsWith("fadefrom"))
                 {
                     World.FadeFrom = Utility.GetInt("fadefrom", line, 0);
+                    _fadeFrom = World.FadeFrom;
                 }
 
                 if (line.StartsWith("lightson"))
