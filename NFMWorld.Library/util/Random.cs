@@ -3,13 +3,13 @@ using SoftFloat;
 namespace NFMWorld.Util;
 
 // https://stackoverflow.com/a/2147782
-public class Random(long seed)
+public struct Random(long seed)
 {
     private ulong seed = ((ulong)seed ^ 0x5DEECE66DUL) & ((1UL << 48) - 1);
 
     public int NextInt(int n)
     {
-        if (n <= 0) throw new ArgumentException("n must be positive");
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(n, 0, "n must be positive");
 
         if ((n & -n) == n)  // i.e., n is a power of 2
             return (int)((n * Next(31)) >> 31);
