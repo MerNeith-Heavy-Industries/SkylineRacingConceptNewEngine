@@ -40,69 +40,69 @@ public partial class Lua
         return phase;
     }
     
-    public void PushFunctions(BaseRacePhase phase, lua_State L)
-    {
-        // add car metatable
-        luaL_newmetatable(L, "CarMetaTable");
-        lua_pushcfunction(L, static (L) =>
-        {
-            // __index function for car metatable
-            var carPtr = lua_touserdata(L, 1);
-            var carId = (ulong)Marshal.ReadInt64((IntPtr)carPtr);
-            var car = (InGameCar)_objects[carId]!;
-            var field = lua_tostring(L, 2);
-            switch (field)
-            {
-            }
-            lua_pushnil(L);
-            return 1;
-        });
-        lua_setfield(L, -2, "__index");
-        lua_pushcfunction(L, static (L) =>
-        {
-            // __newindex function for car metatable
-            var carPtr = lua_touserdata(L, 1);
-            var carId = (ulong)Marshal.ReadInt64((IntPtr)carPtr);
-            var car = (InGameCar)_objects[carId]!;
-            var field = lua_tostring(L, 2);
-            switch (field)
-            {
-            }
-            return 0;
-        });
-        lua_setfield(L, -2, "__newindex");
-        lua_pop(L, 1); // pop metatable
-
-        // add cars table to Lua. it contains a metatable with __index function to get cars by id
-        lua_newtable(L); // cars table
-        lua_newtable(L); // metatable
-        lua_pushcfunction(L, static (L) =>
-        {
-            // __index function
-            var carId = (int)lua_tointeger(L, 2);
-            lua_getglobal(L, "phase");
-            var phase = ReadObjectUserdata<BaseRacePhase>(L);
-            lua_pop(L, 1); // pop phase userdata
-            var car = phase.CarsInRace[carId];
-            if (car != null!)
-            {
-                // return car userdata with metatable
-                NewObjectUserdata(L, (long)GetObjectId(car));
-                luaL_getmetatable(L, "CarMetaTable");
-                lua_setmetatable(L, -2);
-                return 1;
-            }
-            lua_pushnil(L);
-            return 1;
-        });
-        lua_setfield(L, -2, "__index");
-        lua_setmetatable(L, -2);
-        lua_setglobal(L, "cars");
-        
-        // phase global
-        NewObjectUserdata(L, phase);
-        lua_setglobal(L, "phase");
-    }
+    // public void PushFunctions(BaseRacePhase phase, lua_State L)
+    // {
+    //     // add car metatable
+    //     luaL_newmetatable(L, "CarMetaTable");
+    //     lua_pushcfunction(L, static (L) =>
+    //     {
+    //         // __index function for car metatable
+    //         var carPtr = lua_touserdata(L, 1);
+    //         var carId = (ulong)Marshal.ReadInt64((IntPtr)carPtr);
+    //         var car = (InGameCar)_objects[carId]!;
+    //         var field = lua_tostring(L, 2);
+    //         switch (field)
+    //         {
+    //         }
+    //         lua_pushnil(L);
+    //         return 1;
+    //     });
+    //     lua_setfield(L, -2, "__index");
+    //     lua_pushcfunction(L, static (L) =>
+    //     {
+    //         // __newindex function for car metatable
+    //         var carPtr = lua_touserdata(L, 1);
+    //         var carId = (ulong)Marshal.ReadInt64((IntPtr)carPtr);
+    //         var car = (InGameCar)_objects[carId]!;
+    //         var field = lua_tostring(L, 2);
+    //         switch (field)
+    //         {
+    //         }
+    //         return 0;
+    //     });
+    //     lua_setfield(L, -2, "__newindex");
+    //     lua_pop(L, 1); // pop metatable
+    //
+    //     // add cars table to Lua. it contains a metatable with __index function to get cars by id
+    //     lua_newtable(L); // cars table
+    //     lua_newtable(L); // metatable
+    //     lua_pushcfunction(L, static (L) =>
+    //     {
+    //         // __index function
+    //         var carId = (int)lua_tointeger(L, 2);
+    //         lua_getglobal(L, "phase");
+    //         var phase = ReadObjectUserdata<BaseRacePhase>(L);
+    //         lua_pop(L, 1); // pop phase userdata
+    //         var car = phase.CarsInRace[carId];
+    //         if (car != null!)
+    //         {
+    //             // return car userdata with metatable
+    //             NewObjectUserdata(L, (long)GetObjectId(car));
+    //             luaL_getmetatable(L, "CarMetaTable");
+    //             lua_setmetatable(L, -2);
+    //             return 1;
+    //         }
+    //         lua_pushnil(L);
+    //         return 1;
+    //     });
+    //     lua_setfield(L, -2, "__index");
+    //     lua_setmetatable(L, -2);
+    //     lua_setglobal(L, "cars");
+    //     
+    //     // phase global
+    //     NewObjectUserdata(L, phase);
+    //     lua_setglobal(L, "phase");
+    // }
 
     private void PushFix64InlineArray4(lua_State L, Mad mad, Func<Mad, InlineArray4<fix64>> getter)
     {

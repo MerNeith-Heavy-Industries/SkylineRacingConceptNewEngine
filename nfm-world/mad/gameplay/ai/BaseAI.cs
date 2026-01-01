@@ -1,5 +1,6 @@
 ﻿using FixedMathSharp.Utility;
 using Maxine.Extensions;
+using NFMWorld.Library;
 using NFMWorld.Util;
 using SoftFloat;
 
@@ -315,7 +316,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
             }
 
             // If high on damage, find a random FixRoadStart node and enter it as a sequence
-            var wantFix = mad.Hitmag > mad.Stat.Maxmag * (fix64)0.8f && random.NextSFloat() < rubberbandingFactor;
+            var wantFix = mad.Hitmag > mad.Stat.Maxmag * (fix64)0.8f && random.NextF64() < rubberbandingFactor;
             if (wantFix)
             {
                 var fixRoadStartNodes = racePhase.CurrentStage.nodes

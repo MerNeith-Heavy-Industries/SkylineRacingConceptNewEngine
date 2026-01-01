@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.IO.Compression;
 using FixedMathSharp.Utility;
 using nfm_world.mad.collision;
+using NFMWorld.Library;
 using NFMWorld.Util;
 using SoftFloat;
 
@@ -21,7 +22,7 @@ namespace NFMWorld.Mad;
 
 public class Mad
 {
-    private static readonly fix64 _tickRate = (fix64)GameSparker.PHYSICS_MULTIPLIER;
+    private static readonly fix64 _tickRate = Physics.PHYSICS_MULTIPLIER_F64;
     public Boolean Halted = false;
 
     public event EventHandler<(float f, int i)> SfxPlayCrash;
@@ -30,82 +31,82 @@ public class Mad
     public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
     public event EventHandler<float> PowerUp;
 
-    internal bool Btab;
-    internal int Capcnt;
-    internal bool BadLanding;
-    internal readonly UnlimitedArray<bool> _caught = [];
-    internal CarStats Stat;
-    internal int Cn;
-    internal int Cntdest;
-    internal int _cntouch;
+    public bool Btab;
+    public int Capcnt;
+    public bool BadLanding;
+    public readonly UnlimitedArray<bool> _caught = [];
+    public CarStats Stat;
+    public int Cn;
+    public int Cntdest;
+    public int _cntouch;
     
     /// <summary>
     /// Is colliding with the client player car
     /// </summary>
-    internal bool _colidim;
-    internal readonly int[,] _crank = new int[4, 4];
-    internal readonly int[,] _lcrank = new int[4, 4];
-    internal fix64 Cxz;
-    internal int _dcnt;
-    internal fix64 Dcomp;
-    internal bool Wasted;
-    internal readonly UnlimitedArray<bool> _dominate = [];
-    internal readonly fix64 _drag = (fix64)(0.5F);
-    internal int _fixes = -1;
-    internal fix64 _forca;
-    internal bool Ftab;
-    internal fix64 _fxz;
-    internal bool Gtouch;
-    internal int Hitmag;
-    internal int Im;
-    internal int Lastcolido;
-    internal fix64 Lcomp;
-    internal sbyte Loop;
-    internal fix64 _lxz;
-    internal bool Mtouch;
-    internal fix64 Mxz;
-    internal int _nbsq;
-    internal bool Newcar;
-    internal int Newedcar;
-    internal int _nmlt = 1;
-    internal bool Nofocus;
-    internal int Outshakedam = 0;
-    internal bool Pd;
-    internal bool Pl;
-    internal int _pmlt = 1;
-    internal int Point;
-    internal fix64 Power = 75;
-    internal fix64 Powerup;
-    internal bool Pr;
-    internal bool Pu;
-    internal bool Pushed;
+    public bool _colidim;
+    public readonly int[,] _crank = new int[4, 4];
+    public readonly int[,] _lcrank = new int[4, 4];
+    public fix64 Cxz;
+    public int _dcnt;
+    public fix64 Dcomp;
+    public bool Wasted;
+    public readonly UnlimitedArray<bool> _dominate = [];
+    public readonly fix64 _drag = (fix64)(0.5F);
+    public int _fixes = -1;
+    public fix64 _forca;
+    public bool Ftab;
+    public fix64 _fxz;
+    public bool Gtouch;
+    public int Hitmag;
+    public int Im;
+    public int Lastcolido;
+    public fix64 Lcomp;
+    public sbyte Loop;
+    public fix64 _lxz;
+    public bool Mtouch;
+    public fix64 Mxz;
+    public int _nbsq;
+    public bool Newcar;
+    public int Newedcar;
+    public int _nmlt = 1;
+    public bool Nofocus;
+    public int Outshakedam = 0;
+    public bool Pd;
+    public bool Pl;
+    public int _pmlt = 1;
+    public int Point;
+    public fix64 Power = 75;
+    public fix64 Powerup;
+    public bool Pr;
+    public bool Pu;
+    public bool Pushed;
 
-    internal fix64 Pxy;
-    internal fix64 Pzy;
-    internal fix64 Rcomp;
-    internal bool Rtab;
-    internal InlineArray4<fix64> Scx;
-    internal InlineArray4<fix64> Scy;
-    internal InlineArray4<fix64> Scz;
-    internal int Shakedam;
-    internal sbyte Skid;
-    internal fix64 Speed;
-    internal int Squash;
-    internal int _srfcnt;
-    internal bool Surfer;
-    internal fix64 _tilt;
-    internal fix64 Travxy;
-    internal fix64 Travxz;
-    internal fix64 Travzy;
-    internal int Trcnt;
-    internal fix64 Txz;
-    internal fix64 Ucomp;
-    internal bool Wtouch;
-    internal int _xtpower;
+    public fix64 Pxy;
+    public fix64 Pzy;
+    public fix64 Rcomp;
+    public bool Rtab;
+    public InlineArray4<fix64> Scx;
+    public InlineArray4<fix64> Scy;
+    public InlineArray4<fix64> Scz;
+    public int Shakedam;
+    public sbyte Skid;
+    public fix64 Speed;
+    public int Squash;
+    public int _srfcnt;
+    public bool Surfer;
+    public fix64 _tilt;
+    public fix64 Travxy;
+    public fix64 Travxz;
+    public fix64 Travzy;
+    public int Trcnt;
+    public fix64 Txz;
+    public fix64 Ucomp;
+    public bool Wtouch;
+    public int _xtpower;
 
     internal bool IsClientPlayer;
 
-    internal Mad(CarStats stat, int im, bool isClientPlayer)
+    public Mad(CarStats stat, int im, bool isClientPlayer)
     {
         Stat = stat;
         Im = im;
@@ -122,7 +123,7 @@ public class Mad
         return px > bx - szx && px < bx + szx && pz > bz - szz && pz < bz + szz && py > by - szy && py < by + (szy == fix64.Zero ? 100 : szy);
     }
 
-    internal void Colide(ContO conto, Mad othermad, ContO otherconto)
+    public void Colide(ContO conto, Mad othermad, ContO otherconto)
     {
         var random = new DeterministicRandom((ulong)(conto.X.Value.m_rawValue ^ otherconto.X.Value.m_rawValue ^ conto.Z.Value.m_rawValue ^ otherconto.Z.Value.m_rawValue ^ conto.Y.Value.m_rawValue ^ otherconto.Y.Value.m_rawValue));
         
@@ -421,7 +422,7 @@ public class Mad
     internal int Mtcount = 0;
     internal fix64 py = 0;
 
-    internal void Drive(Control control, ContO conto, Stage stage)
+    public void Drive(Control control, ContO conto, IStage stage)
     {
         DeterministicRandom random = new((ulong)(conto.X.Value.m_rawValue ^ conto.Y.Value.m_rawValue ^ conto.Z.Value.m_rawValue));
 
@@ -1220,7 +1221,7 @@ public class Mad
                             f42 = (fix64)(1.2F);
                         }
 
-                        if (random.NextSFloat() > (fix64)0.65f)
+                        if (random.NextF64() > (fix64)0.65f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 f42 * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
@@ -1234,13 +1235,13 @@ public class Mad
                     }
                     else
                     {
-                        if (surfaceType == 1 && random.NextSFloat() > (fix64)0.8f)
+                        if (surfaceType == 1 && random.NextF64() > (fix64)0.8f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.1F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
                         }
 
-                        if ((surfaceType == 2 || surfaceType == 3) && random.NextSFloat() > (fix64)0.6f)
+                        if ((surfaceType == 2 || surfaceType == 3) && random.NextF64() > (fix64)0.6f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.15F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
@@ -1255,7 +1256,7 @@ public class Mad
                 if (surfaceType == 3 || surfaceType == 4)
                 {
                     int
-                        k = (int)fix64.Floor(random.NextSFloat() * 4); // choose 4 wheels randomly to bounce up, usually some wheel will be chosen twice, which means another wheel is not chosen, causing tilt
+                        k = (int)fix64.Floor(random.NextF64() * 4); // choose 4 wheels randomly to bounce up, usually some wheel will be chosen twice, which means another wheel is not chosen, causing tilt
                     fix64 bumpLift = surfaceType == 3 ? (fix64)(-100F) : (fix64)(-150F);
                     fix64 rng = (fix64)0.55F;
                     Scy[k] = bumpLift * rng * Speed / Stat.Swits[2] * (Stat.Bounce - (fix64)0.3F);
@@ -1663,16 +1664,16 @@ public class Mad
         }
         if (Wtouch && surfaceType == 2)
         {
-            conto.Zy += (int)((random.NextSFloat() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
+            conto.Zy += (int)((random.NextF64() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
-            conto.Xy += (int)((random.NextSFloat() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
+            conto.Xy += (int)((random.NextF64() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         }
         if (Wtouch && surfaceType == 1)
         {
-            conto.Zy += (int)((random.NextSFloat() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
+            conto.Zy += (int)((random.NextF64() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
-            conto.Xy += (int)((random.NextSFloat() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
+            conto.Xy += (int)((random.NextF64() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         } // CHK15
         if (Hitmag >= Stat.Maxmag && !Wasted)
@@ -2185,7 +2186,7 @@ public class Mad
 
     // input: number of grounded wheels to medium
     // output: hitVertical when colliding against a wall
-    private void PhyTrackPieceCollision(Stage stage, Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
+    private void PhyTrackPieceCollision(IStage stage, Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
         fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch,
         int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, DeterministicRandom random)
     {
@@ -2253,7 +2254,7 @@ public class Mad
                             // sparks and scrapes
                             if (collidable.Box.Skid != 2)
                                 _crank[0, k]++;
-                            if (collidable.Box.Skid == 5 && random.NextSFloat() > (fix64)0.5f)
+                            if (collidable.Box.Skid == 5 && random.NextF64() > (fix64)0.5f)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2381,7 +2382,7 @@ public class Mad
                 fix64 f112 = 0;
                 for (var i113 = 0; i113 < 4; i113++)
                 {
-                    f112 = f / 20 * random.NextSFloat();
+                    f112 = f / 20 * random.NextF64();
                     if (abool)
                     {
                         Hitmag += (int)fix64.Abs(f112);
@@ -2464,7 +2465,7 @@ public class Mad
                     fix64 f103 = 0;
                     for (var i104 = 0; i104 < 4; i104++)
                     {
-                        f103 = f / 20 * random.NextSFloat();
+                        f103 = f / 20 * random.NextF64();
                         if (abool)
                         {
                             Hitmag += (int)fix64.Abs(f103);
@@ -2484,7 +2485,7 @@ public class Mad
                         fix64 f108 = 0;
                         for (var i109 = 0; i109 < 4; i109++)
                         {
-                            f108 = f / 15 * random.NextSFloat();
+                            f108 = f / 15 * random.NextF64();
                             i105 += (int)f108;
                             i106++;
                             if (abool)
@@ -2547,7 +2548,7 @@ public class Mad
                 fix64 f116 = 0;
                 for (var i117 = 0; i117 < 4; i117++)
                 {
-                    f116 = f / 20 * random.NextSFloat();
+                    f116 = f / 20 * random.NextF64();
                     if (abool)
                     {
                         Hitmag += (int)fix64.Abs(f116);
@@ -2559,7 +2560,7 @@ public class Mad
         return i114;
     }
 
-    internal void Reseto(int i, ContO conto)
+    public void Reseto(int i, ContO conto)
     {
         Cn = i;
         for (var i0 = 0; i0 < 8; i0++)

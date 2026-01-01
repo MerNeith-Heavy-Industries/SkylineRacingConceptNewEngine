@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.Library;
 using NFMWorld.Util;
 using SoftFloat;
 
@@ -165,7 +166,6 @@ public class Environment
         var pvr = new float[nrw * ncl, 8];
         var cgpx = new int[nrw * ncl];
         var cgpz = new int[nrw * ncl];
-        var pmx = new int[nrw * ncl];
         var pcv = new float[nrw * ncl];
         {
             var random =
@@ -248,13 +248,6 @@ public class Environment
                     ogpx[i43, i44] = ((ogpx[i43, i45] + ogpx[i43, i46]) / 2 + ogpx[i43, i44]) / 2;
                     ogpz[i43, i44] = ((ogpz[i43, i45] + ogpz[i43, i46]) / 2 + ogpz[i43, i44]) / 2;
                     pvr[i43, i44] = (float)(1.1 + random.NextDouble() * 0.8);
-                    var i47 = (int)Math.Sqrt(
-                        (int)(ogpx[i43, i44] * ogpx[i43, i44] * pvr[i43, i44] * pvr[i43, i44] +
-                              ogpz[i43, i44] * ogpz[i43, i44] * pvr[i43, i44] * pvr[i43, i44]));
-                    if (i47 > pmx[i43])
-                    {
-                        pmx[i43] = i47;
-                    }
                 }
 
                 pcv[i43] = (float)(0.97 + random.NextDouble() * 0.03);

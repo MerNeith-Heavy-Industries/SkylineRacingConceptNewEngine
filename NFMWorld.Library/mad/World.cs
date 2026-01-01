@@ -1,4 +1,5 @@
-﻿using Stride.Core.Mathematics;
+﻿using NFMWorld.Library;
+using Stride.Core.Mathematics;
 
 namespace NFMWorld.Mad;
 
@@ -69,7 +70,7 @@ public static class World
     public static int ChargedBlinkCountdown;
     public static void GameTick()
     {
-        if (++_tick == GameSparker.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
+        if (++_tick == Physics.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
         {
             if (ChargedBlinkCountdown > 0)
             {

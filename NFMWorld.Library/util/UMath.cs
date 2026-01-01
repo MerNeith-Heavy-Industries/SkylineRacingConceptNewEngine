@@ -14,79 +14,79 @@ public static class UMath
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int Mod(int x, int m)
+    public static int Mod(int x, int m)
     {
         var r = x % m;
         return r < 0 ? r + m : r;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float SinUnsafe(int deg)
+    public static float SinUnsafe(int deg)
     {
         return float.Sin(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float CosUnsafe(int deg)
+    public static float CosUnsafe(int deg)
     {
         return float.Cos(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static (float Sin, float Cos) SinCos(int deg)
+    public static (float Sin, float Cos) SinCos(int deg)
     {
         return float.SinCos(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float SinUnsafe(float deg)
+    public static float SinUnsafe(float deg)
     {
         return float.Sin(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float Sin(AngleSingle angle)
+    public static float Sin(AngleSingle angle)
     {
         return float.Sin(angle.Radians);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float CosUnsafe(float deg)
+    public static float CosUnsafe(float deg)
     {
         return float.Cos(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static (float Sin, float Cos) SinCos(float deg)
+    public static (float Sin, float Cos) SinCos(float deg)
     {
         return float.SinCos(deg * ((float)Math.PI / 180));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float Sin(SinCosFloat deg)
+    public static float Sin(SinCosFloat deg)
     {
         return deg.Sin;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float Cos(SinCosFloat deg)
+    public static float Cos(SinCosFloat deg)
     {
         return deg.Cos;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static float Cos(AngleSingle angle)
+    public static float Cos(AngleSingle angle)
     {
         return float.Cos(angle.Radians);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static (float Sin, float Cos) SinCos(SinCosFloat deg)
+    public static (float Sin, float Cos) SinCos(SinCosFloat deg)
     {
         return (deg.Sin, deg.Cos);
     }
 
-    internal static bool RandomBoolean()
+    public static bool RandomBoolean()
     {
         return URandom.Boolean();
     }
@@ -96,7 +96,7 @@ public static class UMath
     private static int _trn;
     private static int _cntrn;
 
-    internal static float Random()
+    public static float Random()
     {
         if (_cntrn == 0)
         {
@@ -139,7 +139,7 @@ public static class UMath
         return Rand[_trn] / 10.0F;
     }
 
-    internal static void Rot(Span<int> a, Span<int> b, int offA, int offB, int angle, int len)
+    public static void Rot(Span<int> a, Span<int> b, int offA, int offB, int angle, int len)
     {
         if (angle != 0)
         {
@@ -157,7 +157,7 @@ public static class UMath
         }
     }
 
-    internal static void Rot(Span<int> a, Span<int> b, int offA, int offB, float angle, int len)
+    public static void Rot(Span<int> a, Span<int> b, int offA, int offB, float angle, int len)
     {
         if (angle != 0)
         {
@@ -175,7 +175,7 @@ public static class UMath
         }
     }
 
-    internal static void Rot(Span<int> a, Span<int> b, int offA, int offB, SinCosFloat angle, int len)
+    public static void Rot(Span<int> a, Span<int> b, int offA, int offB, SinCosFloat angle, int len)
     {
         if (angle != 0)
         {
@@ -194,7 +194,7 @@ public static class UMath
         }
     }
 
-    internal static void Rot(Span<float> a, Span<float> b, float offA, float offB, float angle, int len)
+    public static void Rot(Span<float> a, Span<float> b, float offA, float offB, float angle, int len)
     {
         if (angle != 0)
         {
@@ -233,45 +233,45 @@ public static class UMath
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(fix64 deg)
+    public static fix64 Sin(fix64 deg)
     {
         var sin = FixedTrigLUT.SinDeg(deg);
         return sin;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(fix64 deg)
+    public static fix64 Cos(fix64 deg)
     {
         var cos = FixedTrigLUT.CosDeg(deg);
         return cos;
     }
 
-    internal static bool EqEpsilon(fix64 a, fix64 b)
+    public static bool EqEpsilon(fix64 a, fix64 b)
     {
         var epsilon = (fix64)0.00001F;
         return fix64.Abs(a - b) < epsilon;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(int deg)
+    public static fix64 Sin(int deg)
     {
         return Sin((fix64)deg);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Sin(float deg)
+    public static fix64 Sin(float deg)
     {
         return Sin((fix64)deg);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(int deg)
+    public static fix64 Cos(int deg)
     {
         return Cos((fix64)deg);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static fix64 Cos(float deg)
+    public static fix64 Cos(float deg)
     {
         return Cos((fix64)deg);
     }

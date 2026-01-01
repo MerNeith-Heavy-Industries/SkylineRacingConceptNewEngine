@@ -1,3 +1,4 @@
+using NFMWorld.Library;
 using NFMWorld.Util;
 
 namespace NFMWorld.Mad;
@@ -17,7 +18,7 @@ public class AroundCamera
     // On each tick change camera position to be around the object
     public void AroundConstantHeight(PerspectiveCamera camera, Transform obj, float xzspeed = 1f)
     {
-        CurrentXz += xzspeed * GameSparker.PHYSICS_MULTIPLIER;
+        CurrentXz += xzspeed * Physics.PHYSICS_MULTIPLIER;
         if (CurrentXz >= 360)
         {
             CurrentXz -= 360;
@@ -34,7 +35,7 @@ public class AroundCamera
 
     public void Around(PerspectiveCamera camera, Transform obj, float xzspeed = 1f, float yspeed = 2f)
     {
-        CurrentXz += xzspeed * GameSparker.PHYSICS_MULTIPLIER;
+        CurrentXz += xzspeed * Physics.PHYSICS_MULTIPLIER;
         if (CurrentXz >= 360)
         {
             CurrentXz -= 360;
@@ -42,7 +43,7 @@ public class AroundCamera
         
         if (_rising)
         {
-            Height += yspeed * GameSparker.PHYSICS_MULTIPLIER;
+            Height += yspeed * Physics.PHYSICS_MULTIPLIER;
             if (Height >= MaxHeight)
             {
                 _rising = false;
@@ -50,7 +51,7 @@ public class AroundCamera
         }
         else
         {
-            Height -= yspeed * GameSparker.PHYSICS_MULTIPLIER;
+            Height -= yspeed * Physics.PHYSICS_MULTIPLIER;
             if (Height <= MinHeight)
             {
                 _rising = true;

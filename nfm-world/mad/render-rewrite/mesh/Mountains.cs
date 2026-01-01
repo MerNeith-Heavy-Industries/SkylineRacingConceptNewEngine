@@ -1,5 +1,6 @@
 ﻿using HoleyDiver;
 using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.Library;
 
 namespace NFMWorld.Mad;
 
@@ -11,6 +12,8 @@ public class Mountains : Transform, IImmediateRenderable
     private readonly Effect _material;
     private readonly int _triangleCount;
     private readonly int _vertexCount;
+
+    public override IReadOnlyList<ITransform> ChildTransforms => [];
 
     public Mountains(GraphicsDevice graphicsDevice, Rad3dPoly[] polys)
     {
