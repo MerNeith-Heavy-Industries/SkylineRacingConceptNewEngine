@@ -3,6 +3,7 @@ disp(60)
 disline(4)
 stonecold()
 grounded(189)
+road()
 
 tracks(5)
 
