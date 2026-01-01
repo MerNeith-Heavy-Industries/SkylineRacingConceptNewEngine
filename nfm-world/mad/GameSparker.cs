@@ -11,6 +11,7 @@ using Path = System.IO.Path;
 using NFMWorld.Mad.UI;
 using NFMWorld.SkiaDriver;
 using NFMWorld.DriverInterface;
+using NFMWorld.Library;
 using SoftFloat;
 
 namespace NFMWorld.Mad;
@@ -73,33 +74,15 @@ public class GameSparker
     
     private static MicroStopwatch timer;
 
-    public static Dictionary<Collection, UnlimitedArray<CarInfo>> cars = new();
-    public static UnlimitedArray<PlaceableObjectInfo> stage_parts;
-    public static UnlimitedArray<PlaceableObjectInfo> vendor_stage_parts;
-    public static UnlimitedArray<PlaceableObjectInfo> user_stage_parts;
-    public static PlaceableObjectInfo error_mesh;
+    public static Dictionary<Rad3d, CarMesh> car_meshes = [];
+    public static Dictionary<Rad3d, Mesh> stage_part_meshes = [];
+    public static Mesh error_mesh;
     
     public static bool devRenderTrackers = false;
     
     public static DevConsole devConsole = new();
 
     public static SettingsMenu SettingsMenu;
-
-    public static readonly string[] CarRads = {
-        "2000tornados", "formula7", "canyenaro", "lescrab", "nimi", "maxrevenge", "leadoxide", "koolkat", "drifter",
-        "policecops", "mustang", "king", "audir8", "masheen", "radicalone", "drmonster"
-    };
-    public static readonly string[] StageRads = {
-        "road", "froad", "twister2", "twister1", "turn", "offroad", "bumproad", "offturn", "nroad", "nturn",
-        "roblend", "noblend", "rnblend", "roadend", "offroadend", "hpground", "ramp30", "cramp35", "dramp15",
-        "dhilo15", "slide10", "takeoff", "sramp22", "offbump", "offramp", "sofframp", "halfpipe", "spikes", "rail",
-        "thewall", "checkpoint", "fixpoint", "offcheckpoint", "sideoff", "bsideoff", "uprise",  //45
-        "riseroad",
-        "sroad",
-        "soffroad", "tside", "launchpad", "thenet", "speedramp", "offhill", "slider", "uphill", "roll1", "roll2",
-        "roll3", "roll4", "roll5", "roll6", "opile1", "opile2", "aircheckpoint", "tree1", "tree2", "tree3", "tree4",
-        "tree5", "tree6", "tree7", "tree8", "cac1", "cac2", "cac3", "8sroad", "8soffroad"
-    };
 
     public static DevConsoleWriter Writer;
 
@@ -183,63 +166,9 @@ public class GameSparker
         
         return stages;
     }
-
-    public static (int Id, CarInfo? Car) GetCar(string name)
-    {
-        var total = 0;
-        foreach (var t in cars.Values)
-        {
-            foreach (var car in t)
-            {
-                if (string.Equals(car.FileName, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return (total, car);
-                }
-
-                total++;
-            }
-        }
-
-        Console.WriteLine("No results for GetCar");
-        return (-1, null!);
-    }
-
-    public static (int Id, PlaceableObjectInfo? Mesh) GetStagePart(string name)
-    {
-        IReadOnlyList<PlaceableObjectInfo>[] arrays = [stage_parts, vendor_stage_parts, user_stage_parts];
-
-        var total = 0;
-        foreach (var t in arrays)
-        {
-            foreach (var part in t)
-            {
-                if (string.Equals(part.FileName, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return (total, part);
-                }
-
-                total++;
-            }
-        }
-
-        Console.WriteLine("No results for GetStagePart");
-        return (-1, null!);
-    }
-
-    public static string GetModelName(int index, bool forCar = false)
-    {
-        var models = forCar ? CarRads : StageRads;
-        
-        if (index >= 0 && index < models.Length)
-        {
-            return models[index];
-        }
-        
-        return "";
-    }
-
     public static void Load(Program game)
     {
+        BackendGameSparker.Load();
         _game = game;
         _graphicsDevice = game.GraphicsDevice;
 
@@ -254,67 +183,6 @@ public class GameSparker
         vendor_stage_parts = [];
         user_stage_parts = [];
 
-        cars.Add(Collection.NFMM, []);
-        FileUtil.LoadFiles("./data/models/nfmm/cars", CarRads, (ais, id, fileName) => {
-            cars[Collection.NFMM][id] = new CarInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "nfmm/" + fileName);
-        });
-
-        FileUtil.LoadFiles("./data/models/nfmm/stage", StageRads, (ais, id, fileName) => {
-            stage_parts[id] = new PlaceableObjectInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "nfmm/" + fileName);
-        });
-        
-        cars.Add(Collection.World, []);
-        FileUtil.LoadFiles("./data/models/world/cars", (ais, fileName) => {
-            cars[Collection.World].Add(new CarInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "world/" + fileName));
-        });
-
-        cars.Add(Collection.Elo, []);
-        FileUtil.LoadFiles("./data/models/elo/cars", (ais, fileName) => {
-            cars[Collection.Elo].Add(new CarInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "elo/" + fileName));
-        });
-
-        cars.Add(Collection.Football, []);
-        FileUtil.LoadFiles("./data/models/football/cars", (ais, fileName) => {
-            cars[Collection.Football].Add(new CarInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "football/" + fileName));
-        });
-        
-        FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) => {
-            vendor_stage_parts.Add(new PlaceableObjectInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "world/" + fileName));
-        });
-        
-        FileUtil.LoadFiles("./data/models/football/stage", (ais, fileName) => {
-            vendor_stage_parts.Add(new PlaceableObjectInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "football/" + fileName));
-        });
-
-        cars.Add(Collection.User, []);
-        FileUtil.LoadFiles("./data/models/user/cars", (ais, fileName) => {
-            try
-            {
-                cars[Collection.User].Add(new CarInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
-            }
-        });
-        
-        FileUtil.LoadFiles("./data/models/user/stage", (ais, fileName) => {
-            try
-            {
-                user_stage_parts.Add(new PlaceableObjectInfo(game.GraphicsDevice, RadParser.ParseRad(Encoding.UTF8.GetString(ais)), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
-            }
-        });
-
-        error_mesh = new PlaceableObjectInfo(
-            game.GraphicsDevice,
-            RadParser.ParseRad(Encoding.UTF8.GetString(System.IO.File.ReadAllBytes("./data/models/error.rad"))),
-            "error.rad"
-        );
-
         // init menu
         SettingsMenu = new SettingsMenu(game);
         MainMenu = new MainMenuPhase(_graphicsDevice);
@@ -327,18 +195,6 @@ public class GameSparker
         ModelEditor = new ModelEditorPhase(_graphicsDevice);
         
         StageEditor = new StageEditorPhase(_graphicsDevice);
-        
-        for (var i = 0; i < StageRads.Length; i++) {
-            if (stage_parts[i] == null) {
-                throw new Exception("No valid ContO (Stage Part) has been assigned to ID " + i + " (" + StageRads[i] + ")");
-            }
-        }
-        for (var i = 0; i < CarRads.Length; i++) {
-            if (cars[Collection.NFMM][i] == null)
-            {
-                throw new Exception("No valid ContO (Vehicle) has been assigned to ID " + i + " (" + StageRads[i] + ")");
-            }
-        }
     }
 
     public static void StartModelViewer()

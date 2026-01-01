@@ -5,6 +5,7 @@ namespace NFMWorld.Mad;
 
 public interface ICar : ITransform
 {
+    CarStats Stats { get; }
     int GroundAt { get; }
     int MaxRadius { get; }
     bool VisuallyWasted { get; set; }
@@ -16,6 +17,22 @@ public interface ICar : ITransform
     void DamageX(CarStats stat, int wheelnum, fix64 amount);
     void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash);
     void DamageZ(CarStats stat, int wheelnum, fix64 amount);
+}
+
+public interface IInGameCar : ICar
+{
+    public Mad Mad { get; }
+    public Control Control { get; }
+    public ushort currentCheckpoint { get; set; }
+    public byte currentLap { get; set; } // mad.nlaps
+    public int totalCheckpoint { get; set; } // mad.clear
+    public int lastCheckpointNode { get; set; } // resets on new lap
+    public int placement { get; set; } // cp.pos
+    public bool Wasted { get; }
+
+    void Drive(IStage stage);
+    void Collide(IInGameCar otherCar);
+    void ResetPosition();
 }
 
 // temp conto for nfmm compatibility

@@ -1,13 +1,14 @@
 using System.Diagnostics;
 using NFMWorld;
 using NFMWorld.Library;
+using NFMWorld.Library.backend;
 using NFMWorld.Mad;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Util;
 using Stride.Core.Mathematics;
 
-public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
-    : BaseGamemode(gamemodeParameters, baseRacePhase)
+public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
+    : BaseGamemode(gamemodeParameters, raceValues)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
@@ -15,9 +16,8 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRac
 
     public override void Enter()
     {
-        carsInRace[playerCarIndex] = new InGameCar(playerCarIndex, GameSparker.GetCar(player.CarName).Car!, 500, 0, true);
-        carsInRace[1] = new InGameCar(1, GameSparker.GetCar("football/BALL").Car!, 0, 0, false);
-        carsInRace[1].Sfx.Mute = true;
+        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Car!, playerCarIndex, 500, 0, true);
+        carsInRace[1] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Car!, 1, 0, 0, false);
 
         Reset();
     }
@@ -58,25 +58,7 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRac
 
         foreach (var car in carsInRace)
         {
-            car.Drive(baseRacePhase.CurrentStage);
+            car.Drive(raceValues.CurrentStage);
         }
-    }
-
-    public override void KeyPressed(Keys key)
-    {
-        // Handle key presses specific to Time Trial mode
-        if (key == Keys.R)
-        {
-            Reset();
-        }
-    }
-
-    public override void KeyReleased(Keys key)
-    {
-        // Handle key releases specific to Time Trial mode
-    }
-
-    public override void Render()
-    {
     }
 }

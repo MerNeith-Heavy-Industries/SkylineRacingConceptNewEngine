@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world.mad.collision;
 using NFMWorld;
+using NFMWorld.Library;
 using NFMWorld.Library.mad;
 using NFMWorld.Mad;
 using NFMWorld.Util;
@@ -19,6 +20,11 @@ public class Stage : GameObject, IStage
     public UnlimitedArray<CheckPoint> checkpoints = [];
     public UnlimitedArray<FixHoop> fixHoops = [];
 
+    IReadOnlyList<ITransform> IStage.pieces => pieces;
+    IReadOnlyList<IAiNode> IStage.nodes => nodes;
+    IReadOnlyList<IAiNode> IStage.checkpoints => checkpoints;
+    IReadOnlyList<IAiNode> IStage.fixHoops => fixHoops;
+
     public int stagePartCount => pieces.Count;
 
     public Sky sky;
@@ -29,7 +35,7 @@ public class Stage : GameObject, IStage
 
     private int _fadeFrom;
     public readonly string Path;
-    public int nlaps;
+    public ushort nlaps { get; }
 
     // left
     public int Sx;
@@ -300,25 +306,25 @@ public class Stage : GameObject, IStage
         CollisionQuadTree.TrimExcess();
     }
 
-    private static bool TryGetPieceToPlace(string setstring, out PlaceableObjectInfo mesh)
+    private static bool TryGetPieceToPlace(string setstring, out Rad3d mesh)
     {
         if (int.TryParse(setstring, out var setindex))
         {
-            mesh = GameSparker.stage_parts[setindex];
+            mesh = BackendGameSparker.stage_parts[setindex];
             if (mesh == null!)
             {
                 GameSparker.Writer.WriteLine($"Stage part '{setstring}' not found.", "error");
-                mesh = GameSparker.error_mesh;
+                mesh = BackendGameSparker.error_mesh;
                 return true;
             }
         }
         else
         {
-            var stagePart = GameSparker.GetStagePart(setstring);
+            var stagePart = BackendGameSparker.GetStagePart(setstring);
             if (stagePart.Mesh == null)
             {
                 GameSparker.Writer.WriteLine($"Stage part '{setstring}' not found.", "error");
-                mesh = GameSparker.error_mesh;
+                mesh = BackendGameSparker.error_mesh;
                 return true;
             }
             mesh = stagePart.Mesh;
@@ -329,11 +335,11 @@ public class Stage : GameObject, IStage
 
     public GameObject CreateObject(string objectName, int x, int y, int z, int r)
     {
-        var part = GameSparker.GetStagePart(objectName);
+        var part = BackendGameSparker.GetStagePart(objectName);
         if (part.Mesh == null)
         {
             GameSparker.devConsole.Log($"Object '{objectName}' not found.", "warning");
-            part = (-1, GameSparker.error_mesh);
+            part = (-1, BackendGameSparker.error_mesh);
         }
 
         var mesh = pieces[stagePartCount] = new CollisionObject(

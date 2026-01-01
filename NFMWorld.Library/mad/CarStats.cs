@@ -161,4 +161,19 @@ public record struct CarStats
         Console.WriteLine($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
         return property;
     }
+
+    public static CarStats ValidateStats(CarStats stats, string fileName)
+    {
+        string? invalidStat = stats.Validate(fileName);
+        if (invalidStat != null)
+        {
+            stats = Default;
+            if(invalidStat == nameof(stats.Name) || string.IsNullOrEmpty(stats.Name))
+            {
+                stats = stats with { Name = fileName };
+            }
+        }
+
+        return stats;
+    }
 }

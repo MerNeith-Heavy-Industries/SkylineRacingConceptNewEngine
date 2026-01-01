@@ -15,12 +15,12 @@ using SoftFloat;
 using Stride.Core.Mathematics;
 using Color = NFMWorld.Util.Color;
 
-public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase _baseRacePhase)
-    : BaseGamemode(gamemodeParameters, _baseRacePhase)
+public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
+    : BaseGamemode(gamemodeParameters, raceValues)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
-    private BaseRacePhase _baseRacePhase = _baseRacePhase;
+    private BaseRacePhase _raceValues = raceValues;
 
     private enum TimeTrialState
     {
@@ -320,7 +320,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         {
             carsInRace[playerCarIndex + 1].Control.Decode(_bestTimeTrial.GetTick(_tick) ?? (false, false, false, false, false));
 
-            carsInRace[playerCarIndex + 1].Drive(_baseRacePhase.CurrentStage);
+            carsInRace[playerCarIndex + 1].Drive(_raceValues.CurrentStage);
         }
 
         currentTimeTrial.RecordTick(carsInRace[playerCarIndex]);
@@ -404,7 +404,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
 
         carsInRace[playerCarIndex].Mad.Halted = true;
-        carsInRace[playerCarIndex].Drive(_baseRacePhase.CurrentStage);
+        carsInRace[playerCarIndex].Drive(_raceValues.CurrentStage);
     }
 
     private void CountdownTick()

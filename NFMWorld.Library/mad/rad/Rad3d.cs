@@ -10,7 +10,8 @@ public record Rad3d(
     [property: JsonPropertyName("boxes")] Rad3dBoxDef[] Boxes,
     [property: JsonPropertyName("polys")] Rad3dPoly[] Polys,
     [property: JsonPropertyName("shadow")] bool CastsShadow,
-    [property: JsonPropertyName("atp")] Vector2[] Atp
+    [property: JsonPropertyName("atp")] Vector2[] Atp,
+    [property: JsonPropertyName("fileName")] string FileName = "hogan rewish"
 )
 {
     public int MaxRadius { get; } = CalculateMaxRadius(Polys);

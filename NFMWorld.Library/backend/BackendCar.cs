@@ -1,0 +1,107 @@
+﻿using NFMWorld.Mad;
+using SoftFloat;
+
+namespace NFMWorld.Library.backend;
+
+public class BackendCar : BackendGameObject, IInGameCar
+{
+    public int GroundAt { get; }
+    public int MaxRadius { get; }
+    public bool VisuallyWasted { get; set; }
+    public f64Euler WheelAngle { get; set; }
+    public f64Euler TurningWheelAngle { get; set; }
+    public IReadOnlyList<Rad3dWheelDef> Wheels { get; }
+
+    public Mad.Mad Mad { get; }
+    public Control Control { get; }
+    public ushort currentCheckpoint { get; set; }
+    public byte currentLap { get; set; } // mad.nlaps
+    public int totalCheckpoint { get; set; } // mad.clear
+    public int lastCheckpointNode { get; set; } = -1; // resets on new lap
+    public int placement { get; set; } // cp.pos
+    public CarStats Stats { get; }
+    public bool Wasted => Mad.Wasted;
+
+    public event DamageFunc? DamagedX;
+    public event RoofDamageFunc? DamagedY;
+    public event DamageFunc? DamagedZ;
+    public event SparkFunc? Sparked;
+    public event DustFunc? Dusted;
+
+    public BackendCar(
+        int maxRadius,
+        IReadOnlyList<Rad3dWheelDef> wheels,
+        CarStats stats,
+        int im,
+        int x,
+        int z,
+        bool isClientPlayer
+    )
+    {
+        Stats = CarStats.ValidateStats(stats, "hogan rewish");
+
+        GroundAt = wheels.FirstOrDefault().Ground;
+        MaxRadius = maxRadius;
+        Wheels = wheels;
+        
+        Mad = new Mad.Mad(Stats, im, isClientPlayer);
+        Control = new Control();
+        
+        Position = new f64Vector3(x, World.Ground - GroundAt, z);
+        Rotation = f64Euler.Identity;
+    }
+
+    public BackendCar(Rad3d rad, int im, int x, int z, bool isClientPlayer) : this(rad.MaxRadius, rad.Wheels, rad.Stats, im, x, z, isClientPlayer)
+    {
+    }
+
+    public void Drive(IStage stage)
+    {
+        Mad.Drive(Control, this, stage);
+    }
+    
+    public void Collide(IInGameCar otherCar)
+    {
+        Mad.Colide(this, otherCar.Mad, new ContO(otherCar));
+    }
+
+    public void ResetPosition()
+    {
+        Mad.Reseto(Mad.Im, this);
+        Position = new f64Vector3(fix64.Zero, World.Ground - GroundAt, fix64.Zero);
+        Rotation = f64Euler.Identity;
+    }
+
+    public void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt,
+        bool onRoof, int wheelGround)
+    {
+        Dusted?.Invoke(wheelidx, wheelx, wheely, wheelz, scx, scz, simag, tilt, onRoof, wheelGround);
+    }
+
+    public void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround)
+    {
+        Sparked?.Invoke(wheelx, wheely, wheelz, scx, scy, scz, type, wheelGround);
+    }
+
+    public void DamageX(CarStats stat, int wheelnum, fix64 amount)
+    {
+        DamagedX?.Invoke(stat, wheelnum, amount);
+    }
+
+    public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
+    {
+        DamagedY?.Invoke(stat, wheelnum, amount, mtouch, nbsq, squash);
+    }
+
+    public void DamageZ(CarStats stat, int wheelnum, fix64 amount)
+    {
+        DamagedZ?.Invoke(stat, wheelnum, amount);
+    }
+    
+    public static implicit operator ContO(BackendCar car) => new(car);
+}
+
+public delegate void DamageFunc(CarStats stat, int wheelnum, fix64 amount);
+public delegate void RoofDamageFunc(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash);
+public delegate void SparkFunc(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround);
+public delegate void DustFunc(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround);

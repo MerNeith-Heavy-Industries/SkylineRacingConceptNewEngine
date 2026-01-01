@@ -1,23 +1,15 @@
 ﻿using FixedMathSharp.Utility;
-using Maxine.Extensions;
 using NFMWorld.Library;
+using NFMWorld.Library.backend;
 using NFMWorld.Util;
 using SoftFloat;
 
 namespace NFMWorld.Mad.ai;
 
 /// <summary>
-/// Base AI class for gamemode-specific AI implementations.
-/// </summary>
-public abstract class BaseAi
-{
-    public abstract void RunAi(InGameCar car, int currentCarIndex);
-}
-
-/// <summary>
 /// Handles AI decision making, path finding, and control inputs based on difficulty and race conditions.
 /// </summary>
-public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
+public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
 {
     /// <summary>
     /// Pythagorean distance squared calculation (integer version).
@@ -62,7 +54,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
     /// <param name="u">Control output structure</param>
     /// <param name="position">Current race position</param>
     /// <param name="currentCarIndex">Index of the current car</param>
-    public override void RunAi(InGameCar car, int currentCarIndex)
+    public override void RunAi(IInGameCar car, int currentCarIndex)
     {
         // Get current race state information
         var u = car.Control;
@@ -104,7 +96,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
     /// Detects when the car is stuck against a wall and applies avoidance steering.
     /// Checks if the car has low speed despite throttle input, indicating a collision.
     /// </summary>
-    private void DetectAndAvoidObstacles(InGameCar car, Mad mad, Stage stage)
+    private void DetectAndAvoidObstacles(IInGameCar car, Mad mad, IStage stage)
     {
         // Decrease avoidance timer
         if (_avoidanceTimer > 0)
@@ -175,7 +167,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
     /// Estimates clearance in a given direction by finding the nearest node.
     /// Higher values = more open space.
     /// </summary>
-    private fix64 GetClearanceInDirection(InGameCar car, fix64 targetX, fix64 targetZ, Stage stage)
+    private fix64 GetClearanceInDirection(IInGameCar car, fix64 targetX, fix64 targetZ, IStage stage)
     {
         // Find closest node to the sample point
         fix64 minDistSq = fix64.MaxValue;
@@ -193,7 +185,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
         return fix64.Sqrt(minDistSq);
     }
 
-    private void FindDrivingTarget(InGameCar car, fix64 rubberbandingFactor, Mad mad, ref DeterministicRandom random)
+    private void FindDrivingTarget(IInGameCar car, fix64 rubberbandingFactor, Mad mad, ref DeterministicRandom random)
     {
         // If distance to target node <5000 units, target next node, except if the current node is a checkpoint
         var targetNodeIndex = _targetNode;
@@ -410,7 +402,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
         Target(car, racePhase.CurrentStage.nodes[targetNodeIndex].Position);
     }
 
-    private void Steer(InGameCar car, Mad mad, Control u)
+    private void Steer(IInGameCar car, Mad mad, Control u)
     {
         // Reset input controls
         u.Up = false;
@@ -481,7 +473,7 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
         return angleDiff;
     }
 
-    private void Target(InGameCar car, f64Vector3 position)
+    private void Target(IInGameCar car, f64Vector3 position)
     {
         // Target object position
         var targetX = position.X;
@@ -496,4 +488,4 @@ public class ElStupido(BaseGamemode gamemode, BaseRacePhase racePhase) : BaseAi
         pan = -(fix64.Atan2(dx, dz) * (180 / fix64.Pi));
     }
     // End of RunAi method
-} // End of ReLitAi class
+}

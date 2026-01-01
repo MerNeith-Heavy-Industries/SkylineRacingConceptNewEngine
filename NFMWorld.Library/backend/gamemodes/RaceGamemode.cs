@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
 using NFMWorld.Library;
+using NFMWorld.Library.backend;
 using NFMWorld.Mad;
 using NFMWorld.Mad.ai;
 using NFMWorld.Mad.gamemodes;
@@ -10,8 +11,8 @@ using NFMWorld.Mad.UI.yoga;
 using NFMWorld.Util;
 using Color = NFMWorld.Util.Color;
 
-public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
-    : BaseGamemode(gamemodeParameters, baseRacePhase)
+public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
+    : BaseGamemode(gamemodeParameters, raceValues)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
@@ -29,92 +30,11 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
     private Stopwatch raceTimer = new Stopwatch();
 
-    private PowerDamageBars _pdBars = new PowerDamageBars();
-
-    private static TextBlock _lapText = null!;
-    
     private int _newTick = 0;
 
     private int _finishTicks;
     
-    private Node _lapTimerSplits = new Node()
-    {
-        Name = "LapTimerSplits",
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-        AlignItems = Yoga.YGAlign.YGAlignFlexStart,
-        JustifyContent = Yoga.YGJustify.YGJustifyCenter,
-        Gap = 10,
-        Padding = 10,
-
-        Children =
-        {
-            new Node()
-            {
-                Name = "LapDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Name = "LapIcon",
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Color = new Color(255, 255, 255),
-                        StrokeColor = new Color(0, 0, 0),
-                        Text = "Lap: ",
-                        Flex = 1
-                    },
-                    new TextBlock()
-                    {
-                        Ref = textBlock => _lapText = textBlock,
-                        StrokeColor = new Color(0, 0, 0),
-                        Name = "LapText",
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-        }
-    };
-
-    private static TextRun _centerText = null!;
-    private Node _centralTextNode = new Node()
-    {
-        Name = "CentralText",
-        AlignItems = Yoga.YGAlign.YGAlignCenter,
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-
-        Children =
-        {
-            new Node()
-            {
-                AlignItems = Yoga.YGAlign.YGAlignCenter,
-                Flex = 1,
-                Children = {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _centerText = textBlock,
-                        Text = "",
-                        Color = new Color(0, 0, 0, 0),
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Display = Yoga.YGDisplay.YGDisplayNone
-                    },
-                }
-            },
-
-            new Node()
-            {
-                Flex = 1
-            }
-        }
-    };
-
     private int _winner;
-
-    public void SetLapText(int currentLap)
-    {
-        _lapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
-    }
 
     public override void Enter()
     {
@@ -144,7 +64,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
             carsInRace[idx].currentLap = 0;
             if (player.IsBot)
             {
-                carsInRace[idx].Bot = new ElStupido(this, baseRacePhase);
+                carsInRace[idx].Bot = new ElStupido(this, raceValues);
             }
         }
         carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
@@ -166,7 +86,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
     {
         FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].Position.X:0.00}, contoz: {carsInRace[playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].Position.Y:0.00}");
 
-        if (baseRacePhase.raceState != RaceState.InProgress)
+        if (raceValues.raceState != RaceState.InProgress)
         {
             return;
         }
@@ -282,7 +202,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
         foreach (var inGameCar in carsInRace)
         {
             inGameCar.Mad.Halted = true;
-            inGameCar.Drive(baseRacePhase.CurrentStage);
+            inGameCar.Drive(raceValues.CurrentStage);
         }
 
         _finishTicks++;

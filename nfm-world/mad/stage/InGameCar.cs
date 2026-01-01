@@ -3,18 +3,18 @@ using SoftFloat;
 
 namespace NFMWorld.Mad;
 
-public class InGameCar : Car
+public class InGameCar : Car, IInGameCar
 {
     public CarInfo ClonedCarInfo;
-    public Mad Mad;
-    public Control Control;
+    public Mad Mad { get; }
+    public Control Control { get; }
     public MadSfx Sfx;
-    public ushort currentCheckpoint;
-    public byte currentLap; // mad.nlaps
-    public int totalCheckpoint; // mad.clear
-    public int lastCheckpointNode = -1; // resets on new lap
+    public ushort currentCheckpoint { get; set; }
+    public byte currentLap { get; set; } // mad.nlaps
+    public int totalCheckpoint { get; set; } // mad.clear
+    public int lastCheckpointNode { get; set; } = -1; // resets on new lap
     public BaseAi? Bot;
-    public int placement; // cp.pos
+    public int placement { get; set; } // cp.pos
     
     public bool Wasted => Mad.Wasted;
 
