@@ -32,15 +32,16 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             var entries = Directory.GetFiles(dir);
             if(entries.IsNullOrEmpty()) continue;
 
-            var stageName = dir.Replace("data/stages/", "").Replace("\\", "/");
+            var stageName = Path.GetFileName(dir);
             _stageCollections.Add(stageName);
         }
-        _selectedCollection = _stageCollections.FirstOrDefault() ?? "";
+        // randomly select collection
+        _selectedCollection = _stageCollections[new System.Random().Next(0, _stageCollections.Count)];
         LoadStagesInCollection(_selectedCollection);
         LoadStageInCollection();
 
         GameSparker.CurrentMusic?.Unload();
-        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new NFMWorld.Util.File("data/music/interface/stages.mp3"), 0f);
+        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new NFMWorld.Util.File("data/music/nfm1/stageselectremastered.mp3"), 0f);
         GameSparker.CurrentMusic?.Play();
     }
 

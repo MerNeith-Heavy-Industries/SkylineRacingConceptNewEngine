@@ -14,10 +14,12 @@ using SoftFloat;
 using Stride.Core.Mathematics;
 using Color = NFMWorld.Util.Color;
 
-public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
-    : BaseGamemode(gamemodeParameters, baseRacePhase)
+public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase _baseRacePhase)
+    : BaseGamemode(gamemodeParameters, _baseRacePhase)
 {
     public override event EventHandler<byte[]>? RaceFinished;
+
+    private BaseRacePhase _baseRacePhase = _baseRacePhase;
 
     private enum TimeTrialState
     {
@@ -32,15 +34,18 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     private int _innerCountdownTicks = 0;
     private TimeTrialState _currentState = TimeTrialState.NotStarted;
 
-    private bool writtenData;
+    private bool _writtenData;
 
-    private Stopwatch raceTimer = new Stopwatch();
+    private Stopwatch _raceTimer = new Stopwatch();
 
     // demo playback and recording
-    private SavedTimeTrial? bestTimeTrial = null;
-    private int tick = 0;
+    private SavedTimeTrial? _bestTimeTrial = null;
+    private int _tick = 0;
     public static bool PlaybackOnReset = true;
     private SavedTimeTrial currentTimeTrial = null!;
+    private long _lastCheckpointSplitDiff = 0;
+    private long _lastLapSplitDiff = 0;
+    private long _lastLapTime = 0;
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
@@ -48,7 +53,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private static TextBlock _timerText = null!;
 
-    private static TextRun _splitsText = null!;
+    private static TextRun _checkpointSplitsText = null!;
+    private static TextRun _lapSplitsText = null!;
+    private static TextRun _lastLapTimeText = null!;
 
     private Node _lapTimerSplits = new Node()
     {
@@ -115,12 +122,42 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             },
             new Node()
             {
+                Children =
+                {
+                    new TextRun()
+                    {
+                        Ref = textBlock => _lastLapTimeText = textBlock,
+                        Name = "LapTimeText",
+                        StrokeColor = new Color(0, 0, 0),
+                        Color = new Color(255, 255, 255),
+                        Font = new Font(FontFamily.DroidSans, 1, 24),
+                        Flex = 1,
+                    }
+                }
+            },
+            new Node()
+            {
               Children =
                 {
                     new TextRun()
                     {
-                        Ref = textBlock => _splitsText = textBlock,
-                        Name = "SplitsText",
+                        Ref = textBlock => _checkpointSplitsText = textBlock,
+                        Name = "CheckpointSplitsText",
+                        StrokeColor = new Color(0, 0, 0),
+                        Color = new Color(255, 255, 255),
+                        Font = new Font(FontFamily.DroidSans, 1, 24),
+                        Flex = 1,
+                    }
+                }
+            },
+            new Node()
+            {
+                Children =
+                {
+                    new TextRun()
+                    {
+                        Ref = textBlock => _lapSplitsText = textBlock,
+                        Name = "LapSplitsText",
                         StrokeColor = new Color(0, 0, 0),
                         Color = new Color(255, 255, 255),
                         Font = new Font(FontFamily.DroidSans, 1, 24),
@@ -170,11 +207,13 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     public void SetTimeText()
     {
-        _timerText.Text = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
+        _timerText.Text = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
     }
 
     public override void Enter()
     {
+        base.Enter();
+
         _currentState = TimeTrialState.NotStarted;
 
         Reset();
@@ -191,12 +230,12 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         _countdownTime = 4;
         _innerCountdownTicks = 0; // Tick down immediately to "three"
-        raceTimer.Reset();
-        writtenData = false;
+        _raceTimer.Reset();
+        _writtenData = false;
 
         // ghosts
-        bestTimeTrial = null;
-        tick = 0;
+        _bestTimeTrial = null;
+        _tick = 0;
 
         carsInRace.Clear();
         carsInRace[playerCarIndex] = new InGameCar(0, GameSparker.GetCar(player.CarName).Car!, 0, 0, true);
@@ -211,8 +250,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(player.CarName, currentStage.Path);
         if (bestTimeDemo != null && PlaybackOnReset)
         {
-            bestTimeTrial = bestTimeDemo;
+            _bestTimeTrial = bestTimeDemo;
             carsInRace[playerCarIndex + 1].AlphaOverride = 0.2f;
+            carsInRace[playerCarIndex + 1].currentLap = 0;
         }
         else
         {
@@ -231,10 +271,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         _pdBars.Reset();
         IBackend.Backend.StopAllSounds();
 
-        SetLapText(1);
-        _splitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+        SetLapText(0);
+        _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
 
         _currentState = TimeTrialState.Countdown;
+        _lastLapSplitDiff = 0;
+        _lastCheckpointSplitDiff = 0;
+        _lastLapTime = 0;
+
+        carsInRace[playerCarIndex].currentLap = 0;
     }
 
     public override void GameTick()
@@ -267,11 +312,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         _pdBars.SetPowerBarFill((float)carsInRace[playerCarIndex].Mad.Power);
         _pdBars.UpdatePowerBarColor();
 
-        if (bestTimeTrial != null)
+        if (_bestTimeTrial != null)
         {
-            carsInRace[playerCarIndex + 1].Control.Decode(bestTimeTrial.GetTick(tick) ?? (false, false, false, false, false));
+            carsInRace[playerCarIndex + 1].Control.Decode(_bestTimeTrial.GetTick(_tick) ?? (false, false, false, false, false));
 
-            carsInRace[playerCarIndex + 1].Drive(baseRacePhase.CurrentStage);
+            carsInRace[playerCarIndex + 1].Drive(_baseRacePhase.CurrentStage);
         }
 
         currentTimeTrial.RecordTick(carsInRace[playerCarIndex]);
@@ -282,13 +327,32 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             // lol
             return;
         }
-        
+
         FixHoopHelper.HandleFixHoops(currentStage, carsInRace[playerCarIndex]);
-        
+
+        int currentLap = carsInRace[playerCarIndex].currentLap;
         if (CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[playerCarIndex]))
         {
-            currentTimeTrial.RecordSplit(raceTimer.ElapsedMilliseconds);
-            
+            if (_bestTimeTrial != null && currentTimeTrial.Splits.SplitTimes.Count > 0)
+            {
+                _lastCheckpointSplitDiff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
+            }
+
+            long currentLapSplitDiff = 0;
+            if (currentLap > 0 && _bestTimeTrial != null)
+            {
+                currentLapSplitDiff = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap) - _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap - 1);
+            }
+
+            currentTimeTrial.RecordSplit(_raceTimer.ElapsedMilliseconds);
+
+            if (currentLap != carsInRace[playerCarIndex].currentLap)
+            {
+                // lap changed
+                _lastLapSplitDiff = currentLapSplitDiff;
+                _lastLapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap);
+            }
+
             SfxLibrary.checkpoint?.Play();
         }
 
@@ -318,25 +382,25 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         if (carsInRace[playerCarIndex].currentLap >= currentStage.nlaps)
         {
             _currentState = TimeTrialState.Finished;
-            raceTimer.Stop();
+            _raceTimer.Stop();
         }
 
-        tick++;
+        _tick++;
     }
 
     private void TimeTrialFinished()
     {
-        if (!writtenData)
+        if (!_writtenData)
         {
-            writtenData = true;
-            if (bestTimeTrial == null || (currentTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0))
+            _writtenData = true;
+            if (_bestTimeTrial == null || (currentTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0))
             {
                 currentTimeTrial.Save();
             }
         }
 
         carsInRace[playerCarIndex].Mad.Halted = true;
-        carsInRace[playerCarIndex].Drive(baseRacePhase.CurrentStage);
+        carsInRace[playerCarIndex].Drive(_baseRacePhase.CurrentStage);
     }
 
     private void CountdownTick()
@@ -351,7 +415,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             {
                 _currentState = TimeTrialState.InProgress;
                 _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
-                raceTimer.Start();
+                _raceTimer.Start();
             }
         }
     }
@@ -370,6 +434,51 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         // Handle key releases specific to Time Trial mode
     }
 
+    private void RenderInfo()
+    {
+        if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && _bestTimeTrial != null)
+            {
+                _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+                long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
+                _checkpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+
+                long lastSplitChange = diff - _lastCheckpointSplitDiff;
+                string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
+
+                string thisDiffFmt = FormatTimeMs(diff, true);
+                _checkpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
+            }
+            else
+            {
+                _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            }
+
+            if (carsInRace[playerCarIndex].currentLap > 0 && _bestTimeTrial != null)
+            {
+                _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+                long lapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
+                long bestLapTime = _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
+                long lapDiff = lapTime - bestLapTime;
+                _lapSplitsText.Color = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+
+                long lastSplitChange = lapDiff - _lastLapSplitDiff;
+                string lastLapSplitFmt = FormatTimeMs(lastSplitChange, true);
+
+                string lapDiffFmt = FormatTimeMs(lapDiff, true);
+
+                _lapSplitsText.Text = $"Lap Diff: {lapDiffFmt} ({lastLapSplitFmt})";
+            }
+            else
+            {
+                _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            }
+
+            if(_lastLapTime > 0)
+            {
+                _lastLapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
+            }
+    }
+
     public override void Render()
     {
         _pdBars.Render();
@@ -378,29 +487,12 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (_currentState == TimeTrialState.InProgress)
         {
-            if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && bestTimeTrial != null)
-            {
-                _splitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
-                long diff = currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
-                if (diff > 0)
-                {
-                    _splitsText.Color = new Color(255, 128, 128);
-                }
-                else if (diff < 0)
-                {
-                    _splitsText.Color = new Color(128, 255, 128);
-                }
-
-                long diffSeconds = Math.Abs(diff / 1000);
-                long diffMs = Math.Abs(diff % 1000);
-
-                string fmt = $"{(diff > 0 ? "+" : "-")}{diffSeconds}s {diffMs}ms";
-
-                _splitsText.Text = $"This Split: {fmt}";
-            }
+            RenderInfo();
         }
         else if (_currentState == TimeTrialState.Countdown)
         {
+            RenderInfo();
+
             _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
             _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
             _centerText.Color = new Color(255, 255, 255);
@@ -409,21 +501,23 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
         else if (_currentState == TimeTrialState.Finished)
         {
-            string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
+            RenderInfo();
+
+            string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
             _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
             _centerText.Color = new Color(128, 255, 128);
             _centerText.StrokeColor = new Color(0, 0, 0);
             _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
             _centerText.Text = $"Finished! Time: {finalTime}";
 
-            bool newBest = bestTimeTrial == null || (bestTimeTrial != null && currentTimeTrial.GetSplitDiff(bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
+            bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
 
-            if(newBest)
+            if (newBest)
                 _centerText.Text += "\nNew best time!";
 
-            if (bestTimeTrial != null || newBest)
+            if (_bestTimeTrial != null || newBest)
             {
-                long bestTimeMs = Math.Min(currentTimeTrial.Splits.SplitTimes[^1], bestTimeTrial != null ? bestTimeTrial.Splits.SplitTimes[^1] : long.MaxValue);
+                long bestTimeMs = Math.Min(currentTimeTrial.Splits.SplitTimes[^1], _bestTimeTrial != null ? _bestTimeTrial.Splits.SplitTimes[^1] : long.MaxValue);
 
                 TimeSpan t = TimeSpan.FromMilliseconds(bestTimeMs);
 
@@ -434,8 +528,16 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
                 _centerText.Text += $"\nBest time: {time}";
             }
-            
+
             _centerText.Text += "\nPress R to restart";
         }
+    }
+
+    private string FormatTimeMs(long time, bool plusMinus)
+    {
+        long timeSecs = Math.Abs(time / 1000);
+        long timeMs = Math.Abs(time % 1000);
+        string fmt = $"{(plusMinus ? ((time > 0) ? "+" : "-") : "")}{timeSecs}.{timeMs}s";
+        return fmt;
     }
 }

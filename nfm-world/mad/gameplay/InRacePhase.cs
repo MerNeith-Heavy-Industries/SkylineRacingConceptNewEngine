@@ -14,41 +14,21 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     public GameModes gamemode
     {
         get;
-        set
-        {
-            field = value;
-            ReloadGamemode();
-        }
+        set;
     } = GameModes.Racing;
+
+    public void SetGamemode(GameModes mode)
+    {
+        gamemode = mode;
+        ReloadGamemode();
+    }
 
     public override void Enter()
     {
         base.Enter();
 
-        LoadStage("nfm2/15_dwm");
-
-        gamemodeInstance ??= CreateGameMode(new BaseGamemodeParameters
-        {
-            Players =
-            [
-                new PlayerParameters
-                {
-                    CarName = playerCarName,
-                    Color = new Color3(255, 0, 0),
-                    PlayerName = "Player",
-                    IsBot = false
-                },
-                new PlayerParameters()
-                {
-                    CarName = "nfmm/audir8",
-                    Color = new Color3(255, 0, 0),
-                    PlayerName = "Player2",
-                    IsBot = true
-                }
-            ],
-            PlayerCarIndex = playerCarIndex
-        });
-        gamemodeInstance.Enter();
+        RecreateScene();
+        ReloadGamemode();
     }
 
     public override void Exit()
