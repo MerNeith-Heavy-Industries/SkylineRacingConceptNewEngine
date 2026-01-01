@@ -278,7 +278,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         _currentState = TimeTrialState.Countdown;
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
+        _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
         _lastLapTime = 0;
+        _lastLapTimeText.Text = "";
+        _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayNone;
 
         carsInRace[playerCarIndex].currentLap = 0;
     }
@@ -476,6 +479,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
             if(_lastLapTime > 0)
             {
+                _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayFlex;
                 _lastLapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
             }
     }
@@ -536,9 +540,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private string FormatTimeMs(long time, bool plusMinus)
     {
-        long timeSecs = Math.Abs(time / 1000);
+        long timeMins = Math.Abs(time / (1000 * 60));
+        string timeMinsFmt = $"{timeMins:D2}";
+        long timeSecs = Math.Abs(time / 1000 % 60);
         long timeMs = Math.Abs(time % 1000);
-        string fmt = $"{(plusMinus ? ((time > 0) ? "+" : "-") : "")}{timeSecs}.{timeMs}s";
+        string fmt = $"{(plusMinus ? ((time > 0) ? "+" : "-") : "")}{(timeMins > 0 ? timeMinsFmt + ":" : "")}{timeSecs:D2}.{timeMs:D3}";
         return fmt;
     }
 }

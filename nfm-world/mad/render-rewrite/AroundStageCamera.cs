@@ -14,6 +14,7 @@ public class AroundStageCamera
     private float _startX = 0f;
     private float _startZ = 0f;
     private float _targetX = 0f;
+    private float _targetY = 0f;
     private float _targetZ = 0f;
 
     private int _pointCount = 0;
@@ -40,12 +41,12 @@ public class AroundStageCamera
             FollowStage(camera, stage);
         }
 
-        Vector3 location = new(_targetX, 250, _targetZ);
+        Vector3 location = new(_targetX, _targetY + 250, _targetZ);
 
         SinCosFloat sincos = new(_yaw);
         camera.Position = new Vector3(
             _targetX + (17000f * sincos.Cos),
-            -_hit,
+            _targetY - _hit,
             _targetZ + (17000f * sincos.Sin)
         );
         camera.LookAt = location;
@@ -70,6 +71,7 @@ public class AroundStageCamera
         }
 
         _targetX -= (_targetX - (float)stage.nodes[_point].Position.X) / 10f * Physics.PHYSICS_MULTIPLIER;
+        _targetY -= (_targetY - (float)stage.nodes[_point].Position.Y) / 10f * Physics.PHYSICS_MULTIPLIER;
         _targetZ -= (_targetZ - (float)stage.nodes[_point].Position.Z) / 10f * Physics.PHYSICS_MULTIPLIER;
 
         if (_pointCount >= 45 * Physics.PHYSICS_MULTIPLIER)
