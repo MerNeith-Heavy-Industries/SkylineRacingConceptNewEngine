@@ -21,7 +21,7 @@ dammult(0.61)
 maxmag(13000)
 dishandle(1.0)
 outdam(1.0)
-enginsignature(1)
+enginsignature(6)
 name(Mighty Rocket Eight)
 
 idiv(160)

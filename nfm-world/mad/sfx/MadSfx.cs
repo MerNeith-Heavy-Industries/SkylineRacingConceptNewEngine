@@ -22,7 +22,7 @@ public class MadSfx
     private int cntwis = 0;
     private bool pwastd = false;
     private int lcn = 0;
-    private bool[] pengs = new bool[5];
+    private bool[] pengs = new bool[7];
 
     private Mad Mad;
 
