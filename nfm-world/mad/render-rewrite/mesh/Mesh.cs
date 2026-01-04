@@ -29,7 +29,7 @@ public class Mesh
     public bool CastsShadow;
 
     public bool Expand;
-    public float Darken;
+    public float Darken = 1.0f;
 
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
