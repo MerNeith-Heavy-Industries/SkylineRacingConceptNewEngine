@@ -14,7 +14,7 @@ nlaps(1)
 
 swapRotY()
 
-soundtrack(rar2,badlands.mod)
+soundtrack(rar2,BadLands.mod)
 
 maxr(21,50000,-48000)
 maxl(21,-50000,-48000)

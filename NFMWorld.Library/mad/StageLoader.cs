@@ -32,7 +32,7 @@ public class StageLoader
 {
     public readonly string Path;
 
-    private int _fadeFrom = 0;
+    private int? _fadeFrom = null;
 
     public ushort nlaps = 3;
 
@@ -213,6 +213,12 @@ public class StageLoader
                     _fadeFrom = World.FadeFrom;
                 }
 
+                if (line.StartsWith("distfog"))
+                {
+                    FadeFrom = Utility.GetInt("distfog", line, 0);
+                    _fadeFrom = World.FadeFrom;
+                }
+
                 if (line.StartsWith("lightson"))
                 {
                     LightsOn = true;
@@ -265,6 +271,8 @@ public class StageLoader
                     if (!TryGetPieceToPlace(Utility.GetString("set", line, 0), out var set)) continue;
 
                     var setheight = World.Ground;
+
+                    var ymult = -1;
                     
                     var hasCustomY = line.Split(',').Length >= 5;
                     if (hasCustomY)
@@ -275,7 +283,7 @@ public class StageLoader
                         }
                         else
                         {
-                            setheight = Utility.GetInt("set", line, 4) * -1;
+                            setheight = Utility.GetInt("set", line, 4) * ymult + World.Ground;
                         }
                     }
 
@@ -320,12 +328,19 @@ public class StageLoader
                 if (line.StartsWith("chk"))
                 {
                     var ymult = -1;
+                    var isAirCheckpoint = false;
                     
                     if (!TryGetPieceToPlace(Utility.GetString("chk", line, 0), out var mesh)) continue;
 
-                    if ((mesh.HasName ? mesh.Name == "nfmm/aircheckpoint" : mesh.Id == 110) || reverseChkY)
+                    if (mesh.HasName ? mesh.Name == "nfmm/aircheckpoint" : mesh.Id == 54)
                     {
                         ymult = 1; // default to inverted Y for stupid rollercoaster chks for compatibility reasons
+                        isAirCheckpoint = true;
+                    }
+
+                    if (reverseChkY)
+                    {
+                        ymult = 1;
                     }
 
                     var chkheight = World.Ground;
@@ -350,7 +365,7 @@ public class StageLoader
                         }
                         else
                         {
-                            chkheight = Utility.GetInt("chk", line, 4) * ymult;
+                            chkheight = Utility.GetInt("chk", line, 4) * ymult + (isAirCheckpoint ? 0 : World.Ground);
                         }
                     }
 

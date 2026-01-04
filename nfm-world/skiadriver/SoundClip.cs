@@ -49,6 +49,7 @@ internal class SoundClip : ISoundClip
 #if USE_BASS
         if (Bass.ChannelIsActive(_chan) != PlaybackState.Playing) return;
         Bass.ChannelStop(_chan);
+        Bass.ChannelSetPosition(_chan, 0);
 #endif
     }
 
