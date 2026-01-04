@@ -114,9 +114,9 @@ public class Chips
                 {
                     var c = poly.Color;
                     c.ToHSB(out var hue, out var saturation, out var brightness);
-                    if (brightness > _car.Flames.Darken)
+                    if (brightness > _car.Mesh.Darken)
                     {
-                        brightness = _car.Flames.Darken;
+                        brightness = _car.Mesh.Darken;
                     }
                     chip.Color = Color3.FromHSB(hue, saturation, brightness);
                 }

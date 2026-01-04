@@ -16,9 +16,6 @@ public class LineMesh : IInstancedRenderElement
     private readonly LineType _lineType;
     private readonly int _lineVertexCount;
 
-    public bool Expand = false;
-    public float Darken = 1.0f;
-
     public LineMesh(
         Mesh supermesh,
         GraphicsDevice graphicsDevice,
@@ -113,8 +110,8 @@ public class LineMesh : IInstancedRenderElement
 
         _material.CurrentTechnique = _material.Techniques["Basic"];
 
-        _material.Expand?.SetValue(Expand);
-        _material.Darken?.SetValue(Darken);
+        _material.Expand?.SetValue(_supermesh.Expand);
+        _material.Darken?.SetValue(_supermesh.Darken);
         _material.RandomFloat?.SetValue(URandom.Single());
         _material.Alpha?.SetValue(1.0f);
 

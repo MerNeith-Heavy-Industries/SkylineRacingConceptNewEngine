@@ -16,9 +16,6 @@ public class Submesh : IInstancedRenderElement
     private readonly int _triangleCount;
     private readonly Mesh _supermesh;
     private readonly GraphicsDevice _graphicsDevice;
-    
-    public bool Expand = false;
-    public float Darken = 1.0f;
 
     public Submesh(
         PolyType polyType,
@@ -93,8 +90,8 @@ public class Submesh : IInstancedRenderElement
         
         lighting?.SetShadowMapParameters(_material.UnderlyingEffect);
 
-        _material.Expand?.SetValue(Expand);
-        _material.Darken?.SetValue(Darken);
+        _material.Expand?.SetValue(_supermesh.Expand);
+        _material.Darken?.SetValue(_supermesh.Darken);
         _material.RandomFloat?.SetValue(URandom.Single());
         
         foreach (var pass in _material.CurrentTechnique.Passes)

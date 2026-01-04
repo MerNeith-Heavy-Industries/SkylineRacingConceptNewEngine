@@ -13,10 +13,7 @@ public class Flames
     private VertexPositionColor[] _triangles;
     private readonly BasicEffect _flameEffect;
 
-    public bool Expand;
-
     private int _tick;
-    public float Darken = 1f;
 
     public Flames(ClientCar car, GraphicsDevice graphicsDevice)
     {
@@ -42,24 +39,24 @@ public class Flames
             {
                 if (_embos <= 11)
                 {
-                    Expand = URandom.Boolean();
+                    _car.Mesh.Expand = URandom.Boolean();
                 }
                 else
                 {
-                    Expand = false;
+                    _car.Mesh.Expand = false;
                 }
 
                 if (_embos is > 7 and <= 9)
                 {
-                    Darken = 0.7f;
+                    _car.Mesh.Darken = 0.7f;
                 }
                 else if (_embos is > 9 and <= 10)
                 {
-                    Darken = 0.6f;
+                    _car.Mesh.Darken = 0.6f;
                 }
                 else if (_embos is > 10 and <= 12)
                 {
-                    Darken = 0.5f;
+                    _car.Mesh.Darken = 0.5f;
                 }
 
                 if (_embos == 12)
@@ -69,7 +66,7 @@ public class Flames
 
                 if (_embos == 13)
                 {
-                    Darken = 0.4f;
+                    _car.Mesh.Darken = 0.4f;
                 }
 
                 if (_embos < 70)

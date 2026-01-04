@@ -28,6 +28,9 @@ public class Mesh
 
     public bool CastsShadow;
 
+    public bool Expand;
+    public float Darken;
+
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         Polys = rad.Polys;
