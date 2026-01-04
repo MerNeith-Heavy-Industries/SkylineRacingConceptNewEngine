@@ -555,7 +555,13 @@ public unsafe class NanoSVGImage : IDisposable, IImage
 
 	public NanoSVGImage(ReadOnlySpan<byte> data, ReadOnlySpan<byte> units = default, float dpi = 96.0f)
 	{
-		fixed (byte* pData = data)
+		// copy data to new native buffer and null-terminate
+		var dataLen = Marshal.AllocHGlobal(data.Length + 1);
+		var buffer = new Span<byte>((void*)dataLen, data.Length + 1);
+		data.CopyTo(buffer);
+		buffer[data.Length] = 0;
+		
+		fixed (byte* pData = buffer)
 		fixed (byte* pUnits = units.IsEmpty ? "px"u8 :units)
 		{
 			var sdata = (sbyte*)pData;
