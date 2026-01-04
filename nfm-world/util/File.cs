@@ -16,6 +16,7 @@ public struct File
 
     public File Parent => new File(_getParent());
     public string NameWithoutExtension => System.IO.Path.GetFileNameWithoutExtension(Path);
+    public string Extension => System.IO.Path.GetExtension(Path);
 
     private string _getParent() => System.IO.Path.GetDirectoryName(Path);
 

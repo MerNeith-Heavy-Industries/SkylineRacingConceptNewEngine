@@ -3,6 +3,7 @@ using System.Text;
 using FontStashSharp;
 using FontStashSharp.RichText;
 using Microsoft.Xna.Framework.Graphics;
+using NanoSVG;
 using NFMWorld.DriverInterface;
 using NFMWorld.SkiaDriver;
 using NFMWorld.Util;
@@ -40,6 +41,10 @@ internal class NanoVGBackend(NvgContext context) : IBackend
     public IImage LoadImage(File file)
     {
         using var stream = System.IO.File.OpenRead(file.Path);
+        if (file.Extension == ".svg")
+        {
+            return NanoSVGImage.FromStream(stream);
+        }
         return new NanoVGImage(Texture2D.FromStream(context.GraphicsDevice, stream));
     }
 
