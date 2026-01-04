@@ -557,20 +557,27 @@ public unsafe class NanoSVGImage : IDisposable, IImage
 	{
 		// copy data to new native buffer and null-terminate
 		var dataLen = Marshal.AllocHGlobal(data.Length + 1);
-		var buffer = new Span<byte>((void*)dataLen, data.Length + 1);
-		data.CopyTo(buffer);
-		buffer[data.Length] = 0;
-		
-		fixed (byte* pData = buffer)
-		fixed (byte* pUnits = units.IsEmpty ? "px"u8 :units)
+		try
 		{
-			var sdata = (sbyte*)pData;
-			var sunits = (sbyte*)pUnits;
-			svg = Methods.nsvgParse(sdata, sunits, dpi);
-			if (svg == null)
+			var buffer = new Span<byte>((void*)dataLen, data.Length + 1);
+			data.CopyTo(buffer);
+			buffer[data.Length] = 0;
+
+			fixed (byte* pData = buffer)
+			fixed (byte* pUnits = units.IsEmpty ? "px"u8 : units)
 			{
-				throw new InvalidOperationException("Failed to parse SVG data");
+				var sdata = (sbyte*)pData;
+				var sunits = (sbyte*)pUnits;
+				svg = Methods.nsvgParse(sdata, sunits, dpi);
+				if (svg == null)
+				{
+					throw new InvalidOperationException("Failed to parse SVG data");
+				}
 			}
+		}
+		finally
+		{
+			Marshal.FreeHGlobal(dataLen);
 		}
 	}
 
