@@ -1,6 +1,6 @@
 ﻿using Yoga;
 
-namespace NFMWorld.Mad.UI.yoga;
+namespace nfm_world.ui.yoga;
 
 public readonly unsafe struct YGConfigPtr : IDisposable
 {

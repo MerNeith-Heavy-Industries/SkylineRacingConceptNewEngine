@@ -1,3 +1,5 @@
+namespace nfm_world_library.mad;
+
 public enum Collection
 {
     /// Game cars

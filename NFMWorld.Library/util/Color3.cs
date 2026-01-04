@@ -1,10 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using NFMWorld.Util;
 using Stride.Core.Mathematics;
-using Color = NFMWorld.Util.Color;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.util;
 
 public readonly record struct Color3(
     [property: JsonPropertyName("r")] short R,

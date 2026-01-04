@@ -1,4 +1,4 @@
-﻿namespace NFMWorld.Mad;
+﻿namespace nfm_world;
 
 public class OrthoLightCamera : OrthoCamera
 {

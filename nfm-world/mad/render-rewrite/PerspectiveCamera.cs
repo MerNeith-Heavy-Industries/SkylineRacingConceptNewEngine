@@ -1,6 +1,6 @@
 ﻿using Stride.Core.Mathematics;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class PerspectiveCamera : Camera
 {

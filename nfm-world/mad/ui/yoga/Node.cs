@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using Yoga;
 
-namespace NFMWorld.Mad.UI.yoga;
+namespace nfm_world.ui.yoga;
 
 [DebuggerDisplay("{DebugToString()}")]
 public class Node : IDisposable

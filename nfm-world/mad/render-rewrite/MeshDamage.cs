@@ -1,8 +1,9 @@
-﻿using NFMWorld.Util;
-using SoftFloat;
-using Random = NFMWorld.Util.Random;
+﻿using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using Random = nfm_world_library.util.Random;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public static class MeshDamage
 {

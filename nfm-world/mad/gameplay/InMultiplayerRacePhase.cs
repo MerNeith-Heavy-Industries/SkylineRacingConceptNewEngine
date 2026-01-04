@@ -1,10 +1,17 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.backend.gamemodes;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.multiplayer;
+using nfm_world.multiplayer.packets.c2s;
+using nfm_world.multiplayer.packets.s2c;
+using nfm_world.util;
+using S2C_PlayerState = nfm_world.multiplayer.packets.s2c.S2C_PlayerState;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public class InMultiplayerRacePhase(
     GraphicsDevice graphicsDevice,

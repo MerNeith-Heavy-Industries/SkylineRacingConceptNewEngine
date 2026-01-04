@@ -1,8 +1,9 @@
-﻿using NFMWorld.Library;
-using SoftFloat;
-using Stride.Core.Mathematics;
+﻿using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
 public abstract class Transform : ITransform
 {

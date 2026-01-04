@@ -1,8 +1,9 @@
-﻿using HoleyDiver;
-using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh.environment;
 
 public class Mountains : Transform, IImmediateRenderable
 {

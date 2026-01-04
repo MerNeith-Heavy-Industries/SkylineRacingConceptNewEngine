@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad;
 
 // temp conto for nfmm compatibility
 public readonly struct ContO

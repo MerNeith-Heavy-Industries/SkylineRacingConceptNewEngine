@@ -1,5 +1,7 @@
 using MessagePack;
 
+namespace nfm_world.files.demo;
+
 [MessagePackObject]
 public class Demo
 {

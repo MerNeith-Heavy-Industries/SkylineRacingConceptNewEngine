@@ -1,7 +1,7 @@
-﻿using nfm_world.mad.collision;
-using SoftFloat;
+﻿using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad.collision;
 
 // A struct for this would be ideal, but it's a very large object so it would cause enormous stack allocations
 public class CollisionBoxRef : IQuadObject

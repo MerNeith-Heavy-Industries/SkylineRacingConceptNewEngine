@@ -1,8 +1,4 @@
-﻿using System.Buffers;
-using NFMWorld.Mad.packets;
-using NFMWorld.Util;
-
-namespace NFMWorld.Mad;
+﻿namespace nfm_world.multiplayer.packets.s2c;
 
 public interface IPacketServerToClient : IPacket;
 

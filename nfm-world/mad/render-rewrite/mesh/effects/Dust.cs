@@ -1,9 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh.effects;
 
 public class Dust
 {

@@ -1,9 +1,8 @@
 ﻿using System.Buffers;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
-using NFMWorld.Mad;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public ref struct SpanReader(ReadOnlySpan<byte> span)
 {

@@ -1,9 +1,10 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
-using Color = NFMWorld.Util.Color;
+using nfm_world_library.backend.gamemodes;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.multiplayer;
+using nfm_world.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphicsDevice)
 {

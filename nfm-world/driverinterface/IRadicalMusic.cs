@@ -1,4 +1,4 @@
-namespace NFMWorld.DriverInterface;
+namespace nfm_world.driverinterface;
 
 public interface IRadicalMusic
 {

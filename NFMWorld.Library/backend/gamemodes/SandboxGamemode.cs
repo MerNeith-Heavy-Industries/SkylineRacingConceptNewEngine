@@ -1,12 +1,7 @@
-using System.Diagnostics;
 using Maxine.Extensions;
-using NFMWorld;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
+using nfm_world_library.mad;
+
+namespace nfm_world_library.backend.gamemodes;
 
 public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
     : BaseGamemode(gamemodeParameters, raceValues)

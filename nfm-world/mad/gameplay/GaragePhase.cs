@@ -1,13 +1,15 @@
 using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Mad.UI.yoga;
-using NFMWorld.Mad.UI.Elements;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.util;
 using Stride.Core.Extensions;
+
+namespace nfm_world.gameplay;
 
 public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {

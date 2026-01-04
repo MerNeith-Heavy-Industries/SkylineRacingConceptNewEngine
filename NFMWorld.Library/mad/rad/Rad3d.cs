@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad.rad;
 
 public record Rad3d(
     [property: JsonPropertyName("colors")] Color3[] Colors,

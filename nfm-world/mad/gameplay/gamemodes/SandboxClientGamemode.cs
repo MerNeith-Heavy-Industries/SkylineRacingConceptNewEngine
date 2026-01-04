@@ -1,7 +1,7 @@
-﻿using NFMWorld.Library.backend;
-using NFMWorld.Util;
+﻿using nfm_world_library.backend.gamemodes;
+using nfm_world.util;
 
-namespace NFMWorld.Mad.gamemodes;
+namespace nfm_world.gameplay.gamemodes;
 
 public class SandboxClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
     : SandboxGamemode(gamemodeParameters, raceValues), IClientGamemode

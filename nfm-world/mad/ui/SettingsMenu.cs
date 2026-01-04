@@ -1,12 +1,12 @@
-using ImGuiNET;
-using System.Numerics;
-using System.IO;
 using System.Globalization;
-using NFMWorld.Util;
-using NFMWorld.DriverInterface;
+using System.Numerics;
+using ImGuiNET;
+using nfm_world_library.mad;
+using nfm_world.driverinterface;
+using nfm_world.util;
 using SDL3;
 
-namespace NFMWorld.Mad.UI;
+namespace nfm_world.ui;
 
 /// <summary>
 /// Settings menu with tabs, similar to Half-Life 1 style

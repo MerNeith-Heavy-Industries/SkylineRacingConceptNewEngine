@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using SoftFloat;
-using Stride.Core.Mathematics;
+using nfm_world_library.mad.rad;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
 public class WheelMeshBuilder
 {

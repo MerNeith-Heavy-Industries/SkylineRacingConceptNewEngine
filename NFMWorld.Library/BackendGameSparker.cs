@@ -1,8 +1,9 @@
 ﻿using System.Text;
-using NFMWorld.Mad;
-using NFMWorld.Util;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
 
-namespace NFMWorld.Library;
+namespace nfm_world_library;
 
 public class BackendGameSparker
 {

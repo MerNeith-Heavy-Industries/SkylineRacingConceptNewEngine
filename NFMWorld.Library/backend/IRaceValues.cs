@@ -1,7 +1,7 @@
-﻿using NFMWorld.Mad;
-using NFMWorld.Util;
+﻿using nfm_world_library.mad;
+using nfm_world_library.util;
 
-namespace NFMWorld.Library.backend;
+namespace nfm_world_library.backend;
 
 public interface IRaceValues
 {

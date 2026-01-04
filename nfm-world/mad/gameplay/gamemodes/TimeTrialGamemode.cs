@@ -1,20 +1,17 @@
-using System.Collections;
 using System.Diagnostics;
-using System.Reflection.Metadata;
-using Maxine.Extensions;
-using nfm_world.mad.collision;
-using NFMWorld.DriverInterface;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Mad.helpers;
-using NFMWorld.Mad.UI.Elements;
-using NFMWorld.Mad.UI.yoga;
-using NFMWorld.Util;
-using SoftFloat;
-using Stride.Core.Mathematics;
-using Color = NFMWorld.Util.Color;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.backend.gamemodes;
+using nfm_world_library.mad.helpers;
+using nfm_world.driverinterface;
+using nfm_world.files;
+using nfm_world.sfx;
+using nfm_world.ui.hud;
+using nfm_world.ui.yoga;
+using nfm_world.util;
+using Color = nfm_world_library.util.Color;
+
+namespace nfm_world.gameplay.gamemodes;
 
 public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
     : BaseGamemode(gamemodeParameters, raceValues), IClientGamemode
@@ -137,7 +134,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             },
             new Node()
             {
-              Children =
+                Children =
                 {
                     new TextRun()
                     {
@@ -420,15 +417,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     {
         if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && _bestTimeTrial != null)
         {
-                _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
-                long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
-                _checkpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+            _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
+            _checkpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
-                long lastSplitChange = diff - _lastCheckpointSplitDiff;
-                string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
+            long lastSplitChange = diff - _lastCheckpointSplitDiff;
+            string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
 
-                string thisDiffFmt = FormatTimeMs(diff, true);
-                _checkpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
+            string thisDiffFmt = FormatTimeMs(diff, true);
+            _checkpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
         }
         else
         {
@@ -505,9 +502,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                 TimeSpan t = TimeSpan.FromMilliseconds(bestTimeMs);
 
                 string time = string.Format("{0:D2}:{1:D2}:{2:D2}",
-                            t.Minutes,
-                            t.Seconds,
-                            t.Milliseconds);
+                    t.Minutes,
+                    t.Seconds,
+                    t.Milliseconds);
 
                 _centerText.Text += $"\nBest time: {time}";
             }

@@ -1,12 +1,11 @@
 ﻿using System.Buffers;
 using System.Collections;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using LuzFaltex.Core.Collections;
-using Microsoft.Collections.Extensions;
 using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library.mad;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class Scene
 {

@@ -1,18 +1,17 @@
-using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
-using nfm_world.mad.collision;
-using NFMWorld;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Library.mad;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.mesh;
+using nfm_world.mesh.environment;
 using Stride.Core.Extensions;
+using Environment = nfm_world.mesh.environment.Environment;
+
+namespace nfm_world.stage;
 
 /**
-    Represents a stage. Holds all information relating to track pices, scenery, etc.
-    But does NOT hold any information relating to the actual game being played, unless such game affects the layout or scenery of the stage.
+Represents a stage. Holds all information relating to track pices, scenery, etc.
+But does NOT hold any information relating to the actual game being played, unless such game affects the layout or scenery of the stage.
 */
 public class ClientStageRenderer : GameObject
 {
@@ -42,8 +41,8 @@ public class ClientStageRenderer : GameObject
     }
 
     /**
-     * Loads stage currently set by checkpoints.stage onto stageContos
-     */
+ * Loads stage currently set by checkpoints.stage onto stageContos
+ */
     public ClientStageRenderer(GraphicsDevice graphicsDevice, BackendStage backendStage)
     {
         var children = new List<GameObject>();
@@ -146,19 +145,19 @@ public class ClientStageRenderer : GameObject
             // Medium.Newstars();
             if (World.DrawPolys)
             {
-                polys = NFMWorld.Mad.Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
+                polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
                     stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
             }
 
             if (World.DrawClouds)
             {
-                clouds = NFMWorld.Mad.Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
+                clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
                     stageLoader.maxt, graphicsDevice);
             }
 
             if (World.DrawMountains)
             {
-                mountains = NFMWorld.Mad.Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
+                mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
                     stageLoader.maxt, graphicsDevice);
             }
             

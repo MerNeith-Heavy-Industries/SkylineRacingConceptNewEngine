@@ -1,8 +1,8 @@
-﻿using System.Numerics;
-using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
+using nfm_world_library.mad;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
 public class Sky : Transform, IImmediateRenderable
 {

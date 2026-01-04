@@ -1,11 +1,12 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Util;
-using SoftFloat;
-using Stride.Core.Mathematics;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
+using nfm_world.mesh;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.stage;
 
 public class FixHoop : StageObjectGameObject
 {

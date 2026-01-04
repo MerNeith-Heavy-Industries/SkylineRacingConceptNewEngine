@@ -1,6 +1,4 @@
-﻿using NFMWorld.Mad;
-
-namespace NFMWorld;
+﻿namespace nfm_world_library.mad;
 
 public interface IAiNode : ITransform
 {

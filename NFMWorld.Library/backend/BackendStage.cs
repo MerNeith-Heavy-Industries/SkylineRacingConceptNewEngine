@@ -1,10 +1,11 @@
 ﻿using System.Runtime.InteropServices;
-using NFMWorld.Library.mad;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world_library.mad.collision;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Library.backend;
+namespace nfm_world_library.backend;
 
 public class BackendStage : IStage
 {

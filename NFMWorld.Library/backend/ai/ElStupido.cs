@@ -1,10 +1,9 @@
 ﻿using FixedMathSharp.Utility;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.backend.gamemodes;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad.ai;
+namespace nfm_world_library.backend.ai;
 
 /// <summary>
 /// Handles AI decision making, path finding, and control inputs based on difficulty and race conditions.

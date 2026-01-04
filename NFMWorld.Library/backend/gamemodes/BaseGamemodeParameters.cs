@@ -1,4 +1,4 @@
-﻿namespace NFMWorld.Mad.gamemodes;
+﻿namespace nfm_world_library.backend.gamemodes;
 
 public class BaseGamemodeParameters
 {

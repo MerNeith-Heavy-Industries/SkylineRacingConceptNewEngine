@@ -1,16 +1,15 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 using FontStashSharp;
-using FontStashSharp.RichText;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.SkiaDriver;
-using NFMWorld.Util;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.skiadriver;
+using nfm_world.util;
 using NvgSharp;
-using File = NFMWorld.Util.File;
-using TextHorizontalAlignment = NFMWorld.DriverInterface.TextHorizontalAlignment;
+using File = nfm_world_library.util.File;
+using TextHorizontalAlignment = nfm_world.driverinterface.TextHorizontalAlignment;
 
-namespace NFMWorld;
+namespace nfm_world;
 
 public class NanoVGRenderer
 {

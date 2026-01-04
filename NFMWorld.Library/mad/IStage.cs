@@ -1,8 +1,7 @@
-﻿using System.Collections;
-using NFMWorld.Util;
-using SoftFloat;
+﻿using nfm_world_library.mad.collision;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad;
 
 public interface IStage
 {

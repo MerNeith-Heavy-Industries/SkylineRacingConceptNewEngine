@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Numerics;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 public partial struct fix64 : ISpanParsable<fix64>
 {

@@ -1,10 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using MessagePack;
-using NFMWorld.Mad;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world.files.demo;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PlayerState

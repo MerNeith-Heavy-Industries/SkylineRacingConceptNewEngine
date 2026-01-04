@@ -1,4 +1,6 @@
-﻿using NFMWorld.Mad;
+﻿using nfm_world_library.mad.rad;
+
+namespace nfm_world_library.mad;
 
 public interface ICollidable : ITransform
 {

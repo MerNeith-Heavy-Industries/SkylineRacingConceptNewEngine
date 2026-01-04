@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+using nfm_world_library;
+using nfm_world_library.mad;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh.environment;
 
 public class Ground : Transform, IImmediateRenderable
 {

@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
+using nfm_world.multiplayer.packets.c2s;
+using nfm_world.multiplayer.packets.s2c;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public abstract class BaseMultiplayerServerTransport : IMultiplayerServerTransport
 {

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library.mad;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollection<IInGameCar> backendCars) : GameObject
 {

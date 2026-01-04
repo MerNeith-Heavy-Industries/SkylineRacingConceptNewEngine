@@ -1,9 +1,9 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh.effects;
 
 public class Sparks
 {

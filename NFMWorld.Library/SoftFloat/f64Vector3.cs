@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Xna.Framework.Design;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 /// <summary>
 /// Describes a 3D-vector.

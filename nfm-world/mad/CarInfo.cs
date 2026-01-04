@@ -1,6 +1,9 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad;
-using Stride.Core.Extensions;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.mesh;
+
+namespace nfm_world;
 
 public class CarMesh : Mesh
 {

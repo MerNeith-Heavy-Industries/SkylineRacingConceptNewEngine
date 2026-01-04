@@ -1,7 +1,7 @@
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+
+namespace nfm_world_library.backend.gamemodes;
 
 public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues) : IGamemode
 {

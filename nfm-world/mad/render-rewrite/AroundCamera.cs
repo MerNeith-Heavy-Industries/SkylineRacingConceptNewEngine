@@ -1,7 +1,9 @@
-using NFMWorld.Library;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.mesh;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class AroundCamera
 {

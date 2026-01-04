@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Library.mad;
+namespace nfm_world_library.mad;
 
 public readonly struct PieceSet
 {

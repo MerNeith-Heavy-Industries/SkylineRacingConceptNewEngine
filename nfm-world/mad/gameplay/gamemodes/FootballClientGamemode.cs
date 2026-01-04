@@ -1,7 +1,8 @@
-﻿using NFMWorld.Library.backend;
-using NFMWorld.Util;
+﻿using nfm_world_library.backend;
+using nfm_world_library.backend.gamemodes;
+using nfm_world.util;
 
-namespace NFMWorld.Mad.gamemodes;
+namespace nfm_world.gameplay.gamemodes;
 
 public class FootballClientGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
     : FootballGamemode(gamemodeParameters, raceValues), IClientGamemode

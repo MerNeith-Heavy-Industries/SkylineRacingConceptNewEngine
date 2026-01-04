@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-
-namespace NFMWorld.Mad;
+﻿namespace nfm_world;
 
 public class OrthoCamera : Camera
 {

@@ -1,13 +1,18 @@
 using ImGuiNET;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
-using System.Numerics;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world.gameplay;
+using nfm_world.mesh;
+using nfm_world.mesh.environment;
+using nfm_world.stage;
+using nfm_world.util;
+using Environment = nfm_world.mesh.environment.Environment;
 
-namespace NFMWorld.Mad.UI;
+namespace nfm_world.ui;
 
 // Custom Stage class for the editor that doesn't require loading from file
 public class EditorStage : BackendStage

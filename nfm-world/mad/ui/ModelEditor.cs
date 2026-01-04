@@ -1,12 +1,17 @@
-using ImGuiNET;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
 using System.Text;
+using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world.gameplay;
+using nfm_world.mesh;
+using nfm_world.stage;
+using nfm_world.util;
+using Stride.Core.Mathematics;
 
-namespace NFMWorld.Mad.UI;
+namespace nfm_world.ui;
 
 // Class to hold the state for a single model editor tab
 public class ModelEditorTab

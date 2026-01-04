@@ -1,9 +1,12 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad.ai;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world.mesh;
+using nfm_world.mesh.effects;
+using nfm_world.sfx;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class ClientCar : MeshedGameObject, ICar
 {

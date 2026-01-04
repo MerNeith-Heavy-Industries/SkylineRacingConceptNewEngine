@@ -1,6 +1,6 @@
-﻿using SoftFloat;
+﻿using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Library;
+namespace nfm_world_library;
 
 public static class Physics
 {

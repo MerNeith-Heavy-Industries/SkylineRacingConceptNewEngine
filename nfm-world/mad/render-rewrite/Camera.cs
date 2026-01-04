@@ -1,6 +1,4 @@
-﻿using Stride.Core.Mathematics;
-
-namespace NFMWorld.Mad;
+﻿namespace nfm_world;
 
 public abstract class Camera
 {

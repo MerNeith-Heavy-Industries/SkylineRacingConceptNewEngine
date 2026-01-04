@@ -1,6 +1,6 @@
-﻿using SoftFloat;
+﻿using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad;
 
 public interface ITransform
 {

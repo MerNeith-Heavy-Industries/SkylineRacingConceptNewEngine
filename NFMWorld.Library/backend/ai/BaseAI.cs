@@ -1,7 +1,6 @@
-﻿using Maxine.Extensions;
-using NFMWorld.Util;
+﻿using nfm_world_library.mad;
 
-namespace NFMWorld.Mad.ai;
+namespace nfm_world_library.backend.ai;
 
 /// <summary>
 /// Base AI class for gamemode-specific AI implementations.

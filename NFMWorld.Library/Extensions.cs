@@ -2,11 +2,11 @@
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
 using FixedMathSharp.Utility;
-using NFMWorld.Mad;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 using Stride.Core.Mathematics;
 
-namespace NFMWorld.Library;
+namespace nfm_world_library;
 
 public static class Extensions
 {

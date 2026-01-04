@@ -1,8 +1,6 @@
-﻿using Maxine.Extensions;
-using NFMWorld.Library;
-using NFMWorld.Mad;
+﻿using nfm_world_library.util;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle roll) : IEquatable<f64Euler>
 {

@@ -1,8 +1,10 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
 public class Submesh : IInstancedRenderElement
 {

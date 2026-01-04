@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
 
-namespace nfm_world.mad.collision;
+namespace nfm_world_library.mad.collision;
 
 public readonly struct BoxWall(
     f64Vector3 rad,

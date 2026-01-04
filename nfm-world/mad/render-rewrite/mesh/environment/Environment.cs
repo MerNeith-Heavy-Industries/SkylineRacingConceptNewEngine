@@ -1,11 +1,13 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh.environment;
 
-using URandom = Util.Random;
+using URandom = URandom;
 
 public class Environment
 {

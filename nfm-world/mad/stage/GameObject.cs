@@ -1,7 +1,7 @@
-﻿using System.Collections.Immutable;
-using NFMWorld.Util;
+﻿using nfm_world_library.mad;
+using nfm_world.mesh;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.stage;
 
 public class GameObject : Transform, IImmediateRenderable
 {

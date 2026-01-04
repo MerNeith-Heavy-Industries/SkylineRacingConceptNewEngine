@@ -1,10 +1,15 @@
-using NFMWorld.DriverInterface;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world.driverinterface;
+using nfm_world.gameplay;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.multiplayer;
+using nfm_world.ui;
 using Steamworks;
 
-namespace NFMWorld.Mad
+namespace nfm_world
 {
     public static class DevConsoleCommands
     {
@@ -484,7 +489,7 @@ namespace NFMWorld.Mad
                         result => 
                         {
                             console.Log($"User clicked: {result}");
-                            if (result == UI.MessageWindow.MessageResult.Yes)
+                            if (result == MessageWindow.MessageResult.Yes)
                             {
                                 console.Log("User confirmed!");
                             }

@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Maxine.Extensions;
-using MessagePack;
-using NFMWorld.Mad;
-using Poly2Tri;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+
+namespace nfm_world.files.demo;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct DemoEntry

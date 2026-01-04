@@ -1,20 +1,17 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using NFMWorld.Mad.Interp;
-using NFMWorld.Util;
-using ImGuiNET;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Stride.Core.Mathematics;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.gameplay;
+using nfm_world.mesh;
+using nfm_world.sfx;
+using nfm_world.ui;
+using nfm_world.util;
 using Path = System.IO.Path;
-using NFMWorld.Mad.UI;
-using NFMWorld.SkiaDriver;
-using NFMWorld.DriverInterface;
-using NFMWorld.Library;
-using SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class GameSparker
 {

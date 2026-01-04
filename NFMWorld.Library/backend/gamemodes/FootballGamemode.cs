@@ -1,11 +1,4 @@
-using System.Diagnostics;
-using NFMWorld;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
+namespace nfm_world_library.backend.gamemodes;
 
 public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
     : BaseGamemode(gamemodeParameters, raceValues)

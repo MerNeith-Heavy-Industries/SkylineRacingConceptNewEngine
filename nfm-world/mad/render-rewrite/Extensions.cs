@@ -1,18 +1,12 @@
 ﻿using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
-using FixedMathSharp;
-using FixedMathSharp.Utility;
 using Microsoft.Xna.Framework.Graphics;
-using SoftFloat;
 using Steamworks;
 using Steamworks.Data;
-using Stride.Core.Mathematics;
-using Color = Microsoft.Xna.Framework.Color;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public static class Extensions
 {

@@ -1,7 +1,6 @@
-﻿using Stride.Core.Mathematics;
-using Color = Microsoft.Xna.Framework.Color;
+﻿using Color = Microsoft.Xna.Framework.Color;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
 public class LineMeshHelpers
 {

@@ -1,6 +1,7 @@
-﻿using NFMWorld.Util;
+﻿using nfm_world_library.backend.gamemodes;
+using nfm_world.util;
 
-namespace NFMWorld.Mad.gamemodes;
+namespace nfm_world.gameplay.gamemodes;
 
 public interface IClientGamemode : IGamemode
 {

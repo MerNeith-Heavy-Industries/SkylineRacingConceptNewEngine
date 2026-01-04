@@ -1,7 +1,7 @@
-﻿using NFMWorld.Util;
-using SoftFloat;
+﻿using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Mad.helpers;
+namespace nfm_world_library.mad.helpers;
 
 public class FixHoopHelper
 {

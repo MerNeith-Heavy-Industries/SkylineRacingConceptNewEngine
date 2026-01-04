@@ -1,10 +1,13 @@
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad.UI;
-using NFMWorld.Util;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.stage;
+using nfm_world.util;
+using File = nfm_world_library.util.File;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : BasePhase
 {
@@ -65,7 +68,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             double tempoMul = !useRemastered ? clientStageRenderer.musicTempoMul : 0d;
             double freqMul = !useRemastered ? clientStageRenderer.musicFreqMul : 1d;
 
-            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new Util.File($"./data/music/{path}"), tempoMul);
+            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new File($"./data/music/{path}"), tempoMul);
             GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();

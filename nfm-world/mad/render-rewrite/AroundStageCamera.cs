@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
-using NFMWorld.Library;
-using NFMWorld.Library.backend;
-using NFMWorld.Mad;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+
+namespace nfm_world;
 
 public class AroundStageCamera
 {
