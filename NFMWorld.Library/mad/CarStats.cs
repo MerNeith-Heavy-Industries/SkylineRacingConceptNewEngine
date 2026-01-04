@@ -152,13 +152,13 @@ public record struct CarStats
 
     private string ValidateFailName(string property, string fileName)
     {
-        GameSparker.Writer.WriteLine($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
+        Console.WriteLine($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
         return property;
     }
 
     private string ValidateFail(string property)
     {
-        GameSparker.Writer.WriteLine($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
+        Console.WriteLine($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
         return property;
     }
 }

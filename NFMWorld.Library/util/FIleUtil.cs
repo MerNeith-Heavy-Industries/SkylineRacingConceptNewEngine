@@ -1,6 +1,6 @@
 namespace NFMWorld.Util;
 
-internal class FileUtil
+public class FileUtil
 {
     public static void LoadFiles(string folder, string[] fileNames, Action<byte[], int, string> action)
     {

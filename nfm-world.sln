@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.LuaSourceGeneratao
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMW.GenerateSinCosTable", "NFMW.GenerateSinCosTable\NFMW.GenerateSinCosTable.csproj", "{B5496802-627B-47F4-8B95-6B56AF2DA482}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.Library", "NFMWorld.Library\NFMWorld.Library.csproj", "{7299D302-F6B8-4A90-BCB2-69E0156A82D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,5 +110,9 @@ Global
 		{B5496802-627B-47F4-8B95-6B56AF2DA482}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5496802-627B-47F4-8B95-6B56AF2DA482}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5496802-627B-47F4-8B95-6B56AF2DA482}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

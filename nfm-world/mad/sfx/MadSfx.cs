@@ -1,3 +1,4 @@
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using SoftFloat;
 
@@ -22,7 +23,7 @@ public class MadSfx
     private int cntwis = 0;
     private bool pwastd = false;
     private int lcn = 0;
-    private bool[] pengs = new bool[5];
+    private bool[] pengs = new bool[7];
 
     private Mad Mad;
 
@@ -346,7 +347,7 @@ public class MadSfx
             //if (!mutes) {
             SfxLibrary.scrape[i268].Play();
             //}
-            bfscrape = (int)(5 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+            bfscrape = (int)(5 * (1 / Physics.PHYSICS_MULTIPLIER));
         }
     }
 
@@ -359,8 +360,8 @@ public class MadSfx
                 SfxLibrary.scrape[2].Stop();
                 SfxLibrary.scrape[2].Play();
                 //}
-                bfsc1 = (int)(12 * (1 / GameSparker.PHYSICS_MULTIPLIER));
-                bfsc2 = (int)(6 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+                bfsc1 = (int)(12 * (1 / Physics.PHYSICS_MULTIPLIER));
+                bfsc2 = (int)(6 * (1 / Physics.PHYSICS_MULTIPLIER));
             }
             else
             {
@@ -368,14 +369,14 @@ public class MadSfx
                 SfxLibrary.scrape[3].Stop();
                 SfxLibrary.scrape[3].Play();
                 //}
-                bfsc2 = (int)(12 * (1 / GameSparker.PHYSICS_MULTIPLIER));
-                bfsc1 = (int)(6 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+                bfsc2 = (int)(12 * (1 / Physics.PHYSICS_MULTIPLIER));
+                bfsc1 = (int)(6 * (1 / Physics.PHYSICS_MULTIPLIER));
             }
     }
 
     private void SfxPlayCrash(object? sender, (float f, int i) crashData)
     {
-        crashData.f *= 1 / GameSparker.PHYSICS_MULTIPLIER;
+        crashData.f *= 1 / Physics.PHYSICS_MULTIPLIER;
 #if USE_BASS
         if (!Mute && bfcrash == 0)
         {
@@ -386,14 +387,14 @@ public class MadSfx
                     //if (!mutes) {
                     SfxLibrary.lowcrash[crshturn].Play();
                     //}
-                    bfcrash = (int)(2 * (1 / GameSparker.PHYSICS_MULTIPLIER)); ;
+                    bfcrash = (int)(2 * (1 / Physics.PHYSICS_MULTIPLIER));
                 }
                 if (Math.Abs(crashData.f) >= 170.0F)
                 {
                     //if (!mutes) {
                     SfxLibrary.crash[crshturn].Play();
                     //}
-                    bfcrash = (int)(2 * (1 / GameSparker.PHYSICS_MULTIPLIER)); ;
+                    bfcrash = (int)(2 * (1 / Physics.PHYSICS_MULTIPLIER));
                 }
                 if (Math.Abs(crashData.f) > 25.0F)
                 {
@@ -422,14 +423,14 @@ public class MadSfx
                     //if (!mutes) {
                     SfxLibrary.lowcrash[2].Play();
                     //}
-                    bfcrash = (int)(2 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+                    bfcrash = (int)(2 * (1 / Physics.PHYSICS_MULTIPLIER));
                 }
                 if (Math.Abs(crashData.f) > 170.0F)
                 {
                     //if (!mutes) {
                     SfxLibrary.crash[2].Play();
                     //}
-                    bfcrash = (int)(2 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+                    bfcrash = (int)(2 * (1 / Physics.PHYSICS_MULTIPLIER));
                 }
             }
             if (crashData.i == 1)
@@ -437,7 +438,7 @@ public class MadSfx
                 //if (!mutes) {
                 SfxLibrary.tires?.Play();
                 //}
-                bfcrash = (int)(3 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+                bfcrash = (int)(3 * (1 / Physics.PHYSICS_MULTIPLIER));
             }
         }
 #endif
@@ -494,7 +495,7 @@ public class MadSfx
                     dskflg = 2;
                 }
             }
-            bfskid = (int)(35 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+            bfskid = (int)(35 * (1 / Physics.PHYSICS_MULTIPLIER));
         }
 #endif
     }

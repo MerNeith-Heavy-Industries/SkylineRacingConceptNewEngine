@@ -186,7 +186,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         base.Render();
 
         if(DebugDisplay) {
-            FrameTrace.RenderMessages();
+            RenderMessages();
             G.SetColor(new Color(0, 0, 0));
             G.DrawString($"Render: {Program._lastFrameTime}ms", 100, 100);
             G.DrawString($"Tick: {Program._lastTickTime}μs", 100, 120);
@@ -194,4 +194,21 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             G.DrawString($"Ticks executed last frame: {Program._lastTickCount}", 100, 160);
         }
     }
+
+    private static void RenderMessages()
+    {
+        if (!FrameTrace.IsEnabled) return;
+        
+        var y = 0f;
+        const float x = 250;
+        const float increment = 20;
+        
+        G.SetColor(new Color(0, 0, 0));
+        foreach (var message in FrameTrace.GetMessages())
+        {
+            y += increment;
+            G.DrawString(message, (int)x, (int)y);
+        }
+    }
+
 }

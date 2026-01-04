@@ -1,4 +1,5 @@
 using NFMWorld.DriverInterface;
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using NFMWorld.Mad.UI.Elements;
 using NFMWorld.Mad.UI.yoga;
@@ -68,7 +69,7 @@ public class PowerDamageBars
     }
     public void EventPowerUp(object? sender, float f)
     {
-        _powerFlickerTicks = (int)(45*(1/GameSparker.PHYSICS_MULTIPLIER));
+        _powerFlickerTicks = (int)(45*(1/Physics.PHYSICS_MULTIPLIER));
     }
 
     public void Reset()
@@ -102,14 +103,14 @@ public class PowerDamageBars
         /* Handle damage flicker when high - complicated to handle all the tick differences!!! */
         if(cmp > 70)
         {
-            if(_damageFlickerTicks < 10*(1/GameSparker.PHYSICS_MULTIPLIER))
+            if(_damageFlickerTicks < 10*(1/Physics.PHYSICS_MULTIPLIER))
             {
-                if(_damageFlickerInnerTicks > (int)(1/GameSparker.PHYSICS_MULTIPLIER) && _damageFlicker)
+                if(_damageFlickerInnerTicks > (int)(1/Physics.PHYSICS_MULTIPLIER) && _damageFlicker)
                 {
                     green = 170;
                     _damageFlicker = false;
                     _damageFlickerInnerTicks = 0;
-                } else if (_damageFlickerInnerTicks > (int)(1/GameSparker.PHYSICS_MULTIPLIER))
+                } else if (_damageFlickerInnerTicks > (int)(1/Physics.PHYSICS_MULTIPLIER))
                 {
                     _damageFlicker = true;
                     _damageFlickerInnerTicks = 0;
@@ -120,7 +121,7 @@ public class PowerDamageBars
                 _damageFlickerInnerTicks = 0;
             }
             _damageFlickerTicks++;
-            if(_damageFlickerTicks > (167*(1/GameSparker.PHYSICS_MULTIPLIER)) - cmp * 1.5f) _damageFlickerTicks = 0;
+            if(_damageFlickerTicks > (167*(1/Physics.PHYSICS_MULTIPLIER)) - cmp * 1.5f) _damageFlickerTicks = 0;
         }
 
         red = (int)(red + red * (World.Snap[0] / 100F));
@@ -157,14 +158,14 @@ public class PowerDamageBars
         int green = (int)(190 + fill * 0.37);
         int blue = 244;
 
-        if(_powerFlickerTicks > 0 && _powerFlickerInnerTicks > (1/GameSparker.PHYSICS_MULTIPLIER) && _powerFlicker)
+        if(_powerFlickerTicks > 0 && _powerFlickerInnerTicks > (1/Physics.PHYSICS_MULTIPLIER) && _powerFlicker)
         {
             red = 128;
             green = 244;
             blue = 244;
             _powerFlickerInnerTicks = 0;
             _powerFlicker = false;
-        } else if(_powerFlickerTicks > 0 && _powerFlickerInnerTicks > (1/GameSparker.PHYSICS_MULTIPLIER) && !_powerFlicker)
+        } else if(_powerFlickerTicks > 0 && _powerFlickerInnerTicks > (1/Physics.PHYSICS_MULTIPLIER) && !_powerFlicker)
         {
             _powerFlicker = true;
         } else if(_powerFlickerTicks <= 0)

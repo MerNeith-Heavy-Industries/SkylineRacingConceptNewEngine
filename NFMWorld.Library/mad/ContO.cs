@@ -3,10 +3,25 @@ using SoftFloat;
 
 namespace NFMWorld.Mad;
 
+public interface ICar : ITransform
+{
+    int GroundAt { get; }
+    int MaxRadius { get; }
+    bool VisuallyWasted { get; set; }
+    f64Euler WheelAngle { get; set; }
+    f64Euler TurningWheelAngle { get; set; }
+    IReadOnlyList<Rad3dWheelDef> Wheels { get; }
+    void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround);
+    void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround);
+    void DamageX(CarStats stat, int wheelnum, fix64 amount);
+    void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash);
+    void DamageZ(CarStats stat, int wheelnum, fix64 amount);
+}
+
 // temp conto for nfmm compatibility
 public readonly struct ContO
 {
-    private readonly Car _car;
+    private readonly ICar _car;
         
     public fix64 X 
     {
@@ -75,7 +90,7 @@ public readonly struct ContO
     } // TODO car fixed ticks
     public int MaxR => _car.MaxRadius;
 
-    public ContO(Car car)
+    public ContO(ICar car)
     {
         _car = car;
 
@@ -86,19 +101,17 @@ public readonly struct ContO
         }
     }
 
-    public static implicit operator ContO(Car car) => new ContO(car);
-
     public void DamageX(CarStats stat, int wheelnum, fix64 amount)
     {
-        MeshDamage.DamageX(stat, _car, wheelnum, (float)amount);
+        _car.DamageX(stat, wheelnum, amount);
     }
     public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
     {
-        MeshDamage.DamageY(stat, _car, wheelnum, (float)amount, mtouch, ref nbsq, ref squash);
+        _car.DamageY(stat, wheelnum, amount, mtouch, nbsq, squash);
     }
     public void DamageZ(CarStats stat, int wheelnum, fix64 amount)
     {
-        MeshDamage.DamageZ(stat, _car, wheelnum, (float)amount);
+        _car.DamageZ(stat, wheelnum, amount);
     }
 
     public void Dust(int wheelidx, fix64 wheelx, fix64 wheely, fix64 wheelz, int scx, int scz, fix64 simag, int tilt, bool onRoof, int wheelGround)

@@ -10,7 +10,7 @@ public static class SfxLibrary
     public static ISoundClip[] scrape = new ISoundClip[4];
     public static ISoundClip[] air = new ISoundClip[6];
 
-    public static ISoundClip[,] engs = new ISoundClip[5,5]; // [engine, level]
+    public static ISoundClip[,] engs = new ISoundClip[7,5]; // [engine, level]
 
     public static ISoundClip? wastd;
     public static ISoundClip? firewasted;
@@ -47,7 +47,7 @@ public static class SfxLibrary
 
         tires = IBackend.Backend.GetSound("data/sound/tires.wav");
 
-        for (int engine = 0; engine < 5; engine++)
+        for (int engine = 0; engine < 7; engine++)
         {
             for (int level = 0; level < 5; level++)
             {
@@ -85,6 +85,8 @@ public static class SfxLibrary
             2 => "retro",
             3 => "power",
             4 => "diesel",
+            5 => "track",
+            6 => "rocket",
             _ => "normal",
         };
     }

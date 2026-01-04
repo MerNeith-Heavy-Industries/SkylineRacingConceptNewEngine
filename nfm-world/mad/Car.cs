@@ -1,8 +1,9 @@
-﻿using NFMWorld.Mad;
+﻿using System.Runtime.CompilerServices;
+using NFMWorld.Mad;
 using SoftFloat;
 using Stride.Core.Mathematics;
 
-public class Car : MeshedGameObject
+public class Car : MeshedGameObject, ICar
 {
     public CarInfo CarInfo;
 
@@ -27,8 +28,8 @@ public class Car : MeshedGameObject
     public int MaxRadius => Mesh.MaxRadius;
     public string FileName => Mesh.FileName;
 
-    // visually wasted
-    public bool VisuallyWasted;
+    public bool VisuallyWasted { get; set; }
+    IReadOnlyList<Rad3dWheelDef> ICar.Wheels => Wheels;
 
     public Car(CarInfo carInfo) : base(new Mesh(carInfo.Mesh))
     {
@@ -135,5 +136,18 @@ public class Car : MeshedGameObject
     public void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround)
     {
         Sparks.AddSpark(wheelx, wheely, wheelz, scx, scy, scz, type, wheelGround);
+    }
+
+    public void DamageX(CarStats stat, int wheelnum, fix64 amount)
+    {
+        MeshDamage.DamageX(stat, this, wheelnum, (float)amount);
+    }
+    public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
+    {
+        MeshDamage.DamageY(stat, this, wheelnum, (float)amount, mtouch, ref nbsq, ref squash);
+    }
+    public void DamageZ(CarStats stat, int wheelnum, fix64 amount)
+    {
+        MeshDamage.DamageZ(stat, this, wheelnum, (float)amount);
     }
 }

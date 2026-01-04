@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.Library;
 
 namespace NFMWorld.Mad;
 
@@ -37,7 +38,7 @@ public class Flames
     {
         if (_car.VisuallyWasted)
         {
-            if (++_tick == GameSparker.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
+            if (++_tick == Physics.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
             {
                 if (_embos <= 11)
                 {

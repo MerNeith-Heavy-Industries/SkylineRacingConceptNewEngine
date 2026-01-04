@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using NFMWorld.Mad.ai;
 using NFMWorld.Mad.gamemodes;
@@ -204,7 +205,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
         // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
         // We round this up to 3 ticks per 63TPS tick.
-        if (++_newTick == GameSparker.OriginalTicksPerNewTick)
+        if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
             for (int i = 0; i < carsInRace.Count; i++)
             for (int j = 0; j < carsInRace.Count; j++)
@@ -316,7 +317,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
         {
             _countdownTime--;
             SfxLibrary.countdown[_countdownTime].Play();
-            _innerCountdownTicks = (int)(10 * (1 / GameSparker.PHYSICS_MULTIPLIER));
+            _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
             if (_countdownTime <= 0)
             {
                 _currentState = InnerRaceState.InProgress;

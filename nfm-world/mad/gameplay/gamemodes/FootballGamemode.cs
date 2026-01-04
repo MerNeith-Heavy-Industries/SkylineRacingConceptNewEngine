@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NFMWorld;
+using NFMWorld.Library;
 using NFMWorld.Mad;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Util;
@@ -41,7 +42,7 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, BaseRac
 
         //All footballers have no powerloss.
 
-        if (++_newTick == GameSparker.OriginalTicksPerNewTick)
+        if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
             for (int i = 0; i < carsInRace.Count; i++)
             for (int j = 0; j < carsInRace.Count; j++)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using NFMWorld.Library;
 
 namespace NFMWorld.Mad;
 
@@ -8,6 +9,8 @@ public class Ground : Transform, IImmediateRenderable
     private readonly VertexBuffer _vertexBuffer;
     private readonly Effect _material;
     private readonly int _triangleCount;
+
+    public override IReadOnlyList<ITransform> ChildTransforms => [];
 
     public Ground(GraphicsDevice graphicsDevice)
     {

@@ -21,7 +21,7 @@ dammult(0.5)
 maxmag(11700)
 dishandle(0.4)
 outdam(0.95)
-enginsignature(4)
+enginsignature(6)
 name(EL ROCKET KING)
 
 div(19)

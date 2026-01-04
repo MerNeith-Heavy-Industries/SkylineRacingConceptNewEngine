@@ -16,6 +16,9 @@
       <Compile Include="..\FNA\src\BoundingSphere.cs">
         <Link>BoundingSphere.cs</Link>
       </Compile>
+      <Compile Include="..\FNA\src\Color.cs">
+        <Link>Color.cs</Link>
+      </Compile>
       <Compile Include="..\FNA\src\ContainmentType.cs">
         <Link>ContainmentType.cs</Link>
       </Compile>
@@ -24,6 +27,9 @@
       </Compile>
       <Compile Include="..\FNA\src\Design\BoundingSphereConverter.cs">
         <Link>Design\BoundingSphereConverter.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Design\ColorConverter.cs">
+        <Link>Design\ColorConverter.cs</Link>
       </Compile>
       <Compile Include="..\FNA\src\Design\MathTypeConverter.cs">
         <Link>Design\MathTypeConverter.cs</Link>
@@ -54,6 +60,63 @@
       </Compile>
       <Compile Include="..\FNA\src\Design\Vector4Converter.cs">
         <Link>Design\Vector4Converter.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Alpha8.cs">
+        <Link>Graphics\PackedVector\Alpha8.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Bgr565.cs">
+        <Link>Graphics\PackedVector\Bgr565.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Bgra4444.cs">
+        <Link>Graphics\PackedVector\Bgra4444.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Bgra5551.cs">
+        <Link>Graphics\PackedVector\Bgra5551.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Byte4.cs">
+        <Link>Graphics\PackedVector\Byte4.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\HalfSingle.cs">
+        <Link>Graphics\PackedVector\HalfSingle.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\HalfTypeHelper.cs">
+        <Link>Graphics\PackedVector\HalfTypeHelper.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\HalfVector2.cs">
+        <Link>Graphics\PackedVector\HalfVector2.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\HalfVector4.cs">
+        <Link>Graphics\PackedVector\HalfVector4.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\IPackedVector.cs">
+        <Link>Graphics\PackedVector\IPackedVector.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\NormalizedByte2.cs">
+        <Link>Graphics\PackedVector\NormalizedByte2.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\NormalizedByte4.cs">
+        <Link>Graphics\PackedVector\NormalizedByte4.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\NormalizedShort2.cs">
+        <Link>Graphics\PackedVector\NormalizedShort2.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\NormalizedShort4.cs">
+        <Link>Graphics\PackedVector\NormalizedShort4.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Rg32.cs">
+        <Link>Graphics\PackedVector\Rg32.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Rgba1010102.cs">
+        <Link>Graphics\PackedVector\Rgba1010102.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Rgba64.cs">
+        <Link>Graphics\PackedVector\Rgba64.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Short2.cs">
+        <Link>Graphics\PackedVector\Short2.cs</Link>
+      </Compile>
+      <Compile Include="..\FNA\src\Graphics\PackedVector\Short4.cs">
+        <Link>Graphics\PackedVector\Short4.cs</Link>
       </Compile>
       <Compile Include="..\FNA\src\MathHelper.cs">
         <Link>MathHelper.cs</Link>
