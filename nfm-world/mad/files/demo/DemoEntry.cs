@@ -45,7 +45,7 @@ public struct DemoEntry
     public (fix64 Mxz, fix64 Txz) XzReadings;
     public BitFlags TheBitFlags;
 
-    public static DemoEntry Create(InGameCar car)
+    public static DemoEntry Create(IInGameCar car)
     {
         DemoEntry entry = new DemoEntry();
 

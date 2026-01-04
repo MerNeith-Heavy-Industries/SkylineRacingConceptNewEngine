@@ -6,5 +6,6 @@ namespace NFMWorld.Library.backend;
 public interface IRaceValues
 {
     UnlimitedArray<IInGameCar> CarsInRace { get; }
-    IStage CurrentStage { get; }
+    BackendStage CurrentStage { get; }
+    RaceState raceState { get; }
 }

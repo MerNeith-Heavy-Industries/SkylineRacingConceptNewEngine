@@ -7,7 +7,7 @@ namespace NFMWorld.Mad;
 
 public class Sparks
 {
-    private readonly Car _car;
+    private readonly ClientCar _car;
     private readonly GraphicsDevice _graphicsDevice;
 
     internal int Sprk;
@@ -36,7 +36,7 @@ public class Sparks
     private readonly DynamicIndexBuffer _indexBuffer;
     private readonly VertexBuffer _instanceBuffer;
 
-    public Sparks(Car car, GraphicsDevice graphicsDevice)
+    public Sparks(ClientCar car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;

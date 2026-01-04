@@ -177,12 +177,6 @@ public class GameSparker
         timer = new MicroStopwatch();
         timer.Start();
         
-        cars = [];
-        
-        stage_parts = [];
-        vendor_stage_parts = [];
-        user_stage_parts = [];
-
         // init menu
         SettingsMenu = new SettingsMenu(game);
         MainMenu = new MainMenuPhase(_graphicsDevice);

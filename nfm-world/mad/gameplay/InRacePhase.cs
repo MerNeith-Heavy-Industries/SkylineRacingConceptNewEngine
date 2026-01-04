@@ -87,19 +87,28 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
     {
         base.KeyPressed(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyPressed(key);
+        if (gamemodeInstance is IClientGamemode clientGamemode)
+        {
+            clientGamemode.KeyPressed(key);
+        }
     }
 
     public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
     {
         base.KeyReleased(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyReleased(key);
+        if (gamemodeInstance is IClientGamemode clientGamemode)
+        {
+            clientGamemode.KeyReleased(key);
+        }
     }
 
     public override void Render()
     {
         base.Render();
-        gamemodeInstance?.Render();
+        if (gamemodeInstance is IClientGamemode clientGamemode)
+        {
+            clientGamemode.Render();
+        }
     }
     
     protected BaseGamemode CreateGameMode(BaseGamemodeParameters parameters)

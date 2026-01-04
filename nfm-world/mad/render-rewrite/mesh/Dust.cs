@@ -7,7 +7,7 @@ namespace NFMWorld.Mad;
 
 public class Dust
 {
-    private readonly Car _car;
+    private readonly ClientCar _car;
     private readonly GraphicsDevice _graphicsDevice;
 
     private int _ust;
@@ -28,7 +28,7 @@ public class Dust
     private int _indexCount;
     private readonly BasicEffect _effect;
 
-    public Dust(Car car, GraphicsDevice graphicsDevice)
+    public Dust(ClientCar car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;
@@ -88,7 +88,7 @@ public class Dust
         }
     }
 
-    public void GameTick(Stage? stage)
+    public void GameTick(ClientStageRenderer? stage)
     {
         _vertexCount = 0;
         _indexCount = 0;
@@ -101,7 +101,7 @@ public class Dust
         }
     }
 
-    private void TickDust(Stage? stage, int dust)
+    private void TickDust(ClientStageRenderer? stage, int dust)
     {
         Span<int> baseColor = stackalloc int[3];
         if (Stg[dust] == 1)

@@ -248,7 +248,7 @@ public class Scene
         }
     }
 
-    public void GameTick(Stage currentStage)
+    public void GameTick(ClientStageRenderer currentStage)
     {
         foreach (var obj in Objects)
         {

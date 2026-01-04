@@ -63,7 +63,7 @@ public abstract class Transform : ITransform
         set;
     } = true;
 
-    public virtual void GameTick(Stage? stage = null)
+    public virtual void GameTick(ClientStageRenderer? stage = null)
     {
     }
 }

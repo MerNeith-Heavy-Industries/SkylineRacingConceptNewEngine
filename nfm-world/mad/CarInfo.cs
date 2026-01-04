@@ -8,9 +8,9 @@ public class CarMesh : Mesh
     public Rad3dWheelDef[] Wheels;
     public Rad3dRimsDef? Rims;
 
-    public CarMesh(GraphicsDevice graphicsDevice, Rad3d rad, string fileName) : base(graphicsDevice, rad, fileName)
+    public CarMesh(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
-        Stats = CarStats.ValidateStats(rad.Stats, fileName);
+        Stats = CarStats.ValidateStats(rad.Stats, rad.FileName);
 
         Wheels = rad.Wheels;
         Rims = rad.Rims;

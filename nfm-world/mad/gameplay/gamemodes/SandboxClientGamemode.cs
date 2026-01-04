@@ -3,9 +3,15 @@ using NFMWorld.Util;
 
 namespace NFMWorld.Mad.gamemodes;
 
-public class FootballClientGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
-    : FootballGamemode(gamemodeParameters, raceValues), IClientGamemode
+public class SandboxClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
+    : SandboxGamemode(gamemodeParameters, raceValues), IClientGamemode
 {
+    public override void Enter()
+    {
+        base.Enter();
+        raceValues.GetClientCar(NumPlayers)!.Sfx!.Mute = true;
+    }
+
     public void KeyPressed(Keys key)
     {
         // Handle key presses specific to Time Trial mode

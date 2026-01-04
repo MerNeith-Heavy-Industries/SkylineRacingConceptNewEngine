@@ -8,7 +8,7 @@ public static class MeshDamage
 {
     public static void DamageX(
         CarStats stat,
-        Car car,
+        ClientCar car,
         int wheelIdx,
         float damageFactor
     )
@@ -105,7 +105,7 @@ public static class MeshDamage
 
     public static void DamageY(
         CarStats stat,
-        Car car,
+        ClientCar car,
         int wheelIdx,
         float damageFactor,
         bool mtouch,
@@ -290,7 +290,7 @@ public static class MeshDamage
 
     public static void DamageZ(
         CarStats stat,
-        Car car,
+        ClientCar car,
         int wheelIdx,
         float damageFactor
     )

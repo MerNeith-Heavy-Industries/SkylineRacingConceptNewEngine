@@ -5,6 +5,7 @@ namespace NFMWorld;
 public interface IAiNode : ITransform
 {
     AiNodeKind Kind { get; }
+    bool IsSpecial { get; }
 }
 
 public enum AiNodeKind

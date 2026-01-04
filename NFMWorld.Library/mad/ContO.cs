@@ -3,42 +3,10 @@ using SoftFloat;
 
 namespace NFMWorld.Mad;
 
-public interface ICar : ITransform
-{
-    CarStats Stats { get; }
-    int GroundAt { get; }
-    int MaxRadius { get; }
-    bool VisuallyWasted { get; set; }
-    f64Euler WheelAngle { get; set; }
-    f64Euler TurningWheelAngle { get; set; }
-    IReadOnlyList<Rad3dWheelDef> Wheels { get; }
-    void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround);
-    void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround);
-    void DamageX(CarStats stat, int wheelnum, fix64 amount);
-    void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash);
-    void DamageZ(CarStats stat, int wheelnum, fix64 amount);
-}
-
-public interface IInGameCar : ICar
-{
-    public Mad Mad { get; }
-    public Control Control { get; }
-    public ushort currentCheckpoint { get; set; }
-    public byte currentLap { get; set; } // mad.nlaps
-    public int totalCheckpoint { get; set; } // mad.clear
-    public int lastCheckpointNode { get; set; } // resets on new lap
-    public int placement { get; set; } // cp.pos
-    public bool Wasted { get; }
-
-    void Drive(IStage stage);
-    void Collide(IInGameCar otherCar);
-    void ResetPosition();
-}
-
 // temp conto for nfmm compatibility
 public readonly struct ContO
 {
-    private readonly ICar _car;
+    private readonly IInGameCar _car;
         
     public fix64 X 
     {
@@ -93,12 +61,6 @@ public readonly struct ContO
     // wheel position
     public readonly InlineArray4<int> Keyx;
     public readonly InlineArray4<int> Keyz;
-    
-    public bool Wasted
-    {
-        get => _car.VisuallyWasted;
-        set => _car.VisuallyWasted = value;
-    }
 
     public int Fcnt
     {
@@ -107,7 +69,7 @@ public readonly struct ContO
     } // TODO car fixed ticks
     public int MaxR => _car.MaxRadius;
 
-    public ContO(ICar car)
+    public ContO(IInGameCar car)
     {
         _car = car;
 

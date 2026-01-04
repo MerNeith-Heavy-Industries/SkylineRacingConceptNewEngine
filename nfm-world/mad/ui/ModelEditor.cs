@@ -74,7 +74,7 @@ public class ModelEditorPhase : BasePhase
     private readonly GraphicsDevice _graphicsDevice;
     private bool _isOpen = false;
     private string[] _userModelNames = [];
-    private Stage? _modelViewerStage;
+    private ClientStageRenderer? _modelViewerStage;
     
     // Tab management
     private List<ModelEditorTab> _tabs = new();

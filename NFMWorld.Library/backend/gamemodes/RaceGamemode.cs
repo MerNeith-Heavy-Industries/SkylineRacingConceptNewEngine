@@ -1,13 +1,12 @@
 using System.Diagnostics;
+using System.Drawing;
 using Maxine.Extensions;
-using NFMWorld.DriverInterface;
 using NFMWorld.Library;
 using NFMWorld.Library.backend;
 using NFMWorld.Mad;
 using NFMWorld.Mad.ai;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Mad.helpers;
-using NFMWorld.Mad.UI.yoga;
 using NFMWorld.Util;
 using Color = NFMWorld.Util.Color;
 
@@ -16,19 +15,19 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
-    private enum InnerRaceState
+    protected enum InnerRaceState
     {
         Countdown,
         InProgress,
         Finished
     }
 
-    private int _countdownTime = 3;
+    protected int _countdownTime = 3;
     // Amount of ticks until we decrease countdown by 1
     private int _innerCountdownTicks = 0;
-    private InnerRaceState _currentState = InnerRaceState.Countdown;
+    protected InnerRaceState _currentState = InnerRaceState.Countdown;
 
-    private Stopwatch raceTimer = new Stopwatch();
+    protected Stopwatch raceTimer = new Stopwatch();
 
     private int _newTick = 0;
 
@@ -59,7 +58,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new InGameCar(idx, GameSparker.GetCar(player.CarName).Car!, -500 + (400 * idx), 0, idx == playerCarIndex);
+            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Car, idx, -500 + (400 * idx), 0, idx == playerCarIndex);
             carsInRace[idx].currentCheckpoint = 0;
             carsInRace[idx].currentLap = 0;
             if (player.IsBot)
@@ -67,17 +66,6 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
                 carsInRace[idx].Bot = new ElStupido(this, raceValues);
             }
         }
-        carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
-
-        foreach (var cp in currentStage.checkpoints)
-        {
-            cp.Glow = false;
-        }
-
-        _pdBars.Reset();
-        IBackend.Backend.StopAllSounds();
-
-        SetLapText(1);
 
         _currentState = InnerRaceState.Countdown;
     }
@@ -105,15 +93,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         }
     }
 
-    private void InRace()
+    protected virtual void InRace()
     {
-        SetLapText(carsInRace[playerCarIndex].currentLap);
-
-        _pdBars.SetDamageBarFill(carsInRace[playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
-        _pdBars.UpdateDamageBarColor();
-        _pdBars.SetPowerBarFill((float)carsInRace[playerCarIndex].Mad.Power);
-        _pdBars.UpdatePowerBarColor();
-
         for (var i = 0; i < carsInRace.Count; i++)
         {
             var inGameCar = carsInRace[i];
@@ -153,38 +134,10 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         for (var i = 0; i < carsInRace.Count; i++)
         {
             FixHoopHelper.HandleFixHoops(currentStage, carsInRace[i]);
-        
-            if (CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[i]))
-            {
-                if (i == playerCarIndex)
-                    SfxLibrary.checkpoint?.Play();
-            }
+            CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[i]);
         }
         
         CheckPointHelper.CalculatePositions(currentStage, carsInRace);
-
-        if (carsInRace[playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[playerCarIndex].currentLap == currentStage.nlaps - 1)
-        {
-            currentStage.checkpoints[^1].Finish = true;
-        }
-        else
-        {
-            currentStage.checkpoints[^1].Finish = false;
-        }
-
-        if (carsInRace[playerCarIndex].currentCheckpoint > 0)
-        {
-            currentStage.checkpoints[carsInRace[playerCarIndex].currentCheckpoint - 1].Glow = false;
-        }
-        else
-        {
-            currentStage.checkpoints[^1].Glow = false;
-        }
-
-        if (carsInRace[playerCarIndex].currentCheckpoint < currentStage.checkpoints.Count)
-        {
-            currentStage.checkpoints[carsInRace[playerCarIndex].currentCheckpoint].Glow = true;
-        }
 
         for (var i = 0; i < carsInRace.Count; i++)
         {
@@ -230,56 +183,18 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         }
     }
 
-    private void CountdownTick()
+    protected virtual void CountdownTick()
     {
         _innerCountdownTicks--;
         if (_innerCountdownTicks <= 0)
         {
             _countdownTime--;
-            SfxLibrary.countdown[_countdownTime].Play();
             _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
             if (_countdownTime <= 0)
             {
                 _currentState = InnerRaceState.InProgress;
-                _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
                 raceTimer.Start();
             }
-        }
-    }
-
-    public override void KeyPressed(Keys key)
-    {
-    }
-
-    public override void KeyReleased(Keys key)
-    {
-        // Handle key releases specific to Time Trial mode
-    }
-
-    public override void Render()
-    {
-        _pdBars.Render();
-        _lapTimerSplits.LayoutAndRender(G.Viewport);
-        _centralTextNode.LayoutAndRender(G.Viewport);
-
-        if (_currentState == InnerRaceState.Countdown)
-        {
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
-            _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
-            _centerText.Color = new Color(255, 255, 255);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Text = $"Starting in {_countdownTime}";
-        }
-        else if (_currentState == InnerRaceState.Finished)
-        {
-            string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
-            _centerText.Color = new Color(128, 255, 128);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
-            _centerText.Text = $"Finished! Time: {finalTime}";
-
-            _centerText.Text += "\nPress R to restart";
         }
     }
 }

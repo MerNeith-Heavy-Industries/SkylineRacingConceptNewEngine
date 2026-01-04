@@ -8,7 +8,7 @@ using SoftFloat;
 namespace NFMWorld.Mad.UI;
 
 // Custom Stage class for the editor that doesn't require loading from file
-public class EditorStage : Stage
+public class EditorStage : ClientStageRenderer
 {
     public EditorStage(GraphicsDevice graphicsDevice) : base("", graphicsDevice)
     {
@@ -103,7 +103,7 @@ public class StageEditorTab
     public ViewModeEnum ViewMode { get; set; } = ViewModeEnum.Scene;
     
     // Associated stage and scene
-    public Stage? Stage { get; set; }
+    public ClientStageRenderer? Stage { get; set; }
     public Scene? Scene { get; set; }
     public string? StageFileName { get; set; }
     public bool HasUnsavedChanges { get; set; } = false;
@@ -671,7 +671,7 @@ public class StageEditorPhase : BasePhase
             tab.StageFileName = stageFileName;
             
             // Load the stage using the Stage class (it expects filename without extension)
-            tab.Stage = new Stage($"user/{stageFileName}", _graphicsDevice);
+            tab.Stage = new ClientStageRenderer($"user/{stageFileName}", _graphicsDevice);
             tab.TabName = tab.Stage.Name;
             
             // Remove all wall pieces from the stage immediately (we'll manage them separately)

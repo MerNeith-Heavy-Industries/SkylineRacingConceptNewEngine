@@ -191,7 +191,7 @@ public class FixHoop : CollisionObject
         }
     }
 
-    public override void GameTick(Stage? stage = null)
+    public override void GameTick(ClientStageRenderer? stage = null)
     {
         if (!Rotated || Rotation.Xz != f64AngleSingle.ZeroAngle)
         {

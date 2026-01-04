@@ -1,4 +1,5 @@
 ﻿using NFMWorld.Mad;
+using NFMWorld.Mad.ai;
 using SoftFloat;
 
 namespace NFMWorld.Library.backend;
@@ -7,7 +8,6 @@ public class BackendCar : BackendGameObject, IInGameCar
 {
     public int GroundAt { get; }
     public int MaxRadius { get; }
-    public bool VisuallyWasted { get; set; }
     public f64Euler WheelAngle { get; set; }
     public f64Euler TurningWheelAngle { get; set; }
     public IReadOnlyList<Rad3dWheelDef> Wheels { get; }
@@ -19,8 +19,11 @@ public class BackendCar : BackendGameObject, IInGameCar
     public int totalCheckpoint { get; set; } // mad.clear
     public int lastCheckpointNode { get; set; } = -1; // resets on new lap
     public int placement { get; set; } // cp.pos
+    public Rad3d Rad { get; }
     public CarStats Stats { get; }
     public bool Wasted => Mad.Wasted;
+
+    public BaseAi? Bot { get; set; }
 
     public event DamageFunc? DamagedX;
     public event RoofDamageFunc? DamagedY;
@@ -29,30 +32,33 @@ public class BackendCar : BackendGameObject, IInGameCar
     public event DustFunc? Dusted;
 
     public BackendCar(
-        int maxRadius,
-        IReadOnlyList<Rad3dWheelDef> wheels,
-        CarStats stats,
+        IInGameCar other,
         int im,
-        int x,
-        int z,
         bool isClientPlayer
+    ) : this(
+        other.Rad,
+        im,
+        other.Position.X,
+        other.Position.Z,
+        isClientPlayer
     )
     {
-        Stats = CarStats.ValidateStats(stats, "hogan rewish");
+    }
 
-        GroundAt = wheels.FirstOrDefault().Ground;
-        MaxRadius = maxRadius;
-        Wheels = wheels;
+    public BackendCar(Rad3d rad, int im, fix64 x, fix64 z, bool isClientPlayer)
+    {
+        Rad = rad;
+        Stats = CarStats.ValidateStats(rad.Stats, "hogan rewish");
+
+        GroundAt = rad.Wheels.FirstOrDefault().Ground;
+        MaxRadius = rad.MaxRadius;
+        Wheels = rad.Wheels;
         
         Mad = new Mad.Mad(Stats, im, isClientPlayer);
         Control = new Control();
         
         Position = new f64Vector3(x, World.Ground - GroundAt, z);
         Rotation = f64Euler.Identity;
-    }
-
-    public BackendCar(Rad3d rad, int im, int x, int z, bool isClientPlayer) : this(rad.MaxRadius, rad.Wheels, rad.Stats, im, x, z, isClientPlayer)
-    {
     }
 
     public void Drive(IStage stage)

@@ -8,5 +8,4 @@ public interface ITransform
     f64Vector3 Position { get; set; }
     f64Euler Rotation { get; set; }
     ITransform? Parent { get; }
-    Matrix MatrixWorld { get; }
 }

@@ -28,7 +28,7 @@ public class Mesh
 
     public bool CastsShadow;
 
-    public Mesh(GraphicsDevice graphicsDevice, Rad3d rad, string fileName)
+    public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         Polys = rad.Polys;
         GroundAt = rad.Wheels.FirstOrDefault().Ground;
@@ -38,7 +38,7 @@ public class Mesh
         Triangulation = Array.ConvertAll(Polys, poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
         BuildMesh(graphicsDevice);
 
-        FileName = fileName;
+        FileName = rad.FileName;
         MaxRadius = rad.MaxRadius;
         CastsShadow = rad.CastsShadow;
     }

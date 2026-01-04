@@ -17,7 +17,7 @@ public class Chips
         public Color3 Color;
     }
     
-    private readonly Car _car;
+    private readonly ClientCar _car;
     private readonly GraphicsDevice _graphicsDevice;
     
     private Chip[] _chips;
@@ -25,7 +25,7 @@ public class Chips
     private readonly VertexPositionColor[] _triangles;
     private int _triangleCount;
 
-    public Chips(Car car, GraphicsDevice graphicsDevice)
+    public Chips(ClientCar car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;

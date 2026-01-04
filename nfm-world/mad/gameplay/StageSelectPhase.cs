@@ -1,13 +1,14 @@
 using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
+using NFMWorld.Library.backend;
 using NFMWorld.Mad;
 using NFMWorld.Util;
 using Stride.Core.Extensions;
 
 public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
-    public event EventHandler<Stage>? StageSelected;
+    public event EventHandler<BackendStage>? StageSelected;
 
     private UnlimitedArray<string> _stageCollections = [];
     private string _selectedCollection = "";

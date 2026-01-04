@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using NFMWorld.Library;
+using NFMWorld.Library.backend;
 using NFMWorld.Mad;
 using NFMWorld.Util;
 
@@ -29,7 +30,7 @@ public class AroundStageCamera
         _fallen = 0f;
     }
 
-    public void AroundStage(PerspectiveCamera camera, Stage stage)
+    public void AroundStage(PerspectiveCamera camera, IStage stage)
     {
         if (_hit > 5000f)
         {
@@ -52,7 +53,7 @@ public class AroundStageCamera
         camera.LookAt = location;
     }
 
-    private void FollowStage(PerspectiveCamera camera, Stage stage)
+    private void FollowStage(PerspectiveCamera camera, IStage stage)
     {
         camera.Fov = 400f * _focus;
         if(Math.Abs(_focus - _gofocus) > 0.005)
@@ -95,7 +96,7 @@ public class AroundStageCamera
         };
     }
 
-    private void FallIntoPlace(Stage stage)
+    private void FallIntoPlace(IStage stage)
     {
         if (_hit == 45000f)
         {

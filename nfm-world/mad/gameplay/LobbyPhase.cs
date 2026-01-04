@@ -147,7 +147,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
             ImGui.PopStyleColor();
             
             ImGui.Indent(20);
-            ImGui.TextDisabled($"Vehicle: {GameSparker.GetCar(player.Vehicle).Car?.Stats.Name}");
+            ImGui.TextDisabled($"Vehicle: {BackendGameSparker.GetCar(player.Vehicle).Car?.Stats.Name}");
             ImGui.Unindent(20);
             ImGui.Spacing();
         }
@@ -187,7 +187,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
             ImGui.Separator();
 
             // Dummy vehicle list
-            foreach (var vehicleArr in (Span<UnlimitedArray<CarInfo>>)[[.. GameSparker.cars.Values.SelectMany(i => i)]])
+            foreach (var vehicleArr in (Span<UnlimitedArray<Rad3d>>)[[.. BackendGameSparker.cars.Values.SelectMany(i => i)]])
             foreach (var vehicle in vehicleArr)
             {
                 if (ImGui.Selectable(vehicle.Stats.Name + "##" + vehicle.FileName))

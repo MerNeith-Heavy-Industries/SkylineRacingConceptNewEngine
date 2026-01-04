@@ -9,7 +9,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IR
     public IReadOnlyList<PlayerParameters> players => gamemodeParameters.Players;
     public PlayerParameters player => gamemodeParameters.Players[playerCarIndex];
     public UnlimitedArray<IInGameCar> carsInRace => raceValues.CarsInRace;
-    public IStage currentStage => raceValues.CurrentStage;
+    public BackendStage currentStage => raceValues.CurrentStage;
     public int NumPlayers => players.Count;
 
     /// <summary>

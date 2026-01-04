@@ -382,10 +382,7 @@ public class Mad
         return bottomy;
     }
 
-    private void Distruct(ContO conto)
-    {
-        conto.Wasted = true;
-    }
+    public event EventHandler Distruct;
 
     public void bounceRebound(int wi, ContO conto, DeterministicRandom random)
     {
@@ -1678,7 +1675,7 @@ public class Mad
         } // CHK15
         if (Hitmag >= Stat.Maxmag && !Wasted)
         {
-            Distruct(conto);
+            Distruct(this, EventArgs.Empty);
             if (Cntdest == 7)
             {
                 Wasted = true;

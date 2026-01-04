@@ -1,12 +1,15 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
+using NFMWorld.Library.backend;
 using NFMWorld.Mad.UI;
 using NFMWorld.Util;
 
 namespace NFMWorld.Mad;
 
-public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice)
+public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice), IRaceValues
 {
+    BackendStage IRaceValues.CurrentStage => CurrentStage;
+
     public RaceState raceState
     {
         get;

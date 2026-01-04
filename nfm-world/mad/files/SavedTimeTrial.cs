@@ -65,7 +65,7 @@ public class SavedTimeTrial
         MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
     }
 
-    public void RecordTick(InGameCar car)
+    public void RecordTick(IInGameCar car)
     {
         DemoEntry entry = DemoEntry.Create(car);
         DemoData.AddEntry(entry);

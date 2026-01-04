@@ -34,7 +34,7 @@ public class StageLoader
 
     private int _fadeFrom = 0;
 
-    public int nlaps = 3;
+    public ushort nlaps = 3;
 
     // soundtrack(folder,fileName)
     public string musicPath = "";
@@ -407,7 +407,7 @@ public class StageLoader
                 // }
                 if (line.StartsWith("nlaps"))
                 {
-                    nlaps = Utility.GetInt("nlaps", line, 0);
+                    nlaps = (ushort)Utility.GetInt("nlaps", line, 0);
                 }
                 if (line.StartsWith("name"))
                 {

@@ -7,13 +7,13 @@ public class FixHoopHelper
 {
     // TODO fix car, play car fixed sound
     public static bool HandleFixHoops(
-        Stage currentStage,
-        InGameCar car)
+        IStage currentStage,
+        IInGameCar car)
     {
         for (var i = 0; i < currentStage.fixHoops.Count; i++)
         {
             var fixhoop = currentStage.fixHoops[i];
-            if (!fixhoop.Rotated)
+            if (fixhoop.Rotation.Xz.Degrees == 0)
             {
                 if (fix64.Abs(car.Position.Z - fixhoop.Position.Z) < 200 &&
                     UMath.Py(

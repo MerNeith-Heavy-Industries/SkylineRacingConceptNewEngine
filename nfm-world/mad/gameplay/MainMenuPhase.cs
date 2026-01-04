@@ -41,7 +41,7 @@ public class MainMenuPhase : BasePhase
 
     private GraphicsDevice _graphicsDevice;
 
-    private CarInfo? garageSelectedCar;
+    private Rad3d? garageSelectedCar;
 
     public MainMenuPhase(GraphicsDevice graphicsDevice)
     {
@@ -429,7 +429,7 @@ public class MainMenuPhase : BasePhase
         ssp.StageSelected += (sender, stage) =>
         {
             GameSparker.InRace.CurrentStage = stage;
-            GameSparker.InRace.CurrentStage.ReapplyFadeFrom();
+            GameSparker.InRace.RecreateScene();
             GameSparker.InRace.LoadStageMusic(true);
             GameSparker.SetPhase(this);
 

@@ -8,8 +8,8 @@ namespace NFMWorld.Mad.helpers;
 public class CheckPointHelper
 {
     public static void CalculatePositions(
-        Stage currentStage,
-        IReadOnlyList<InGameCar> carsInRace
+        IStage currentStage,
+        IReadOnlyList<IInGameCar> carsInRace
     )
     {
         foreach (var car in carsInRace)
@@ -68,13 +68,13 @@ public class CheckPointHelper
     }
 
     public static bool HandleCheckPoint(
-        Stage currentStage,
-        InGameCar car)
+        IStage currentStage,
+        IInGameCar car)
     {
         if (car.currentCheckpoint >= currentStage.checkpoints.Count)
             return false;
 
-        CheckPoint nextCheckpoint = currentStage.checkpoints[car.currentCheckpoint];
+        var nextCheckpoint = currentStage.checkpoints[car.currentCheckpoint];
         f64Vector3 carPos = car.Position;
         var mad = car.Mad;
         f64Vector3 velocity = new f64Vector3(
