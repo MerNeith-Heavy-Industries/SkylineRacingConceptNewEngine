@@ -15,10 +15,15 @@
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
         <PackageReference Include="Stride.Core.Mathematics" Version="4.3.0.2507" />
+        <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\FNA.Math\FNA.Math.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="data\" />
     </ItemGroup>
 </Project>

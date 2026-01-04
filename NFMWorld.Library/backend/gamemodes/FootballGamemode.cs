@@ -16,8 +16,8 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVa
 
     public override void Enter()
     {
-        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Car!, playerCarIndex, 500, 0, true);
-        carsInRace[1] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Car!, 1, 0, 0, false);
+        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, playerCarIndex, 500, 0, true);
+        carsInRace[1] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
 
         Reset();
     }

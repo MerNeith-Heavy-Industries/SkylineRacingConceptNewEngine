@@ -32,7 +32,7 @@ public record Rad3d(
         return maxR;
     }
 
-    public Rad3d(Rad3dPoly[] polys, bool castsShadow) : this([], new CarStats(), [], null, [], polys, castsShadow, [])
+    public Rad3d(Rad3dPoly[] polys, bool castsShadow, string fileName) : this([], new CarStats(), [], null, [], polys, castsShadow, [], fileName)
     {
     }
 }

@@ -10,7 +10,7 @@ using URandom = Util.Random;
 public class Environment
 {
     public static GroundPolys MakePolys(
-        ClientStageRenderer stage,
+        IStage stage,
         int sx, int ncx, int sz, int ncz, int stagePartCount, // newpolys
         GraphicsDevice graphicsDevice
     )

@@ -21,12 +21,12 @@ public struct PlayerState
         set => _currentTimeInMs = (ulong)value.ToUnixTimeMilliseconds();
     }
     
-    public static void ApplyTo(PlayerState state, InGameCar c)
+    public static void ApplyTo(PlayerState state, IInGameCar c)
     {
         state.DemoEntry.ApplyToCar(c);
     }
     
-    public static PlayerState CreateFrom(uint ticks, InGameCar car)
+    public static PlayerState CreateFrom(uint ticks, IInGameCar car)
     {
         return new PlayerState
         {

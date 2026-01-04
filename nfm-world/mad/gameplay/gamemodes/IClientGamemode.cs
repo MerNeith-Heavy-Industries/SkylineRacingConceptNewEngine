@@ -2,7 +2,7 @@
 
 namespace NFMWorld.Mad.gamemodes;
 
-public interface IClientGamemode
+public interface IClientGamemode : IGamemode
 {
     public void KeyPressed(Keys key)
     {

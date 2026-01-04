@@ -573,6 +573,12 @@ public class StageLoader
         }
     }
 
+    public StageLoader()
+    {
+        // Create an empty stage loader for editor purposes
+        Path = "default_stage";
+    }
+
     private bool TryGetPieceToPlace(string setstring, out PieceSet p1)
     {
         if (int.TryParse(setstring, out var setindex))

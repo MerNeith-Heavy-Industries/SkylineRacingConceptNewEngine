@@ -93,7 +93,7 @@ public class LineMesh : IInstancedRenderElement
         _graphicsDevice.RasterizerState = RasterizerState.CullClockwise;
 
         // If a parameter is null that means the HLSL compiler optimized it out.
-        _material.SnapColor?.SetValue(World.Snap.ToVector3());
+        _material.SnapColor?.SetValue((Vector3)World.Snap);
         _material.IsFullbright?.SetValue(false);
         _material.UseBaseColor?.SetValue(false);
         _material.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -101,7 +101,7 @@ public class LineMesh : IInstancedRenderElement
         _material.HalfThickness?.SetValue(World.OutlineThickness);
 
         _material.LightDirection?.SetValue(World.LightDirection);
-        _material.FogColor?.SetValue(World.Fog.Snap(World.Snap).ToVector3());
+        _material.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         _material.FogDistance?.SetValue(World.FadeFrom);
         _material.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         _material.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));

@@ -39,6 +39,9 @@ public readonly record struct Color3(
         }
     }
     
+    public static Color3 FromSpan(ReadOnlySpan<short> span)
+        => new(span[0], span[1], span[2]);
+
     public static implicit operator Color(Color3 color) => new(color.R, color.G, color.B);
     public static implicit operator ColorBGRA(Color3 color) => new(color.R, color.G, color.B, 255);
     public static explicit operator Color3(Color color) => new(color.R, color.G, color.B);
@@ -131,4 +134,10 @@ public readonly record struct Color3(
             (short) Math.Min((int) (b / Factor), 255)
         );
     }
+    
+    public static implicit operator Microsoft.Xna.Framework.Vector4(Color3 color3)
+        => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
+    public static implicit operator System.Numerics.Vector4(Color3 color3)
+        => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
+
 }

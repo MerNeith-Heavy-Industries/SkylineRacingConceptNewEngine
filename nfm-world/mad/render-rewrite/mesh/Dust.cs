@@ -88,7 +88,7 @@ public class Dust
         }
     }
 
-    public void GameTick(ClientStageRenderer? stage)
+    public void GameTick(IStage? stage)
     {
         _vertexCount = 0;
         _indexCount = 0;
@@ -101,7 +101,7 @@ public class Dust
         }
     }
 
-    private void TickDust(ClientStageRenderer? stage, int dust)
+    private void TickDust(IStage? stage, int dust)
     {
         Span<int> baseColor = stackalloc int[3];
         if (Stg[dust] == 1)

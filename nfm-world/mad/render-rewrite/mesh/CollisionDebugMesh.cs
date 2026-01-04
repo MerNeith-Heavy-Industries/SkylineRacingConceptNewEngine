@@ -174,7 +174,7 @@ public sealed class CollisionDebugMesh : GameObject
         GameSparker._graphicsDevice.Indices = lineIndexBuffer;
 
         // If a parameter is null that means the HLSL compiler optimized it out.
-        _material.SnapColor?.SetValue(new Color3(100, 100, 100).ToVector3());
+        _material.SnapColor?.SetValue((Vector3)new Color3(100, 100, 100));
         _material.IsFullbright?.SetValue(true);
         _material.UseBaseColor?.SetValue(false);
         _material.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -182,7 +182,7 @@ public sealed class CollisionDebugMesh : GameObject
         _material.HalfThickness?.SetValue(World.OutlineThickness);
 
         _material.LightDirection?.SetValue(World.LightDirection);
-        _material.FogColor?.SetValue(World.Fog.Snap(World.Snap).ToVector3());
+        _material.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         _material.FogDistance?.SetValue(World.FadeFrom);
         _material.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         _material.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));

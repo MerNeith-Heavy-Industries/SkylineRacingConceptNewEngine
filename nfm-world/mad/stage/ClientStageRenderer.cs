@@ -145,7 +145,7 @@ public class ClientStageRenderer : GameObject
             // Medium.Newstars();
             if (World.DrawPolys)
             {
-                polys = NFMWorld.Mad.Environment.MakePolys(this, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
+                polys = NFMWorld.Mad.Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
                     stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
             }
 
@@ -166,19 +166,33 @@ public class ClientStageRenderer : GameObject
                 if (piece is StageObject obj)
                 {
                     var mesh = GameSparker.stage_part_meshes.GetValueOrDefault(obj.Rad) ?? GameSparker.error_mesh;
-                    var clientObj = new StageObjectGameObject(mesh, obj)
-                    {
-                        Parent = this
-                    };
-                    children.Add(clientObj);
-
                     if (obj.Kind == AiNodeKind.CheckPoint)
                     {
+                        var clientObj = new StageObjectGameObject(mesh, obj)
+                        {
+                            Parent = this
+                        };
+                        children.Add(clientObj);
+
                         checkpoints.Add(clientObj);
                     }
                     else if (obj.Kind == AiNodeKind.FixHoop)
                     {
+                        var clientObj = new FixHoop(mesh, obj)
+                        {
+                            Parent = this
+                        };
+                        children.Add(clientObj);
+
                         fixhoops.Add(clientObj);
+                    }
+                    else
+                    {
+                        var clientObj = new StageObjectGameObject(mesh, obj)
+                        {
+                            Parent = this
+                        };
+                        children.Add(clientObj);
                     }
                 }
             }
@@ -213,44 +227,30 @@ public class ClientStageRenderer : GameObject
 
     public void UpdateCheckpointGlow(ushort currentCheckpoint, bool isFinish)
     {
-        if (isFinish)
+        if (checkpoints.Count > 0)
         {
-            checkpoints[^1].Finish = true;
-        }
-        else
-        {
-            checkpoints[^1].Finish = false;
-        }
+            if (isFinish)
+            {
+                checkpoints[^1].Finish = true;
+            }
+            else
+            {
+                checkpoints[^1].Finish = false;
+            }
 
-        if (currentCheckpoint > 0)
-        {
-            checkpoints[currentCheckpoint - 1].Glow = false;
+            if (currentCheckpoint > 0)
+            {
+                checkpoints[currentCheckpoint - 1].Glow = false;
+            }
+            else
+            {
+                checkpoints[^1].Glow = false;
+            }
+
+            if (currentCheckpoint < checkpoints.Count)
+            {
+                checkpoints[currentCheckpoint].Glow = true;
+            }
         }
-        else
-        {
-            checkpoints[^1].Glow = false;
-        }
-
-        if (currentCheckpoint < checkpoints.Count)
-        {
-            checkpoints[currentCheckpoint].Glow = true;
-        }
-    }
-}
-
-public class StageObjectGameObject : MeshedGameObject
-{
-    private readonly StageObject _obj;
-
-    public StageObjectGameObject(Mesh mesh, StageObject obj) : base(mesh, obj.Position, obj.Rotation)
-    {
-        _obj = obj;
-    }
-
-    public override void GameTick(ClientStageRenderer? stage = null)
-    {
-        base.GameTick(stage);
-        Position = _obj.Position;
-        Rotation = _obj.Rotation;
     }
 }

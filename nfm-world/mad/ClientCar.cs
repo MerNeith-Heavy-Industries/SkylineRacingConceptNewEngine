@@ -55,6 +55,7 @@ public class ClientCar : MeshedGameObject, ICar
     {
         Bfase = new float[Mesh.Polys.Length];
         
+        _backendCar = backendCar;
         _wheels = Wheels
             .Select(wheel => new WheelMeshBuilder(wheel, backendCar.Rad.Rims).BuildGameObject(graphicsDevice, this))
             .ToArray();
@@ -62,7 +63,6 @@ public class ClientCar : MeshedGameObject, ICar
         Dust = new Dust(this, graphicsDevice);
         Chips = new Chips(this, graphicsDevice);
         Sparks = new Sparks(this, graphicsDevice);
-        _backendCar = backendCar;
     }
 
     public ClientCar(GraphicsDevice graphicsDevice, IInGameCar backendCar)
@@ -127,7 +127,7 @@ public class ClientCar : MeshedGameObject, ICar
         // bfase = -7
     }
 
-    public override void GameTick(ClientStageRenderer? stage = null)
+    public override void GameTick(IStage? stage = null)
     {
         Flames.GameTick();
         Dust.GameTick(stage);

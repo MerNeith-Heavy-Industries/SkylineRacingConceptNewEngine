@@ -3,7 +3,7 @@ using NFMWorld.Mad;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Util;
 
-public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
+public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues) : IGamemode
 {
     public int playerCarIndex => gamemodeParameters.PlayerCarIndex;
     public IReadOnlyList<PlayerParameters> players => gamemodeParameters.Players;

@@ -7,9 +7,9 @@ namespace NFMWorld.Library;
 public class BackendGameSparker
 {
     public static Dictionary<Collection, UnlimitedArray<Rad3d>> cars = new();
-    public static UnlimitedArray<Rad3d> stage_parts;
-    public static UnlimitedArray<Rad3d> vendor_stage_parts;
-    public static UnlimitedArray<Rad3d> user_stage_parts;
+    public static UnlimitedArray<Rad3d> stage_parts = [];
+    public static UnlimitedArray<Rad3d> vendor_stage_parts = [];
+    public static UnlimitedArray<Rad3d> user_stage_parts = [];
     public static Rad3d error_mesh;
 
     public static readonly string[] CarRads =
@@ -142,7 +142,7 @@ public class BackendGameSparker
         }
     }
 
-    public static (int Id, Rad3d? Car) GetCar(string name)
+    public static (int Id, Rad3d? Rad) GetCar(string name)
     {
         var total = 0;
         foreach (var t in cars.Values)
@@ -162,7 +162,7 @@ public class BackendGameSparker
         return (-1, null!);
     }
 
-    public static (int Id, Rad3d? Mesh) GetStagePart(string name)
+    public static (int Id, Rad3d? Rad) GetStagePart(string name)
     {
         IReadOnlyList<Rad3d>[] arrays = [stage_parts, vendor_stage_parts, user_stage_parts];
 

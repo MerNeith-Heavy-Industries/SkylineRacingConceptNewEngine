@@ -33,7 +33,7 @@ public class AroundCamera
         camera.LookAt = (Vector3)obj.Position;
     }
 
-    public void Around(PerspectiveCamera camera, Transform obj, float xzspeed = 1f, float yspeed = 2f)
+    public void Around(PerspectiveCamera camera, ITransform obj, float xzspeed = 1f, float yspeed = 2f)
     {
         CurrentXz += xzspeed * Physics.PHYSICS_MULTIPLIER;
         if (CurrentXz >= 360)

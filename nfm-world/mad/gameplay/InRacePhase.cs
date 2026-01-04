@@ -9,7 +9,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
 {
     public string playerCarName = "nfmm/radicalone";
 
-    protected BaseGamemode? gamemodeInstance { get; set; }
+    protected IClientGamemode? gamemodeInstance { get; set; }
 
     public GameModes gamemode
     {
@@ -87,38 +87,29 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
     {
         base.KeyPressed(key, imguiWantsKeyboard);
-        if (gamemodeInstance is IClientGamemode clientGamemode)
-        {
-            clientGamemode.KeyPressed(key);
-        }
+        gamemodeInstance?.KeyPressed(key);
     }
 
     public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
     {
         base.KeyReleased(key, imguiWantsKeyboard);
-        if (gamemodeInstance is IClientGamemode clientGamemode)
-        {
-            clientGamemode.KeyReleased(key);
-        }
+        gamemodeInstance?.KeyReleased(key);
     }
 
     public override void Render()
     {
         base.Render();
-        if (gamemodeInstance is IClientGamemode clientGamemode)
-        {
-            clientGamemode.Render();
-        }
+        gamemodeInstance?.Render();
     }
     
-    protected BaseGamemode CreateGameMode(BaseGamemodeParameters parameters)
+    protected IClientGamemode CreateGameMode(BaseGamemodeParameters parameters)
     {
         return gamemode switch
         {
-            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
             GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
-            GameModes.Football => new FootballGamemode(parameters, this),
-            GameModes.Racing => new RaceGamemode(parameters, this),
+            GameModes.Football => new FootballClientGamemode(parameters, this),
+            GameModes.Racing => new RaceClientGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(gamemode), gamemode, null)
         };
     }

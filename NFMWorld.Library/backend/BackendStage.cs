@@ -36,6 +36,13 @@ public class BackendStage : IStage
 
     public readonly StageLoader stageLoader;
 
+    protected BackendStage()
+    {
+        // Creates an empty stage for inheritance
+        Path = "~empty~";
+        stageLoader = new StageLoader();
+    }
+
     public BackendStage(string stageName, StageLoader stageLoader)
     {
         Path = stageName;
@@ -114,6 +121,7 @@ public class BackendStage : IStage
                         piece.Position,
                         piece.Rotation
                     );
+                    obj.Kind = AiNodeKind.CheckPoint;
                     pieces[stagePartCount] = obj;
                     nodes[nodes.Count] = obj;
                     checkpoints[checkpoints.Count] = obj;
@@ -130,6 +138,7 @@ public class BackendStage : IStage
                         piece.Position,
                         piece.Rotation
                     );
+                    fix.Kind = AiNodeKind.FixHoop;
                     pieces[stagePartCount] = fix;
 
                     fixHoops[fixHoops.Count] = fix;
@@ -202,13 +211,13 @@ public class BackendStage : IStage
         else
         {
             var stagePart = BackendGameSparker.GetStagePart(setstring);
-            if (stagePart.Mesh == null)
+            if (stagePart.Rad == null)
             {
                 Console.WriteLine($"Stage part '{setstring}' not found.", "error");
                 mesh = BackendGameSparker.error_mesh;
                 return true;
             }
-            mesh = stagePart.Mesh;
+            mesh = stagePart.Rad;
         }
 
         return true;
@@ -217,14 +226,14 @@ public class BackendStage : IStage
     public ITransform CreateObject(string objectName, int x, int y, int z, int r)
     {
         var part = BackendGameSparker.GetStagePart(objectName);
-        if (part.Mesh == null)
+        if (part.Rad == null)
         {
             Console.WriteLine($"Object '{objectName}' not found.");
             part = (-1, BackendGameSparker.error_mesh);
         }
 
         var mesh = new StageObject(
-            part.Mesh,
+            part.Rad,
             new f64Vector3(x, 250 - y, z), 
             new f64Euler(f64AngleSingle.FromDegrees(r), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
         );
@@ -327,6 +336,7 @@ public class StageObject : ITransform, IAiNode, ICollidable
     public bool IsSpecial { get; set; }
     public Rad3dBoxDef[] Boxes { get; }
     public int MaxRadius { get; }
+    public string FileName => Rad.FileName;
 
     public StageObject(Rad3d rad)
     {
@@ -339,5 +349,9 @@ public class StageObject : ITransform, IAiNode, ICollidable
     {
         Position = position;
         Rotation = rotation;
+    }
+
+    public void GameTick()
+    {
     }
 }

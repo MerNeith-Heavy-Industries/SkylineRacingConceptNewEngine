@@ -14,7 +14,7 @@ public class InMultiplayerRacePhase(
 )
     : BaseRacePhase(graphicsDevice)
 {
-    protected BaseGamemode? gamemodeInstance { get; set; }
+    protected IClientGamemode? gamemodeInstance { get; set; }
     private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
     private UnlimitedArray<uint> _lastTick = [];
     
@@ -54,10 +54,12 @@ public class InMultiplayerRacePhase(
 
         gamemodeInstance ??= session.Gamemode switch
         {
-            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
+            GameModes.Football => new FootballClientGamemode(parameters, this),
+            GameModes.Racing => new RaceClientGamemode(parameters, this),
             GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
-        };;
+        };
         gamemodeInstance.Enter();
         
         transport.SendPacketToServer(new C2S_RaceLoaded());

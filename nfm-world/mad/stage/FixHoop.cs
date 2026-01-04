@@ -3,10 +3,11 @@ using NFMWorld.Util;
 using SoftFloat;
 using Stride.Core.Mathematics;
 using NFMWorld.Library;
+using NFMWorld.Library.backend;
 
 namespace NFMWorld.Mad;
 
-public class FixHoop : CollisionObject
+public class FixHoop : StageObjectGameObject
 {
     private readonly GraphicsDevice _graphicsDevice;
     
@@ -23,16 +24,15 @@ public class FixHoop : CollisionObject
     private VertexPositionColor[] _vertices = new VertexPositionColor[8*CntLines];
     private short[] _indices = new short[18*CntLines];
 
-    public FixHoop(PlaceableObjectInfo placeableObjectInfo, f64Vector3 position, f64Euler rotation) : base(placeableObjectInfo, position, rotation)
+    public FixHoop(Mesh mesh, StageObject obj) : base(mesh, obj)
     {
-        _graphicsDevice = placeableObjectInfo.GraphicsDevice;
+        _graphicsDevice = mesh.GraphicsDevice;
         _fixhoopEffect = new BasicEffect(_graphicsDevice)
         {
             LightingEnabled = false,
             TextureEnabled = false,
             VertexColorEnabled = true
         };
-        Kind = AiNodeKind.FixHoop;
     }
 
     public bool IsSpecial { get; set; }
@@ -191,7 +191,7 @@ public class FixHoop : CollisionObject
         }
     }
 
-    public override void GameTick(ClientStageRenderer? stage = null)
+    public override void GameTick(IStage? stage = null)
     {
         if (!Rotated || Rotation.Xz != f64AngleSingle.ZeroAngle)
         {

@@ -238,7 +238,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         _tick = 0;
 
         carsInRace.Clear();
-        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Car!, 0, 0, 0, true);
+        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, 0, 0, 0, true);
         carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
         carsInRace[playerCarIndex].currentCheckpoint = 0;
         carsInRace[playerCarIndex].currentLap = 0;

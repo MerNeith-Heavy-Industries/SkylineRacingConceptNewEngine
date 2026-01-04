@@ -20,20 +20,20 @@ public class Sky : Transform, IImmediateRenderable
         var skyline = -300;
 
         var layers = new LinkedList<(Vector3 Position, Vector3 Color)>();
-        layers.AddLast((new Vector3(0, skyline - 700, 7000), World.Sky.Snap(World.Snap).ToVector3()));
+        layers.AddLast((new Vector3(0, skyline - 700, 7000), World.Sky.Snap(World.Snap)));
 
-        var col = World.Sky.Snap(World.Snap).ToVector3();
+        Vector3 col = World.Sky.Snap(World.Snap);
         for (var i = 0; i < 16; ++i) {
-            col = ((new Vector3(7, 7, 7) * col) + World.Fog.ToVector3()) / (new Vector3(8, 8, 8));
+            col = ((new Vector3(7, 7, 7) * col) + World.Fog) / (new Vector3(8, 8, 8));
             layers.AddLast((new Vector3(0, skyline, Fade(i)), col));
         }
 
-        col = World.Sky.Snap(World.Snap).ToVector3();
+        col = World.Sky.Snap(World.Snap);
         for (var i = 1; i < 20; ++i) {
             col = new Vector3(0.991f, 0.991f, 0.998f) * col;
             layers.AddFirst((new Vector3(0, skyline - 700 - i * 70, 7000), col));
         }
-        layers.AddLast((new Vector3(0, 10250, 7000), World.Fog.ToVector3()));
+        layers.AddLast((new Vector3(0, 10250, 7000), World.Fog));
 
         var data = new List<VertexPositionColor>();
 
@@ -85,7 +85,7 @@ public class Sky : Transform, IImmediateRenderable
 
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
         
-        var col = World.Sky.Snap(World.Snap).ToVector3();
+        Vector3 col = World.Sky.Snap(World.Snap);
         for (var i = 1; i < 20; ++i) {
             col = new Vector3(0.991f, 0.991f, 0.998f) * col;
         }

@@ -58,7 +58,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Car, idx, -500 + (400 * idx), 0, idx == playerCarIndex);
+            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad, idx, -500 + (400 * idx), 0, idx == playerCarIndex);
             carsInRace[idx].currentCheckpoint = 0;
             carsInRace[idx].currentLap = 0;
             if (player.IsBot)

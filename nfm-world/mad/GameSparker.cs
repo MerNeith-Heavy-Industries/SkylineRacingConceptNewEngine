@@ -169,8 +169,41 @@ public class GameSparker
     public static void Load(Program game)
     {
         BackendGameSparker.Load();
+        
         _game = game;
         _graphicsDevice = game.GraphicsDevice;
+
+        foreach (var (collection, cars) in BackendGameSparker.cars)
+        {
+            foreach (var car in cars)
+            {
+                try
+                {
+                    var carMesh = new CarMesh(_graphicsDevice, car);
+                    car_meshes[car] = carMesh;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating mesh for car '{car.FileName}': {ex.Message}\n{ex.StackTrace}");
+                }
+            }
+        }
+        
+        foreach (var stageParts in (Span<UnlimitedArray<Rad3d>>)[BackendGameSparker.stage_parts, BackendGameSparker.vendor_stage_parts, BackendGameSparker.user_stage_parts])
+        foreach (var stagePart in stageParts)
+        {
+            try
+            {
+                var mesh = new Mesh(_graphicsDevice, stagePart);
+                stage_part_meshes[stagePart] = mesh;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating mesh for stage part '{stagePart.FileName}': {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+        
+        error_mesh = new Mesh(_graphicsDevice, BackendGameSparker.error_mesh);
 
         SfxLibrary.LoadSounds();
 

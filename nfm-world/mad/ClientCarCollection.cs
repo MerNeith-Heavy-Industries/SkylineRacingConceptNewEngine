@@ -66,7 +66,7 @@ public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollect
         }
     }
 
-    public override void GameTick(ClientStageRenderer? stage = null)
+    public override void GameTick(IStage? stage = null)
     {
         base.GameTick(stage);
         
@@ -78,6 +78,9 @@ public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollect
             }
 
             clientCar.GameTick(stage);
+            
+            clientCar.Position = car.Position;
+            clientCar.Rotation = car.Rotation;
         }
 
         RemoveExcessCars();

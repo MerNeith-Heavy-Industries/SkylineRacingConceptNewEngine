@@ -98,7 +98,7 @@ public struct DemoEntry
         return entry;
     }
 
-    public void ApplyToCar(InGameCar car)
+    public void ApplyToCar(IInGameCar car)
     {
         car.Control.Up = TheBitFlags.Up;
         car.Control.Down = TheBitFlags.Down;

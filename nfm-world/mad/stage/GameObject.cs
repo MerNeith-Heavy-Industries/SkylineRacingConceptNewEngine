@@ -39,7 +39,7 @@ public class GameObject : Transform, IImmediateRenderable
         }
     }
 
-    public override void GameTick(ClientStageRenderer? stage = null)
+    public override void GameTick(IStage? stage = null)
     {
         base.GameTick(stage);
         foreach (var child in Children)

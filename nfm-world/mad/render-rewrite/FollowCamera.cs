@@ -12,7 +12,7 @@ public class FollowCamera
     private Euler _angle;
     public static int FollowZOffset = 0;
 
-    public void Follow(PerspectiveCamera camera, Transform obj, float cxz, int lookback)
+    public void Follow(PerspectiveCamera camera, ITransform obj, float cxz, int lookback)
     {
         // x: yaw = xz
         // y: pitch = zy

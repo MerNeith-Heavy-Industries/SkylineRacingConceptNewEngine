@@ -12,5 +12,5 @@ public interface IStage
     IReadOnlyList<IAiNode> checkpoints { get; }
     IReadOnlyList<IAiNode> fixHoops { get; }
     ushort nlaps { get; }
-    void CreateObject(string objectName, int x, int y, int z, int xz);
+    ITransform CreateObject(string objectName, int x, int y, int z, int xz);
 }
