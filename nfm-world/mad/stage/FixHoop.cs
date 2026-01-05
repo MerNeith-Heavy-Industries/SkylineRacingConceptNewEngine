@@ -44,8 +44,8 @@ public class FixHoop : StageObjectGameObject
             PrepareLine(i);
         }
 
-        _fixhoopEffect.World = Matrix.CreateTranslation((Vector3)Position) *
-                               Matrix.CreateRotationY((float)Rotation.Xz.Radians);
+        _fixhoopEffect.World = Matrix.CreateRotationY((float)Rotation.Xz.Radians) *
+                               Matrix.CreateTranslation((Vector3)Position);
         _fixhoopEffect.View = camera.ViewMatrix;
         _fixhoopEffect.Projection = camera.ProjectionMatrix;
         
