@@ -297,12 +297,21 @@ jobs:
           # Initialize wine prefix
           wineboot -u
           
-          # Wait for wine server to start
-          sleep 5
-          wineserver -w || true
+          # Wait for wine server to start (with timeout)
+          for i in {1..30}; do
+            if wineserver -w 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          
+          # Install winetricks if not already installed
+          brew install winetricks
+          
+          # Wait a moment for winetricks to be ready
+          sleep 2
           
           # Install d3dcompiler_47 using winetricks
-          brew install winetricks
           WINEPREFIX=$HOME/.wine64 winetricks -q d3dcompiler_47
           
           # Set environment variable for MGFXC
