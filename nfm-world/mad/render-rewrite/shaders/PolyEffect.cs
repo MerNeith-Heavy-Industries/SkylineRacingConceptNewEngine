@@ -2,7 +2,7 @@
 
 namespace nfm_world.shaders;
 
-public class PolyEffect(Effect effect) : IDisposable
+public class PolyEffect(Effect effect)
 {
     public Effect UnderlyingEffect => effect;
     public EffectParameter? World { get; } = effect.Parameters["World"];
@@ -38,25 +38,4 @@ public class PolyEffect(Effect effect) : IDisposable
 
     /// <inheritdoc cref="Effect.CurrentTechnique"/>
     public EffectTechnique CurrentTechnique { get => effect.CurrentTechnique; set => effect.CurrentTechnique = value; }
-
-    private void ReleaseUnmanagedResources()
-    {
-        effect.Dispose();
-    }
-
-    private void Dispose(bool disposing)
-    {
-        ReleaseUnmanagedResources();
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    ~PolyEffect()
-    {
-        Dispose(false);
-    }
 }
