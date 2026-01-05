@@ -67,6 +67,9 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
         Dust = new Dust(this, graphicsDevice);
         Chips = new Chips(this, graphicsDevice);
         Sparks = new Sparks(this, graphicsDevice);
+        
+        Position = backendCar.Position;
+        Rotation = backendCar.Rotation;
     }
 
     public ClientCar(GraphicsDevice graphicsDevice, IInGameCar backendCar)
