@@ -1,13 +1,8 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using CommunityToolkit.HighPerformance;
-using CommunityToolkit.HighPerformance.Buffers;
-using Maxine.Extensions;
-using NFMWorld.Util;
+﻿using Maxine.Extensions;
 using Steamworks;
 using Steamworks.Data;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public class SteamMultiplayerClientTransport : BaseMultiplayerClientTransport, IConnectionManager
 {

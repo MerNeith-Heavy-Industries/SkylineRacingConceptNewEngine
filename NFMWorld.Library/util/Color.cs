@@ -1,7 +1,6 @@
-using System;
 using System.Runtime.CompilerServices;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public struct Color
 {

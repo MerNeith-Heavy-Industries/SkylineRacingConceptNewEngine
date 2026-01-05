@@ -1,15 +1,16 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
-using Color = NFMWorld.Util.Color;
+using nfm_world_library.backend.gamemodes;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.multiplayer;
+using nfm_world.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphicsDevice)
 {
     public string playerCarName = "nfmm/radicalone";
 
-    protected BaseGamemode? gamemodeInstance { get; set; }
+    protected IClientGamemode? gamemodeInstance { get; set; }
 
     public GameModes gamemode
     {
@@ -102,14 +103,14 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         gamemodeInstance?.Render();
     }
     
-    protected BaseGamemode CreateGameMode(BaseGamemodeParameters parameters)
+    protected IClientGamemode CreateGameMode(BaseGamemodeParameters parameters)
     {
         return gamemode switch
         {
-            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
             GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
-            GameModes.Football => new FootballGamemode(parameters, this),
-            GameModes.Racing => new RaceGamemode(parameters, this),
+            GameModes.Football => new FootballClientGamemode(parameters, this),
+            GameModes.Racing => new RaceClientGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(gamemode), gamemode, null)
         };
     }

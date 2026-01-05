@@ -1,11 +1,18 @@
-using ImGuiNET;
-using NFMWorld.Util;
-using Stride.Core.Mathematics;
 using System.Text;
+using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world.camera;
+using nfm_world.gameplay;
+using nfm_world.mesh;
+using nfm_world.stage;
+using nfm_world.util;
+using Stride.Core.Mathematics;
 
-namespace NFMWorld.Mad.UI;
+namespace nfm_world.ui;
 
 // Class to hold the state for a single model editor tab
 public class ModelEditorTab
@@ -74,7 +81,7 @@ public class ModelEditorPhase : BasePhase
     private readonly GraphicsDevice _graphicsDevice;
     private bool _isOpen = false;
     private string[] _userModelNames = [];
-    private Stage? _modelViewerStage;
+    private ClientStageRenderer? _modelViewerStage;
     
     // Tab management
     private List<ModelEditorTab> _tabs = new();
@@ -272,7 +279,7 @@ public class ModelEditorPhase : BasePhase
         {
             // Import reference model
             var builtInPath = $"./data/models/{category}";
-            var refModels = _isCreatingCar ? GameSparker.CarRads : GameSparker.StageRads;
+            var refModels = _isCreatingCar ? BackendGameSparker.CarRads : BackendGameSparker.StageRads;
             
             if (_selectedReferenceModel < refModels.Length)
             {
@@ -413,7 +420,7 @@ public class ModelEditorPhase : BasePhase
         // Try to parse the model, but keep the file loaded even if it fails
         try
         {
-            tab.Object = new EditorObject(new EditorObjectInfo(GameSparker._graphicsDevice, RadParser.ParseRad(radContent), "editing"));
+            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(radContent) with { FileName = "editing" });
             ResetTabView(tab);
         }
         catch (Exception parseEx)
@@ -1452,7 +1459,7 @@ public class ModelEditorPhase : BasePhase
                             System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
-                            tab.Object = new EditorObject(new EditorObjectInfo(GameSparker._graphicsDevice, RadParser.ParseRad(tab.TextContent), "editing"));
+                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
                         }
                     }
                     catch (Exception ex)
@@ -1475,7 +1482,7 @@ public class ModelEditorPhase : BasePhase
                             System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
-                            tab.Object = new EditorObject(new EditorObjectInfo(GameSparker._graphicsDevice, RadParser.ParseRad(tab.TextContent), "editing"));
+                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
                             tab.TextEditorExpanded = false;
                         }
                     }
@@ -1787,7 +1794,7 @@ public class ModelEditorPhase : BasePhase
                         ImGui.Spacing();
                         
                         // Car selection dropdown
-                        var carRads = GameSparker.CarRads;
+                        var carRads = BackendGameSparker.CarRads;
                         int selectedCar = activeTab.ReferenceCarIndex;
                         
                         if (ImGui.BeginCombo("Reference Car", selectedCar < carRads.Length ? carRads[selectedCar] : ""))
@@ -1905,7 +1912,7 @@ public class ModelEditorPhase : BasePhase
                 ImGui.Spacing();
                 ImGui.Text("Select Reference:");
                 
-                var refModels = _isCreatingCar ? GameSparker.CarRads : GameSparker.StageRads;
+                var refModels = _isCreatingCar ? BackendGameSparker.CarRads : BackendGameSparker.StageRads;
                 
                 if (ImGui.BeginCombo("##Reference", _selectedReferenceModel < refModels.Length ? refModels[_selectedReferenceModel] : ""))
                 {
@@ -2291,7 +2298,7 @@ public class ModelEditorPhase : BasePhase
         // Try to reload the model with the new code
         try
         {
-            tab.Object = new EditorObject(new EditorObjectInfo(GameSparker._graphicsDevice, RadParser.ParseRad(tab.TextContent), "editing"));
+            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
             tab.PolygonEditorDirty = false;
             
             if (removeElement)
@@ -2389,50 +2396,48 @@ public class ModelEditorPhase : BasePhase
         scene.Render(false);
         
         // Render reference car overlay with transparency (rendered separately after main model)
-        if (tab.ShowReferenceOverlay && tab.ReferenceCarIndex >= 0 && tab.ReferenceCarIndex < GameSparker.cars[Collection.NFMM].Count)
+        if (tab.ShowReferenceOverlay && tab.ReferenceCarIndex >= 0 && tab.ReferenceCarIndex < BackendGameSparker.cars[Collection.NFMM].Count)
         {
             // TODO optimize by caching reference car object instead of recreating each frame
-            var referenceCar = new Car(GameSparker.cars[Collection.NFMM][tab.ReferenceCarIndex]);
-            if (referenceCar != null)
-            {
-                // Store original state
-                var originalRefPosition = referenceCar.Position;
-                var originalRefRotation = referenceCar.Rotation;
-                var previousBlendState = _graphicsDevice.BlendState;
-                var previousDepthState = _graphicsDevice.DepthStencilState;
+            var referenceCar = new ClientCar(_graphicsDevice, new ClientOnlyBackendCar(BackendGameSparker.cars[Collection.NFMM][tab.ReferenceCarIndex]));
 
-                // Position reference car at same location as main model
-                referenceCar.Position = tab.ModelPosition;
-                referenceCar.Rotation = new f64Euler(
-                    f64AngleSingle.FromDegrees(tab.ModelRotation.Y),
-                    f64AngleSingle.FromDegrees(-tab.ModelRotation.X),
-                    f64AngleSingle.FromDegrees(tab.ModelRotation.Z)
-                );
-                
-                // Enable alpha blending
-                _graphicsDevice.BlendState = BlendState.AlphaBlend;
-                
-                // Clear depth buffer and disable depth testing so reference car always renders in front
-                _graphicsDevice.Clear(ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.Transparent, 1.0f, 0);
-                var depthOff = new DepthStencilState
-                {
-                    DepthBufferEnable = false,
-                    DepthBufferWriteEnable = false
-                };
-                _graphicsDevice.DepthStencilState = depthOff;
-                
-                referenceCar.AlphaOverride = tab.ReferenceOpacity;
-                
-                overlayScene.Objects.Clear();
-                overlayScene.Objects.Add(referenceCar);
-                overlayScene.Render(false, false);
-                
-                // Restore states
-                _graphicsDevice.BlendState = previousBlendState;
-                _graphicsDevice.DepthStencilState = previousDepthState;
-                referenceCar.Position = originalRefPosition;
-                referenceCar.Rotation = originalRefRotation;
-            }
+            // Store original state
+            var originalRefPosition = referenceCar.Position;
+            var originalRefRotation = referenceCar.Rotation;
+            var previousBlendState = _graphicsDevice.BlendState;
+            var previousDepthState = _graphicsDevice.DepthStencilState;
+
+            // Position reference car at same location as main model
+            referenceCar.Position = tab.ModelPosition;
+            referenceCar.Rotation = new f64Euler(
+                f64AngleSingle.FromDegrees(tab.ModelRotation.Y),
+                f64AngleSingle.FromDegrees(-tab.ModelRotation.X),
+                f64AngleSingle.FromDegrees(tab.ModelRotation.Z)
+            );
+            
+            // Enable alpha blending
+            _graphicsDevice.BlendState = BlendState.AlphaBlend;
+            
+            // Clear depth buffer and disable depth testing so reference car always renders in front
+            _graphicsDevice.Clear(ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.Transparent, 1.0f, 0);
+            var depthOff = new DepthStencilState
+            {
+                DepthBufferEnable = false,
+                DepthBufferWriteEnable = false
+            };
+            _graphicsDevice.DepthStencilState = depthOff;
+            
+            referenceCar.AlphaOverride = tab.ReferenceOpacity;
+            
+            overlayScene.Objects.Clear();
+            overlayScene.Objects.Add(referenceCar);
+            overlayScene.Render(false, false);
+            
+            // Restore states
+            _graphicsDevice.BlendState = previousBlendState;
+            _graphicsDevice.DepthStencilState = previousDepthState;
+            referenceCar.Position = originalRefPosition;
+            referenceCar.Rotation = originalRefRotation;
         }
         
         // Render selected polygon overlay with transparency
@@ -2470,12 +2475,11 @@ public class ModelEditorPhase : BasePhase
         var overlayPolys = new Rad3dPoly[] { highlightPoly };
         
         // Create a temporary mesh for the overlay
-        var overlayMesh = new EditorObject(new EditorObjectInfo(
+        var overlayMesh = new EditorObject(
             GameSparker._graphicsDevice,
-            new Rad3d(overlayPolys, false),
-            "overlay"
-        ));
-        
+            new Rad3d(overlayPolys, false, "overlay")
+        );
+
         // Match the main model's transform
         overlayMesh.Position = tab.Object.Position;
         overlayMesh.Rotation = tab.Object.Rotation;

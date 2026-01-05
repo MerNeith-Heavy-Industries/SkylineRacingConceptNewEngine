@@ -1,7 +1,6 @@
 using ImGuiNET;
-using System;
 
-namespace NFMWorld.Mad.UI;
+namespace nfm_world.ui;
 
 /// <summary>
 /// Universal message window using ImGui that can display messages with configurable buttons.

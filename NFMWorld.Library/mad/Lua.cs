@@ -2,11 +2,10 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace nfm_world.mad;
+namespace nfm_world_library.mad;
 
 public partial class Lua
 {

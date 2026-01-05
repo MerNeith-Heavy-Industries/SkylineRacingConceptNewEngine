@@ -1,9 +1,7 @@
-using System.Collections;
 using System.Runtime.CompilerServices;
-using SoftFloat;
-using Stride.Core.Mathematics;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public static class UMath
 {

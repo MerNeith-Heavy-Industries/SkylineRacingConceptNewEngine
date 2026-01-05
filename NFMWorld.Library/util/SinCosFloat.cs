@@ -3,9 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using NFMWorld.Mad;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public readonly record struct SinCosFloat : IFloatingPointIeee754<SinCosFloat>, IComparisonOperators<SinCosFloat, float, bool>, IComparisonOperators<SinCosFloat, int, bool>
 {

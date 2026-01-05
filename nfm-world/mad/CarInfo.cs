@@ -1,28 +1,19 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad;
-using Stride.Core.Extensions;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.mesh;
 
-public class CarInfo : ObjectInfo
+namespace nfm_world;
+
+public class CarMesh : Mesh
 {
     public CarStats Stats;
     public Rad3dWheelDef[] Wheels;
     public Rad3dRimsDef? Rims;
 
-    public CarInfo(GraphicsDevice graphicsDevice, Rad3d rad, string fileName) : base(new Mesh(graphicsDevice, rad, fileName))
+    public CarMesh(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
-        string? invalidStat = rad.Stats.Validate(fileName);
-        if (invalidStat != null)
-        {
-            Stats = CarStats.Default;
-            if(invalidStat == nameof(Stats.Name) || rad.Stats.Name.IsNullOrEmpty())
-            {
-                Stats = Stats with { Name = fileName };
-            }
-        }
-        else
-        {
-            Stats = rad.Stats;
-        }
+        Stats = CarStats.ValidateStats(rad.Stats, rad.FileName);
 
         Wheels = rad.Wheels;
         Rims = rad.Rims;

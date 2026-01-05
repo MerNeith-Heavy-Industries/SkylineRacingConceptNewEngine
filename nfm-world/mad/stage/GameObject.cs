@@ -1,7 +1,8 @@
-﻿using System.Collections.Immutable;
-using NFMWorld.Util;
+﻿using nfm_world_library.mad;
+using nfm_world.camera;
+using nfm_world.mesh;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.stage;
 
 public class GameObject : Transform, IImmediateRenderable
 {
@@ -39,7 +40,7 @@ public class GameObject : Transform, IImmediateRenderable
         }
     }
 
-    public override void GameTick(Stage? stage = null)
+    public override void GameTick(IStage? stage = null)
     {
         base.GameTick(stage);
         foreach (var child in Children)

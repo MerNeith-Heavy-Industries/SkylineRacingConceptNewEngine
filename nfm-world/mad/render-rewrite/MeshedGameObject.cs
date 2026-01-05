@@ -1,6 +1,9 @@
-﻿using SoftFloat;
+﻿using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world.mesh;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class MeshedGameObject(Mesh mesh) : GameObject
 {

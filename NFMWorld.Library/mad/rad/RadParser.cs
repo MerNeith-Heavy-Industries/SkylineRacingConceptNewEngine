@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using MessagePack;
-using NFMWorld.Library;
-using SoftFloat;
+﻿using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad.rad;
 
 public class RadParser
 {

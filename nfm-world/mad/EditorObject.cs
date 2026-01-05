@@ -1,27 +1,31 @@
-﻿using NFMWorld.Mad;
-using SoftFloat;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world.camera;
+using nfm_world.mesh;
 
 // This duplicates some code from CollisionObject, no workaround
-public class EditorObject : Car
+namespace nfm_world;
+
+public class EditorObject : ClientCar
 {
-    public EditorObjectInfo EditorObjectInfo;
-    public Rad3dBoxDef[] Boxes => EditorObjectInfo.Boxes;
+    public Rad3dBoxDef[] Boxes { get; }
 
     private readonly CollisionDebugMesh? _collisionDebugMesh;
 
-    public EditorObject(EditorObjectInfo carInfo) : base(carInfo)
+    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, new ClientOnlyBackendCar(rad))
     {
-        EditorObjectInfo = carInfo;
-        if (EditorObjectInfo.Boxes.Length > 0)
+        Boxes = rad.Boxes;
+        if (rad.Boxes.Length > 0)
         {
-            _collisionDebugMesh = new CollisionDebugMesh(EditorObjectInfo.Boxes)
+            _collisionDebugMesh = new CollisionDebugMesh(rad.Boxes)
             {
                 Parent = this
             };
         }
     }
 
-    public EditorObject(EditorObjectInfo carInfo, f64Vector3 position, f64Euler rotation) : this(carInfo)
+    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad, f64Vector3 position, f64Euler rotation) : this(graphicsDevice, rad)
     {
         Position = position;
         Rotation = rotation;

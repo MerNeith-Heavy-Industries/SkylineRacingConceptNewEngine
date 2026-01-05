@@ -1,10 +1,10 @@
-using System.Collections;
 using System.IO.Compression;
-using Maxine.Extensions;
 using MessagePack;
-using NFMWorld.Mad;
-using NFMWorld.Mad.packets;
-using NFMWorld.Util;
+using nfm_world_library.mad;
+using nfm_world.files.demo;
+using nfm_world.multiplayer.packets;
+
+namespace nfm_world.files;
 
 [MessagePackObject]
 public class SavedTimeTrial
@@ -65,7 +65,7 @@ public class SavedTimeTrial
         MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
     }
 
-    public void RecordTick(InGameCar car)
+    public void RecordTick(IInGameCar car)
     {
         DemoEntry entry = DemoEntry.Create(car);
         DemoData.AddEntry(entry);

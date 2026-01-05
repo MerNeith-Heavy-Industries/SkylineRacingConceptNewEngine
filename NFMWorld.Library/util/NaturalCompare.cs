@@ -1,5 +1,7 @@
 using System.Globalization;
 
+namespace nfm_world_library.util;
+
 public static class NaturalCompare
 {
     public static int CompareNatural(string strA, string strB)

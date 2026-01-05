@@ -1,8 +1,6 @@
-using System;
-using System.IO;
 using System.Text;
 
-namespace NFMWorld.Mad
+namespace nfm_world
 {
     public class DevConsoleWriter : TextWriter
     {

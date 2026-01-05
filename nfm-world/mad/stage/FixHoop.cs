@@ -1,17 +1,18 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Util;
-using SoftFloat;
-using Stride.Core.Mathematics;
-using NFMWorld.Library;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.mesh;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.stage;
 
-public class FixHoop : CollisionObject
+public class FixHoop : StageObjectGameObject
 {
     private readonly GraphicsDevice _graphicsDevice;
     
-    public bool Rotated;
-
     private const int CntLines = 4;
     
     private readonly int[] _edl = new int[CntLines];
@@ -23,16 +24,15 @@ public class FixHoop : CollisionObject
     private VertexPositionColor[] _vertices = new VertexPositionColor[8*CntLines];
     private short[] _indices = new short[18*CntLines];
 
-    public FixHoop(PlaceableObjectInfo placeableObjectInfo, f64Vector3 position, f64Euler rotation) : base(placeableObjectInfo, position, rotation)
+    public FixHoop(Mesh mesh, StageObject obj) : base(mesh, obj)
     {
-        _graphicsDevice = placeableObjectInfo.GraphicsDevice;
+        _graphicsDevice = mesh.GraphicsDevice;
         _fixhoopEffect = new BasicEffect(_graphicsDevice)
         {
             LightingEnabled = false,
             TextureEnabled = false,
             VertexColorEnabled = true
         };
-        Kind = AiNodeKind.FixHoop;
     }
 
     public bool IsSpecial { get; set; }
@@ -43,7 +43,9 @@ public class FixHoop : CollisionObject
         {
             PrepareLine(i);
         }
-        _fixhoopEffect.World = Matrix.CreateTranslation((Vector3)Position);
+
+        _fixhoopEffect.World = Matrix.CreateRotationY((float)Rotation.Xz.Radians) *
+                               Matrix.CreateTranslation((Vector3)Position);
         _fixhoopEffect.View = camera.ViewMatrix;
         _fixhoopEffect.Projection = camera.ProjectionMatrix;
         
@@ -103,10 +105,6 @@ public class FixHoop : CollisionObject
         y[6] = -yl + 5 + URandom.Int(0, 5);
         x[7] = -504;
         y[7] = -_edl[idx] + 5 + URandom.Int(0, 5);
-        if (Rotated)
-        {
-            UMath.Rot(x, z, 0, 0, 90f, 8);
-        }
         
         var r = (int) (160.0F + 160.0F * (World.Snap[0] / 500.0F));
         if (r > 255)
@@ -191,27 +189,17 @@ public class FixHoop : CollisionObject
         }
     }
 
-    public override void GameTick(Stage? stage = null)
+    private fix64 _rotAccumulator = 0;
+
+    public override void GameTick(IStage? stage = null)
     {
-        if (!Rotated || Rotation.Xz != f64AngleSingle.ZeroAngle)
+        base.GameTick(stage);
+        
+        _rotAccumulator += 11 * Physics.PHYSICS_MULTIPLIER_F64;
+        if (_rotAccumulator > 360)
         {
-            var xy = Rotation.Xy.Degrees;
-            xy += 11 * Physics.PHYSICS_MULTIPLIER_F64;
-            if (xy > 360)
-            {
-                xy -= 360;
-            }
-            Rotation = Rotation with { Xy = f64AngleSingle.FromDegrees(xy) };
+            _rotAccumulator -= 360;
         }
-        else
-        {
-            var zy = Rotation.Zy.Degrees;
-            zy += 11 * Physics.PHYSICS_MULTIPLIER_F64;
-            if (zy > 360)
-            {
-                zy -= 360;
-            }
-            Rotation = Rotation with { Zy = f64AngleSingle.FromDegrees(zy) };
-        }
+        Rotation = Rotation with { Xy = f64AngleSingle.FromDegrees(Rotation.Xy.Degrees + _rotAccumulator) };
     }
 }

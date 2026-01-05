@@ -1,4 +1,4 @@
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public struct File
 {

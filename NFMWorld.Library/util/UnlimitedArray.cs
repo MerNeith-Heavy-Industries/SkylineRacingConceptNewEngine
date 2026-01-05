@@ -4,7 +4,7 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>
 {

@@ -1,4 +1,6 @@
-﻿namespace NFMWorld.Mad;
+﻿using nfm_world.camera;
+
+namespace nfm_world;
 
 public interface IImmediateRenderable
 {

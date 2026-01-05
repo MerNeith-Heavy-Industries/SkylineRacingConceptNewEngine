@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 public readonly struct ConcurrentHashSet<T>(ConcurrentDictionary<T, byte> dictionary) : ISet<T>, IReadOnlyCollection<T>
     where T : notnull

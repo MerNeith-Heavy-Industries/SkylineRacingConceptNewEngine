@@ -1,6 +1,7 @@
-using NFMWorld.DriverInterface;
-using NFMWorld.Mad;
-using NFMWorld.Mad.UI.yoga;
+using nfm_world.driverinterface;
+using nfm_world.ui.yoga;
+
+namespace nfm_world.ui.elements;
 
 public class Image : Node
 {

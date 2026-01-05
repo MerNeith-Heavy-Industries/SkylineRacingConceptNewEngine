@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Maxine.Extensions;
-using MessagePack;
-using NFMWorld.Mad;
-using Poly2Tri;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+
+namespace nfm_world.files.demo;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct DemoEntry
@@ -45,7 +45,7 @@ public struct DemoEntry
     public (fix64 Mxz, fix64 Txz) XzReadings;
     public BitFlags TheBitFlags;
 
-    public static DemoEntry Create(InGameCar car)
+    public static DemoEntry Create(IInGameCar car)
     {
         DemoEntry entry = new DemoEntry();
 
@@ -98,7 +98,7 @@ public struct DemoEntry
         return entry;
     }
 
-    public void ApplyToCar(InGameCar car)
+    public void ApplyToCar(IInGameCar car)
     {
         car.Control.Up = TheBitFlags.Up;
         car.Control.Down = TheBitFlags.Down;

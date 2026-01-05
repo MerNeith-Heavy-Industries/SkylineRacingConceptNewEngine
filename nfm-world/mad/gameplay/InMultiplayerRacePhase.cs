@@ -1,9 +1,17 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Mad.gamemodes;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.backend.gamemodes;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.multiplayer;
+using nfm_world.multiplayer.packets.c2s;
+using nfm_world.multiplayer.packets.s2c;
+using nfm_world.util;
+using S2C_PlayerState = nfm_world.multiplayer.packets.s2c.S2C_PlayerState;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public class InMultiplayerRacePhase(
     GraphicsDevice graphicsDevice,
@@ -13,7 +21,7 @@ public class InMultiplayerRacePhase(
 )
     : BaseRacePhase(graphicsDevice)
 {
-    protected BaseGamemode? gamemodeInstance { get; set; }
+    protected IClientGamemode? gamemodeInstance { get; set; }
     private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
     private UnlimitedArray<uint> _lastTick = [];
     
@@ -53,10 +61,12 @@ public class InMultiplayerRacePhase(
 
         gamemodeInstance ??= session.Gamemode switch
         {
-            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
+            GameModes.Football => new FootballClientGamemode(parameters, this),
+            GameModes.Racing => new RaceClientGamemode(parameters, this),
             GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
-        };;
+        };
         gamemodeInstance.Enter();
         
         transport.SendPacketToServer(new C2S_RaceLoaded());

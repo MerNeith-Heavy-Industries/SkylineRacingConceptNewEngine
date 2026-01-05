@@ -1,0 +1,15 @@
+﻿using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+
+namespace nfm_world_library.mad;
+
+public interface ICar : ITransform
+{
+    Rad3d Rad { get; }
+    CarStats Stats { get; }
+    int GroundAt { get; }
+    int MaxRadius { get; }
+    f64Euler WheelAngle { get; set; }
+    f64Euler TurningWheelAngle { get; set; }
+    IReadOnlyList<Rad3dWheelDef> Wheels { get; }
+}

@@ -1,7 +1,4 @@
-﻿using NFMWorld.Library;
-using Stride.Core.Mathematics;
-
-namespace NFMWorld.Mad;
+﻿namespace nfm_world_library.mad;
 
 public static class World
 {
