@@ -7,6 +7,7 @@ using nfm_world_library.mad.rad;
 using nfm_world_library.util;
 using nfm_world.camera;
 using nfm_world.driverinterface;
+using nfm_world.stage;
 using nfm_world.util;
 using Stride.Core.Extensions;
 
@@ -47,6 +48,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private bool _openSearchPopup = false;
     private int _searchKbFocus = 0;
     public BackendStage? StageOverride;
+    public ClientStageRenderer? ClientStageRendererOverride;
     private bool _loadedStageMusic = false;
 
     private PerspectiveCamera _camera = new();
@@ -72,6 +74,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         if (StageOverride != null)
         {
             CurrentStage = StageOverride;
+            clientStageRenderer = ClientStageRendererOverride ?? new ClientStageRenderer(GraphicsDevice, CurrentStage);
         }
         else
         {

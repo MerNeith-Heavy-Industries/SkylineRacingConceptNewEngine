@@ -79,6 +79,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     public virtual void LoadStage(string stageName, bool loadMusic = true)
     {
         CurrentStage = new BackendStage(stageName);
+        clientStageRenderer = new ClientStageRenderer(GraphicsDevice, CurrentStage);
 
         RecreateScene();
 
@@ -91,7 +92,6 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     public virtual void RecreateScene()
     {
         clientCarCollection = new ClientCarCollection(GraphicsDevice, CarsInRace);
-        clientStageRenderer = new ClientStageRenderer(GraphicsDevice, CurrentStage);
         current_scene = new Scene(
             GraphicsDevice,
             [clientStageRenderer, clientCarCollection],

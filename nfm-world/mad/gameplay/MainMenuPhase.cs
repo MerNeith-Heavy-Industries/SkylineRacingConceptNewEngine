@@ -448,6 +448,7 @@ public class MainMenuPhase : BasePhase
             };
 
             gp.StageOverride = GameSparker.InRace.CurrentStage;
+            gp.ClientStageRendererOverride = GameSparker.InRace.clientStageRenderer;
             GameSparker.SetPhase(gp);
         };
 
