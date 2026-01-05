@@ -281,6 +281,7 @@ jobs:
 
       - name: Install Wine for shader compilation
         run: |
+          set -e
           # Install Wine using Homebrew (wine-stable is a formula)
           brew install wine-stable
           
@@ -289,6 +290,7 @@ jobs:
 
       - name: Setup Wine prefix for MGFXC
         run: |
+          set -e
           # Create 64-bit wine prefix
           export WINEPREFIX=$HOME/.wine64
           export WINEARCH=win64
