@@ -89,12 +89,6 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             LoadStage(dir + Path.GetFileNameWithoutExtension(stagePath), false);
         }
 
-        if (!_loadedStageMusic)
-        {
-            LoadStageMusic(true);
-            _loadedStageMusic = true;
-        }
-
         _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
         _car = new ClientCar(GraphicsDevice, _backendCar);
         CarsInRace[0] = _backendCar;
@@ -104,6 +98,12 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         FovOverride = 53;
 
         RecreateScene();
+
+        if (!_loadedStageMusic)
+        {
+            LoadStageMusic(true);
+            _loadedStageMusic = true;
+        }
 
         // create and position stat bars
         float switsLevel = (_car.Stats.Swits[2] - 220) / 90f;
