@@ -3,9 +3,9 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 using Stride.Core.Mathematics;
 using File = System.IO.File;
 
@@ -173,8 +173,7 @@ sb.AppendLine(
     // ReSharper disable InconsistentNaming
 
     using System.Runtime.InteropServices;
-    using NFMWorld.Mad;
-
+    
     namespace nfm_world.mad;
 
     public partial class Lua

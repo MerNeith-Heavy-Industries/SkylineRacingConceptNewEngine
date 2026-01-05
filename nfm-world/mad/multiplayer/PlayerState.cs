@@ -1,10 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using MessagePack;
-using NFMWorld.Mad;
-using SoftFloat;
+using nfm_world_library.mad;
+using nfm_world.files.demo;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PlayerState
@@ -21,12 +20,12 @@ public struct PlayerState
         set => _currentTimeInMs = (ulong)value.ToUnixTimeMilliseconds();
     }
     
-    public static void ApplyTo(PlayerState state, InGameCar c)
+    public static void ApplyTo(PlayerState state, IInGameCar c)
     {
         state.DemoEntry.ApplyToCar(c);
     }
     
-    public static PlayerState CreateFrom(uint ticks, InGameCar car)
+    public static PlayerState CreateFrom(uint ticks, IInGameCar car)
     {
         return new PlayerState
         {

@@ -1,8 +1,7 @@
-using System;
 using ImGuiNET;
-using NFMWorld.Mad;
+using nfm_world.camera;
 
-namespace NFMWorld.Mad.UI
+namespace nfm_world.ui
 {
     public class DebugCameraWindow
     {

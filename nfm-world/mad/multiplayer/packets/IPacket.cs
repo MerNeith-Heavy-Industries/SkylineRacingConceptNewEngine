@@ -4,9 +4,10 @@ using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
 using Microsoft.Xna.Framework;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
+using nfm_world.files.demo;
 
-namespace NFMWorld.Mad.packets;
+namespace nfm_world.multiplayer.packets;
 
 public interface IPacket;
 

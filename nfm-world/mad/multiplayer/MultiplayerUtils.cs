@@ -1,8 +1,9 @@
 ﻿using System.Collections.Frozen;
-using NFMWorld.Mad.packets;
-using NFMWorld.Util;
+using nfm_world.multiplayer.packets;
+using nfm_world.multiplayer.packets.c2s;
+using nfm_world.multiplayer.packets.s2c;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public static class MultiplayerUtils
 {

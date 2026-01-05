@@ -1,8 +1,17 @@
-using NFMWorld.DriverInterface;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+using nfm_world.camera;
+using nfm_world.driverinterface;
+using nfm_world.gameplay;
+using nfm_world.gameplay.gamemodes;
+using nfm_world.mesh;
+using nfm_world.multiplayer;
+using nfm_world.ui;
 using Steamworks;
 
-namespace NFMWorld.Mad
+namespace nfm_world
 {
     public static class DevConsoleCommands
     {
@@ -93,15 +102,15 @@ namespace NFMWorld.Mad
             // car command: only autocomplete first argument (position 0)
             console.RegisterArgumentAutocompleter("car", (args, position) =>
             position == 0
-                ? [.. GameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
+                ? [.. BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
                 : new List<string>());
             
             // create command: only autocomplete first argument (position 0) - the stage/road name
             console.RegisterArgumentAutocompleter("create", (args, position) => 
                 position == 0 
-                    ? GameSparker.stage_parts.Select(part => part.FileName)
-                        .Concat(GameSparker.vendor_stage_parts.Select(part => part.FileName))
-                        .Concat(GameSparker.user_stage_parts.Select(part => part.FileName))
+                    ? BackendGameSparker.stage_parts.Select(part => part.FileName)
+                        .Concat(BackendGameSparker.vendor_stage_parts.Select(part => part.FileName))
+                        .Concat(BackendGameSparker.user_stage_parts.Select(part => part.FileName))
                         .ToList()
                     : []);
             
@@ -128,7 +137,7 @@ namespace NFMWorld.Mad
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.CarsInRace[inRacePhase.playerCarIndex].VisuallyWasted = true;
+                inRacePhase.GetClientCar(inRacePhase.playerCarIndex).VisuallyWasted = true;
             }
         }
 
@@ -202,7 +211,7 @@ namespace NFMWorld.Mad
 
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
+                var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
                 MeshDamage.DamageX(car.Stats, car, 0, amount);
                 MeshDamage.DamageX(car.Stats, car, 1, amount);
                 MeshDamage.DamageX(car.Stats, car, 2, amount);
@@ -219,13 +228,14 @@ namespace NFMWorld.Mad
 
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
+                var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
                 var nbsq = 0;
-                var squash = car.Mad.Squash;
-                MeshDamage.DamageY(car.Stats, car, 0, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car, 1, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car, 2, amount, car.Mad.Mtouch, ref nbsq, ref squash);
-                MeshDamage.DamageY(car.Stats, car, 3, amount, car.Mad.Mtouch, ref nbsq, ref squash);
+                var squash = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Squash;
+                var mtouch = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Mtouch;
+                MeshDamage.DamageY(car.Stats, car, 0, amount, mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 1, amount, mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 2, amount, mtouch, ref nbsq, ref squash);
+                MeshDamage.DamageY(car.Stats, car, 3, amount, mtouch, ref nbsq, ref squash);
             }
         }
 
@@ -238,7 +248,7 @@ namespace NFMWorld.Mad
 
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                var car = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
+                var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
                 MeshDamage.DamageZ(car.Stats, car, 0, amount);
                 MeshDamage.DamageZ(car.Stats, car, 1, amount);
                 MeshDamage.DamageZ(car.Stats, car, 2, amount);
@@ -327,7 +337,7 @@ namespace NFMWorld.Mad
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 var originalCar = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
-                inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new InGameCar(inRacePhase.playerCarIndex, originalCar.ClonedCarInfo, 0, 0, true);
+                inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(originalCar.Rad, inRacePhase.playerCarIndex, 0, 0, true);
             }
 
             console.Log("Position reset");
@@ -402,7 +412,7 @@ namespace NFMWorld.Mad
             }
 
             var carId = string.Join(" ", args);
-            var (id, car) = GameSparker.GetCar(carId);
+            var (id, car) = BackendGameSparker.GetCar(carId);
 
             if (car == null)
             {
@@ -413,7 +423,7 @@ namespace NFMWorld.Mad
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 inRacePhase.playerCarName = car.FileName;
-                inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new InGameCar(inRacePhase.playerCarIndex, car, 0, 0, true);
+                inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(car, inRacePhase.playerCarIndex, 0, 0, true);
                 inRacePhase.ReloadGamemode();
             }
         
@@ -481,7 +491,7 @@ namespace NFMWorld.Mad
                         result => 
                         {
                             console.Log($"User clicked: {result}");
-                            if (result == UI.MessageWindow.MessageResult.Yes)
+                            if (result == MessageWindow.MessageResult.Yes)
                             {
                                 console.Log("User confirmed!");
                             }

@@ -1,11 +1,16 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.camera;
+using nfm_world.shaders;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
-public class LineMesh : IInstancedRenderElement
+public class LineMesh : IInstancedRenderElement, IDisposable
 {
     private readonly LineEffect _material = new(Program._lineShader);
     private readonly Mesh _supermesh;
@@ -15,9 +20,6 @@ public class LineMesh : IInstancedRenderElement
     private readonly int _lineTriangleCount;
     private readonly LineType _lineType;
     private readonly int _lineVertexCount;
-
-    public bool Expand = false;
-    public float Darken = 1.0f;
 
     public LineMesh(
         Mesh supermesh,
@@ -82,8 +84,7 @@ public class LineMesh : IInstancedRenderElement
 
     ~LineMesh()
     {
-        _lineVertexBuffer.Dispose();
-        _lineIndexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void Render(Camera camera, Lighting? lighting, VertexBuffer instanceBuffer, int instanceCount)
@@ -93,7 +94,7 @@ public class LineMesh : IInstancedRenderElement
         _graphicsDevice.RasterizerState = RasterizerState.CullClockwise;
 
         // If a parameter is null that means the HLSL compiler optimized it out.
-        _material.SnapColor?.SetValue(World.Snap.ToVector3());
+        _material.SnapColor?.SetValue((Vector3)World.Snap);
         _material.IsFullbright?.SetValue(false);
         _material.UseBaseColor?.SetValue(false);
         _material.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -101,7 +102,7 @@ public class LineMesh : IInstancedRenderElement
         _material.HalfThickness?.SetValue(World.OutlineThickness);
 
         _material.LightDirection?.SetValue(World.LightDirection);
-        _material.FogColor?.SetValue(World.Fog.Snap(World.Snap).ToVector3());
+        _material.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         _material.FogDistance?.SetValue(World.FadeFrom);
         _material.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         _material.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
@@ -113,8 +114,8 @@ public class LineMesh : IInstancedRenderElement
 
         _material.CurrentTechnique = _material.Techniques["Basic"];
 
-        _material.Expand?.SetValue(Expand);
-        _material.Darken?.SetValue(Darken);
+        _material.Expand?.SetValue(_supermesh.Expand);
+        _material.Darken?.SetValue(_supermesh.Darken);
         _material.RandomFloat?.SetValue(URandom.Single());
         _material.Alpha?.SetValue(1.0f);
 
@@ -151,5 +152,22 @@ public class LineMesh : IInstancedRenderElement
             new VertexElement(44, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 1),
             new VertexElement(56, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 2)
         );
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _lineVertexBuffer.Dispose();
+        _lineIndexBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

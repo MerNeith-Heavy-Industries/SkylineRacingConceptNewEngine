@@ -1,9 +1,14 @@
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Mad.UI;
-using NFMWorld.Util;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.driverinterface;
+using nfm_world.stage;
+using nfm_world.util;
+using File = nfm_world_library.util.File;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : BasePhase
 {
@@ -33,11 +38,13 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         }
     ];
 
-    public Stage CurrentStage = null!;
+    public BackendStage CurrentStage = null!;
     public Scene current_scene = null!;
 
-    public UnlimitedArray<InGameCar> CarsInRace = [];
+    public UnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
     public int playerCarIndex = 0;
+    private ClientCarCollection clientCarCollection;
+    public ClientStageRenderer clientStageRenderer;
 
     public override void Exit()
     {
@@ -54,15 +61,15 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
                 GameSparker.CurrentMusic?.Unload();
             }
 
-            Console.WriteLine("playing stage music: " + CurrentStage.musicPath);
+            Console.WriteLine("playing stage music: " + clientStageRenderer.musicPath);
 
-            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath);
+            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath);
             // Dont shift pitch or tempo if using remastered
-            string path = useRemastered ? CurrentStage.remasteredMusicPath : CurrentStage.musicPath;
-            double tempoMul = !useRemastered ? CurrentStage.musicTempoMul : 0d;
-            double freqMul = !useRemastered ? CurrentStage.musicFreqMul : 1d;
+            string path = useRemastered ? clientStageRenderer.remasteredMusicPath : clientStageRenderer.musicPath;
+            double tempoMul = !useRemastered ? clientStageRenderer.musicTempoMul : 0d;
+            double freqMul = !useRemastered ? clientStageRenderer.musicFreqMul : 1d;
 
-            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new Util.File($"./data/music/{path}"), tempoMul);
+            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new File($"./data/music/{path}"), tempoMul);
             GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();
@@ -71,24 +78,30 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public virtual void LoadStage(string stageName, bool loadMusic = true)
     {
-        CurrentStage = new Stage(stageName, GraphicsDevice);
+        CurrentStage = new BackendStage(stageName);
+        clientStageRenderer = new ClientStageRenderer(GraphicsDevice, CurrentStage);
 
-        if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.remasteredMusicPath))))
+        RecreateScene();
+
+        if (loadMusic && (!string.IsNullOrEmpty(clientStageRenderer.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath))))
         {
             LoadStageMusic(true);
         }
-
-        RecreateScene();
     }
 
-    protected virtual void RecreateScene()
+    public virtual void RecreateScene()
     {
+        clientCarCollection = new ClientCarCollection(GraphicsDevice, CarsInRace);
         current_scene = new Scene(
             GraphicsDevice,
-            [CurrentStage, new GameObject() { Children = CarsInRace }],
+            [clientStageRenderer, clientCarCollection],
             camera,
             lightCameras
         );
+    }
+    public ClientCar GetClientCar(int index)
+    {
+        return clientCarCollection.GetCar(CarsInRace[index]);
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)

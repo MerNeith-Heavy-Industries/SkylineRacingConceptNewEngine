@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using NFMWorld.Mad;
 
-namespace NFMWorld;
+namespace nfm_world;
 
 public class TimeStep(float targetDeltaTime)
 {

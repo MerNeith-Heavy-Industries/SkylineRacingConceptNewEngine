@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad.rad;
 
 public readonly record struct Rad3dBoxDef(
     [property: JsonPropertyName("xy")] int Xy,

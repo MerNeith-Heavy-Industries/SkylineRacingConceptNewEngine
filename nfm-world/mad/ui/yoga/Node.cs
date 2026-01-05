@@ -6,10 +6,9 @@ using System.Text;
 using Maxine.Extensions;
 using Yoga;
 
+namespace nfm_world.ui.yoga;
+
 // ReSharper disable InconsistentNaming
-
-namespace NFMWorld.Mad.UI.yoga;
-
 [DebuggerDisplay("{DebugToString()}")]
 public class Node : IDisposable
 {

@@ -1,5 +1,6 @@
-using NFMWorld.DriverInterface;
-using NFMWorld.SkiaDriver;
+using nfm_world.driverinterface;
+
+namespace nfm_world.sfx;
 
 public static class SfxLibrary
 {

@@ -1,6 +1,6 @@
-using SoftFloat;
+using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Util;
+namespace nfm_world_library.util;
 
 // https://stackoverflow.com/a/2147782
 public struct Random(long seed)

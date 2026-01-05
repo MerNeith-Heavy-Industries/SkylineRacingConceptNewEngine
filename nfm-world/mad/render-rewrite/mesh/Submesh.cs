@@ -1,10 +1,14 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.camera;
+using nfm_world.shaders;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
-public class Submesh : IInstancedRenderElement
+public class Submesh : IInstancedRenderElement, IDisposable
 {
     private readonly PolyEffect _material = new(Program._polyShader);
     public readonly PolyType PolyType;
@@ -16,9 +20,6 @@ public class Submesh : IInstancedRenderElement
     private readonly int _triangleCount;
     private readonly Mesh _supermesh;
     private readonly GraphicsDevice _graphicsDevice;
-    
-    public bool Expand = false;
-    public float Darken = 1.0f;
 
     public Submesh(
         PolyType polyType,
@@ -49,8 +50,7 @@ public class Submesh : IInstancedRenderElement
 
     ~Submesh()
     {
-        _vertexBuffer.Dispose();
-        _indexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void Render(Camera camera, Lighting? lighting, VertexBuffer instanceBuffer, int instanceCount)
@@ -60,12 +60,12 @@ public class Submesh : IInstancedRenderElement
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         
         // If a parameter is null that means the HLSL compiler optimized it out.
-        _material.SnapColor?.SetValue(World.Snap.ToVector3());
+        _material.SnapColor?.SetValue((Vector3)World.Snap);
         _material.IsFullbright?.SetValue((PolyType is PolyType.BrakeLight or PolyType.Light or PolyType.ReverseLight && World.LightsOn));
         _material.UseBaseColor?.SetValue(PolyType is PolyType.Glass);
-        _material.BaseColor?.SetValue(World.Sky.ToVector3());
+        _material.BaseColor?.SetValue((Vector3)World.Sky);
         _material.LightDirection?.SetValue(World.LightDirection);
-        _material.FogColor?.SetValue(World.Fog.Snap(World.Snap).ToVector3());
+        _material.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         _material.FogDistance?.SetValue(World.FadeFrom);
         _material.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1f));
         _material.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
@@ -93,8 +93,8 @@ public class Submesh : IInstancedRenderElement
         
         lighting?.SetShadowMapParameters(_material.UnderlyingEffect);
 
-        _material.Expand?.SetValue(Expand);
-        _material.Darken?.SetValue(Darken);
+        _material.Expand?.SetValue(_supermesh.Expand);
+        _material.Darken?.SetValue(_supermesh.Darken);
         _material.RandomFloat?.SetValue(URandom.Single());
         
         foreach (var pass in _material.CurrentTechnique.Passes)
@@ -107,5 +107,22 @@ public class Submesh : IInstancedRenderElement
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.BlendState = BlendState.Opaque;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

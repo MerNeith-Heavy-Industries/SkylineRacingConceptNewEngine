@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world.camera;
 
-namespace NFMWorld.Mad;
+namespace nfm_world;
 
 public class Lighting
 {

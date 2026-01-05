@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using MessagePack;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer.packets.s2c;
 
 [MessagePackObject]
 public struct S2C_RaceStarted : IPacketServerToClient<S2C_RaceStarted>

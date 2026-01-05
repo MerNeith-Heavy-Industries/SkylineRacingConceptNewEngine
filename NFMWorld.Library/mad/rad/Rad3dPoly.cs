@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad.rad;
 
 public readonly record struct Rad3dPoly(
     [property: JsonPropertyName("c")] Color3 Color,

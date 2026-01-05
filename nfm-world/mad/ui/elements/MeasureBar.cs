@@ -1,8 +1,8 @@
-using NFMWorld.Util;
-using NFMWorld.Mad.UI.yoga;
-using NFMWorld.DriverInterface;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.ui.yoga;
 
-namespace NFMWorld.Mad.UI.Elements;
+namespace nfm_world.ui.elements;
 
 public class MeasureBar : Node
 {

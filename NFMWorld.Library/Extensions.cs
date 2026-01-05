@@ -2,12 +2,11 @@
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
 using FixedMathSharp.Utility;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 using Stride.Core.Mathematics;
 
-namespace NFMWorld.Library;
+namespace nfm_world_library;
 
 public static class Extensions
 {
@@ -66,17 +65,8 @@ public static class Extensions
             => new(span[0], span[1], span[2]);
     }
 
-    extension(f64Vector3 f64Vector3)
-    {
-        public static f64Vector3 FromSpan(ReadOnlySpan<fix64> span)
-            => new(span[0], span[1], span[2]);
-    }
-
     extension(Color3 color3)
     {
-        public static Color3 FromSpan(ReadOnlySpan<short> span)
-            => new(span[0], span[1], span[2]);
-
         public Color3 Snap(Color3 snap)
         {
             var r = (short)(color3[0] + color3[0] * (snap[0] / 100.0F));
@@ -91,23 +81,6 @@ public static class Extensions
 
             return new Color3(r, g, b);
         }
-
-        public Color ToXna()
-            =>
-                new(
-                    (byte)Math.Clamp(color3.R, (short)0, (short)255),
-                    (byte)Math.Clamp(color3.G, (short)0, (short)255),
-                    (byte)Math.Clamp(color3.B, (short)0, (short)255)
-                );
-
-        public Vector3 ToVector3()
-            => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f);
-
-        public Microsoft.Xna.Framework.Vector4 ToVector4()
-            => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
-
-        public Stride.Core.Mathematics.Vector3 ToStrideVector3()
-            => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f);
     }
 
     extension(Matrix matrix)

@@ -1,9 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using ENet;
-using Steamworks.Data;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public class ENetMultiplayerServerTransport : BaseMultiplayerServerTransport
 {

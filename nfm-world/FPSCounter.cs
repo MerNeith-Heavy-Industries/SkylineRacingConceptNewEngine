@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
-using NFMWorld.Mad;
-using NFMWorld.Util;
+using nfm_world.util;
 
-namespace NFMWorld;
+namespace nfm_world;
 
 public class FPSCounter
 {

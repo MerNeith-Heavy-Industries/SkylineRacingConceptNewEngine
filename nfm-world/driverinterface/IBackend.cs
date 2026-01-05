@@ -1,6 +1,6 @@
-using File = NFMWorld.Util.File;
+using File = nfm_world_library.util.File;
 
-namespace NFMWorld.DriverInterface;
+namespace nfm_world.driverinterface;
 
 public interface IBackend
 {

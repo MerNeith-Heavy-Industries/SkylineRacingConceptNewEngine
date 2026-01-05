@@ -1,9 +1,12 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad.UI;
-using NFMWorld.Util;
+﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using nfm_world.multiplayer;
+using nfm_world.stage;
+using nfm_world.ui;
+using nfm_world.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 // TODO: implement the same menu as in nfm-lit
 
@@ -41,7 +44,7 @@ public class MainMenuPhase : BasePhase
 
     private GraphicsDevice _graphicsDevice;
 
-    private CarInfo? garageSelectedCar;
+    private Rad3d? garageSelectedCar;
 
     public MainMenuPhase(GraphicsDevice graphicsDevice)
     {
@@ -429,7 +432,8 @@ public class MainMenuPhase : BasePhase
         ssp.StageSelected += (sender, stage) =>
         {
             GameSparker.InRace.CurrentStage = stage;
-            GameSparker.InRace.CurrentStage.ReapplyFadeFrom();
+            GameSparker.InRace.clientStageRenderer = new ClientStageRenderer(_graphicsDevice, stage);
+            GameSparker.InRace.RecreateScene();
             GameSparker.InRace.LoadStageMusic(true);
             GameSparker.SetPhase(this);
 
@@ -446,6 +450,7 @@ public class MainMenuPhase : BasePhase
             };
 
             gp.StageOverride = GameSparker.InRace.CurrentStage;
+            gp.ClientStageRendererOverride = GameSparker.InRace.clientStageRenderer;
             GameSparker.SetPhase(gp);
         };
 

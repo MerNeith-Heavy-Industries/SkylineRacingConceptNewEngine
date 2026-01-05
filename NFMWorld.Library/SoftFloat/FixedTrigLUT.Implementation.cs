@@ -1,6 +1,4 @@
-﻿using FixedMathSharp;
-
-namespace SoftFloat;
+﻿namespace nfm_world_library.SoftFloat;
 
 public static partial class FixedTrigLUT
 {

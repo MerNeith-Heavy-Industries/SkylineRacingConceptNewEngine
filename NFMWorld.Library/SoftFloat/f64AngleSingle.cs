@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquatable<f64AngleSingle>, ISpanFormattable
 {

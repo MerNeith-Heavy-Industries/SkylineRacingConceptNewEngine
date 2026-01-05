@@ -1,11 +1,17 @@
 using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Mad;
-using NFMWorld.Mad.UI.yoga;
-using NFMWorld.Mad.UI.Elements;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.driverinterface;
+using nfm_world.stage;
+using nfm_world.util;
 using Stride.Core.Extensions;
+
+namespace nfm_world.gameplay;
 
 public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
@@ -13,7 +19,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     /// This should be hooked onto by the calling phase, so that the calling phase can be restored upon car selection.
     /// Returns the car that was selected.
     /// </summary>
-    public event EventHandler<CarInfo>? CarSelected;
+    public event EventHandler<Rad3d>? CarSelected;
 
     /// <summary>
     /// This should be hooked onto by the calling phase, so that the calling phase can be restored upon car selection.
@@ -24,8 +30,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private int _selectedCarIdx = 0;
 
     private Collection _currentCollection = Collection.NFMM;
-    private UnlimitedArray<CarInfo> _cars = GameSparker.cars[Collection.NFMM];
-    private Car? _car;
+    private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
+    private BackendCar? _backendCar;
+    private ClientCar? _car;
 
     private UnlimitedArray<GarageDynamicStatBar> statBars = [];
 
@@ -37,15 +44,16 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private string _searchQuery = "";
     private int _autocompleteIndex = 0;
     private bool _inAutocomplete = false;
-    private CarInfo[] _autocompleteMatches = [];
+    private Rad3d[] _autocompleteMatches = [];
     private bool _openSearchPopup = false;
     private int _searchKbFocus = 0;
-    public Stage? StageOverride;
+    public BackendStage? StageOverride;
+    public ClientStageRenderer? ClientStageRendererOverride;
     private bool _loadedStageMusic = false;
 
     private PerspectiveCamera _camera = new();
 
-    public GaragePhase(GraphicsDevice graphicsDevice, CarInfo currentCar) : this(graphicsDevice)
+    public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar) : this(graphicsDevice)
     {
         _selectedCarIdx = _cars.FindIndex(c =>
         {
@@ -66,6 +74,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         if (StageOverride != null)
         {
             CurrentStage = StageOverride;
+            clientStageRenderer = ClientStageRendererOverride ?? new ClientStageRenderer(GraphicsDevice, CurrentStage);
         }
         else
         {
@@ -83,20 +92,21 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             LoadStage(dir + Path.GetFileNameWithoutExtension(stagePath), false);
         }
 
-        if (!_loadedStageMusic)
-        {
-            LoadStageMusic(true);
-            _loadedStageMusic = true;
-        }
-
-        _car = new Car(_cars[_selectedCarIdx]);
-        CarsInRace[0] = new InGameCar(0, _car.CarInfo, 0, 0, false);
+        _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
+        _car = new ClientCar(GraphicsDevice, _backendCar);
+        CarsInRace[0] = _backendCar;
 
         camera.LookAt = new Vector3(0, 250, 400);
         camera.Position = new Vector3(-750, 50, 750);
         FovOverride = 53;
 
         RecreateScene();
+
+        if (!_loadedStageMusic)
+        {
+            LoadStageMusic(true);
+            _loadedStageMusic = true;
+        }
 
         // create and position stat bars
         float switsLevel = (_car.Stats.Swits[2] - 220) / 90f;
@@ -152,9 +162,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         {
             if (ImGui.BeginMenu("Collection"))
             {
-                foreach (Collection key in GameSparker.cars.Keys)
+                foreach (Collection key in BackendGameSparker.cars.Keys)
                 {
-                    if (GameSparker.cars[key].Count > 0 && ImGui.MenuItem(key.ToString()))
+                    if (BackendGameSparker.cars[key].Count > 0 && ImGui.MenuItem(key.ToString()))
                     {
                         GoToCollection(key);
                     }
@@ -326,13 +336,13 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private void SelectedCar()
     {
         if (CarSelected == null) throw new ArgumentNullException("Attempted to invoke CarSelected, but it was null.");
-        CarSelected.Invoke(this, _car!.CarInfo);
+        CarSelected.Invoke(this, _car!.Rad);
     }
 
     private void SelectionCancelled()
     {
         if (CarSelectionCancelled == null) throw new ArgumentNullException("Attempted to invoke CarSelectionCancelled, but it was null.");
-        CarSelectionCancelled.Invoke(this, new EventArgs());
+        CarSelectionCancelled.Invoke(this, EventArgs.Empty);
     }
 
     private void CycleCarRight()
@@ -351,7 +361,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void GoToCollection(Collection collection)
     {
-        _cars = GameSparker.cars[collection];
+        _cars = BackendGameSparker.cars[collection];
         _selectedCarIdx = 0;
         _currentCollection = collection;
         SetupCurrentCar();

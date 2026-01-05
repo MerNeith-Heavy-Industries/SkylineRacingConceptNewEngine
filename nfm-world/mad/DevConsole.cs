@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
-using NFMWorld.Util;
-using NFMWorld.Mad.UI;
 using ImGuiNET;
+using nfm_world.ui;
 
-namespace NFMWorld.Mad
+namespace nfm_world
 {
     public class DevConsole
     {

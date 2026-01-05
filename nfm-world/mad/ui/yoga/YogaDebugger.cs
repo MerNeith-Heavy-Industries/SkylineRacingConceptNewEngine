@@ -1,10 +1,10 @@
-﻿using System.Drawing.Imaging.Effects;
-using Maxine.Extensions;
-using NFMWorld.DriverInterface;
-using NFMWorld.Util;
+﻿using Maxine.Extensions;
+using nfm_world;
+using nfm_world.driverinterface;
+using nfm_world.util;
 using Stride.Core.Mathematics;
 
-namespace NFMWorld.Mad.UI.yoga;
+namespace nfm_world.ui.yoga;
 
 public static class YogaDebugger
 {

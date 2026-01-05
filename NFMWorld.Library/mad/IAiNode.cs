@@ -1,10 +1,9 @@
-﻿using NFMWorld.Mad;
-
-namespace NFMWorld;
+﻿namespace nfm_world_library.mad;
 
 public interface IAiNode : ITransform
 {
     AiNodeKind Kind { get; }
+    bool IsSpecial { get; }
 }
 
 public enum AiNodeKind

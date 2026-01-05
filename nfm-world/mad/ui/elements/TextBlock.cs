@@ -1,7 +1,8 @@
-﻿using NFMWorld.DriverInterface;
-using NFMWorld.Util;
+﻿using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.util;
 
-namespace NFMWorld.Mad.UI.yoga;
+namespace nfm_world.ui.yoga;
 
 public class TextBlock : Node
 {

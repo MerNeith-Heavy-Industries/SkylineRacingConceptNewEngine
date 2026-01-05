@@ -1,13 +1,19 @@
 using ImGuiNET;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.DriverInterface;
-using NFMWorld.Mad;
-using NFMWorld.Util;
+using nfm_world_library.backend;
+using nfm_world_library.mad;
+using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.driverinterface;
+using nfm_world.util;
 using Stride.Core.Extensions;
+using File = nfm_world_library.util.File;
+
+namespace nfm_world.gameplay;
 
 public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
-    public event EventHandler<Stage>? StageSelected;
+    public event EventHandler<BackendStage>? StageSelected;
 
     private UnlimitedArray<string> _stageCollections = [];
     private string _selectedCollection = "";
@@ -41,7 +47,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         LoadStageInCollection();
 
         GameSparker.CurrentMusic?.Unload();
-        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new NFMWorld.Util.File("data/music/nfm1/stageselectremastered.mp3"), 0f);
+        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new File("data/music/nfm1/stageselectremastered.mp3"), 0f);
         GameSparker.CurrentMusic?.Play();
     }
 

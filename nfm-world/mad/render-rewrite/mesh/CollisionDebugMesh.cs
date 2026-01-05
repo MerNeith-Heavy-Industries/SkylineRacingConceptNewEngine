@@ -1,9 +1,15 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.shaders;
+using nfm_world.stage;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.mesh;
 
-public sealed class CollisionDebugMesh : GameObject
+public sealed class CollisionDebugMesh : GameObject, IDisposable
 {
     private LineEffect _material;
     private int lineTriangleCount;
@@ -160,9 +166,7 @@ public sealed class CollisionDebugMesh : GameObject
 
     ~CollisionDebugMesh()
     {
-        lineVertexBuffer.Dispose();
-        lineIndexBuffer.Dispose();
-        lineInstanceBuffer.Dispose();
+        Dispose(false);
     }
 
     public override void Render(Camera camera, Lighting? lighting)
@@ -174,7 +178,7 @@ public sealed class CollisionDebugMesh : GameObject
         GameSparker._graphicsDevice.Indices = lineIndexBuffer;
 
         // If a parameter is null that means the HLSL compiler optimized it out.
-        _material.SnapColor?.SetValue(new Color3(100, 100, 100).ToVector3());
+        _material.SnapColor?.SetValue((Vector3)new Color3(100, 100, 100));
         _material.IsFullbright?.SetValue(true);
         _material.UseBaseColor?.SetValue(false);
         _material.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -182,7 +186,7 @@ public sealed class CollisionDebugMesh : GameObject
         _material.HalfThickness?.SetValue(World.OutlineThickness);
 
         _material.LightDirection?.SetValue(World.LightDirection);
-        _material.FogColor?.SetValue(World.Fog.Snap(World.Snap).ToVector3());
+        _material.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         _material.FogDistance?.SetValue(World.FadeFrom);
         _material.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         _material.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
@@ -209,5 +213,23 @@ public sealed class CollisionDebugMesh : GameObject
     
             GameSparker._graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, lineVertexCount, 0, lineTriangleCount, 1);
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        lineIndexBuffer.Dispose();
+        lineVertexBuffer.Dispose();
+        lineInstanceBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }
