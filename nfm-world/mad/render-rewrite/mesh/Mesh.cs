@@ -4,6 +4,7 @@ using HoleyDiver;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library.mad.rad;
+using nfm_world.camera;
 using nfm_world.stage;
 
 namespace nfm_world.mesh;

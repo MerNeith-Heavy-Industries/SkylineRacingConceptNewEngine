@@ -5,6 +5,7 @@ using nfm_world_library.SoftFloat;
 using nfm_world.driverinterface;
 using nfm_world.gameplay;
 using nfm_world.gameplay.gamemodes;
+using nfm_world.mesh;
 using nfm_world.multiplayer;
 using nfm_world.ui;
 using Steamworks;

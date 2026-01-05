@@ -3,7 +3,7 @@ using nfm_world_library.mad.rad;
 using nfm_world_library.util;
 using Random = nfm_world_library.util.Random;
 
-namespace nfm_world;
+namespace nfm_world.mesh;
 
 public static class MeshDamage
 {

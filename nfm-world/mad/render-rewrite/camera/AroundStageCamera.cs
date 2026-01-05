@@ -2,7 +2,7 @@ using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.util;
 
-namespace nfm_world;
+namespace nfm_world.camera;
 
 public class AroundStageCamera
 {

@@ -2,6 +2,8 @@
 using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.mad.rad;
+using nfm_world.camera;
+using nfm_world.shaders;
 using nfm_world.stage;
 
 namespace nfm_world.mesh;

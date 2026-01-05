@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.SoftFloat;
+using nfm_world.camera;
 
 namespace nfm_world.mesh.effects;
 

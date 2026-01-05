@@ -5,6 +5,7 @@ using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.mad.rad;
 using nfm_world_library.SoftFloat;
+using nfm_world.camera;
 using nfm_world.gameplay;
 using nfm_world.mesh;
 using nfm_world.stage;

@@ -1,4 +1,6 @@
-﻿namespace nfm_world;
+﻿using nfm_world.camera;
+
+namespace nfm_world;
 
 public class CameraSettings
 {

@@ -5,6 +5,7 @@ using nfm_world_library.backend;
 using nfm_world_library.mad;
 using nfm_world_library.mad.rad;
 using nfm_world_library.util;
+using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.util;
 using Stride.Core.Extensions;

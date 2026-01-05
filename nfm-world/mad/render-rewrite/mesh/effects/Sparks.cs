@@ -2,6 +2,8 @@
 using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.util;
+using nfm_world.camera;
+using nfm_world.shaders;
 
 namespace nfm_world.mesh.effects;
 

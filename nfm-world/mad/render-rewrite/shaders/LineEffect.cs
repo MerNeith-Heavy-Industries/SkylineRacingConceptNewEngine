@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 
-namespace nfm_world;
+namespace nfm_world.shaders;
 
 public class LineEffect(Effect effect) : IDisposable
 {

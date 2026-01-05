@@ -3,6 +3,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library.mad;
+using nfm_world.camera;
 using nfm_world.stage;
 
 namespace nfm_world;

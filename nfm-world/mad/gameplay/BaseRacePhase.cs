@@ -3,6 +3,7 @@ using nfm_world_library;
 using nfm_world_library.backend;
 using nfm_world_library.mad;
 using nfm_world_library.util;
+using nfm_world.camera;
 using nfm_world.ui;
 using nfm_world.util;
 

@@ -1,6 +1,7 @@
 ﻿using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.util;
+using nfm_world.camera;
 
 namespace nfm_world;
 
