@@ -2,7 +2,7 @@
 
 namespace nfm_world;
 
-public class LineEffect(Effect effect)
+public class LineEffect(Effect effect) : IDisposable
 {
     public Effect UnderlyingEffect => effect;
     public EffectParameter? View { get; } = effect.Parameters["View"];
@@ -39,4 +39,24 @@ public class LineEffect(Effect effect)
     /// <inheritdoc cref="Effect.CurrentTechnique"/>
     public EffectTechnique CurrentTechnique { get => effect.CurrentTechnique; set => effect.CurrentTechnique = value; }
 
+    private void ReleaseUnmanagedResources()
+    {
+        effect.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~LineEffect()
+    {
+        Dispose(false);
+    }
 }

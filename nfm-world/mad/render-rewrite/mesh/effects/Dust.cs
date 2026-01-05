@@ -6,7 +6,7 @@ using nfm_world_library.SoftFloat;
 
 namespace nfm_world.mesh.effects;
 
-public class Dust
+public class Dust : IDisposable
 {
     private readonly ClientCar _car;
     private readonly GraphicsDevice _graphicsDevice;
@@ -337,5 +337,26 @@ public class Dust
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _effect.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~Dust()
+    {
+        Dispose(false);
     }
 }

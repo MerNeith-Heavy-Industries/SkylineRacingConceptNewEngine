@@ -8,7 +8,7 @@ using nfm_world.stage;
 
 namespace nfm_world.mesh;
 
-public class LineMesh : IInstancedRenderElement
+public class LineMesh : IInstancedRenderElement, IDisposable
 {
     private readonly LineEffect _material = new(Program._lineShader);
     private readonly Mesh _supermesh;
@@ -82,8 +82,7 @@ public class LineMesh : IInstancedRenderElement
 
     ~LineMesh()
     {
-        _lineVertexBuffer.Dispose();
-        _lineIndexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void Render(Camera camera, Lighting? lighting, VertexBuffer instanceBuffer, int instanceCount)
@@ -151,5 +150,22 @@ public class LineMesh : IInstancedRenderElement
             new VertexElement(44, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 1),
             new VertexElement(56, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 2)
         );
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _lineVertexBuffer.Dispose();
+        _lineIndexBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

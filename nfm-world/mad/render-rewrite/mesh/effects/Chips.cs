@@ -4,7 +4,7 @@ using nfm_world_library.mad;
 
 namespace nfm_world.mesh.effects;
 
-public class Chips
+public class Chips : IDisposable
 {
     private struct Chip
     {
@@ -176,5 +176,26 @@ public class Chips
             _chips[i].State = 1;
             _chips[i].Ctmag = 2f;
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _effect.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~Chips()
+    {
+        Dispose(false);
     }
 }

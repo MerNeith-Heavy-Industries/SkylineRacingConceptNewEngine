@@ -8,7 +8,7 @@ using nfm_world.stage;
 
 namespace nfm_world.mesh;
 
-public class Mesh
+public class Mesh : IDisposable
 {
     public Rad3dPoly[] Polys;
 
@@ -64,9 +64,25 @@ public class Mesh
         CastsShadow = baseMesh.CastsShadow;
     }
 
-    [MemberNotNull(nameof(Submeshes))]
+    [MemberNotNull(nameof(Submeshes), nameof(LineMeshes))]
     private void BuildMesh(GraphicsDevice graphicsDevice)
     {
+        if (Submeshes != null)
+        {
+            foreach (var submesh in Submeshes)
+            {
+                submesh?.Dispose();
+            }
+        }
+        
+        if (LineMeshes != null)
+        {
+            foreach (var lineMesh in LineMeshes)
+            {
+                lineMesh?.Dispose();
+            }
+        }
+        
         var submeshes = new (
             List<VertexPositionNormalColorCentroid> Data,
             List<int> Indices
@@ -222,5 +238,35 @@ public class Mesh
         {
             yield return (glassSubmesh, 1);
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            foreach (var submesh in Submeshes)
+            {
+                submesh?.Dispose();
+            }
+        
+            if (LineMeshes != null)
+            {
+                foreach (var lineMesh in LineMeshes)
+                {
+                    lineMesh?.Dispose();
+                }
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

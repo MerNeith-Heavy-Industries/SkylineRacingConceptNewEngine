@@ -7,7 +7,7 @@ using nfm_world.stage;
 
 namespace nfm_world.mesh;
 
-public sealed class CollisionDebugMesh : GameObject
+public sealed class CollisionDebugMesh : GameObject, IDisposable
 {
     private LineEffect _material;
     private int lineTriangleCount;
@@ -164,9 +164,7 @@ public sealed class CollisionDebugMesh : GameObject
 
     ~CollisionDebugMesh()
     {
-        lineVertexBuffer.Dispose();
-        lineIndexBuffer.Dispose();
-        lineInstanceBuffer.Dispose();
+        Dispose(false);
     }
 
     public override void Render(Camera camera, Lighting? lighting)
@@ -213,5 +211,23 @@ public sealed class CollisionDebugMesh : GameObject
     
             GameSparker._graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, lineVertexCount, 0, lineTriangleCount, 1);
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        lineIndexBuffer.Dispose();
+        lineVertexBuffer.Dispose();
+        lineInstanceBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

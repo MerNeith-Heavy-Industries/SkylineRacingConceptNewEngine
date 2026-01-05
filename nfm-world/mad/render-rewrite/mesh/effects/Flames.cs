@@ -4,7 +4,7 @@ using nfm_world_library.mad;
 
 namespace nfm_world.mesh.effects;
 
-public class Flames
+public class Flames : IDisposable
 {
     private int _embos;
     private readonly ClientCar _car;
@@ -311,5 +311,26 @@ public class Flames
             }
             _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _flameEffect.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~Flames()
+    {
+        Dispose(false);
     }
 }

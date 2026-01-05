@@ -8,7 +8,7 @@ using nfm_world.sfx;
 
 namespace nfm_world;
 
-public class ClientCar : MeshedGameObject, ICar
+public class ClientCar : MeshedGameObject, ICar, IDisposable
 {
     private ICar _backendCar;
 
@@ -195,5 +195,32 @@ public class ClientCar : MeshedGameObject, ICar
         {
             wheel.OnBeforeRender();
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            Flames.Dispose();
+            Dust.Dispose();
+            Chips.Dispose();
+            Sparks.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~ClientCar()
+    {
+        Dispose(false);
     }
 }

@@ -6,7 +6,7 @@ using nfm_world.stage;
 
 namespace nfm_world.mesh;
 
-public class Submesh : IInstancedRenderElement
+public class Submesh : IInstancedRenderElement, IDisposable
 {
     private readonly PolyEffect _material = new(Program._polyShader);
     public readonly PolyType PolyType;
@@ -48,8 +48,7 @@ public class Submesh : IInstancedRenderElement
 
     ~Submesh()
     {
-        _vertexBuffer.Dispose();
-        _indexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void Render(Camera camera, Lighting? lighting, VertexBuffer instanceBuffer, int instanceCount)
@@ -106,5 +105,22 @@ public class Submesh : IInstancedRenderElement
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.BlendState = BlendState.Opaque;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -5,7 +5,7 @@ using nfm_world_library.util;
 
 namespace nfm_world.mesh.effects;
 
-public class Sparks
+public class Sparks : IDisposable
 {
     private readonly ClientCar _car;
     private readonly GraphicsDevice _graphicsDevice;
@@ -67,11 +67,9 @@ public class Sparks
     
     ~Sparks()
     {
-        _vertexBuffer.Dispose();
-        _indexBuffer.Dispose();
-        _instanceBuffer.Dispose();
+        Dispose(false);
     }
-    
+
     public void AddSpark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround)
     {
         if (type != 1)
@@ -297,5 +295,23 @@ public class Sparks
             );
         }
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+        _instanceBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }
