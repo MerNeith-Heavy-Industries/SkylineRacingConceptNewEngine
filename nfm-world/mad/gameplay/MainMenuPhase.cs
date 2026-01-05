@@ -241,12 +241,12 @@ public class MainMenuPhase : BasePhase
         base.Render();
 
         // Clear to dark purple background
-        G.SetColor(new Util.Color(15, 0, 35));
+        G.SetColor(new Color(15, 0, 35));
         G.FillRect(0, 0, 1920, 1080);
 
         // Draw title
         G.SetFont(_titleFont);
-        G.SetColor(new Util.Color(255, 140, 0)); // Orange
+        G.SetColor(new Color(255, 140, 0)); // Orange
 
         // Draw "NEED FOR MADNESS?" with styling similar to the image
         G.DrawString("NEED FOR MADNESS?", 90, 290);
@@ -260,12 +260,12 @@ public class MainMenuPhase : BasePhase
 
         // Debug: Show mouse position
         G.SetFont(new Font(FontFamily.DroidSans, 0, 12));
-        G.SetColor(new Util.Color(255, 255, 0)); // Yellow
+        G.SetColor(new Color(255, 255, 0)); // Yellow
         G.DrawString($"Mouse: ({_mouseX}, {_mouseY})", 10, 30);
 
         // Draw tooltip at bottom (similar to image)
         G.SetFont(new Font(FontFamily.DroidSans, 0, 14));
-        G.SetColor(new Util.Color(255, 140, 0)); // Orange
+        G.SetColor(new Color(255, 140, 0)); // Orange
 
         // Find hovered button and show description
         foreach (var button in _buttons)
@@ -316,26 +316,26 @@ public class MainMenuPhase : BasePhase
         if (button.IsHovered)
         {
             // Hovered state - filled orange background
-            G.SetColor(new Util.Color(255, 140, 0)); // Bright orange
+            G.SetColor(new Color(255, 140, 0)); // Bright orange
             G.FillRect(button.X, button.Y, button.Width, button.Height);
 
             // Inner dark background
-            G.SetColor(new Util.Color(20, 15, 35));
+            G.SetColor(new Color(20, 15, 35));
             G.FillRect(button.X + 3, button.Y + 3, button.Width - 6, button.Height - 6);
 
             // Border
-            G.SetColor(new Util.Color(255, 140, 0)); // Orange
+            G.SetColor(new Color(255, 140, 0)); // Orange
             G.DrawRect(button.X, button.Y, button.Width, button.Height);
         }
         else
         {
             // Normal state - just orange border, no fill
-            G.SetColor(new Util.Color(255, 140, 0)); // Orange
+            G.SetColor(new Color(255, 140, 0)); // Orange
             G.DrawRect(button.X, button.Y, button.Width, button.Height);
         }
 
         // Button text
-        G.SetColor(new Util.Color(255, 140, 0)); // Orange text
+        G.SetColor(new Color(255, 140, 0)); // Orange text
         G.SetFont(_buttonFont);
 
         // Center the text in the button

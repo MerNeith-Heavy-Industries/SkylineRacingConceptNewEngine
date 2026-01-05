@@ -10,7 +10,6 @@ using SoftFloat;
 using Steamworks;
 using Steamworks.Data;
 using Stride.Core.Mathematics;
-using Color = Microsoft.Xna.Framework.Color;
 
 namespace NFMWorld.Mad;
 
@@ -125,5 +124,10 @@ public static class Extensions
             fixed (T* ptr = data)
                 return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
         }
+    }
+
+    extension(RectangleF rectangle)
+    {
+        public bool Contains(Vector2 vec) => rectangle.Contains(vec.X, vec.Y);
     }
 }

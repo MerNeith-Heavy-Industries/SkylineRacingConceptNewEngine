@@ -59,7 +59,7 @@ public class TextBlock : Node
         _invalidated = true;
     }
 
-    public override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
 

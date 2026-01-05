@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 using NFMWorld.Util;
 using Stride.Core.Mathematics;
-using Color = NFMWorld.Util.Color;
 
 namespace NFMWorld.Mad;
 
@@ -39,7 +38,6 @@ public readonly record struct Color3(
         }
     }
     
-    public static implicit operator Color(Color3 color) => new(color.R, color.G, color.B);
     public static implicit operator ColorBGRA(Color3 color) => new(color.R, color.G, color.B, 255);
     public static explicit operator Color3(Color color) => new(color.R, color.G, color.B);
     public static explicit operator Color3(ColorBGRA color) => new(color.R, color.G, color.B);

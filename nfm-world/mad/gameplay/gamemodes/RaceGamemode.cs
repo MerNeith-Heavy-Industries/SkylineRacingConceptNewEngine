@@ -8,7 +8,6 @@ using NFMWorld.Mad.gamemodes;
 using NFMWorld.Mad.helpers;
 using NFMWorld.Mad.UI.yoga;
 using NFMWorld.Util;
-using Color = NFMWorld.Util.Color;
 
 public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase baseRacePhase)
     : BaseGamemode(gamemodeParameters, baseRacePhase)
@@ -31,7 +30,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextBlock _lapText = null!;
+    private static TextRun _lapText = null!;
     
     private int _newTick = 0;
 
@@ -63,7 +62,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePha
                         Text = "Lap: ",
                         Flex = 1
                     },
-                    new TextBlock()
+                    new TextRun()
                     {
                         Ref = textBlock => _lapText = textBlock,
                         StrokeColor = new Color(0, 0, 0),

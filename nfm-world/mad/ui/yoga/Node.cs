@@ -1,7 +1,12 @@
 ﻿using System.Collections;
 using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using Maxine.Extensions;
 using Yoga;
+
+// ReSharper disable InconsistentNaming
 
 namespace NFMWorld.Mad.UI.yoga;
 
@@ -11,10 +16,29 @@ public class Node : IDisposable
     internal static readonly YGConfigPtr Config;
 
     internal YGNodePtr NodeInternal = new(Config);
+    
+    internal string __INTERNAL_CtorCallerFilePath = "";
+    internal int __INTERNAL_CtorCallerLineNumber = 0;
+    internal string __INTERNAL_CtorCallerMemberName = "";
+    
+    internal static List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
+    #if DEBUG
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    #endif
     public Node()
     {
         Children = new(this);
+        
+#if DEBUG
+        var stackTrace = new StackTrace(1, true);
+        // skip inherited constructors
+        var stackFrame = stackTrace.GetFrames()
+            .FirstOrDefault(e => e.GetMethod()?.DeclaringType?.IsAssignableTo(typeof(Node)) != true);
+        __INTERNAL_CtorCallerFilePath = stackFrame?.GetFileName() ?? "";
+        __INTERNAL_CtorCallerLineNumber = stackFrame?.GetFileLineNumber() ?? 0;
+        __INTERNAL_CtorCallerMemberName = stackFrame?.GetMethod()?.Name ?? "";
+#endif
     }
 
     public NodeChildCollection Children { get; }
@@ -23,7 +47,7 @@ public class Node : IDisposable
 
     public string DebugToString()
     {
-        var sb = new StringBuilder();
+        using var sb = new ValueStringBuilder(stackalloc char[ValueStringBuilder.StackallocCharBufferSizeLimit]);
         sb.Append($"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})");
         foreach (var child in Children)
         {
@@ -994,19 +1018,19 @@ public class Node : IDisposable
         }
     }
     
-    public virtual void RenderBackground(Vector2 position, Vector2 size)
+    protected virtual void RenderBackground(Vector2 position, Vector2 size)
     {
     }
 
-    public virtual void RenderBorder(Vector2 position, Vector2 size)
+    protected virtual void RenderBorder(Vector2 position, Vector2 size)
     {
     }
     
-    public virtual void RenderContent(Vector2 position, Vector2 size)
+    protected virtual void RenderContent(Vector2 position, Vector2 size)
     {
     }
 
-    public virtual void Render()
+    protected virtual void Render()
     {
         RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
         RenderBorder(LayoutBorderPosition, LayoutBorderSize);
@@ -1026,12 +1050,16 @@ public class Node : IDisposable
         }
     }
 
-    public virtual void GameTick()
+    protected virtual void GameTick()
     {
     }
 
     public void LayoutAndRender(Vector2 availableSize, Vector2? origin = null)
     {
+#if DEBUG
+        __INTERNAL_YogaRootsThisFrame.Add(this);
+#endif
+        
         RescaleRecursive();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
         RenderRecursive(origin ?? Vector2.Zero);

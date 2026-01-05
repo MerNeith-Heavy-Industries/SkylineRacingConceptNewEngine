@@ -23,17 +23,17 @@ public class MeasureBar : Node
         }
     } = 1f;
 
-    public override void RenderBackground(Vector2 position, Vector2 size)
+    protected override void RenderBackground(Vector2 position, Vector2 size)
     {
 
     }
     
-    public override void RenderBorder(Vector2 position, Vector2 size)
+    protected override void RenderBorder(Vector2 position, Vector2 size)
     {
 
     }
 
-    public override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         G.DrawImage(BarImage, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y);
         G.SetColor(BarColor);

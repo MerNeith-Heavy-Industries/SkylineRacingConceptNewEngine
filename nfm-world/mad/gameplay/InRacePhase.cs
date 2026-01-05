@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Mad.gamemodes;
 using NFMWorld.Util;
-using Color = NFMWorld.Util.Color;
 
 namespace NFMWorld.Mad;
 

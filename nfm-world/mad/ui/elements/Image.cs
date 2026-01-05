@@ -26,7 +26,7 @@ public class Image : Node
         }
     }
 
-    public override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         if(ImageData != null)
         {

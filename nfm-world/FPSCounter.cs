@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using NFMWorld.Mad;
-using Color = NFMWorld.Util.Color;
+using NFMWorld.Util;
 
 namespace NFMWorld;
 
@@ -23,7 +23,7 @@ public class FPSCounter
         elapsed = now - last;
         if (elapsed > msgFrequency)
         {
-            msg = $" Fps: {((frames / elapsed)):0.00}\n Elapsed time: {elapsed:0.00}\n Updates: {updates}\n Frames: {frames}";
+            msg = $"Fps: {frames / elapsed:0.00}\nElapsed time: {elapsed:0.00}\nUpdates: {updates}\nFrames: {frames}";
             //Console.WriteLine(msg);
             elapsed = 0;
             frames = 0;
@@ -35,7 +35,10 @@ public class FPSCounter
 
     public static void Render()
     {
-        G.SetColor(new Color(0, 0, 0));
+        G.SetFont(new Font(FontFamily.DroidSans, 0, 16));
+        G.SetColor(Color.Black);
+        G.DrawStringStroke(msg, 10, 25);
+        G.SetColor(Color.White);
         G.DrawString(msg, 10, 25);
         frames++;
     }

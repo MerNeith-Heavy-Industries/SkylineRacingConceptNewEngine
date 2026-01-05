@@ -13,7 +13,6 @@ using NFMWorld.Mad.UI.yoga;
 using NFMWorld.Util;
 using SoftFloat;
 using Stride.Core.Mathematics;
-using Color = NFMWorld.Util.Color;
 
 public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase _baseRacePhase)
     : BaseGamemode(gamemodeParameters, _baseRacePhase)
@@ -50,9 +49,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextBlock _lapText = null!;
+    private static TextRun _lapText = null!;
 
-    private static TextBlock _timerText = null!;
+    private static TextRun _timerText = null!;
 
     private static TextRun _checkpointSplitsText = null!;
     private static TextRun _lapSplitsText = null!;
@@ -84,7 +83,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                         Text = "Lap: ",
                         Flex = 1
                     },
-                    new TextBlock()
+                    new TextRun()
                     {
                         Ref = textBlock => _lapText = textBlock,
                         StrokeColor = new Color(0, 0, 0),
@@ -110,7 +109,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                         Text = "Time: ",
                         Flex = 1
                     },
-                    new TextBlock()
+                    new TextRun()
                     {
                         Ref = textBlock => _timerText = textBlock,
                         StrokeColor = new Color(0, 0, 0),

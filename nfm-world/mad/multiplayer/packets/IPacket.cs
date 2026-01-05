@@ -5,7 +5,6 @@ using MessagePack.Formatters;
 using MessagePack.Resolvers;
 using Microsoft.Xna.Framework;
 using SoftFloat;
-using Color = NFMWorld.Util.Color;
 
 namespace NFMWorld.Mad.packets;
 
