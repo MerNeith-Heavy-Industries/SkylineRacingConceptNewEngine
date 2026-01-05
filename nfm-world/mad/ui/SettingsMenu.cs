@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using ImGuiNET;
 using nfm_world_library.mad;
+using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.util;
 using SDL3;

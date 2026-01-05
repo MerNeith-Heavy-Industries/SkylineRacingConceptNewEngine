@@ -1,4 +1,5 @@
 using ImGuiNET;
+using nfm_world.camera;
 
 namespace nfm_world.ui
 {

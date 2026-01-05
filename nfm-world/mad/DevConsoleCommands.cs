@@ -2,6 +2,7 @@ using nfm_world_library;
 using nfm_world_library.backend;
 using nfm_world_library.mad;
 using nfm_world_library.SoftFloat;
+using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.gameplay;
 using nfm_world.gameplay.gamemodes;
