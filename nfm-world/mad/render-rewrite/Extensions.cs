@@ -76,7 +76,7 @@ public static class Extensions
             int startIndex,
             int elementCount
         ) where T : struct {
-            if (data == null)
+            if (data.IsEmpty)
             {
                 throw new ArgumentNullException("data");
             }
