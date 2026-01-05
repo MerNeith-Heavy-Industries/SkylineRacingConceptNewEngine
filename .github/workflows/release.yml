@@ -384,9 +384,8 @@ jobs:
               # Use zip for Windows, tar.gz for Linux and macOS
               if [[ "$dir" == nfm-world-win-* ]]; then
                 zip -r "../${dir}.zip" .
-              elif [[ "$dir" == nfm-world-linux-* ]]; then
-                tar -czf "../${dir}.tar.gz" .
-              elif [[ "$dir" == nfm-world-osx-* ]]; then
+              else
+                # Linux and macOS both use tar.gz
                 tar -czf "../${dir}.tar.gz" .
               fi
               popd > /dev/null
