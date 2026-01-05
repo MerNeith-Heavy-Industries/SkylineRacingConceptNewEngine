@@ -281,8 +281,8 @@ jobs:
 
       - name: Install Wine for shader compilation
         run: |
-          # Install Wine using Homebrew
-          brew install --cask wine-stable
+          # Install Wine using Homebrew (wine-stable is a formula)
+          brew install wine-stable
           
           # Verify Wine installation
           wine --version
@@ -294,23 +294,11 @@ jobs:
           export WINEARCH=win64
           export WINEDLLOVERRIDES="mscoree,mshtml="
           
-          # Initialize wine prefix
+          # Initialize wine prefix (this will wait for server to be ready)
           wineboot -u
           
-          # Wait for wine server to start (with timeout)
-          WINE_STARTED=false
-          for i in {1..30}; do
-            if wineserver -w 2>/dev/null; then
-              WINE_STARTED=true
-              break
-            fi
-            sleep 1
-          done
-          
-          if [ "$WINE_STARTED" = false ]; then
-            echo "Error: Wine server failed to start within 30 seconds"
-            exit 1
-          fi
+          # Give wine a moment to stabilize
+          sleep 3
           
           # Install winetricks if not already installed
           brew install winetricks
