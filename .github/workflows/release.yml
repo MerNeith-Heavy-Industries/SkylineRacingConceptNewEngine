@@ -298,12 +298,19 @@ jobs:
           wineboot -u
           
           # Wait for wine server to start (with timeout)
+          WINE_STARTED=false
           for i in {1..30}; do
             if wineserver -w 2>/dev/null; then
+              WINE_STARTED=true
               break
             fi
             sleep 1
           done
+          
+          if [ "$WINE_STARTED" = false ]; then
+            echo "Error: Wine server failed to start within 30 seconds"
+            exit 1
+          fi
           
           # Install winetricks if not already installed
           brew install winetricks
@@ -384,9 +391,10 @@ jobs:
               # Use zip for Windows, tar.gz for Linux and macOS
               if [[ "$dir" == nfm-world-win-* ]]; then
                 zip -r "../${dir}.zip" .
-              else
-                # Linux and macOS both use tar.gz
+              elif [[ "$dir" == nfm-world-linux-* ]] || [[ "$dir" == nfm-world-osx-* ]]; then
                 tar -czf "../${dir}.tar.gz" .
+              else
+                echo "Warning: Unknown platform for directory: $dir"
               fi
               popd > /dev/null
               rm -rf "$dir"
