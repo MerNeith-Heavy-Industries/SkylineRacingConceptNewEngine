@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Xna.Framework;
-using NFMWorld.DriverInterface;
+using nfm_world.driverinterface;
 using NvgSharp;
 using static NanoSVG.NSVGpaintType;
 using static NanoSVG.NSVGspreadType;
