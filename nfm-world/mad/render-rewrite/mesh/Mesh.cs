@@ -33,7 +33,8 @@ public class Mesh
 
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
-        Polys = rad.Polys;
+        // make a copy of points for damageable meshes
+        Polys = Array.ConvertAll(rad.Polys, poly => poly with { Points = [..poly.Points] });
         GroundAt = rad.Wheels.FirstOrDefault().Ground;
 
         GraphicsDevice = graphicsDevice;
