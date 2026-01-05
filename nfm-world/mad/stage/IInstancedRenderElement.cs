@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad;
+using nfm_world.camera;
+
+namespace nfm_world.stage;
 
 public interface IInstancedRenderElement
 {

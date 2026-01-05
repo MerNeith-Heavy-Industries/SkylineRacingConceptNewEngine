@@ -22,13 +22,11 @@
 // The MIT License (MIT) - http://www.opensource.org/licenses/mit-license.php
 // If you need a different license please contact me
 
-using System;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using FixedMathSharp;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 [DebuggerDisplay("{ToString()}")]
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)] 

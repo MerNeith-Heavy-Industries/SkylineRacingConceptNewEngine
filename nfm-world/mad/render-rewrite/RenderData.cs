@@ -1,4 +1,6 @@
-﻿namespace NFMWorld.Mad;
+﻿using nfm_world.stage;
+
+namespace nfm_world;
 
 public readonly record struct RenderData(
     IInstancedRenderElement RenderElement,

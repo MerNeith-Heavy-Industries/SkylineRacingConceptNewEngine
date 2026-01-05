@@ -1,8 +1,9 @@
 #nullable enable
 
-using NFMWorld.Util;
+using nfm_world_library.util;
+using nfm_world.util;
 
-namespace NFMWorld.DriverInterface;
+namespace nfm_world.driverinterface;
 
 public interface IGraphics
 {

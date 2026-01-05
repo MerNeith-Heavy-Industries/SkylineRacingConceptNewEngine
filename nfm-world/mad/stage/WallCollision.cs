@@ -1,5 +1,8 @@
-﻿using NFMWorld.Mad;
-using SoftFloat;
+﻿using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+
+namespace nfm_world.stage;
 
 public class WallCollision : GameObject, ICollidable
 {

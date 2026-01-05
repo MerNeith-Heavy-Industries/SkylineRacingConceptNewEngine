@@ -1,6 +1,6 @@
 ﻿using FixedMathSharp;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 public partial struct fix64
 {

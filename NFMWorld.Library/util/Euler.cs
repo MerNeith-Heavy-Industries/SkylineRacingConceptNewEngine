@@ -1,7 +1,6 @@
-﻿using NFMWorld.Library;
-using Stride.Core.Mathematics;
+﻿using Stride.Core.Mathematics;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.util;
 
 public struct Euler(AngleSingle yaw, AngleSingle pitch, AngleSingle roll) : IEquatable<Euler>
 {

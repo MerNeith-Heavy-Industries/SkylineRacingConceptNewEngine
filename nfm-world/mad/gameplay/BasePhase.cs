@@ -1,7 +1,6 @@
-﻿using ImGuiNET;
-using NFMWorld.Util;
+﻿using nfm_world.util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public abstract class BasePhase
 {

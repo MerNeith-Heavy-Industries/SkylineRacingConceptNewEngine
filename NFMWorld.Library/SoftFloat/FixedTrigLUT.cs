@@ -1,4 +1,4 @@
-﻿namespace SoftFloat;
+﻿namespace nfm_world_library.SoftFloat;
 
 public partial class FixedTrigLUT
 {

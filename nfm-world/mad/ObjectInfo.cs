@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Mad;
+using nfm_world.mesh;
+
+namespace nfm_world;
 
 public class ObjectInfo(Mesh mesh)
 {

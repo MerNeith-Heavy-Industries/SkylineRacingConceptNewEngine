@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using NFMWorld.Mad;
-using NFMWorld.Util;
-using SoftFloat;
+using nfm_world_library.mad.rad;
+using nfm_world_library.SoftFloat;
+using nfm_world_library.util;
 
-namespace NFMWorld.Library.mad;
+namespace nfm_world_library.mad;
 
 public readonly struct PieceSet
 {
@@ -34,7 +34,7 @@ public class StageLoader
 
     private int? _fadeFrom = null;
 
-    public int nlaps = 3;
+    public ushort nlaps = 3;
 
     // soundtrack(folder,fileName)
     public string musicPath = "";
@@ -422,7 +422,7 @@ public class StageLoader
                 // }
                 if (line.StartsWith("nlaps"))
                 {
-                    nlaps = Utility.GetInt("nlaps", line, 0);
+                    nlaps = (ushort)Utility.GetInt("nlaps", line, 0);
                 }
                 if (line.StartsWith("name"))
                 {
@@ -586,6 +586,12 @@ public class StageLoader
         {
             throw new StageLoadException(line, lineNumber, ex);
         }
+    }
+
+    public StageLoader()
+    {
+        // Create an empty stage loader for editor purposes
+        Path = "default_stage";
     }
 
     private bool TryGetPieceToPlace(string setstring, out PieceSet p1)

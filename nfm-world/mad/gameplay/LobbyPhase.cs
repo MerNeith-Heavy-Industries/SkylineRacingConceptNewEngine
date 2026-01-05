@@ -1,10 +1,14 @@
 ﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Library;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
+using nfm_world.multiplayer;
+using nfm_world.multiplayer.packets.c2s;
+using nfm_world.multiplayer.packets.s2c;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.gameplay;
 
 public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTransport transport) : BasePhase
 {
@@ -142,12 +146,12 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
         
         foreach (var player in _players)
         {
-            ImGui.PushStyleColor(ImGuiCol.Text, player.Color.ToVector4());
+            ImGui.PushStyleColor(ImGuiCol.Text, player.Color);
             ImGui.Text($"• {player.Name}");
             ImGui.PopStyleColor();
             
             ImGui.Indent(20);
-            ImGui.TextDisabled($"Vehicle: {GameSparker.GetCar(player.Vehicle).Car?.Stats.Name}");
+            ImGui.TextDisabled($"Vehicle: {BackendGameSparker.GetCar(player.Vehicle).Rad?.Stats.Name}");
             ImGui.Unindent(20);
             ImGui.Spacing();
         }
@@ -187,8 +191,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
             ImGui.Separator();
 
             // Dummy vehicle list
-            foreach (var vehicleArr in (Span<UnlimitedArray<CarInfo>>)[[.. GameSparker.cars.Values.SelectMany(i => i)]])
-            foreach (var vehicle in vehicleArr)
+            foreach (var vehicle in (Span<Rad3d>)[..BackendGameSparker.cars.Values.SelectMany(i => i)])
             {
                 if (ImGui.Selectable(vehicle.Stats.Name + "##" + vehicle.FileName))
                 {
@@ -383,7 +386,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
         
         foreach (var msg in _chatMessages)
         {
-            ImGui.PushStyleColor(ImGuiCol.Text, msg.Color.ToVector4());
+            ImGui.PushStyleColor(ImGuiCol.Text, msg.Color);
             ImGui.Text($"{msg.PlayerName}:");
             ImGui.PopStyleColor();
             

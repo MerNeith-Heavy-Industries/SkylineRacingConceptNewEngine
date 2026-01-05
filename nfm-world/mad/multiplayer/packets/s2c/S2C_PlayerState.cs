@@ -1,9 +1,6 @@
-﻿using System.Buffers;
-using CommunityToolkit.HighPerformance;
-using MessagePack;
-using NFMWorld.Util;
+﻿using MessagePack;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer.packets.s2c;
 
 [MessagePackObject(AllowPrivate = true)]
 public partial struct S2C_PlayerState : IPacketServerToClient<S2C_PlayerState>

@@ -1,23 +1,20 @@
-﻿using System.Collections.Frozen;
-using ManagedBass;
-using Color = NFMWorld.Util.Color;
-using Font = NFMWorld.Util.Font;
-using File = NFMWorld.Util.File;
-using Keys = NFMWorld.Util.Keys;
-using NFMWorld.DriverInterface;
-using NFMWorld.SkiaDriver;
-using NFMWorld.Mad;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using ImGuiNET;
+using ManagedBass;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
-using NFMWorld.Library;
-using Environment = System.Environment;
-using NFMWorld.Util;
+using nfm_world_library;
+using nfm_world_library.util;
+using nfm_world.driverinterface;
+using nfm_world.skiadriver;
+using Color = nfm_world_library.util.Color;
+using Font = nfm_world.util.Font;
+using File = nfm_world_library.util.File;
+using Keys = nfm_world.util.Keys;
 
-namespace NFMWorld;
+namespace nfm_world;
 
 /// <summary>
 /// This sample demonstrates how to load a Direct2D1 bitmap from a file.

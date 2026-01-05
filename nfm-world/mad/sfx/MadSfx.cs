@@ -1,6 +1,8 @@
-using NFMWorld.Library;
-using NFMWorld.Mad;
-using SoftFloat;
+using nfm_world_library;
+using nfm_world_library.mad;
+using nfm_world_library.SoftFloat;
+
+namespace nfm_world.sfx;
 
 public class MadSfx
 {
@@ -278,20 +280,20 @@ public class MadSfx
                 cntwis = 0;
             }
             /*if (fase == 0 || fase == 7001 || fase == 6 || fase == -1 || fase == -2 || fase == -3 || fase == -4 || fase == -5) {
-                if (mutes != control.mutes) {
-                    mutes = control.mutes;
-                }
-                if (control.mutem != mutem) {
-                    mutem = control.mutem;
-                    if (mutem) {
-                        if (loadedt) {
-                            strack.setPaused(true);
-                        }
-                    } else if (loadedt) {
-                        strack.setPaused(false);
+            if (mutes != control.mutes) {
+                mutes = control.mutes;
+            }
+            if (control.mutem != mutem) {
+                mutem = control.mutem;
+                if (mutem) {
+                    if (loadedt) {
+                        strack.setPaused(true);
                     }
+                } else if (loadedt) {
+                    strack.setPaused(false);
                 }
-            }*/
+            }
+        }*/
             if (mad.Cntdest != 0 && cntwis < 7)
             {
                 if (mad.Wasted)

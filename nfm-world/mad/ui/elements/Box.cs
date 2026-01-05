@@ -1,7 +1,7 @@
-﻿using NFMWorld.Util;
-using NFMWorld.Mad.UI.yoga;
+﻿using nfm_world_library.util;
+using nfm_world.ui.yoga;
 
-namespace NFMWorld.Mad.UI.Elements;
+namespace nfm_world.ui.elements;
 
 public class Box : Node
 {

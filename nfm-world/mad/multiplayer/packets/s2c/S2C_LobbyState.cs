@@ -1,11 +1,7 @@
-﻿using System.Buffers;
-using System.Runtime.InteropServices;
-using CommunityToolkit.HighPerformance;
+﻿using System.Runtime.InteropServices;
 using MessagePack;
-using Microsoft.Xna.Framework;
-using NFMWorld.Util;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer.packets.s2c;
 
 [MessagePackObject]
 public struct S2C_LobbyState : IPacketServerToClient<S2C_LobbyState>

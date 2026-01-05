@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using SoftFloat;
+using nfm_world_library.SoftFloat;
 
 var table = new List<long>();
 for (int angle = 0; angle < 36000; angle++)

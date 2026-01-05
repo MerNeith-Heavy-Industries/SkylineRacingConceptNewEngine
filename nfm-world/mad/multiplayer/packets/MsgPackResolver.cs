@@ -1,7 +1,8 @@
 ﻿using MessagePack;
 using Microsoft.Xna.Framework;
-using NFMWorld.Mad;
-using SoftFloat;
+using nfm_world_library.SoftFloat;
+using nfm_world.files.demo;
+using nfm_world.multiplayer;
 
 [assembly: MessagePackAssumedFormattable(typeof(PlayerState))]
 [assembly: MessagePackAssumedFormattable(typeof(Vector2))]
@@ -17,7 +18,7 @@ using SoftFloat;
 [assembly: MessagePackAssumedFormattable(typeof(DemoEntry))]
 [assembly: MessagePackAssumedFormattable(typeof(List<DemoEntry>))]
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer.packets;
 
 [GeneratedMessagePackResolver]
 internal partial class MsgPackResolver;

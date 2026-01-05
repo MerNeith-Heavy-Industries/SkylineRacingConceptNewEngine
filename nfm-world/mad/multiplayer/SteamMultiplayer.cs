@@ -1,6 +1,6 @@
 ﻿using Steamworks;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public class SteamMultiplayer
 {

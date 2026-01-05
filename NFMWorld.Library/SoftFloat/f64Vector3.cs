@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Xna.Framework.Design;
 
-namespace SoftFloat;
+namespace nfm_world_library.SoftFloat;
 
 /// <summary>
 /// Describes a 3D-vector.
@@ -1492,6 +1492,9 @@ public struct f64Vector3 : IEquatable<f64Vector3>
 
 	#endregion
 	
+	public static f64Vector3 FromSpan(ReadOnlySpan<fix64> span)
+		=> new(span[0], span[1], span[2]);
+
 	public static explicit operator Vector3(f64Vector3 value)
 		=> new((float)value.X, (float)value.Y, (float)value.Z);
 	public static explicit operator f64Vector3(Vector3 value)

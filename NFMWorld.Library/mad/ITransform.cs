@@ -1,6 +1,6 @@
-﻿using SoftFloat;
+﻿using nfm_world_library.SoftFloat;
 
-namespace NFMWorld.Mad;
+namespace nfm_world_library.mad;
 
 public interface ITransform
 {
@@ -8,5 +8,4 @@ public interface ITransform
     f64Vector3 Position { get; set; }
     f64Euler Rotation { get; set; }
     ITransform? Parent { get; }
-    Matrix MatrixWorld { get; }
 }

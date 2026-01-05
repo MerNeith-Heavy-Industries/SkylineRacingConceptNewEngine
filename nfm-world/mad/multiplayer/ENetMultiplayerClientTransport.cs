@@ -1,11 +1,7 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using CommunityToolkit.HighPerformance;
-using CommunityToolkit.HighPerformance.Buffers;
 using ENet;
-using Steamworks.Data;
 
-namespace NFMWorld.Mad;
+namespace nfm_world.multiplayer;
 
 public class ENetMultiplayerClientTransport : BaseMultiplayerClientTransport
 {
