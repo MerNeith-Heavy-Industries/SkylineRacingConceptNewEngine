@@ -2,6 +2,7 @@
 using nfm_world_library.mad.rad;
 using nfm_world_library.util;
 using nfm_world.multiplayer;
+using nfm_world.stage;
 using nfm_world.ui;
 using nfm_world.util;
 
@@ -431,6 +432,7 @@ public class MainMenuPhase : BasePhase
         ssp.StageSelected += (sender, stage) =>
         {
             GameSparker.InRace.CurrentStage = stage;
+            GameSparker.InRace.clientStageRenderer = new ClientStageRenderer(_graphicsDevice, stage);
             GameSparker.InRace.RecreateScene();
             GameSparker.InRace.LoadStageMusic(true);
             GameSparker.SetPhase(this);
