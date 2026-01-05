@@ -73,7 +73,7 @@
     </Target>
 
     <!-- linux builds -->
-    <Target Name="CopyCustomContentLinux" AfterTargets="AfterBuild" Condition="'$(OS)' != 'Windows_NT'">
+    <Target Name="CopyCustomContentLinux" AfterTargets="AfterBuild" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
         <ItemGroup>
             <SoFiles Include="skiadriver/*.so" />
             <SoFiles Include="skiadriver/*.so.0" />
@@ -81,12 +81,27 @@
         <Copy SourceFiles="@(SoFiles)" DestinationFolder="$(OutDir)" />
     </Target>
 
-    <Target Name="CopyCustomContentLinux_Publish" AfterTargets="Publish" Condition="'$(OS)' != 'Windows_NT'">
+    <Target Name="CopyCustomContentLinux_Publish" AfterTargets="Publish" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
         <ItemGroup>
             <SoFiles Include="skiadriver/*.so" />
             <SoFiles Include="skiadriver/*.so.0" />
         </ItemGroup>
         <Copy SourceFiles="@(SoFiles)" DestinationFolder="$(PublishDir)" />
+    </Target>
+
+    <!-- mac builds -->
+    <Target Name="CopyCustomContentLinux" AfterTargets="AfterBuild" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <ItemGroup>
+            <DylibFiles Include="skiadriver/*.dylib" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DylibFiles)" DestinationFolder="$(OutDir)" />
+    </Target>
+
+    <Target Name="CopyCustomContentLinux_Publish" AfterTargets="Publish" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <ItemGroup>
+            <DylibFiles Include="skiadriver/*.dylib" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DylibFiles)" DestinationFolder="$(PublishDir)" />
     </Target>
     
     <!-- Run mgfxc if on Windows -->
@@ -167,8 +182,8 @@
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
         <ItemGroup>
-            <SoFiles Include="$(OutputPath)/data/shaders/*.fxb" />
+            <ShaderFiles Include="$(OutputPath)/data/shaders/*.fxb" />
         </ItemGroup>
-        <Copy SourceFiles="@(SoFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
+        <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
     </Target>
 </Project>
