@@ -6,7 +6,6 @@ using MessagePack.Resolvers;
 using Microsoft.Xna.Framework;
 using nfm_world_library.SoftFloat;
 using nfm_world.files.demo;
-using Color = nfm_world_library.util.Color;
 
 namespace nfm_world.multiplayer.packets;
 

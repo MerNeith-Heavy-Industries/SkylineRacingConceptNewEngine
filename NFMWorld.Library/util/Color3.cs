@@ -40,11 +40,10 @@ public readonly record struct Color3(
     public static Color3 FromSpan(ReadOnlySpan<short> span)
         => new(span[0], span[1], span[2]);
 
-    public static implicit operator Color(Color3 color) => new(color.R, color.G, color.B);
     public static implicit operator ColorBGRA(Color3 color) => new(color.R, color.G, color.B, 255);
     public static explicit operator Color3(Color color) => new(color.R, color.G, color.B);
     public static explicit operator Color3(ColorBGRA color) => new(color.R, color.G, color.B);
-    public static implicit operator Microsoft.Xna.Framework.Color(Color3 color) => new(
+    public static implicit operator Color(Color3 color) => new(
         (byte)Math.Clamp(color.R, (short)0, (short)255),
         (byte)Math.Clamp(color.G, (short)0, (short)255),
         (byte)Math.Clamp(color.B, (short)0, (short)255)

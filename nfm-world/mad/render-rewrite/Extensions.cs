@@ -120,4 +120,9 @@ public static class Extensions
                 return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
         }
     }
+
+    extension(RectangleF rectangle)
+    {
+        public bool Contains(Vector2 vec) => rectangle.Contains(vec.X, vec.Y);
+    }
 }

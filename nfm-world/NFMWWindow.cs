@@ -1,3 +1,5 @@
+﻿using System.Collections.Frozen;
+using ManagedBass;
 ﻿using System.Diagnostics;
 using ImGuiNET;
 using ManagedBass;
@@ -9,7 +11,7 @@ using nfm_world_library;
 using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.skiadriver;
-using Color = nfm_world_library.util.Color;
+using nfm_world.ui.yoga;
 using Font = nfm_world.util.Font;
 using File = nfm_world_library.util.File;
 using Keys = nfm_world.util.Keys;
@@ -45,6 +47,8 @@ public class Program : Game
     private const int FrameDelay = (int) (1000 / 21.3f);
     
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
+
+    private bool _yogaInspectorEnabled = false;
 
     private static Keys TranslateKey(Microsoft.Xna.Framework.Input.Keys key)
     {
@@ -479,6 +483,11 @@ public class Program : Game
 
         if (newState.X != oldMouseState.X || newState.Y != oldMouseState.Y)
         {
+#if DEBUG
+            if (_yogaInspectorEnabled)
+                YogaDebugger.MouseMove(newState.X, newState.Y);
+#endif
+
             GameSparker.CurrentPhase.MouseMoved(newState.X, newState.Y, ImGui.GetIO().WantCaptureMouse);
         }
 
@@ -497,9 +506,20 @@ public class Program : Game
 
         var t = Stopwatch.StartNew();
         
+#if DEBUG
+        Node.__INTERNAL_YogaRootsThisFrame.Clear();
+#endif
+        
+        GameSparker.Render();
+        
         // Render based on game state
         GameSparker.CurrentPhase.Render();
         
+#if DEBUG
+        if (_yogaInspectorEnabled)
+            YogaDebugger.Render();
+#endif
+
         FPSCounter.Render();
         
         _nvg.Render();
@@ -511,7 +531,7 @@ public class Program : Game
         GameSparker.RenderImgui();
         GameSparker.CurrentPhase.RenderImgui();
         _imguiRenderer.EndLayout();
-
+        
         base.Draw(gameTime);
         _lastFrameTime = (int)t.ElapsedMilliseconds;
     }
@@ -556,6 +576,13 @@ public class Program : Game
         {
             GameSparker.KeyPressed(key);
             GameSparker.CurrentPhase.KeyPressed(key, ImGui.GetIO().WantCaptureKeyboard);
+
+#if DEBUG
+            if (key == Keys.F9)
+            {
+                _yogaInspectorEnabled = !_yogaInspectorEnabled;
+            }
+#endif
         }
         else
         {

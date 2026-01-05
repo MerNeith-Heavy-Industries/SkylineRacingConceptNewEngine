@@ -51,7 +51,7 @@ public class TextRun : Node
     public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
     public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
 
-    public override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
 

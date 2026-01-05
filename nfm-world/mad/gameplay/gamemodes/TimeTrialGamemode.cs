@@ -9,7 +9,6 @@ using nfm_world.sfx;
 using nfm_world.ui.hud;
 using nfm_world.ui.yoga;
 using nfm_world.util;
-using Color = nfm_world_library.util.Color;
 
 namespace nfm_world.gameplay.gamemodes;
 
@@ -46,9 +45,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextBlock _lapText = null!;
+    private static TextRun _lapText = null!;
 
-    private static TextBlock _timerText = null!;
+    private static TextRun _timerText = null!;
 
     private static TextRun _checkpointSplitsText = null!;
     private static TextRun _lapSplitsText = null!;
@@ -80,7 +79,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                         Text = "Lap: ",
                         Flex = 1
                     },
-                    new TextBlock()
+                    new TextRun()
                     {
                         Ref = textBlock => _lapText = textBlock,
                         StrokeColor = new Color(0, 0, 0),
@@ -106,7 +105,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                         Text = "Time: ",
                         Flex = 1
                     },
-                    new TextBlock()
+                    new TextRun()
                     {
                         Ref = textBlock => _timerText = textBlock,
                         StrokeColor = new Color(0, 0, 0),

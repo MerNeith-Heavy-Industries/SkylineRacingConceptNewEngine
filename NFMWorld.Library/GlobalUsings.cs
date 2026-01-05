@@ -8,3 +8,4 @@ global using Vector2 = Microsoft.Xna.Framework.Vector2;
 global using URandom = nfm_world_library.util.Random;
 global using LuaNET.LuaJIT;
 global using static LuaNET.LuaJIT.Lua;
+global using Color = Microsoft.Xna.Framework.Color;

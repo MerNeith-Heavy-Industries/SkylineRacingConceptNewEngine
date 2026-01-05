@@ -1,5 +1,3 @@
-﻿using Color = Microsoft.Xna.Framework.Color;
-
 namespace nfm_world.mesh;
 
 public class LineMeshHelpers

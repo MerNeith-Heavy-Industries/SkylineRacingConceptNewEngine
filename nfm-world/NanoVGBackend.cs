@@ -80,6 +80,7 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _fontSystems[FontFamily.DroidSans] = LoadFont("./data/fonts/DroidSans.ttf");
             _fontSystems[FontFamily.AdventureHollow] = LoadFont("./data/fonts/AdventureHollow.otf");
             _fontSystems[FontFamily.Adventure] = LoadFont("./data/fonts/Adventure.otf");
+            _fontSystems[FontFamily.RobotoMono] = LoadFont("./data/fonts/RobotoMono-Regular.ttf");
             _font = _fontSystems[FontFamily.DroidSans].GetFont(18);
         }
 
@@ -186,13 +187,13 @@ internal class NanoVGBackend(NvgContext context) : IBackend
 
         public void DrawStringStroke(string text, int x, int y, int effectAmount = 1)
         {
-            _context.StrokePaint(_paint);
+            _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
         public void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
-            _context.StrokePaint(_paint);
+            _context.FillPaint(_paint);
 
             float xFloat = x;
             float yFloat = y;
@@ -210,30 +211,27 @@ internal class NanoVGBackend(NvgContext context) : IBackend
         {
             if (hAlign != TextHorizontalAlignment.Left)
             {
-                x += areaWidth / 2f;
-
                 var sz = _font.MeasureString(text);
                 if (hAlign == TextHorizontalAlignment.Center)
                 {
-                    x -= sz.X / 2.0f;
+                    x += areaWidth / 2f;
+                    x -= sz.X / 2f;
                 }
                 else if (hAlign == TextHorizontalAlignment.Right)
                 {
+                    x += areaWidth;
                     x -= sz.X;
                 }
             }
             
-            if (vAlign != TextVerticalAlignment.Top)
-            {
-                y += areaHeight / 2f;
-            }
-
             if (vAlign == TextVerticalAlignment.Center)
             {
+                y += areaHeight / 2f;
                 y -= _font.LineHeight / 2.0f;
             }
             else if (vAlign == TextVerticalAlignment.Bottom)
             {
+                y += areaHeight;
                 y -= _font.LineHeight;
             }
         }
