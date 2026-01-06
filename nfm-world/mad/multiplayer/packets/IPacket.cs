@@ -24,6 +24,7 @@ using nfm_world.multiplayer;
 [assembly: MessagePackAssumedFormattable(typeof(List<DemoEntry>))]
 [assembly: MessagePackAssumedFormattable(typeof(f64AngleSingle))]
 [assembly: MessagePackAssumedFormattable(typeof(f64Euler))]
+[assembly: MessagePackAssumedFormattable(typeof(InlineArray4<fix64>))]
 
 namespace nfm_world.multiplayer.packets;
 
