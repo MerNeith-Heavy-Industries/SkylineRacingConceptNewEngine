@@ -344,10 +344,11 @@ jobs:
           # Create output directory for universal binary
           mkdir -p ./publish/osx-universal
           
-          # Copy all files from x64 build (these will work for both architectures)
+          # Copy all files from x64 build (includes all data files, libraries, etc.)
           cp -r ./publish/osx-x64/* ./publish/osx-universal/
           
           # Create universal binary using lipo for the main executable
+          # This overwrites the x64-only NFMWorld executable with a universal one
           lipo -create -output ./publish/osx-universal/NFMWorld \
             ./publish/osx-x64/NFMWorld \
             ./publish/osx-arm64/NFMWorld
