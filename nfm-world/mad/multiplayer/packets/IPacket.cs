@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using MessagePack;
 using MessagePack.Formatters;
@@ -6,6 +7,23 @@ using MessagePack.Resolvers;
 using Microsoft.Xna.Framework;
 using nfm_world_library.SoftFloat;
 using nfm_world.files.demo;
+using nfm_world.multiplayer;
+
+[assembly: MessagePackAssumedFormattable(typeof(PlayerState))]
+[assembly: MessagePackAssumedFormattable(typeof(Vector2))]
+[assembly: MessagePackAssumedFormattable(typeof(Vector3))]
+[assembly: MessagePackAssumedFormattable(typeof(Vector4))]
+[assembly: MessagePackAssumedFormattable(typeof(Quaternion))]
+[assembly: MessagePackAssumedFormattable(typeof(Matrix))]
+[assembly: MessagePackAssumedFormattable(typeof(Color))]
+[assembly: MessagePackAssumedFormattable(typeof(Color3))]
+[assembly: MessagePackAssumedFormattable(typeof(AngleSingle))]
+[assembly: MessagePackAssumedFormattable(typeof(fix64))]
+[assembly: MessagePackAssumedFormattable(typeof(f64Vector3))]
+[assembly: MessagePackAssumedFormattable(typeof(DemoEntry))]
+[assembly: MessagePackAssumedFormattable(typeof(List<DemoEntry>))]
+[assembly: MessagePackAssumedFormattable(typeof(f64AngleSingle))]
+[assembly: MessagePackAssumedFormattable(typeof(f64Euler))]
 
 namespace nfm_world.multiplayer.packets;
 
@@ -31,6 +49,7 @@ public static class MsgPackHelpers
             new UnsafeUnmanagedStructListFormatter<DemoEntry>(112),
             new UnsafeUnmanagedStructFormatter<f64AngleSingle>(113),
             new UnsafeUnmanagedStructFormatter<f64Euler>(114),
+            new UnsafeUnmanagedStructFormatter<InlineArray4<fix64>>(115),
         ], [
             StandardResolver.Instance,
             MsgPackResolver.Instance
