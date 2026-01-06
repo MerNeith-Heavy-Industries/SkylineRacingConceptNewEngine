@@ -250,11 +250,6 @@ jobs:
   build-macos:
     needs: prepare
     runs-on: macos-latest
-    strategy:
-      matrix:
-        rid:
-          - osx-x64
-          - osx-arm64
 
     steps:
       - name: Checkout code
@@ -330,33 +325,22 @@ jobs:
           echo "semantic_version=${SEMANTIC_VERSION}" >> $GITHUB_OUTPUT
           echo "info_version=${INFO_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Publish ${{ matrix.rid }}
+      - name: Publish universal macOS binary
         run: |
-          RID="${{ matrix.rid }}"
-          PUBLISH_RID="$RID"
-          EXTRA_ARGS=""
-          
-          # For v3 variants, use base RID for publishing and add IlcInstructionSet
-          if [[ "$RID" == *-v3 ]]; then
-            PUBLISH_RID="${RID%-v3}"
-            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
-          fi
-          
           dotnet publish nfm-world/NFMWorld.csproj \
             -c Release \
-            -r $PUBLISH_RID \
             --self-contained \
             -p:PublishAot=true \
+            -p:RuntimeIdentifiers="osx-x64;osx-arm64" \
             -p:Version="${{ steps.version.outputs.semantic_version }}" \
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
-            $EXTRA_ARGS \
-            -o ./publish/${{ matrix.rid }}
+            -o ./publish/osx-universal
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nfm-world-${{ matrix.rid }}
-          path: ./publish/${{ matrix.rid }}/
+          name: nfm-world-osx-universal
+          path: ./publish/osx-universal/
 
   release:
     needs: [prepare, build-windows, build-linux, build-macos]
