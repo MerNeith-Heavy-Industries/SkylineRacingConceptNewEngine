@@ -325,16 +325,35 @@ jobs:
           echo "semantic_version=${SEMANTIC_VERSION}" >> $GITHUB_OUTPUT
           echo "info_version=${INFO_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Publish universal macOS binary
+      - name: Publish macOS x64 and arm64 binaries
         run: |
-          dotnet publish nfm-world/NFMWorld.csproj \
-            -c Release \
-            --self-contained \
-            -p:PublishAot=true \
-            -p:RuntimeIdentifiers="osx-x64;osx-arm64" \
-            -p:Version="${{ steps.version.outputs.semantic_version }}" \
-            -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
-            -o ./publish/osx-universal
+          # Build for both architectures separately (NativeAOT doesn't support multi-RID publishing)
+          for RID in osx-x64 osx-arm64; do
+            dotnet publish nfm-world/NFMWorld.csproj \
+              -c Release \
+              --self-contained \
+              -p:PublishAot=true \
+              -r $RID \
+              -p:Version="${{ steps.version.outputs.semantic_version }}" \
+              -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
+              -o ./publish/$RID
+          done
+
+      - name: Create universal binary
+        run: |
+          # Create output directory for universal binary
+          mkdir -p ./publish/osx-universal
+          
+          # Copy all files from x64 build (these will work for both architectures)
+          cp -r ./publish/osx-x64/* ./publish/osx-universal/
+          
+          # Create universal binary using lipo for the main executable
+          lipo -create -output ./publish/osx-universal/NFMWorld \
+            ./publish/osx-x64/NFMWorld \
+            ./publish/osx-arm64/NFMWorld
+          
+          # Verify the universal binary was created correctly
+          lipo -info ./publish/osx-universal/NFMWorld
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
