@@ -11,6 +11,20 @@ internal class RadicalMusic : IRadicalMusic
 {
     private bool _readable;
     private readonly int _music;
+    
+#if USE_BASS
+    private static int CreateHandle(ReadOnlySpan<byte> data, string filePath)
+    {
+        var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+        return extension switch
+        {
+            ".mp3" or ".ogg" or ".wav" or ".aiff" => BassEx.CreateStream(data, BassFlags.Loop | BassFlags.Decode),
+            ".opus" => BassEx.OpusCreateStream(data, BassFlags.Loop | BassFlags.Decode),
+            _ => BassEx.MusicLoad(data, BassFlags.Loop | BassFlags.Decode)
+        };
+    }
+#endif
 
     public RadicalMusic(File file, double tempomul)
     {
@@ -18,40 +32,31 @@ internal class RadicalMusic : IRadicalMusic
         try
         {
             using var fileStream = System.IO.File.OpenRead(file.Path);
-            using var resultStream = new MemoryStream();
 
-            if(file.Path.EndsWith("mp3"))
-            {
-                byte[] f = System.IO.File.ReadAllBytes(file.Path);
-
-                if ((_music = Bass.CreateStream(f, 0, f.Length, BassFlags.Loop | BassFlags.Decode)) == 0)
-                {
-                    // it ain't playable
-                    throw new Exception(SoundClip.GetBassError(Bass.LastError));
-                }  
-            } else if(file.Path.EndsWith("zipo")
-                || file.Path.EndsWith("radq")
-                || file.Path.EndsWith("zip"))
+            if(file.Path.EndsWith("zipo") || file.Path.EndsWith("radq") || file.Path.EndsWith("zip"))
             {
                 using var zipStream = new ZipArchive(fileStream, ZipArchiveMode.Read);
+                using var resultStream = new MemoryStream();
 
-                zipStream.Entries.First().Open().CopyTo(resultStream);
-                var arr = resultStream.ToArray();
+                var entry = zipStream.Entries.First();
+                entry.Open().CopyTo(resultStream);
+                var arr = resultStream.GetBuffer().AsSpan(0, (int)resultStream.Length);
 
-                if ((_music = Bass.MusicLoad(arr, 0, arr.Length, BassFlags.Loop | BassFlags.Decode)) == 0)
+                if ((_music = CreateHandle(arr, entry.FullName)) == 0)
                 {
                     // it ain't playable
                     throw new Exception(SoundClip.GetBassError(Bass.LastError));
-                }  
-            } else
+                }
+            }
+            else
             {
                 byte[] f = System.IO.File.ReadAllBytes(file.Path);
 
-                if ((_music = Bass.MusicLoad(f, 0, f.Length, BassFlags.Loop | BassFlags.Decode)) == 0)
+                if ((_music = CreateHandle(f, file.Path)) == 0)
                 {
                     // it ain't playable
                     throw new Exception(SoundClip.GetBassError(Bass.LastError));
-                }  
+                }
             }
 
             Bass.Configure(Configuration.PlaybackBufferLength, 1000);
@@ -59,9 +64,10 @@ internal class RadicalMusic : IRadicalMusic
             Bass.ChannelSetAttribute(_music, ChannelAttribute.Tempo, tempomul);
 
             _readable = true;
-        } catch(Exception e)
+        }
+        catch(Exception e)
         {
-            GameSparker.Writer.WriteLine("Error loading music " + file.Path + ": " + e.ToString());
+            GameSparker.Writer.WriteLine($"Error loading music {file.Path}: {e}");
         }
 #endif
     }
