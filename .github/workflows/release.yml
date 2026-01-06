@@ -254,7 +254,6 @@ jobs:
       matrix:
         rid:
           - osx-x64
-          - osx-x64-v3
           - osx-arm64
 
     steps:
