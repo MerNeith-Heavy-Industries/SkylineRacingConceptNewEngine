@@ -50,6 +50,11 @@ public class SavedTimeTrial
         return null;
     }
 
+    public static SavedTimeTrial Load(ReadOnlyMemory<byte> data)
+    {
+        return MessagePackSerializer.Deserialize<SavedTimeTrial>(data, MsgPackHelpers.Options);
+    }
+
     public void Save()
     {
         if (!Directory.Exists(GetDirName(CarName, StageName)))

@@ -1,0 +1,35 @@
+﻿using nfm_world.files;
+
+namespace nfm_world_library.backend.gamemodes;
+
+public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues, SavedTimeTrial timeTrial)
+    : TimeTrialGamemode(gamemodeParameters, raceValues)
+{
+    private int _tick = 0;
+    public override void Reset()
+    {
+        base.Reset();
+        _tick = 0;
+    }
+
+    protected override void TimeTrialInRace()
+    {
+        carsInRace[playerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
+        base.TimeTrialInRace();
+        _tick++;
+    }
+
+    public int? SimulateToCompletion(int tickLimit = 100_000_000)
+    {
+        while (_currentState != TimeTrialState.Finished)
+        {
+            GameTick();
+            if (_tick > tickLimit)
+            {
+                return null;
+            }
+        }
+
+        return _tick;
+    }
+}

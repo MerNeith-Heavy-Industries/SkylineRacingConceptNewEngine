@@ -1,9 +1,12 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using CommunityToolkit.HighPerformance;
 using FixedMathSharp.Utility;
 using nfm_world_library.SoftFloat;
 using nfm_world_library.util;
+using Steamworks;
+using Steamworks.Data;
 using Stride.Core.Mathematics;
 
 namespace nfm_world_library;
@@ -446,6 +449,33 @@ public static class Extensions2
             G = color.G;
             B = color.B;
             A = color.A;
+        }
+    }
+    
+    extension(Connection connection)
+    {
+        public unsafe Result SendMessage<T>(Span<T> data, SendType sendType = SendType.Reliable)
+            where T : unmanaged
+        {
+            fixed (T* ptr = data)
+                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
+        }
+
+        public unsafe Result SendMessage<T>(ReadOnlySpan<T> data, SendType sendType = SendType.Reliable)
+            where T : unmanaged
+        {
+            fixed (T* ptr = data)
+                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
+        }
+    }
+
+    extension(Encoding encoding)
+    {
+        public unsafe string GetString(byte* bytes)
+        {
+            var length = 0;
+            while (bytes[length] != 0) length++;
+            return encoding.GetString(bytes, length);
         }
     }
 }

@@ -32,7 +32,6 @@
         </EmbeddedResource>
     </ItemGroup>
   <ItemGroup>
-      <PackageReference Include="ENet-CSharp" Version="2.4.8" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
       <PackageReference Include="ManagedBass" Version="4.0.1" />
       <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
@@ -48,14 +47,6 @@
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
   </ItemGroup>
-
-    <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
-        <ProjectReference Include="..\Facepunch.Steamworks\Facepunch.Steamworks\Facepunch.Steamworks.Win64.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
-        <ProjectReference Include="..\Facepunch.Steamworks\Facepunch.Steamworks\Facepunch.Steamworks.Posix.csproj" />
-    </ItemGroup>
 
     <!-- windows builds -->
     <Target Name="CopyCustomContentWindows" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
