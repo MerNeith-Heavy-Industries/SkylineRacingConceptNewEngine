@@ -211,37 +211,119 @@ public static class BackendGameSparker
     /// <param name="args">The args</param>
     /// <returns></returns>
     [UnmanagedCallersOnly(EntryPoint = "nfmw_simulate_tt", CallConvs = [typeof(CallConvStdcall)])]
-    public static unsafe int SimulateTimeTrial(SimulateTimeTrialArgs* args)
+    public static unsafe SimulateTimeTrialResult SimulateTimeTrial(SimulateTimeTrialArgs* args)
     {
-        var simulator = BackendRaceValues.Create(
-            Encoding.UTF8.GetString(args->StageName),
-            new ReadOnlySpan<SimulateTimeTrialArgs.CarInfoUnmanaged>(args->Cars, args->CarCount)
-                .ToArray()
-                .Select(car => new BackendRaceValues.CarInit(
-                    Encoding.UTF8.GetString(car.CarName),
-                    car.StartX,
-                    car.StartZ
-                )).ToArray()
-        );
-
-        using var timeTrialMemory = new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
-
-        var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
+        try
         {
-            PlayerCarIndex = 0,
-            Players =
-            [
-                new PlayerParameters()
+            var simulator = BackendRaceValues.Create(
+                Encoding.UTF8.GetString(args->StageName),
+                new ReadOnlySpan<SimulateTimeTrialArgs.CarInfoUnmanaged>(args->Cars, args->CarCount)
+                    .ToArray()
+                    .Select(car => new BackendRaceValues.CarInit(
+                        Encoding.UTF8.GetString(car.CarName),
+                        car.StartX,
+                        car.StartZ
+                    )).ToArray()
+            );
+
+            using var timeTrialMemory =
+                new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
+
+            var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
+            {
+                PlayerCarIndex = 0,
+                Players =
+                [
+                    new PlayerParameters()
+                    {
+                        PlayerName = "Player",
+                        CarName = Encoding.UTF8.GetString(args->Cars[0].CarName),
+                        Color = new Color3(255, 0, 0),
+                        IsBot = false
+                    }
+                ]
+            }, simulator, SavedTimeTrial.Load(timeTrialMemory.Memory));
+
+            return new SimulateTimeTrialResult
+            {
+                ResultCode = gamemode.SimulateToCompletion() ?? -1,
+                HasError = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new SimulateTimeTrialResult
+            {
+                ResultCode = -1,
+                HasError = true,
+                Exception = SimulateTimeTrialResult.NativeException.FromException(ex)
+            };
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SimulateTimeTrialResult
+    {
+        [InlineArray(16384)]
+        public struct ErrorBuffer
+        {
+            public byte Data;
+            public Span<byte> AsSpan()
+            {
+                unsafe
                 {
-                    PlayerName = "Player",
-                    CarName = Encoding.UTF8.GetString(args->Cars[0].CarName),
-                    Color = new Color3(255, 0, 0),
-                    IsBot = false
+                    fixed (byte* ptr = &Data)
+                    {
+                        return new Span<byte>(ptr, 16384);
+                    }
                 }
-            ]
-        }, simulator, SavedTimeTrial.Load(timeTrialMemory.Memory));
+            }
+        }
+        [InlineArray(1024)]
+        public struct ErrorMessageBuffer
+        {
+            public byte Data;
+            public Span<byte> AsSpan()
+            {
+                unsafe
+                {
+                    fixed (byte* ptr = &Data)
+                    {
+                        return new Span<byte>(ptr, 1024);
+                    }
+                }
+            }
+        }
         
-        return gamemode.SimulateToCompletion() ?? -1;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativeException
+        {
+            public ErrorMessageBuffer TypeName;
+            public ErrorMessageBuffer Message;
+            public ErrorBuffer StackTrace;
+            
+            public static NativeException FromException(Exception ex)
+            {
+                var typeNameBytes = Encoding.UTF8.GetBytes(ex.GetType().FullName ?? "UnknownException");
+                var messageBytes = Encoding.UTF8.GetBytes(ex.Message);
+                var stackTraceBytes = Encoding.UTF8.GetBytes(ex.StackTrace ?? "");
+
+                var nativeEx = new NativeException();
+                typeNameBytes.AsSpan(0, 1024).CopyTo(nativeEx.TypeName.AsSpan());
+                messageBytes.AsSpan(0, 1024).CopyTo(nativeEx.Message.AsSpan());
+                stackTraceBytes.AsSpan(0, 16384).CopyTo(nativeEx.StackTrace.AsSpan());
+                
+                return nativeEx;
+            }
+        }
+
+        // The result code: number of ticks elapsed, or -1 on timeout or error
+        public int ResultCode;
+
+        // Whether an error occurred
+        public bool HasError;
+        // Error information
+        public NativeException Exception;
     }
 
     [StructLayout(LayoutKind.Sequential)]
