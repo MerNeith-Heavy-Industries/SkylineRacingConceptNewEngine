@@ -105,23 +105,6 @@ public static class Extensions
         }
     }
 
-    extension(Connection connection)
-    {
-        public unsafe Result SendMessage<T>(Span<T> data, SendType sendType = SendType.Reliable)
-            where T : unmanaged
-        {
-            fixed (T* ptr = data)
-                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
-        }
-
-        public unsafe Result SendMessage<T>(ReadOnlySpan<T> data, SendType sendType = SendType.Reliable)
-            where T : unmanaged
-        {
-            fixed (T* ptr = data)
-                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
-        }
-    }
-
     extension(RectangleF rectangle)
     {
         public bool Contains(Vector2 vec) => rectangle.Contains(vec.X, vec.Y);

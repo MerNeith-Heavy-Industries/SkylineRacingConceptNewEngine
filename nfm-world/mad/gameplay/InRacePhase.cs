@@ -108,7 +108,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         return gamemode switch
         {
             GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
-            GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
+            GameModes.TimeTrial => new TimeTrialClientGamemode(parameters, this),
             GameModes.Football => new FootballClientGamemode(parameters, this),
             GameModes.Racing => new RaceClientGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(gamemode), gamemode, null)

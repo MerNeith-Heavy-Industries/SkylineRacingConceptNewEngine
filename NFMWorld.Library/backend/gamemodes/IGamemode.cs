@@ -11,7 +11,12 @@ public interface IGamemode
     public UnlimitedArray<IInGameCar> carsInRace { get; }
     public BackendStage currentStage { get; }
     public int NumPlayers { get; }
+    
+    /// <summary>
+    /// Arguments: byte[] player standings indexed by player index
+    /// </summary>
     public event EventHandler<byte[]>? RaceFinished;
+
     public void Enter();
     public void Exit();
     public void GameTick();

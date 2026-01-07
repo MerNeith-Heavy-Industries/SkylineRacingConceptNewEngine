@@ -128,8 +128,8 @@ namespace nfm_world
 
         private static void DemoPlayback(DevConsole console, string[] args)
         {
-            TimeTrialGamemode.PlaybackOnReset = !TimeTrialGamemode.PlaybackOnReset;
-            console.Log("Playback set to " + TimeTrialGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
+            TimeTrialClientGamemode.PlaybackOnReset = !TimeTrialClientGamemode.PlaybackOnReset;
+            console.Log("Playback set to " + TimeTrialClientGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
             console.Log("Restart the time trial for changes to take effect.");
         }
 

@@ -1,11 +1,18 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using CommunityToolkit.HighPerformance.Buffers;
+using Maxine.Extensions;
+using nfm_world_library.backend;
+using nfm_world_library.backend.gamemodes;
 using nfm_world_library.mad;
 using nfm_world_library.mad.rad;
 using nfm_world_library.util;
+using nfm_world.files;
 
 namespace nfm_world_library;
 
-public class BackendGameSparker
+public static class BackendGameSparker
 {
     public static Dictionary<Collection, UnlimitedArray<Rad3d>> cars = new();
     public static UnlimitedArray<Rad3d> stage_parts = [];
@@ -195,5 +202,71 @@ public class BackendGameSparker
         }
         
         return "";
+    }
+
+    /// <summary>
+    /// Simulates a time trial to completion with a limit of 100M ticks. Returns the number of elapsed ticks, or -1 on
+    /// timeout.
+    /// </summary>
+    /// <param name="args">The args</param>
+    /// <returns></returns>
+    [UnmanagedCallersOnly(EntryPoint = "nfmw_simulate_tt", CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe int SimulateTimeTrial(SimulateTimeTrialArgs* args)
+    {
+        var simulator = BackendRaceValues.Create(
+            Encoding.UTF8.GetString(args->StageName),
+            new ReadOnlySpan<SimulateTimeTrialArgs.CarInfoUnmanaged>(args->Cars, args->CarCount)
+                .ToArray()
+                .Select(car => new BackendRaceValues.CarInit(
+                    Encoding.UTF8.GetString(car.CarName),
+                    car.StartX,
+                    car.StartZ
+                )).ToArray()
+        );
+
+        using var timeTrialMemory = new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
+
+        var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
+        {
+            PlayerCarIndex = 0,
+            Players =
+            [
+                new PlayerParameters()
+                {
+                    PlayerName = "Player",
+                    CarName = Encoding.UTF8.GetString(args->Cars[0].CarName),
+                    Color = new Color3(255, 0, 0),
+                    IsBot = false
+                }
+            ]
+        }, simulator, SavedTimeTrial.Load(timeTrialMemory.Memory));
+        
+        return gamemode.SimulateToCompletion() ?? -1;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct SimulateTimeTrialArgs
+    {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct CarInfoUnmanaged
+        {
+            // Pointer to UTF-8 encoded car name, null-terminated
+            public byte* CarName;
+            public int StartX;
+            public int StartZ;
+        }
+
+        // Pointer to UTF-8 encoded stage name, null-terminated
+        public byte* StageName;
+        
+        // Pointer to array of CarInfoUnmanaged
+        public CarInfoUnmanaged* Cars;
+        // Number of cars
+        public int CarCount;
+        
+        // Pointer to time trial data
+        public byte* TimeTrialData;
+        // Length of time trial data
+        public int TimeTrialDataLength;
     }
 }

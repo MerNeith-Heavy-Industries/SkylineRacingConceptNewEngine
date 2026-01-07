@@ -2,8 +2,8 @@
 
 public class BaseGamemodeParameters
 {
-    public int PlayerCarIndex { get; init; }
-    public IReadOnlyList<PlayerParameters> Players { get; init; }
+    public required int PlayerCarIndex { get; init; }
+    public required IReadOnlyList<PlayerParameters> Players { get; init; }
 }
 
 public class PlayerParameters

@@ -12,28 +12,13 @@ using nfm_world.util;
 
 namespace nfm_world.gameplay.gamemodes;
 
-public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
-    : BaseGamemode(gamemodeParameters, raceValues), IClientGamemode
+public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues)
+    : TimeTrialGamemode(gamemodeParameters, raceValues), IClientGamemode
 {
-    public override event EventHandler<byte[]>? RaceFinished;
-
-    private enum TimeTrialState
-    {
-        NotStarted,
-        Countdown,
-        InProgress,
-        Finished
-    }
-
-    private int _countdownTime = 3;
-    // Amount of ticks until we decrease countdown by 1
-    private int _innerCountdownTicks = 0;
-    private TimeTrialState _currentState = TimeTrialState.NotStarted;
-
-    private bool _writtenData;
-
     private Stopwatch _raceTimer = new Stopwatch();
 
+    private bool _writtenData;
+    
     // demo playback and recording
     private SavedTimeTrial? _bestTimeTrial = null;
     private int _tick = 0;
@@ -210,22 +195,19 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
     {
         base.Enter();
 
-        _currentState = TimeTrialState.NotStarted;
-
         Reset();
     }
 
     public override void Exit()
     {
         // Cleanup for Time Trial mode
+        base.Exit();
     }
 
     public override void Reset()
     {
         base.Reset();
 
-        _countdownTime = 4;
-        _innerCountdownTicks = 0; // Tick down immediately to "three"
         _raceTimer.Reset();
         _writtenData = false;
 
@@ -233,11 +215,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         _bestTimeTrial = null;
         _tick = 0;
 
-        carsInRace.Clear();
-        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, 0, 0, 0, true);
         carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
-        carsInRace[playerCarIndex].currentCheckpoint = 0;
-        carsInRace[playerCarIndex].currentLap = 0;
 
         // ghost
         carsInRace[playerCarIndex + 1] = new BackendCar(carsInRace[playerCarIndex], 0, false);
@@ -252,7 +230,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
         else
         {
-            carsInRace.RemoveAt(1);
+            carsInRace.RemoveAt(playerCarIndex + 1);
         }
 
         currentTimeTrial = new SavedTimeTrial(player.CarName, currentStage.Path);
@@ -267,38 +245,21 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         SetLapText(0);
         _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
 
-        _currentState = TimeTrialState.Countdown;
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
         _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
         _lastLapTime = 0;
         _lastLapTimeText.Text = "";
         _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayNone;
-
-        carsInRace[playerCarIndex].currentLap = 0;
     }
 
     public override void GameTick()
     {
         FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].Position.X:0.00}, contoz: {carsInRace[playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].Position.Y:0.00}");
-        switch (_currentState)
-        {
-            case TimeTrialState.NotStarted:
-                Reset();
-                break;
-            case TimeTrialState.Countdown:
-                CountdownTick();
-                break;
-            case TimeTrialState.InProgress:
-                TimeTrialInRace();
-                break;
-            case TimeTrialState.Finished:
-                TimeTrialFinished();
-                break;
-        }
+        base.GameTick();
     }
 
-    private void TimeTrialInRace()
+    protected override void TimeTrialInRace()
     {
         SetLapText(carsInRace[playerCarIndex].currentLap);
         SetTimeText();
@@ -316,18 +277,12 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
         }
 
         currentTimeTrial.RecordTick(carsInRace[playerCarIndex]);
-        carsInRace[playerCarIndex].Drive(currentStage);
+        
+        var lastCurrentCheckpoint = carsInRace[playerCarIndex].currentCheckpoint;
+        var lastLap = carsInRace[playerCarIndex].currentLap;
+        base.TimeTrialInRace();
 
-        if (currentStage.checkpoints.Count == 0)
-        {
-            // lol
-            return;
-        }
-
-        FixHoopHelper.HandleFixHoops(currentStage, carsInRace[playerCarIndex]);
-
-        int currentLap = carsInRace[playerCarIndex].currentLap;
-        if (CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[playerCarIndex]))
+        if (carsInRace[playerCarIndex].currentCheckpoint != lastCurrentCheckpoint)
         {
             if (_bestTimeTrial != null && currentTimeTrial.Splits.SplitTimes.Count > 0)
             {
@@ -335,23 +290,23 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
             }
 
             long currentLapSplitDiff = 0;
-            if (currentLap > 0 && _bestTimeTrial != null)
+            if (lastLap > 0 && _bestTimeTrial != null)
             {
-                currentLapSplitDiff = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap) - _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap - 1);
+                currentLapSplitDiff = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, lastLap) - _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, lastLap - 1);
             }
 
             currentTimeTrial.RecordSplit(_raceTimer.ElapsedMilliseconds);
 
-            if (currentLap != carsInRace[playerCarIndex].currentLap)
+            if (lastLap != carsInRace[playerCarIndex].currentLap)
             {
                 // lap changed
                 _lastLapSplitDiff = currentLapSplitDiff;
-                _lastLapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, currentLap);
+                _lastLapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, lastLap);
             }
 
             SfxLibrary.checkpoint?.Play();
         }
-        
+
         raceValues.clientStageRenderer.UpdateCheckpointGlow(
             carsInRace[playerCarIndex].currentCheckpoint,
             carsInRace[playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[playerCarIndex].currentLap == currentStage.nlaps - 1
@@ -359,15 +314,16 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
 
         if (carsInRace[playerCarIndex].currentLap >= currentStage.nlaps)
         {
-            _currentState = TimeTrialState.Finished;
             _raceTimer.Stop();
         }
 
         _tick++;
     }
 
-    private void TimeTrialFinished()
+    protected override void TimeTrialFinished()
     {
+        base.TimeTrialFinished();
+
         if (!_writtenData)
         {
             _writtenData = true;
@@ -376,19 +332,17 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, BaseRa
                 currentTimeTrial.Save();
             }
         }
-
-        carsInRace[playerCarIndex].Mad.Halted = true;
-        carsInRace[playerCarIndex].Drive(raceValues.CurrentStage);
     }
 
     private void CountdownTick()
     {
-        _innerCountdownTicks--;
-        if (_innerCountdownTicks <= 0)
+        var innerCountdownTicks = _innerCountdownTicks;
+        var countdownTime = _countdownTime;
+        base.CountdownTick();
+        
+        if (innerCountdownTicks < _innerCountdownTicks) // innercountdownticks reset
         {
-            _countdownTime--;
             SfxLibrary.countdown[_countdownTime].Play();
-            _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;

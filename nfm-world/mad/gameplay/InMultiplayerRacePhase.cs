@@ -64,7 +64,7 @@ public class InMultiplayerRacePhase(
             GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
             GameModes.Football => new FootballClientGamemode(parameters, this),
             GameModes.Racing => new RaceClientGamemode(parameters, this),
-            GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
+            GameModes.TimeTrial => new TimeTrialClientGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
         };
         gamemodeInstance.Enter();
