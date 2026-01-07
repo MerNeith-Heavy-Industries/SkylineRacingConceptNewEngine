@@ -18,6 +18,7 @@ public static class BackendGameSparker
     public static UnlimitedArray<Rad3d> stage_parts = [];
     public static UnlimitedArray<Rad3d> vendor_stage_parts = [];
     public static UnlimitedArray<Rad3d> user_stage_parts = [];
+    public static Dictionary<string, (int Index, Rad3d Rad)> dynamic_models = new();
     public static Rad3d error_mesh;
 
     public static readonly string[] CarRads =
@@ -166,6 +167,27 @@ public static class BackendGameSparker
             }
         }
 
+        if (Path.IsPathRooted(name))
+        {
+            if (dynamic_models.TryGetValue(name, out var dynRad))
+            {
+                return dynRad;
+            }
+            try
+            {
+                total += dynamic_models.Count;
+                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
+                {
+                    FileName = name
+                };
+                return dynamic_models[name] = (total, rad);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
         Console.WriteLine("No results for GetCar");
         return (-1, null!);
     }
@@ -185,6 +207,27 @@ public static class BackendGameSparker
                 }
 
                 total++;
+            }
+        }
+
+        if (Path.IsPathRooted(name))
+        {
+            if (dynamic_models.TryGetValue(name, out var dynRad))
+            {
+                return dynRad;
+            }
+            try
+            {
+                total += dynamic_models.Count;
+                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
+                {
+                    FileName = name
+                };
+                return dynamic_models[name] = (total, rad);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -228,7 +271,8 @@ public static class BackendGameSparker
 
             using var timeTrialMemory =
                 new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
-
+            var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
+            
             var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
             {
                 PlayerCarIndex = 0,
@@ -242,11 +286,12 @@ public static class BackendGameSparker
                         IsBot = false
                     }
                 ]
-            }, simulator, SavedTimeTrial.Load(timeTrialMemory.Memory));
+            }, simulator, timeTrial);
 
             return new SimulateTimeTrialResult
             {
-                ResultCode = gamemode.SimulateToCompletion() ?? -1,
+                ElapsedTicks = gamemode.SimulateToCompletion() ?? -1,
+                ExpectedTicks = timeTrial.DemoData.Ticks.Count,
                 HasError = false
             };
         }
@@ -254,7 +299,8 @@ public static class BackendGameSparker
         {
             return new SimulateTimeTrialResult
             {
-                ResultCode = -1,
+                ElapsedTicks = -1,
+                ExpectedTicks = -1,
                 HasError = true,
                 Exception = SimulateTimeTrialResult.NativeException.FromException(ex)
             };
@@ -318,10 +364,12 @@ public static class BackendGameSparker
         }
 
         // The result code: number of ticks elapsed, or -1 on timeout or error
-        public int ResultCode;
+        public required int ElapsedTicks;
+
+        public required int ExpectedTicks;
 
         // Whether an error occurred
-        public bool HasError;
+        public required bool HasError;
         // Error information
         public NativeException Exception;
     }

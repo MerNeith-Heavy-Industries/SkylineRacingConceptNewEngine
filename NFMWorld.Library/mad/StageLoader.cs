@@ -89,7 +89,7 @@ public class StageLoader
     {
         Path = stageName;
         //var customStagePath = "stages/" + CheckPoints.Stage + ".txt";
-        var customStagePath = "data/stages/" + stageName + ".txt";
+        var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
         var line = "";
         int lineNumber = 0;
         try
