@@ -365,7 +365,7 @@ public static class BackendGameSparker
 
         // The result code: number of ticks elapsed, or -1 on timeout or error
         public required int ElapsedTicks;
-
+        // Number of input ticks in the replay
         public required int ExpectedTicks;
 
         // Whether an error occurred
