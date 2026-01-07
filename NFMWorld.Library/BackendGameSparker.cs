@@ -246,6 +246,119 @@ public static class BackendGameSparker
         
         return "";
     }
+    
+    [UnmanagedCallersOnly(EntryPoint = "nfmw_get_tt_info", CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe GetTTInfoResult GetTTInfo(GetTTInfoArgs* args)
+    {
+        try
+        {
+            using var timeTrialMemory =
+                new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
+            var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
+            if (timeTrial == null)
+            {
+                throw new InvalidOperationException("Failed to load time trial data");
+            }
+
+            return new GetTTInfoResult
+            {
+                CheckpointCount = timeTrial.Splits.SplitTimes.Count,
+                ReplayVersion = timeTrial.Version ?? 0,
+                BackendVersion = SavedTimeTrial.CURRENT_VERSION,
+                TickCount = timeTrial.DemoData.Ticks.Count,
+                HasError = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new GetTTInfoResult
+            {
+                CheckpointCount = -1,
+                ReplayVersion = -1,
+                BackendVersion = SavedTimeTrial.CURRENT_VERSION,
+                TickCount = -1,
+                HasError = true,
+                Exception = NativeException.FromException(ex)
+            };
+        }
+    }
+    [InlineArray(16384)]
+    public struct ErrorBuffer
+    {
+        public byte Data;
+        public Span<byte> AsSpan()
+        {
+            unsafe
+            {
+                fixed (byte* ptr = &Data)
+                {
+                    return new Span<byte>(ptr, 16384);
+                }
+            }
+        }
+    }
+    [InlineArray(1024)]
+    public struct ErrorMessageBuffer
+    {
+        public byte Data;
+        public Span<byte> AsSpan()
+        {
+            unsafe
+            {
+                fixed (byte* ptr = &Data)
+                {
+                    return new Span<byte>(ptr, 1024);
+                }
+            }
+        }
+    }
+        
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeException
+    {
+        public ErrorMessageBuffer TypeName;
+        public ErrorMessageBuffer Message;
+        public ErrorBuffer StackTrace;
+            
+        public static NativeException FromException(Exception ex)
+        {
+            var typeNameBytes = Encoding.UTF8.GetBytes(ex.GetType().FullName ?? "UnknownException");
+            var messageBytes = Encoding.UTF8.GetBytes(ex.Message);
+            var stackTraceBytes = Encoding.UTF8.GetBytes(ex.StackTrace ?? "");
+
+            var nativeEx = new NativeException();
+            typeNameBytes.AsSpan(0, Math.Min(typeNameBytes.Length, 1024)).CopyTo(nativeEx.TypeName.AsSpan());
+            messageBytes.AsSpan(0, Math.Min(messageBytes.Length, 1024)).CopyTo(nativeEx.Message.AsSpan());
+            stackTraceBytes.AsSpan(0, Math.Min(stackTraceBytes.Length, 16384)).CopyTo(nativeEx.StackTrace.AsSpan());
+                
+            return nativeEx;
+        }
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct GetTTInfoArgs
+    {
+        // Pointer to time trial data
+        public byte* TimeTrialData;
+        // Length of time trial data
+        public int TimeTrialDataLength;
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GetTTInfoResult
+    {
+        // Number of checkpoints in the time trial
+        public required int CheckpointCount;
+        public required int TickCount;
+        public required int ReplayVersion;
+        public required int BackendVersion;
+
+        // Whether an error occurred
+        public required bool HasError;
+        // Error information
+        public NativeException Exception;
+    }
 
     /// <summary>
     /// Simulates a time trial to completion with a limit of 100M ticks. Returns the number of elapsed ticks, or -1 on
@@ -302,7 +415,7 @@ public static class BackendGameSparker
                 ElapsedTicks = -1,
                 ExpectedTicks = -1,
                 HasError = true,
-                Exception = SimulateTimeTrialResult.NativeException.FromException(ex)
+                Exception = NativeException.FromException(ex)
             };
         }
     }
@@ -310,59 +423,6 @@ public static class BackendGameSparker
     [StructLayout(LayoutKind.Sequential)]
     public struct SimulateTimeTrialResult
     {
-        [InlineArray(16384)]
-        public struct ErrorBuffer
-        {
-            public byte Data;
-            public Span<byte> AsSpan()
-            {
-                unsafe
-                {
-                    fixed (byte* ptr = &Data)
-                    {
-                        return new Span<byte>(ptr, 16384);
-                    }
-                }
-            }
-        }
-        [InlineArray(1024)]
-        public struct ErrorMessageBuffer
-        {
-            public byte Data;
-            public Span<byte> AsSpan()
-            {
-                unsafe
-                {
-                    fixed (byte* ptr = &Data)
-                    {
-                        return new Span<byte>(ptr, 1024);
-                    }
-                }
-            }
-        }
-        
-        [StructLayout(LayoutKind.Sequential)]
-        public struct NativeException
-        {
-            public ErrorMessageBuffer TypeName;
-            public ErrorMessageBuffer Message;
-            public ErrorBuffer StackTrace;
-            
-            public static NativeException FromException(Exception ex)
-            {
-                var typeNameBytes = Encoding.UTF8.GetBytes(ex.GetType().FullName ?? "UnknownException");
-                var messageBytes = Encoding.UTF8.GetBytes(ex.Message);
-                var stackTraceBytes = Encoding.UTF8.GetBytes(ex.StackTrace ?? "");
-
-                var nativeEx = new NativeException();
-                typeNameBytes.AsSpan(0, Math.Min(typeNameBytes.Length, 1024)).CopyTo(nativeEx.TypeName.AsSpan());
-                messageBytes.AsSpan(0, Math.Min(messageBytes.Length, 1024)).CopyTo(nativeEx.Message.AsSpan());
-                stackTraceBytes.AsSpan(0, Math.Min(stackTraceBytes.Length, 16384)).CopyTo(nativeEx.StackTrace.AsSpan());
-                
-                return nativeEx;
-            }
-        }
-
         // The result code: number of ticks elapsed, or -1 on timeout or error
         public required int ElapsedTicks;
         // Number of input ticks in the replay
