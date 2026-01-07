@@ -309,9 +309,9 @@ public static class BackendGameSparker
                 var stackTraceBytes = Encoding.UTF8.GetBytes(ex.StackTrace ?? "");
 
                 var nativeEx = new NativeException();
-                typeNameBytes.AsSpan(0, 1024).CopyTo(nativeEx.TypeName.AsSpan());
-                messageBytes.AsSpan(0, 1024).CopyTo(nativeEx.Message.AsSpan());
-                stackTraceBytes.AsSpan(0, 16384).CopyTo(nativeEx.StackTrace.AsSpan());
+                typeNameBytes.AsSpan(0, Math.Min(typeNameBytes.Length, 1024)).CopyTo(nativeEx.TypeName.AsSpan());
+                messageBytes.AsSpan(0, Math.Min(messageBytes.Length, 1024)).CopyTo(nativeEx.Message.AsSpan());
+                stackTraceBytes.AsSpan(0, Math.Min(stackTraceBytes.Length, 16384)).CopyTo(nativeEx.StackTrace.AsSpan());
                 
                 return nativeEx;
             }
