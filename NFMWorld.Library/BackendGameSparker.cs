@@ -371,14 +371,14 @@ public static class BackendGameSparker
     {
         try
         {
-            var simulator = BackendRaceValues.Create(
-                Encoding.UTF8.GetString(args->StageName)
-            );
-
             using var timeTrialMemory =
                 new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
             var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
-            
+
+            var simulator = timeTrial.StageData is {} stageData
+                ? BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName), stageData)
+                : BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName));
+
             var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
             {
                 PlayerCarIndex = 0,

@@ -22,5 +22,16 @@ public class BackendRaceValues : IRaceValues
         };
     }
 
-    public readonly record struct CarInit(string CarName, int X, int Z);
+    public static IRaceValues Create(string stage, StageLoader stageData)
+    {
+        var backendStage = new BackendStage(stage, stageData);
+        var carsInRace = new UnlimitedArray<IInGameCar>();
+
+        return new BackendRaceValues
+        {
+            CurrentStage = backendStage,
+            CarsInRace = carsInRace,
+            raceState = RaceState.InProgress
+        };
+    }
 }

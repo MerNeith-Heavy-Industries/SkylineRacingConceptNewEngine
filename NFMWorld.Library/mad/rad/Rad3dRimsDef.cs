@@ -1,9 +1,11 @@
 ﻿using System.Text.Json.Serialization;
+using MessagePack;
 
 namespace nfm_world_library.mad.rad;
 
+[MessagePackObject]
 public readonly record struct Rad3dRimsDef(
-    [property: JsonPropertyName("color")] Color3 Color,
-    [property: JsonPropertyName("size")] float Size,
-    [property: JsonPropertyName("depth")] float Depth
+    [property: JsonPropertyName("color"), Key(0)] Color3 Color,
+    [property: JsonPropertyName("size"), Key(1)] float Size,
+    [property: JsonPropertyName("depth"), Key(2)] float Depth
 );

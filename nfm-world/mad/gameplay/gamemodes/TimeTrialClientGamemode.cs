@@ -233,7 +233,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             carsInRace.RemoveAt(playerCarIndex + 1);
         }
 
-        currentTimeTrial = new SavedTimeTrial(player.CarName, currentStage.Path);
+        currentTimeTrial = new SavedTimeTrial(player.CarName, currentStage.Path, currentStage.stageLoader);
         
         raceValues.clientStageRenderer.ResetCheckpointGlow();
 
@@ -334,7 +334,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
     }
 
-    private void CountdownTick()
+    protected override void CountdownTick()
     {
         var innerCountdownTicks = _innerCountdownTicks;
         var countdownTime = _countdownTime;

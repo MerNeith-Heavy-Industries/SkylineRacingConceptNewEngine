@@ -1,21 +1,23 @@
 using System.IO.Compression;
 using MessagePack;
 using nfm_world_library.mad;
+using nfm_world_library.util;
 using nfm_world.files.demo;
 using nfm_world.multiplayer.packets;
 
 namespace nfm_world.files;
 
 [MessagePackObject]
-public class SavedTimeTrial
+public partial class SavedTimeTrial
 {
-    public const int CURRENT_VERSION = 1;
+    public const int CURRENT_VERSION = 2;
     
     [Key(0)] public string CarName;
     [Key(1)] public string StageName;
     [Key(2)] public Demo DemoData;
     [Key(3)] public Splits Splits;
-    [Key(4)] public int? Version; // Defaults to 0
+    [Key(4)] public int? Version; // New in version 1, defaults to 0
+    [Key(5)] public StageLoader? StageData; // New in version 2
 
     public static string GetDirName(string carName, string stageName)
     {
@@ -27,29 +29,44 @@ public class SavedTimeTrial
         return "data/tts/" + stageName + "/" + carName + ".timetrial";
     }
 
-    public SavedTimeTrial(string carName, string stageName)
+    [SerializationConstructor]
+    private SavedTimeTrial(string carName, string stageName)
     {
         CarName = carName;
         StageName = stageName;
 
         DemoData = new Demo()
         {
-            Ticks = new List<DemoEntry>()
+            Ticks = []
         };
         Splits = new Splits()
         {
-            SplitTimes = new List<long>()
+            SplitTimes = []
         };
+        Version = CURRENT_VERSION;
+    }
+
+    public SavedTimeTrial(string carName, string stageName, StageLoader stageData) : this(carName, stageName)
+    {
+        StageData = stageData;
     }
 
     public static SavedTimeTrial? Load(string carName, string stageName)
     {
-        if (System.IO.File.Exists(GetPathName(carName, stageName)))
+        try
         {
-            using var fileStream = System.IO.File.OpenRead(GetPathName(carName, stageName));
-            using var compressedStream = new DeflateStream(fileStream, CompressionMode.Decompress);
-            return MessagePackSerializer.Deserialize<SavedTimeTrial>(compressedStream, MsgPackHelpers.Options);
+            if (System.IO.File.Exists(GetPathName(carName, stageName)))
+            {
+                using var fileStream = System.IO.File.OpenRead(GetPathName(carName, stageName));
+                using var compressedStream = new DeflateStream(fileStream, CompressionMode.Decompress);
+                return MessagePackSerializer.Deserialize<SavedTimeTrial>(compressedStream, MsgPackHelpers.Options);
+            }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load SavedTimeTrial for {carName} on {stageName}: {ex}");
+        }
+
         return null;
     }
 

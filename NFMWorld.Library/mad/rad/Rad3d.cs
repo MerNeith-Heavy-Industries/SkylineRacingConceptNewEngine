@@ -1,20 +1,23 @@
 ﻿using System.Text.Json.Serialization;
+using MessagePack;
 
 namespace nfm_world_library.mad.rad;
 
+[MessagePackObject]
+[method: SerializationConstructor]
 public record Rad3d(
-    [property: JsonPropertyName("colors")] Color3[] Colors,
-    [property: JsonPropertyName("stats")] CarStats Stats,
-    [property: JsonPropertyName("wheels")] Rad3dWheelDef[] Wheels,
-    [property: JsonPropertyName("rims")] Rad3dRimsDef? Rims,
-    [property: JsonPropertyName("boxes")] Rad3dBoxDef[] Boxes,
-    [property: JsonPropertyName("polys")] Rad3dPoly[] Polys,
-    [property: JsonPropertyName("shadow")] bool CastsShadow,
-    [property: JsonPropertyName("atp")] Vector2[] Atp,
-    [property: JsonPropertyName("fileName")] string FileName = "hogan rewish"
+    [property: JsonPropertyName("colors"), Key(0)] Color3[] Colors,
+    [property: JsonPropertyName("stats"), Key(1)] CarStats Stats,
+    [property: JsonPropertyName("wheels"), Key(2)] Rad3dWheelDef[] Wheels,
+    [property: JsonPropertyName("rims"), Key(3)] Rad3dRimsDef? Rims,
+    [property: JsonPropertyName("boxes"), Key(4)] Rad3dBoxDef[] Boxes,
+    [property: JsonPropertyName("polys"), Key(5)] Rad3dPoly[] Polys,
+    [property: JsonPropertyName("shadow"), Key(6)] bool CastsShadow,
+    [property: JsonPropertyName("atp"), Key(7)] Vector2[] Atp,
+    [property: JsonPropertyName("fileName"), Key(8)] string FileName = "hogan rewish"
 )
 {
-    public int MaxRadius { get; } = CalculateMaxRadius(Polys);
+    [IgnoreMember] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
 
     private static int CalculateMaxRadius(Rad3dPoly[] polys)
     {
