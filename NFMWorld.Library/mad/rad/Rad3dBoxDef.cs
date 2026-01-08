@@ -1,15 +1,17 @@
 ﻿using System.Text.Json.Serialization;
+using MessagePack;
 using nfm_world_library.SoftFloat;
 
 namespace nfm_world_library.mad.rad;
 
+[MessagePackObject]
 public readonly record struct Rad3dBoxDef(
-    [property: JsonPropertyName("xy")] int Xy,
-    [property: JsonPropertyName("zy")] int Zy,
-    [property: JsonPropertyName("rad")] f64Vector3 Radius,
-    [property: JsonPropertyName("t")] f64Vector3 Translation,
-    [property: JsonPropertyName("skid")] int Skid,
-    [property: JsonPropertyName("damage")] int Damage,
-    [property: JsonPropertyName("notwall")] bool NotWall,
-    [property: JsonPropertyName("c")] Color3 Color
+    [property: JsonPropertyName("xy"), Key(0)] int Xy,
+    [property: JsonPropertyName("zy"), Key(1)] int Zy,
+    [property: JsonPropertyName("rad"), Key(2)] f64Vector3 Radius,
+    [property: JsonPropertyName("t"), Key(3)] f64Vector3 Translation,
+    [property: JsonPropertyName("skid"), Key(4)] int Skid,
+    [property: JsonPropertyName("damage"), Key(5)] int Damage,
+    [property: JsonPropertyName("notwall"), Key(6)] bool NotWall,
+    [property: JsonPropertyName("c"), Key(7)] Color3 Color
 );

@@ -34,13 +34,18 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IRaceV
         _innerCountdownTicks = 0; // Tick down immediately to "three"
         
         carsInRace.Clear();
-        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, 0, 0, 0, true);
+        carsInRace[playerCarIndex] = LoadPlayerCar(0, 0);
         carsInRace[playerCarIndex].currentCheckpoint = 0;
         carsInRace[playerCarIndex].currentLap = 0;
 
         _currentState = TimeTrialState.Countdown;
 
         carsInRace[playerCarIndex].currentLap = 0;
+    }
+
+    protected virtual BackendCar LoadPlayerCar(int x, int z)
+    {
+        return new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, 0, x, z, true);
     }
 
     public override void GameTick()

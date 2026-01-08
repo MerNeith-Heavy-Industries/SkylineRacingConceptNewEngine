@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
 using nfm_world_library.mad;
@@ -71,8 +72,7 @@ public class GameSparker
     
     private static MicroStopwatch timer;
 
-    public static Dictionary<Rad3d, CarMesh> car_meshes = [];
-    public static Dictionary<Rad3d, Mesh> stage_part_meshes = [];
+    public static Dictionary<Rad3d, Mesh> stage_part_meshes = new(Rad3d.VisualEqualityComparer.Instance);
     public static Mesh error_mesh;
     
     public static bool devRenderTrackers = false;
@@ -170,22 +170,6 @@ public class GameSparker
         _game = game;
         _graphicsDevice = game.GraphicsDevice;
 
-        foreach (var (collection, cars) in BackendGameSparker.cars)
-        {
-            foreach (var car in cars)
-            {
-                try
-                {
-                    var carMesh = new CarMesh(_graphicsDevice, car);
-                    car_meshes[car] = carMesh;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error creating mesh for car '{car.FileName}': {ex.Message}\n{ex.StackTrace}");
-                }
-            }
-        }
-        
         foreach (var stageParts in (Span<UnlimitedArray<Rad3d>>)[BackendGameSparker.stage_parts, BackendGameSparker.vendor_stage_parts, BackendGameSparker.user_stage_parts])
         foreach (var stagePart in stageParts)
         {
@@ -219,6 +203,17 @@ public class GameSparker
         ModelEditor = new ModelEditorPhase(_graphicsDevice);
         
         StageEditor = new StageEditorPhase(_graphicsDevice);
+    }
+    
+    public static Mesh GetStagePartMesh(Rad3d stagePart)
+    {
+        ref var mesh = ref CollectionsMarshal.GetValueRefOrAddDefault(stage_part_meshes, stagePart, out var exists);
+        if (exists)
+        {
+            return mesh!;
+        }
+
+        return mesh = new Mesh(_graphicsDevice, stagePart);
     }
 
     public static void StartModelViewer()

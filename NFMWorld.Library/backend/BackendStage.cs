@@ -95,11 +95,8 @@ public class BackendStage : IStage
             {
                 case PiecePlacementType.CollisionObject:
                 {
-                    if (!TryGetPieceToPlace(piece.Set.HasName ? piece.Set.Name : piece.Set.Id.ToString()!,
-                            out var mesh)) continue;
-
                     var obj = new StageObject(
-                        mesh,
+                        piece.Object,
                         piece.Position,
                         piece.Rotation
                     );
@@ -114,11 +111,8 @@ public class BackendStage : IStage
                 }
                 case PiecePlacementType.CheckPoint:
                 {
-                    if (!TryGetPieceToPlace(piece.Set.HasName ? piece.Set.Name : piece.Set.Id.ToString()!,
-                            out var mesh)) continue;
-
                     var obj = new StageObject(
-                        mesh,
+                        piece.Object,
                         piece.Position,
                         piece.Rotation
                     );
@@ -131,11 +125,8 @@ public class BackendStage : IStage
                 }
                 case PiecePlacementType.FixHoop:
                 {
-                    if (!TryGetPieceToPlace(piece.Set.HasName ? piece.Set.Name : piece.Set.Id.ToString()!,
-                            out var mesh)) continue;
-
                     var fix = new StageObject(
-                        mesh,
+                        piece.Object,
                         piece.Position,
                         piece.Rotation
                     );
@@ -195,33 +186,6 @@ public class BackendStage : IStage
             }
         }
         CollisionQuadTree.TrimExcess();
-    }
-
-    private static bool TryGetPieceToPlace(string setstring, out Rad3d mesh)
-    {
-        if (int.TryParse(setstring, out var setindex))
-        {
-            mesh = BackendGameSparker.stage_parts[setindex];
-            if (mesh == null!)
-            {
-                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
-                mesh = BackendGameSparker.error_mesh;
-                return true;
-            }
-        }
-        else
-        {
-            var stagePart = BackendGameSparker.GetStagePart(setstring);
-            if (stagePart.Rad == null)
-            {
-                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
-                mesh = BackendGameSparker.error_mesh;
-                return true;
-            }
-            mesh = stagePart.Rad;
-        }
-
-        return true;
     }
 
     public ITransform CreateObject(string objectName, int x, int y, int z, int r)

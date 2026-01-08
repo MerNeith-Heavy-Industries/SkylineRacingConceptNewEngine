@@ -6,42 +6,42 @@ public static class NaturalCompare
 {
     public static int CompareNatural(string strA, string strB)
     {
-        return CompareNatural(strA, strB, CultureInfo.CurrentCulture, CompareOptions.IgnoreCase);
+        return CompareNatural(strA, strB, CultureInfo.InvariantCulture, CompareOptions.IgnoreCase);
     }
 
-    public static int CompareNatural(string strA, string strB, CultureInfo culture, CompareOptions options)
+    public static int CompareNatural(ReadOnlySpan<char> strA, ReadOnlySpan<char> strB, CultureInfo culture, CompareOptions options)
     {
-        CompareInfo cmp = culture.CompareInfo;
-        int iA = 0;
-        int iB = 0;
-        int softResult = 0;
-        int softResultWeight = 0;
+        var cmp = culture.CompareInfo;
+        var iA = 0;
+        var iB = 0;
+        var softResult = 0;
+        var softResultWeight = 0;
         while (iA < strA.Length && iB < strB.Length)
         {
-            bool isDigitA = Char.IsDigit(strA[iA]);
-            bool isDigitB = Char.IsDigit(strB[iB]);
+            var isDigitA = char.IsDigit(strA[iA]);
+            var isDigitB = char.IsDigit(strB[iB]);
             if (isDigitA != isDigitB)
             {
-                return cmp.Compare(strA, iA, strB, iB, options);
+                return cmp.Compare(strA[iA..], strB[iB..], options);
             }
             else if (!isDigitA && !isDigitB)
             {
-                int jA = iA + 1;
-                int jB = iB + 1;
-                while (jA < strA.Length && !Char.IsDigit(strA[jA])) jA++;
-                while (jB < strB.Length && !Char.IsDigit(strB[jB])) jB++;
-                int cmpResult = cmp.Compare(strA, iA, jA - iA, strB, iB, jB - iB, options);
+                var jA = iA + 1;
+                var jB = iB + 1;
+                while (jA < strA.Length && !char.IsDigit(strA[jA])) jA++;
+                while (jB < strB.Length && !char.IsDigit(strB[jB])) jB++;
+                var cmpResult = cmp.Compare(strA.Slice(iA, jA - iA), strB.Slice(iB, jB - iB), options);
                 if (cmpResult != 0)
                 {
                     // Certain strings may be considered different due to "soft" differences that are
                     // ignored if more significant differences follow, e.g. a hyphen only affects the
                     // comparison if no other differences follow
-                    string sectionA = strA.Substring(iA, jA - iA);
-                    string sectionB = strB.Substring(iB, jB - iB);
-                    if (cmp.Compare(sectionA + "1", sectionB + "2", options) ==
-                        cmp.Compare(sectionA + "2", sectionB + "1", options))
+                    var sectionA = strA.Slice(iA, jA - iA);
+                    var sectionB = strB.Slice(iB, jB - iB);
+                    if (cmp.Compare([..sectionA, '1'], [..sectionB, '2'], options) ==
+                        cmp.Compare([..sectionA, '2'], [..sectionB, '1'], options))
                     {
-                        return cmp.Compare(strA, iA, strB, iB, options);
+                        return cmp.Compare(strA[iA..], strB[iB..], options);
                     }
                     else if (softResultWeight < 1)
                     {
@@ -54,19 +54,19 @@ public static class NaturalCompare
             }
             else
             {
-                char zeroA = (char)(strA[iA] - (int)Char.GetNumericValue(strA[iA]));
-                char zeroB = (char)(strB[iB] - (int)Char.GetNumericValue(strB[iB]));
-                int jA = iA;
-                int jB = iB;
+                var zeroA = (char)(strA[iA] - (int)char.GetNumericValue(strA[iA]));
+                var zeroB = (char)(strB[iB] - (int)char.GetNumericValue(strB[iB]));
+                var jA = iA;
+                var jB = iB;
                 while (jA < strA.Length && strA[jA] == zeroA) jA++;
                 while (jB < strB.Length && strB[jB] == zeroB) jB++;
-                int resultIfSameLength = 0;
+                var resultIfSameLength = 0;
                 do
                 {
-                    isDigitA = jA < strA.Length && Char.IsDigit(strA[jA]);
-                    isDigitB = jB < strB.Length && Char.IsDigit(strB[jB]);
-                    int numA = isDigitA ? (int)Char.GetNumericValue(strA[jA]) : 0;
-                    int numB = isDigitB ? (int)Char.GetNumericValue(strB[jB]) : 0;
+                    isDigitA = jA < strA.Length && char.IsDigit(strA[jA]);
+                    isDigitB = jB < strB.Length && char.IsDigit(strB[jB]);
+                    var numA = isDigitA ? (int)char.GetNumericValue(strA[jA]) : 0;
+                    var numB = isDigitB ? (int)char.GetNumericValue(strB[jB]) : 0;
                     if (isDigitA && (char)(strA[jA] - numA) != zeroA) isDigitA = false;
                     if (isDigitB && (char)(strB[jB] - numB) != zeroB) isDigitB = false;
                     if (isDigitA && isDigitB)
@@ -92,8 +92,8 @@ public static class NaturalCompare
                     // the digits differed - the first difference determines the result
                     return resultIfSameLength;
                 }
-                int lA = jA - iA;
-                int lB = jB - iB;
+                var lA = jA - iA;
+                var lB = jB - iB;
                 if (lA != lB)
                 {
                     // Both numbers are equivalent but one has more leading zeros
@@ -101,7 +101,7 @@ public static class NaturalCompare
                 }
                 else if (zeroA != zeroB && softResultWeight < 2)
                 {
-                    softResult = cmp.Compare(strA, iA, 1, strB, iB, 1, options);
+                    softResult = cmp.Compare(strA.Slice(iA, 1), strB.Slice(iB, 1), options);
                     softResultWeight = 2;
                 }
                 iA = jA;

@@ -12,6 +12,11 @@ public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParamete
         _tick = 0;
     }
 
+    protected override BackendCar LoadPlayerCar(int x, int z)
+    {
+        return new BackendCar(timeTrial.CarData ?? BackendGameSparker.GetCar(player.CarName).Rad!, 0, x, z, true);
+    }
+
     protected override void TimeTrialInRace()
     {
         carsInRace[playerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));

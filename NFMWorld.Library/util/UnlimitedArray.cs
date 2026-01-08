@@ -2,7 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Collections;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using MessagePack;
+using MessagePack.Formatters;
 
 namespace nfm_world_library.util;
 
@@ -308,5 +312,113 @@ public class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>
     public void Sort(Comparison<T> compareFunc)
     {
         _items.AsSpan(0, _size).Sort(compareFunc);
+    }
+
+    internal Span<T> GetSpan()
+    {
+        return _items.AsSpan();
+    }
+}
+
+    
+public sealed class UnlimitedArrayFormatter<T> : IMessagePackFormatter<UnlimitedArray<T>?>
+{
+    public static readonly IMessagePackFormatter Instance = new UnlimitedArrayFormatter<T>();
+
+    public void Serialize(ref MessagePackWriter writer, UnlimitedArray<T>? value, MessagePackSerializerOptions options)
+    {
+        if (value == null)
+        {
+            writer.WriteNil();
+        }
+        else
+        {
+            var formatter = options.Resolver.GetFormatterWithVerify<T>();
+
+            var c = value.Count;
+            writer.WriteArrayHeader(c);
+            for (var i = 0; i < c; i++)
+            {
+                writer.CancellationToken.ThrowIfCancellationRequested();
+                formatter.Serialize(ref writer, value[i], options);
+            }
+        }
+    }
+
+    public UnlimitedArray<T>? Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
+    {
+        if (reader.TryReadNil())
+        {
+            return null;
+        }
+
+        var formatter = options.Resolver.GetFormatterWithVerify<T>();
+
+        var len = reader.ReadArrayHeader();
+        var list = new UnlimitedArray<T>(len);
+        options.Security.DepthStep(ref reader);
+        try
+        {
+            var span = list.GetSpan();
+            for (int i = 0; i < len; i++)
+            {
+                reader.CancellationToken.ThrowIfCancellationRequested();
+                span[i] = formatter.Deserialize(ref reader, options);
+            }
+        }
+        finally
+        {
+            reader.Depth--;
+        }
+
+        return list;
+    }
+}
+
+public sealed class UnlimitedArrayResolver : IFormatterResolver
+{
+    /// <summary>
+    /// The singleton instance that can be used.
+    /// </summary>
+    public static readonly UnlimitedArrayResolver Instance = new();
+
+    private UnlimitedArrayResolver()
+    {
+    }
+
+    public IMessagePackFormatter<T>? GetFormatter<T>()
+    {
+        return FormatterCache<T>.Formatter;
+    }
+
+    private static class FormatterCache<T>
+    {
+        public static readonly IMessagePackFormatter<T>? Formatter;
+
+        static FormatterCache()
+        {
+            Formatter = (IMessagePackFormatter<T>?)Helper.GetFormatter(typeof(T));
+        }
+    }
+
+    private static class Helper
+    {
+        public static object? GetFormatter(Type type)
+        {
+            if (type.IsGenericType)
+            {
+                var genericType = type.GetGenericTypeDefinition();
+
+                if (genericType == typeof(UnlimitedArray<>))
+                    return CreateInstance(typeof(UnlimitedArrayFormatter<>), type.GenericTypeArguments);
+            }
+            
+            return null;
+        }
+
+        private static object? CreateInstance(Type genericType, Type[] genericTypeArguments, params object?[] arguments)
+        {
+            return Activator.CreateInstance(genericType.MakeGenericType(genericTypeArguments), arguments);
+        }
     }
 }
