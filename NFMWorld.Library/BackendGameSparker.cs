@@ -396,7 +396,7 @@ public static class BackendGameSparker
 
             return new SimulateTimeTrialResult
             {
-                ElapsedTicks = gamemode.SimulateToCompletion() ?? -1,
+                ElapsedTicks = gamemode.SimulateToCompletion(timeTrial.DemoData.Ticks.Count + 500) ?? -1,
                 ExpectedTicks = timeTrial.DemoData.Ticks.Count,
                 HasError = false
             };
