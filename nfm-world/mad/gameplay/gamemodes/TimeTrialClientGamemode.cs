@@ -218,22 +218,19 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         carsInRace[playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
 
         // ghost
-        carsInRace[playerCarIndex + 1] = new BackendCar(carsInRace[playerCarIndex], 0, false);
-        raceValues.GetClientCar(playerCarIndex + 1)!.Sfx!.Mute = true;
-
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(player.CarName, currentStage.Path);
         if (bestTimeDemo != null && PlaybackOnReset)
         {
             _bestTimeTrial = bestTimeDemo;
+            carsInRace[playerCarIndex + 1] = bestTimeDemo.CarData != null
+                ? new BackendCar(bestTimeDemo.CarData, 0, 0, 0, false)
+                : new BackendCar(carsInRace[playerCarIndex], 0, false);
+            raceValues.GetClientCar(playerCarIndex + 1)!.Sfx!.Mute = true;
             raceValues.GetClientCar(playerCarIndex + 1).AlphaOverride = 0.2f;
             carsInRace[playerCarIndex + 1].currentLap = 0;
         }
-        else
-        {
-            carsInRace.RemoveAt(playerCarIndex + 1);
-        }
 
-        currentTimeTrial = new SavedTimeTrial(player.CarName, currentStage.Path, currentStage.stageLoader);
+        currentTimeTrial = new SavedTimeTrial(player.CarName, currentStage.Path, currentStage.stageLoader, carsInRace[playerCarIndex].Rad);
         
         raceValues.clientStageRenderer.ResetCheckpointGlow();
 

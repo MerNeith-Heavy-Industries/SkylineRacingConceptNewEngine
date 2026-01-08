@@ -39,34 +39,36 @@ namespace nfm_world_library.util;
 
 public static class MsgPackHelpers
 {
-    public static MessagePackSerializerOptions Options { get; } = MessagePackSerializerOptions.Standard
+    private static readonly IFormatterResolver CompositeResolver = MessagePack.Resolvers.CompositeResolver.Create([
+        new UnsafeUnmanagedStructFormatter<PlayerState>(100),
+        new UnsafeUnmanagedStructFormatter<Vector2>(101),
+        new UnsafeUnmanagedStructFormatter<Vector3>(102),
+        new UnsafeUnmanagedStructFormatter<Vector4>(103),
+        new UnsafeUnmanagedStructFormatter<Quaternion>(104),
+        new UnsafeUnmanagedStructFormatter<Matrix>(105),
+        new UnsafeUnmanagedStructFormatter<Color>(106),
+        new UnsafeUnmanagedStructFormatter<Color3>(107),
+        new UnsafeUnmanagedStructFormatter<AngleSingle>(108),
+        new UnsafeUnmanagedStructFormatter<fix64>(109),
+        new UnsafeUnmanagedStructFormatter<f64Vector3>(110),
+        new UnsafeUnmanagedStructFormatter<DemoEntry>(111),
+        new UnsafeUnmanagedStructListFormatter<DemoEntry>(112),
+        new UnsafeUnmanagedStructFormatter<f64AngleSingle>(113),
+        new UnsafeUnmanagedStructFormatter<f64Euler>(114),
+        new UnsafeUnmanagedStructFormatter<InlineArray4<fix64>>(115), // keep for time trial format compatibility
+        new UnsafeUnmanagedStructFormatter<Int3>(116),
+        InlineArray4Formatter<int>.Instance,
+        InlineArray5Formatter<int>.Instance,
+        UnlimitedArrayFormatter<PiecePlacement>.Instance,
+        UnlimitedArrayFormatter<Rad3dBoxDef>.Instance,
+    ], [
+        StandardResolver.Instance,
+        InlineArrayResolver.Instance,
+        UnlimitedArrayResolver.Instance,
+        MsgPackResolver.Instance,
+    ]);
+
+    public static MessagePackSerializerOptions Options => MessagePackSerializerOptions.Standard
         .WithSecurity(MessagePackSecurity.UntrustedData)
-        .WithResolver(CompositeResolver.Create([
-            new UnsafeUnmanagedStructFormatter<PlayerState>(100),
-            new UnsafeUnmanagedStructFormatter<Vector2>(101),
-            new UnsafeUnmanagedStructFormatter<Vector3>(102),
-            new UnsafeUnmanagedStructFormatter<Vector4>(103),
-            new UnsafeUnmanagedStructFormatter<Quaternion>(104),
-            new UnsafeUnmanagedStructFormatter<Matrix>(105),
-            new UnsafeUnmanagedStructFormatter<Color>(106),
-            new UnsafeUnmanagedStructFormatter<Color3>(107),
-            new UnsafeUnmanagedStructFormatter<AngleSingle>(108),
-            new UnsafeUnmanagedStructFormatter<fix64>(109),
-            new UnsafeUnmanagedStructFormatter<f64Vector3>(110),
-            new UnsafeUnmanagedStructFormatter<DemoEntry>(111),
-            new UnsafeUnmanagedStructListFormatter<DemoEntry>(112),
-            new UnsafeUnmanagedStructFormatter<f64AngleSingle>(113),
-            new UnsafeUnmanagedStructFormatter<f64Euler>(114),
-            new UnsafeUnmanagedStructFormatter<InlineArray4<fix64>>(115), // keep for time trial format compatibility
-            new UnsafeUnmanagedStructFormatter<Int3>(116),
-            InlineArray4Formatter<int>.Instance,
-            InlineArray5Formatter<int>.Instance,
-            UnlimitedArrayFormatter<PiecePlacement>.Instance,
-            UnlimitedArrayFormatter<Rad3dBoxDef>.Instance,
-        ], [
-            StandardResolver.Instance,
-            InlineArrayResolver.Instance,
-            UnlimitedArrayResolver.Instance,
-            MsgPackResolver.Instance,
-        ]));
+        .WithResolver(DedupingResolver.Create(CompositeResolver));
 }

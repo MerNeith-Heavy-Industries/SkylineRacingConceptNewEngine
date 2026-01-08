@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using MessagePack;
 using nfm_world_library.mad;
+using nfm_world_library.mad.rad;
 using nfm_world_library.util;
 using nfm_world.files.demo;
 using nfm_world.multiplayer.packets;
@@ -17,7 +18,8 @@ public partial class SavedTimeTrial
     [Key(2)] public Demo DemoData;
     [Key(3)] public Splits Splits;
     [Key(4)] public int? Version; // New in version 1, defaults to 0
-    [Key(5)] public StageLoader? StageData; // New in version 2
+    [Key(5)] public StageLoader? StageData; // New in version 2 
+    [Key(6)] public Rad3d? CarData; // New in version 2
 
     public static string GetDirName(string carName, string stageName)
     {
@@ -46,9 +48,10 @@ public partial class SavedTimeTrial
         Version = CURRENT_VERSION;
     }
 
-    public SavedTimeTrial(string carName, string stageName, StageLoader stageData) : this(carName, stageName)
+    public SavedTimeTrial(string carName, string stageName, StageLoader stageData, Rad3d carData) : this(carName, stageName)
     {
         StageData = stageData;
+        CarData = carData;
     }
 
     public static SavedTimeTrial? Load(string carName, string stageName)
@@ -84,7 +87,7 @@ public partial class SavedTimeTrial
 
         // compress file using DeflateStream
 
-        using var fileStream = System.IO.File.OpenWrite(GetPathName(CarName, StageName));
+        using var fileStream = System.IO.File.Create(GetPathName(CarName, StageName));
         using var deflateStream = new DeflateStream(fileStream, CompressionMode.Compress);
 
         MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
