@@ -372,14 +372,7 @@ public static class BackendGameSparker
         try
         {
             var simulator = BackendRaceValues.Create(
-                Encoding.UTF8.GetString(args->StageName),
-                new ReadOnlySpan<SimulateTimeTrialArgs.CarInfoUnmanaged>(args->Cars, args->CarCount)
-                    .ToArray()
-                    .Select(car => new BackendRaceValues.CarInit(
-                        Encoding.UTF8.GetString(car.CarName),
-                        car.StartX,
-                        car.StartZ
-                    )).ToArray()
+                Encoding.UTF8.GetString(args->StageName)
             );
 
             using var timeTrialMemory =
@@ -442,8 +435,6 @@ public static class BackendGameSparker
         {
             // Pointer to UTF-8 encoded car name, null-terminated
             public byte* CarName;
-            public int StartX;
-            public int StartZ;
         }
 
         // Pointer to UTF-8 encoded stage name, null-terminated
