@@ -122,7 +122,7 @@ public static class BackendGameSparker
         {
             try
             {
-                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais))with
+                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
                 {
                     FileName = "user/" + fileName
                 });
@@ -375,11 +375,38 @@ public static class BackendGameSparker
         public NativeException Exception;
     }
 
-
-    [UnmanagedCallersOnly(EntryPoint = "nfmw_load", CallConvs = [typeof(CallConvStdcall)])]
-    public static unsafe void LoadUnmanaged()
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LoadResult
     {
-        Load();
+        // Whether an error occurred
+        public required bool HasError;
+        // Error information
+        public NativeException Exception;
+    }
+
+    /// <summary>
+    /// Loads the backend.
+    /// </summary>
+    /// <returns></returns>
+    [UnmanagedCallersOnly(EntryPoint = "nfmw_load", CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe LoadResult LoadUnmanaged()
+    {
+        try
+        {
+            Load();
+            return new LoadResult
+            {
+                HasError = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new LoadResult
+            {
+                HasError = true,
+                Exception = NativeException.FromException(ex)
+            };
+        }
     }
 
     /// <summary>
