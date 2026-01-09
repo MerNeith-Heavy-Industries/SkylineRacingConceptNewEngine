@@ -247,8 +247,123 @@ jobs:
           name: nfm-world-${{ matrix.rid }}
           path: ./publish/${{ matrix.rid }}/
 
+  build-macos:
+    needs: prepare
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install Command Line Tools for Xcode
+        run: |
+          # Install Xcode Command Line Tools (required for NativeAOT)
+          # GitHub Actions runners typically have these pre-installed
+          # Verify they are available
+          if xcode-select -p &>/dev/null; then
+            echo "Command Line Tools already installed at: $(xcode-select -p)"
+          else
+            echo "Command Line Tools not found. They should be pre-installed on GitHub Actions runners."
+            echo "Installing manually may not work in CI environment."
+            exit 1
+          fi
+          
+          # Verify clang is available
+          clang --version
+
+      - name: Install Wine for shader compilation
+        run: |
+          set -e
+          # Install Wine using Homebrew (wine-stable is a formula)
+          brew install wine-stable
+          
+          # Verify Wine installation
+          wine --version
+
+      - name: Setup Wine prefix for MGFXC
+        run: |
+          set -e
+          # Create 64-bit wine prefix
+          export WINEPREFIX=$HOME/.wine64
+          export WINEARCH=win64
+          export WINEDLLOVERRIDES="mscoree,mshtml="
+          
+          # Initialize wine prefix (this will wait for server to be ready)
+          wineboot -u
+          
+          # Give wine a moment to stabilize
+          sleep 3
+          
+          # Install winetricks if not already installed
+          brew install winetricks
+          
+          # Wait a moment for winetricks to be ready
+          sleep 2
+          
+          # Install d3dcompiler_47 using winetricks
+          WINEPREFIX=$HOME/.wine64 winetricks -q d3dcompiler_47
+          
+          # Set environment variable for MGFXC
+          echo "MGFXC_WINE_PATH=$HOME/.wine64" >> $GITHUB_ENV
+          echo "WINEPREFIX=$HOME/.wine64" >> $GITHUB_ENV
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Generate version string
+        id: version
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          DATE=$(date -u +"%Y.%m.%d")
+          SHORT_SHA=$(git rev-parse --short=8 HEAD)
+          SEMANTIC_VERSION="1.0.0"
+          INFO_VERSION="NFM-World ${BRANCH_NAME}-${DATE}-${SHORT_SHA}"
+          echo "semantic_version=${SEMANTIC_VERSION}" >> $GITHUB_OUTPUT
+          echo "info_version=${INFO_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Publish macOS x64 and arm64 binaries
+        run: |
+          # Build for both architectures separately (NativeAOT doesn't support multi-RID publishing)
+          for RID in osx-x64 osx-arm64; do
+            dotnet publish nfm-world/NFMWorld.csproj \
+              -c Release \
+              --self-contained \
+              -p:PublishAot=true \
+              -r $RID \
+              -p:Version="${{ steps.version.outputs.semantic_version }}" \
+              -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
+              -o ./publish/$RID
+          done
+
+      - name: Create universal binary
+        run: |
+          # Create output directory for universal binary
+          mkdir -p ./publish/osx-universal
+          
+          # Copy all files from x64 build (includes all data files, libraries, etc.)
+          cp -r ./publish/osx-x64/* ./publish/osx-universal/
+          
+          # Create universal binary using lipo for the main executable
+          # This overwrites the x64-only NFMWorld executable with a universal one
+          lipo -create -output ./publish/osx-universal/NFMWorld \
+            ./publish/osx-x64/NFMWorld \
+            ./publish/osx-arm64/NFMWorld
+          
+          # Verify the universal binary was created correctly
+          lipo -info ./publish/osx-universal/NFMWorld
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfm-world-osx-universal
+          path: ./publish/osx-universal/
+
   release:
-    needs: [prepare, build-windows, build-linux]
+    needs: [prepare, build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
 
     steps:
@@ -266,11 +381,13 @@ jobs:
           for dir in nfm-world-*; do
             if [ -d "$dir" ]; then
               pushd "$dir" > /dev/null
-              # Use zip for Windows, tar.gz for Linux
+              # Use zip for Windows, tar.gz for Linux and macOS
               if [[ "$dir" == nfm-world-win-* ]]; then
                 zip -r "../${dir}.zip" .
-              elif [[ "$dir" == nfm-world-linux-* ]]; then
+              elif [[ "$dir" == nfm-world-linux-* ]] || [[ "$dir" == nfm-world-osx-* ]]; then
                 tar -czf "../${dir}.tar.gz" .
+              else
+                echo "Warning: Unknown platform for directory: $dir"
               fi
               popd > /dev/null
               rm -rf "$dir"
