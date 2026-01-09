@@ -4,32 +4,32 @@ public class FileUtil
 {
     public static void LoadFiles(string folder, string[] fileNames, Action<byte[], int, string> action)
     {
-        if (!Directory.Exists(folder))
+        if (!VFS.Exists(folder))
         {
             Console.WriteLine($"Folder not found: {folder}");
             return;
         }
-        foreach (var file in Directory.GetFiles(folder))
+        foreach (var file in VFS.GetFiles(folder))
         {
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+            var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
             var a = fileNames.IndexOf(fileNameWithoutExtension);
             if (a != -1)
             {
-                action(System.IO.File.ReadAllBytes(file), a, fileNameWithoutExtension);
+                action(VFS.ReadAllBytes(file), a, fileNameWithoutExtension);
             }
         }
     }
     public static void LoadFiles(string folder, Action<byte[], string> action)
     {
-        if (!Directory.Exists(folder))
+        if (!VFS.Exists(folder))
         {
             Console.WriteLine($"Folder not found: {folder}");
             return;
         }
-        foreach (var file in Directory.GetFiles(folder))
+        foreach (var file in VFS.GetFiles(folder))
         {
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
-            action(System.IO.File.ReadAllBytes(file), fileNameWithoutExtension);
+            var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
+            action(VFS.ReadAllBytes(file), fileNameWithoutExtension);
         }
     }
 }

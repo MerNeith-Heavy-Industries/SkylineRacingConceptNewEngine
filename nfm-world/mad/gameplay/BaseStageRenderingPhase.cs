@@ -6,7 +6,6 @@ using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.stage;
 using nfm_world.util;
-using File = nfm_world_library.util.File;
 
 namespace nfm_world.gameplay;
 
@@ -69,7 +68,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             double tempoMul = !useRemastered ? clientStageRenderer.musicTempoMul : 0d;
             double freqMul = !useRemastered ? clientStageRenderer.musicFreqMul : 1d;
 
-            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new File($"./data/music/{path}"), tempoMul);
+            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
             GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();

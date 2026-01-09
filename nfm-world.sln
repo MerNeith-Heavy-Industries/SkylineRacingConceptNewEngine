@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMW.GenerateSinCosTable", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.Library", "NFMWorld.Library\NFMWorld.Library.csproj", "{7299D302-F6B8-4A90-BCB2-69E0156A82D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maxine.VFS", "Maxine.Extensions\Maxine.VFS\Maxine.VFS.csproj", "{797C7F62-03C6-48F8-B05C-E12C313EB878}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,5 +116,9 @@ Global
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

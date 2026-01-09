@@ -13,7 +13,6 @@ using nfm_world.driverinterface;
 using nfm_world.skiadriver;
 using nfm_world.ui.yoga;
 using Font = nfm_world.util.Font;
-using File = nfm_world_library.util.File;
 using Keys = nfm_world.util.Keys;
 
 namespace nfm_world;
@@ -310,11 +309,11 @@ public class Program : Game
 
     protected override void LoadContent()
     {
-        _polyShader = new Effect(GraphicsDevice, System.IO.File.ReadAllBytes("./data/shaders/Poly.fxb"));
-        _lineShader = new Effect(GraphicsDevice, System.IO.File.ReadAllBytes("./data/shaders/Line.fxb"));
-        _skyShader = new Effect(GraphicsDevice, System.IO.File.ReadAllBytes("./data/shaders/Sky.fxb"));
-        _groundShader = new Effect(GraphicsDevice, System.IO.File.ReadAllBytes("./data/shaders/Ground.fxb"));
-        _mountainsShader = new Effect(GraphicsDevice, System.IO.File.ReadAllBytes("./data/shaders/Mountains.fxb"));
+        _polyShader = new Effect(GraphicsDevice, VFS.ReadAllBytes("./data/shaders/Poly.fxb"));
+        _lineShader = new Effect(GraphicsDevice, VFS.ReadAllBytes("./data/shaders/Line.fxb"));
+        _skyShader = new Effect(GraphicsDevice, VFS.ReadAllBytes("./data/shaders/Sky.fxb"));
+        _groundShader = new Effect(GraphicsDevice, VFS.ReadAllBytes("./data/shaders/Ground.fxb"));
+        _mountainsShader = new Effect(GraphicsDevice, VFS.ReadAllBytes("./data/shaders/Mountains.fxb"));
         
         GameSparker.Load(this);
 
@@ -597,12 +596,12 @@ public class DummyBackend : IBackend
     public Vector2 Viewport => new();
     public float Scale { get; set; } = 1;
 
-    public IRadicalMusic LoadMusic(File file, double tempomul)
+    public IRadicalMusic LoadMusic(string file, double tempomul)
     {
         return new RadicalMusic(file, tempomul);
     }
 
-    public IImage LoadImage(File file)
+    public IImage LoadImage(string file)
     {
         throw new NotImplementedException();
     }
