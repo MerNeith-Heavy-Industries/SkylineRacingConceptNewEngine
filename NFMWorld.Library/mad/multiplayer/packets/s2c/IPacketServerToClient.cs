@@ -1,4 +1,6 @@
-﻿namespace nfm_world.multiplayer.packets.s2c;
+﻿using nfm_world_library.util;
+
+namespace nfm_world.multiplayer.packets.s2c;
 
 public interface IPacketServerToClient : IPacket;
 

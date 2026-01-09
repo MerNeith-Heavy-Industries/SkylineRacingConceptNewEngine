@@ -9,15 +9,10 @@ public class BackendRaceValues : IRaceValues
     public required BackendStage CurrentStage { get; init; }
     public required RaceState raceState { get; init; }
     
-    public static BackendRaceValues Create(string stage, CarInit[] cars)
+    public static BackendRaceValues Create(string stage)
     {
         var backendStage = new BackendStage(stage);
         var carsInRace = new UnlimitedArray<IInGameCar>();
-        for (int i = 0; i < cars.Length; i++)
-        {
-            var backendCar = new BackendCar(BackendGameSparker.GetCar(cars[i].CarName).Rad!, i, cars[i].X, cars[i].Z, true);
-            carsInRace.Add(backendCar);
-        }
 
         return new BackendRaceValues
         {
@@ -27,5 +22,16 @@ public class BackendRaceValues : IRaceValues
         };
     }
 
-    public readonly record struct CarInit(string CarName, int X, int Z);
+    public static IRaceValues Create(string stage, StageLoader stageData)
+    {
+        var backendStage = new BackendStage(stage, stageData);
+        var carsInRace = new UnlimitedArray<IInGameCar>();
+
+        return new BackendRaceValues
+        {
+            CurrentStage = backendStage,
+            CarsInRace = carsInRace,
+            raceState = RaceState.InProgress
+        };
+    }
 }

@@ -1,35 +1,37 @@
 using System.Text.Json.Serialization;
+using MessagePack;
 using nfm_world_library.SoftFloat;
 
 namespace nfm_world_library.mad;
 
+[MessagePackObject]
 public record struct CarStats
 {
-    [JsonPropertyName("swits")] public Int3 Swits { get; init; }
-    [JsonPropertyName("acelf")] public f64Vector3 Acelf { get; init; }
-    [JsonPropertyName("handb")] public int Handb { get; init; }
-    [JsonPropertyName("airs")] public fix64 Airs { get; init; }
-    [JsonPropertyName("airc")] public int Airc { get; init; }
-    [JsonPropertyName("turn")] public int Turn { get; init; }
-    [JsonPropertyName("grip")] public fix64 Grip { get; init; }
-    [JsonPropertyName("bounce")] public fix64 Bounce { get; init; }
-    [JsonPropertyName("simag")] public fix64 Simag { get; init; }
-    [JsonPropertyName("moment")] public fix64 Moment { get; init; }
-    [JsonPropertyName("comprad")] public fix64 Comprad { get; init; }
-    [JsonPropertyName("push")] public fix64 Push { get; init; }
-    [JsonPropertyName("revpush")] public fix64 Revpush { get; init; }
-    [JsonPropertyName("lift")] public int Lift { get; init; }
-    [JsonPropertyName("revlift")] public int Revlift { get; init; }
-    [JsonPropertyName("powerloss")] public int Powerloss { get; init; }
-    [JsonPropertyName("flipy")] public int Flipy { get; init; }
-    [JsonPropertyName("msquash")] public int Msquash { get; init; }
-    [JsonPropertyName("clrad")] public int Clrad { get; init; } 
-    [JsonPropertyName("dammult")] public fix64 Dammult { get; init; }
-    [JsonPropertyName("maxmag")] public int Maxmag { get; init; }
-    [JsonPropertyName("dishandle")] public fix64 Dishandle { get; init; }
-    [JsonPropertyName("outdam")] public fix64 Outdam { get; init; }
-    [JsonPropertyName("name")] public string Name { get; init; }
-    [JsonPropertyName("enginsignature")] public sbyte Enginsignature { get; init; }
+    [JsonPropertyName("swits"), Key(0)] public Int3 Swits { get; init; }
+    [JsonPropertyName("acelf"), Key(1)] public f64Vector3 Acelf { get; init; }
+    [JsonPropertyName("handb"), Key(2)] public int Handb { get; init; }
+    [JsonPropertyName("airs"), Key(3)] public fix64 Airs { get; init; }
+    [JsonPropertyName("airc"), Key(4)] public int Airc { get; init; }
+    [JsonPropertyName("turn"), Key(5)] public int Turn { get; init; }
+    [JsonPropertyName("grip"), Key(6)] public fix64 Grip { get; init; }
+    [JsonPropertyName("bounce"), Key(7)] public fix64 Bounce { get; init; }
+    [JsonPropertyName("simag"), Key(8)] public fix64 Simag { get; init; }
+    [JsonPropertyName("moment"), Key(9)] public fix64 Moment { get; init; }
+    [JsonPropertyName("comprad"), Key(10)] public fix64 Comprad { get; init; }
+    [JsonPropertyName("push"), Key(11)] public fix64 Push { get; init; }
+    [JsonPropertyName("revpush"), Key(12)] public fix64 Revpush { get; init; }
+    [JsonPropertyName("lift"), Key(13)] public int Lift { get; init; }
+    [JsonPropertyName("revlift"), Key(14)] public int Revlift { get; init; }
+    [JsonPropertyName("powerloss"), Key(15)] public int Powerloss { get; init; }
+    [JsonPropertyName("flipy"), Key(16)] public int Flipy { get; init; }
+    [JsonPropertyName("msquash"), Key(17)] public int Msquash { get; init; }
+    [JsonPropertyName("clrad"), Key(18)] public int Clrad { get; init; } 
+    [JsonPropertyName("dammult"), Key(19)] public fix64 Dammult { get; init; }
+    [JsonPropertyName("maxmag"), Key(20)] public int Maxmag { get; init; }
+    [JsonPropertyName("dishandle"), Key(21)] public fix64 Dishandle { get; init; }
+    [JsonPropertyName("outdam"), Key(22)] public fix64 Outdam { get; init; }
+    [JsonPropertyName("name"), Key(23)] public string Name { get; init; }
+    [JsonPropertyName("enginsignature"), Key(24)] public sbyte Enginsignature { get; init; }
 
     /// <summary>
     /// Tornado Shark stats, used as a fallback if a car has incomplete or invalid stats in the rad file.

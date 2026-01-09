@@ -166,7 +166,7 @@ public class ClientStageRenderer : GameObject
             {
                 if (piece is StageObject obj)
                 {
-                    var mesh = GameSparker.stage_part_meshes.GetValueOrDefault(obj.Rad) ?? GameSparker.error_mesh;
+                    var mesh = GameSparker.GetStagePartMesh(obj.Rad);
                     if (obj.Kind == AiNodeKind.CheckPoint)
                     {
                         var clientObj = new StageObjectGameObject(mesh, obj)

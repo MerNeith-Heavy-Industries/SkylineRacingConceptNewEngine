@@ -1,25 +1,21 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using MessagePack;
 using nfm_world_library.mad.rad;
 using nfm_world_library.SoftFloat;
 using nfm_world_library.util;
 
 namespace nfm_world_library.mad;
 
-public readonly struct PieceSet
-{
-    public readonly string? Name;
-    public readonly int? Id;
-    
-    [MemberNotNullWhen(true, nameof(Name))]
-    [MemberNotNullWhen(false, nameof(Id))]
-    public bool HasName => Name != null;
-
-    public PieceSet(string name) => Name = name;
-    public PieceSet(int id) => Id = id;
-}
-
-public readonly record struct PiecePlacement(PiecePlacementType Type, PieceSet Set, f64Vector3 Position, f64Euler Rotation, AiNodeKind? NodeKind = null, bool IsSpecial = false);
+[MessagePackObject]
+public readonly record struct PiecePlacement(
+    [property: Key(0)] PiecePlacementType Type,
+    [property: Key(1)] Rad3d Object,
+    [property: Key(2)] f64Vector3 Position,
+    [property: Key(3)] f64Euler Rotation,
+    [property: Key(4)] AiNodeKind? NodeKind = null,
+    [property: Key(5)] bool IsSpecial = false
+);
 
 public enum PiecePlacementType : byte
 {
@@ -28,68 +24,69 @@ public enum PiecePlacementType : byte
     FixHoop
 }
 
+[MessagePackObject]
 public class StageLoader
 {
-    public readonly string Path;
+    [Key(0)] public readonly string Path;
 
-    private int? _fadeFrom = null;
-
-    public ushort nlaps = 3;
+    [Key(1)] public ushort nlaps = 3;
 
     // soundtrack(folder,fileName)
-    public string musicPath = "";
+    [Key(2)] public string musicPath = "";
+
     // soundtrackremaster(folder,fileName)
-    public string remasteredMusicPath = "";
+    [Key(3)] public string remasteredMusicPath = "";
+
     // soundtrackfreqmul(mul)
-    public double musicFreqMul = 1.0d;
-    public double musicTempoMul = 0d;
+    [Key(4)] public double musicFreqMul = 1.0d;
+    [Key(5)] public double musicTempoMul = 0d;
+    [Key(6)] public string Name = "hogan rewish";
+    [Key(7)] public int indexOffset = 10;
 
-    public string Name = "hogan rewish";
-
-    public int indexOffset = 10;
     private bool swapYandRot = false;
     private bool reverseChkY = false;
 
     // left
-    public int Sx;
+    [Key(8)] public int Sx;
+
     // top
-    public int Sz;
+    [Key(9)] public int Sz;
+
     // width
-    public int Ncx;
+    [Key(10)] public int Ncx;
+
     // height
-    public int Ncz;
+    [Key(11)] public int Ncz;
 
-    public Color3? Snap;
-    public Color3? Sky;
-    public Color3? GroundColor;
-    public Color3? GroundPolysColor;
-    public bool DrawPolys = true;
-    public Color3? Fog;
-    public InlineArray4<int>? Texture;
-    public InlineArray5<int>? Clouds;
-    public bool DrawClouds = true;
-    public float? CloudCoverage;
-    public int? FogDensity;
-    public int? FadeFrom;
-    public bool LightsOn;
-    public bool DrawMountains = true;
-    public int? MountainSeed;
-    public float? MountainCoverage;
-    public Vector3? LightDirection;
-    
-    public UnlimitedArray<PiecePlacement> pieces = new();
-    public UnlimitedArray<Rad3dBoxDef> walls = new();
-
-    public int maxr = 0;
-    public int maxl = 100;
-    public int maxt = 0;
-    public int maxb = 100;
+    [Key(12)] public Color3? Snap;
+    [Key(13)] public Color3? Sky;
+    [Key(14)] public Color3? GroundColor;
+    [Key(15)] public Color3? GroundPolysColor;
+    [Key(16)] public bool DrawPolys = true;
+    [Key(17)] public Color3? Fog;
+    [Key(18)] public InlineArray4<int>? Texture;
+    [Key(19)] public InlineArray5<int>? Clouds;
+    [Key(20)] public bool DrawClouds = true;
+    [Key(21)] public float? CloudCoverage;
+    [Key(22)] public int? FogDensity;
+    [Key(23)] public int? FadeFrom;
+    [Key(24)] public bool LightsOn;
+    [Key(25)] public bool DrawMountains = true;
+    [Key(26)] public int? MountainSeed;
+    [Key(27)] public float? MountainCoverage;
+    [Key(28)] public Vector3? LightDirection;
+    [Key(29)] public UnlimitedArray<PiecePlacement> pieces = new();
+    [Key(30)] public UnlimitedArray<Rad3dBoxDef> walls = new();
+    [Key(31)] public int maxr = 0;
+    [Key(32)] public int maxl = 100;
+    [Key(33)] public int maxt = 0;
+    [Key(34)] public int maxb = 100;
 
     public StageLoader(string stageName)
     {
         Path = stageName;
         //var customStagePath = "stages/" + CheckPoints.Stage + ".txt";
-        var customStagePath = "data/stages/" + stageName + ".txt";
+        var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
         var line = "";
         int lineNumber = 0;
         try
@@ -210,13 +207,11 @@ public class StageLoader
                 if (line.StartsWith("fadefrom"))
                 {
                     FadeFrom = Utility.GetInt("fadefrom", line, 0);
-                    _fadeFrom = World.FadeFrom;
                 }
 
                 if (line.StartsWith("distfog"))
                 {
                     FadeFrom = Utility.GetInt("distfog", line, 0);
-                    _fadeFrom = World.FadeFrom;
                 }
 
                 if (line.StartsWith("lightson"))
@@ -332,7 +327,7 @@ public class StageLoader
                     
                     if (!TryGetPieceToPlace(Utility.GetString("chk", line, 0), out var mesh)) continue;
 
-                    if (mesh.HasName ? mesh.Name == "nfmm/aircheckpoint" : mesh.Id == 54)
+                    if (mesh.FileName == "nfmm/aircheckpoint")
                     {
                         ymult = 1; // default to inverted Y for stupid rollercoaster chks for compatibility reasons
                         isAirCheckpoint = true;
@@ -472,7 +467,8 @@ public class StageLoader
                 }
 
                 // stage walls
-                var wall = new PieceSet(29); // nfmm/thewall
+                if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
+
                 if (line.StartsWith("maxr"))
                 {
                     var n = Utility.GetInt("maxr", line, 0);
@@ -594,17 +590,29 @@ public class StageLoader
         Path = "default_stage";
     }
 
-    private bool TryGetPieceToPlace(string setstring, out PieceSet p1)
+    private bool TryGetPieceToPlace(string setstring, out Rad3d mesh)
     {
         if (int.TryParse(setstring, out var setindex))
         {
             setindex -= indexOffset;
-            p1 = new PieceSet(setindex);
+            mesh = BackendGameSparker.stage_parts[setindex];
+            if (mesh == null!)
+            {
+                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
+                mesh = BackendGameSparker.error_mesh;
+            }
             return true;
         }
         else
         {
-            p1 = new PieceSet(setstring);
+            var stagePart = BackendGameSparker.GetStagePart(setstring);
+            if (stagePart.Rad == null)
+            {
+                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
+                mesh = BackendGameSparker.error_mesh;
+                return true;
+            }
+            mesh = stagePart.Rad;
             return true;
         }
     }

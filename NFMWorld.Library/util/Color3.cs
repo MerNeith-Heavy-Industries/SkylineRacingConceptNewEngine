@@ -4,12 +4,12 @@ using Stride.Core.Mathematics;
 
 namespace nfm_world_library.util;
 
-public readonly record struct Color3(
-    [property: JsonPropertyName("r")] short R,
-    [property: JsonPropertyName("g")] short G,
-    [property: JsonPropertyName("b")] short B
-)
+public record struct Color3(short R, short G, short B)
 {
+    [JsonPropertyName("r")] public short R { readonly get; set; } = R;
+    [JsonPropertyName("g")] public short G { readonly get; set; } = G;
+    [JsonPropertyName("b")] public short B { readonly get; set; } = B;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Vector3(Color3 c) => new(c.R / 255f, c.G / 255f, c.B / 255f);
 
@@ -17,10 +17,10 @@ public readonly record struct Color3(
     public static implicit operator Int3(Color3 c) => new(c.R, c.G, c.B);
 
     [JsonIgnore]
-    public int this[int index]
+    public short this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
+        readonly get
         {
             return index switch
             {
@@ -35,8 +35,31 @@ public readonly record struct Color3(
                 throw new IndexOutOfRangeException($"Index was out of range. Must be between 0 and 2, inclusive. Received: {index}");
             }
         }
+        set 
+        {
+            switch (index)
+            {
+                case 0:
+                    R = value;
+                    break;
+                case 1:
+                    G = value;
+                    break;
+                case 2:
+                    B = value;
+                    break;
+                default:
+                    ThrowIndexOutOfRangeException(index);
+                    break;
+            }
+
+            static void ThrowIndexOutOfRangeException(int index)
+            {
+                throw new IndexOutOfRangeException($"Index was out of range. Must be between 0 and 2, inclusive. Received: {index}");
+            }
+        }
     }
-    
+
     public static Color3 FromSpan(ReadOnlySpan<short> span)
         => new(span[0], span[1], span[2]);
 
@@ -137,4 +160,10 @@ public readonly record struct Color3(
     public static implicit operator System.Numerics.Vector4(Color3 color3)
         => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
 
+    public void Deconstruct(out short R, out short G, out short B)
+    {
+        R = this.R;
+        G = this.G;
+        B = this.B;
+    }
 }
