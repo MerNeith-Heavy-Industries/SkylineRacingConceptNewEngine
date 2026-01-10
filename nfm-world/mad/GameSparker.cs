@@ -165,8 +165,6 @@ public class GameSparker
     }
     public static void Load(Program game)
     {
-        BackendGameSparker.Load();
-        
         _game = game;
         _graphicsDevice = game.GraphicsDevice;
 

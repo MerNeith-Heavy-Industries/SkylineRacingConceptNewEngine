@@ -542,6 +542,8 @@ public class Program : Game
         {
             Process.GetCurrentProcess().Kill();
         };
+        
+        BackendGameSparker.Load();
 
         var program = new Program();
         program.Run();
