@@ -7,7 +7,6 @@ using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.util;
 using Stride.Core.Extensions;
-using File = nfm_world_library.util.File;
 
 namespace nfm_world.gameplay;
 
@@ -47,7 +46,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         LoadStageInCollection();
 
         GameSparker.CurrentMusic?.Unload();
-        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic(new File("data/music/nfm1/stageselectremastered.mp3"), 0f);
+        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic("data/music/nfm1/stageselectremastered.mp3", 0f);
         GameSparker.CurrentMusic?.Play();
     }
 

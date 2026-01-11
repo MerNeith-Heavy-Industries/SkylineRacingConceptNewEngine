@@ -4,14 +4,13 @@ using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.ui.elements;
 using nfm_world.ui.yoga;
-using File = nfm_world_library.util.File;
 
 namespace nfm_world.ui.hud;
 
 public class PowerDamageBars
 {
-    private static IImage _power = IBackend.Backend.LoadImage(new File("data/images/power.gif"));
-    private static IImage _damage = IBackend.Backend.LoadImage(new File("data/images/damage.gif"));
+    private static IImage _power = IBackend.Backend.LoadImage("data/images/power.gif");
+    private static IImage _damage = IBackend.Backend.LoadImage("data/images/damage.gif");
 
     private Node _pdNode = new Node()
     {

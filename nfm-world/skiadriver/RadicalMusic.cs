@@ -5,8 +5,6 @@ using nfm_world.driverinterface;
 
 namespace nfm_world.skiadriver;
 
-using File = nfm_world_library.util.File;
-
 internal class RadicalMusic : IRadicalMusic
 {
     private bool _readable;
@@ -26,14 +24,14 @@ internal class RadicalMusic : IRadicalMusic
     }
 #endif
 
-    public RadicalMusic(File file, double tempomul)
+    public RadicalMusic(string file, double tempomul)
     {
 #if USE_BASS
         try
         {
-            using var fileStream = System.IO.File.OpenRead(file.Path);
+            using var fileStream = VFS.OpenRead(file);
 
-            if(file.Path.EndsWith("zipo") || file.Path.EndsWith("radq") || file.Path.EndsWith("zip"))
+            if(file.EndsWith("zipo") || file.EndsWith("radq") || file.EndsWith("zip"))
             {
                 using var zipStream = new ZipArchive(fileStream, ZipArchiveMode.Read);
                 using var resultStream = new MemoryStream();
@@ -50,9 +48,11 @@ internal class RadicalMusic : IRadicalMusic
             }
             else
             {
-                byte[] f = System.IO.File.ReadAllBytes(file.Path);
+                var ms = new MemoryStream();
+                fileStream.CopyTo(ms);
+                var span = ms.GetBuffer().AsSpan(0, (int)ms.Length);
 
-                if ((_music = CreateHandle(f, file.Path)) == 0)
+                if ((_music = CreateHandle(span, file)) == 0)
                 {
                     // it ain't playable
                     throw new Exception(SoundClip.GetBassError(Bass.LastError));
@@ -67,7 +67,7 @@ internal class RadicalMusic : IRadicalMusic
         }
         catch(Exception e)
         {
-            GameSparker.Writer.WriteLine($"Error loading music {file.Path}: {e}");
+            GameSparker.Writer.WriteLine($"Error loading music {file}: {e}");
         }
 #endif
     }

@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMW.GenerateSinCosTable", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.Library", "NFMWorld.Library\NFMWorld.Library.csproj", "{7299D302-F6B8-4A90-BCB2-69E0156A82D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maxine.VFS", "Maxine.Extensions\Maxine.VFS\Maxine.VFS.csproj", "{797C7F62-03C6-48F8-B05C-E12C313EB878}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.RustBindGen", "NFMWorld.RustBindGen\NFMWorld.RustBindGen.csproj", "{9347CCAA-A867-429F-ACE3-829D930F81DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maxine.Extensions.MessagePack", "Maxine.Extensions\Maxine.Extensions.MessagePack\Maxine.Extensions.MessagePack.csproj", "{16F06DAB-D69F-4324-9023-91BA351A0B67}"
@@ -118,6 +120,10 @@ Global
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7299D302-F6B8-4A90-BCB2-69E0156A82D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{797C7F62-03C6-48F8-B05C-E12C313EB878}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9347CCAA-A867-429F-ACE3-829D930F81DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9347CCAA-A867-429F-ACE3-829D930F81DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9347CCAA-A867-429F-ACE3-829D930F81DB}.Release|Any CPU.ActiveCfg = Release|Any CPU

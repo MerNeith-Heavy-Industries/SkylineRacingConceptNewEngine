@@ -7,7 +7,6 @@ using nfm_world.driverinterface;
 using nfm_world.skiadriver;
 using nfm_world.util;
 using NvgSharp;
-using File = nfm_world_library.util.File;
 using TextHorizontalAlignment = nfm_world.driverinterface.TextHorizontalAlignment;
 
 namespace nfm_world;
@@ -32,15 +31,15 @@ internal class NanoVGBackend(NvgContext context) : IBackend
 {
     public float Scale { get; set; } = 1;
 
-    public IRadicalMusic LoadMusic(File file, double tempomul)
+    public IRadicalMusic LoadMusic(string file, double tempomul)
     {
         return new RadicalMusic(file, tempomul);
     }
 
-    public IImage LoadImage(File file)
+    public IImage LoadImage(string file)
     {
-        using var stream = System.IO.File.OpenRead(file.Path);
-        if (file.Extension == ".svg")
+        using var stream = VFS.OpenRead(file);
+        if (VFS.Path.GetExtension(file) == ".svg")
         {
             return NanoSVGImage.FromStream(stream);
         }
@@ -92,7 +91,7 @@ internal class NanoVGBackend(NvgContext context) : IBackend
         private FontSystem LoadFont(string fontFile)
         {
             var fontSystem = new FontSystem();
-            fontSystem.AddFont(System.IO.File.ReadAllBytes(fontFile));
+            fontSystem.AddFont(VFS.ReadAllBytes(fontFile));
             return fontSystem;
         }
 

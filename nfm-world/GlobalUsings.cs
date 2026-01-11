@@ -10,3 +10,4 @@ global using LuaNET.LuaJIT;
 global using static LuaNET.LuaJIT.Lua;
 global using Color = Microsoft.Xna.Framework.Color;
 global using RectangleF = Stride.Core.Mathematics.RectangleF;
+global using static nfm_world_library.TheVFS;

@@ -1,5 +1,3 @@
-using File = nfm_world_library.util.File;
-
 namespace nfm_world.driverinterface;
 
 public interface IBackend
@@ -8,8 +6,8 @@ public interface IBackend
 
     float Scale { get; set; }
     Vector2 Viewport { get; }
-    IRadicalMusic LoadMusic(File file, double tempomul);
-    IImage LoadImage(File file);
+    IRadicalMusic LoadMusic(string file, double tempomul);
+    IImage LoadImage(string file);
     IImage LoadImage(ReadOnlySpan<byte> file);
     void StopAllSounds();
     ISoundClip GetSound(string filePath);

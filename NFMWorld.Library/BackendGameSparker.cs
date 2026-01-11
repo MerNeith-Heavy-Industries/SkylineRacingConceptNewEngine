@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using CommunityToolkit.HighPerformance.Buffers;
 using Maxine.Extensions;
+using Maxine.VFS;
 using nfm_world_library.backend;
 using nfm_world_library.backend.gamemodes;
 using nfm_world_library.mad;
@@ -22,26 +23,40 @@ public static class BackendGameSparker
     public static Rad3d error_mesh;
 
     public static readonly string[] CarRads =
-    {
+    [
         "2000tornados", "formula7", "canyenaro", "lescrab", "nimi", "maxrevenge", "leadoxide", "koolkat", "drifter",
         "policecops", "mustang", "king", "audir8", "masheen", "radicalone", "drmonster"
-    };
+    ];
 
     public static readonly string[] StageRads =
-    {
+    [
         "road", "froad", "twister2", "twister1", "turn", "offroad", "bumproad", "offturn", "nroad", "nturn",
         "roblend", "noblend", "rnblend", "roadend", "offroadend", "hpground", "ramp30", "cramp35", "dramp15",
         "dhilo15", "slide10", "takeoff", "sramp22", "offbump", "offramp", "sofframp", "halfpipe", "spikes", "rail",
         "thewall", "checkpoint", "fixpoint", "offcheckpoint", "sideoff", "bsideoff", "uprise", //45
-        "riseroad",
-        "sroad",
-        "soffroad", "tside", "launchpad", "thenet", "speedramp", "offhill", "slider", "uphill", "roll1", "roll2",
-        "roll3", "roll4", "roll5", "roll6", "opile1", "opile2", "aircheckpoint", "tree1", "tree2", "tree3", "tree4",
-        "tree5", "tree6", "tree7", "tree8", "cac1", "cac2", "cac3", "8sroad", "8soffroad"
-    };
+        "riseroad", "sroad", "soffroad", "tside", "launchpad", "thenet", "speedramp", "offhill", "slider", "uphill",
+        "roll1", "roll2", "roll3", "roll4", "roll5", "roll6", "opile1", "opile2", "aircheckpoint",
+        "tree1", "tree2", "tree3", "tree4",  "tree5", "tree6", "tree7", "tree8", "cac1", "cac2", "cac3",
+        "8sroad", "8soffroad"
+    ];
+
+    private static bool _loaded;
 
     public static void Load()
     {
+        if (_loaded)
+            return;
+        _loaded = true;
+        
+        var realFs = new RelativeFileSystem(Directory.GetCurrentDirectory());
+        VFS.MountNewFileTarget(realFs);
+        
+        // VFS.MountFileSystem(new HttpFileSystem());
+        VFS.MountFileSystem(realFs);
+        var modsFolder = Path.Combine(Directory.GetCurrentDirectory(), "mods");
+        if (Directory.Exists(modsFolder))
+            VFS.MountFileSystem(new RelativeFileSystem(modsFolder));
+
         cars.Add(Collection.NFMM, []);
         FileUtil.LoadFiles("./data/models/nfmm/cars", CarRads, (ais, id, fileName) =>
         {
@@ -107,7 +122,7 @@ public static class BackendGameSparker
         {
             try
             {
-                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais))with
+                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
                 {
                     FileName = "user/" + fileName
                 });
@@ -133,7 +148,7 @@ public static class BackendGameSparker
             }
         });
 
-        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(System.IO.File.ReadAllBytes("./data/models/error.rad"))) with
+        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad"))) with
         {
             FileName = "error.rad"
         };
@@ -358,6 +373,40 @@ public static class BackendGameSparker
         public required bool HasError;
         // Error information
         public NativeException Exception;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LoadResult
+    {
+        // Whether an error occurred
+        public required bool HasError;
+        // Error information
+        public NativeException Exception;
+    }
+
+    /// <summary>
+    /// Loads the backend.
+    /// </summary>
+    /// <returns></returns>
+    [UnmanagedCallersOnly(EntryPoint = "nfmw_load", CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe LoadResult LoadUnmanaged()
+    {
+        try
+        {
+            Load();
+            return new LoadResult
+            {
+                HasError = false
+            };
+        }
+        catch (Exception ex)
+        {
+            return new LoadResult
+            {
+                HasError = true,
+                Exception = NativeException.FromException(ex)
+            };
+        }
     }
 
     /// <summary>
