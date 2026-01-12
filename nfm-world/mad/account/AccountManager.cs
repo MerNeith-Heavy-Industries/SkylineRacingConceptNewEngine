@@ -16,6 +16,12 @@ public class AccountManager
     /// <returns>The result of account creation. Throws an exception where there is a server error or input validation error.</returns>
     public async Task<CreateAccountResult> CreateAccount(string username, string password)
     {
+        // This is disabled for now as accounts are created on a case-by-case. The account system needs to mature
+        // before we can make it open registration.
+
+        throw new NotImplementedException();
+
+        /*
         var res = await UserApi.CreateAccount(username, password);
 
         if(res.Item1 == HttpStatusCode.InternalServerError)
@@ -29,6 +35,8 @@ public class AccountManager
             return CreateAccountResult.UsernameTaken;
         }
 
-        return CreateAccountResult.Success;
+        return CreateAccountResult.Success;*/
     }
+
+    
 }
