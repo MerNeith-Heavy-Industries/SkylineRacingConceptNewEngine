@@ -8,8 +8,4 @@ public enum CreateAccountResult
     /// </summary>
     Success,
     UsernameTaken,
-    InvalidUsername,
-    InvalidPassword,
-    ServerError,
-    ClientError
 }

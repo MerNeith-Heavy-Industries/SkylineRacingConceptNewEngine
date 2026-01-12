@@ -10,8 +10,6 @@ public enum LogInResult
     /// </summary>
     Success,
     Unauthorized,
-    ServerError,
-    ClientError,
     /// <summary>
     /// This happens if the user invokes a password reset request.
     /// </summary>
