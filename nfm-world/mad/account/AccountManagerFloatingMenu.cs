@@ -53,6 +53,9 @@ public class AccountManagerFloatingMenu
     private string? _pendingOauthCode;
     private string? _pendingOauthRedirect;
 
+    // Disable all buttons when running in a thread context to prevent weirdness...
+    private bool _buttonsDisabled = false;
+
     public AccountManagerFloatingMenu()
     {
         _isOpen = true;
@@ -92,19 +95,21 @@ public class AccountManagerFloatingMenu
                 ImGui.Text("Local login");
                 ImGui.InputText("Username", ref _localUsername, 128);
                 ImGui.InputText("Password", ref _localPassword, 128, ImGuiInputTextFlags.Password);
-                if (ImGui.Button("Login"))
+                if (ImGui.Button("Login") && !_buttonsDisabled)
                 {
                     _statusMessage = "Logging in...";
                     var username = _localUsername;
                     var password = _localPassword;
 
                     // Run network login off the game thread; callback runs on game thread
+                    _buttonsDisabled = true;
                     GameThreadContext.Current.Run(async () =>
                     {
                         var res = await GameSparker.AccountManager.LogInToLocalAccount(username, password);
                         return res;
                     }, (LocalLogInResult res) =>
                     {
+                        _buttonsDisabled = false;
                         if (res == LocalLogInResult.Success)
                         {
                             _statusMessage = "Logged in (local)";
@@ -127,7 +132,7 @@ public class AccountManagerFloatingMenu
 
                 ImGui.NewLine();
                 ImGui.Spacing();
-                if (ImGui.Button("Create Account"))
+                if (ImGui.Button("Create Account") && !_buttonsDisabled)
                 {
                     _showCreateMenu = true;
                 }
@@ -138,13 +143,13 @@ public class AccountManagerFloatingMenu
                 ImGui.Text("Create Account");
 
                 ImGui.InputText("New username", ref _createUsername, 128);
-                
+
                 if(string.IsNullOrEmpty(_pendingOauthCode)) {
                     ImGui.InputText("New password", ref _createPassword, 128, ImGuiInputTextFlags.Password);
                     ImGui.InputText("Confirm password", ref _createPasswordConfirm, 128, ImGuiInputTextFlags.Password);
                 }
 
-                if (ImGui.Button("Create"))
+                if (ImGui.Button("Create") && !_buttonsDisabled)
                 {
                     if (string.IsNullOrWhiteSpace(_createUsername))
                         _statusMessage = "Username required";
@@ -153,7 +158,7 @@ public class AccountManagerFloatingMenu
                     else
                     {
                         var un = _createUsername;
-                        var pw = _createPassword;
+                        var local_pw = _createPassword;
                         _statusMessage = "Creating account...";
 
                         if (!string.IsNullOrEmpty(_pendingOauthCode))
@@ -161,14 +166,17 @@ public class AccountManagerFloatingMenu
                             // Create account using the pending OAuth code path
                             var code = _pendingOauthCode;
                             var redirect = _pendingOauthRedirect;
+                            _buttonsDisabled = true;
                             GameThreadContext.Current.Run(async () =>
                             {
                                 var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(code!, redirect!, un);
                                 return res;
                             }, (Oauth2CreateAccountResult res) =>
                             {
+                                _buttonsDisabled = false;
                                 if (res == Oauth2CreateAccountResult.Success)
                                 {
+                                    _buttonsDisabled = true;
                                     _statusMessage = "Account created from Discord. Attempting login...";
                                     // After creating, attempt login using the same code
                                     GameThreadContext.Current.Run(async () =>
@@ -177,6 +185,7 @@ public class AccountManagerFloatingMenu
                                         return loginRes;
                                     }, (Oauth2LogInResult loginRes) =>
                                     {
+                                        _buttonsDisabled = false;
                                         if (loginRes == Oauth2LogInResult.Success)
                                         {
                                             _statusMessage = "Logged in via OAuth after creation.";
@@ -207,12 +216,14 @@ public class AccountManagerFloatingMenu
                         }
                         else
                         {
+                            _buttonsDisabled = true;
                             GameThreadContext.Current.Run(async () =>
                             {
-                                var res = await GameSparker.AccountManager.CreateLocalAccount(un, pw);
+                                var res = await GameSparker.AccountManager.CreateLocalAccount(un, local_pw);
                                 return res;
                             }, (CreateLocalAccountResult res) =>
                             {
+                                _buttonsDisabled = false;
                                 if (res == CreateLocalAccountResult.Success)
                                 {
                                     _statusMessage = "Account created (awaiting approval).";
@@ -229,7 +240,7 @@ public class AccountManagerFloatingMenu
 
                 ImGui.NewLine();
                 ImGui.Spacing();
-                if (ImGui.Button("Log In"))
+                if (ImGui.Button("Log In") && !_buttonsDisabled)
                 {
                     _showCreateMenu = false;
                 }
@@ -237,7 +248,7 @@ public class AccountManagerFloatingMenu
 
             ImGui.Separator();
             ImGui.Text("Social login");
-            if (ImGui.Button("Login with Discord"))
+            if (ImGui.Button("Login with Discord") && !_buttonsDisabled)
             {
                 if (_oauthTask == null || _oauthTask.IsCompleted)
                 {
@@ -281,12 +292,14 @@ public class AccountManagerFloatingMenu
                                 _statusMessage = "Verifying OAuth code with server...";
 
                                 // Exchange / verify code via AccountManager on a background thread; callback runs on game thread
+                                _buttonsDisabled = true;
                                 GameThreadContext.Current.Run(async () =>
                                 {
                                     var res = await GameSparker.AccountManager.DiscordOauth2AttemptLogIn(_pendingOauthCode!, _pendingOauthRedirect!);
                                     return res;
                                 }, (Oauth2LogInResult res) =>
                                 {
+                                    _buttonsDisabled = false;
                                     if (res == Oauth2LogInResult.Success)
                                     {
                                         _statusMessage = "Logged in via OAuth.";
