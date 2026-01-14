@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 namespace nfm_world.mad.account.oauth2;
 
@@ -22,22 +23,18 @@ public class DiscordOauth2Manager
     public class DiscordOauthResult
     {
         public bool Success { get; set; }
-        public string? AccessToken { get; set; }
-        public string? RefreshToken { get; set; }
         public string? Code { get; set; }
         public string? Error { get; set; }
-        public string? RawResponse { get; set; }
+        public string? RedirectUri { get; set; }
     }
 
     /// <summary>
     /// Start an OAuth2 authorization flow.
     /// - `clientId`: Discord application client id
     /// - `scopes`: scopes requested (e.g. new[] { "identify", "email" })
-    /// - `clientSecret`: optional. If provided, an authorization code will be exchanged for an access token.
-    /// Returns a <see cref="DiscordOauthResult"/> containing either `AccessToken` (if exchange performed)
-    /// or the `Code` (if no client secret provided) or an error message.
+    /// Returns a <see cref="DiscordOauthResult"/> containing the authorization `Code` or an error message.
     /// </summary>
-    public async Task<DiscordOauthResult> AuthorizeAsync(string clientId, string[] scopes, string? clientSecret = null, CancellationToken ct = default)
+    public async Task<DiscordOauthResult> AuthorizeAsync(string clientId, string[] scopes, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(clientId))
             throw new ArgumentException("clientId is required", nameof(clientId));
@@ -70,60 +67,21 @@ public class DiscordOauth2Manager
                 var qs = ParseQuery(query);
                 if (qs.TryGetValue("error", out var err))
                 {
-                    return new DiscordOauthResult { Success = false, Error = err };
+                    return new DiscordOauthResult { Success = false, Error = err, RedirectUri = redirectUri };
                 }
 
                 qs.TryGetValue("code", out var code);
                 if (string.IsNullOrEmpty(code))
                 {
-                    return new DiscordOauthResult { Success = false, Error = "No code in callback" };
+                    return new DiscordOauthResult { Success = false, Error = "No code in callback", RedirectUri = redirectUri };
                 }
 
-                // If a client secret is provided, exchange the code for a token
-                if (!string.IsNullOrEmpty(clientSecret))
-                {
-                    using var http = new HttpClient();
-                    var tokenEndpoint = "https://discord.com/api/oauth2/token";
-                    var form = new Dictionary<string, string>
-                    {
-                        ["client_id"] = clientId,
-                        ["client_secret"] = clientSecret,
-                        ["grant_type"] = "authorization_code",
-                        ["code"] = code,
-                        ["redirect_uri"] = redirectUri
-                    };
-
-                    using var resp = await http.PostAsync(tokenEndpoint, new FormUrlEncodedContent(form), ct);
-                    var body = await resp.Content.ReadAsStringAsync(ct);
-                    if (!resp.IsSuccessStatusCode)
-                        return new DiscordOauthResult { Success = false, Error = $"Token exchange failed: {resp.StatusCode}", RawResponse = body };
-
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(body);
-                        var root = doc.RootElement;
-                        root.TryGetProperty("access_token", out var at);
-                        root.TryGetProperty("refresh_token", out var rt);
-                        return new DiscordOauthResult
-                        {
-                            Success = true,
-                            AccessToken = at.GetString(),
-                            RefreshToken = rt.GetString(),
-                            RawResponse = body
-                        };
-                    }
-                    catch (JsonException)
-                    {
-                        return new DiscordOauthResult { Success = false, Error = "Invalid JSON from token endpoint", RawResponse = body };
-                    }
-                }
-
-                // No exchange performed — return the code
-                return new DiscordOauthResult { Success = true, Code = code };
+                // Return the authorization code to the caller; the service layer will exchange it for tokens
+                return new DiscordOauthResult { Success = true, Code = code, RedirectUri = redirectUri };
             }
             else
             {
-                return new DiscordOauthResult { Success = false, Error = "Listener accept timed out or was cancelled" };
+                return new DiscordOauthResult { Success = false, Error = "Listener accept timed out or was cancelled", RedirectUri = redirectUri };
             }
         }
         finally
