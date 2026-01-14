@@ -3,6 +3,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using nfm_world.mad.account.oauth2;
+using nfm_world;
+using nfm_world_library.util;
 
 namespace nfm_world.mad.account;
 
@@ -47,6 +49,9 @@ public class AccountManagerFloatingMenu
     private string _statusMessage = string.Empty;
     private bool _loggedIn = false;
     private CancellationTokenSource? _oauthCts;
+    private bool _oauthHandled = false;
+    private string? _pendingOauthCode;
+    private string? _pendingOauthRedirect;
 
     public AccountManagerFloatingMenu()
     {
@@ -89,8 +94,35 @@ public class AccountManagerFloatingMenu
                 ImGui.InputText("Password", ref _localPassword, 128, ImGuiInputTextFlags.Password);
                 if (ImGui.Button("Login"))
                 {
-                    // TODO: call the real local login API (GameSparker.AccountManager or similar)
-                    _statusMessage = $"(stub) Attempted local login for {_localUsername}";
+                    _statusMessage = "Logging in...";
+                    var username = _localUsername;
+                    var password = _localPassword;
+
+                    // Run network login off the game thread; callback runs on game thread
+                    GameThreadContext.Current.Run(async () =>
+                    {
+                        var res = await GameSparker.AccountManager.LogInToLocalAccount(username, password);
+                        return res;
+                    }, (LocalLogInResult res) =>
+                    {
+                        if (res == LocalLogInResult.Success)
+                        {
+                            _statusMessage = "Logged in (local)";
+                            _loggedIn = true;
+                        }
+                        else if (res == LocalLogInResult.Unauthorized)
+                        {
+                            _statusMessage = "Invalid username or password.";
+                        }
+                        else if (res == LocalLogInResult.MustChangePasswordBeforeLogIn)
+                        {
+                            _statusMessage = "Password reset required before login.";
+                        }
+                        else
+                        {
+                            _statusMessage = "Login failed.";
+                        }
+                    });
                 }
 
                 ImGui.NewLine();
@@ -106,8 +138,12 @@ public class AccountManagerFloatingMenu
                 ImGui.Text("Create Account");
 
                 ImGui.InputText("New username", ref _createUsername, 128);
-                ImGui.InputText("New password", ref _createPassword, 128, ImGuiInputTextFlags.Password);
-                ImGui.InputText("Confirm password", ref _createPasswordConfirm, 128, ImGuiInputTextFlags.Password);
+                
+                if(string.IsNullOrEmpty(_pendingOauthCode)) {
+                    ImGui.InputText("New password", ref _createPassword, 128, ImGuiInputTextFlags.Password);
+                    ImGui.InputText("Confirm password", ref _createPasswordConfirm, 128, ImGuiInputTextFlags.Password);
+                }
+
                 if (ImGui.Button("Create"))
                 {
                     if (string.IsNullOrWhiteSpace(_createUsername))
@@ -116,9 +152,78 @@ public class AccountManagerFloatingMenu
                         _statusMessage = "Passwords do not match";
                     else
                     {
-                        // TODO: call account creation API
-                        _statusMessage = $"(stub) Created account {_createUsername}";
-                        _showCreateMenu = false;
+                        var un = _createUsername;
+                        var pw = _createPassword;
+                        _statusMessage = "Creating account...";
+
+                        if (!string.IsNullOrEmpty(_pendingOauthCode))
+                        {
+                            // Create account using the pending OAuth code path
+                            var code = _pendingOauthCode;
+                            var redirect = _pendingOauthRedirect;
+                            GameThreadContext.Current.Run(async () =>
+                            {
+                                var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(code!, redirect!, un);
+                                return res;
+                            }, (Oauth2CreateAccountResult res) =>
+                            {
+                                if (res == Oauth2CreateAccountResult.Success)
+                                {
+                                    _statusMessage = "Account created from Discord. Attempting login...";
+                                    // After creating, attempt login using the same code
+                                    GameThreadContext.Current.Run(async () =>
+                                    {
+                                        var loginRes = await GameSparker.AccountManager.DiscordOauth2AttemptLogIn(code!, redirect!);
+                                        return loginRes;
+                                    }, (Oauth2LogInResult loginRes) =>
+                                    {
+                                        if (loginRes == Oauth2LogInResult.Success)
+                                        {
+                                            _statusMessage = "Logged in via OAuth after creation.";
+                                            _loggedIn = true;
+                                        }
+                                        else
+                                        {
+                                            _statusMessage = "Login after creation failed.";
+                                        }
+                                    });
+                                    _showCreateMenu = false;
+                                    _pendingOauthCode = null;
+                                    _pendingOauthRedirect = null;
+                                }
+                                else if (res == Oauth2CreateAccountResult.UsernameTaken)
+                                {
+                                    _statusMessage = "Username already taken.";
+                                }
+                                else if (res == Oauth2CreateAccountResult.InvalidUsername)
+                                {
+                                    _statusMessage = "Invalid username.";
+                                }
+                                else
+                                {
+                                    _statusMessage = "Failed to create account from OAuth code.";
+                                }
+                            });
+                        }
+                        else
+                        {
+                            GameThreadContext.Current.Run(async () =>
+                            {
+                                var res = await GameSparker.AccountManager.CreateLocalAccount(un, pw);
+                                return res;
+                            }, (CreateLocalAccountResult res) =>
+                            {
+                                if (res == CreateLocalAccountResult.Success)
+                                {
+                                    _statusMessage = "Account created (awaiting approval).";
+                                    _showCreateMenu = false;
+                                }
+                                else if (res == CreateLocalAccountResult.UsernameTaken)
+                                {
+                                    _statusMessage = "Username already taken.";
+                                }
+                            });
+                        }
                     }
                 }
 
@@ -147,7 +252,7 @@ public class AccountManagerFloatingMenu
                     _statusMessage = "Opening Discord in web browser.";
                     _oauthResult = null;
                     var manager = new DiscordOauth2Manager();
-                    _oauthTask = manager.AuthorizeAsync(clientId, ["identify", "email"], token);
+                    _oauthTask = manager.AuthorizeAsync(clientId, new[] { "identify", "email" }, token);
                 }
             }
 
@@ -167,9 +272,37 @@ public class AccountManagerFloatingMenu
                             ImGui.TextColored(new System.Numerics.Vector4(0, 1, 0, 1), "OAuth succeeded");
                             ImGui.Text($"Code: {_oauthResult.Code}");
                             ImGui.Text($"RedirectUri: {_oauthResult.RedirectUri}");
-                            _statusMessage = "Received OAuth code. Hand this to your backend to exchange for tokens.";
-                            // For this draft we mark logged in when we receive a code. In real usage validate on backend.
-                            _loggedIn = true;
+                            // Avoid handling more than once
+                            if (!_oauthHandled)
+                            {
+                                _oauthHandled = true;
+                                _pendingOauthCode = _oauthResult.Code;
+                                _pendingOauthRedirect = _oauthResult.RedirectUri;
+                                _statusMessage = "Verifying OAuth code with server...";
+
+                                // Exchange / verify code via AccountManager on a background thread; callback runs on game thread
+                                GameThreadContext.Current.Run(async () =>
+                                {
+                                    var res = await GameSparker.AccountManager.DiscordOauth2AttemptLogIn(_pendingOauthCode!, _pendingOauthRedirect!);
+                                    return res;
+                                }, (Oauth2LogInResult res) =>
+                                {
+                                    if (res == Oauth2LogInResult.Success)
+                                    {
+                                        _statusMessage = "Logged in via OAuth.";
+                                        _loggedIn = true;
+                                    }
+                                    else if (res == Oauth2LogInResult.AccountDoesNotExist)
+                                    {
+                                        _statusMessage = "No server account for this Discord identity. Enter username to create one.";
+                                        _showCreateMenu = true;
+                                    }
+                                    else
+                                    {
+                                        _statusMessage = "Invalid OAuth code or redirect URI.";
+                                    }
+                                });
+                            }
                         }
                         else
                         {
