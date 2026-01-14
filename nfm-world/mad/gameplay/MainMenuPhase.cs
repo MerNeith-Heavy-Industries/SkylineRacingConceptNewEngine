@@ -5,6 +5,7 @@ using nfm_world.multiplayer;
 using nfm_world.stage;
 using nfm_world.ui;
 using nfm_world.util;
+using nfm_world.mad.account;
 
 namespace nfm_world.gameplay;
 
@@ -530,8 +531,12 @@ public class MainMenuPhase : BasePhase
         return;
     }
 
+    public AccountManagerFloatingMenu m = new AccountManagerFloatingMenu();
+
     public override void RenderImgui()
     {
         base.RenderImgui();
+
+        Console.WriteLine(m.Process());
     }
 }
