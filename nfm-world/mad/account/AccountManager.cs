@@ -94,18 +94,19 @@ public class AccountManager
     }
 
     /// <summary>
-    /// Attempt to log in using a Discord Oauth2 token. The token must be valid.
-    /// If this token is associated with an existing user account, a session token for that user is created and returned.
-    /// If not, this call will fail and instead should call into DiscordOauth2CreateAccount, which accepts both a token and a username. 
+    /// Attempt to log in using a Discord Oauth2 authorization code. The code must be valid.
+    /// If this code (when converted to a token) is associated with an existing user account, a session code for that user is created and returned.
+    /// If not, this call will fail and instead should call into DiscordOauth2CreateAccount, which accepts both a code and a username. 
     /// 
     /// Please note - if the user changes their Discord password, the session token is *not* invalidated. The user needs to manually revoke
     /// all session tokens after resetting the Discord password.
     /// 
     /// See LogInToLocalAccount for session token retention policy.
     /// </summary>
-    /// <param name="token">The token to log in from.</param>
+    /// <param name="code">The token to log in from.</param>
+    /// <param name="redirectUri">The escaped redirect URI used for accessing the code.</param>
     /// <returns>Either a session token or an error state describing actions the user must take.</returns>
-    public async Task<Oauth2LogInResult> DiscordOauth2AttemptLogIn(string token)
+    public async Task<Oauth2LogInResult> DiscordOauth2AttemptLogIn(string code, string redirectUri)
     {
         // Intentionally left as a stub for now
 
@@ -113,13 +114,14 @@ public class AccountManager
     }
 
     /// <summary>
-    /// Create an acctoung based on the provided Oauth2 token. The token must be associated with a Discord user that has not already registered.
+    /// Create an account based on the provided Oauth2 code. The code must be associated with a Discord user that has not already registered.
     /// The username must also be unique and follow the username policy.
     /// </summary>
-    /// <param name="token">The Discord Oauth2 token.</param>
+    /// <param name="code">The Discord Oauth2 code.</param>
+    /// <param name="redirectUri">The escaped redirect URI used for accessing the code.</param>
     /// <param name="username">The username of the account to create.</param>
     /// <returns></returns>
-    public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string token, string username)
+    public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string code, string redirectUri, string username)
     {
         // Inentionally left as a stub for now
 

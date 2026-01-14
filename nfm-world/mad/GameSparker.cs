@@ -20,6 +20,7 @@ public class GameSparker
     public static Program _game;
     public static GraphicsDevice _graphicsDevice;
     public static readonly string version = GetVersionString();
+    public static AccountManager AccountManager = new AccountManager();
 
     private static string GetVersionString()
     {

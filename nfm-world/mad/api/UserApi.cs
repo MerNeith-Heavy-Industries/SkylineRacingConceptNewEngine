@@ -29,24 +29,26 @@ public static class UserApi
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
     }
 
-    public static async Task<ApiRes> CreateDiscordOauth2Account(string oauth2Token, string username)
+    public static async Task<ApiRes> CreateDiscordOauth2Account(string oauth2Code, string redirectUri, string username)
     {
         var route = "discord_create_account";
         var body = new
         {
             username,
-            oauth2Token
+            redirectUri,
+            oauth2Code
         };
 
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
     }
 
-    public static async Task<(HttpStatusCode, LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Token)
+    public static async Task<(HttpStatusCode, LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Code, string redirectUri)
     {
         var route = "discord_login";
         var body = new
         {
-            oauth2Token
+            redirectUri,
+            oauth2Code
         };
 
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
