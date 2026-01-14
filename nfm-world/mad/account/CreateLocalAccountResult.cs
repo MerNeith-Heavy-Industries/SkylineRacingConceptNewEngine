@@ -1,6 +1,6 @@
 namespace nfm_world.mad.account;
 
-public enum CreateAccountResult
+public enum CreateLocalAccountResult
 {
     /// <summary>
     /// At least for now, account creation is only an intermediate step. The created account needs manual approval

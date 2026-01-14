@@ -1,10 +1,9 @@
 namespace nfm_world.mad.api;
 
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-
-using ApiRes = (System.Net.HttpStatusCode, ApiResponse);
 
 public class NfmwApi
 {
@@ -13,12 +12,11 @@ public class NfmwApi
     private static HttpClient _client = new()
     {
         BaseAddress = new Uri(_baseAddr),
-        Timeout = TimeSpan.FromSeconds(10),
     };
 
     static NfmwApi() {
-        _client.DefaultRequestHeaders.UserAgent.Clear();
-        _client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("NfmwClientAgent"));
+        _client.DefaultRequestHeaders.Remove("User-Agent");
+        _client.DefaultRequestHeaders.Add("User-Agent", "NfmwClientAgent");
 
         _client.DefaultRequestHeaders.Accept.Clear();
         _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -26,17 +24,18 @@ public class NfmwApi
 
     public static void SetAuthorization(string token)
     {
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(token);
+        _client.DefaultRequestHeaders.Remove("Authorization");
+        _client.DefaultRequestHeaders.Add("Authorization", token);
     }
 
-    public static async Task<ApiRes> GetAsync(string route)
+    public static async Task<(HttpStatusCode, T?)> GetAsync<T>(string route)
     {
         using HttpResponseMessage response = await _client.GetAsync(route);
 
-        return await ProcessResponse(response);
+        return await ProcessResponse<T>(response);
     }
 
-    public static async Task<ApiRes> PostAsync(string route, object body)
+    public static async Task<(HttpStatusCode, T?)> PostAsync<T>(string route, object body)
     {
         using StringContent jsonContent = new(
             JsonSerializer.Serialize(body),
@@ -46,10 +45,10 @@ public class NfmwApi
 
         using HttpResponseMessage response = await _client.PostAsync(route, jsonContent);
 
-        return await ProcessResponse(response);
+        return await ProcessResponse<T>(response);
     }
 
-    public static async Task<ApiRes> PatchAsync(string route, object body)
+    public static async Task<(HttpStatusCode, T?)> PatchAsync<T>(string route, object body)
     {
         using StringContent jsonContent = new(
             JsonSerializer.Serialize(body),
@@ -59,21 +58,21 @@ public class NfmwApi
 
         using HttpResponseMessage response = await _client.PatchAsync(route, jsonContent);
 
-        return await ProcessResponse(response);
+        return await ProcessResponse<T>(response);
     }
 
-    public static async Task<ApiRes> DeleteAsync(string route)
+    public static async Task<(HttpStatusCode, T?)> DeleteAsync<T>(string route)
     {
         using HttpResponseMessage response = await _client.DeleteAsync(route);
 
-        return await ProcessResponse(response);
+        return await ProcessResponse<T>(response);
     }
 
-    private static async Task<ApiRes> ProcessResponse(HttpResponseMessage response)
+    private static async Task<(HttpStatusCode, T?)> ProcessResponse<T>(HttpResponseMessage response)
     {
         var status = response.StatusCode;
         var content = await response.Content.ReadAsStreamAsync();
-        var res = await JsonSerializer.DeserializeAsync<ApiResponse>(content);
+        var res = await JsonSerializer.DeserializeAsync<T>(content);
 
         return (status, res);
     }

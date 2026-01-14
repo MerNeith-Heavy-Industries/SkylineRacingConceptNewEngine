@@ -1,6 +1,6 @@
 namespace nfm_world.mad.account;
 
-public enum LogInResult
+public enum LocalLogInResult
 {
     /// <summary>
     /// On success, AccountManager.ActiveAccount is set to an Account and the token is stored there.
