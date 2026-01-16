@@ -434,7 +434,7 @@ public class MainMenuPhase : BasePhase
 
     private void OnLogoutClicked()
     {
-        if (GameSparker.AccountManager.LoggedIn())
+        if (GameSparker.AccountManager.LoggedIn)
         {
             GameSparker.AccountManager.LogOut();
         }

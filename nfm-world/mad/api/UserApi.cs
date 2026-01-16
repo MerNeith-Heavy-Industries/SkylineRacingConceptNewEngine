@@ -9,48 +9,48 @@ public static class UserApi
     public static async Task<ApiRes> CreateLocalAccount(string username, string password)
     {
         var route = "create_account";
-        var body = new
+        var body = new LocalAccountRequestParams
         {
-            username,
-            password
+            Username = username,
+            Password = password
         };
 
-        return await NfmwApi.PostAsync<ApiResponse>(route, body);
+        return await NfmwApi.PostAsync(route, body, ApiSerializerContext.Default.LocalAccountRequestParams, ApiSerializerContext.Default.ApiResponse);
     }
 
     public static async Task<(HttpStatusCode, LogInApiResponse?)> LocalLogIn(string username, string password)
     {
         var route = "login";
-        var body = new
+        var body = new LocalAccountRequestParams
         {
-            username,
-            password
+            Username = username,
+            Password = password
         };
 
-        return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
+        return await NfmwApi.PostAsync(route, body, ApiSerializerContext.Default.LocalAccountRequestParams, ApiSerializerContext.Default.LogInApiResponse);
     }
 
     public static async Task<(HttpStatusCode, LogInApiResponse?)> CreateDiscordOauth2Account(string tempToken, string username)
     {
         var route = "discord/create_account";
-        var body = new
+        var body = new Oauth2CreateAccountRequestParams
         {
-            temp_token = tempToken,
-            username
+            TempToken = tempToken,
+            Username = username
         };
 
-        return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
+        return await NfmwApi.PostAsync(route, body, ApiSerializerContext.Default.Oauth2CreateAccountRequestParams, ApiSerializerContext.Default.LogInApiResponse);
     }
 
     public static async Task<(HttpStatusCode, Oauth2LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Code, string redirectUri)
     {
         var route = "discord/login";
-        var body = new
+        var body = new Oauth2LogInRequestParams
         {
-            redirect_uri = redirectUri,
-            code = oauth2Code
+            RedirectUri = redirectUri,
+            Code = oauth2Code
         };
 
-        return await NfmwApi.PostAsync<Oauth2LogInApiResponse>(route, body);
+        return await NfmwApi.PostAsync(route, body, ApiSerializerContext.Default.Oauth2LogInRequestParams, ApiSerializerContext.Default.Oauth2LogInApiResponse);
     }
 }
