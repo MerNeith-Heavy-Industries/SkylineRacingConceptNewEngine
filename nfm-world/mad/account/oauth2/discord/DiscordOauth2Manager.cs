@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
-namespace nfm_world.mad.account.oauth2;
+namespace nfm_world.mad.account.oauth2.discord;
 
 /// <summary>
 /// Manager to help process Discord Oauth2 account management.

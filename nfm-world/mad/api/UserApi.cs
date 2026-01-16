@@ -1,6 +1,7 @@
 namespace nfm_world.mad.api;
 
 using System.Net;
+using nfm_world.mad.account.oauth2;
 using ApiRes = (System.Net.HttpStatusCode, ApiResponse?);
 
 public static class UserApi
@@ -29,28 +30,28 @@ public static class UserApi
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
     }
 
-    public static async Task<ApiRes> CreateDiscordOauth2Account(string oauth2Code, string redirectUri, string username)
+    public static async Task<(HttpStatusCode, LogInApiResponse?)> CreateDiscordOauth2Account(string oauth2Code, string redirectUri, string username)
     {
         var route = "discord_create_account";
         var body = new
         {
             username,
-            redirectUri,
-            oauth2Code
+            redirect_uri = redirectUri,
+            code = oauth2Code
         };
 
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
     }
 
-    public static async Task<(HttpStatusCode, LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Code, string redirectUri)
+    public static async Task<(HttpStatusCode, Oauth2LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Code, string redirectUri)
     {
         var route = "discord_login";
         var body = new
         {
-            redirectUri,
-            oauth2Code
+            redirec_uri = redirectUri,
+            code = oauth2Code
         };
 
-        return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
+        return await NfmwApi.PostAsync<Oauth2LogInApiResponse>(route, body);
     }
 }

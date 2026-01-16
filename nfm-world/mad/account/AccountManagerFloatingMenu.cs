@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using nfm_world.mad.account.oauth2;
 using nfm_world;
 using nfm_world_library.util;
+using nfm_world.mad.account.oauth2.discord;
 
 namespace nfm_world.mad.account;
 
@@ -78,25 +79,17 @@ public class AccountManagerFloatingMenu
             {
                 var res = await GameSparker.AccountManager.LogInToLocalAccount(username, password);
                 return res;
-            }, (LocalLogInResult res) =>
+            }, res =>
             {
                 _buttonsDisabled = false;
-                if (res == LocalLogInResult.Success)
+                if (res.Success())
                 {
-                    _statusMessage = "Logged in (local)";
+                    _statusMessage = "Logged in via local account.";
                     _loggedIn = true;
-                }
-                else if (res == LocalLogInResult.Unauthorized)
-                {
-                    _statusMessage = "Invalid username or password.";
-                }
-                else if (res == LocalLogInResult.MustChangePasswordBeforeLogIn)
-                {
-                    _statusMessage = "Password reset required before login.";
                 }
                 else
                 {
-                    _statusMessage = "Login failed.";
+                    _statusMessage = res.ErrorString() ?? "Unknown login error.";
                 }
             });
         }
@@ -126,7 +119,7 @@ public class AccountManagerFloatingMenu
         {
             if (string.IsNullOrWhiteSpace(_createUsername))
                 _statusMessage = "Username required";
-            else if (_createPassword != _createPasswordConfirm)
+            else if (_createPassword != _createPasswordConfirm && string.IsNullOrEmpty(_pendingOauthCode))
                 _statusMessage = "Passwords do not match";
             else
             {
@@ -144,47 +137,18 @@ public class AccountManagerFloatingMenu
                     {
                         var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(code!, redirect!, un);
                         return res;
-                    }, (Oauth2CreateAccountResult res) =>
+                    }, res =>
                     {
                         _buttonsDisabled = false;
-                        if (res == Oauth2CreateAccountResult.Success)
+                        _showCreateMenu = false;
+                        _pendingOauthCode = null;
+                        _pendingOauthRedirect = null;
+                        if (res.Success())
                         {
-                            _buttonsDisabled = true;
-                            _statusMessage = "Account created from Discord. Attempting login...";
-                            // After creating, attempt login using the same code
-                            GameThreadContext.Current.Run(async () =>
-                            {
-                                var loginRes = await GameSparker.AccountManager.DiscordOauth2AttemptLogIn(code!, redirect!);
-                                return loginRes;
-                            }, (Oauth2LogInResult loginRes) =>
-                            {
-                                _buttonsDisabled = false;
-                                if (loginRes == Oauth2LogInResult.Success)
-                                {
-                                    _statusMessage = "Logged in via OAuth after creation.";
-                                    _loggedIn = true;
-                                }
-                                else
-                                {
-                                    _statusMessage = "Login after creation failed.";
-                                }
-                            });
-                            _showCreateMenu = false;
-                            _pendingOauthCode = null;
-                            _pendingOauthRedirect = null;
+                            _statusMessage = "Logged in via OAuth after creation.";
+                            _loggedIn = true;
                         }
-                        else if (res == Oauth2CreateAccountResult.UsernameTaken)
-                        {
-                            _statusMessage = "Username already taken.";
-                        }
-                        else if (res == Oauth2CreateAccountResult.InvalidUsername)
-                        {
-                            _statusMessage = "Invalid username.";
-                        }
-                        else
-                        {
-                            _statusMessage = "Failed to create account from OAuth code.";
-                        }
+                        _statusMessage = res.ErrorString() ?? "Unknown Error";
                     });
                 }
                 else
@@ -194,17 +158,18 @@ public class AccountManagerFloatingMenu
                     {
                         var res = await GameSparker.AccountManager.CreateLocalAccount(un, local_pw);
                         return res;
-                    }, (CreateLocalAccountResult res) =>
+                    }, res =>
                     {
+                        // TODO: Extend RequestResult for this
                         _buttonsDisabled = false;
-                        if (res == CreateLocalAccountResult.Success)
+                        if (res.Success())
                         {
                             _statusMessage = "Account created (awaiting approval).";
                             _showCreateMenu = false;
                         }
-                        else if (res == CreateLocalAccountResult.UsernameTaken)
+                        else
                         {
-                            _statusMessage = "Username already taken.";
+                            _statusMessage = res.ErrorString() ?? "Unknown error.";
                         }
                     });
                 }
@@ -243,20 +208,20 @@ public class AccountManagerFloatingMenu
                 _oauthResult = null;
                 _buttonsDisabled = true;
                 var manager = new DiscordOauth2Manager();
-                _oauthTask = manager.AuthorizeAsync(clientId, new[] { "identify", "email" }, token);
+                _oauthTask = manager.AuthorizeAsync(clientId, [ "identify", "email" ], token);
             }
         }
     }
 
     private void HandleOauthTaskDisplay()
     {
-        if (!_oauthTask.IsCompleted)
+        if ((!(_oauthTask?.IsCompleted)) ?? false)
         {
             ImGui.Text("OAuth: in progress...");
         }
         else
         {
-            _oauthResult ??= _oauthTask.Result;
+            _oauthResult ??= _oauthTask?.Result;
             if (_oauthResult != null)
             {
                 _buttonsDisabled = false;
@@ -282,19 +247,22 @@ public class AccountManagerFloatingMenu
                         }, (Oauth2LogInResult res) =>
                         {
                             _buttonsDisabled = false;
-                            if (res == Oauth2LogInResult.Success)
+                            if (res.Success())
                             {
                                 _statusMessage = "Logged in via OAuth.";
                                 _loggedIn = true;
                             }
-                            else if (res == Oauth2LogInResult.AccountDoesNotExist)
+                            else if (res.NoSuchAccount())
                             {
+                                // Save pending code/redirect and use them when creating
                                 _statusMessage = "No server account for this Discord identity. Enter username to create one.";
                                 _showCreateMenu = true;
                             }
                             else
                             {
-                                _statusMessage = "Invalid OAuth code or redirect URI.";
+                                _statusMessage = res.ErrorString() ?? "Unknown login error.";
+                                _pendingOauthCode = null;
+                                _pendingOauthRedirect = null;
                             }
                         });
                     }

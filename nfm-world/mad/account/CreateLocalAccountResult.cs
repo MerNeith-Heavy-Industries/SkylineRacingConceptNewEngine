@@ -1,11 +1,22 @@
+using System.Net;
+
 namespace nfm_world.mad.account;
 
-public enum CreateLocalAccountResult
+public class CreateLocalAccountResult(string message, HttpStatusCode code) : RequestResult(message, code)
 {
-    /// <summary>
-    /// At least for now, account creation is only an intermediate step. The created account needs manual approval
-    /// in the database to become officially active.
-    /// </summary>
-    Success,
-    UsernameTaken,
+    public override string? ErrorString()
+    {
+        var current = base.ErrorString();
+        if(current is not null) return current;
+
+        switch (StatusCode)
+        {
+            case HttpStatusCode.Conflict:
+                {
+                    return "An account already exists with this username, or this account is already registered.";
+                }
+        }
+
+        return "Unknown error: " + StatusCode;
+    }
 }

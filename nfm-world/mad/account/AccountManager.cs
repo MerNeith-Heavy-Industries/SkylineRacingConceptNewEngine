@@ -20,25 +20,9 @@ public class AccountManager
     /// <returns>The result of account creation. Throws an exception where there is a server error or input validation error.</returns>
     public async Task<CreateLocalAccountResult> CreateLocalAccount(string username, string password)
     {
-        // This is disabled for now as accounts are created on a case-by-case. The account system needs to mature
-        // before we can make it open registration.
         var res = await UserApi.CreateLocalAccount(username, password);
-
-        if(res.Item1 == HttpStatusCode.InternalServerError)
-        {
-           throw new HttpRequestException(res.Item2?.status);
-        } else if(res.Item1 == HttpStatusCode.BadRequest)
-        {
-            throw new HttpRequestException(res.Item2?.status);
-        } else if (res.Item1 == HttpStatusCode.Forbidden)
-        {
-            throw new UnauthorizedAccessException(res.Item2?.status);
-        } else if(res.Item1 == HttpStatusCode.Conflict)
-        {
-            return CreateLocalAccountResult.UsernameTaken;
-        }
-
-        return CreateLocalAccountResult.Success;
+        
+        return new CreateLocalAccountResult(res.Item2?.status ?? "Unknown Status", res.Item1);
     }
 
     /// <summary>
@@ -60,25 +44,17 @@ public class AccountManager
     public async Task<LocalLogInResult> LogInToLocalAccount(string username, string password)
     {
         var res = await UserApi.LocalLogIn(username, password);
+        var inner_res = new LocalLogInResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        if(res.Item1 == HttpStatusCode.InternalServerError)
+        if(!inner_res.Success())
         {
-           throw new HttpRequestException(res.Item2?.status);
-        } else if(res.Item1 == HttpStatusCode.BadRequest)
-        {
-            throw new HttpRequestException(res.Item2?.status);
-        } else if(res.Item1 == HttpStatusCode.Unauthorized)
-        {
-            return LocalLogInResult.Unauthorized;
-        } else if(res.Item1 == HttpStatusCode.Forbidden)
-        {
-            return LocalLogInResult.MustChangePasswordBeforeLogIn;
+            return inner_res;
         }
 
         string token = res.Item2?.token ?? throw new Exception("token was null in api response");
         ActiveAccount = new Account(token, username);
 
-        return LocalLogInResult.Success;
+        return inner_res;
     }
 
     /// <summary>
@@ -90,7 +66,7 @@ public class AccountManager
     /// <returns>The change password result.</returns>
     public async Task ChangeLocalAccountPassword(string current, string updated)
     {
-
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -108,9 +84,20 @@ public class AccountManager
     /// <returns>Either a session token or an error state describing actions the user must take.</returns>
     public async Task<Oauth2LogInResult> DiscordOauth2AttemptLogIn(string code, string redirectUri)
     {
-        // Intentionally left as a stub for now
+        var res = await UserApi.DiscordOauth2LogIn(code, redirectUri);
+        var inner_res = new Oauth2LogInResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        throw new NotImplementedException();
+        if(!inner_res.Success())
+        {
+            return inner_res;
+        }
+
+        // todo: dont throw here
+        string username = res.Item2?.Username ?? throw new Exception("username was nul in api response");
+        string token = res.Item2?.token ?? throw new Exception("token was null in api response");
+        ActiveAccount = new Account(token, username);
+
+        return inner_res;
     }
 
     /// <summary>
@@ -123,8 +110,17 @@ public class AccountManager
     /// <returns></returns>
     public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string code, string redirectUri, string username)
     {
-        // Inentionally left as a stub for now
+        var res = await UserApi.CreateDiscordOauth2Account(code, redirectUri, username);
+        var inner_res = new Oauth2CreateAccountResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        throw new NotImplementedException();
+        if(!inner_res.Success())
+        {
+            return inner_res;
+        }
+
+        string token = res.Item2?.token ?? throw new Exception("token was null in api response");
+        ActiveAccount = new Account(token, username);
+
+        return inner_res;
     }
 }

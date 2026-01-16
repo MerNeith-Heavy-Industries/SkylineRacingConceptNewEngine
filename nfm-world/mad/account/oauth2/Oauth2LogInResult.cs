@@ -1,8 +1,27 @@
+using System.Net;
+
 namespace nfm_world.mad.account.oauth2;
 
-public enum Oauth2LogInResult
+public class Oauth2LogInResult(string message, HttpStatusCode code) : RequestResult(message, code)
 {
-    Success,
-    InvalidCodeOrRedirectURI,
-    AccountDoesNotExist
+    public override string? ErrorString()
+    {
+        var current = base.ErrorString();
+        if(current is not null) return current;
+
+        switch (StatusCode)
+        {
+            case HttpStatusCode.NotFound:
+                {
+                    return "This account is not registered.";
+                }
+        }
+
+        return "Unknown error: " + StatusCode;
+    }
+
+    public bool NoSuchAccount()
+    {
+        return StatusCode == HttpStatusCode.NotFound;
+    }
 }
