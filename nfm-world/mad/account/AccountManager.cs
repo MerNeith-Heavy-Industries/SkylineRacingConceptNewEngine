@@ -8,6 +8,17 @@ public class AccountManager
 {
     public Account? ActiveAccount;
 
+    public bool LoggedIn()
+    {
+        return ActiveAccount is not null;
+    }
+
+    // TODO: Logout properly by querying API to invalidate token?
+    public void LogOut()
+    {
+        ActiveAccount = null;
+    }
+
     /// <summary>
     /// Create an account. On success, this method has no side effects.
     /// Once an account is successfully created, it can be logged into with AccountManager.LogIn

@@ -60,6 +60,26 @@ public class AccountManagerFloatingMenu
     public AccountManagerFloatingMenu()
     {
         _isOpen = true;
+        _loggedIn = GameSparker.AccountManager.ActiveAccount is not null;
+    }
+
+    public void Close()
+    {
+        _isOpen = false;
+
+        try
+        {
+            if (_oauthCts != null && !(_oauthTask?.IsCompleted ?? true))
+            {
+                _oauthCts.Cancel();
+            }
+        }
+        catch { }
+        finally
+        {
+            try { _oauthCts?.Dispose(); } catch { }
+            _oauthCts = null;
+        }
     }
 
     private void ShowLocalLoginArea()
@@ -113,7 +133,8 @@ public class AccountManagerFloatingMenu
         {
             ImGui.InputText("New password", ref _createPassword, 128, ImGuiInputTextFlags.Password);
             ImGui.InputText("Confirm password", ref _createPasswordConfirm, 128, ImGuiInputTextFlags.Password);
-        } else
+        }
+        else
         {
             _createPassword = "";
             _createPasswordConfirm = "";
@@ -212,7 +233,7 @@ public class AccountManagerFloatingMenu
                 _oauthResult = null;
                 _buttonsDisabled = true;
                 var manager = new DiscordOauth2Manager();
-                _oauthTask = manager.AuthorizeAsync(clientId, [ "identify", "email" ], token);
+                _oauthTask = manager.AuthorizeAsync(clientId, ["identify", "email"], token);
             }
         }
     }
@@ -308,6 +329,7 @@ public class AccountManagerFloatingMenu
             return _loggedIn ? AccountManagerFloatingMenuState.LoggedIn : AccountManagerFloatingMenuState.Canceled;
         }
 
+        // Auto size to fit content
         ImGui.SetNextWindowSize(new System.Numerics.Vector2(0, 0));
         if (ImGui.Begin("Login", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize))
         {
