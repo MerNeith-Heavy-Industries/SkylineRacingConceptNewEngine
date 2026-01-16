@@ -104,7 +104,7 @@ public class AccountManagerFloatingMenu
             }, res =>
             {
                 _buttonsDisabled = false;
-                if (res.Success())
+                if (res.Success)
                 {
                     _statusMessage = "Logged in via local account.";
                     _loggedIn = true;
@@ -160,15 +160,15 @@ public class AccountManagerFloatingMenu
                     var code = _pendingOauthCode;
                     var redirect = _pendingOauthRedirect;
                     _buttonsDisabled = true;
+                    var tt = _pendingOauthTempToken ?? throw new Exception("Temp token was null");
                     GameThreadContext.Current.Run(async () =>
                     {
-                        var tt = _pendingOauthTempToken ?? throw new Exception("Temp token was null");
                         var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(tt, un);
                         return res;
                     }, res =>
                     {
                         _buttonsDisabled = false;
-                        if (res.Success())
+                        if (res.Success)
                         {
                             _statusMessage = "Logged in via OAuth after creation.";
                             _loggedIn = true;
@@ -194,7 +194,7 @@ public class AccountManagerFloatingMenu
                     {
                         // TODO: Extend RequestResult for this
                         _buttonsDisabled = false;
-                        if (res.Success())
+                        if (res.Success)
                         {
                             _statusMessage = "Account created (awaiting approval).";
                             _showCreateMenu = false;
@@ -256,6 +256,8 @@ public class AccountManagerFloatingMenu
             _oauthResult ??= _oauthTask?.Result;
             if (_oauthResult != null)
             {
+                _oauthCts?.Dispose();
+                _oauthCts = null;
                 _buttonsDisabled = false;
                 if (_oauthResult.Success)
                 {
@@ -279,7 +281,7 @@ public class AccountManagerFloatingMenu
                         }, (Oauth2LogInResult res) =>
                         {
                             _buttonsDisabled = false;
-                            if (res.Success())
+                            if (res.Success)
                             {
                                 _statusMessage = "Logged in via OAuth.";
                                 _loggedIn = true;

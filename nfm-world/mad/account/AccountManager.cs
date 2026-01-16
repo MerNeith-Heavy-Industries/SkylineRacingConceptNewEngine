@@ -8,10 +8,7 @@ public class AccountManager
 {
     public Account? ActiveAccount;
 
-    public bool LoggedIn()
-    {
-        return ActiveAccount is not null;
-    }
+    public bool LoggedIn { get { return ActiveAccount is not null; } }
 
     // TODO: Logout properly by querying API to invalidate token?
     public void LogOut()
@@ -57,12 +54,12 @@ public class AccountManager
         var res = await UserApi.LocalLogIn(username, password);
         var inner_res = new LocalLogInResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        if(!inner_res.Success())
+        if(!inner_res.Success)
         {
             return inner_res;
         }
 
-        string token = res.Item2?.token ?? throw new Exception("token was null in api response");
+        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
         ActiveAccount = new Account(token, username);
 
         return inner_res;
@@ -98,7 +95,7 @@ public class AccountManager
         var res = await UserApi.DiscordOauth2LogIn(code, redirectUri);
         var inner_res = new Oauth2LogInResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        if(!inner_res.Success())
+        if(!inner_res.Success)
         {
 
             inner_res.TempToken = res.Item2?.TempToken;
@@ -106,8 +103,8 @@ public class AccountManager
         }
 
         // todo: dont throw here
-        string username = res.Item2?.username ?? throw new Exception("username was null in api response");
-        string token = res.Item2?.token ?? throw new Exception("token was null in api response");
+        string username = res.Item2?.Username ?? throw new Exception("username was null in api response");
+        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
         ActiveAccount = new Account(token, username);
 
         return inner_res;
@@ -126,12 +123,12 @@ public class AccountManager
         var res = await UserApi.CreateDiscordOauth2Account(tempToken, username);
         var inner_res = new Oauth2CreateAccountResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
-        if(!inner_res.Success())
+        if(!inner_res.Success)
         {
             return inner_res;
         }
 
-        string token = res.Item2?.token ?? throw new Exception("token was null in api response");
+        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
         ActiveAccount = new Account(token, username);
 
         return inner_res;

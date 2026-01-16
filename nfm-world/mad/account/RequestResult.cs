@@ -5,14 +5,11 @@ public class RequestResult
     public string? Message;
     public HttpStatusCode StatusCode;
 
-    public bool Success()
-    {
-        return StatusCode == HttpStatusCode.OK;
-    }
+    public bool Success { get { return StatusCode == HttpStatusCode.OK; }}
 
     public virtual string? ErrorString()
     {
-        if (Success()) return null;
+        if (Success) return null;
 
         switch (StatusCode)
         {

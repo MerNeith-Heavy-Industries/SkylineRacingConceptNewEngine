@@ -20,8 +20,5 @@ public class LocalLogInResult(string message, HttpStatusCode code) : RequestResu
         return "Unknown error: " + StatusCode;
     }
 
-    public bool NoSuchAccount()
-    {
-        return StatusCode == HttpStatusCode.NotFound;
-    }
+    public bool NoSuchAccount { get { return StatusCode == HttpStatusCode.NotFound; }}
 }

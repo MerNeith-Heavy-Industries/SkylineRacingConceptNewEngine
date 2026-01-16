@@ -4,6 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Buffers;
 
 namespace nfm_world.mad.account.oauth2.discord;
 
@@ -86,7 +87,7 @@ public class DiscordOauth2Manager
         }
         finally
         {
-            try { listener.Stop(); } catch { }
+            try { listener.Stop(); listener.Dispose(); } catch { }
         }
     }
 
@@ -117,7 +118,7 @@ public class DiscordOauth2Manager
     private static async Task<string> ReadRequestAndRespondAsync(TcpClient client)
     {
         using var ns = client.GetStream();
-        var buffer = new byte[8192];
+        var buffer = ArrayPool<byte>.Shared.Rent(8192);
         var sb = new StringBuilder();
         int read;
         // Read until header terminator \r\n\r\n
@@ -132,7 +133,7 @@ public class DiscordOauth2Manager
 
         var req = sb.ToString();
         // first line: GET /callback?code=... HTTP/1.1
-        var firstLine = req.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+        var firstLine = req.Split([ '\r', '\n' ], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
         var parts = firstLine.Split(' ');
         var pathAndQuery = parts.Length >= 2 ? parts[1] : "/";
 

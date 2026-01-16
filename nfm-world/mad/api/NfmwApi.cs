@@ -16,7 +16,8 @@ public class NfmwApi
 
     static NfmwApi() {
         _client.DefaultRequestHeaders.Remove("User-Agent");
-        _client.DefaultRequestHeaders.Add("User-Agent", "NfmwClientAgent");
+        // TODO: get a programmatic version from somewhere?
+        _client.DefaultRequestHeaders.Add("User-Agent", "NfmwClientAgent/1");
 
         _client.DefaultRequestHeaders.Accept.Clear();
         _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
