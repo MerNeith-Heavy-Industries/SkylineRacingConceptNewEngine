@@ -35,6 +35,8 @@ public class AccountManagerFloatingMenu
         Canceled,
     }
 
+    private readonly static string _clientId = "526861829872549898";
+
     private bool _isOpen;
     private string _localUsername = string.Empty;
     private string _localPassword = string.Empty;
@@ -235,7 +237,7 @@ public class AccountManagerFloatingMenu
                 var token = _oauthCts.Token;
 
                 // Kick off OAuth2 flow in background. Replace CLIENT_ID placeholder with real value.
-                var clientId = "526861829872549898";
+                var clientId = _clientId;
                 _statusMessage = "Opening Discord in web browser.";
                 _oauthResult = null;
                 _buttonsDisabled = true;
