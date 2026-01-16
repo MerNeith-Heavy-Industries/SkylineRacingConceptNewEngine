@@ -7,7 +7,7 @@ using System.Text.Json;
 
 public class NfmwApi
 {
-    private static readonly string _baseAddr = "https://nfmwapi.jacher.io";
+    private static readonly string _baseAddr = "http://127.0.0.1:8074";
 
     private static HttpClient _client = new()
     {
@@ -72,6 +72,7 @@ public class NfmwApi
     {
         var status = response.StatusCode;
         var content = await response.Content.ReadAsStreamAsync();
+
         var res = await JsonSerializer.DeserializeAsync<T>(content);
 
         return (status, res);

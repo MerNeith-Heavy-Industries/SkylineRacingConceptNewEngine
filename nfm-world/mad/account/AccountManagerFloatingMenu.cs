@@ -53,6 +53,8 @@ public class AccountManagerFloatingMenu
     private bool _oauthHandled = false;
     private string? _pendingOauthCode;
     private string? _pendingOauthRedirect;
+    // See Oauth2LogInResult - TempToken
+    private string? _pendingOauthTempToken;
 
     // Disable all buttons when running in a thread context to prevent weirdness...
     private bool _buttonsDisabled = false;
@@ -160,7 +162,8 @@ public class AccountManagerFloatingMenu
                     _buttonsDisabled = true;
                     GameThreadContext.Current.Run(async () =>
                     {
-                        var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(code!, redirect!, un);
+                        var tt = _pendingOauthTempToken ?? throw new Exception("Temp token was null");
+                        var res = await GameSparker.AccountManager.DiscordOauth2CreateAccount(tt, un);
                         return res;
                     }, res =>
                     {
@@ -228,7 +231,7 @@ public class AccountManagerFloatingMenu
                 var token = _oauthCts.Token;
 
                 // Kick off OAuth2 flow in background. Replace CLIENT_ID placeholder with real value.
-                var clientId = "YOUR_DISCORD_CLIENT_ID";
+                var clientId = "526861829872549898";
                 _statusMessage = "Opening Discord in web browser.";
                 _oauthResult = null;
                 _buttonsDisabled = true;
@@ -280,6 +283,7 @@ public class AccountManagerFloatingMenu
                             else if (res.NoSuchAccount())
                             {
                                 // Save pending code/redirect and use them when creating
+                                _pendingOauthTempToken = res.TempToken;
                                 _statusMessage = "No server account for this Discord identity. Enter username to create one.";
                                 _showCreateMenu = true;
                             }
@@ -342,7 +346,10 @@ public class AccountManagerFloatingMenu
                 ShowCreateAccountArea();
             }
 
-            ShowSocialLoginArea();
+            if(_pendingOauthCode is null)
+            {
+                ShowSocialLoginArea();   
+            }
 
             if (_oauthTask != null)
             {

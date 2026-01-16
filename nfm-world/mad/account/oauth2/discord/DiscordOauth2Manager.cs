@@ -40,7 +40,7 @@ public class DiscordOauth2Manager
             throw new ArgumentException("clientId is required", nameof(clientId));
 
         // Start a loopback listener on an ephemeral port
-        var listener = new TcpListener(IPAddress.Loopback, 0);
+        var listener = new TcpListener(IPAddress.Loopback, 8122);
         listener.Start();
         try
         {

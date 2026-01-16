@@ -4,6 +4,8 @@ namespace nfm_world.mad.account.oauth2;
 
 public class Oauth2CreateAccountResult(string message, HttpStatusCode code) : RequestResult(message, code)
 {
+    public string? TempToken;
+
     public override string? ErrorString()
     {
         var current = base.ErrorString();

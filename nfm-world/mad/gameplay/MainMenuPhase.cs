@@ -77,10 +77,8 @@ public class MainMenuPhase : BasePhase
         AddButton(startX, startY + spacing * 4, buttonWidth, buttonHeight, "CREDITS", OnClickUnavailable);
         AddButton(startX, startY + spacing * 5, buttonWidth, buttonHeight, "QUIT", OnQuitClicked);
 
-        if(GameSparker.AccountManager.LoggedIn())
-            AddButton((int)(G.Viewport.X - startX - buttonWidth), startY, buttonWidth, buttonHeight, "LOGOUT", OnLogoutClicked);
-        else
-            AddButton((int)(G.Viewport.X - startX - buttonWidth), startY, buttonWidth, buttonHeight, "LOGIN", OnLoginClicked);
+        //AddButton((int)(G.Viewport.X - startX - buttonWidth), startY, buttonWidth, buttonHeight, "LOGOUT", OnLogoutClicked);
+        AddButton((int)(G.Viewport.X - startX - buttonWidth), startY, buttonWidth, buttonHeight, "LOGIN", OnLoginClicked);
     }
 
     private void BuildWorkshopMenu()
@@ -184,7 +182,7 @@ public class MainMenuPhase : BasePhase
             Width = width,
             Height = height,
             Text = text,
-            OnClick = onClick ?? (() => { }) // Empty action for non-implemented buttons
+            OnClick = onClick ?? (() => { }), // Empty action for non-implemented buttons,
         });
     }
 
@@ -277,9 +275,11 @@ public class MainMenuPhase : BasePhase
             "Logged in as: " + GameSparker.AccountManager.ActiveAccount.Username :
             "Logged Out";
 
+        var b = _buttons.Find(b => b.Text == "LOGIN");
+
         G.DrawStringAligned(
             loginText,
-            (int)(G.Viewport.X - startX), 
+            b.X + b.Width,
             startY + buttonHeight + spacing,
             driverinterface.TextHorizontalAlignment.Right,
             driverinterface.TextVerticalAlignment.Bottom
@@ -434,7 +434,7 @@ public class MainMenuPhase : BasePhase
 
     private void OnLogoutClicked()
     {
-        if(GameSparker.AccountManager.LoggedIn())
+        if (GameSparker.AccountManager.LoggedIn())
         {
             GameSparker.AccountManager.LogOut();
         }

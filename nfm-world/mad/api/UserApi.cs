@@ -30,14 +30,13 @@ public static class UserApi
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
     }
 
-    public static async Task<(HttpStatusCode, LogInApiResponse?)> CreateDiscordOauth2Account(string oauth2Code, string redirectUri, string username)
+    public static async Task<(HttpStatusCode, LogInApiResponse?)> CreateDiscordOauth2Account(string tempToken, string username)
     {
-        var route = "discord_create_account";
+        var route = "discord/create_account";
         var body = new
         {
-            username,
-            redirect_uri = redirectUri,
-            code = oauth2Code
+            temp_token = tempToken,
+            username
         };
 
         return await NfmwApi.PostAsync<LogInApiResponse>(route, body);
@@ -45,10 +44,10 @@ public static class UserApi
 
     public static async Task<(HttpStatusCode, Oauth2LogInApiResponse?)> DiscordOauth2LogIn(string oauth2Code, string redirectUri)
     {
-        var route = "discord_login";
+        var route = "discord/login";
         var body = new
         {
-            redirec_uri = redirectUri,
+            redirect_uri = redirectUri,
             code = oauth2Code
         };
 

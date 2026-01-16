@@ -100,11 +100,13 @@ public class AccountManager
 
         if(!inner_res.Success())
         {
+
+            inner_res.TempToken = res.Item2?.TempToken;
             return inner_res;
         }
 
         // todo: dont throw here
-        string username = res.Item2?.Username ?? throw new Exception("username was nul in api response");
+        string username = res.Item2?.username ?? throw new Exception("username was null in api response");
         string token = res.Item2?.token ?? throw new Exception("token was null in api response");
         ActiveAccount = new Account(token, username);
 
@@ -115,13 +117,13 @@ public class AccountManager
     /// Create an account based on the provided Oauth2 code. The code must be associated with a Discord user that has not already registered.
     /// The username must also be unique and follow the username policy.
     /// </summary>
-    /// <param name="code">The Discord Oauth2 code.</param>
-    /// <param name="redirectUri">The escaped redirect URI used for accessing the code.</param>
-    /// <param name="username">The username of the account to create.</param>
+    /// <param name="tempToken">The temporary session token returned by /discord/login</param>
+    /// <param name="username">The username to create the account under</param>
     /// <returns></returns>
-    public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string code, string redirectUri, string username)
+    public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string tempToken, string username)
     {
-        var res = await UserApi.CreateDiscordOauth2Account(code, redirectUri, username);
+        // When we create an account via oauth, we automatically log in
+        var res = await UserApi.CreateDiscordOauth2Account(tempToken, username);
         var inner_res = new Oauth2CreateAccountResult(res.Item2?.status ?? "Unknown Status", res.Item1);
 
         if(!inner_res.Success())
