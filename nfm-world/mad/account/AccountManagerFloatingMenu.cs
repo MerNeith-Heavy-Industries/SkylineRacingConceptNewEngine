@@ -35,7 +35,7 @@ public class AccountManagerFloatingMenu
         Canceled,
     }
 
-    private readonly static string _clientId = "526861829872549898"
+    private readonly static string _clientId = "526861829872549898";
 
     private bool _isOpen;
     private string _localUsername = string.Empty;
