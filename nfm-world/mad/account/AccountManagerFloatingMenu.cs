@@ -113,6 +113,10 @@ public class AccountManagerFloatingMenu
         {
             ImGui.InputText("New password", ref _createPassword, 128, ImGuiInputTextFlags.Password);
             ImGui.InputText("Confirm password", ref _createPasswordConfirm, 128, ImGuiInputTextFlags.Password);
+        } else
+        {
+            _createPassword = "";
+            _createPasswordConfirm = "";
         }
 
         if (ImGui.Button("Create") && !_buttonsDisabled)
@@ -304,11 +308,12 @@ public class AccountManagerFloatingMenu
             return _loggedIn ? AccountManagerFloatingMenuState.LoggedIn : AccountManagerFloatingMenuState.Canceled;
         }
 
-        if (ImGui.Begin("Login", ref _isOpen, ImGuiWindowFlags.NoCollapse))
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(0, 0));
+        if (ImGui.Begin("Login", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize))
         {
             if (!_showCreateMenu)
             {
-                ShowLocalLoginArea();
+                //ShowLocalLoginArea();
             }
             else
             {

@@ -49,7 +49,7 @@ public class DiscordOauth2Manager
             var redirectUri = $"http://127.0.0.1:{port}/callback";
 
             var scopeStr = Uri.EscapeDataString(string.Join(' ', scopes));
-            var authUrl = $"https://diiscord.com/api/oauth2/authorize?response_type=code&client_id={Uri.EscapeDataString(clientId)}&scope={scopeStr}&redirect_uri={Uri.EscapeDataString(redirectUri)}&prompt=consent";
+            var authUrl = $"https://discord.com/api/oauth2/authorize?response_type=code&client_id={Uri.EscapeDataString(clientId)}&scope={scopeStr}&redirect_uri={Uri.EscapeDataString(redirectUri)}&prompt=consent";
 
             // Open the browser to the authorization URL
             OpenBrowser(authUrl);
