@@ -7,7 +7,7 @@ using System.Text.Json;
 
 public class NfmwApi
 {
-    private static readonly string _baseAddr = "http://127.0.0.1:8074";
+    private static readonly string _baseAddr = "https://nfmwapi.jacher.io";
 
     private static HttpClient _client = new()
     {
