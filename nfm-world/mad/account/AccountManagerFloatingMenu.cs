@@ -168,15 +168,19 @@ public class AccountManagerFloatingMenu
                     }, res =>
                     {
                         _buttonsDisabled = false;
-                        _showCreateMenu = false;
-                        _pendingOauthCode = null;
-                        _pendingOauthRedirect = null;
                         if (res.Success())
                         {
                             _statusMessage = "Logged in via OAuth after creation.";
                             _loggedIn = true;
+                            _showCreateMenu = false;
+                            _pendingOauthCode = null;
+                            _pendingOauthRedirect = null;
+                            _pendingOauthTempToken = null;
                         }
-                        _statusMessage = res.ErrorString() ?? "Unknown Error";
+                        else
+                        {
+                            _statusMessage = "*** " + (res.ErrorString() ?? "Unknown Error") + " ***";
+                        }
                     });
                 }
                 else
@@ -346,9 +350,9 @@ public class AccountManagerFloatingMenu
                 ShowCreateAccountArea();
             }
 
-            if(_pendingOauthCode is null)
+            if (_pendingOauthCode is null && _pendingOauthTempToken is null)
             {
-                ShowSocialLoginArea();   
+                ShowSocialLoginArea();
             }
 
             if (_oauthTask != null)
