@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using FixedMathSharp;
 using FixedMathSharp.Utility;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
@@ -22,12 +23,6 @@ public class Mad
     private static readonly fix64 _tickRate = Physics.PHYSICS_MULTIPLIER_F64;
     private static readonly fix64 _oneOverTickRate = 1 / _tickRate;
     public Boolean Halted = false;
-
-    public event EventHandler<(float f, int i)> SfxPlayCrash;
-    public event EventHandler<(int i, float f)> SfxPlaySkid;
-    public event EventHandler<(int i, int i2, int i3)> SfxPlayScrape;
-    public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
-    public event EventHandler<float> PowerUp;
 
     public bool Btab;
     public int Capcnt;
@@ -103,6 +98,14 @@ public class Mad
     public int _xtpower;
 
     internal bool IsClientPlayer;
+    internal int Mtcount = 0;
+    internal fix64 py = 0;
+
+    public event EventHandler<(float f, int i)> SfxPlayCrash;
+    public event EventHandler<(int i, float f)> SfxPlaySkid;
+    public event EventHandler<(int i, int i2, int i3)> SfxPlayScrape;
+    public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
+    public event EventHandler<float> PowerUp;
 
     public Mad(CarStats stat, int im, bool isClientPlayer)
     {
@@ -123,7 +126,7 @@ public class Mad
 
     public void Colide(ContO conto, Mad othermad, ContO otherconto)
     {
-        var random = new DeterministicRandom((ulong)(conto.X.Value.m_rawValue ^ otherconto.X.Value.m_rawValue ^ conto.Z.Value.m_rawValue ^ otherconto.Z.Value.m_rawValue ^ conto.Y.Value.m_rawValue ^ otherconto.Y.Value.m_rawValue));
+        var random = new DeterministicRandom((ulong)(conto.X.m_rawValue ^ otherconto.X.m_rawValue ^ conto.Z.m_rawValue ^ otherconto.Z.m_rawValue ^ conto.Y.m_rawValue ^ otherconto.Y.m_rawValue));
         
         var wheelx = new InlineArray4<fix64>();
         var wheely = new InlineArray4<fix64>();
@@ -414,12 +417,10 @@ public class Mad
             // Scy[wi] -= Scy[wi] * rebound; // don't need the abs, both are always positive
             Scy[wi] = (fix64)(-1) * Scy[wi] * (rebound - fix64.One);
     }
-    internal int Mtcount = 0;
-    internal fix64 py = 0;
 
     public void Drive(Control control, ContO conto, IStage stage)
     {
-        DeterministicRandom random = new((ulong)(conto.X.Value.m_rawValue ^ conto.Y.Value.m_rawValue ^ conto.Z.Value.m_rawValue));
+        DeterministicRandom random = new((ulong)(conto.X.m_rawValue ^ conto.Y.m_rawValue ^ conto.Z.m_rawValue));
 
         FrameTrace.AddMessage($"xz: {conto.Xz:0.00}, mxz: {Mxz:0.00}, lxz: {_lxz:0.00}, fxz: {_fxz:0.00}, cxz: {Cxz:0.00}");
         FrameTrace.AddMessage($"xy: {conto.Xy:0.00}, pxy: {Pxy:0.00}, zy: {conto.Zy:0.00}, pzy: {Pzy:0.00}");
@@ -1216,7 +1217,7 @@ public class Mad
                             f42 = (fix64)(1.2F);
                         }
 
-                        if (random.NextF64() > (fix64)0.65f)
+                        if (random.NextFixed6401() > (fix64)0.65f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 f42 * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
@@ -1230,13 +1231,13 @@ public class Mad
                     }
                     else
                     {
-                        if (surfaceType == 1 && random.NextF64() > (fix64)0.8f)
+                        if (surfaceType == 1 && random.NextFixed6401() > (fix64)0.8f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.1F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
                         }
 
-                        if ((surfaceType == 2 || surfaceType == 3) && random.NextF64() > (fix64)0.6f)
+                        if ((surfaceType == 2 || surfaceType == 3) && random.NextFixed6401() > (fix64)0.6f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.15F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
@@ -1658,16 +1659,16 @@ public class Mad
         }
         if (Wtouch && surfaceType == 2)
         {
-            conto.Zy += (int)((random.NextF64() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
+            conto.Zy += (int)((random.NextFixed6401() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
-            conto.Xy += (int)((random.NextF64() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
+            conto.Xy += (int)((random.NextFixed6401() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         }
         if (Wtouch && surfaceType == 1)
         {
-            conto.Zy += (int)((random.NextF64() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
+            conto.Zy += (int)((random.NextFixed6401() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
-            conto.Xy += (int)((random.NextF64() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
+            conto.Xy += (int)((random.NextFixed6401() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         } // CHK15
         if (Hitmag >= Stat.Maxmag && !Wasted)
@@ -2349,7 +2350,7 @@ public class Mad
                             // sparks and scrapes
                             if (collidable.Box.Skid != 2)
                                 _crank[0, k]++;
-                            if (collidable.Box.Skid == 5 && random.NextF64() > fix64.Half)
+                            if (collidable.Box.Skid == 5 && random.NextFixed6401() > fix64.Half)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2477,7 +2478,7 @@ public class Mad
                 fix64 f112 = 0;
                 for (var i113 = 0; i113 < 4; i113++)
                 {
-                    f112 = f / 20 * random.NextF64();
+                    f112 = f / 20 * random.NextFixed6401();
                     if (abool)
                     {
                         Hitmag += (int)fix64.Abs(f112);
@@ -2560,7 +2561,7 @@ public class Mad
                     fix64 f103 = 0;
                     for (var i104 = 0; i104 < 4; i104++)
                     {
-                        f103 = f / 20 * random.NextF64();
+                        f103 = f / 20 * random.NextFixed6401();
                         if (abool)
                         {
                             Hitmag += (int)fix64.Abs(f103);
@@ -2580,7 +2581,7 @@ public class Mad
                         fix64 f108 = 0;
                         for (var i109 = 0; i109 < 4; i109++)
                         {
-                            f108 = f / 15 * random.NextF64();
+                            f108 = f / 15 * random.NextFixed6401();
                             i105 += (int)f108;
                             i106++;
                             if (abool)
@@ -2643,7 +2644,7 @@ public class Mad
                 fix64 f116 = 0;
                 for (var i117 = 0; i117 < 4; i117++)
                 {
-                    f116 = f / 20 * random.NextF64();
+                    f116 = f / 20 * random.NextFixed6401();
                     if (abool)
                     {
                         Hitmag += (int)fix64.Abs(f116);
