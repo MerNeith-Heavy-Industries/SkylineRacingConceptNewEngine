@@ -21,18 +21,15 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
     /// Pythagorean distance squared calculation (fixed-point version).
     /// Used for fast distance comparisons without square root.
     /// </summary>
-    private static fix64 pyo(fix64 x1, fix64 x2, fix64 z1, fix64 z2) {
-        return (((x1 - x2) * (x1 - x2)) + ((z1 - z2) * (z1 - z2)));
+    private static fix64 pyo(fix64 x1, fix64 x2, fix64 z1, fix64 z2)
+    {
+        var a = (x1 - x2);
+        var b = (z1 - z2);
+        return ((a * a) + (b * b));
     }
 
     private fix64 pan = fix64.Zero;
     private fix64 difficulty = 1; // 0.0 (easy) to 1.0 (hard)
-    
-    // if the next node is a sequence start node, we start a sequence and store sequenceStartNode and sequenceEndNode
-    // then, we must traverse the nodes in the sequence in order, until we reach sequenceEndNode
-    // if the target node is not the next sequence node in order, we drive back to the start of the sequence
-    // we also support driving backwards from a FixRoadEnd to a FixHoop
-    private readonly record struct Sequence(int StartNode, int EndNode, int CurrentNode, bool TraversingBackwards);
     private Sequence? sequence;
     
     private int? targetFixRoadStartNode = null;
@@ -44,6 +41,12 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
     private fix64 _avoidanceAngle;
     private int _avoidanceTimer;
     private bool smallturn;
+    
+    // if the next node is a sequence start node, we start a sequence and store sequenceStartNode and sequenceEndNode
+    // then, we must traverse the nodes in the sequence in order, until we reach sequenceEndNode
+    // if the target node is not the next sequence node in order, we drive back to the start of the sequence
+    // we also support driving backwards from a FixRoadEnd to a FixHoop
+    private readonly record struct Sequence(int StartNode, int EndNode, int CurrentNode, bool TraversingBackwards);
 
     /// <summary>
     /// Main AI update function. Called every frame to compute control inputs for the AI vehicle.
@@ -61,7 +64,7 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
 
         // Initialize random number generator with deterministic seed based on car position
         var conto = new ContO(car);
-        DeterministicRandom random = new((ulong)(conto.X.Value.m_rawValue ^ conto.Y.Value.m_rawValue ^ conto.Z.Value.m_rawValue));
+        DeterministicRandom random = new((ulong)(conto.X.m_rawValue ^ conto.Y.m_rawValue ^ conto.Z.m_rawValue));
         
         // Calculate rubberbanding factor
         // 1.0 = last place, 0.0 = first place
@@ -306,7 +309,7 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
             }
 
             // If high on damage, find a random FixRoadStart node and enter it as a sequence
-            var wantFix = mad.Hitmag > mad.Stat.Maxmag * (fix64)0.8f && random.NextF64() < rubberbandingFactor;
+            var wantFix = mad.Hitmag > mad.Stat.Maxmag * (fix64)0.8f && random.NextFixed6401() < rubberbandingFactor;
             if (wantFix)
             {
                 var fixRoadStartNodes = racePhase.CurrentStage.nodes
