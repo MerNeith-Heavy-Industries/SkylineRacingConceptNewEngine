@@ -537,6 +537,19 @@ public class Program : Game
 
     public static void Main()
     {
+        FNALoggerEXT.LogError += (message) =>
+        {
+            GameSparker.Writer?.WriteLine(message, "error");
+        };
+        FNALoggerEXT.LogInfo += (message) =>
+        {
+            GameSparker.Writer?.WriteLine(message, "info");
+        };
+        FNALoggerEXT.LogWarn += (message) =>
+        {
+            GameSparker.Writer?.WriteLine(message, "warning");
+        };
+        
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
         {
