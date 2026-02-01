@@ -94,18 +94,23 @@ namespace nfm_world
             switch (normalizedLevel)
             {
                 case "warning":
+                    SentrySdk.Logger.LogWarning(message);
                     formattedMessage = $"[WARN] {message}";
                     break;
                 case "error":
+                    SentrySdk.Logger.LogError(message);
                     formattedMessage = message; // No prefix for error
                     break;
                 case "info":
+                    SentrySdk.Logger.LogInfo(message);
                     formattedMessage = message; // No prefix for info
                     break;
                 case "debug":
+                    SentrySdk.Logger.LogDebug(message);
                     formattedMessage = message; // No prefix for debug
                     break;
                 default:
+                    SentrySdk.Logger.LogInfo(message);
                     formattedMessage = message; // Default to plain message
                     normalizedLevel = "default";
                     break;

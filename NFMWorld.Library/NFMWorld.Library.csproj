@@ -16,6 +16,7 @@
         <PackageReference Include="LuzFaltex.Core.Collections" Version="0.1.0" />
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
+        <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
         <PackageReference Include="Stride.Core.Mathematics" Version="4.3.0.2507" />
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>

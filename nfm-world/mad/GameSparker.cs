@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
@@ -24,9 +25,9 @@ public class GameSparker
 
     private static string GetVersionString()
     {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        var attributes = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false);
-        if (attributes.Length > 0 && attributes[0] is System.Reflection.AssemblyInformationalVersionAttribute infoVersion)
+        var assembly = Assembly.GetExecutingAssembly();
+        var attributes = assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+        if (attributes.Length > 0 && attributes[0] is AssemblyInformationalVersionAttribute infoVersion)
         {
             var version = infoVersion.InformationalVersion;
             // clip the commit hash
