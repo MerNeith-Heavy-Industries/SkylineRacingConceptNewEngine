@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Avalonia;
 using Maxine.Extensions;
 using Yoga;
 
@@ -10,7 +11,7 @@ namespace nfm_world.ui.yoga;
 
 // ReSharper disable InconsistentNaming
 [DebuggerDisplay("{DebugToString()}")]
-public class Node : IDisposable
+public class Node : IDisposable, INamed
 {
     internal static readonly YGConfigPtr Config;
 

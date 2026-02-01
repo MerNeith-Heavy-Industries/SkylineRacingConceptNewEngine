@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Example Yoga XAML layout demonstrating the yoga layout system -->
+<Node xmlns="clr-namespace:nfm_world.ui.yoga"
+      xmlns:elements="clr-namespace:nfm_world.ui.elements"
+      xmlns:x="clr-namespace:System;assembly=mscorlib"
+      x:Class="nfm_world.ui.hud.LapTimerSplitsView"
+      FlexDirection="YGFlexDirectionColumn"
+      AlignItems="YGAlignFlexStart"
+      JustifyContent="YGJustifyCenter"
+      Gap="10"
+      Padding="10">
+
+    <!-- Lap Display Row -->
+    <Node Name="LapDisplay"
+          FlexDirection="YGFlexDirectionRow">
+
+        <elements:TextRun Name="LapIcon"
+                 Font="Adventure,1,24"
+                 Color="255,255,255"
+                 StrokeColor="0,0,0"
+                 Text="Lap: "
+                 Flex="1" />
+
+        <elements:TextBlock Name="LapText"
+                            Font="DroidSans,1,24"
+                            Color="255,255,255"
+                            StrokeColor="0,0,0"
+                            Flex="1" />
+    </Node>
+
+</Node>

@@ -38,6 +38,7 @@
       <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
       <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
       <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+      <PackageReference Include="XamlNameReferenceGenerator" Version="1.6.1" />
       <PackageReference Include="Yoga-CS" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +48,15 @@
     <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
+    <!-- Yoga XAML Source Generator -->
+    <ProjectReference Include="..\NFMWorld.YogaXaml.SourceGen\NFMWorld.YogaXaml.SourceGen.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  
+  <!-- Yoga XAML files for source generation -->
+  <ItemGroup>
+    <AdditionalFiles Include="**\*.yoga.xaml" />
   </ItemGroup>
 
     <!-- windows builds -->
@@ -171,6 +181,10 @@
     <ItemGroup>
         <CompileShader Include="data/shaders/*.fx" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <None Remove="mad\ui\test.xaml" />
+    </ItemGroup>
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
         <ItemGroup>
@@ -178,4 +192,8 @@
         </ItemGroup>
         <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
     </Target>
+    
+    <ItemGroup>
+        <AdditionalFiles Include="**\*.xaml"/>
+    </ItemGroup>
 </Project>
