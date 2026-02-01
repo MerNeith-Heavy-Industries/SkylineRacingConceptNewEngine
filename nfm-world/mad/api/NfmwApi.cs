@@ -1,3 +1,5 @@
+using nfm_world_library;
+
 namespace nfm_world.mad.api;
 
 using System.Net;
@@ -44,7 +46,7 @@ public class NfmwApi
             Encoding.UTF8,
             "application/json"
         );
-        Console.WriteLine(JsonSerializer.Serialize(body, requestTypeInfo));
+        Logging.Debug(JsonSerializer.Serialize(body, requestTypeInfo));
 
         using HttpResponseMessage response = await _client.PostAsync(route, jsonContent);
 

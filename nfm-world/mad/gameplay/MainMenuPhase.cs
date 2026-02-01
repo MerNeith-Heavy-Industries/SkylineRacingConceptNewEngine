@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
 using nfm_world_library.mad.rad;
 using nfm_world_library.util;
 using nfm_world.multiplayer;
@@ -214,7 +215,7 @@ public class MainMenuPhase : BasePhase
             button.IsHovered = IsPointInButton(x, y, button);
             if (button.IsHovered && !wasHovered)
             {
-                Console.WriteLine($"Hovering over button: {button.Text} at mouse ({x}, {y})");
+                Logging.Debug($"Hovering over button: {button.Text} at mouse ({x}, {y})");
             }
             _buttons[i] = button;
         }

@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
 using nfm_world_library.backend;
 using nfm_world_library.mad;
 using nfm_world_library.util;
@@ -60,7 +61,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
                 GameSparker.CurrentMusic?.Unload();
             }
 
-            Console.WriteLine("playing stage music: " + clientStageRenderer.musicPath);
+            Logging.Debug("playing stage music: " + clientStageRenderer.musicPath);
 
             bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath);
             // Dont shift pitch or tempo if using remastered

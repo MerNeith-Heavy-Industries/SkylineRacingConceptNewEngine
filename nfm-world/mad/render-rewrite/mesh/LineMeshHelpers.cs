@@ -1,3 +1,5 @@
+using nfm_world_library;
+
 namespace nfm_world.mesh;
 
 public class LineMeshHelpers
@@ -23,7 +25,8 @@ public class LineMeshHelpers
         
         if (lineDir == Vector3.Zero)
         {
-            Console.WriteLine($"Degenerate line!!!!\n{System.Environment.StackTrace}");
+            SentrySdk.CaptureMessage("Degenerate line in LineMeshHelpers.CreateLineMesh", SentryLevel.Error);
+            Logging.Error($"Degenerate line!!!!\n{System.Environment.StackTrace}");
         }
         
         // Choose an initial perpendicular vector that's not parallel to lineDir

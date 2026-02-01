@@ -172,7 +172,8 @@ public class GameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating mesh for stage part '{stagePart.FileName}': {ex.Message}\n{ex.StackTrace}");
+                SentrySdk.CaptureException(ex);
+                Logging.Debug($"Error creating mesh for stage part '{stagePart.FileName}': {ex.Message}\n{ex.StackTrace}");
             }
         }
         
@@ -234,7 +235,7 @@ public class GameSparker
         // temp
         SetPhase(InRace);
 
-        Console.WriteLine("Game started!");
+        Logging.Info("Game started!");
     }
 
     public static void GameTick()

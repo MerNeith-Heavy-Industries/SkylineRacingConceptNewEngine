@@ -312,7 +312,7 @@ public class StageEditorPhase : BasePhase
         
         UpdateCameraPosition();
         
-        Console.WriteLine("Stage Editor opened");
+        Logging.Debug("Stage Editor opened");
     }
     
     public override void Exit()
@@ -374,7 +374,7 @@ public class StageEditorPhase : BasePhase
         
         _tabs.Clear();
         _activeTabIndex = -1;
-        Console.WriteLine("Stage Editor closed");
+        Logging.Debug("Stage Editor closed");
     }
     
     private void CreateEmptyStage(string stageName)
@@ -422,7 +422,7 @@ public class StageEditorPhase : BasePhase
         RecreateScene();
         SaveStage(); // Automatically save the new stage
         
-        Console.WriteLine($"Created new stage: {stageName} (filename: {tab.StageFileName})");
+        Logging.Info($"Created new stage: {stageName} (filename: {tab.StageFileName})");
     }
     
     private string ConvertStageNameToFilename(string stageName)
@@ -435,7 +435,7 @@ public class StageEditorPhase : BasePhase
     {
         if (ActiveTab == null || ActiveTab.Stage == null || string.IsNullOrWhiteSpace(ActiveTab.StageFileName))
         {
-            Console.WriteLine("Cannot save: no stage loaded");
+            Logging.Info("Cannot save: no stage loaded");
             return;
         }
         
@@ -596,12 +596,13 @@ public class StageEditorPhase : BasePhase
                 }
             }
             
-            Console.WriteLine($"Stage saved to: {filePath}");
+            Logging.Info($"Stage saved to: {filePath}");
             ActiveTab.HasUnsavedChanges = false;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving stage: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+            Logging.Error($"Error saving stage: {ex.Message}");
         }
     }
     
@@ -669,7 +670,7 @@ public class StageEditorPhase : BasePhase
                         break;
                     }
                 }
-                Console.WriteLine($"Stage '{stageFileName}' is already open, switched to that tab.");
+                Logging.Info($"Stage '{stageFileName}' is already open, switched to that tab.");
                 return;
             }
         }
@@ -696,7 +697,7 @@ public class StageEditorPhase : BasePhase
                     removedCount++;
                 }
             }
-            Console.WriteLine($"Removed {removedCount} wall pieces from stage");
+            Logging.Info($"Removed {removedCount} wall pieces from stage");
             
             // First pass: detect wall groups and piece tags by reading the original file
             var stageFilePath = $"data/stages/user/{stageFileName}.txt";
@@ -896,11 +897,12 @@ public class StageEditorPhase : BasePhase
             // Rebuild walls AFTER recreating scene
             RebuildAllWalls();
             
-            Console.WriteLine($"Loaded stage: {tab.Stage.Name}");
+            Logging.Info($"Loaded stage: {tab.Stage.Name}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading stage: {ex.Message}");
+            SentrySdk.CaptureException(ex);
+            Logging.Error($"Error loading stage: {ex.Message}");
         }
     }
     
@@ -1034,14 +1036,15 @@ public class StageEditorPhase : BasePhase
         var wallPart = BackendGameSparker.GetStagePart("nfmm/thewall");
         if (wallPart.Rad == null)
         {
-            Console.WriteLine("Wall mesh not found!");
+            SentrySdk.CaptureMessage("Wall mesh not found!");
+            Logging.Error("Wall mesh not found!");
             return;
         }
         
         // Clear the wall meshes list
         ActiveTab.WallMeshes.Clear();
         
-        Console.WriteLine($"Rebuilding walls: {ActiveTab.StageWalls.Count} wall groups");
+        Logging.Info($"Rebuilding walls: {ActiveTab.StageWalls.Count} wall groups");
         
         // Generate wall meshes based on StageWalls definitions
         foreach (var wall in ActiveTab.StageWalls)
@@ -1050,7 +1053,7 @@ public class StageEditorPhase : BasePhase
             var o = wall.Position;
             var p = wall.Offset;
             
-            Console.WriteLine($"Creating wall: {wall.Direction}, count={n}, pos={o}, offset={p}");
+            Logging.Debug($"Creating wall: {wall.Direction}, count={n}, pos={o}, offset={p}");
             
             for (int q = 0; q < n; q++)
             {
@@ -1085,7 +1088,7 @@ public class StageEditorPhase : BasePhase
             }
         }
         
-        Console.WriteLine($"Total wall meshes created: {ActiveTab.WallMeshes.Count}");
+        Logging.Debug($"Total wall meshes created: {ActiveTab.WallMeshes.Count}");
     }
     
     private void RenderSelectionHighlight(StagePieceInstance piece)

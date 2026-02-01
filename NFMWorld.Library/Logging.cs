@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,13 @@ public static class Logging
             .AddConsoleFormatter<RayLogConsoleFormatter, ConsoleFormatterOptions>()
             .AddSentry(o => o.Dsn = SentryDsn)
             .AddProvider(new NfmwLoggerProvider())
+            .SetMinimumLevel(
+#if DEBUG
+                LogLevel.Trace
+#else
+                LogLevel.Debug
+#endif
+            )
         );
 
     private static readonly ILogger General = LoggerFactory.CreateLogger("general");
@@ -41,11 +49,16 @@ public static class Logging
 
 public class NfmwLoggerProvider : ILoggerProvider
 {
-    private static readonly Queue<(string message, string level)> OutputLog = new();
+    private static readonly ConcurrentQueue<(string message, string level)> OutputLog = new();
     
     public static IEnumerable<(string message, string level)> GetLogs()
     {
         return OutputLog;
+    }
+
+    public static void ClearMessages()
+    {
+        OutputLog.Clear();
     }
 
     public void Dispose()
@@ -76,7 +89,7 @@ public class NfmwLoggerProvider : ILoggerProvider
                 ? $"[{categoryName.ToUpperInvariant()}] {message}"
                 : message;
             OutputLog.Enqueue((formattedMessage, level));
-            if (OutputLog.Count > 100) OutputLog.Dequeue(); // Limit log size
+            if (OutputLog.Count > 100) OutputLog.TryDequeue(out _); // Limit log size
         }
 
         public bool IsEnabled(LogLevel logLevel)
