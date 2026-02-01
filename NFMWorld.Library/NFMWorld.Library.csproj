@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RootNamespace>nfm_world_library</RootNamespace>
+        <OptimizationPreference>Speed</OptimizationPreference>
     </PropertyGroup>
 
     <ItemGroup>
