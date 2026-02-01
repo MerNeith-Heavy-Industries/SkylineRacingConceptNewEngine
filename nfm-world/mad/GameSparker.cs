@@ -84,15 +84,6 @@ public class GameSparker
 
     public static SettingsMenu SettingsMenu;
 
-    public static DevConsoleWriter Writer;
-
-    static GameSparker()
-    {
-        var originalOut = Console.Out;
-        Writer = new DevConsoleWriter(devConsole, originalOut);
-        Console.SetOut(Writer);
-    }
-
     /////////////////////////////////
 
     public static Dictionary<Keys, bool> DebugKeyStates = new();

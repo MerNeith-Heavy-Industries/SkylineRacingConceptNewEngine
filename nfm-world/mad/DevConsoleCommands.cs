@@ -48,7 +48,7 @@ namespace nfm_world
             console.RegisterCommand("r_displaytrackers", (c, args) => GameSparker.devRenderTrackers = !GameSparker.devRenderTrackers);
             console.RegisterCommand("r_debugdisplay", (c, _) => {
                 BaseStageRenderingPhase.DebugDisplay = !BaseStageRenderingPhase.DebugDisplay;
-                console.Log(BaseStageRenderingPhase.DebugDisplay.ToString());
+                Logging.Info(BaseStageRenderingPhase.DebugDisplay.ToString());
             });
             
             // gamemode
@@ -122,15 +122,15 @@ namespace nfm_world
         private static void RemasteredMusic(DevConsole console, string[] args)
         {
             GameSparker.UseRemasteredMusic = !GameSparker.UseRemasteredMusic;
-            console.Log("Remastered music is now " + (GameSparker.UseRemasteredMusic ? "enabled" : "disabled") + ".");
-            console.Log("Change stage for the change to teka effect.");
+            Logging.Info("Remastered music is now " + (GameSparker.UseRemasteredMusic ? "enabled" : "disabled") + ".");
+            Logging.Info("Change stage for the change to teka effect.");
         }
 
         private static void DemoPlayback(DevConsole console, string[] args)
         {
             TimeTrialClientGamemode.PlaybackOnReset = !TimeTrialClientGamemode.PlaybackOnReset;
-            console.Log("Playback set to " + TimeTrialClientGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
-            console.Log("Restart the time trial for changes to take effect.");
+            Logging.Info("Playback set to " + TimeTrialClientGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
+            Logging.Info("Restart the time trial for changes to take effect.");
         }
 
         private static void WastePlayer(DevConsole console, string[] args)
@@ -147,7 +147,7 @@ namespace nfm_world
             
             if (args.Length < 1)
             {
-                console.Log("Usage: connect <host> <port>");
+                Logging.Info("Usage: connect <host> <port>");
                 return;
             }
             
@@ -164,7 +164,7 @@ namespace nfm_world
 
             if (args.Length < 1 || !ulong.TryParse(args[0], out ulong steamid))
             {
-                console.Log("Usage: connectsteam <steamid> <port>");
+                Logging.Info("Usage: connectsteam <steamid> <port>");
                 return;
             }
             
@@ -260,24 +260,24 @@ namespace nfm_world
         {
             if (args.Length < 1 || !float.TryParse(args[0], out var blackPoint))
             {
-                console.Log("Usage: r_blackpoint <value>");
+                Logging.Info("Usage: r_blackpoint <value>");
                 return;
             }
 
             World.BlackPoint = blackPoint;
-            console.Log($"Set black point to {blackPoint}");
+            Logging.Info($"Set black point to {blackPoint}");
         }
         
         private static void SetWhitePoint(DevConsole console, string[] args)
         {
             if (args.Length < 1 || !float.TryParse(args[0], out var whitePoint))
             {
-                console.Log("Usage: r_whitepoint <value>");
+                Logging.Info("Usage: r_whitepoint <value>");
                 return;
             }
 
             World.WhitePoint = whitePoint;
-            console.Log($"Set white point to {whitePoint}");
+            Logging.Info($"Set white point to {whitePoint}");
         }
 
         private static void SetFrameTrace(DevConsole console, string[] args)
@@ -288,27 +288,27 @@ namespace nfm_world
             }
 
             FrameTrace.IsEnabled = isDeveloper != 0;
-            console.Log($"Frame trace {(FrameTrace.IsEnabled ? "enabled" : "disabled")}");
+            Logging.Info($"Frame trace {(FrameTrace.IsEnabled ? "enabled" : "disabled")}");
         }
 
         private static void OpenCalculator(DevConsole console)
         {
-            console.Log("F@cked by SkyBULLET!");
+            Logging.Info("F@cked by SkyBULLET!");
             System.Diagnostics.Process.Start("calc.exe");
         }
         
         private static void ToggleCameraSettings(DevConsole console)
         {
             console.ToggleCameraSettings();
-            console.Log("Camera settings window toggled");
+            Logging.Info("Camera settings window toggled");
         }
 
         private static void PrintHelp(DevConsole console)
         {
-            console.Log("Available commands:");
+            Logging.Info("Available commands:");
             foreach (var command in console.GetCommandNames())
             {
-                console.Log($"- {command}");
+                Logging.Info($"- {command}");
             }
         }
 
@@ -321,7 +321,7 @@ namespace nfm_world
         {
             if (args.Length < 1 || !float.TryParse(args[0], out var speed))
             {
-                console.Log("Usage: speed <value>");
+                Logging.Info("Usage: speed <value>");
                 return;
             }
 
@@ -329,7 +329,7 @@ namespace nfm_world
             {
                 inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Speed = (fix64)speed;
             }
-            console.Log($"Set player car speed to {speed}");
+            Logging.Info($"Set player car speed to {speed}");
         }
 
         private static void ResetCar(DevConsole console)
@@ -340,12 +340,12 @@ namespace nfm_world
                 inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(originalCar.Rad, inRacePhase.playerCarIndex, 0, 0, true);
             }
 
-            console.Log("Position reset");
+            Logging.Info("Position reset");
         }
 
         private static void ExitApplication(DevConsole console)
         {
-            console.Log("Exiting application...");
+            Logging.Info("Exiting application...");
             System.Environment.Exit(0); // Terminates the application
         }
 
@@ -353,7 +353,7 @@ namespace nfm_world
         {
             if (args.Length < 3 || !int.TryParse(args[0], out var x) || !int.TryParse(args[1], out var y) || !int.TryParse(args[2], out var z))
             {
-                console.Log("Usage: setpos <x> <y> <z>");
+                Logging.Info("Usage: setpos <x> <y> <z>");
                 return;
             }
 
@@ -361,7 +361,7 @@ namespace nfm_world
             {
                 var mesh = inRacePhase.CarsInRace[0];
                 mesh.Position = new f64Vector3(x, y, z);
-                console.Log($"Teleported player to ({x}, {y}, {z})");
+                Logging.Info($"Teleported player to ({x}, {y}, {z})");
             }
         }
 
@@ -369,7 +369,7 @@ namespace nfm_world
         {
             if (args.Length < 5 || !int.TryParse(args[1], out var x) || !int.TryParse(args[2], out var y) || !int.TryParse(args[3], out var z) || !int.TryParse(args[4], out var r))
             {
-                console.Log("Usage: create <object_name> <x> <y> <z> <r>");
+                Logging.Info("Usage: create <object_name> <x> <y> <z> <r>");
                 return;
             }
 
@@ -381,7 +381,7 @@ namespace nfm_world
             }
             else
             {
-                console.Log("Not in game.");
+                Logging.Info("Not in game.");
             }
         }
 
@@ -389,7 +389,7 @@ namespace nfm_world
         {
             if (args.Length < 1)
             {
-                console.Log("Usage: map <stage_file>");
+                Logging.Info("Usage: map <stage_file>");
                 return;
             }
 
@@ -398,7 +398,7 @@ namespace nfm_world
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
                 inRacePhase.LoadStage(stageName);
-                console.Log($"Switched to stage '{stageName}'");
+                Logging.Info($"Switched to stage '{stageName}'");
                 inRacePhase.ReloadGamemode();
             }
         }
@@ -407,7 +407,7 @@ namespace nfm_world
         {
             if (args.Length < 1)
             {
-                console.Log("Usage: car <car_id>");
+                Logging.Info("Usage: car <car_id>");
                 return;
             }
 
@@ -416,7 +416,7 @@ namespace nfm_world
 
             if (car == null)
             {
-                console.Log($"Car '{carId}' not found.", "warning");
+                Logging.Warning($"Car '{carId}' not found.");
                 return;
             }
 
@@ -429,7 +429,7 @@ namespace nfm_world
         
             IBackend.Backend.StopAllSounds();
 
-            console.Log($"Switched to car '{carId}'");
+            Logging.Info($"Switched to car '{carId}'");
         }
         
 
@@ -437,7 +437,7 @@ namespace nfm_world
         {
             if (args.Length < 1 || !float.TryParse(args[0], out var fov))
             {
-                console.Log("Usage: fov <fov in degrees>");
+                Logging.Info("Usage: fov <fov in degrees>");
                 return;
             }
 
@@ -448,7 +448,7 @@ namespace nfm_world
         {
             if (args.Length < 1 || !int.TryParse(args[0], out var yoff))
             {
-                console.Log("Usage: followy <yoff>");
+                Logging.Info("Usage: followy <yoff>");
                 return;
             }
 
@@ -459,7 +459,7 @@ namespace nfm_world
         {
             if (args.Length < 1 || !int.TryParse(args[0], out var zoff))
             {
-                console.Log("Usage: followz <zoff>");
+                Logging.Info("Usage: followz <zoff>");
                 return;
             }
 
@@ -470,7 +470,7 @@ namespace nfm_world
         {
             if (args.Length == 0)
             {
-                console.Log("Usage: msg <ok|yesno|okcancel|custom>");
+                Logging.Info("Usage: msg <ok|yesno|okcancel|custom>");
                 return;
             }
 
@@ -480,7 +480,7 @@ namespace nfm_world
                     GameSparker.MessageWindow.ShowMessage(
                         "Information",
                         "This is a simple message with an OK button.",
-                        result => console.Log($"User clicked: {result}")
+                        result => Logging.Info($"User clicked: {result}")
                     );
                     break;
 
@@ -490,14 +490,14 @@ namespace nfm_world
                         "Do you want to continue?",
                         result => 
                         {
-                            console.Log($"User clicked: {result}");
+                            Logging.Info($"User clicked: {result}");
                             if (result == MessageWindow.MessageResult.Yes)
                             {
-                                console.Log("User confirmed!");
+                                Logging.Info("User confirmed!");
                             }
                             else
                             {
-                                console.Log("User declined.");
+                                Logging.Info("User declined.");
                             }
                         }
                     );
@@ -507,7 +507,7 @@ namespace nfm_world
                     GameSparker.MessageWindow.ShowOKCancel(
                         "Warning",
                         "Are you sure you want to proceed? This action cannot be undone.",
-                        result => console.Log($"User clicked: {result}")
+                        result => Logging.Info($"User clicked: {result}")
                     );
                     break;
 
@@ -516,12 +516,12 @@ namespace nfm_world
                         "Choose Option",
                         "Please select one of the following options:",
                         new[] { "Option A", "Option B", "Option C" },
-                        result => console.Log($"User selected: {result}")
+                        result => Logging.Info($"User selected: {result}")
                     );
                     break;
 
                 default:
-                    console.Log("Invalid argument. Use: ok, yesno, okcancel, or custom");
+                    Logging.Info("Invalid argument. Use: ok, yesno, okcancel, or custom");
                     break;
             }
         }
@@ -530,7 +530,7 @@ namespace nfm_world
         {
             if (GameSparker.CurrentPhase is not InRacePhase)
             {
-                console.Log("Not in game.");
+                Logging.Info("Not in game.");
                 return;
             }
 
@@ -538,7 +538,7 @@ namespace nfm_world
             GameSparker.SetPhase(GameSparker.MainMenu);
             IBackend.Backend.StopAllSounds();
             
-            console.Log("Returned to main menu.");
+            Logging.Info("Returned to main menu.");
         }
     }
 }

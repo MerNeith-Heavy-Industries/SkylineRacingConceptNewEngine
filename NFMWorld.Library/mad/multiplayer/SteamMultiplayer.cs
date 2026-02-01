@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using nfm_world_library;
+using Steamworks;
 
 namespace nfm_world.multiplayer;
 
@@ -26,7 +27,7 @@ public class SteamMultiplayer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Steam initialization failed: {ex.Message}\n{ex.StackTrace}");
+            Logging.Info($"Steam initialization failed: {ex.Message}\n{ex.StackTrace}");
         }
     }
 

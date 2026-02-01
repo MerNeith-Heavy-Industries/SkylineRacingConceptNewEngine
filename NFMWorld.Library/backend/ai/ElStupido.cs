@@ -230,7 +230,7 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
             {
                 _targetNode = nodeIndex;
                 targetNodeIndex = nodeIndex;
-                Console.WriteLine($"Advanced _targetNode to {nodeIndex} (visited ahead of current target)");
+                Logging.Info($"Advanced _targetNode to {nodeIndex} (visited ahead of current target)");
                 break;
             }
         }

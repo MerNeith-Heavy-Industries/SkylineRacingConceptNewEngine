@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using ManagedBass;
 using ManagedBass.Fx;
+using nfm_world_library;
 using nfm_world.driverinterface;
 
 namespace nfm_world.skiadriver;
@@ -67,7 +68,8 @@ internal class RadicalMusic : IRadicalMusic
         }
         catch(Exception e)
         {
-            GameSparker.Writer.WriteLine($"Error loading music {file}: {e}");
+            SentrySdk.CaptureException(e);
+            Logging.Error($"Error loading music {file}: {e}");
         }
 #endif
     }

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using ENet;
+using nfm_world_library;
 
 namespace nfm_world.multiplayer;
 
@@ -67,26 +68,26 @@ public class ENetMultiplayerServerTransport : BaseMultiplayerServerTransport
                         break;
 
                     case EventType.Connect:
-                        Console.WriteLine("Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+                        Logging.Info("Client connected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
                         ClientConnecting?.Invoke(this, netEvent.Peer.ID);
                         ClientConnected?.Invoke(this, netEvent.Peer.ID);
                         _connectedClients.TryAdd(netEvent.Peer.ID, netEvent.Peer);
                         break;
 
                     case EventType.Disconnect:
-                        Console.WriteLine("Client disconnected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+                        Logging.Info("Client disconnected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
                         ClientDisconnected?.Invoke(this, netEvent.Peer.ID);
                         _connectedClients.TryRemove(netEvent.Peer.ID, out _);
                         break;
 
                     case EventType.Timeout:
-                        Console.WriteLine("Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+                        Logging.Info("Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
                         ClientDisconnected?.Invoke(this, netEvent.Peer.ID);
                         _connectedClients.TryRemove(netEvent.Peer.ID, out _);
                         break;
 
                     case EventType.Receive:
-                        Console.WriteLine("Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+                        Logging.Info("Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
                         try
                         {
                             using var messageData = netEvent.Packet.AsMemory();

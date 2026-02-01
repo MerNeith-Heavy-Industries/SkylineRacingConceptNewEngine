@@ -54,14 +54,16 @@ public class BackendStage : IStage
         }
         catch (StageLoadException exception)
         {
-            Console.WriteLine($"Error in stage: {stageName}", "error");
-            Console.WriteLine($"At line: {exception.Line} (number {exception.LineNumber})", "error");
-            Console.WriteLine(exception.ToString(), "error");
+            SentrySdk.CaptureException(exception);
+            Logging.Error($"Error in stage: {stageName}");
+            Logging.Error($"At line: {exception.Line} (number {exception.LineNumber})");
+            Logging.Error(exception.ToString());
         }
         catch (Exception exception)
         {
-            Console.WriteLine($"Error in stage: {stageName}", "error");
-            Console.WriteLine(exception.ToString(), "error");
+            SentrySdk.CaptureException(exception);
+            Logging.Error($"Error in stage: {stageName}");
+            Logging.Error(exception.ToString());
         }
     }
 
@@ -76,14 +78,16 @@ public class BackendStage : IStage
         }
         catch (StageLoadException exception)
         {
-            Console.WriteLine($"Error in stage: {stageName}", "error");
-            Console.WriteLine($"At line: {exception.Line} (number {exception.LineNumber})", "error");
-            Console.WriteLine(exception.ToString(), "error");
+            SentrySdk.CaptureException(exception);
+            Logging.Error($"Error in stage: {stageName}");
+            Logging.Error($"At line: {exception.Line} (number {exception.LineNumber})");
+            Logging.Error(exception.ToString());
         }
         catch (Exception exception)
         {
-            Console.WriteLine($"Error in stage: {stageName}", "error");
-            Console.WriteLine(exception.ToString(), "error");
+            SentrySdk.CaptureException(exception);
+            Logging.Error($"Error in stage: {stageName}");
+            Logging.Error(exception.ToString());
         }
     }
 
@@ -193,7 +197,7 @@ public class BackendStage : IStage
         var part = BackendGameSparker.GetStagePart(objectName);
         if (part.Rad == null)
         {
-            Console.WriteLine($"Object '{objectName}' not found.");
+            Logging.Info($"Object '{objectName}' not found.");
             part = (-1, BackendGameSparker.error_mesh);
         }
 
@@ -204,7 +208,7 @@ public class BackendStage : IStage
         );
         pieces[stagePartCount] = mesh;
 
-        Console.WriteLine($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}");
+        Logging.Info($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}");
 
         AddToQuadTree(mesh);
 

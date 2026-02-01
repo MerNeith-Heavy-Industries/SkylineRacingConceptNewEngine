@@ -54,7 +54,7 @@ public static class BackendGameSparker
             // A Sentry Data Source Name (DSN) is required.
             // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
             // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
-            options.Dsn = "https://baadef1bd7ebd872a30c292477d45ed6@sentry.puppykitty.racing/1";
+            options.Dsn = Logging.SentryDsn;
 
             // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
             // This might be helpful, or might interfere with the normal operation of your application.
@@ -74,11 +74,7 @@ public static class BackendGameSparker
             options.EnableLogs = true;
             
             // Try get NFMWorld assembly version first
-            var ver = AppDomain.CurrentDomain.GetAssemblies()
-                .FirstOrDefault(ass => ass.FullName?.StartsWith("NFMWorld,") == true)
-                ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion;
-            options.Release = ver ?? "NFM-World dev";
+            options.Release = Logging.Release;
         });
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
         
@@ -163,7 +159,7 @@ public static class BackendGameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
             }
         });
 
@@ -182,7 +178,7 @@ public static class BackendGameSparker
                 {
                     Message = $"Error loading user stage part '{fileName}'"
                 });
-                Console.WriteLine($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                Logging.Info($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
             }
         });
 
@@ -243,12 +239,12 @@ public static class BackendGameSparker
                 {
                     Message = $"Error loading dynamic model '{name}'"
                 });
-                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
+                Logging.Info($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
         SentrySdk.CaptureMessage("No results for GetCar: " + name, SentryLevel.Warning);
-        Console.WriteLine("No results for GetCar: " + name);
+        Logging.Info("No results for GetCar: " + name);
         return (-1, null!);
     }
 
@@ -291,12 +287,12 @@ public static class BackendGameSparker
                 {
                     Message = $"Error loading dynamic model '{name}'"
                 });
-                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
+                Logging.Info($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
         SentrySdk.CaptureMessage("No results for GetStagePart: " + name, SentryLevel.Warning);
-        Console.WriteLine("No results for GetStagePart: " + name);
+        Logging.Info("No results for GetStagePart: " + name);
         return (-1, null!);
     }
     

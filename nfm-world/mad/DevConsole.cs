@@ -1,4 +1,5 @@
 using ImGuiNET;
+using nfm_world_library;
 using nfm_world.ui;
 
 namespace nfm_world
@@ -25,7 +26,7 @@ namespace nfm_world
         public DevConsole()
         {
             DevConsoleCommands.RegisterAll(this);
-            Log(GameSparker.version, "info");
+            Logging.Info(GameSparker.version);
         }
 
         public void Toggle()
@@ -57,7 +58,7 @@ namespace nfm_world
             }
             else
             {
-                Log($"Unknown command: {command}");
+                Logging.Info($"Unknown command: {command}");
             }
         }
 
@@ -79,45 +80,7 @@ namespace nfm_world
         public void ClearLog()
         {
             _outputLog.Clear();
-            Log(GameSparker.version, "info");
-        }
-
-        public void Log(string message, string logLevel = "default")
-        {
-            // Don't log empty strings
-            if (string.IsNullOrWhiteSpace(message)) return;
-            
-            string formattedMessage = message;
-            string normalizedLevel = logLevel.ToLowerInvariant();
-
-            // Format the message based on the log level
-            switch (normalizedLevel)
-            {
-                case "warning":
-                    SentrySdk.Logger.LogWarning(message);
-                    formattedMessage = $"[WARN] {message}";
-                    break;
-                case "error":
-                    SentrySdk.Logger.LogError(message);
-                    formattedMessage = message; // No prefix for error
-                    break;
-                case "info":
-                    SentrySdk.Logger.LogInfo(message);
-                    formattedMessage = message; // No prefix for info
-                    break;
-                case "debug":
-                    SentrySdk.Logger.LogDebug(message);
-                    formattedMessage = message; // No prefix for debug
-                    break;
-                default:
-                    SentrySdk.Logger.LogInfo(message);
-                    formattedMessage = message; // Default to plain message
-                    normalizedLevel = "default";
-                    break;
-            }
-
-            _outputLog.Add((formattedMessage, normalizedLevel));
-            if (_outputLog.Count > 100) _outputLog.RemoveAt(0); // Limit log size
+            Logging.Info(GameSparker.version);
         }
 
         public void Render()
@@ -294,7 +257,7 @@ namespace nfm_world
                 {
                     if (!string.IsNullOrWhiteSpace(_currentInput))
                     {
-                        Log($"> {_currentInput}"); // Show command in log
+                        Logging.Info($"> {_currentInput}"); // Show command in log
                         
                         // Add to history BEFORE executing
                         if (_commandHistory.Count == 0 || _commandHistory[^1] != _currentInput)

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
+using nfm_world_library;
 using nfm_world.multiplayer.packets.c2s;
 using nfm_world.multiplayer.packets.s2c;
 
@@ -34,7 +35,7 @@ public abstract class BaseMultiplayerClientTransport : IMultiplayerClientTranspo
         }
         else
         {
-            Console.WriteLine($"Client received a message with unknown opcode {opcode}");
+            Logging.Info($"Client received a message with unknown opcode {opcode}");
         }
     }
 

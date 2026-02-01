@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using ImGuiNET;
+using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world.camera;
 using nfm_world.driverinterface;
@@ -196,7 +197,7 @@ public class SettingsMenu(Program game)
             {
                 // Clear the conflicting binding by setting it to None
                 prop.SetValue(Bindings, Keys.None);
-                GameSparker.Writer?.WriteLine($"Cleared {prop.Name} (was {key})", "debug");
+                Logging.Debug($"Cleared {prop.Name} (was {key})");
             }
         }
 
@@ -205,7 +206,7 @@ public class SettingsMenu(Program game)
         if (property != null)
         {
             property.SetValue(Bindings, key);
-            GameSparker.Writer?.WriteLine($"Bound {_capturingAction} to {key}", "debug");
+            Logging.Debug($"Bound {_capturingAction} to {key}");
         }
 
         _capturingAction = null;
@@ -548,11 +549,12 @@ public class SettingsMenu(Program game)
                 cfgWriter.WriteLine();
             }
             
-            GameSparker.Writer?.WriteLine($"Config saved to {configPath}", "debug");
+            Logging.Debug($"Config saved to {configPath}");
         }
         catch (Exception ex)
         {
-            GameSparker.Writer?.WriteLine($"Error saving config: {ex.Message}", "error");
+            SentrySdk.CaptureException(ex);
+            Logging.Error($"Error saving config: {ex.Message}");
         }
     }
     
@@ -564,7 +566,7 @@ public class SettingsMenu(Program game)
             
             if (!System.IO.File.Exists(configPath))
             {
-                GameSparker.Writer?.WriteLine("No config file found, using defaults.", "warning");
+                Logging.Warning("No config file found, using defaults.");
                 return;
             }
             
@@ -694,18 +696,20 @@ public class SettingsMenu(Program game)
                 }
                 catch (Exception ex)
                 {
-                    GameSparker.Writer?.WriteLine($"Error parsing config line '{line}': {ex.Message}", "error");
+                    SentrySdk.CaptureException(ex);
+                    Logging.Error($"Error parsing config line '{line}': {ex.Message}");
                 }
             }
             
             // Apply loaded settings immediately
             ApplySettings(out _);
             
-            GameSparker.Writer?.WriteLine($"Config loaded from {configPath}", "debug");
+            Logging.Debug($"Config loaded from {configPath}");
         }
         catch (Exception ex)
         {
-            GameSparker.Writer?.WriteLine($"Error loading config: {ex.Message}", "error");
+            SentrySdk.CaptureException(ex);
+            Logging.Error($"Error loading config: {ex.Message}");
         }
     }
 }

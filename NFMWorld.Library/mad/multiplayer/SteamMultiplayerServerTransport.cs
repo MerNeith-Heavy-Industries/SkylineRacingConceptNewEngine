@@ -43,7 +43,7 @@ public class SteamMultiplayerServerTransport : BaseMultiplayerServerTransport, I
         Connections = new ConnectionsList(this);
         _server = SteamNetworkingSockets.CreateRelaySocket<SocketManager>(virtualport);
         _server.Interface = this;
-        Console.WriteLine($"SteamID: {SteamClient.SteamId}");
+        Logging.Info($"SteamID: {SteamClient.SteamId}");
     }
 
     private void ReceiveLoop()
@@ -58,19 +58,19 @@ public class SteamMultiplayerServerTransport : BaseMultiplayerServerTransport, I
     {
         connection.Accept();
         ClientConnecting?.Invoke(this, connection.Id);
-        Console.WriteLine($"{info.Identity} is connecting");
+        Logging.Info($"{info.Identity} is connecting");
     }
 
     public void OnConnected(Connection connection, ConnectionInfo info)
     {
-        Console.WriteLine($"{info.Identity} has joined the game");
+        Logging.Info($"{info.Identity} has joined the game");
         _connectedClients.TryAdd(connection, connection);
     }
 
     public void OnDisconnected(Connection connection, ConnectionInfo info)
     {
         _connectedClients.TryRemove(connection, out _);
-        Console.WriteLine($"{info.Identity} has left the game");
+        Logging.Info($"{info.Identity} has left the game");
     }
     
     public unsafe void OnMessage(Connection connection, NetIdentity identity, IntPtr data, int size, long messageNum, long recvTime, int channel)
