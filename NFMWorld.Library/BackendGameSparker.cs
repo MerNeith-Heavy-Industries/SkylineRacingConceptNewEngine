@@ -54,7 +54,7 @@ public static class BackendGameSparker
             // A Sentry Data Source Name (DSN) is required.
             // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
             // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
-            options.Dsn = "https://4e644d9518b842d8f850cce3a7ac16fc@o4509836837847040.ingest.de.sentry.io/4510807801921616";
+            options.Dsn = "https://baadef1bd7ebd872a30c292477d45ed6@sentry.puppykitty.racing/1";
 
             // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
             // This might be helpful, or might interfere with the normal operation of your application.
@@ -80,6 +80,7 @@ public static class BackendGameSparker
                 ?.InformationalVersion;
             options.Release = ver ?? "NFM-World dev";
         });
+        SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
         
         var realFs = new RelativeFileSystem(Directory.GetCurrentDirectory());
         VFS.MountNewFileTarget(realFs);
