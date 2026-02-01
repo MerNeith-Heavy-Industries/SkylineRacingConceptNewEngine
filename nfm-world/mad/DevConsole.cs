@@ -8,7 +8,6 @@ namespace nfm_world
     {
         private bool _isOpen = false;
         private string _currentInput = string.Empty;
-        private readonly List<(string message, string level)> _outputLog = new();
         private readonly Dictionary<string, Action<DevConsole, string[]>> _commands = new();
         
         // UI Windows
@@ -79,7 +78,7 @@ namespace nfm_world
 
         public void ClearLog()
         {
-            _outputLog.Clear();
+            NfmwLoggerProvider.ClearMessages();
             Logging.Info(GameSparker.version);
         }
 
@@ -111,7 +110,7 @@ namespace nfm_world
                 // output log
                 if (ImGui.BeginChild("ScrollingRegion", new System.Numerics.Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.None, ImGuiWindowFlags.None))
                 {
-                    foreach (var (message, level) in _outputLog.ToArray())
+                    foreach (var (message, level) in NfmwLoggerProvider.GetLogs())
                     {
                         // Set color based on log level
                         switch (level)
@@ -171,7 +170,7 @@ namespace nfm_world
                 {
                     _currentInput = _pendingInput;
                     _pendingInput = null;
-                    Console.WriteLine($"Applied pending input: {_currentInput}");
+                    Logging.Debug($"Applied pending input: {_currentInput}");
                 }
                 
                 // Store previous input to detect changes
