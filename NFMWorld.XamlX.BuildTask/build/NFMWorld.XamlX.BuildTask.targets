@@ -8,7 +8,7 @@
 
   <!-- Register our custom item type for XAML files -->
   <ItemGroup>
-    <AvailableItemName Include="YogaXaml" />
+    <AvailableItemName Include="AvaloniaXaml" />
   </ItemGroup>
 
   <!-- Import the task assembly -->
@@ -20,7 +20,7 @@
   <!-- Generate refs file for the task -->
   <Target Name="_GenerateXamlRefsFile"
           BeforeTargets="CompileYogaXaml"
-          Condition="'@(YogaXaml)' != ''">
+          Condition="'@(AvaloniaXaml)' != ''">
     <ItemGroup>
       <_XamlRefAssemblies Include="@(ReferencePath)" />
     </ItemGroup>
@@ -39,8 +39,8 @@
   <Target Name="CompileYogaXaml"
           AfterTargets="CoreCompile"
           BeforeTargets="CopyFilesToOutputDirectory"
-          Condition="'@(YogaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')"
-          Inputs="@(YogaXaml);@(IntermediateAssembly)"
+          Condition="'@(AvaloniaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')"
+          Inputs="@(AvaloniaXaml);@(IntermediateAssembly)"
           Outputs="$(IntermediateOutputPath)xaml.compiled.marker">
 
     <PropertyGroup>
@@ -55,7 +55,7 @@
     <CompileXamlTask
       AssemblyPath="$(_XamlAssemblyPath)"
       ReferencesFile="$(IntermediateOutputPath)xamlrefs.txt"
-      XamlFiles="@(YogaXaml)"
+      XamlFiles="@(AvaloniaXaml)"
       OutputPath="$(_XamlAssemblyPath)" />
 
     <!-- Create a marker file to indicate compilation happened -->
@@ -65,14 +65,14 @@
   <!-- Also run XAML compilation during Publish -->
   <Target Name="CompileYogaXamlOnPublish"
           AfterTargets="Publish"
-          Condition="'@(YogaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')">
+          Condition="'@(AvaloniaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')">
 
     <Message Text="Compiling Yoga XAML files for publish..." Importance="High" />
 
     <CompileXamlTask
       AssemblyPath="$(PublishDir)$(TargetFileName)"
       ReferencesFile="$(IntermediateOutputPath)xamlrefs.txt"
-      XamlFiles="@(YogaXaml)"
+      XamlFiles="@(AvaloniaXaml)"
       OutputPath="$(PublishDir)$(TargetFileName)" />
   </Target>
 
