@@ -5,7 +5,7 @@ namespace nfm_world.ui.hud;
 /// <summary>
 /// Code-behind for LapTimerSplitsView.xaml.
 /// </summary>
-public partial class LapTimerSplitsView : Node
+public partial class LapTimerSplitsView : View
 {
     /// <summary>
     /// Creates a new LapTimerSplitsView and initializes it from XAML.
