@@ -844,7 +844,7 @@ public class Node : IDisposable, INamed
         set
         {
             field = value;
-            NodeInternal.BorderTop = value ?? YG.YGUndefined;
+            NodeInternal.BorderTop = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
@@ -855,7 +855,7 @@ public class Node : IDisposable, INamed
         set
         {
             field = value;
-            NodeInternal.BorderBottom = value ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
     
@@ -866,7 +866,7 @@ public class Node : IDisposable, INamed
         set
         {
             field = value;
-            NodeInternal.BorderLeft = value ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
     
@@ -877,7 +877,7 @@ public class Node : IDisposable, INamed
         set
         {
             field = value;
-            NodeInternal.BorderRight = value ?? YG.YGUndefined;
+            NodeInternal.BorderRight = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
