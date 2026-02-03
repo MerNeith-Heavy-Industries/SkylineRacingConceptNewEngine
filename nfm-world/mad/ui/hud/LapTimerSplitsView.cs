@@ -13,7 +13,6 @@ public partial class LapTimerSplitsView : Node
     public LapTimerSplitsView()
     {
         InitializeComponent();
-        
     }
 
     /// <summary>
