@@ -235,6 +235,10 @@ public class Node : IDisposable, INamed
                 {
                     return null;
                 }
+                if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (float?)0;
+                }
                 if (trimmed.EndsWith("px"))
                 {
                     if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
@@ -256,19 +260,16 @@ public class Node : IDisposable, INamed
         }
     }
 
-    [TypeConverter(typeof(PixelsConverter))]
     public float Flex
     {
         get => NodeInternal.Flex;
         set => NodeInternal.Flex = value;
     }
-    [TypeConverter(typeof(PixelsConverter))]
     public float FlexGrow
     {
         get => NodeInternal.FlexGrow;
         set => NodeInternal.FlexGrow = value;
     }
-    [TypeConverter(typeof(PixelsConverter))]
     public float FlexShrink
     {
         get => NodeInternal.FlexShrink;
