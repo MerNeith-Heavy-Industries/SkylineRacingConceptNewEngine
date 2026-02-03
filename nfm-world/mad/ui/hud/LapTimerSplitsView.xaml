@@ -11,17 +11,17 @@
       Padding="10">
 
     <!-- Lap Display Row -->
-    <Node x:Name="LapDisplay"
+    <Node Name="LapDisplay"
           FlexDirection="YGFlexDirectionRow">
 
-        <elements:TextRun x:Name="LapIcon"
+        <elements:TextRun Name="LapIcon"
                           Font="Adventure,1,24"
                           Color="255,255,255,255"
                           StrokeColor="0,0,0,255"
                           Text="Lap: "
                           Flex="1" />
 
-        <elements:TextBlock x:Name="LapText"
+        <elements:TextBlock Name="LapText"
                             Font="DroidSans,1,24"
                             Color="255,255,255,255"
                             StrokeColor="0,0,0,255"
