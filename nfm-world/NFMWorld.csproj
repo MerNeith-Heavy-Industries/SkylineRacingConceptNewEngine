@@ -11,6 +11,8 @@
     <InformationalVersion>NFM-World dev</InformationalVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <TieredCompilation>false</TieredCompilation>
+<!--    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
+<!--    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
   </PropertyGroup>
     <PropertyGroup>
         <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -48,6 +50,7 @@
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
     <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
+    <Analyzer Include="..\Avalonia.Generators\bin\$(Configuration)\netstandard2.0\Avalonia.Generators.dll" />
   </ItemGroup>
 
     <!-- XAML compilation for Yoga UI -->
@@ -61,9 +64,20 @@
 
     <!-- XAML files to compile -->
     <ItemGroup>
-        <YogaXaml Include="mad\ui\hud\LapTimerSplitsView.xaml" />
+        <AvaloniaXaml Include="mad\ui\hud\LapTimerSplitsView.xaml" />
     </ItemGroup>
-
+    
+    <!-- https://platform.uno/blog/using-msbuild-items-and-properties-in-c-9-source-generators/ -->
+    <Target Name="_InjectAdditionalFiles" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
+        <ItemGroup>
+            <AdditionalFiles Include="@(AvaloniaXaml)" SourceItemGroup="AvaloniaXaml" />
+        </ItemGroup>
+    </Target>
+    
+    <ItemGroup>
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup" />
+    </ItemGroup>
+    
     <!-- windows builds -->
     <Target Name="CopyCustomContentWindows" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
         <ItemGroup>
@@ -190,6 +204,12 @@
     <ItemGroup>
       <None Remove="mad\ui\test.xaml" />
       <None Remove="mad\ui\hud\LapTimerSplitsView.xaml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="mad\ui\hud\LapTimerSplitsView.cs">
+        <DependentUpon>LapTimerSplitsView.xaml</DependentUpon>
+      </Compile>
     </ItemGroup>
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
