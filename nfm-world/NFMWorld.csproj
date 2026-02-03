@@ -50,7 +50,7 @@
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
     <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
-      
+
       <!-- Reference Avalonia.Generators for XAML source generation -->
         <ProjectReference Include="..\Avalonia.Generators\Avalonia.Generators.csproj"
                           PrivateAssets="all"
@@ -69,6 +69,11 @@
     <Import Project="..\NFMWorld.XamlX.BuildTask\build\NFMWorld.XamlX.BuildTask.targets"
             Condition="Exists('..\NFMWorld.XamlX.BuildTask\build\NFMWorld.XamlX.BuildTask.targets')" />
 
+    <!-- rd.xml file for runtime directive preservation -->
+    <ItemGroup>
+        <RdXmlFile Include="rd.xml" />
+    </ItemGroup>
+
     <!-- XAML files to compile -->
     <ItemGroup>
         <AvaloniaXaml Include="mad\ui\hud\CentralTextView.xaml" />
@@ -76,18 +81,18 @@
         <AvaloniaXaml Include="mad\ui\hud\PowerDamageBars.xaml" />
         <AvaloniaXaml Include="mad\ui\hud\TTLapTimerSplitsView.xaml" />
     </ItemGroup>
-    
+
     <!-- https://platform.uno/blog/using-msbuild-items-and-properties-in-c-9-source-generators/ -->
     <Target Name="_InjectAdditionalFiles" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
         <ItemGroup>
             <AdditionalFiles Include="@(AvaloniaXaml)" SourceItemGroup="AvaloniaXaml" />
         </ItemGroup>
     </Target>
-    
+
     <ItemGroup>
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup" />
     </ItemGroup>
-    
+
     <!-- windows builds -->
     <Target Name="CopyCustomContentWindows" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
         <ItemGroup>
@@ -211,7 +216,7 @@
         <CompileShader Include="data/shaders/*.fx" />
     </ItemGroup>
 
-    
+
     <ItemGroup>
       <Compile Update="mad\ui\hud\CentralTextView.cs">
         <DependentUpon>CentralTextView.xaml</DependentUpon>
@@ -225,11 +230,6 @@
       <Compile Update="mad\ui\hud\TTLapTimerSplitsView.cs">
         <DependentUpon>TTLapTimerSplitsView.xaml</DependentUpon>
       </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="ui\" />
-      <Folder Include="yoga\" />
     </ItemGroup>
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">

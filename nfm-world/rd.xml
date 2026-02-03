@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Runtime Directives (rd.xml) for NFM-World
+
+    This file preserves types and members from trimming during AOT compilation
+    and when using ILLink. It's particularly important for reflection-based code
+    like the XamlX-generated Populate and Build methods.
+-->
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+    <Application>
+        <!--
+            XamlX-generated methods called via reflection
+            Preserve Populate and Build methods on all types in the ui namespace
+        -->
+        <Namespace Name="nfm_world.ui" Serialize="Required">
+            <Type Name="*" Dynamic="Required">
+                <Method Name="Populate" Dynamic="Required" />
+                <Method Name="Build" Dynamic="Required" />
+                <Method Name="InitializeComponent" Dynamic="Required" />
+            </Type>
+        </Namespace>
+
+        <!--
+            Preserve the generated Context types used by XamlX
+        -->
+        <Namespace Name="__XamlRuntime__" Serialize="All" Dynamic="All" />
+
+        <!--
+            Preserve Avalonia.Markup.Xaml interfaces used by XamlX
+        -->
+        <Type Name="Avalonia.Markup.Xaml.IRootObjectProvider" Dynamic="Required">
+            <Property Name="RootObject" Dynamic="Required" />
+            <Property Name="IntermediateRootObject" Dynamic="Required" />
+        </Type>
+        <Type Name="Avalonia.Markup.Xaml.IUriContext" Dynamic="Required">
+            <Property Name="BaseUri" Dynamic="Required" />
+        </Type>
+        <Type Name="Avalonia.Markup.Xaml.IProvideValueTarget" Dynamic="Required">
+            <Property Name="TargetObject" Dynamic="Required" />
+            <Property Name="TargetProperty" Dynamic="Required" />
+        </Type>
+
+        <!--
+            Preserve XamlX runtime interfaces
+        -->
+        <Type Name="XamlX.Runtime.IXamlParentStackProviderV1" Dynamic="Required" />
+        <Type Name="XamlX.Runtime.IXamlXmlNamespaceInfoProviderV1" Dynamic="Required" />
+    </Application>
+</Directives>
