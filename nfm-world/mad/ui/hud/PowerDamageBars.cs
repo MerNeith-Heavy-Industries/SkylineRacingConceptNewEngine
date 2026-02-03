@@ -15,9 +15,11 @@ public partial class PowerDamageBars : Node
         PowerBar.BarColor = GetPowerBarColor(1f);
         PowerBar.Width = IBackend.Backend.LoadCachedImage("data/images/power.gif").Width;
         PowerBar.Height = IBackend.Backend.LoadCachedImage("data/images/power.gif").Height;
+        PowerBar.Scale = 1.2f; // needs to be set after width/height
         DamageBar.BarColor = GetDamageBarColor(0f);
         DamageBar.Width = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Width;
         DamageBar.Height = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Height;
+        DamageBar.Scale = 1.2f; // needs to be set after width/height
     }
     public void SetDamageBarFill(int hitmag, int maxmag)
     {

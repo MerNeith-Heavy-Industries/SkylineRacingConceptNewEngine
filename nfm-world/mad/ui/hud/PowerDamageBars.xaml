@@ -14,11 +14,11 @@
         Name="DamageBar"
         BarFillAmount="0"
         BarImagePath="data/images/damage.gif"
-        Scale="1.2" />
+        />
 
     <elements:MeasureBar
         Name="PowerBar"
         BarFillAmount="0.98"
         BarImagePath="data/images/power.gif"
-        Scale="1.2" />
+        />
 </Node>
