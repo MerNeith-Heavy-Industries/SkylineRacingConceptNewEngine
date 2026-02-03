@@ -85,7 +85,7 @@ public class YGFlexDirectionTypeConverter : TypeConverter
     {
         if (value is string str)
         {
-            return Enum.Parse<YGFlexDirection>(str.Trim(), ignoreCase: true);
+            return Enum.Parse<YgFlexDirection>(str.Trim(), ignoreCase: true);
         }
         return base.ConvertFrom(context, culture, value);
     }
@@ -105,7 +105,7 @@ public class YGAlignTypeConverter : TypeConverter
     {
         if (value is string str)
         {
-            return Enum.Parse<YGAlign>(str.Trim(), ignoreCase: true);
+            return Enum.Parse<YgAlign>(str.Trim(), ignoreCase: true);
         }
         return base.ConvertFrom(context, culture, value);
     }
@@ -125,7 +125,7 @@ public class YGJustifyTypeConverter : TypeConverter
     {
         if (value is string str)
         {
-            return Enum.Parse<YGJustify>(str.Trim(), ignoreCase: true);
+            return Enum.Parse<YgJustify>(str.Trim(), ignoreCase: true);
         }
         return base.ConvertFrom(context, culture, value);
     }
@@ -145,100 +145,7 @@ public class YGDisplayTypeConverter : TypeConverter
     {
         if (value is string str)
         {
-            return Enum.Parse<YGDisplay>(str.Trim(), ignoreCase: true);
-        }
-        return base.ConvertFrom(context, culture, value);
-    }
-}
-
-/// <summary>
-/// Type converter for Node.MeasurementPadding.
-/// Parses a single float value.
-/// </summary>
-public class MeasurementPaddingTypeConverter : TypeConverter
-{
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
-
-    public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
-    {
-        if (value is string str)
-        {
-            var trimmed = str.Trim();
-            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
-            {
-                return (Node.MeasurementPadding)floatValue;
-            }
-            throw new FormatException($"Invalid padding format: {str}. Expected a number.");
-        }
-        return base.ConvertFrom(context, culture, value);
-    }
-}
-
-/// <summary>
-/// Type converter for Node.MeasurementGap.
-/// Parses a single float value.
-/// </summary>
-public class MeasurementGapTypeConverter : TypeConverter
-{
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
-
-    public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
-    {
-        if (value is string str)
-        {
-            var trimmed = str.Trim();
-            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
-            {
-                return (Node.MeasurementGap)floatValue;
-            }
-            throw new FormatException($"Invalid gap format: {str}. Expected a number.");
-        }
-        return base.ConvertFrom(context, culture, value);
-    }
-}
-
-/// <summary>
-/// Type converter for Node.MeasurementWidthHeight.
-/// Parses values like "100", "50%", "auto", "stretch", etc.
-/// </summary>
-public class MeasurementWidthHeightTypeConverter : TypeConverter
-{
-    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
-    {
-        return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-    }
-
-    public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
-    {
-        if (value is string str)
-        {
-            var trimmed = str.Trim().ToLowerInvariant();
-
-            if (trimmed == "auto")
-                return Node.MeasurementWidthHeight.Auto();
-            if (trimmed == "stretch")
-                return Node.MeasurementWidthHeight.Stretch();
-            if (trimmed == "fit-content" || trimmed == "fitcontent")
-                return Node.MeasurementWidthHeight.FitContent();
-            if (trimmed == "max-content" || trimmed == "maxcontent")
-                return Node.MeasurementWidthHeight.MaxContent();
-            if (trimmed.EndsWith('%'))
-            {
-                var percentValue = float.Parse(trimmed.TrimEnd('%'), CultureInfo.InvariantCulture);
-                return Node.MeasurementWidthHeight.Percent(percentValue);
-            }
-            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
-            {
-                return (Node.MeasurementWidthHeight)floatValue;
-            }
-
-            throw new FormatException($"Invalid measurement format: {str}. Expected a number, percentage, 'auto', 'stretch', 'fit-content', or 'max-content'.");
+            return Enum.Parse<YgDisplay>(str.Trim(), ignoreCase: true);
         }
         return base.ConvertFrom(context, culture, value);
     }
