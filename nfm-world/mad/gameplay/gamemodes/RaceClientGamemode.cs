@@ -19,37 +19,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 
     private LapTimerSplitsView _lapTimerSplits = new LapTimerSplitsView();
 
-    private static TextRun _centerText = null!;
-    private Node _centralTextNode = new Node()
-    {
-        Name = "CentralText",
-        AlignItems = YgAlign.Center,
-        FlexDirection = YgFlexDirection.Column,
-
-        Children =
-        {
-            new Node()
-            {
-                AlignItems = YgAlign.Center,
-                Flex = 1,
-                Children = {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _centerText = textBlock,
-                        Text = "",
-                        Color = new Color(0, 0, 0, 0),
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Display = YgDisplay.None
-                    },
-                }
-            },
-
-            new Node()
-            {
-                Flex = 1
-            }
-        }
-    };
+    private CentralTextView _centralTextNode = new CentralTextView();
 
     public override void Reset()
     {
@@ -95,22 +65,22 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 
         if (_currentState == InnerRaceState.Countdown)
         {
-            _centerText.Display = YgDisplay.Flex;
-            _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
-            _centerText.Color = new Color(255, 255, 255);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Text = $"Starting in {_countdownTime}";
+            _centralTextNode.CenterText.Display = YgDisplay.Flex;
+            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, 1, 24);
+            _centralTextNode.CenterText.Color = new Color(255, 255, 255);
+            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
+            _centralTextNode.CenterText.Text = $"Starting in {_countdownTime}";
         }
         else if (_currentState == InnerRaceState.Finished)
         {
             string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            _centerText.Display = YgDisplay.Flex;
-            _centerText.Color = new Color(128, 255, 128);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
-            _centerText.Text = $"Finished! Time: {finalTime}";
+            _centralTextNode.CenterText.Display = YgDisplay.Flex;
+            _centralTextNode.CenterText.Color = new Color(128, 255, 128);
+            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
+            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, 1, 24);
+            _centralTextNode.CenterText.Text = $"Finished! Time: {finalTime}";
 
-            _centerText.Text += "\nPress R to restart";
+            _centralTextNode.CenterText.Text += "\nPress R to restart";
         }
     }
 
@@ -123,7 +93,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centerText.Display = YgDisplay.None;
+                _centralTextNode.CenterText.Display = YgDisplay.None;
             }
         }
     }

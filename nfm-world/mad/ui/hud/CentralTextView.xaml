@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Node xmlns="clr-namespace:nfm_world.ui.yoga"
+      xmlns:elements="clr-namespace:nfm_world.ui.elements"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      x:Class="nfm_world.ui.hud.CentralTextView"
+      Name="CentralText"
+      AlignItems="Center"
+      FlexDirection="Column">
+
+    <Node AlignItems="Center" Flex="1">
+        <elements:TextRun Name="CenterText"
+                          Text=""
+                          Color="0,0,0,0"
+                          Font="Adventure,1,24"
+                          Display="None" />
+    </Node>
+
+    <Node Flex="1" />
+</Node>
