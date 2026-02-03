@@ -2,7 +2,7 @@
 using nfm_world;
 using nfm_world.driverinterface;
 using nfm_world.util;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world.ui.yoga;
 

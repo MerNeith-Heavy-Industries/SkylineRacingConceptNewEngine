@@ -9,7 +9,6 @@ using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.stage;
 using nfm_world.util;
-using Stride.Core.Extensions;
 
 namespace nfm_world.gameplay;
 
@@ -80,7 +79,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         {
             string[] stages = Directory.GetFiles("data/stages", "*.*", SearchOption.AllDirectories);
             string stagePath = "";
-            while (stagePath.IsNullOrEmpty() || stagePath.Contains("rar2"))
+            while (string.IsNullOrEmpty(stagePath) || stagePath.Contains("rar2"))
             {
                 stagePath = stages[(int)(URandom.Double() * stages.Length)];
             }
@@ -246,7 +245,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             ImGui.SetKeyboardFocusHere(-1);
         }
 
-        if (_searchQuery.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(_searchQuery))
         {
             _autocompleteMatches = _cars.ToArray();
         }

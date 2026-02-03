@@ -1,4 +1,4 @@
-﻿using Stride.Core.Mathematics;
+﻿using Maxine.Extensions.Mathematics;
 
 namespace nfm_world.camera;
 

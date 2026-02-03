@@ -1,4 +1,4 @@
-﻿using Stride.Core.Mathematics;
+﻿using Maxine.Extensions.Mathematics;
 
 namespace nfm_world_library.util;
 
@@ -43,7 +43,7 @@ public struct Euler(AngleSingle yaw, AngleSingle pitch, AngleSingle roll) : IEqu
     }
     
     /// <summary>
-    /// Wraps this Stride.Core.Mathematics.AngleSingle to be in the range [0, 2π).
+    /// Wraps this Maxine.Extensions.Mathematics.AngleSingle to be in the range [0, 2π).
     /// </summary>
     private static AngleSingle WrapSinglePositive(AngleSingle radians)
     {

@@ -10,7 +10,7 @@ using nfm_world.gameplay;
 using nfm_world.mesh;
 using nfm_world.stage;
 using nfm_world.util;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world.ui;
 

@@ -5,7 +5,7 @@ using nfm_world_library.util;
 using nfm_world.camera;
 using nfm_world.mesh;
 using nfm_world.mesh.environment;
-using Stride.Core.Extensions;
+using Maxine.Extensions.Mathematics;
 using Environment = nfm_world.mesh.environment.Environment;
 
 namespace nfm_world.stage;
@@ -135,7 +135,7 @@ public class ClientStageRenderer : GameObject
             musicFreqMul = stageLoader.musicFreqMul;
             musicTempoMul = stageLoader.musicTempoMul;
 
-            if (musicPath.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(musicPath))
             {
                 GameSparker.Writer.WriteLine("No music is defined for this stage!", "error");
             }

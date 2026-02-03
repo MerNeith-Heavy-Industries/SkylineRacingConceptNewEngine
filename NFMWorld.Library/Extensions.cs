@@ -7,7 +7,7 @@ using nfm_world_library.SoftFloat;
 using nfm_world_library.util;
 using Steamworks;
 using Steamworks.Data;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world_library;
 
@@ -47,16 +47,16 @@ public static class Extensions
         public Vector3 ToXna() => new(vector3.X, vector3.Y, vector3.Z);
     }
 
-    extension(Stride.Core.Mathematics.Vector3 vector3)
+    extension(Maxine.Extensions.Mathematics.Vector3 vector3)
     {
-        public static Stride.Core.Mathematics.Vector3 RotateAround(in Stride.Core.Mathematics.Vector3 source,
-            in Stride.Core.Mathematics.Vector3 target, in Stride.Core.Mathematics.Vector3 axis, AngleSingle angle)
-            => Stride.Core.Mathematics.Vector3.RotateAround(in source, in target, in axis, angle.Radians);
+        public static Maxine.Extensions.Mathematics.Vector3 RotateAround(in Maxine.Extensions.Mathematics.Vector3 source,
+            in Maxine.Extensions.Mathematics.Vector3 target, in Maxine.Extensions.Mathematics.Vector3 axis, AngleSingle angle)
+            => Maxine.Extensions.Mathematics.Vector3.RotateAround(in source, in target, in axis, angle.Radians);
 
-        public static Stride.Core.Mathematics.Vector3 Abs(Stride.Core.Mathematics.Vector3 vector) =>
+        public static Maxine.Extensions.Mathematics.Vector3 Abs(Maxine.Extensions.Mathematics.Vector3 vector) =>
             new(MathF.Abs(vector.X), MathF.Abs(vector.Y), MathF.Abs(vector.Z));
 
-        public static Stride.Core.Mathematics.Vector3 FromSpan(ReadOnlySpan<float> span)
+        public static Maxine.Extensions.Mathematics.Vector3 FromSpan(ReadOnlySpan<float> span)
             => new(span[0], span[1], span[2]);
 
         public Vector3 ToXna() => new(vector3.X, vector3.Y, vector3.Z);
@@ -159,7 +159,7 @@ public static class Extensions
             => new(vector2.X, vector2.Y);
     }
 
-    extension(Stride.Core.Mathematics.Quaternion quat)
+    extension(Maxine.Extensions.Mathematics.Quaternion quat)
     {
         public Quaternion ToXna()
             => new(quat.X, quat.Y, quat.Z, quat.W);
@@ -179,9 +179,9 @@ public static class Extensions
 
 public static class Extensions2
 {
-    extension(Stride.Core.Mathematics.Matrix matrix)
+    extension(Maxine.Extensions.Mathematics.Matrix matrix)
     {
-        public static Stride.Core.Mathematics.Matrix CreateFromEuler(Euler euler)
+        public static Maxine.Extensions.Mathematics.Matrix CreateFromEuler(Euler euler)
         {
             // NFM rotation order: yaw-pitch-roll
 
@@ -225,7 +225,7 @@ public static class Extensions2
             te[14] = 0;
             te[15] = 1;
 
-            return new Stride.Core.Mathematics.Matrix(
+            return new Maxine.Extensions.Mathematics.Matrix(
                 te[0],
                 te[1],
                 te[2],

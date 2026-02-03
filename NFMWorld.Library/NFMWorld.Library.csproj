@@ -16,7 +16,6 @@
         <PackageReference Include="LuzFaltex.Core.Collections" Version="0.1.0" />
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
-        <PackageReference Include="Stride.Core.Mathematics" Version="4.3.0.2507" />
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
@@ -25,6 +24,7 @@
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.MessagePack\Maxine.Extensions.MessagePack.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.VFS\Maxine.VFS.csproj" />
+      <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.Mathematics\Maxine.Extensions.Mathematics.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
