@@ -1,5 +1,4 @@
 ﻿using nfm_world_library.backend.gamemodes;
-using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.sfx;
 using nfm_world.ui.elements;
@@ -14,50 +13,11 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 {
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextBlock _lapText = null!;
     private int _lastClientCheckpoint = 0;
     
     private int _lastCountdownTime = 0;
 
-    private Node _lapTimerSplits = new Node()
-    {
-        Name = "LapTimerSplits",
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-        AlignItems = Yoga.YGAlign.YGAlignFlexStart,
-        JustifyContent = Yoga.YGJustify.YGJustifyCenter,
-        Gap = 10,
-        Padding = 10,
-
-        Children =
-        {
-            new Node()
-            {
-                Name = "LapDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Name = "LapIcon",
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Color = new Color(255, 255, 255),
-                        StrokeColor = new Color(0, 0, 0),
-                        Text = "Lap: ",
-                        Flex = 1
-                    },
-                    new TextBlock()
-                    {
-                        Ref = textBlock => _lapText = textBlock,
-                        StrokeColor = new Color(0, 0, 0),
-                        Name = "LapText",
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-        }
-    };
+    private LapTimerSplitsView _lapTimerSplits = new LapTimerSplitsView();
 
     private static TextRun _centerText = null!;
     private Node _centralTextNode = new Node()
@@ -91,11 +51,6 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         }
     };
 
-    public void SetLapText(int currentLap)
-    {
-        _lapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
-    }
-
     public override void Reset()
     {
         base.Reset();
@@ -106,12 +61,12 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         _pdBars.Reset();
         IBackend.Backend.StopAllSounds();
 
-        SetLapText(1);
+        _lapTimerSplits.SetLapText(1, currentStage.nlaps);
     }
 
     protected override void InRace()
     {
-        SetLapText(carsInRace[playerCarIndex].currentLap);
+        _lapTimerSplits.SetLapText(carsInRace[playerCarIndex].currentLap, currentStage.nlaps);
 
         _pdBars.SetDamageBarFill(carsInRace[playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
         _pdBars.UpdateDamageBarColor();
