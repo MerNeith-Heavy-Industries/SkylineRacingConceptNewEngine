@@ -203,7 +203,7 @@ public class CompileXamlTask : Task
                 {
                     asm.Write(dllStream, writerParams);
                 }
-                
+
                 // Close the symbol stream if it was created
                 writerParams.SymbolStream?.Close();
                 writerParams.SymbolStream?.Dispose();
@@ -212,7 +212,7 @@ public class CompileXamlTask : Task
                 if (File.Exists(outputPath))
                     File.Delete(outputPath);
                 File.Move(tempDllPath, outputPath);
-                
+
                 if (File.Exists(tempPdbPath))
                 {
                     if (File.Exists(pdbPath))
@@ -248,7 +248,11 @@ public class CompileXamlTask : Task
         // Set up our runtime interfaces
         var rootObjectProvider = typeSystem.FindType("Avalonia.Markup.Xaml.IRootObjectProvider");
         if (rootObjectProvider != null)
+        {
             mappings.RootObjectProvider = rootObjectProvider;
+            // Tell XamlX to generate the IntermediateRootObject property getter
+            mappings.RootObjectProviderIntermediateRootPropertyName = "IntermediateRootObject";
+        }
 
         var uriContext = typeSystem.FindType("Avalonia.Markup.Xaml.IUriContext");
         if (uriContext != null)
