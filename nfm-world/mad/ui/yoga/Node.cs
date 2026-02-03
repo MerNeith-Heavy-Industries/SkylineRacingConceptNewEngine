@@ -1,26 +1,29 @@
 ﻿using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Avalonia;
 using Maxine.Extensions;
+using nfm_world.ui.yoga.xaml;
 using Yoga;
 
 namespace nfm_world.ui.yoga;
 
 // ReSharper disable InconsistentNaming
 [DebuggerDisplay("{DebugToString()}")]
+[ContentProperty(Name = "Children")]
 public class Node : IDisposable, INamed
 {
     internal static readonly YGConfigPtr Config;
 
     internal YGNodePtr NodeInternal = new(Config);
-    
+
     internal string __INTERNAL_CtorCallerFilePath = "";
     internal int __INTERNAL_CtorCallerLineNumber = 0;
     internal string __INTERNAL_CtorCallerMemberName = "";
-    
+
     internal static List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
     #if DEBUG
@@ -29,7 +32,7 @@ public class Node : IDisposable, INamed
     public Node()
     {
         Children = new(this);
-        
+
 #if DEBUG
         var stackTrace = new StackTrace(1, true);
         // skip inherited constructors
@@ -42,7 +45,7 @@ public class Node : IDisposable, INamed
     }
 
     public NodeChildCollection Children { get; }
-    
+
     public string? Name { get; set; }
 
     public string DebugToString()
@@ -71,11 +74,11 @@ public class Node : IDisposable, INamed
     public Vector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
     public Vector2 LayoutContentPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
     public Vector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
-    
+
     public Vector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
     public Vector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
     public Vector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
-    
+
     public float LayoutWidth => NodeInternal.LayoutWidth;
     public float LayoutHeight => NodeInternal.LayoutHeight;
     public float LayoutX => NodeInternal.LayoutX;
@@ -112,7 +115,7 @@ public class Node : IDisposable, INamed
         set => NodeInternal.IsReferenceBaseline = value;
         get => NodeInternal.IsReferenceBaseline;
     }
-    
+
     public YGNodeType NodeType
     {
         get => NodeInternal.NodeType;
@@ -126,9 +129,9 @@ public class Node : IDisposable, INamed
     }
 
     #endregion
-    
+
     #region Style
-    
+
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     public YGDirection Direction
     {
@@ -180,7 +183,7 @@ public class Node : IDisposable, INamed
         get => NodeInternal.Display;
         set => NodeInternal.Display = value;
     }
-    
+
     public float Flex
     {
         get => NodeInternal.Flex;
@@ -205,7 +208,7 @@ public class Node : IDisposable, INamed
     public struct MeasurementFlexBasis
     {
         public YGValue InternalValue;
-        
+
         public static implicit operator MeasurementFlexBasis(float value)
         {
             return new MeasurementFlexBasis
@@ -275,7 +278,7 @@ public class Node : IDisposable, INamed
                 }
             };
         }
-        
+
         public static MeasurementFlexBasis Point(float value)
         {
             return new MeasurementFlexBasis
@@ -321,7 +324,7 @@ public class Node : IDisposable, INamed
     public struct MeasurementMarginPosition
     {
         public YGValue InternalValue;
-        
+
         public static implicit operator MeasurementMarginPosition(float value)
         {
             return new MeasurementMarginPosition
@@ -415,7 +418,7 @@ public class Node : IDisposable, INamed
             NodeInternal.Top = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
-    
+
     public MeasurementMarginPosition Right
     {
         get;
@@ -425,7 +428,7 @@ public class Node : IDisposable, INamed
             NodeInternal.Right = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
-    
+
     public MeasurementMarginPosition Bottom
     {
         get;
@@ -476,10 +479,11 @@ public class Node : IDisposable, INamed
         }
     } = MeasurementMarginPosition.Undefined;
 
+    [TypeConverter(typeof(MeasurementPaddingTypeConverter))]
     public struct MeasurementPadding
     {
         public YGValue InternalValue;
-        
+
         public static implicit operator MeasurementPadding(float value)
         {
             return new MeasurementPadding
@@ -544,7 +548,7 @@ public class Node : IDisposable, INamed
             return this;
         }
     }
-    
+
     public MeasurementPadding Padding
     {
         set
@@ -575,7 +579,7 @@ public class Node : IDisposable, INamed
             NodeInternal.PaddingBottom = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
-    
+
     public MeasurementPadding PaddingLeft
     {
         get;
@@ -644,11 +648,12 @@ public class Node : IDisposable, INamed
             NodeInternal.BorderRight = value ?? YG.YGUndefined;
         }
     }
-    
+
+    [TypeConverter(typeof(MeasurementGapTypeConverter))]
     public struct MeasurementGap
     {
         public YGValue InternalValue;
-        
+
         public static implicit operator MeasurementGap(float value)
         {
             return new MeasurementGap
@@ -732,7 +737,7 @@ public class Node : IDisposable, INamed
             NodeInternal.GapColumn = value;
         }
     } = MeasurementGap.Undefined;
-    
+
     public MeasurementGap GapRow
     {
         get;
@@ -742,7 +747,7 @@ public class Node : IDisposable, INamed
             NodeInternal.GapRow = value;
         }
     } = MeasurementGap.Undefined;
-    
+
     public YGBoxSizing BoxSizing
     {
         get => NodeInternal.BoxSizing;
@@ -752,7 +757,7 @@ public class Node : IDisposable, INamed
     public struct MeasurementWidthHeight
     {
         public YGValue InternalValue;
-        
+
         public static implicit operator MeasurementWidthHeight(float value)
         {
             return new MeasurementWidthHeight
@@ -879,7 +884,7 @@ public class Node : IDisposable, INamed
             NodeInternal.Height = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
     public MeasurementWidthHeight MinWidth
     {
         get;
@@ -889,7 +894,7 @@ public class Node : IDisposable, INamed
             NodeInternal.MinWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
     public MeasurementWidthHeight MinHeight
     {
         get;
@@ -899,7 +904,7 @@ public class Node : IDisposable, INamed
             NodeInternal.MinHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
     public MeasurementWidthHeight MaxWidth
     {
         get;
@@ -909,7 +914,7 @@ public class Node : IDisposable, INamed
             NodeInternal.MaxWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
     public MeasurementWidthHeight MaxHeight
     {
         get;
@@ -919,7 +924,7 @@ public class Node : IDisposable, INamed
             NodeInternal.MaxHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
     public float AspectRatio
     {
         get => NodeInternal.AspectRatio;
@@ -993,7 +998,7 @@ public class Node : IDisposable, INamed
             Right = Right;
             Bottom = Bottom;
 #pragma warning restore CA2245
-            
+
             _lastScale = G.Scale;
 
             return true;
@@ -1005,7 +1010,7 @@ public class Node : IDisposable, INamed
     protected virtual void OnScaleChanged()
     {
     }
-    
+
     private void RescaleRecursive()
     {
         if (Rescale())
@@ -1017,7 +1022,7 @@ public class Node : IDisposable, INamed
             }
         }
     }
-    
+
     protected virtual void RenderBackground(Vector2 position, Vector2 size)
     {
     }
@@ -1025,7 +1030,7 @@ public class Node : IDisposable, INamed
     protected virtual void RenderBorder(Vector2 position, Vector2 size)
     {
     }
-    
+
     protected virtual void RenderContent(Vector2 position, Vector2 size)
     {
     }
@@ -1059,7 +1064,7 @@ public class Node : IDisposable, INamed
 #if DEBUG
         __INTERNAL_YogaRootsThisFrame.Add(this);
 #endif
-        
+
         RescaleRecursive();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
         RenderRecursive(origin ?? Vector2.Zero);
@@ -1078,7 +1083,7 @@ public class Node : IDisposable, INamed
 public class NodeChildCollection(Node parent) : IList<Node>
 {
     private List<Node> _internalList = new();
-    
+
     public IEnumerator<Node> GetEnumerator()
     {
         return _internalList.GetEnumerator();

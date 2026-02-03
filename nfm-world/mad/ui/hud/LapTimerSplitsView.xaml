@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Example Yoga XAML layout demonstrating the yoga layout system -->
+<!--
+    LapTimerSplitsView XAML layout using Yoga flexbox layout system.
+    This file is compiled by the XamlX build task into the LapTimerSplitsView class.
+-->
 <Node xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:elements="clr-namespace:nfm_world.ui.elements"
       xmlns:x="clr-namespace:System;assembly=mscorlib"
@@ -16,16 +19,17 @@
           FlexDirection="YGFlexDirectionRow">
 
         <elements:TextRun Name="LapIcon"
-                 Font="Adventure,1,24"
-                 Color="255,255,255"
-                 StrokeColor="0,0,0"
-                 Text="Lap: "
-                 Flex="1" />
+                          Font="Adventure,1,24"
+                          Color="255,255,255,255"
+                          StrokeColor="0,0,0,255"
+                          Text="Lap: "
+                          Flex="1" />
 
         <elements:TextBlock Name="LapText"
                             Font="DroidSans,1,24"
-                            Color="255,255,255"
-                            StrokeColor="0,0,0"
+                            Color="255,255,255,255"
+                            StrokeColor="0,0,0,255"
+                            Text="1/3"
                             Flex="1" />
     </Node>
 

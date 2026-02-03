@@ -38,7 +38,6 @@
       <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
       <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
       <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
-      <PackageReference Include="XamlNameReferenceGenerator" Version="1.6.1" />
       <PackageReference Include="Yoga-CS" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
@@ -48,16 +47,22 @@
     <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
-    <!-- Yoga XAML Source Generator -->
-    <ProjectReference Include="..\NFMWorld.YogaXaml.SourceGen\NFMWorld.YogaXaml.SourceGen.csproj" 
-                      OutputItemType="Analyzer" 
-                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
   </ItemGroup>
-  
-  <!-- Yoga XAML files for source generation -->
-  <ItemGroup>
-    <AdditionalFiles Include="**\*.yoga.xaml" />
-  </ItemGroup>
+
+    <!-- XAML compilation for Yoga UI -->
+    <PropertyGroup>
+        <NFMWorldXamlXTasksDir>$(MSBuildThisFileDirectory)..\NFMWorld.XamlX.BuildTask\bin\$(Configuration)\net10.0\</NFMWorldXamlXTasksDir>
+    </PropertyGroup>
+
+    <!-- Import the XAML build targets (only if the task is built) -->
+    <Import Project="..\NFMWorld.XamlX.BuildTask\build\NFMWorld.XamlX.BuildTask.targets"
+            Condition="Exists('..\NFMWorld.XamlX.BuildTask\build\NFMWorld.XamlX.BuildTask.targets')" />
+
+    <!-- XAML files to compile -->
+    <ItemGroup>
+        <YogaXaml Include="mad\ui\hud\LapTimerSplitsView.xaml" />
+    </ItemGroup>
 
     <!-- windows builds -->
     <Target Name="CopyCustomContentWindows" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
@@ -66,7 +71,7 @@
         </ItemGroup>
         <Copy SourceFiles="@(DllFiles)" DestinationFolder="$(OutDir)" />
     </Target>
-    
+
     <Target Name="CopyCustomContentWindows_Publish" AfterTargets="Publish" Condition="'$(OS)' == 'Windows_NT'">
         <ItemGroup>
             <DllFiles Include="skiadriver/*.dll" />
@@ -105,7 +110,7 @@
         </ItemGroup>
         <Copy SourceFiles="@(DylibFiles)" DestinationFolder="$(PublishDir)" />
     </Target>
-    
+
     <!-- Run mgfxc if on Windows -->
     <ItemGroup>
         <AvailableItemName Include="CompileShader" />
@@ -135,7 +140,7 @@
     </PropertyGroup>
     <!-- Reference:
         https://stackoverflow.com/questions/3433200/msbuild-how-do-i-create-and-use-a-task-to-convert-content-items-at-build-time
-        
+
         Handy reload solution: https://stackoverflow.com/a/24837585/165500
     -->
     <Target Name="BuildShaders" BeforeTargets="Compile"
@@ -164,7 +169,7 @@
 
 
     <!-- Ensure that dependent projects are aware of generated shaders:
-    
+
         Reference: https://stackoverflow.com/questions/14322391/msbuild-to-copy-dynamically-generated-files-as-part-of-project-dependency
         Also: https://stackoverflow.com/questions/44752139/how-to-make-msbuild-correctly-track-files-generated-with-an-external-tool-across
     -->
@@ -177,13 +182,14 @@
             <AllItemsFullPathWithTargetPath Include="@(CompiledShaders->'%(FullPath)')"  />
         </ItemGroup>
     </Target>
-    
+
     <ItemGroup>
         <CompileShader Include="data/shaders/*.fx" />
     </ItemGroup>
-    
+
     <ItemGroup>
       <None Remove="mad\ui\test.xaml" />
+      <None Remove="mad\ui\hud\LapTimerSplitsView.xaml" />
     </ItemGroup>
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
@@ -192,8 +198,4 @@
         </ItemGroup>
         <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
     </Target>
-    
-    <ItemGroup>
-        <AdditionalFiles Include="**\*.xaml"/>
-    </ItemGroup>
 </Project>

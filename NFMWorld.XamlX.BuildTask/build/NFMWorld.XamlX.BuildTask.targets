@@ -1,0 +1,85 @@
+<!-- NFMWorld.XamlX.BuildTask MSBuild Targets -->
+<!-- This file is imported by projects that want to compile XAML files -->
+<Project>
+
+  <PropertyGroup>
+    <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == ''">$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\</NFMWorldXamlXTasksDir>
+  </PropertyGroup>
+
+  <!-- Register our custom item type for XAML files -->
+  <ItemGroup>
+    <AvailableItemName Include="YogaXaml" />
+  </ItemGroup>
+
+  <!-- Import the task assembly -->
+  <UsingTask
+    TaskName="NFMWorld.XamlX.BuildTask.CompileXamlTask"
+    AssemblyFile="$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll"
+    Condition="Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')" />
+
+  <!-- Generate refs file for the task -->
+  <Target Name="_GenerateXamlRefsFile"
+          BeforeTargets="CompileYogaXaml"
+          Condition="'@(YogaXaml)' != ''">
+    <ItemGroup>
+      <_XamlRefAssemblies Include="@(ReferencePath)" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_XamlRefsFile>$(IntermediateOutputPath)xamlrefs.txt</_XamlRefsFile>
+    </PropertyGroup>
+
+    <WriteLinesToFile
+      File="$(_XamlRefsFile)"
+      Lines="@(_XamlRefAssemblies)"
+      Overwrite="true" />
+  </Target>
+
+  <!-- Compile XAML files after assembly is built but before it's copied to output -->
+  <Target Name="CompileYogaXaml"
+          AfterTargets="CoreCompile"
+          BeforeTargets="CopyFilesToOutputDirectory"
+          Condition="'@(YogaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')"
+          Inputs="@(YogaXaml);@(IntermediateAssembly)"
+          Outputs="$(IntermediateOutputPath)xaml.compiled.marker">
+
+    <PropertyGroup>
+      <!-- Use the intermediate assembly which is available after CoreCompile -->
+      <_XamlAssemblyPath>@(IntermediateAssembly)</_XamlAssemblyPath>
+    </PropertyGroup>
+
+    <Message Text="Compiling Yoga XAML files..." Importance="High" />
+    <Message Text="  Assembly: $(_XamlAssemblyPath)" Importance="Normal" />
+    <Message Text="  Task DLL: $(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll" Importance="Normal" />
+
+    <CompileXamlTask
+      AssemblyPath="$(_XamlAssemblyPath)"
+      ReferencesFile="$(IntermediateOutputPath)xamlrefs.txt"
+      XamlFiles="@(YogaXaml)"
+      OutputPath="$(_XamlAssemblyPath)" />
+
+    <!-- Create a marker file to indicate compilation happened -->
+    <Touch Files="$(IntermediateOutputPath)xaml.compiled.marker" AlwaysCreate="true" />
+  </Target>
+
+  <!-- Also run XAML compilation during Publish -->
+  <Target Name="CompileYogaXamlOnPublish"
+          AfterTargets="Publish"
+          Condition="'@(YogaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')">
+
+    <Message Text="Compiling Yoga XAML files for publish..." Importance="High" />
+
+    <CompileXamlTask
+      AssemblyPath="$(PublishDir)$(TargetFileName)"
+      ReferencesFile="$(IntermediateOutputPath)xamlrefs.txt"
+      XamlFiles="@(YogaXaml)"
+      OutputPath="$(PublishDir)$(TargetFileName)" />
+  </Target>
+
+  <!-- Clean up XAML compilation artifacts -->
+  <Target Name="CleanYogaXamlArtifacts" AfterTargets="Clean">
+    <Delete Files="$(IntermediateOutputPath)xamlrefs.txt" Condition="Exists('$(IntermediateOutputPath)xamlrefs.txt')" />
+    <Delete Files="$(IntermediateOutputPath)xaml.compiled.marker" Condition="Exists('$(IntermediateOutputPath)xaml.compiled.marker')" />
+  </Target>
+
+</Project>
