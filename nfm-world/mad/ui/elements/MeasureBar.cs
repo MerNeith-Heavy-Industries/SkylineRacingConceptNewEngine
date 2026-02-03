@@ -12,6 +12,11 @@ public class MeasureBar : Node
     /// </summary>
     public float BarFillAmount { get; set; } = 0f;
     public IImage BarImage { get; set; } = null!;
+    public string BarImagePath
+    {
+        set => BarImage = IBackend.Backend.LoadCachedImage(value);
+    }
+
     public float Scale
     {
         get;

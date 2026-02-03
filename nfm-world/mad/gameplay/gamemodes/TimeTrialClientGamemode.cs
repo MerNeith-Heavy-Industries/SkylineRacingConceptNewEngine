@@ -42,9 +42,9 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
     private Node _lapTimerSplits = new Node()
     {
         Name = "LapTimerSplits",
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-        AlignItems = Yoga.YGAlign.YGAlignFlexStart,
-        JustifyContent = Yoga.YGJustify.YGJustifyCenter,
+        FlexDirection = YgFlexDirection.Column,
+        AlignItems = YgAlign.FlexStart,
+        JustifyContent = YgJustify.Center,
         Gap = 10,
         Padding = 10,
 
@@ -53,7 +53,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             new Node()
             {
                 Name = "LapDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
+                FlexDirection = YgFlexDirection.Row,
                 Children =
                 {
                     new TextRun()
@@ -79,7 +79,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             new Node()
             {
                 Name = "TimeDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
+                FlexDirection = YgFlexDirection.Row,
                 Children =
                 {
                     new TextRun()
@@ -154,14 +154,14 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
     private Node _centralTextNode = new Node()
     {
         Name = "CentralText",
-        AlignItems = Yoga.YGAlign.YGAlignCenter,
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
+        AlignItems = YgAlign.Center,
+        FlexDirection = YgFlexDirection.Column,
 
         Children =
         {
             new Node()
             {
-                AlignItems = Yoga.YGAlign.YGAlignCenter,
+                AlignItems = YgAlign.Center,
                 Flex = 1,
                 Children = {
                     new TextRun()
@@ -170,7 +170,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
                         Text = "",
                         Color = new Color(0, 0, 0, 0),
                         Font = new Font(FontFamily.Adventure, 1, 24),
-                        Display = Yoga.YGDisplay.YGDisplayNone
+                        Display = YgDisplay.None
                     },
                 }
             },
@@ -241,14 +241,14 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         IBackend.Backend.StopAllSounds();
 
         SetLapText(0);
-        _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _checkpointSplitsText.Display = YgDisplay.None;
 
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
-        _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _lapSplitsText.Display = YgDisplay.None;
         _lastLapTime = 0;
         _lastLapTimeText.Text = "";
-        _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _lastLapTimeText.Display = YgDisplay.None;
     }
 
     public override void GameTick()
@@ -344,7 +344,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;
-                _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
+                _centerText.Display = YgDisplay.None;
                 _raceTimer.Start();
             }
         }
@@ -368,7 +368,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
     {
         if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && _bestTimeTrial != null)
         {
-            _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _checkpointSplitsText.Display = YgDisplay.Flex;
             long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
             _checkpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
@@ -380,12 +380,12 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
         else
         {
-            _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            _checkpointSplitsText.Display = YgDisplay.None;
         }
 
         if (carsInRace[playerCarIndex].currentLap > 0 && _bestTimeTrial != null)
         {
-            _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _lapSplitsText.Display = YgDisplay.Flex;
             long lapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
             long bestLapTime = _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
             long lapDiff = lapTime - bestLapTime;
@@ -400,19 +400,19 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
         else
         {
-            _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            _lapSplitsText.Display = YgDisplay.None;
         }
 
         if(_lastLapTime > 0)
         {
-            _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _lastLapTimeText.Display = YgDisplay.Flex;
             _lastLapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
         }
     }
 
     public void Render()
     {
-        _pdBars.Render();
+        _pdBars.LayoutAndRender(G.Viewport);
         _lapTimerSplits.LayoutAndRender(G.Viewport);
         _centralTextNode.LayoutAndRender(G.Viewport);
 
@@ -424,7 +424,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         {
             RenderInfo();
 
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Display = YgDisplay.Flex;
             _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
             _centerText.Color = new Color(255, 255, 255);
             _centerText.StrokeColor = new Color(0, 0, 0);
@@ -435,7 +435,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             RenderInfo();
 
             string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Display = YgDisplay.Flex;
             _centerText.Color = new Color(128, 255, 128);
             _centerText.StrokeColor = new Color(0, 0, 0);
             _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);

@@ -4,15 +4,15 @@
       xmlns:elements="clr-namespace:nfm_world.ui.elements"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.LapTimerSplitsView"
-      FlexDirection="YGFlexDirectionColumn"
-      AlignItems="YGAlignFlexStart"
-      JustifyContent="YGJustifyCenter"
+      FlexDirection="Column"
+      AlignItems="FlexStart"
+      JustifyContent="Center"
       Gap="10"
       Padding="10">
 
     <!-- Lap Display Row -->
     <Node Name="LapDisplay"
-          FlexDirection="YGFlexDirectionRow">
+          FlexDirection="Row">
 
         <elements:TextRun Name="LapIcon"
                           Font="Adventure,1,24"

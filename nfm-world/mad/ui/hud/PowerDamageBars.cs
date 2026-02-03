@@ -7,67 +7,35 @@ using nfm_world.ui.yoga;
 
 namespace nfm_world.ui.hud;
 
-public class PowerDamageBars
+public partial class PowerDamageBars : Node
 {
-    private static IImage _power = IBackend.Backend.LoadImage("data/images/power.gif");
-    private static IImage _damage = IBackend.Backend.LoadImage("data/images/damage.gif");
-
-    private Node _pdNode = new Node()
+    public PowerDamageBars()
     {
-        Top = 0,
-        Padding = 10,
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-        Gap = 10,
-        AlignItems = Yoga.YGAlign.YGAlignFlexEnd,
-
-        Children =
-        {
-            new MeasureBar()
-            {
-                BarColor = GetDamageBarColor(0f),
-                BarImage = _damage,
-                BarFillAmount = 0f,
-                Width = _damage.Width,
-                Height = _damage.Height,
-                Scale = 1.2f
-            },
-            new MeasureBar()
-            {
-                BarColor = GetPowerBarColor(1f),
-                BarFillAmount = 0.98f,
-                BarImage = _power,
-                Width = _power.Width,
-                Height = _power.Height,
-                Scale = 1.2f
-            }
-        }
-    };
-
-    private MeasureBar GetDamageBar()
-    {
-        return (MeasureBar)_pdNode.Children[0];
+        InitializeComponent();
+        PowerBar.BarColor = GetPowerBarColor(1f);
+        PowerBar.Width = IBackend.Backend.LoadCachedImage("data/images/power.gif").Width;
+        PowerBar.Height = IBackend.Backend.LoadCachedImage("data/images/power.gif").Height;
+        DamageBar.BarColor = GetDamageBarColor(0f);
+        DamageBar.Width = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Width;
+        DamageBar.Height = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Height;
     }
     public void SetDamageBarFill(int hitmag, int maxmag)
     {
         float dmgfill = (float)hitmag / maxmag;
         dmgfill = Math.Min(1f, dmgfill);
-        GetDamageBar().BarFillAmount = dmgfill;
+        DamageBar.BarFillAmount = dmgfill;
     }
     public void UpdateDamageBarColor()
     {
-        GetDamageBar().BarColor = GetDamageBarColor(GetDamageBar().BarFillAmount);
-    }
-    private MeasureBar GetPowerBar()
-    {
-        return (MeasureBar)_pdNode.Children[1];
+        DamageBar.BarColor = GetDamageBarColor(DamageBar.BarFillAmount);
     }
     public void SetPowerBarFill(float power)
     {
-        GetPowerBar().BarFillAmount = power / 100f;
+        PowerBar.BarFillAmount = power / 100f;
     }
     public void UpdatePowerBarColor()
     {
-        GetPowerBar().BarColor = GetPowerBarColor(GetPowerBar().BarFillAmount);
+        PowerBar.BarColor = GetPowerBarColor(PowerBar.BarFillAmount);
     }
     public void EventPowerUp(object? sender, float f)
     {
@@ -201,10 +169,5 @@ public class PowerDamageBars
         }
 
         return new Color(red, green, blue);
-    }
-
-    public void Render()
-    {
-        _pdNode.LayoutAndRender(G.Viewport);
     }
 }

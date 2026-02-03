@@ -23,14 +23,14 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
     private Node _centralTextNode = new Node()
     {
         Name = "CentralText",
-        AlignItems = Yoga.YGAlign.YGAlignCenter,
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
+        AlignItems = YgAlign.Center,
+        FlexDirection = YgFlexDirection.Column,
 
         Children =
         {
             new Node()
             {
-                AlignItems = Yoga.YGAlign.YGAlignCenter,
+                AlignItems = YgAlign.Center,
                 Flex = 1,
                 Children = {
                     new TextRun()
@@ -39,7 +39,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
                         Text = "",
                         Color = new Color(0, 0, 0, 0),
                         Font = new Font(FontFamily.Adventure, 1, 24),
-                        Display = Yoga.YGDisplay.YGDisplayNone
+                        Display = YgDisplay.None
                     },
                 }
             },
@@ -89,13 +89,13 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 
     public void Render()
     {
-        _pdBars.Render();
+        _pdBars.LayoutAndRender(G.Viewport);
         _lapTimerSplits.LayoutAndRender(G.Viewport);
         _centralTextNode.LayoutAndRender(G.Viewport);
 
         if (_currentState == InnerRaceState.Countdown)
         {
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Display = YgDisplay.Flex;
             _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
             _centerText.Color = new Color(255, 255, 255);
             _centerText.StrokeColor = new Color(0, 0, 0);
@@ -104,7 +104,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         else if (_currentState == InnerRaceState.Finished)
         {
             string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _centerText.Display = YgDisplay.Flex;
             _centerText.Color = new Color(128, 255, 128);
             _centerText.StrokeColor = new Color(0, 0, 0);
             _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
@@ -123,7 +123,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
+                _centerText.Display = YgDisplay.None;
             }
         }
     }

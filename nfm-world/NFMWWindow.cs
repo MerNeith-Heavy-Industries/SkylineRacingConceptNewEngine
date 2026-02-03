@@ -607,6 +607,11 @@ public class DummyBackend : IBackend
     {
         throw new NotImplementedException();
     }
+    
+    public IImage LoadCachedImage(string file)
+    {
+        throw new NotImplementedException();
+    }
 
     public IImage LoadImage(ReadOnlySpan<byte> file)
     {
