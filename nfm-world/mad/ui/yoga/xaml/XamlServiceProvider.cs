@@ -1,65 +1,6 @@
+using Avalonia.Markup.Xaml;
+
 namespace nfm_world.ui.yoga.xaml;
-
-/// <summary>
-/// Provides access to the root object during XAML instantiation.
-/// </summary>
-public interface IRootObjectProvider
-{
-    /// <summary>
-    /// Gets the root object being constructed.
-    /// </summary>
-    object? RootObject { get; }
-
-    /// <summary>
-    /// Gets the intermediate root object (used during nested object construction).
-    /// </summary>
-    object? IntermediateRootObject { get; }
-}
-
-/// <summary>
-/// Provides URI context during XAML loading.
-/// </summary>
-public interface IUriContext
-{
-    /// <summary>
-    /// Gets or sets the base URI of the current XAML document.
-    /// </summary>
-    Uri? BaseUri { get; set; }
-}
-
-/// <summary>
-/// Provides information about the target of a markup extension.
-/// </summary>
-public interface IProvideValueTarget
-{
-    /// <summary>
-    /// Gets the target object where a value is being set.
-    /// </summary>
-    object? TargetObject { get; }
-
-    /// <summary>
-    /// Gets the target property where a value is being set.
-    /// </summary>
-    object? TargetProperty { get; }
-}
-
-/// <summary>
-/// Interface for adding child elements to a parent.
-/// </summary>
-public interface IAddChild
-{
-    void AddChild(object child);
-    void AddText(string text);
-}
-
-/// <summary>
-/// Generic interface for adding typed child elements.
-/// </summary>
-public interface IAddChild<in T>
-{
-    void AddChild(T child);
-    void AddText(string text);
-}
 
 /// <summary>
 /// Simple service provider implementation for XAML runtime.

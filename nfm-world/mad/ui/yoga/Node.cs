@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Avalonia;
+using Avalonia.Metadata;
 using Maxine.Extensions;
 using nfm_world.ui.yoga.xaml;
 using Yoga;
@@ -13,7 +14,6 @@ namespace nfm_world.ui.yoga;
 
 // ReSharper disable InconsistentNaming
 [DebuggerDisplay("{DebugToString()}")]
-[ContentProperty(Name = "Children")]
 public class Node : IDisposable, INamed
 {
     internal static readonly YGConfigPtr Config;
@@ -44,6 +44,7 @@ public class Node : IDisposable, INamed
 #endif
     }
 
+    [Content]
     public NodeChildCollection Children { get; }
 
     public string? Name { get; set; }
