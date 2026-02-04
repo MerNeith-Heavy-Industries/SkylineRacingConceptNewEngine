@@ -77,6 +77,12 @@ public enum YgNodeType
     Text,
 }
 
+public enum Visibility
+{
+    Hidden,
+    Visible
+}
+
 // Implicit conversions between these enums and Yoga-CS enums
 public static class Conversions
 {

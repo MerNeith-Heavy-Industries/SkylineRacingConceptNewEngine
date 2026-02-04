@@ -134,6 +134,10 @@ public class Node : IDisposable, INamed
 
     #region Style
 
+    public Visibility Visibility { get; set; } = Visibility.Visible;
+    
+    public float Opacity { get; set; } = 1.0f;
+
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     public YgDirection Direction
     {
@@ -1374,21 +1378,26 @@ public class Node : IDisposable, INamed
 
     protected virtual void Render()
     {
+        G.SetAlpha(Opacity);
         RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
         RenderBorder(LayoutBorderPosition, LayoutBorderSize);
         RenderContent(LayoutContentPosition, LayoutContentSize);
+        G.SetAlpha(1f);
     }
 
-    private void RenderRecursive(Vector2 root)
+    private void RenderRecursive(Vector2 root, float rootOpacity = 1f)
     {
         _root = root;
-        if (Display != YgDisplay.None)
+        if (Display != YgDisplay.None && Visibility == Visibility.Visible && Opacity > 0f)
         {
+            var ownOpacity = rootOpacity * Opacity;
+            G.SetAlpha(ownOpacity);
             Render();
             foreach (var child in Children)
             {
-                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY)); // todo should this be LayoutContentPosition
+                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY), ownOpacity); // todo should this be LayoutContentPosition
             }
+            G.SetAlpha(1f);
         }
     }
 
