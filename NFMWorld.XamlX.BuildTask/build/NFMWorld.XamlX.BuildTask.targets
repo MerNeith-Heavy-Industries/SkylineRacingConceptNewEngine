@@ -3,7 +3,10 @@
 <Project>
 
   <PropertyGroup>
-    <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == ''">$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\</NFMWorldXamlXTasksDir>
+    <!-- Try to find the task DLL in the same configuration first, then try Debug -->
+    <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net10.0\</NFMWorldXamlXTasksDir>
+    <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\</NFMWorldXamlXTasksDir>
+    <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\Release\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Release\net10.0\</NFMWorldXamlXTasksDir>
   </PropertyGroup>
 
   <!-- Register our custom item type for XAML files -->
@@ -19,8 +22,8 @@
 
   <!-- Generate refs file for the task -->
   <Target Name="_GenerateXamlRefsFile"
-          BeforeTargets="CompileYogaXaml"
-          Condition="'@(AvaloniaXaml)' != ''">
+          BeforeTargets="_CompileYogaXamlInternal"
+          Condition="'@(AvaloniaXaml)' != '' AND '$(IntermediateOutputPath)' != ''">
     <ItemGroup>
       <_XamlRefAssemblies Include="@(ReferencePath)" />
     </ItemGroup>
@@ -29,26 +32,39 @@
       <_XamlRefsFile>$(IntermediateOutputPath)xamlrefs.txt</_XamlRefsFile>
     </PropertyGroup>
 
+    <Message Text="Generating XAML refs file: $(_XamlRefsFile)" Importance="Low" />
+
     <WriteLinesToFile
       File="$(_XamlRefsFile)"
       Lines="@(_XamlRefAssemblies)"
-      Overwrite="true" />
+      Overwrite="true"
+      Condition="'$(_XamlRefsFile)' != ''" />
   </Target>
 
-  <!-- Compile XAML files after assembly is built but before it's copied to output -->
-  <Target Name="CompileYogaXaml"
-          AfterTargets="CoreCompile"
-          BeforeTargets="CopyFilesToOutputDirectory"
-          Condition="'@(AvaloniaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')"
-          Inputs="@(AvaloniaXaml);@(IntermediateAssembly)"
+  <!-- Hook into the compilation pipeline using TargetsTriggeredByCompilation -->
+  <Target Name="_SetupYogaXamlCompilation" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);_CompileYogaXamlInternal</TargetsTriggeredByCompilation>
+    </PropertyGroup>
+  </Target>
+
+  <!-- Internal target that does the actual XAML compilation -->
+  <!-- This will be triggered as part of the compilation pipeline -->
+  <Target Name="_CompileYogaXamlInternal"
           Outputs="$(IntermediateOutputPath)xaml.compiled.marker">
+
+    <ItemGroup>
+      <IntermediateAssembly Update="*"/>
+      <_DebugSymbolsIntermediatePath Update="*"/>
+      <IntermediateRefAssembly Update="*"/>
+    </ItemGroup>
 
     <PropertyGroup>
       <!-- Use the intermediate assembly which is available after CoreCompile -->
       <_XamlAssemblyPath>@(IntermediateAssembly)</_XamlAssemblyPath>
     </PropertyGroup>
 
-    <Message Text="Compiling Yoga XAML files..." Importance="High" />
+    <Message Text="Compiling Yoga XAML files (triggered by compilation)..." Importance="High" />
     <Message Text="  Assembly: $(_XamlAssemblyPath)" Importance="Normal" />
     <Message Text="  Task DLL: $(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll" Importance="Normal" />
 
@@ -62,19 +78,8 @@
     <Touch Files="$(IntermediateOutputPath)xaml.compiled.marker" AlwaysCreate="true" />
   </Target>
 
-  <!-- Also run XAML compilation during Publish -->
-  <Target Name="CompileYogaXamlOnPublish"
-          AfterTargets="Publish"
-          Condition="'@(AvaloniaXaml)' != '' AND Exists('$(NFMWorldXamlXTasksDir)NFMWorld.XamlX.BuildTask.dll')">
-
-    <Message Text="Compiling Yoga XAML files for publish..." Importance="High" />
-
-    <CompileXamlTask
-      AssemblyPath="$(PublishDir)$(TargetFileName)"
-      ReferencesFile="$(IntermediateOutputPath)xamlrefs.txt"
-      XamlFiles="@(AvaloniaXaml)"
-      OutputPath="$(PublishDir)$(TargetFileName)" />
-  </Target>
+  <!-- Public target for manual invocation -->
+  <Target Name="CompileYogaXaml" DependsOnTargets="_CompileYogaXamlInternal" />
 
   <!-- Clean up XAML compilation artifacts -->
   <Target Name="CleanYogaXamlArtifacts" AfterTargets="Clean">

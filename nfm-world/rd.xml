@@ -8,40 +8,27 @@
 -->
 <Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
     <Application>
-        <!--
-            XamlX-generated methods called via reflection
-            Preserve Populate and Build methods on all types in the ui namespace
-        -->
-        <Type Name="nfm_world.ui.*" Dynamic="Required">
-            <Method Name="Populate" Dynamic="Required" />
-            <Method Name="Build" Dynamic="Required" />
-            <Method Name="InitializeComponent" Dynamic="Required" />
-        </Type>
-
-        <!--
-            Preserve the generated Context types used by XamlX
-        -->
-        <Type Name="__XamlRuntime__.*" Serialize="All" Dynamic="All" />
-
-        <!--
-            Preserve Avalonia.Markup.Xaml interfaces used by XamlX
-        -->
-        <Type Name="Avalonia.Markup.Xaml.IRootObjectProvider" Dynamic="Required">
-            <Property Name="RootObject" Dynamic="Required" />
-            <Property Name="IntermediateRootObject" Dynamic="Required" />
-        </Type>
-        <Type Name="Avalonia.Markup.Xaml.IUriContext" Dynamic="Required">
-            <Property Name="BaseUri" Dynamic="Required" />
-        </Type>
-        <Type Name="Avalonia.Markup.Xaml.IProvideValueTarget" Dynamic="Required">
-            <Property Name="TargetObject" Dynamic="Required" />
-            <Property Name="TargetProperty" Dynamic="Required" />
-        </Type>
-
-        <!--
-            Preserve XamlX runtime interfaces
-        -->
-        <Type Name="XamlX.Runtime.IXamlParentStackProviderV1" Dynamic="Required" />
-        <Type Name="XamlX.Runtime.IXamlXmlNamespaceInfoProviderV1" Dynamic="Required" />
+        <Assembly Name="NFMWorld">
+            <Type Name="nfm_world.ui.hud.CentralTextView">
+                <Method Name="Populate" Dynamic="Required" />
+                <Method Name="Build" Dynamic="Required" />
+                <Method Name="InitializeComponent" Dynamic="Required" />
+            </Type>
+            <Type Name="nfm_world.ui.hud.LapTimerSplitsView">
+                <Method Name="Populate" Dynamic="Required" />
+                <Method Name="Build" Dynamic="Required" />
+                <Method Name="InitializeComponent" Dynamic="Required" />
+            </Type>
+            <Type Name="nfm_world.ui.hud.PowerDamageBars">
+                <Method Name="Populate" Dynamic="Required" />
+                <Method Name="Build" Dynamic="Required" />
+                <Method Name="InitializeComponent" Dynamic="Required" />
+            </Type>
+            <Type Name="nfm_world.ui.hud.TTLapTimerSplitsView">
+                <Method Name="Populate" Dynamic="Required" />
+                <Method Name="Build" Dynamic="Required" />
+                <Method Name="InitializeComponent" Dynamic="Required" />
+            </Type>
+        </Assembly>
     </Application>
 </Directives>
