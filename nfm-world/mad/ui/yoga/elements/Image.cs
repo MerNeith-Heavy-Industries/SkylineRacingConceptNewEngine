@@ -10,8 +10,14 @@ public class Image : Node
         set
         {
             field = value;
-            Width = field?.Width ?? 0;
-            Height = field?.Height ?? 0;
+            if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            {
+                Width = Scale * field?.Width ?? 0;
+            }
+            if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            {
+                Height = Scale * field?.Height ?? 0;
+            }
         }
     }
 
@@ -21,10 +27,16 @@ public class Image : Node
         set
         {
             field = value;
-            Width = (int)(field * Width.InternalValue.value);
-            Height = (int)(field * Height.InternalValue.value);
+            if (Width.PointValue is {} widthValue)
+            {
+                Width = (int)(field * widthValue);
+            }
+            if (Height.PointValue is {} heightValue)
+            {
+                Height = (int)(field * heightValue);
+            }
         }
-    }
+    } = 1f;
 
     protected override void RenderContent(Vector2 position, Vector2 size)
     {

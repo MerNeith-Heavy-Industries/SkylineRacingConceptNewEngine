@@ -11,32 +11,26 @@ public partial class PowerDamageBars : Node
     public PowerDamageBars()
     {
         InitializeComponent();
-        PowerBar.BarColor = GetPowerBarColor(1f);
-        PowerBar.Width = IBackend.Backend.LoadCachedImage("data/images/power.gif").Width;
-        PowerBar.Height = IBackend.Backend.LoadCachedImage("data/images/power.gif").Height;
-        PowerBar.Scale = 1.2f; // needs to be set after width/height
-        DamageBar.BarColor = GetDamageBarColor(0f);
-        DamageBar.Width = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Width;
-        DamageBar.Height = IBackend.Backend.LoadCachedImage("data/images/damage.gif").Height;
-        DamageBar.Scale = 1.2f; // needs to be set after width/height
+        PowerBar.Color = GetPowerColor(1f);
+        DamageBar.Color = GetDamageColor(0f);
     }
     public void SetDamageBarFill(int hitmag, int maxmag)
     {
         float dmgfill = (float)hitmag / maxmag;
         dmgfill = Math.Min(1f, dmgfill);
-        DamageBar.BarFillAmount = dmgfill;
+        DamageBar.FillAmount = dmgfill;
     }
     public void UpdateDamageBarColor()
     {
-        DamageBar.BarColor = GetDamageBarColor(DamageBar.BarFillAmount);
+        DamageBar.Color = GetDamageColor(DamageBar.FillAmount);
     }
     public void SetPowerBarFill(float power)
     {
-        PowerBar.BarFillAmount = power / 100f;
+        PowerBar.FillAmount = power / 100f;
     }
     public void UpdatePowerBarColor()
     {
-        PowerBar.BarColor = GetPowerBarColor(PowerBar.BarFillAmount);
+        PowerBar.Color = GetPowerColor(PowerBar.FillAmount);
     }
     public void EventPowerUp(object? sender, float f)
     {
@@ -61,7 +55,7 @@ public partial class PowerDamageBars : Node
     private static int _damageFlickerInnerTicks = 0;
     private static bool _damageFlicker = false;
 
-    public static Color GetDamageBarColor(float fill)
+    public static Color GetDamageColor(float fill)
     {
         float cmp = 98f * fill;
         int red = 244;
@@ -119,7 +113,7 @@ public partial class PowerDamageBars : Node
     public static int _powerFlickerTicks = 0;
     private static int _powerFlickerInnerTicks = 0;
     private static bool _powerFlicker = false;
-    public static Color GetPowerBarColor(float fill)
+    public static Color GetPowerColor(float fill)
     {
         fill *= 100;
 

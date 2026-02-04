@@ -11,13 +11,15 @@
 
     <MeasureBar
         Name="DamageBar"
-        BarFillAmount="0"
-        BarImagePath="data/images/damage.gif"
+        FillAmount="0"
+        ImageData="{StaticImage data/images/damage.gif}"
+        Scale="1.2"
         />
 
     <MeasureBar
         Name="PowerBar"
-        BarFillAmount="0.98"
-        BarImagePath="data/images/power.gif"
+        FillAmount="0.98"
+        ImageData="{StaticImage data/images/power.gif}"
+        Scale="1.2"
         />
 </Node>

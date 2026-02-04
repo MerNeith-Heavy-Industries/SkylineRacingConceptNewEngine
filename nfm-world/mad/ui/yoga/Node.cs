@@ -344,8 +344,12 @@ public class Node : IDisposable, INamed
                 return base.ConvertFrom(context, culture, value);
             }
         }
-
-        public YGValue InternalValue;
+        
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
 
         public static implicit operator MeasurementFlexBasis(float value)
         {
@@ -510,7 +514,11 @@ public class Node : IDisposable, INamed
             }
         }
         
-        public YGValue InternalValue;
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
 
         public static implicit operator MeasurementMarginPosition(float value)
         {
@@ -713,7 +721,11 @@ public class Node : IDisposable, INamed
             }
         }
 
-        public YGValue InternalValue;
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
 
         public static implicit operator MeasurementPadding(float value)
         {
@@ -934,7 +946,11 @@ public class Node : IDisposable, INamed
             }
         }
 
-        public YGValue InternalValue;
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
 
         public static implicit operator MeasurementGap(float value)
         {
@@ -1099,7 +1115,11 @@ public class Node : IDisposable, INamed
             }
         }
 
-        public YGValue InternalValue;
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
 
         public static implicit operator MeasurementWidthHeight(float value)
         {

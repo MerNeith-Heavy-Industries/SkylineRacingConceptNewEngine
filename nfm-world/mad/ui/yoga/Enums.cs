@@ -83,6 +83,17 @@ public enum Visibility
     Visible
 }
 
+public enum YgUnit
+{
+    Undefined,
+    Point,
+    Percent,
+    Auto,
+    MaxContent,
+    FitContent,
+    Stretch,
+}
+
 // Implicit conversions between these enums and Yoga-CS enums
 public static class Conversions
 {
@@ -106,4 +117,6 @@ public static class Conversions
     public static YgBoxSizing ToNfmBoxSizing(this Yoga.YGBoxSizing b) => (YgBoxSizing)b;
     public static Yoga.YGNodeType ToYogaNodeType(this YgNodeType n) => (Yoga.YGNodeType)n;
     public static YgNodeType ToNfmNodeType(this Yoga.YGNodeType n) => (YgNodeType)n;
+    public static Yoga.YGUnit ToYogaUnit(this YgUnit u) => (Yoga.YGUnit)u;
+    public static YgUnit ToNfmUnit(this Yoga.YGUnit u) => (YgUnit)u;
 }
