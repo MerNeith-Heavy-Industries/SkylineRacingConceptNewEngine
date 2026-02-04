@@ -30,7 +30,7 @@ public static class YogaDebugger
                     (int)node.LayoutBorderSize.Y
                 );
                 
-                G.SetFont(new Font(FontFamily.RobotoMono, 0, 20));
+                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 20));
                 var info = $"Node: {node.Name ?? "???"}[{node.GetType().Name}] from {(node.__INTERNAL_CtorCallerFilePath != "" ? Path.GetRelativePath(slnDir, node.__INTERNAL_CtorCallerFilePath) : "")}:{node.__INTERNAL_CtorCallerMemberName}:{node.__INTERNAL_CtorCallerLineNumber}";
                 var prefix = new string(' ', i * 2);
                 
@@ -41,7 +41,7 @@ public static class YogaDebugger
             }
             
             var lastEntry = mouseOverNodeTree[^1];
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             var layoutInfo = $"""
                 Layout:
                 Margin: {lastEntry.LayoutMarginSize.X}px x {lastEntry.LayoutMarginSize.Y}px at ({lastEntry.LayoutMarginPosition.X}, {lastEntry.LayoutMarginPosition.Y})
@@ -167,13 +167,13 @@ public static class YogaDebugger
             G.SetColor(Color.Blue with { A = 128 });
             G.FillRect((int)content.X, (int)content.Y, (int)content.Width, (int)content.Height);
             
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             G.SetColor(Color.Black);
             G.DrawStringStroke("content", (int)content.X, (int)content.Y + 16);
             G.SetColor(Color.White);
             G.DrawString("content", (int)content.X, (int)content.Y + 16);
 
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             var contentSizeText = $"{(int)lastEntry.LayoutContentSize.X}px x {(int)lastEntry.LayoutContentSize.Y}px";
             G.SetColor(Color.Black);
             G.DrawStringStrokeAligned(
@@ -202,7 +202,7 @@ public static class YogaDebugger
         G.DrawLine(0, (int)_mousePosition.Y, (int)G.Viewport.X, (int)_mousePosition.Y);
         G.DrawLine((int)_mousePosition.X, 0, (int)_mousePosition.X, (int)G.Viewport.Y);
         // draw mouse position text
-        G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+        G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
         var mousePosText = $"Mouse: ({(int)_mousePosition.X}, {(int)_mousePosition.Y})";
         G.SetColor(Color.White);
         G.DrawStringStroke(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
@@ -222,7 +222,7 @@ public static class YogaDebugger
             G.FillRect((int)area.X, (int)area.Y, (int)area.Width, (int)area.Height);
         }
         
-        G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+        G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
         G.SetColor(Color.Black);
         G.DrawStringStroke(label, (int)area.X, (int)area.Y + 16);
         G.SetColor(Color.White);

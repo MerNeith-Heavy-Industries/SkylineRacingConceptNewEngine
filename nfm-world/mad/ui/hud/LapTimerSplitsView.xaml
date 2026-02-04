@@ -15,14 +15,14 @@
           FlexDirection="Row">
 
         <elements:TextRun Name="LapIcon"
-                          Font="Adventure,1,24"
+                          Font="bold 24px Adventure"
                           Color="255,255,255,255"
                           StrokeColor="0,0,0,255"
                           Text="Lap: "
                           Flex="1" />
 
         <elements:TextBlock Name="LapText"
-                            Font="DroidSans,1,24"
+                            Font="bold 24px DroidSans"
                             Color="255,255,255,255"
                             StrokeColor="0,0,0,255"
                             Text="1/3"

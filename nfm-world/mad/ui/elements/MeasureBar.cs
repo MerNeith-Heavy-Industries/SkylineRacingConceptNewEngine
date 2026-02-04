@@ -1,11 +1,14 @@
+using System.ComponentModel;
 using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 
 namespace nfm_world.ui.elements;
 
 public class MeasureBar : Node
 {
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color BarColor { get; set; } = new Color(255, 255, 255);
     /// <summary>
     /// 1f = full, 0f = empty

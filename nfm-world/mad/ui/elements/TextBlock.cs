@@ -1,12 +1,17 @@
-﻿using nfm_world.driverinterface;
+﻿using System.ComponentModel;
+using nfm_world.driverinterface;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 using nfm_world.util;
 
 namespace nfm_world.ui.elements;
 
 public class TextBlock : Node
 {
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color Color { get; set; } = new Color(255, 255, 255);
+    
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color? StrokeColor { get; set; } = null;
     public Font Font
     {
@@ -16,7 +21,7 @@ public class TextBlock : Node
             field = value;
             _invalidated = true;
         }
-    } = new Font(FontFamily.DroidSans, 0, 18);
+    } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
     public string? Text
     {

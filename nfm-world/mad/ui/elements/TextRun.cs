@@ -1,6 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using nfm_world.driverinterface;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 using nfm_world.util;
 
 namespace nfm_world.ui.elements;
@@ -8,7 +10,9 @@ namespace nfm_world.ui.elements;
 public class TextRun : Node
 {
     private IFontMetrics? _fontMetrics;
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color Color { get; set; } = new Color(255, 255, 255);
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color? StrokeColor { get; set; } = null;
     public Font Font
     {
@@ -19,7 +23,7 @@ public class TextRun : Node
             SetFontMetrics();
             RelayoutText();
         }
-    } = new Font(FontFamily.DroidSans, 0, 18);
+    } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
     public string? Text
     {

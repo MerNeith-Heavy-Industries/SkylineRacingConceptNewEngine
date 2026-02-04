@@ -11,7 +11,7 @@
         <elements:TextRun Name="CenterText"
                           Text=""
                           Color="0,0,0,0"
-                          Font="Adventure,1,24"
+                          Font="bold 1px Adventure"
                           Display="None" />
     </Node>
 

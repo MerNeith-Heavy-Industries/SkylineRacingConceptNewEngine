@@ -278,7 +278,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             RenderInfo();
 
             _centralTextNode.CenterText.Display = YgDisplay.Flex;
-            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, 1, 24);
+            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
             _centralTextNode.CenterText.Color = new Color(255, 255, 255);
             _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
             _centralTextNode.CenterText.Text = $"Starting in {_countdownTime}";
@@ -291,7 +291,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             _centralTextNode.CenterText.Display = YgDisplay.Flex;
             _centralTextNode.CenterText.Color = new Color(128, 255, 128);
             _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
-            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, 1, 24);
+            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
             _centralTextNode.CenterText.Text = $"Finished! Time: {finalTime}";
 
             bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);

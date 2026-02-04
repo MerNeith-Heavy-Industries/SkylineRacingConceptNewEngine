@@ -1,12 +1,17 @@
-﻿using nfm_world_library.util;
+﻿using System.ComponentModel;
+using nfm_world_library.util;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 
 namespace nfm_world.ui.elements;
 
 public class Box : Node
 {
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color BorderColor { get; set; } = new Color(0, 0, 0, 255);
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color BackgroundColor { get; set; } = new Color(150, 255, 150, 255);
+    [TypeConverter(typeof(ColorTypeConverter))]
     public Color ContentColor { get; set; } = new Color(0, 0, 0, 255);
 
     protected override void RenderBackground(Vector2 position, Vector2 size)

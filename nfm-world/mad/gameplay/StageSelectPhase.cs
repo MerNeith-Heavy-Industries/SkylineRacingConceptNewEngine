@@ -169,7 +169,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             }
         }
 
-        G.SetFont(new Font(FontFamily.DroidSans, 1, 48));
+        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 48));
         G.SetColor(new Color(0, 0, 0));
         G.DrawStringStrokeAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
