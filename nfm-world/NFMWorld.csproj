@@ -51,10 +51,6 @@
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
     <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
-      <ProjectReference Include="..\NFMWorld.XamlX.BuildTask\NFMWorld.XamlX.BuildTask.csproj"
-                        ExcludeAssets="runtime; compile; contentfiles; analyzers; buildtransitive"
-      />
-
       <!-- Reference Avalonia.Generators for XAML source generation -->
         <ProjectReference Include="..\Avalonia.Generators\Avalonia.Generators.csproj"
                           PrivateAssets="all"
@@ -89,6 +85,7 @@
         <AvaloniaXaml Include="mad\ui\hud\LapTimerSplitsView.xaml" />
         <AvaloniaXaml Include="mad\ui\hud\PowerDamageBars.xaml" />
         <AvaloniaXaml Include="mad\ui\hud\TTLapTimerSplitsView.xaml" />
+        <AvaloniaXaml Include="mad\ui\menu\GarageUiView.xaml" />
     </ItemGroup>
 
     <!-- https://platform.uno/blog/using-msbuild-items-and-properties-in-c-9-source-generators/ -->
@@ -158,22 +155,22 @@
         <!-- WINDOWS: -->
 
         <!-- 1) Use a provided tools\fxc.exe (Requires DirectX (June 2010) or the SDK) -->
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT' AND Exists('$(MSBuildThisFileDirectory)tools\fxc.exe')" >"$(MSBuildThisFileDirectory)tools\fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT' AND Exists('$(MSBuildThisFileDirectory)tools\fxc.exe')">"$(MSBuildThisFileDirectory)tools\fxc.exe"</FxcCommandLine>
 
         <!-- 2) Use the SDK version (Requires DirectX SDK (June 2010)) -->
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT' AND Exists('$(DXSDK_DIR)\Utilities\bin\x86\fxc.exe')" >"$(DXSDK_DIR)\Utilities\bin\x86\fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT' AND Exists('$(DXSDK_DIR)\Utilities\bin\x86\fxc.exe')">"$(DXSDK_DIR)\Utilities\bin\x86\fxc.exe"</FxcCommandLine>
 
 
         <!-- NON-WINDOWS (eg: OSX) (Requires wine is in PATH) -->
 
         <!-- 1) Use a provided tools/fxc.exe (Requires "winetricks d3dcompiler_43" or "winetricks dxsdk_jun2010") -->
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(MSBuildThisFileDirectory)tools\fxc.exe')" >wine "$(MSBuildThisFileDirectory)tools/fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(MSBuildThisFileDirectory)tools\fxc.exe')">wine "$(MSBuildThisFileDirectory)tools/fxc.exe"</FxcCommandLine>
 
         <!-- 2) Use the SDK version (Requires "winetricks dxsdk_jun2010") -->
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND '$(WINEPREFIX)' != '' AND Exists('$(WINEPREFIX)/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')" >wine "$(WINEPREFIX)/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND '$(WINEPREFIX)' != '' AND Exists('$(WINEPREFIX)/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')" >wine "$(WINEPREFIX)/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(HOME)/.wine/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')" >wine "$(HOME)/.wine/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
-        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(HOME)/.wine/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')" >wine "$(HOME)/.wine/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND '$(WINEPREFIX)' != '' AND Exists('$(WINEPREFIX)/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')">wine "$(WINEPREFIX)/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND '$(WINEPREFIX)' != '' AND Exists('$(WINEPREFIX)/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')">wine "$(WINEPREFIX)/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(HOME)/.wine/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')">wine "$(HOME)/.wine/drive_c/Program Files/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
+        <FxcCommandLine Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT' AND Exists('$(HOME)/.wine/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe')">wine "$(HOME)/.wine/drive_c/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Utilities/bin/x86/fxc.exe"</FxcCommandLine>
 
     </PropertyGroup>
     <!-- Reference:
@@ -181,17 +178,13 @@
 
         Handy reload solution: https://stackoverflow.com/a/24837585/165500
     -->
-    <Target Name="BuildShaders" BeforeTargets="Compile"
-            Inputs="@(CompileShader)"
-            Outputs="@(CompileShader -> '$(OutputPath)%(RelativeDir)%(Filename).fxb' )" >
+    <Target Name="BuildShaders" BeforeTargets="Compile" Inputs="@(CompileShader)" Outputs="@(CompileShader -> '$(OutputPath)%(RelativeDir)%(Filename).fxb' )">
 
-        <Error Text="Unable to find fxc.exe. Install DirectX SDK (June 2010). See the documentation for more details."
-               Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT'" />
-        <Error Text="Unable to find fxc.exe. Install DirectX SDK (June 2010) using 'winetricks dxsdk_jun2010'. See the documentation for more details."
-               Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT'" />
+        <Error Text="Unable to find fxc.exe. Install DirectX SDK (June 2010). See the documentation for more details." Condition="'$(FxcCommandLine)' == '' AND '$(OS)' == 'Windows_NT'" />
+        <Error Text="Unable to find fxc.exe. Install DirectX SDK (June 2010) using 'winetricks dxsdk_jun2010'. See the documentation for more details." Condition="'$(FxcCommandLine)' == '' AND '$(OS)' != 'Windows_NT'" />
 
         <!-- fxc doesn't know how to create directories: -->
-        <MakeDir Directories="$(OutputPath)%(CompileShader.RelativeDir)"/>
+        <MakeDir Directories="$(OutputPath)%(CompileShader.RelativeDir)" />
 
         <Exec Command="$(FxcCommandLine) /nologo /Vd /T fx_2_0 /Fo &quot;$(OutputPath)%(CompileShader.RelativeDir)%(CompileShader.Filename).fxb&quot; &quot;%(CompileShader.Identity)&quot;" />
 
@@ -201,7 +194,7 @@
             (NOTE: FileWrites gets written out to obj directory at some point, possbily after CoreCompile)
         -->
         <ItemGroup>
-            <FileWrites Include="@(CompileShader -> '$(OutputPath)%(RelativeDir)%(Filename).fxb' )"/>
+            <FileWrites Include="@(CompileShader -> '$(OutputPath)%(RelativeDir)%(Filename).fxb' )" />
         </ItemGroup>
     </Target>
 
@@ -217,7 +210,7 @@
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>%(RelativeDir)%(FileName).fxb</TargetPath>
             </CompiledShaders>
-            <AllItemsFullPathWithTargetPath Include="@(CompiledShaders->'%(FullPath)')"  />
+            <AllItemsFullPathWithTargetPath Include="@(CompiledShaders->'%(FullPath)')" />
         </ItemGroup>
     </Target>
 
@@ -238,6 +231,9 @@
       </Compile>
       <Compile Update="mad\ui\hud\TTLapTimerSplitsView.cs">
         <DependentUpon>TTLapTimerSplitsView.xaml</DependentUpon>
+      </Compile>
+      <Compile Update="mad\ui\menu\GarageUiView.cs">
+        <DependentUpon>GarageUiView.xaml</DependentUpon>
       </Compile>
     </ItemGroup>
 

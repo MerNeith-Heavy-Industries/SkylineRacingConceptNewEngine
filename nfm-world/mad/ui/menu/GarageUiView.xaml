@@ -2,14 +2,14 @@
 
 <View xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      x:Class="nfm_world.ui.hud.CentralTextView"
+      x:Class="nfm_world.ui.menu.GarageUiView"
       Name="CentralText"
       AlignItems="Center"
       FlexDirection="Column">
 
     <Node AlignItems="Center" Flex="1">
         <TextRun Name="CenterText"
-                 Text=""
+                 Text="Farts"
                  Color="black"
                  Font="bold 1px Adventure"
                  Display="None" />

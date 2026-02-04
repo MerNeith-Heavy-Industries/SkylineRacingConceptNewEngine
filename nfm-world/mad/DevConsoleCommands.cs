@@ -1,3 +1,4 @@
+using System.Reflection;
 using nfm_world_library;
 using nfm_world_library.backend;
 using nfm_world_library.mad;
@@ -9,6 +10,7 @@ using nfm_world.gameplay.gamemodes;
 using nfm_world.mesh;
 using nfm_world.multiplayer;
 using nfm_world.ui;
+using nfm_world.ui.yoga;
 using Steamworks;
 
 namespace nfm_world
@@ -91,6 +93,30 @@ namespace nfm_world
             console.RegisterCommand("demo_playback", DemoPlayback);
             console.RegisterCommand("music_remastered", RemasteredMusic);
 
+#if DEBUG
+            console.RegisterCommand("debugui", (console, args) =>
+            {
+                if (args.Length < 1)
+                {
+                    console.Log("Usage: debugui <classname>");
+                    return;
+                }
+
+                Program.DebugUiClass = args[0];
+            });
+            console.RegisterArgumentAutocompleter("debugui", (args, position) =>
+#pragma warning disable IL2026 // Never run during AOT
+                position == 0
+                    ? Assembly.GetExecutingAssembly()
+                        .GetTypes()
+                        .Where(e => e.IsAssignableTo(typeof(View)))
+                        .Select(e => e.Name)
+                        .ToList()
+                    : []
+            );
+#pragma warning restore IL2026
+#endif
+
             //cheats
             //console.RegisterCommand("sv_cheats", SVCheats);
             //console.RegisterCommand("god", Godmode);
@@ -101,9 +127,9 @@ namespace nfm_world
             // argument autocompleters
             // car command: only autocomplete first argument (position 0)
             console.RegisterArgumentAutocompleter("car", (args, position) =>
-            position == 0
-                ? [.. BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
-                : new List<string>());
+                position == 0
+                    ? [.. BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
+                    : new List<string>());
             
             // create command: only autocomplete first argument (position 0) - the stage/road name
             console.RegisterArgumentAutocompleter("create", (args, position) => 

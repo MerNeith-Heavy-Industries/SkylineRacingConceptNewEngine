@@ -1,6 +1,7 @@
 ﻿using System.Collections.Frozen;
 using ManagedBass;
 ﻿using System.Diagnostics;
+using System.Reflection;
 using ImGuiNET;
 using ManagedBass;
 using Microsoft.Xna.Framework;
@@ -11,6 +12,7 @@ using nfm_world_library;
 using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.skiadriver;
+using nfm_world.ui.hud;
 using nfm_world.ui.yoga;
 using Font = nfm_world.util.Font;
 using Keys = nfm_world.util.Keys;
@@ -47,7 +49,12 @@ public class Program : Game
     
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
-    private bool _yogaInspectorEnabled = false;
+    private static bool _yogaInspectorEnabled = false;
+
+#if DEBUG
+    internal static string? DebugUiClass;
+    private static Node? _debugUiRoot;
+#endif
 
     private static Keys TranslateKey(Microsoft.Xna.Framework.Input.Keys key)
     {
@@ -515,6 +522,30 @@ public class Program : Game
         GameSparker.CurrentPhase.Render();
         
 #if DEBUG
+        if (DebugUiClass != null)
+        {
+            if (_debugUiRoot == null)
+            {
+#pragma warning disable IL2057 // Never run during AOT compilation
+#pragma warning disable IL2026 // Never run during AOT compilation
+                var type = Type.GetType(DebugUiClass) ?? Assembly.GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(e => e.Name == DebugUiClass);
+#pragma warning restore IL2026
+#pragma warning restore IL2057
+                if (type != null)
+                {
+#pragma warning disable IL2072 // Never run during AOT compilation
+                    _debugUiRoot = Activator.CreateInstance(type) as Node;
+#pragma warning restore IL2072
+                }
+            }
+
+            G.SetColor(Color.CornflowerBlue);
+            G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
+            _debugUiRoot?.LayoutAndRender(G.Viewport);
+        }
+
         if (_yogaInspectorEnabled)
             YogaDebugger.Render();
 #endif
@@ -535,13 +566,21 @@ public class Program : Game
         _lastFrameTime = (int)t.ElapsedMilliseconds;
     }
 
-    public static void Main()
+    public static void Main(string[] args)
     {
         // TODO figure out why SDL ProcessExit doesn't work properly
-        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
             Process.GetCurrentProcess().Kill();
         };
+
+#if DEBUG
+        if (args.IndexOf("-debugui", StringComparer.OrdinalIgnoreCase) is var index and >= 0)
+        {
+            DebugUiClass = args.Length > index + 1 ? args[index + 1] : typeof(CentralTextView).FullName;
+            _yogaInspectorEnabled = true;
+        }
+#endif
         
         BackendGameSparker.Load();
 
