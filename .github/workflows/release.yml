@@ -113,7 +113,8 @@ jobs:
             -p:Version="${{ steps.version.outputs.semantic_version }}" `
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
             $extraArgs `
-            -o ./publish/${{ matrix.rid }}
+            -o ./publish/${{ matrix.rid }} `
+            -v diag
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -237,7 +238,8 @@ jobs:
             -p:Version="${{ steps.version.outputs.semantic_version }}" \
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
             $EXTRA_ARGS \
-            -o ./publish/${{ matrix.rid }}
+            -o ./publish/${{ matrix.rid }} \
+            -v diag
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -333,7 +335,8 @@ jobs:
               -r $RID \
               -p:Version="${{ steps.version.outputs.semantic_version }}" \
               -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
-              -o ./publish/$RID
+              -o ./publish/$RID \
+              -v diag
           done
 
       - name: Create universal binary
