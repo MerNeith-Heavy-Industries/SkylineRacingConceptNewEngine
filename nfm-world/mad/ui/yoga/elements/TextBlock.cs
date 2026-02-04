@@ -64,7 +64,7 @@ public class TextBlock : Node
     {
         base.RenderContent(position, size);
 
-        if (Text == null)
+        if (string.IsNullOrEmpty(Text))
         {
             return;
         }

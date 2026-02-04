@@ -54,7 +54,7 @@ public class TextRun : Node
     {
         base.RenderContent(position, size);
 
-        if (Text == null)
+        if (string.IsNullOrEmpty(Text))
         {
             return;
         }
