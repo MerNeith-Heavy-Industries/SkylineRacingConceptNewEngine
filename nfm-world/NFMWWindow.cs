@@ -14,6 +14,7 @@ using nfm_world.driverinterface;
 using nfm_world.skiadriver;
 using nfm_world.ui.hud;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 using Font = nfm_world.util.Font;
 using Keys = nfm_world.util.Keys;
 
@@ -53,7 +54,7 @@ public class Program : Game
 
 #if DEBUG
     internal static string? DebugUiClass;
-    private static Node? _debugUiRoot;
+    internal static Node? DebugUiRoot;
 #endif
 
     private static Keys TranslateKey(Microsoft.Xna.Framework.Input.Keys key)
@@ -291,6 +292,14 @@ public class Program : Game
 #if USE_BASS
         Bass.Init();
 #endif
+        
+#if DEBUG
+#pragma warning disable IL3050
+#pragma warning disable IL2026
+        XamlHotReload.Initialize();
+#pragma warning restore IL2026
+#pragma warning restore IL3050
+#endif
 
         oldKeyState = Keyboard.GetState();
         oldMouseState = Mouse.GetState();
@@ -524,7 +533,7 @@ public class Program : Game
 #if DEBUG
         if (DebugUiClass != null)
         {
-            if (_debugUiRoot == null)
+            if (DebugUiRoot == null)
             {
 #pragma warning disable IL2057 // Never run during AOT compilation
 #pragma warning disable IL2026 // Never run during AOT compilation
@@ -536,14 +545,14 @@ public class Program : Game
                 if (type != null)
                 {
 #pragma warning disable IL2072 // Never run during AOT compilation
-                    _debugUiRoot = Activator.CreateInstance(type) as Node;
+                    DebugUiRoot = Activator.CreateInstance(type) as Node;
 #pragma warning restore IL2072
                 }
             }
 
             G.SetColor(Color.CornflowerBlue);
             G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
-            _debugUiRoot?.LayoutAndRender(G.Viewport);
+            DebugUiRoot?.LayoutAndRender(G.Viewport);
         }
 
         if (_yogaInspectorEnabled)

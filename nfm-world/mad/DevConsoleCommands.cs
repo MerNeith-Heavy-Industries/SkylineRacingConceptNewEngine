@@ -103,6 +103,7 @@ namespace nfm_world
                 }
 
                 Program.DebugUiClass = args[0];
+                Program.DebugUiRoot = null;
             });
             console.RegisterArgumentAutocompleter("debugui", (args, position) =>
 #pragma warning disable IL2026 // Never run during AOT

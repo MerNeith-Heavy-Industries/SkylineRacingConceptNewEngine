@@ -3,17 +3,62 @@
 <View xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.menu.GarageUiView"
-      Name="CentralText"
-      AlignItems="Center"
-      FlexDirection="Column">
+      Name="LapTimerSplits"
+      FlexDirection="Column"
+      AlignItems="FlexStart"
+      JustifyContent="Center"
+      Gap="10"
+      Padding="10">
 
-    <Node AlignItems="Center" Flex="1">
-        <TextRun Name="CenterText"
-                 Text="Farts"
-                 Color="black"
-                 Font="bold 1px Adventure"
-                 Display="None" />
+    <Node Name="LapDisplay" FlexDirection="Row">
+        <TextRun Name="LapIcon"
+                 Font="bold 24px Adventure"
+                 Color="white"
+                 StrokeColor="black"
+                 Text="Lep: "
+                 Flex="1" />
+        <TextRun Name="LapText"
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 
-    <Node Flex="1" />
+    <Node Name="TimeDisplay" FlexDirection="Row">
+        <TextRun Name="TimeIcon"
+                 Font="bold 24px Adventure"
+                 Color="white"
+                 StrokeColor="black"
+                 Text="Time: "
+                 Flex="1" />
+        <TextRun Name="TimeText"
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
+    </Node>
+
+    <Node>
+        <TextRun Name="LapTimeText"
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
+    </Node>
+
+    <Node>
+        <TextRun Name="CheckpointSplitsText"
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
+    </Node>
+
+    <Node>
+        <TextRun Name="LapSplitsText"
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
+    </Node>
 </View>

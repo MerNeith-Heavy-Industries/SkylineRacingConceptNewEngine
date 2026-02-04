@@ -11,7 +11,7 @@
     <InformationalVersion>NFM-World dev</InformationalVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <TieredCompilation>false</TieredCompilation>
-      <PublishAot>true</PublishAot>
+    <PublishAot Condition="'$(Configuration)' != 'Debug'" >true</PublishAot>
 <!--    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 <!--    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
   </PropertyGroup>
@@ -48,6 +48,7 @@
     <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
     <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj" />
     <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
+    <ProjectReference Include="..\NFMWorld.XamlX.Core\NFMWorld.XamlX.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
     <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
@@ -57,6 +58,7 @@
                           ReferenceOutputAssembly="false"
                           OutputItemType="Analyzer"
         />
+        <ProjectReference Include="..\XamlX\src\XamlX\XamlX.csproj" />
   </ItemGroup>
 
     <!-- XAML compilation for Yoga UI -->

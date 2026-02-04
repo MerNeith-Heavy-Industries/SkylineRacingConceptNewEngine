@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\NFMWorld.XamlX.Core\NFMWorld.XamlX.Core.csproj" />
       <ProjectReference Include="..\XamlX\src\XamlX.IL.Cecil\XamlX.IL.Cecil.csproj" />
       <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
       <ProjectReference Include="..\XamlX\src\XamlX\XamlX.csproj" />
