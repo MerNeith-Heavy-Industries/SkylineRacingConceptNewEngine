@@ -21,9 +21,9 @@ public class Node : IDisposable, INamed
 
     internal YGNodePtr NodeInternal = new(Config);
 
-    internal string __INTERNAL_CtorCallerFilePath = "";
-    internal int __INTERNAL_CtorCallerLineNumber = 0;
-    internal string __INTERNAL_CtorCallerMemberName = "";
+    internal readonly string __INTERNAL_CtorCallerFilePath = "";
+    internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
+    internal readonly string __INTERNAL_CtorCallerMemberName = "";
 
     internal static List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
@@ -308,7 +308,8 @@ public class Node : IDisposable, INamed
                     {
                         return Auto;
                     }
-                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
                     {
                         return MaxContent;
                     }
@@ -1063,11 +1064,13 @@ public class Node : IDisposable, INamed
                     {
                         return Stretch();
                     }
-                    if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("fitcontent", StringComparison.OrdinalIgnoreCase))
                     {
                         return FitContent();
                     }
-                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
                     {
                         return MaxContent();
                     }

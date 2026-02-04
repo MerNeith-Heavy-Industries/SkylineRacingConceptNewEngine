@@ -5,23 +5,17 @@ namespace nfm_world.ui.yoga.xaml;
 /// <summary>
 /// Simple service provider implementation for XAML runtime.
 /// </summary>
-public class XamlServiceProvider : IServiceProvider
+public class XamlServiceProvider(IRootObjectProvider rootObjectProvider, IUriContext uriContext, IProvideValueTarget provideValueTarget) : IServiceProvider
 {
-    private readonly Dictionary<Type, object> _services = new();
-
-    public void AddService(Type serviceType, object service)
-    {
-        _services[serviceType] = service;
-    }
-
-    public void AddService<T>(T service) where T : notnull
-    {
-        _services[typeof(T)] = service;
-    }
-
     public object? GetService(Type serviceType)
     {
-        return _services.TryGetValue(serviceType, out var service) ? service : null;
+        if (serviceType == typeof(IRootObjectProvider))
+            return rootObjectProvider;
+        if (serviceType == typeof(IUriContext))
+            return uriContext;
+        if (serviceType == typeof(IProvideValueTarget))
+            return provideValueTarget;
+        return null;
     }
 }
 

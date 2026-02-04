@@ -1,6 +1,7 @@
 ﻿using nfm_world.ui.avalonia;
 using nfm_world.ui.yoga;
 
+// ReSharper disable once CheckNamespace
 namespace Avalonia.Controls;
 
 public static class NameScopeExtensions

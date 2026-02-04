@@ -1,4 +1,5 @@
-﻿namespace Avalonia.Controls;
+﻿// ReSharper disable once CheckNamespace
+namespace Avalonia.Controls;
 
 public interface INameScope
 {
