@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <Node xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.CentralTextView"
@@ -8,10 +9,10 @@
 
     <Node AlignItems="Center" Flex="1">
         <TextRun Name="CenterText"
-                          Text=""
-                          Color="black"
-                          Font="bold 1px Adventure"
-                          Display="None" />
+                 Text=""
+                 Color="black"
+                 Font="bold 1px Adventure"
+                 Display="None" />
     </Node>
 
     <Node Flex="1" />

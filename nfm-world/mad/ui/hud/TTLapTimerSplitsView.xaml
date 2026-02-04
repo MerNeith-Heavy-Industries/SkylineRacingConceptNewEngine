@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <Node xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.TTLapTimerSplitsView"
@@ -11,53 +12,53 @@
 
     <Node Name="LapDisplay" FlexDirection="Row">
         <TextRun Name="LapIcon"
-                         Font="bold 24px Adventure"
-                         Color="white"
-                         StrokeColor="black"
-                         Text="Lap: "
-                         Flex="1" />
+                 Font="bold 24px Adventure"
+                 Color="white"
+                 StrokeColor="black"
+                 Text="Lap: "
+                 Flex="1" />
         <TextRun Name="LapText"
-                         StrokeColor="black"
-                         Color="white"
-                         Font="bold 24px DroidSans"
-                         Flex="1" />
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 
     <Node Name="TimeDisplay" FlexDirection="Row">
         <TextRun Name="TimeIcon"
-                         Font="bold 24px Adventure"
-                         Color="white"
-                         StrokeColor="black"
-                         Text="Time: "
-                         Flex="1" />
+                 Font="bold 24px Adventure"
+                 Color="white"
+                 StrokeColor="black"
+                 Text="Time: "
+                 Flex="1" />
         <TextRun Name="TimeText"
-                         StrokeColor="black"
-                         Color="white"
-                         Font="bold 24px DroidSans"
-                         Flex="1" />
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 
     <Node>
         <TextRun Name="LapTimeText"
-                         StrokeColor="black"
-                         Color="white"
-                         Font="bold 24px DroidSans"
-                         Flex="1" />
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 
     <Node>
         <TextRun Name="CheckpointSplitsText"
-                         StrokeColor="black"
-                         Color="white"
-                         Font="bold 24px DroidSans"
-                         Flex="1" />
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 
     <Node>
         <TextRun Name="LapSplitsText"
-                         StrokeColor="black"
-                         Color="white"
-                         Font="bold 24px DroidSans"
-                         Flex="1" />
+                 StrokeColor="black"
+                 Color="white"
+                 Font="bold 24px DroidSans"
+                 Flex="1" />
     </Node>
 </Node>

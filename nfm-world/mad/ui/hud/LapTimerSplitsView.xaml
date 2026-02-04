@@ -14,18 +14,18 @@
           FlexDirection="Row">
 
         <TextRun Name="LapIcon"
-                          Font="bold 24px Adventure"
-                          Color="white"
-                          StrokeColor="black"
-                          Text="Lap: "
-                          Flex="1" />
+                 Font="bold 24px Adventure"
+                 Color="white"
+                 StrokeColor="black"
+                 Text="Lap: "
+                 Flex="1" />
 
         <TextBlock Name="LapText"
-                            Font="bold 24px DroidSans"
-                            Color="white"
-                            StrokeColor="black"
-                            Text="1/3"
-                            Flex="1" />
+                   Font="bold 24px DroidSans"
+                   Color="white"
+                   StrokeColor="black"
+                   Text="1/3"
+                   Flex="1" />
     </Node>
 
 </View>
