@@ -351,7 +351,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -370,9 +370,9 @@ public class Node : IDisposable, INamed
             return value.InternalValue;
         }
 
-        public static MeasurementFlexBasis Undefined = new MeasurementFlexBasis
+        public static MeasurementFlexBasis Undefined = new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -381,7 +381,7 @@ public class Node : IDisposable, INamed
         public static MeasurementFlexBasis Auto =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -390,7 +390,7 @@ public class Node : IDisposable, INamed
         public static MeasurementFlexBasis MaxContent =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitMaxContent
                 }
@@ -399,7 +399,7 @@ public class Node : IDisposable, INamed
         public static MeasurementFlexBasis Stretch =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitStretch
                 }
@@ -409,7 +409,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -421,7 +421,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -432,7 +432,7 @@ public class Node : IDisposable, INamed
         public static MeasurementFlexBasis FitContent =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -516,7 +516,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -538,15 +538,15 @@ public class Node : IDisposable, INamed
         public static MeasurementMarginPosition Auto =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitAuto
                 }
             };
 
-        public static MeasurementMarginPosition Undefined => new MeasurementMarginPosition
+        public static MeasurementMarginPosition Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -556,7 +556,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -567,7 +567,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -719,7 +719,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -738,9 +738,9 @@ public class Node : IDisposable, INamed
             return value.InternalValue;
         }
 
-        public static MeasurementPadding Undefined => new MeasurementPadding
+        public static MeasurementPadding Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -750,7 +750,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -761,7 +761,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -940,7 +940,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -959,9 +959,9 @@ public class Node : IDisposable, INamed
             return value.InternalValue;
         }
 
-        public static MeasurementGap Undefined => new MeasurementGap
+        public static MeasurementGap Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -971,7 +971,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -982,7 +982,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -1105,7 +1105,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -1124,9 +1124,9 @@ public class Node : IDisposable, INamed
             return value.InternalValue;
         }
 
-        public static MeasurementWidthHeight Undefined => new MeasurementWidthHeight
+        public static MeasurementWidthHeight Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -1136,7 +1136,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitAuto
                 }
@@ -1146,7 +1146,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -1157,7 +1157,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -1169,7 +1169,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -1179,7 +1179,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitMaxContent
                 }
@@ -1190,7 +1190,7 @@ public class Node : IDisposable, INamed
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitStretch
                 }
