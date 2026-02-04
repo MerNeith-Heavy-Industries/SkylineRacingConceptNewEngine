@@ -8,7 +8,6 @@ namespace nfm_world.ui.elements;
 
 public class MeasureBar : Node
 {
-    [TypeConverter(typeof(ColorTypeConverter))]
     public Color BarColor { get; set; } = new Color(255, 255, 255);
     /// <summary>
     /// 1f = full, 0f = empty

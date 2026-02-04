@@ -10,9 +10,7 @@ namespace nfm_world.ui.elements;
 public class TextRun : Node
 {
     private IFontMetrics? _fontMetrics;
-    [TypeConverter(typeof(ColorTypeConverter))]
     public Color Color { get; set; } = new Color(255, 255, 255);
-    [TypeConverter(typeof(ColorTypeConverter))]
     public Color? StrokeColor { get; set; } = null;
     public Font Font
     {
