@@ -25,7 +25,7 @@ public class Node : IDisposable, INamed
     internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
     internal readonly string __INTERNAL_CtorCallerMemberName = "";
 
-    internal static List<Node> __INTERNAL_YogaRootsThisFrame = new();
+    internal static readonly List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
     #if DEBUG
     [MethodImpl(MethodImplOptions.NoInlining)]
