@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Node xmlns="clr-namespace:nfm_world.ui.yoga"
-      xmlns:elements="clr-namespace:nfm_world.ui.elements"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.TTLapTimerSplitsView"
       Name="LapTimerSplits"
@@ -11,13 +10,13 @@
       Padding="10">
 
     <Node Name="LapDisplay" FlexDirection="Row">
-        <elements:TextRun Name="LapIcon"
+        <TextRun Name="LapIcon"
                          Font="bold 24px Adventure"
                          Color="white"
                          StrokeColor="black"
                          Text="Lap: "
                          Flex="1" />
-        <elements:TextRun Name="LapText"
+        <TextRun Name="LapText"
                          StrokeColor="black"
                          Color="white"
                          Font="bold 24px DroidSans"
@@ -25,13 +24,13 @@
     </Node>
 
     <Node Name="TimeDisplay" FlexDirection="Row">
-        <elements:TextRun Name="TimeIcon"
+        <TextRun Name="TimeIcon"
                          Font="bold 24px Adventure"
                          Color="white"
                          StrokeColor="black"
                          Text="Time: "
                          Flex="1" />
-        <elements:TextRun Name="TimeText"
+        <TextRun Name="TimeText"
                          StrokeColor="black"
                          Color="white"
                          Font="bold 24px DroidSans"
@@ -39,7 +38,7 @@
     </Node>
 
     <Node>
-        <elements:TextRun Name="LapTimeText"
+        <TextRun Name="LapTimeText"
                          StrokeColor="black"
                          Color="white"
                          Font="bold 24px DroidSans"
@@ -47,7 +46,7 @@
     </Node>
 
     <Node>
-        <elements:TextRun Name="CheckpointSplitsText"
+        <TextRun Name="CheckpointSplitsText"
                          StrokeColor="black"
                          Color="white"
                          Font="bold 24px DroidSans"
@@ -55,7 +54,7 @@
     </Node>
 
     <Node>
-        <elements:TextRun Name="LapSplitsText"
+        <TextRun Name="LapSplitsText"
                          StrokeColor="black"
                          Color="white"
                          Font="bold 24px DroidSans"

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <View xmlns="clr-namespace:nfm_world.ui.yoga"
-      xmlns:elements="clr-namespace:nfm_world.ui.elements"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.LapTimerSplitsView"
       FlexDirection="Column"
@@ -14,14 +13,14 @@
     <Node Name="LapDisplay"
           FlexDirection="Row">
 
-        <elements:TextRun Name="LapIcon"
+        <TextRun Name="LapIcon"
                           Font="bold 24px Adventure"
                           Color="white"
                           StrokeColor="black"
                           Text="Lap: "
                           Flex="1" />
 
-        <elements:TextBlock Name="LapText"
+        <TextBlock Name="LapText"
                             Font="bold 24px DroidSans"
                             Color="white"
                             StrokeColor="black"

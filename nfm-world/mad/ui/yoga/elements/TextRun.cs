@@ -1,11 +1,8 @@
-﻿using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using nfm_world.driverinterface;
-using nfm_world.ui.yoga;
-using nfm_world.ui.yoga.xaml;
 using nfm_world.util;
 
-namespace nfm_world.ui.elements;
+namespace nfm_world.ui.yoga;
 
 public class TextRun : Node
 {
