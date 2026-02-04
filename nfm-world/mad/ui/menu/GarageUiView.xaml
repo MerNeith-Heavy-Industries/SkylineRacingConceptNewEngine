@@ -6,59 +6,24 @@
       Name="LapTimerSplits"
       FlexDirection="Column"
       AlignItems="FlexStart"
-      JustifyContent="Center"
+      JustifyContent="FlexStart"
       Gap="10"
-      Padding="10">
+      Padding="10"
+      Margin="50">
 
-    <Node Name="LapDisplay" FlexDirection="Row">
-        <TextRun Name="LapIcon"
-                 Font="bold 24px Adventure"
-                 Color="white"
-                 StrokeColor="black"
-                 Text="Lop: "
-                 Flex="1" />
-        <TextRun Name="LapText"
-                 StrokeColor="black"
-                 Color="white"
-                 Font="bold 24px DroidSans"
-                 Flex="1" />
+    <Node FlexDirection="Row" Gap="25" MarginBottom="25">
+        <GarageDynamicStatBar Name="Bar0" StatName="Top Speed" />
+        <GarageDynamicStatBar Name="Bar1" StatName="Acceleration" />
+        <GarageDynamicStatBar Name="Bar2" StatName="Handling" />
     </Node>
-
-    <Node Name="TimeDisplay" FlexDirection="Row">
-        <TextRun Name="TimeIcon"
-                 Font="bold 24px Adventure"
-                 Color="white"
-                 StrokeColor="black"
-                 Text="Time: "
-                 Flex="1" />
-        <TextRun Name="TimeText"
-                 StrokeColor="black"
-                 Color="white"
-                 Font="bold 24px DroidSans"
-                 Flex="1" />
+    <Node FlexDirection="Row" Gap="25" MarginBottom="25">
+        <GarageDynamicStatBar Name="Bar3" StatName="Power Save" />
+        <GarageDynamicStatBar Name="Bar4" StatName="Strength" />
+        <GarageDynamicStatBar Name="Bar5" StatName="Max Health" />
     </Node>
-
-    <Node>
-        <TextRun Name="LapTimeText"
-                 StrokeColor="black"
-                 Color="white"
-                 Font="bold 24px DroidSans"
-                 Flex="1" />
-    </Node>
-
-    <Node>
-        <TextRun Name="CheckpointSplitsText"
-                 StrokeColor="black"
-                 Color="white"
-                 Font="bold 24px DroidSans"
-                 Flex="1" />
-    </Node>
-
-    <Node>
-        <TextRun Name="LapSplitsText"
-                 StrokeColor="black"
-                 Color="white"
-                 Font="bold 24px DroidSans"
-                 Flex="1" />
+    <Node FlexDirection="Row" Gap="25" MarginBottom="25">
+        <GarageDynamicStatBar Name="Bar6" StatName="Stunting" />
+        <GarageDynamicStatBar Name="Bar7" StatName="Hypergliding" />
+        <GarageDynamicStatBar Name="Bar8" StatName="AB'ing" />
     </Node>
 </View>

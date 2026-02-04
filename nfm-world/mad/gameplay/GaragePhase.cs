@@ -8,6 +8,7 @@ using nfm_world_library.util;
 using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.stage;
+using nfm_world.ui.menu;
 using nfm_world.util;
 
 namespace nfm_world.gameplay;
@@ -32,8 +33,8 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
     private BackendCar? _backendCar;
     private ClientCar? _car;
-
-    private UnlimitedArray<GarageDynamicStatBar> statBars = [];
+    
+    private GarageUiView _garageUiView = new();
 
     private int _statsBarBaseX = 120;
     private int _statsBarBaseY = 200;
@@ -110,40 +111,37 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         // create and position stat bars
         float switsLevel = (_car.Stats.Swits[2] - 220) / 90f;
         switsLevel = Math.Max(0.05f, switsLevel);
-        statBars[0] = new GarageDynamicStatBar(switsLevel, _statsBarBaseX, _statsBarBaseY, "Top Speed");
+        _garageUiView.Bar0.TargetValue = switsLevel;
 
         float accel = (float)(_car.Stats.Acelf.X * _car.Stats.Acelf.Y * _car.Stats.Acelf.Z * _car.Stats.Grip / 7700);
-        statBars[1] = new GarageDynamicStatBar(accel, _statsBarBaseX + _statsBarXGap, _statsBarBaseY, "Acceleration");
+        _garageUiView.Bar1.TargetValue = accel;
 
-        statBars[2] = new GarageDynamicStatBar((float)_car.Stats.Dishandle, _statsBarBaseX + _statsBarXGap * 2, _statsBarBaseY, "Handling");
+        _garageUiView.Bar2.TargetValue = (float)_car.Stats.Dishandle;
 
         float powerloss = _car.Stats.Powerloss / 5500000f;
-        statBars[3] = new GarageDynamicStatBar(powerloss, _statsBarBaseX, _statsBarBaseY + _statsBarYGap, "Power Save");
+        _garageUiView.Bar3.TargetValue = powerloss;
 
         float strength = ((float)_car.Stats.Moment + 0.5f) / 2.6f;
-        statBars[4] = new GarageDynamicStatBar(strength, _statsBarBaseX + _statsBarXGap, _statsBarBaseY + _statsBarYGap, "Strength");
+        _garageUiView.Bar4.TargetValue = strength;
 
         float health = (float)_car.Stats.Outdam / 1.05f + _car.Stats.Maxmag / 100000f;
-        statBars[5] = new GarageDynamicStatBar(health, _statsBarBaseX + _statsBarXGap * 2, _statsBarBaseY + _statsBarYGap, "Max Health");
+        _garageUiView.Bar5.TargetValue = health;
 
         float airs = (_car.Stats.Airc * 2 * ((float)_car.Stats.Airs * 0.5f) * (float)_car.Stats.Bounce + 28f) / 100f;
-        statBars[6] = new GarageDynamicStatBar(airs, _statsBarBaseX, _statsBarBaseY + _statsBarYGap * 2, "Stunting");
+        _garageUiView.Bar6.TargetValue = airs;
 
         float hglide = ((Math.Abs(_car.Stats.Flipy) + Math.Abs(_car.GroundAt)) / 2f / 70f) + (float)_car.Stats.Airs / 230f;
-        statBars[7] = new GarageDynamicStatBar(hglide, _statsBarBaseX + _statsBarXGap, _statsBarBaseY + _statsBarYGap * 2, "Hypergliding");
+        _garageUiView.Bar7.TargetValue = hglide;
 
         float ab = _car.Stats.Airc / 75f;
-        statBars[8] = new GarageDynamicStatBar(ab, _statsBarBaseX + _statsBarXGap * 2, _statsBarBaseY + _statsBarYGap * 2, "AB'ing");
+        _garageUiView.Bar8.TargetValue = ab;
     }
 
 
 
     public override void GameTick()
     {
-        foreach (GarageDynamicStatBar gb in statBars)
-        {
-            gb.Tick();
-        }
+        _garageUiView.Update();
     }
 
     public override void Render()
@@ -274,10 +272,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void DrawCarStats()
     {
-        foreach (GarageDynamicStatBar gb in statBars)
-        {
-            gb.Render();
-        }
+        _garageUiView.LayoutAndRender(G.Viewport);
     }
 
     public override void Enter()
@@ -369,130 +364,5 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void WindowSizeChanged(int width, int height)
     {
 
-    }
-}
-
-internal class GarageDynamicStatBar
-{
-    private readonly float maxSpeed = 1000f;
-    private readonly float speedUp = 0.1f;
-    private readonly int fullBar = 100;
-
-    public int maxWidth = 100;
-    public int height = 10;
-
-    private float currentValue = 0f;
-    private float targetValue;
-    private float speed;
-
-    public int x;
-    public int y;
-
-    private string _name;
-
-    private Color[] barColors =
-    [
-        new Color(255, 0, 0),
-        new Color(128, 128, 128),
-        new Color(255, 128, 0),
-        new Color(128, 128, 128),
-        new Color(255, 255, 0),
-        new Color(128, 128, 128),
-        new Color(128, 255, 0),
-        new Color(128, 128, 128),
-        new Color(0, 255, 0),
-        new Color(128, 128, 128),
-        new Color(0, 255, 128),
-        new Color(128, 128, 128),
-        new Color(0, 255, 255),
-        new Color(128, 128, 128),
-        new Color(0, 128, 255),
-        new Color(128, 128, 128),
-        new Color(0, 0, 255),
-        new Color(128, 128, 128),
-        new Color(128, 0, 255),
-        new Color(128, 128, 128),
-        new Color(255, 0, 255),
-        new Color(128, 128, 128),
-        new Color(255, 0, 128),
-        new Color(128, 128, 128),
-    ];
-
-    public GarageDynamicStatBar(float targetValue, int x, int y, string name)
-    {
-        this.targetValue = targetValue * 100;
-        speed = speedUp;
-        this.x = x;
-        this.y = y;
-        _name = name;
-    }
-
-    public void Tick()
-    {
-        currentValue += speed;
-        currentValue = Math.Min(targetValue, currentValue);
-
-        speed += speedUp;
-        speed = Math.Min(speed, maxSpeed);
-    }
-
-    private int GetColor(int lim, int i)
-    {
-        if (i < 0)
-        {
-            return i % lim + lim;
-        }
-        else
-        {
-            return i % lim;
-        }
-    }
-
-    public void Render()
-    {
-        int multiples = 0;
-        float remaining = currentValue;
-
-        while (remaining > fullBar)
-        {
-            remaining -= fullBar;
-            multiples++;
-        }
-
-        G.SetColor(new Color(0, 0, 0));
-        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 20));
-        G.DrawStringStroke(_name, x, y - 5);
-        G.SetColor(new Color(255, 255, 255));
-        G.DrawString(_name, x, y - 5);
-
-        Color baseBarColorStart = multiples > 0 ? barColors[GetColor(barColors.Length, multiples - 1)] : new Color(0, 0, 0, 0);
-        Color baseBarColorEnd = multiples > 0 ? barColors[GetColor(barColors.Length, multiples)] : new Color(0, 0, 0, 0);
-
-        Color barColorStart = barColors[GetColor(barColors.Length, multiples)];
-        Color barColorEnd = barColors[GetColor(barColors.Length, multiples + 1)];
-
-        G.SetLinearGradient(x, y, maxWidth, height, [baseBarColorStart, baseBarColorEnd], null);
-        G.FillRect(x, y, maxWidth, height);
-
-        int barRatio = (int)(remaining / fullBar * 100);
-        barRatio *= maxWidth / fullBar;
-
-        G.SetLinearGradient(x, y, maxWidth, height, [barColorStart, barColorEnd], null);
-        G.FillRect(x, y, barRatio, height);
-
-        G.SetColor(new Color(255, 255, 255));
-        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 12));
-        G.DrawString(((int)currentValue).ToString(), x + 5, y + height);
-
-        DrawDividers();
-    }
-
-    // Draw the black thing that overlays the stat itself...
-    private void DrawDividers()
-    {
-        G.SetColor(new Color(0, 0, 0));
-        G.DrawLine(x, y + height, x + maxWidth, y + height);
-        G.DrawLine(x, y, x, y + height);
-        G.DrawLine(x + maxWidth, y, x + maxWidth, y + height);
     }
 }
