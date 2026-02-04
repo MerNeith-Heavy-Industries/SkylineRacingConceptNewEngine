@@ -66,9 +66,9 @@
     <!-- XAML compilation for Yoga UI -->
     <PropertyGroup>
         <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\NFMWorld.XamlX.BuildTask\bin\$(Configuration)\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\NFMWorld.XamlX.BuildTask\bin\$(Configuration)\net10.0\</NFMWorldXamlXTasksDir>
-        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net10.0\</NFMWorldXamlXTasksDir>
-        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\</NFMWorldXamlXTasksDir>
-        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)..\bin\Release\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Release\net10.0\</NFMWorldXamlXTasksDir>
+        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)bin\$(Configuration)\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\$(Configuration)\net10.0\</NFMWorldXamlXTasksDir>
+        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)bin\Debug\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Debug\net10.0\</NFMWorldXamlXTasksDir>
+        <NFMWorldXamlXTasksDir Condition="'$(NFMWorldXamlXTasksDir)' == '' AND Exists('$(MSBuildThisFileDirectory)bin\Release\net10.0\NFMWorld.XamlX.BuildTask.dll')">$(MSBuildThisFileDirectory)..\bin\Release\net10.0\</NFMWorldXamlXTasksDir>
     </PropertyGroup>
 
     <!-- Import the XAML build targets (only if the task is built) -->
