@@ -69,7 +69,7 @@ The project uses a custom XAML runtime built on XamlX (IL weaving) with Avalonia
          Padding="10">
 
        <!-- Child elements here -->
-       <elements:TextRun Name="TitleText" Font="Adventure,1,24" Text="Hello" />
+       <elements:TextRun Name="TitleText" Font="24px bold Adventure" Text="Hello" />
    </Node>
    ```
 
@@ -168,4 +168,16 @@ public PowerDamageBars()
 - **Missing `InitializeComponent`** — Ensure XAML file is in `<AvaloniaXaml>` ItemGroup and `x:Class` matches
 - **Type not found** — Check namespace in `xmlns` matches the actual C# namespace
 - **Property not found** — Ensure property has public setter; check for [TypeConverter] attribute if needed
+
+### AOT Publishing
+
+When adding new XAML views, you must update [nfm-world/rd.xml](nfm-world/rd.xml) to preserve the generated `Populate` methods for Native AOT compilation:
+
+```xml
+<Type Name="nfm_world.ui.hud.MyView" Dynamic="Required All">
+  <Method Name="Populate" Dynamic="Required" />
+</Type>
+```
+
+Without this, `dotnet publish` with AOT will fail with "Could not find Method(s) [NFMWorld]nfm_world.ui.hud.MyView.Populate specified by a Runtime Directive"
 
