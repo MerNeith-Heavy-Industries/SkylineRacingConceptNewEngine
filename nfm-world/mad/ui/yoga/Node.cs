@@ -634,6 +634,141 @@ public class Node : IDisposable, INamed
         }
     } = MeasurementMarginPosition.Undefined;
 
+    [TypeConverter(typeof(MeasurementMultiMarginTypeConverter))]
+    public struct MeasurementMultiMargin
+    {
+        public class MeasurementMultiMarginTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+            
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementMarginPosition.Undefined);
+                    }
+                    if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementMarginPosition.Auto);
+                    }
+
+                    var idx = 0;
+                    var sides = new InlineArray4<MeasurementMarginPosition>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+                    
+                        if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Percent(percentValue);
+                            }
+                        }
+                        else if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiMargin
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiMargin
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+                    
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected 'auto', '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<MeasurementMarginPosition> Sides;
+        public MeasurementMarginPosition Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public MeasurementMarginPosition Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public MeasurementMarginPosition Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public MeasurementMarginPosition Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+        
+        public static MeasurementMultiMargin All(MeasurementMarginPosition value)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+        
+        public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+    }
+    
+    public MeasurementMultiMargin Margin 
+    {
+        set
+        {
+            MarginLeft = value.Left;
+            MarginRight = value.Right;
+            MarginTop = value.Top;
+            MarginBottom = value.Bottom;
+        }
+    }
+
     public MeasurementMarginPosition MarginTop
     {
         get;
@@ -792,14 +927,134 @@ public class Node : IDisposable, INamed
         }
     }
 
-    public MeasurementPadding Padding
+    [TypeConverter(typeof(MeasurementMultiPaddingTypeConverter))]
+    public struct MeasurementMultiPadding
+    {
+        public class MeasurementMultiPaddingTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+            
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementPadding.Undefined);
+                    }
+                    
+                    var idx = 0;
+                    var sides = new InlineArray4<MeasurementPadding>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+                    
+                        if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                            {
+                                sides[idx] = MeasurementPadding.Percent(percentValue);
+                            }
+                        }
+                        else if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementPadding.Point(pointValue);
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementPadding.Point(pointValue);
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiPadding
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiPadding
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+                    
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<MeasurementPadding> Sides;
+        public MeasurementPadding Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public MeasurementPadding Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public MeasurementPadding Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public MeasurementPadding Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+        
+        public static MeasurementMultiPadding All(MeasurementPadding value)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+        
+        public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+    }
+    
+    public MeasurementMultiPadding Padding
     {
         set
         {
-            PaddingLeft = value;
-            PaddingRight = value;
-            PaddingTop = value;
-            PaddingBottom = value;
+            PaddingLeft = value.Left;
+            PaddingRight = value.Right;
+            PaddingTop = value.Top;
+            PaddingBottom = value.Bottom;
         }
     }
 
