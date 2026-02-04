@@ -41,13 +41,13 @@ public class XamlHotReload
         _trackedViews.AddOrUpdate(view, fullPath);
     }
     
+#if DEBUG
 #pragma warning disable IL2026
 #pragma warning disable IL3050
     private static readonly Debounced<FileSystemEventArgs> Debounced = ((Action<FileSystemEventArgs>)((e) => Task.Run(() => ReloadXaml(e.FullPath)))).Debounce(1000);
 #pragma warning restore IL3050
 #pragma warning restore IL2026
-    
-#if DEBUG
+
     [RequiresUnreferencedCode("Uses XamlX Sre types which may not be compatible with trimming.")]
     [RequiresDynamicCode("Uses Reflection.Emit which may not be compatible with AOT.")]
     private static void OnXamlFileChanged(object sender, FileSystemEventArgs e)
