@@ -110,7 +110,6 @@ jobs:
             -c Release `
             -r $publishRid `
             --self-contained `
-            -p:PublishAot=true `
             -p:Version="${{ steps.version.outputs.semantic_version }}" `
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
             $extraArgs `
@@ -235,7 +234,6 @@ jobs:
             -c Release \
             -r $PUBLISH_RID \
             --self-contained \
-            -p:PublishAot=true \
             -p:Version="${{ steps.version.outputs.semantic_version }}" \
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
             $EXTRA_ARGS \
@@ -332,7 +330,6 @@ jobs:
             dotnet publish nfm-world/NFMWorld.csproj \
               -c Release \
               --self-contained \
-              -p:PublishAot=true \
               -r $RID \
               -p:Version="${{ steps.version.outputs.semantic_version }}" \
               -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
