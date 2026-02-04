@@ -12,53 +12,53 @@
 
     <Node Name="LapDisplay" FlexDirection="Row">
         <elements:TextRun Name="LapIcon"
-                         Font="Adventure,1,24"
-                         Color="255,255,255,255"
-                         StrokeColor="0,0,0,255"
+                         Font="24px bold Adventure"
+                         Color="255,255,255"
+                         StrokeColor="0,0,0"
                          Text="Lap: "
                          Flex="1" />
         <elements:TextRun Name="LapText"
-                         StrokeColor="0,0,0,255"
-                         Color="255,255,255,255"
-                         Font="DroidSans,1,24"
+                         StrokeColor="0,0,0"
+                         Color="255,255,255"
+                         Font="24px bold DroidSans"
                          Flex="1" />
     </Node>
 
     <Node Name="TimeDisplay" FlexDirection="Row">
         <elements:TextRun Name="TimeIcon"
-                         Font="Adventure,1,24"
-                         Color="255,255,255,255"
-                         StrokeColor="0,0,0,255"
+                         Font="24px bold Adventure"
+                         Color="255,255,255"
+                         StrokeColor="0,0,0"
                          Text="Time: "
                          Flex="1" />
         <elements:TextRun Name="TimeText"
-                         StrokeColor="0,0,0,255"
-                         Color="255,255,255,255"
-                         Font="DroidSans,1,24"
+                         StrokeColor="0,0,0"
+                         Color="255,255,255"
+                         Font="24px bold DroidSans"
                          Flex="1" />
     </Node>
 
     <Node>
         <elements:TextRun Name="LapTimeText"
-                         StrokeColor="0,0,0,255"
-                         Color="255,255,255,255"
-                         Font="DroidSans,1,24"
+                         StrokeColor="0,0,0"
+                         Color="255,255,255"
+                         Font="24px bold DroidSans"
                          Flex="1" />
     </Node>
 
     <Node>
         <elements:TextRun Name="CheckpointSplitsText"
-                         StrokeColor="0,0,0,255"
-                         Color="255,255,255,255"
-                         Font="DroidSans,1,24"
+                         StrokeColor="0,0,0"
+                         Color="255,255,255"
+                         Font="24px bold DroidSans"
                          Flex="1" />
     </Node>
 
     <Node>
         <elements:TextRun Name="LapSplitsText"
-                         StrokeColor="0,0,0,255"
-                         Color="255,255,255,255"
-                         Font="DroidSans,1,24"
+                         StrokeColor="0,0,0"
+                         Color="255,255,255"
+                         Font="24px bold DroidSans"
                          Flex="1" />
     </Node>
 </Node>
