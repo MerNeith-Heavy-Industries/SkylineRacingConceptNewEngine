@@ -10,7 +10,7 @@
     <Node AlignItems="Center" Flex="1">
         <elements:TextRun Name="CenterText"
                           Text=""
-                          Color="0,0,0,0"
+                          Color="black"
                           Font="bold 1px Adventure"
                           Display="None" />
     </Node>
