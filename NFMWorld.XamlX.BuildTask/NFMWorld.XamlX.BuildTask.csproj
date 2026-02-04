@@ -24,6 +24,7 @@
     <!-- Copy the .targets file to output -->
     <ItemGroup>
       <None Include="build\**\*" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="build" />
+      <None Remove="prebuilt\**\*" />
     </ItemGroup>
-
+    
 </Project>
