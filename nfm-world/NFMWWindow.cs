@@ -51,6 +51,7 @@ public class Program : Game
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
     private static bool _yogaInspectorEnabled = false;
+    private static int _yogaInspectorPage = 0;
 
 #if DEBUG
     internal static string? DebugUiClass;
@@ -556,7 +557,7 @@ public class Program : Game
         }
 
         if (_yogaInspectorEnabled)
-            YogaDebugger.Render();
+            YogaDebugger.Render(_yogaInspectorPage);
 #endif
 
         FPSCounter.Render();
@@ -630,6 +631,13 @@ public class Program : Game
             if (key == Keys.F9)
             {
                 _yogaInspectorEnabled = !_yogaInspectorEnabled;
+            }
+
+            if (key == Keys.F10)
+            {
+                _yogaInspectorPage++;
+                if (_yogaInspectorPage > YogaDebugger.MaxPages)
+                    _yogaInspectorPage = 0;
             }
 #endif
         }

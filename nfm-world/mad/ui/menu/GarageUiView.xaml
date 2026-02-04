@@ -15,7 +15,7 @@
                  Font="bold 24px Adventure"
                  Color="white"
                  StrokeColor="black"
-                 Text="Lep: "
+                 Text="Lop: "
                  Flex="1" />
         <TextRun Name="LapText"
                  StrokeColor="black"
