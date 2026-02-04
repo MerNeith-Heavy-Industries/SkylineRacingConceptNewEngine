@@ -12,18 +12,16 @@
             XamlX-generated methods called via reflection
             Preserve Populate and Build methods on all types in the ui namespace
         -->
-        <Namespace Name="nfm_world.ui" Serialize="Required">
-            <Type Name="*" Dynamic="Required">
-                <Method Name="Populate" Dynamic="Required" />
-                <Method Name="Build" Dynamic="Required" />
-                <Method Name="InitializeComponent" Dynamic="Required" />
-            </Type>
-        </Namespace>
+        <Type Name="nfm_world.ui.*" Dynamic="Required">
+            <Method Name="Populate" Dynamic="Required" />
+            <Method Name="Build" Dynamic="Required" />
+            <Method Name="InitializeComponent" Dynamic="Required" />
+        </Type>
 
         <!--
             Preserve the generated Context types used by XamlX
         -->
-        <Namespace Name="__XamlRuntime__" Serialize="All" Dynamic="All" />
+        <Type Name="__XamlRuntime__.*" Serialize="All" Dynamic="All" />
 
         <!--
             Preserve Avalonia.Markup.Xaml interfaces used by XamlX
