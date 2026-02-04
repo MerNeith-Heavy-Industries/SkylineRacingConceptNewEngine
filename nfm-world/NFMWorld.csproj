@@ -51,6 +51,9 @@
     <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
     <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
     <ProjectReference Include="..\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
+      <ProjectReference Include="..\NFMWorld.XamlX.BuildTask\NFMWorld.XamlX.BuildTask.csproj"
+                        ExcludeAssets="runtime; compile; contentfiles; analyzers; buildtransitive"
+      />
 
       <!-- Reference Avalonia.Generators for XAML source generation -->
         <ProjectReference Include="..\Avalonia.Generators\Avalonia.Generators.csproj"
