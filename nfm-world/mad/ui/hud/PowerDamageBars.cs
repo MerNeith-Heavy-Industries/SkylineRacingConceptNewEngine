@@ -6,7 +6,7 @@ using nfm_world.ui.yoga;
 
 namespace nfm_world.ui.hud;
 
-public partial class PowerDamageBars : Node
+public partial class PowerDamageBars : Box
 {
     public PowerDamageBars()
     {

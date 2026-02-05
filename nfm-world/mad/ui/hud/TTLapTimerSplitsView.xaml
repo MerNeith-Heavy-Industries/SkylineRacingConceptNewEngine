@@ -10,55 +10,63 @@
       Gap="10"
       Padding="10">
 
-    <Node Name="LapDisplay" FlexDirection="Row">
+    <Box Name="LapDisplay" FlexDirection="Row">
         <TextRun Name="LapIcon"
                  Font="bold 24px Adventure"
                  Color="white"
                  StrokeColor="black"
-                 Text="Lap: "
-                 Flex="1" />
+                 Flex="1"
+                 MarginRight="5">
+            Lap:
+        </TextRun>
         <TextRun Name="LapText"
                  StrokeColor="black"
                  Color="white"
                  Font="bold 24px DroidSans"
-                 Flex="1" />
-    </Node>
+                 Flex="1">
+            1/3
+        </TextRun>
+    </Box>
 
-    <Node Name="TimeDisplay" FlexDirection="Row">
+    <Box Name="TimeDisplay" FlexDirection="Row">
         <TextRun Name="TimeIcon"
                  Font="bold 24px Adventure"
                  Color="white"
                  StrokeColor="black"
-                 Text="Time: "
-                 Flex="1" />
+                 Flex="1"
+                 MarginRight="5">
+            Time:
+        </TextRun>
         <TextRun Name="TimeText"
                  StrokeColor="black"
                  Color="white"
                  Font="bold 24px DroidSans"
-                 Flex="1" />
-    </Node>
+                 Flex="1">
+            0:00.000
+        </TextRun>
+    </Box>
 
-    <Node>
+    <Box>
         <TextRun Name="LapTimeText"
                  StrokeColor="black"
                  Color="white"
                  Font="bold 24px DroidSans"
                  Flex="1" />
-    </Node>
+    </Box>
 
-    <Node>
+    <Box>
         <TextRun Name="CheckpointSplitsText"
                  StrokeColor="black"
                  Color="white"
                  Font="bold 24px DroidSans"
                  Flex="1" />
-    </Node>
+    </Box>
 
-    <Node>
+    <Box>
         <TextRun Name="LapSplitsText"
                  StrokeColor="black"
                  Color="white"
                  Font="bold 24px DroidSans"
                  Flex="1" />
-    </Node>
+    </Box>
 </View>

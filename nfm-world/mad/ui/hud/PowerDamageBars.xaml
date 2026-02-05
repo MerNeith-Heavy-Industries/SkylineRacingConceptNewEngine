@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
-<Node xmlns="clr-namespace:nfm_world.ui.yoga"
+<Box xmlns="clr-namespace:nfm_world.ui.yoga"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       x:Class="nfm_world.ui.hud.PowerDamageBars"
       Top="0"
@@ -22,4 +22,4 @@
         ImageData="{StaticImage data/images/power.gif}"
         Scale="1.2"
         />
-</Node>
+</Box>

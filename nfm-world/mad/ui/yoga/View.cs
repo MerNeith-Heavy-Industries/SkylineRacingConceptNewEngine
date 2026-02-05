@@ -1,6 +1,6 @@
 ﻿namespace nfm_world.ui.yoga;
 
-public class View : Node
-{
-    
-}
+/// <summary>
+/// Represents a generic container view that can hold multiple child nodes.
+/// </summary>
+public class View : Box;

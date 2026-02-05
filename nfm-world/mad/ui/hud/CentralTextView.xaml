@@ -7,13 +7,12 @@
       AlignItems="Center"
       FlexDirection="Column">
 
-    <Node AlignItems="Center" Flex="1">
+    <Box AlignItems="Center" Flex="1">
         <TextRun Name="CenterText"
-                 Text=""
                  Color="black"
                  Font="bold 1px Adventure"
                  Display="None" />
-    </Node>
+    </Box>
 
     <Node Flex="1" />
 </View>

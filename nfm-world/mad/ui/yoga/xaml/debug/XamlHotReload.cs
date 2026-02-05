@@ -19,10 +19,10 @@ namespace nfm_world.ui.yoga.xaml;
 
 public class XamlHotReload
 {
+#if DEBUG
     private static FileSystemWatcher? _watcher;
-    private static ConditionalWeakTable<Node, string> _trackedViews = new();
+    private static ConditionalWeakTable<Node, string> _trackedNodes = new();
     
-    #if DEBUG
     [RequiresUnreferencedCode("Uses XamlX Sre types which may not be compatible with trimming.")]
     [RequiresDynamicCode("Uses Reflection.Emit which may not be compatible with AOT.")]
     public static void Initialize(string? projectRoot = null)
@@ -32,13 +32,15 @@ public class XamlHotReload
         _watcher.Changed += OnXamlFileChanged;
         _watcher.EnableRaisingEvents = true;
     }
-    #endif
+#endif
     
     [Conditional("DEBUG")]
-    public static void Register(Node view, string xamlPath)
+    public static void Register(Node node, string xamlPath)
     {
+#if DEBUG
         var fullPath = Path.GetFullPath(Path.Combine(_watcher!.Path, xamlPath));
-        _trackedViews.AddOrUpdate(view, fullPath);
+        _trackedNodes.AddOrUpdate(node, fullPath);
+#endif
     }
     
 #if DEBUG
@@ -61,25 +63,26 @@ public class XamlHotReload
     private static async Task? ReloadXaml(string path)
     {
         var fullPath = Path.GetFullPath(path);
-        var viewsToUpdate = _trackedViews.Where(e => e.Value == fullPath).ToArray();
-        if (viewsToUpdate.Length > 0)
+        var nodesToUpdate = _trackedNodes.Where(e => e.Value == fullPath).ToArray();
+        if (nodesToUpdate.Length > 0)
         {
             Console.WriteLine($"[XamlHotReload] Reloading XAML: {fullPath}");
 
             // Reload the XAML and re-initialize the view
             try
             {
-                var firstView = viewsToUpdate[0].Key;
-                var (create, populate) = CompileXaml(firstView, path, await File.ReadAllTextAsync(path));
+                var firstNode = nodesToUpdate[0].Key;
+                var (create, populate) = CompileXaml(firstNode, path, await File.ReadAllTextAsync(path));
                 Console.WriteLine($"[XamlHotReload] Successfully compiled XAML: {fullPath}");
                 
-                foreach (var (view, _) in viewsToUpdate)
+                foreach (var (node, _) in nodesToUpdate)
                 {
                     // Remove old children
-                    view.Children.Clear();
+                    if (node is View view)
+                        view.Children.Clear();
 
                     // Populate the view
-                    populate(AvaloniaXamlLoader.CreateDefaultServiceProvider(view), view);
+                    populate(AvaloniaXamlLoader.CreateDefaultServiceProvider(node), node);
                 }
                 Console.WriteLine($"[XamlHotReload] Successfully reloaded XAML: {fullPath}");
             }

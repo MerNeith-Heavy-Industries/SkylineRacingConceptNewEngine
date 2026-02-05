@@ -20,15 +20,19 @@ public sealed class NameScope(Node node) : INameScope
 
     private static T? FindChildByNameRecursive<T>(Node parent, string name) where T : Node
     {
-        foreach (var child in parent.Children)
+        if (parent is Box box)
         {
-            if (child.Name == name && child is T typed)
-                return typed;
+            foreach (var child in box.Children)
+            {
+                if (child.Name == name && child is T typed)
+                    return typed;
 
-            var found = FindChildByNameRecursive<T>(child, name);
-            if (found != null)
-                return found;
+                var found = FindChildByNameRecursive<T>(child, name);
+                if (found != null)
+                    return found;
+            }
         }
+
         return null;
     }
 }

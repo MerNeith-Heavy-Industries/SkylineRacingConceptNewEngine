@@ -1,4 +1,5 @@
-﻿using nfm_world.driverinterface;
+﻿using Avalonia.Metadata;
+using nfm_world.driverinterface;
 using nfm_world.util;
 
 namespace nfm_world.ui.yoga;
@@ -18,6 +19,7 @@ public class TextBlock : Node
         }
     } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
+    [Content]
     public string? Text
     {
         get;

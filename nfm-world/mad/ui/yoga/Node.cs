@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -14,6 +13,10 @@ using Yoga;
 namespace nfm_world.ui.yoga;
 
 // ReSharper disable InconsistentNaming
+
+/// <summary>
+/// Represents a single node in the Yoga layout system.
+/// </summary>
 [DebuggerDisplay("{DebugToString()}")]
 public class Node : IDisposable, INamed
 {
@@ -27,13 +30,11 @@ public class Node : IDisposable, INamed
 
     internal static readonly List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
-    #if DEBUG
+#if DEBUG
     [MethodImpl(MethodImplOptions.NoInlining)]
-    #endif
+#endif
     public Node()
     {
-        Children = new(this);
-
 #if DEBUG
         var stackTrace = new StackTrace(1, true);
         // skip inherited constructors
@@ -45,29 +46,17 @@ public class Node : IDisposable, INamed
 #endif
     }
 
-    [Content]
-    public NodeChildCollection Children { get; }
-
     public string? Name { get; set; }
 
     public string DebugToString()
     {
-        using var sb = new ValueStringBuilder(stackalloc char[ValueStringBuilder.StackallocCharBufferSizeLimit]);
-        sb.Append($"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})");
-        foreach (var child in Children)
-        {
-            sb.AppendLine();
-            sb.Append('{');
-            sb.Append(child.DebugToString().Replace("\n", "\n  "));
-            sb.Append('}');
-        }
-        return sb.ToString();
+        return $"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
 
     #region Layout
 
     // https://www.w3schools.com/css/css_boxmodel.asp
-    private Vector2 _root;
+    private protected Vector2 _root;
     public Vector2 LayoutMarginPosition => _root + new Vector2(LayoutX, LayoutY);
     public Vector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
     public Vector2 LayoutBorderPosition => _root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
@@ -1734,7 +1723,11 @@ public class Node : IDisposable, INamed
         GC.SuppressFinalize(this);
     }
 
-    private bool Rescale()
+    /// <summary>
+    /// Do not use directly.
+    /// </summary>
+    /// <returns>true if scale changed</returns>
+    private protected bool Rescale()
     {
         if (Math.Abs(_lastScale - G.Scale) > 0.001f)
         {
@@ -1779,15 +1772,14 @@ public class Node : IDisposable, INamed
     {
     }
 
-    private void RescaleRecursive()
+    /// <summary>
+    /// DO NOT OVERRIDE. Override OnScaleChanged() instead.
+    /// </summary>
+    protected internal virtual void RescaleRecursive()
     {
         if (Rescale())
         {
             OnScaleChanged();
-            foreach (var child in Children)
-            {
-                child.RescaleRecursive();
-            }
         }
     }
 
@@ -1812,7 +1804,7 @@ public class Node : IDisposable, INamed
         G.SetAlpha(1f);
     }
 
-    private void RenderRecursive(Vector2 root, float rootOpacity = 1f)
+    protected internal virtual void RenderRecursive(Vector2 root, float rootOpacity = 1f)
     {
         _root = root;
         if (Display != YgDisplay.None && Visibility == Visibility.Visible && Opacity > 0f)
@@ -1820,10 +1812,6 @@ public class Node : IDisposable, INamed
             var ownOpacity = rootOpacity * Opacity;
             G.SetAlpha(ownOpacity);
             Render();
-            foreach (var child in Children)
-            {
-                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY), ownOpacity); // todo should this be LayoutContentPosition
-            }
             G.SetAlpha(1f);
         }
     }
@@ -1843,93 +1831,11 @@ public class Node : IDisposable, INamed
         RenderRecursive(origin ?? Vector2.Zero);
     }
 
-    public void Update()
+    /// <summary>
+    /// DO NOT OVERRIDE. Override GameTick() instead.
+    /// </summary>
+    protected internal virtual void Update()
     {
         GameTick();
-        foreach (var child in Children)
-        {
-            child.Update();
-        }
-    }
-}
-
-public class NodeChildCollection(Node parent) : IList<Node>
-{
-    private List<Node> _internalList = new();
-
-    public IEnumerator<Node> GetEnumerator()
-    {
-        return _internalList.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-    public void Add(Node item)
-    {
-        parent.NodeInternal.InsertChild(item.NodeInternal, parent.NodeInternal.GetChildCount());
-        _internalList.Add(item);
-    }
-
-    public void Clear()
-    {
-        parent.NodeInternal.RemoveAllChildren();
-        _internalList.Clear();
-    }
-
-    public bool Contains(Node item)
-    {
-        return _internalList.Contains(item);
-    }
-
-    public void CopyTo(Node[] array, int arrayIndex)
-    {
-        _internalList.CopyTo(array, arrayIndex);
-    }
-
-    public bool Remove(Node item)
-    {
-        if (_internalList.Remove(item))
-        {
-            parent.NodeInternal.RemoveChild(item.NodeInternal);
-            return true;
-        }
-
-        return false;
-    }
-
-    public int Count => _internalList.Count;
-    public bool IsReadOnly => false;
-    public int IndexOf(Node item)
-    {
-        return _internalList.IndexOf(item);
-    }
-
-    public void Insert(int index, Node item)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        parent.NodeInternal.InsertChild(item.NodeInternal, (uint)index);
-        _internalList.Insert(index, item);
-    }
-
-    public void RemoveAt(int index)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        var item = _internalList[index];
-        parent.NodeInternal.RemoveChild(item.NodeInternal);
-        _internalList.RemoveAt(index);
-    }
-
-    public Node this[int index]
-    {
-        get => _internalList[index];
-        set
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-            _internalList[index] = value;
-            parent.NodeInternal.SwapChild(value.NodeInternal, (uint)index);
-        }
     }
 }

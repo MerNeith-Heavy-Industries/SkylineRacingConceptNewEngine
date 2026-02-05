@@ -48,10 +48,14 @@ public static class YogaDebugger
             static int GetMaxDepth(Node node, int depth)
             {
                 var childMax = depth;
-                foreach (var child in node.Children)
+                if (node is Box box)
                 {
-                    childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    foreach (var child in box.Children)
+                    {
+                        childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    }
                 }
+
                 return childMax;
             }
         }
@@ -60,7 +64,7 @@ public static class YogaDebugger
         foreach (var root in Node.__INTERNAL_YogaRootsThisFrame)
         {
             DrawElementAndChildren(root, y, 0);
-            y += 24 * (1 + GetChildCount(root));
+            y += 24 * (1 + (root is Box box ? GetChildCount(box) : 0));
         }
 
         return;
@@ -86,19 +90,23 @@ public static class YogaDebugger
             G.SetColor(color);
             G.DrawString(indent + layoutInfo, 12, y);
             y += 24;
-            foreach (var child in node.Children)
+            if (node is Box box)
             {
-                DrawElementAndChildren(child, y, depth + 1);
-                y += 24 * (1 + GetChildCount(child));
+                foreach (var child in box.Children)
+                {
+                    DrawElementAndChildren(child, y, depth + 1);
+                    y += 24 * (1 + (child is Box childBox ? GetChildCount(childBox) : 0));
+                }
             }
         }
         
-        static int GetChildCount(Node child)
+        static int GetChildCount(Box child)
         {
             var count = child.Children.Count;
             foreach (var grandChild in child.Children)
             {
-                count += GetChildCount(grandChild);
+                if (grandChild is Box box)
+                    count += GetChildCount(box);
             }
             return count;
         }
@@ -116,10 +124,14 @@ public static class YogaDebugger
             static int GetMaxDepth(Node node, int depth)
             {
                 var childMax = depth;
-                foreach (var child in node.Children)
+                if (node is Box box)
                 {
-                    childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    foreach (var child in box.Children)
+                    {
+                        childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    }
                 }
+
                 return childMax;
             }
         }
@@ -147,10 +159,13 @@ public static class YogaDebugger
                 G.DrawStringStroke(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
                 G.SetColor(color);
                 G.DrawString(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
-                
-                foreach (var child in node.Children)
+
+                if (node is Box box)
                 {
-                    DrawNodeAndChildren(child, depth + 1);
+                    foreach (var child in box.Children)
+                    {
+                        DrawNodeAndChildren(child, depth + 1);
+                    }
                 }
             }
         }
@@ -429,12 +444,15 @@ public static class YogaDebugger
         );
         if (rect.Contains(_mousePosition))
         {
-            foreach (var child in node.Children)
+            if (node is Box box)
             {
-                var childResult = FindMouseOverNodeTree(child);
-                if (childResult.Length > 0)
+                foreach (var child in box.Children)
                 {
-                    return [node, ..childResult];
+                    var childResult = FindMouseOverNodeTree(child);
+                    if (childResult.Length > 0)
+                    {
+                        return [node, ..childResult];
+                    }
                 }
             }
 

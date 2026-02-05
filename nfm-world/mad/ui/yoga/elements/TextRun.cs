@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Avalonia.Metadata;
 using nfm_world.driverinterface;
 using nfm_world.util;
 
@@ -20,6 +21,7 @@ public class TextRun : Node
         }
     } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
+    [Content]
     public string? Text
     {
         get;

@@ -10,22 +10,25 @@
       Padding="10">
 
     <!-- Lap Display Row -->
-    <Node Name="LapDisplay"
-          FlexDirection="Row">
+    <Box Name="LapDisplay"
+         FlexDirection="Row">
 
         <TextRun Name="LapIcon"
                  Font="bold 24px Adventure"
                  Color="white"
                  StrokeColor="black"
-                 Text="Lap: "
-                 Flex="1" />
+                 Flex="1"
+                 MarginRight="5">
+            Lap:
+        </TextRun>
 
         <TextBlock Name="LapText"
                    Font="bold 24px DroidSans"
                    Color="white"
                    StrokeColor="black"
-                   Text="1/3"
-                   Flex="1" />
-    </Node>
+                   Flex="1">
+            1/3
+        </TextBlock>
+    </Box>
 
 </View>
