@@ -9,8 +9,8 @@ public interface IGraphics
 {
     void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos);
     void SetColor(Color c);
-    void FillPolygon(Span<int> x, Span<int> y, int n);
-    void DrawPolygon(Span<int> x, Span<int> y, int n);
+    void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n);
+    void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n);
     void FillRect(int x1, int y1, int width, int height);
     void DrawLine(int x1, int y1, int x2, int y2);
     void SetAlpha(float f);

@@ -696,11 +696,11 @@ public class DummyBackend : IBackend
         {
         }
 
-        public void FillPolygon(Span<int> x, Span<int> y, int n)
+        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
         }
 
-        public void DrawPolygon(Span<int> x, Span<int> y, int n)
+        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
         }
 

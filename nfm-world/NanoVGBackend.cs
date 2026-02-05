@@ -127,12 +127,12 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _paint = new Paint(new Microsoft.Xna.Framework.Color(c.R, c.G, c.B, c.A));
         }
 
-        public void FillPolygon(Span<int> x, Span<int> y, int n)
+        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
             throw new NotImplementedException(); // TODO
         }
 
-        public void DrawPolygon(Span<int> x, Span<int> y, int n)
+        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
             throw new NotImplementedException(); // TODO
         }
