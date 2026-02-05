@@ -38,6 +38,7 @@ public class XamlHotReload
     public static void Register(Node node, string xamlPath)
     {
 #if DEBUG
+        Console.WriteLine($"[XamlHotReload] Registered for hot reload: {xamlPath}");
         var fullPath = Path.GetFullPath(Path.Combine(_watcher!.Path, xamlPath));
         _trackedNodes.AddOrUpdate(node, fullPath);
 #endif

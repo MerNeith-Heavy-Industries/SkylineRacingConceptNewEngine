@@ -96,7 +96,30 @@ public class CompileXamlTask : Task
             };
             var config = new TransformerConfiguration(typeSystem, assembly, typeMappings, diagnosticsHandler: diagnosticsHandler);
 
-            var emitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>();
+            // Find the XamlHotReload.Register method for runtime support
+            var registerMethod = assembly
+                .FindType("nfm_world.ui.yoga.xaml.XamlHotReload")
+                ?.FindMethod(method => method.Name == "Register");
+            
+            if (registerMethod == null)
+            {
+                Log.LogMessage(MessageImportance.High, "XamlHotReload.Register method not found.");
+            }
+
+            // Set up emit mappings with a callback to inject hot reload registration code
+            var emitMappings = new XamlLanguageEmitMappings<IXamlILEmitter, XamlILNodeEmitResult>()
+            {
+                ContextFactoryCallback = (context, codeGen) =>
+                {
+                    if (registerMethod != null)
+                    {
+                        codeGen
+                            .Ldarg(1) // load element parameter
+                            .Ldstr(context.BaseUrl) // load base URI
+                            .EmitCall(registerMethod); // Call XamlHotReload.Register(element, baseUri)
+                    }
+                }
+            };
             var compiler = new XamlILCompiler(config, emitMappings, true)
             {
                 EnableIlVerification = false // Disable for now, can enable for debugging

@@ -8,6 +8,5 @@ public partial class GarageUiView : View
     public GarageUiView()
     {
         InitializeComponent();
-        XamlHotReload.Register(this, "mad/ui/menu/GarageUiView.xaml");
     }
 }
