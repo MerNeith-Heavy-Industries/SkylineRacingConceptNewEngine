@@ -301,28 +301,28 @@ public class Node : IDisposable, INamed
     /// <summary>
     /// CSS: flex - Shorthand for flex-grow, flex-shrink, and flex-basis combined
     /// </summary>
-    public float Flex
+    public float? Flex
     {
-        get => NodeInternal.Flex;
-        set => NodeInternal.Flex = value;
+        get => NodeInternal.Flex is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.Flex = value ?? float.NaN;
     }
 
     /// <summary>
     /// CSS: flex-grow - Defines the ability for a flex item to grow if necessary
     /// </summary>
-    public float FlexGrow
+    public float? FlexGrow
     {
-        get => NodeInternal.FlexGrow;
-        set => NodeInternal.FlexGrow = value;
+        get => NodeInternal.FlexGrow is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexGrow = value ?? float.NaN;
     }
 
     /// <summary>
     /// CSS: flex-shrink - Defines the ability for a flex item to shrink if necessary
     /// </summary>
-    public float FlexShrink
+    public float? FlexShrink
     {
-        get => NodeInternal.FlexShrink;
-        set => NodeInternal.FlexShrink = value;
+        get => NodeInternal.FlexShrink is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexShrink = value ?? float.NaN;
     }
 
     public Action<Node> Ref
@@ -804,6 +804,10 @@ public class Node : IDisposable, INamed
             set => Sides[3] = value;
         }
 
+        public static MeasurementMultiMargin Auto => MeasurementMarginPosition.Auto;
+
+        public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
+
         public static MeasurementMultiMargin All(MeasurementMarginPosition value)
         {
             return new MeasurementMultiMargin
@@ -1107,6 +1111,8 @@ public class Node : IDisposable, INamed
             get => Sides[3];
             set => Sides[3] = value;
         }
+
+        public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
 
         public static MeasurementMultiPadding All(MeasurementPadding value)
         {
@@ -1682,10 +1688,10 @@ public class Node : IDisposable, INamed
     /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
     /// </summary>
     [TypeConverter(typeof(PixelsConverter))]
-    public float AspectRatio
+    public float? AspectRatio
     {
-        get => NodeInternal.AspectRatio;
-        set => NodeInternal.AspectRatio = value;
+        get => NodeInternal.AspectRatio is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.AspectRatio = value ?? float.NaN;
     }
 
     #endregion
