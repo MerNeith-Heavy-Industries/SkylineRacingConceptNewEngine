@@ -1194,18 +1194,132 @@ public class Node : IDisposable, INamed
         }
     } = MeasurementPadding.Undefined;
 
+    [TypeConverter(typeof(MeasurementMultiBorderTypeConverter))]
+    public struct MeasurementMultiBorder
+    {
+        public class MeasurementMultiBorderTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+
+                    var idx = 0;
+                    var sides = new InlineArray4<float>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+
+                        if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = pointValue;
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = pointValue;
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiBorder
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiBorder
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<float?> Sides;
+        public float? Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public float? Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public float? Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public float? Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+
+        public static MeasurementMultiBorder Undefined => All(null);
+
+        public static MeasurementMultiBorder All(float? value)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+
+        public static implicit operator MeasurementMultiBorder(float? value) => All(value);
+    }
+
     /// <summary>
     /// CSS: border - Shorthand for setting all border widths
     /// </summary>
-    [TypeConverter(typeof(PixelsConverter))]
-    public float Border
+    public MeasurementMultiBorder Border
     {
         set
         {
-            BorderLeft = value;
-            BorderRight = value;
-            BorderTop = value;
-            BorderBottom = value;
+            BorderLeft = value.Left;
+            BorderRight = value.Right;
+            BorderTop = value.Top;
+            BorderBottom = value.Bottom;
         }
     }
 
