@@ -28,7 +28,7 @@ public static class G
 
     public static void SetAlpha(float f) => Graphics.SetAlpha(f);
 
-    public static void DrawImage(IImage image, int x, int y)
+    public static void DrawImage(IImage? image, int x, int y)
     {
         if (image == null)
         {
