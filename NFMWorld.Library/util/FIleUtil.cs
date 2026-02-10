@@ -6,7 +6,7 @@ public class FileUtil
     {
         if (!VFS.Exists(folder))
         {
-            Console.WriteLine($"Folder not found: {folder}");
+            Logging.Info($"Folder not found: {folder}");
             return;
         }
         foreach (var file in VFS.GetFiles(folder))
@@ -23,7 +23,7 @@ public class FileUtil
     {
         if (!VFS.Exists(folder))
         {
-            Console.WriteLine($"Folder not found: {folder}");
+            Logging.Info($"Folder not found: {folder}");
             return;
         }
         foreach (var file in VFS.GetFiles(folder))

@@ -20,7 +20,7 @@ public static class BracketParser
     public static Span<T> GetNumbers<T>(ReadOnlySpan<char> line, Span<T> n)
         where T : ISpanParsable<T>
     {
-        // Console.WriteLine(line);
+        // Logging.Info(line);
         var lineSlice = GetLineSlice(line);
 
         var i = 0;
@@ -28,7 +28,7 @@ public static class BracketParser
         {
             if (i >= n.Length)
                 break;
-            // Console.WriteLine($"{i},{lineSlice[range]}");
+            // Logging.Info($"{i},{lineSlice[range]}");
             n[i] = T.Parse(lineSlice[range], CultureInfo.InvariantCulture);
             i++;
         }

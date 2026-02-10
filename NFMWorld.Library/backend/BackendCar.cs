@@ -64,12 +64,16 @@ public class BackendCar : BackendGameObject, IInGameCar
 
     public void Drive(IStage stage)
     {
+        var transaction = SentrySdk.StartTransaction("BackendCar.Drive", "drive-car");
         Mad.Drive(Control, this, stage);
+        transaction.Finish();
     }
     
     public void Collide(IInGameCar otherCar)
     {
+        var transaction = SentrySdk.StartTransaction("BackendCar.Collide", "car-collide");
         Mad.Colide(this, otherCar.Mad, new ContO(otherCar));
+        transaction.Finish();
     }
 
     public void ResetPosition()

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using CommunityToolkit.HighPerformance.Buffers;
@@ -47,6 +48,35 @@ public static class BackendGameSparker
         if (_loaded)
             return;
         _loaded = true;
+        
+        SentrySdk.Init(options =>
+        {
+            // A Sentry Data Source Name (DSN) is required.
+            // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
+            // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
+            options.Dsn = Logging.SentryDsn;
+
+            // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
+            // This might be helpful, or might interfere with the normal operation of your application.
+            // We enable it here for demonstration purposes when first trying Sentry.
+            // You shouldn't do this in your applications unless you're troubleshooting issues with Sentry.
+            options.Debug = false;
+
+            // This option is recommended. It enables Sentry's "Release Health" feature.
+            options.AutoSessionTracking = true;
+
+            // Set TracesSampleRate to 1.0 to capture 100%
+            // of transactions for tracing.
+            // We recommend adjusting this value in production.
+            options.TracesSampleRate = 0.05;
+            
+            // Enable logs to be sent to Sentry
+            options.EnableLogs = true;
+            
+            // Try get NFMWorld assembly version first
+            options.Release = Logging.Release;
+        });
+        SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
         
         var realFs = new RelativeFileSystem(Directory.GetCurrentDirectory());
         VFS.MountNewFileTarget(realFs);
@@ -129,7 +159,7 @@ public static class BackendGameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
             }
         });
 
@@ -144,7 +174,11 @@ public static class BackendGameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                SentrySdk.CaptureEvent(new SentryEvent(ex)
+                {
+                    Message = $"Error loading user stage part '{fileName}'"
+                });
+                Logging.Info($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
             }
         });
 
@@ -155,12 +189,14 @@ public static class BackendGameSparker
         
         for (var i = 0; i < StageRads.Length; i++) {
             if (stage_parts[i] == null) {
+                SentrySdk.CaptureMessage("No valid ContO (Stage Part) has been assigned to ID " + i + " (" + StageRads[i] + ")", SentryLevel.Error);
                 throw new Exception("No valid ContO (Stage Part) has been assigned to ID " + i + " (" + StageRads[i] + ")");
             }
         }
         for (var i = 0; i < CarRads.Length; i++) {
             if (cars[Collection.NFMM][i] == null)
             {
+                SentrySdk.CaptureMessage("No valid ContO (Vehicle) has been assigned to ID " + i + " (" + StageRads[i] + ")", SentryLevel.Error);
                 throw new Exception("No valid ContO (Vehicle) has been assigned to ID " + i + " (" + StageRads[i] + ")");
             }
         }
@@ -199,11 +235,16 @@ public static class BackendGameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
+                SentrySdk.CaptureEvent(new SentryEvent(ex)
+                {
+                    Message = $"Error loading dynamic model '{name}'"
+                });
+                Logging.Info($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
-        Console.WriteLine("No results for GetCar");
+        SentrySdk.CaptureMessage("No results for GetCar: " + name, SentryLevel.Warning);
+        Logging.Info("No results for GetCar: " + name);
         return (-1, null!);
     }
 
@@ -242,11 +283,16 @@ public static class BackendGameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
+                SentrySdk.CaptureEvent(new SentryEvent(ex)
+                {
+                    Message = $"Error loading dynamic model '{name}'"
+                });
+                Logging.Info($"Error loading dynamic model '{name}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
-        Console.WriteLine("No results for GetStagePart");
+        SentrySdk.CaptureMessage("No results for GetStagePart: " + name, SentryLevel.Warning);
+        Logging.Info("No results for GetStagePart: " + name);
         return (-1, null!);
     }
     
@@ -272,6 +318,7 @@ public static class BackendGameSparker
             var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
             if (timeTrial == null)
             {
+                SentrySdk.CaptureMessage("Failed to load time trial data", SentryLevel.Error);
                 throw new InvalidOperationException("Failed to load time trial data");
             }
 
@@ -286,6 +333,7 @@ public static class BackendGameSparker
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             return new GetTTInfoResult
             {
                 CheckpointCount = -1,
@@ -401,6 +449,7 @@ public static class BackendGameSparker
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             return new LoadResult
             {
                 HasError = true,
@@ -452,6 +501,7 @@ public static class BackendGameSparker
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             return new SimulateTimeTrialResult
             {
                 ElapsedTicks = -1,

@@ -598,7 +598,8 @@ public class StageLoader
             mesh = BackendGameSparker.stage_parts[setindex];
             if (mesh == null!)
             {
-                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
+                SentrySdk.CaptureMessage($"Stage part '{setstring}' not found.");
+                Logging.Error($"Stage part '{setstring}' not found.");
                 mesh = BackendGameSparker.error_mesh;
             }
             return true;
@@ -608,7 +609,8 @@ public class StageLoader
             var stagePart = BackendGameSparker.GetStagePart(setstring);
             if (stagePart.Rad == null)
             {
-                Console.WriteLine($"Stage part '{setstring}' not found.", "error");
+                SentrySdk.CaptureMessage($"Stage part '{setstring}' not found.");
+                Logging.Error($"Stage part '{setstring}' not found.");
                 mesh = BackendGameSparker.error_mesh;
                 return true;
             }

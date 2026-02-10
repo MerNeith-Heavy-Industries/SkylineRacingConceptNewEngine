@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.RustBindGen", "NFM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maxine.Extensions.MessagePack", "Maxine.Extensions\Maxine.Extensions.MessagePack\Maxine.Extensions.MessagePack.csproj", "{16F06DAB-D69F-4324-9023-91BA351A0B67}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RayTech.RayLog.MEL", "Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj", "{15408FC4-5140-4CB2-B8AA-CE242459012E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -132,5 +134,9 @@ Global
 		{16F06DAB-D69F-4324-9023-91BA351A0B67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16F06DAB-D69F-4324-9023-91BA351A0B67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16F06DAB-D69F-4324-9023-91BA351A0B67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15408FC4-5140-4CB2-B8AA-CE242459012E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15408FC4-5140-4CB2-B8AA-CE242459012E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15408FC4-5140-4CB2-B8AA-CE242459012E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15408FC4-5140-4CB2-B8AA-CE242459012E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

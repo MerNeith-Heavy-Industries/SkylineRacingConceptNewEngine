@@ -1,4 +1,5 @@
 using ImGuiNET;
+using nfm_world_library;
 using nfm_world.ui;
 
 namespace nfm_world
@@ -7,7 +8,6 @@ namespace nfm_world
     {
         private bool _isOpen = false;
         private string _currentInput = string.Empty;
-        private readonly List<(string message, string level)> _outputLog = new();
         private readonly Dictionary<string, Action<DevConsole, string[]>> _commands = new();
         
         // UI Windows
@@ -25,7 +25,7 @@ namespace nfm_world
         public DevConsole()
         {
             DevConsoleCommands.RegisterAll(this);
-            Log(GameSparker.version, "info");
+            Logging.Info(GameSparker.version);
         }
 
         public void Toggle()
@@ -57,7 +57,7 @@ namespace nfm_world
             }
             else
             {
-                Log($"Unknown command: {command}");
+                Logging.Info($"Unknown command: {command}");
             }
         }
 
@@ -78,41 +78,8 @@ namespace nfm_world
 
         public void ClearLog()
         {
-            _outputLog.Clear();
-            Log(GameSparker.version, "info");
-        }
-
-        public void Log(string message, string logLevel = "default")
-        {
-            // Don't log empty strings
-            if (string.IsNullOrWhiteSpace(message)) return;
-            
-            string formattedMessage = message;
-            string normalizedLevel = logLevel.ToLowerInvariant();
-
-            // Format the message based on the log level
-            switch (normalizedLevel)
-            {
-                case "warning":
-                    formattedMessage = $"[WARN] {message}";
-                    break;
-                case "error":
-                    formattedMessage = message; // No prefix for error
-                    break;
-                case "info":
-                    formattedMessage = message; // No prefix for info
-                    break;
-                case "debug":
-                    formattedMessage = message; // No prefix for debug
-                    break;
-                default:
-                    formattedMessage = message; // Default to plain message
-                    normalizedLevel = "default";
-                    break;
-            }
-
-            _outputLog.Add((formattedMessage, normalizedLevel));
-            if (_outputLog.Count > 100) _outputLog.RemoveAt(0); // Limit log size
+            NfmwLoggerProvider.ClearMessages();
+            Logging.Info(GameSparker.version);
         }
 
         public void Render()
@@ -143,7 +110,7 @@ namespace nfm_world
                 // output log
                 if (ImGui.BeginChild("ScrollingRegion", new System.Numerics.Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.None, ImGuiWindowFlags.None))
                 {
-                    foreach (var (message, level) in _outputLog.ToArray())
+                    foreach (var (message, level) in NfmwLoggerProvider.GetLogs())
                     {
                         // Set color based on log level
                         switch (level)
@@ -203,7 +170,7 @@ namespace nfm_world
                 {
                     _currentInput = _pendingInput;
                     _pendingInput = null;
-                    Console.WriteLine($"Applied pending input: {_currentInput}");
+                    Logging.Debug($"Applied pending input: {_currentInput}");
                 }
                 
                 // Store previous input to detect changes
@@ -289,7 +256,7 @@ namespace nfm_world
                 {
                     if (!string.IsNullOrWhiteSpace(_currentInput))
                     {
-                        Log($"> {_currentInput}"); // Show command in log
+                        Logging.Info($"> {_currentInput}"); // Show command in log
                         
                         // Add to history BEFORE executing
                         if (_commandHistory.Count == 0 || _commandHistory[^1] != _currentInput)

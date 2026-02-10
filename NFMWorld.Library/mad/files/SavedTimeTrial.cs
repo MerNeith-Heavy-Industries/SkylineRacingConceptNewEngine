@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using MessagePack;
+using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world_library.mad.rad;
 using nfm_world_library.util;
@@ -8,7 +9,7 @@ using nfm_world.multiplayer.packets;
 
 namespace nfm_world.files;
 
-[MessagePackObject]
+[MessagePackObject(AllowPrivate = true)]
 public partial class SavedTimeTrial
 {
     public const int CURRENT_VERSION = 2;
@@ -67,7 +68,7 @@ public partial class SavedTimeTrial
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load SavedTimeTrial for {carName} on {stageName}: {ex}");
+            Logging.Info($"Failed to load SavedTimeTrial for {carName} on {stageName}: {ex}");
         }
 
         return null;
@@ -121,7 +122,7 @@ public partial class SavedTimeTrial
         int startIndex = lap * checkpointsInLap;
         int endIndex = startIndex + checkpointsInLap;
 
-        Console.WriteLine(lap);
+        Logging.Debug(lap);
         if (startIndex >= Splits.SplitTimes.Count) return 0;
 
         long startTime = startIndex == 0 ? 0 : Splits.SplitTimes[startIndex - 1];

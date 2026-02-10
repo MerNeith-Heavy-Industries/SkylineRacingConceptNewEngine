@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
@@ -24,9 +25,9 @@ public class GameSparker
 
     private static string GetVersionString()
     {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        var attributes = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false);
-        if (attributes.Length > 0 && attributes[0] is System.Reflection.AssemblyInformationalVersionAttribute infoVersion)
+        var assembly = Assembly.GetExecutingAssembly();
+        var attributes = assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+        if (attributes.Length > 0 && attributes[0] is AssemblyInformationalVersionAttribute infoVersion)
         {
             var version = infoVersion.InformationalVersion;
             // clip the commit hash
@@ -82,15 +83,6 @@ public class GameSparker
     public static DevConsole devConsole = new();
 
     public static SettingsMenu SettingsMenu;
-
-    public static DevConsoleWriter Writer;
-
-    static GameSparker()
-    {
-        var originalOut = Console.Out;
-        Writer = new DevConsoleWriter(devConsole, originalOut);
-        Console.SetOut(Writer);
-    }
 
     /////////////////////////////////
 
@@ -180,7 +172,8 @@ public class GameSparker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating mesh for stage part '{stagePart.FileName}': {ex.Message}\n{ex.StackTrace}");
+                SentrySdk.CaptureException(ex);
+                Logging.Debug($"Error creating mesh for stage part '{stagePart.FileName}': {ex.Message}\n{ex.StackTrace}");
             }
         }
         
@@ -242,7 +235,7 @@ public class GameSparker
         // temp
         SetPhase(InRace);
 
-        Console.WriteLine("Game started!");
+        Logging.Info("Game started!");
     }
 
     public static void GameTick()

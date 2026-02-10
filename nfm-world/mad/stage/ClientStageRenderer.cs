@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework.Graphics;
+using nfm_world_library;
 using nfm_world_library.backend;
 using nfm_world_library.mad;
 using nfm_world_library.util;
@@ -137,7 +138,7 @@ public class ClientStageRenderer : GameObject
 
             if (musicPath.IsNullOrEmpty())
             {
-                GameSparker.Writer.WriteLine("No music is defined for this stage!", "error");
+                Logging.Error("No music is defined for this stage!");
             }
 
             // Medium.Newpolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount);
@@ -200,8 +201,9 @@ public class ClientStageRenderer : GameObject
         }
         catch (Exception exception)
         {
-            GameSparker.Writer.WriteLine($"Error in stage: {backendStage.Name}", "error");
-            GameSparker.Writer.WriteLine(exception.ToString(), "error");
+            SentrySdk.CaptureException(exception);
+            Logging.Error($"Error in stage: {backendStage.Name}");
+            Logging.Error(exception.ToString());
         }
         sky = new Sky(graphicsDevice);
         ground = new Ground(graphicsDevice);

@@ -30,19 +30,19 @@ public class SteamMultiplayerClientTransport : BaseMultiplayerClientTransport, I
 
     public void OnConnected(ConnectionInfo info)
     {
-        Console.WriteLine("Connected to server");
+        Logging.Info("Connected to server");
         State = ClientState.Connected;
     }
 
     public void OnConnecting(ConnectionInfo info)
     {
-        Console.WriteLine("Connecting to server");
+        Logging.Info("Connecting to server");
         State = ClientState.Connecting;
     }
 
     public void OnDisconnected(ConnectionInfo info)
     {
-        Console.WriteLine("Disconnected from server");
+        Logging.Info("Disconnected from server");
         State = ClientState.Disconnected;
     }
 

@@ -1,5 +1,6 @@
 using System.Text;
 using ImGuiNET;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
 using nfm_world_library.mad;
@@ -386,12 +387,10 @@ public class ModelEditorPhase : BasePhase
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             var err = $"Error loading file: {ex.Message}";
             GameSparker.MessageWindow.ShowMessage("Error", err);
-            if (GameSparker.Writer != null)
-            {
-                GameSparker.Writer.WriteLine(err, "error");
-            }
+            Logging.Error(err);
         }
     }
     
@@ -425,12 +424,10 @@ public class ModelEditorPhase : BasePhase
         }
         catch (Exception parseEx)
         {
+            SentrySdk.CaptureException(parseEx);
             var err = $"Error parsing model: {parseEx.Message}\n\nFile loaded in text editor for correction.";
             GameSparker.MessageWindow.ShowMessage("Parse Error", err);
-            if (GameSparker.Writer != null)
-            {
-                GameSparker.Writer.WriteLine($"Parse error in {Path.GetFileName(filePath)}: {parseEx.Message}", "error");
-            }
+            Logging.Error($"Parse error in {Path.GetFileName(filePath)}: {parseEx.Message}");
             tab.Object = null;
         }
     }
@@ -1117,9 +1114,9 @@ public class ModelEditorPhase : BasePhase
         }
         
         // Debug output
-        if (GameSparker.Writer != null && selectionStart >= 0)
+        if (selectionStart >= 0)
         {
-            GameSparker.Writer.WriteLine($"Polygon {tab.SelectedPolygonIndex + 1}: selection range {selectionStart}-{selectionEnd}", "info");
+            Logging.Debug($"Polygon {tab.SelectedPolygonIndex + 1}: selection range {selectionStart}-{selectionEnd}");
         }
     }
     
@@ -1195,9 +1192,9 @@ public class ModelEditorPhase : BasePhase
         }
         
         // Debug output
-        if (GameSparker.Writer != null && selectionStart >= 0)
+        if (selectionStart >= 0)
         {
-            GameSparker.Writer.WriteLine($"Collision {tab.SelectedCollisionIndex + 1}: selection range {selectionStart}-{selectionEnd}", "info");
+            Logging.Debug($"Collision {tab.SelectedCollisionIndex + 1}: selection range {selectionStart}-{selectionEnd}");
         }
     }
     
@@ -1464,10 +1461,10 @@ public class ModelEditorPhase : BasePhase
                     }
                     catch (Exception ex)
                     {
+                        SentrySdk.CaptureException(ex);
                         var err = $"Error saving/reloading model:\n{ex.Message}";
                         GameSparker.MessageWindow.ShowMessage("Error", err);
-                        if (GameSparker.Writer != null)
-                            GameSparker.Writer.WriteLine(err, "error");
+                        Logging.Error(err);
                     }
                 }
                 
@@ -1488,12 +1485,10 @@ public class ModelEditorPhase : BasePhase
                     }
                     catch (Exception ex)
                     {
+                        SentrySdk.CaptureException(ex);
                         var err = $"Error saving/reloading model:\n{ex.Message}";
                         GameSparker.MessageWindow.ShowMessage("Error", err);
-                        if (GameSparker.Writer != null)
-                        {
-                            GameSparker.Writer.WriteLine(err, "error");
-                        }
+                        Logging.Error(err);
                     }
                 }
                 
@@ -1515,12 +1510,10 @@ public class ModelEditorPhase : BasePhase
                     }
                     catch (Exception ex)
                     {
+                        SentrySdk.CaptureException(ex);
                         var err = $"Error opening external editor: {ex.Message}";
                         GameSparker.MessageWindow.ShowMessage("Error", err);
-                        if (GameSparker.Writer != null)
-                        {
-                            GameSparker.Writer.WriteLine(err, "error");
-                        }
+                        Logging.Error(err);
                     }
                 }
                 
@@ -2251,9 +2244,9 @@ public class ModelEditorPhase : BasePhase
             tab.TextEditorSelectionStart >= tab.TextEditorSelectionEnd)
         {
             var err = $"Selection range is out of sync with text content. Start: {tab.TextEditorSelectionStart}, End: {tab.TextEditorSelectionEnd}, Length: {tab.TextContent.Length}";
+            SentrySdk.CaptureMessage(err, SentryLevel.Error);
             GameSparker.MessageWindow.ShowMessage("Parse Error", err);
-            if (GameSparker.Writer != null)
-                GameSparker.Writer.WriteLine(err, "error");
+            Logging.Error(err);
             
             // Invalidate selection so user is forced to reselect
             tab.TextEditorSelectionStart = -1;
@@ -2314,11 +2307,8 @@ public class ModelEditorPhase : BasePhase
                     tab.SelectedPolygonIndex = -1;
                 }
                 
-                if (GameSparker.Writer != null)
-                {
-                    var itemType = editingCollision ? "Collision" : "Polygon";
-                    GameSparker.Writer.WriteLine($"{itemType} {editedIndex + 1} removed successfully", "info");
-                }
+                var itemType = editingCollision ? "Collision" : "Polygon";
+                Logging.Debug($"{itemType} {editedIndex + 1} removed successfully");
             }
             else
             {
@@ -2340,19 +2330,16 @@ public class ModelEditorPhase : BasePhase
                 // Keep the editor window open with updated content
                 tab.ShowPolygonEditor = true;
                 
-                if (GameSparker.Writer != null)
-                {
-                    var itemType = editingCollision ? "Collision" : "Polygon";
-                    GameSparker.Writer.WriteLine($"{itemType} {editedIndex + 1} updated successfully", "info");
-                }
+                var itemType = editingCollision ? "Collision" : "Polygon";
+                Logging.Debug($"{itemType} {editedIndex + 1} updated successfully");
             }
         }
         catch (Exception ex)
         {
+            SentrySdk.CaptureException(ex);
             var err = $"Error parsing updated code:\n{ex.Message}";
             GameSparker.MessageWindow.ShowMessage("Parse Error", err);
-            if (GameSparker.Writer != null)
-                GameSparker.Writer.WriteLine(err, "error");
+            Logging.Error(err);
         }
     }
 

@@ -155,13 +155,15 @@ public record struct CarStats
 
     private string ValidateFailName(string property, string fileName)
     {
-        Console.WriteLine($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
+        SentrySdk.CaptureMessage($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
+        Logging.Error($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
         return property;
     }
 
     private string ValidateFail(string property)
     {
-        Console.WriteLine($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.", "error");
+        SentrySdk.CaptureMessage($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
+        Logging.Error($"Car stat {property} for car '{Name}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
         return property;
     }
 

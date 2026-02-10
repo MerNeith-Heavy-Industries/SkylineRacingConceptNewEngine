@@ -3,6 +3,7 @@ using ManagedBass;
 ﻿using System.Diagnostics;
 using ImGuiNET;
 using ManagedBass;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -537,6 +538,20 @@ public class Program : Game
 
     public static void Main()
     {
+        var fnaLogger = Logging.LoggerFactory.CreateLogger("FNA");
+        FNALoggerEXT.LogError += (message) =>
+        {
+            fnaLogger.LogError(message);
+        };
+        FNALoggerEXT.LogInfo += (message) =>
+        {
+            fnaLogger.LogInformation(message);
+        };
+        FNALoggerEXT.LogWarn += (message) =>
+        {
+            fnaLogger.LogWarning(message);
+        };
+        
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
         {

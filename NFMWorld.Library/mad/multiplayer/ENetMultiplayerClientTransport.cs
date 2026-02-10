@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using ENet;
+using nfm_world_library;
 
 namespace nfm_world.multiplayer;
 
@@ -46,22 +47,22 @@ public class ENetMultiplayerClientTransport : BaseMultiplayerClientTransport
                         break;
 
                     case EventType.Connect:
-                        Console.WriteLine("Client connected to server");
+                        Logging.Info("Client connected to server");
                         State = ClientState.Connected;
                         break;
 
                     case EventType.Disconnect:
-                        Console.WriteLine("Client disconnected from server");
+                        Logging.Info("Client disconnected from server");
                         State = ClientState.Disconnected;
                         break;
 
                     case EventType.Timeout:
-                        Console.WriteLine("Client connection timeout");
+                        Logging.Info("Client connection timeout");
                         State = ClientState.Disconnected;
                         break;
 
                     case EventType.Receive:
-                        Console.WriteLine(
+                        Logging.Info(
                             $"Packet received from server - Channel ID: {netEvent.ChannelID}, Data length: {netEvent.Packet.Length}");
                         try
                         {
