@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Avalonia.Markup.Xaml;
 using Maxine.Extensions;
+using nfm_world_library;
 using NFMWorld.XamlX.Core;
 using XamlX;
 using XamlX.Emit;
@@ -38,7 +39,7 @@ public class XamlHotReload
     public static void Register(Node node, string xamlPath)
     {
 #if DEBUG
-        Console.WriteLine($"[XamlHotReload] Registered for hot reload: {xamlPath}");
+        Logging.Debug($"[XamlHotReload] Registered for hot reload: {xamlPath}");
         var fullPath = Path.GetFullPath(Path.Combine(_watcher!.Path, xamlPath));
         _trackedNodes.AddOrUpdate(node, fullPath);
 #endif
@@ -67,14 +68,14 @@ public class XamlHotReload
         var nodesToUpdate = _trackedNodes.Where(e => e.Value == fullPath).ToArray();
         if (nodesToUpdate.Length > 0)
         {
-            Console.WriteLine($"[XamlHotReload] Reloading XAML: {fullPath}");
+            Logging.Debug($"[XamlHotReload] Reloading XAML: {fullPath}");
 
             // Reload the XAML and re-initialize the view
             try
             {
                 var firstNode = nodesToUpdate[0].Key;
                 var (create, populate) = CompileXaml(firstNode, path, await File.ReadAllTextAsync(path));
-                Console.WriteLine($"[XamlHotReload] Successfully compiled XAML: {fullPath}");
+                Logging.Debug($"[XamlHotReload] Successfully compiled XAML: {fullPath}");
                 
                 foreach (var (node, _) in nodesToUpdate)
                 {
@@ -85,11 +86,11 @@ public class XamlHotReload
                     // Populate the view
                     populate(AvaloniaXamlLoader.CreateDefaultServiceProvider(node), node);
                 }
-                Console.WriteLine($"[XamlHotReload] Successfully reloaded XAML: {fullPath}");
+                Logging.Debug($"[XamlHotReload] Successfully reloaded XAML: {fullPath}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[XamlHotReload] Failed to reload XAML: {fullPath}. Error: {ex}");
+                Logging.Warning($"[XamlHotReload] Failed to reload XAML: {fullPath}. Error: {ex}");
             }
         }
     }
@@ -112,11 +113,11 @@ public class XamlHotReload
             HandleDiagnostic = diagnostic =>
             {
                 if (diagnostic.Severity == XamlDiagnosticSeverity.Error)
-                    Console.WriteLine($"XAML: {diagnostic.Code} - {diagnostic.Title}");
+                    Logging.Debug($"XAML: {diagnostic.Code} - {diagnostic.Title}");
                 else if (diagnostic.Severity == XamlDiagnosticSeverity.Warning)
-                    Console.WriteLine($"XAML: {diagnostic.Code} - {diagnostic.Title}");
+                    Logging.Debug($"XAML: {diagnostic.Code} - {diagnostic.Title}");
                 else
-                    Console.WriteLine($"XAML: {diagnostic.Code} - {diagnostic.Title}");
+                    Logging.Debug($"XAML: {diagnostic.Code} - {diagnostic.Title}");
                 return diagnostic.Severity;
             }
         };
@@ -148,7 +149,7 @@ public class XamlHotReload
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error compiling hot-reload Xaml for {intoNode.GetType().FullName}: {ex.Message}");
+            Logging.Debug($"Error compiling hot-reload Xaml for {intoNode.GetType().FullName}: {ex.Message}");
             throw;
         }
     }
