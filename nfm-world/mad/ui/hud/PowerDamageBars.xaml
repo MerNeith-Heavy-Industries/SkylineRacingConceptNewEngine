@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Box xmlns="clr-namespace:nfm_world.ui.yoga"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      x:Class="nfm_world.ui.hud.PowerDamageBars"
+      Top="0"
+      Padding="10"
+      FlexDirection="Column"
+      Gap="10"
+      AlignItems="FlexEnd">
+
+    <MeasureBar
+        Name="DamageBar"
+        FillAmount="0"
+        ImageData="{StaticImage data/images/damage.gif}"
+        Scale="1.2"
+        />
+
+    <MeasureBar
+        Name="PowerBar"
+        FillAmount="0.98"
+        ImageData="{StaticImage data/images/power.gif}"
+        Scale="1.2"
+        />
+</Box>

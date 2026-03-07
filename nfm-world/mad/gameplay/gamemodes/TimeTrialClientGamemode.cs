@@ -30,165 +30,18 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
 
     private PowerDamageBars _pdBars = new PowerDamageBars();
 
-    private static TextRun _lapText = null!;
+    private TTLapTimerSplitsView _lapTimerSplits = new TTLapTimerSplitsView();
 
-    private static TextRun _timerText = null!;
-
-    private static TextRun _checkpointSplitsText = null!;
-    private static TextRun _lapSplitsText = null!;
-    private static TextRun _lastLapTimeText = null!;
-
-    private Node _lapTimerSplits = new Node()
-    {
-        Name = "LapTimerSplits",
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-        AlignItems = Yoga.YGAlign.YGAlignFlexStart,
-        JustifyContent = Yoga.YGJustify.YGJustifyCenter,
-        Gap = 10,
-        Padding = 10,
-
-        Children =
-        {
-            new Node()
-            {
-                Name = "LapDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Name = "LapIcon",
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Color = new Color(255, 255, 255),
-                        StrokeColor = new Color(0, 0, 0),
-                        Text = "Lap: ",
-                        Flex = 1
-                    },
-                    new TextRun()
-                    {
-                        Ref = textBlock => _lapText = textBlock,
-                        StrokeColor = new Color(0, 0, 0),
-                        Name = "LapText",
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-            new Node()
-            {
-                Name = "TimeDisplay",
-                FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionRow,
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Name = "TimeIcon",
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Color = new Color(255, 255, 255),
-                        StrokeColor = new Color(0, 0, 0),
-                        Text = "Time: ",
-                        Flex = 1
-                    },
-                    new TextRun()
-                    {
-                        Ref = textBlock => _timerText = textBlock,
-                        StrokeColor = new Color(0, 0, 0),
-                        Name = "TimeText",
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-            new Node()
-            {
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _lastLapTimeText = textBlock,
-                        Name = "LapTimeText",
-                        StrokeColor = new Color(0, 0, 0),
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-            new Node()
-            {
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _checkpointSplitsText = textBlock,
-                        Name = "CheckpointSplitsText",
-                        StrokeColor = new Color(0, 0, 0),
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            },
-            new Node()
-            {
-                Children =
-                {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _lapSplitsText = textBlock,
-                        Name = "LapSplitsText",
-                        StrokeColor = new Color(0, 0, 0),
-                        Color = new Color(255, 255, 255),
-                        Font = new Font(FontFamily.DroidSans, 1, 24),
-                        Flex = 1,
-                    }
-                }
-            }
-        }
-    };
-
-    private static TextRun _centerText = null!;
-    private Node _centralTextNode = new Node()
-    {
-        Name = "CentralText",
-        AlignItems = Yoga.YGAlign.YGAlignCenter,
-        FlexDirection = Yoga.YGFlexDirection.YGFlexDirectionColumn,
-
-        Children =
-        {
-            new Node()
-            {
-                AlignItems = Yoga.YGAlign.YGAlignCenter,
-                Flex = 1,
-                Children = {
-                    new TextRun()
-                    {
-                        Ref = textBlock => _centerText = textBlock,
-                        Text = "",
-                        Color = new Color(0, 0, 0, 0),
-                        Font = new Font(FontFamily.Adventure, 1, 24),
-                        Display = Yoga.YGDisplay.YGDisplayNone
-                    },
-                }
-            },
-
-            new Node()
-            {
-                Flex = 1
-            }
-        }
-    };
+    private CentralTextView _centralTextNode = new CentralTextView();
 
     public void SetLapText(int currentLap)
     {
-        _lapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
+        _lapTimerSplits.LapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
     }
 
     public void SetTimeText()
     {
-        _timerText.Text = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
+        _lapTimerSplits.TimeText.Text = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
     }
 
     public override void Enter()
@@ -240,14 +93,14 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         IBackend.Backend.StopAllSounds();
 
         SetLapText(0);
-        _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.None;
 
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
-        _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _lapTimerSplits.LapSplitsText.Display = YgDisplay.None;
         _lastLapTime = 0;
-        _lastLapTimeText.Text = "";
-        _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayNone;
+        _lapTimerSplits.LapTimeText.Text = "";
+        _lapTimerSplits.LapTimeText.Display = YgDisplay.None;
     }
 
     public override void GameTick()
@@ -343,7 +196,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;
-                _centerText.Display = Yoga.YGDisplay.YGDisplayNone;
+                _centralTextNode.CenterText.Display = YgDisplay.None;
                 _raceTimer.Start();
             }
         }
@@ -367,51 +220,51 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
     {
         if ((carsInRace[playerCarIndex].currentCheckpoint != 0 || carsInRace[playerCarIndex].currentLap != 0) && _bestTimeTrial != null)
         {
-            _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.Flex;
             long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
-            _checkpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+            _lapTimerSplits.CheckpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
             long lastSplitChange = diff - _lastCheckpointSplitDiff;
             string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string thisDiffFmt = FormatTimeMs(diff, true);
-            _checkpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
+            _lapTimerSplits.CheckpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
         }
         else
         {
-            _checkpointSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.None;
         }
 
         if (carsInRace[playerCarIndex].currentLap > 0 && _bestTimeTrial != null)
         {
-            _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayFlex;
+            _lapTimerSplits.LapSplitsText.Display = YgDisplay.Flex;
             long lapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
             long bestLapTime = _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[playerCarIndex].currentLap - 1);
             long lapDiff = lapTime - bestLapTime;
-            _lapSplitsText.Color = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+            _lapTimerSplits.LapSplitsText.Color = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
             long lastSplitChange = lapDiff - _lastLapSplitDiff;
             string lastLapSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string lapDiffFmt = FormatTimeMs(lapDiff, true);
 
-            _lapSplitsText.Text = $"Lap Diff: {lapDiffFmt} ({lastLapSplitFmt})";
+            _lapTimerSplits.LapSplitsText.Text = $"Lap Diff: {lapDiffFmt} ({lastLapSplitFmt})";
         }
         else
         {
-            _lapSplitsText.Display = Yoga.YGDisplay.YGDisplayNone;
+            _lapTimerSplits.LapSplitsText.Display = YgDisplay.None;
         }
 
         if(_lastLapTime > 0)
         {
-            _lastLapTimeText.Display = Yoga.YGDisplay.YGDisplayFlex;
-            _lastLapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
+            _lapTimerSplits.LapTimeText.Display = YgDisplay.Flex;
+            _lapTimerSplits.LapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
         }
     }
 
     public void Render()
     {
-        _pdBars.Render();
+        _pdBars.LayoutAndRender(G.Viewport);
         _lapTimerSplits.LayoutAndRender(G.Viewport);
         _centralTextNode.LayoutAndRender(G.Viewport);
 
@@ -423,27 +276,27 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         {
             RenderInfo();
 
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
-            _centerText.Font = new Font(FontFamily.Adventure, 1, 24);
-            _centerText.Color = new Color(255, 255, 255);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Text = $"Starting in {_countdownTime}";
+            _centralTextNode.CenterText.Display = YgDisplay.Flex;
+            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            _centralTextNode.CenterText.Color = new Color(255, 255, 255);
+            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
+            _centralTextNode.CenterText.Text = $"Starting in {_countdownTime}";
         }
         else if (_currentState == TimeTrialState.Finished)
         {
             RenderInfo();
 
             string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            _centerText.Display = Yoga.YGDisplay.YGDisplayFlex;
-            _centerText.Color = new Color(128, 255, 128);
-            _centerText.StrokeColor = new Color(0, 0, 0);
-            _centerText.Font = new Font(FontFamily.DroidSans, 1, 24);
-            _centerText.Text = $"Finished! Time: {finalTime}";
+            _centralTextNode.CenterText.Display = YgDisplay.Flex;
+            _centralTextNode.CenterText.Color = new Color(128, 255, 128);
+            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
+            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+            _centralTextNode.CenterText.Text = $"Finished! Time: {finalTime}";
 
             bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
 
             if (newBest)
-                _centerText.Text += "\nNew best time!";
+                _centralTextNode.CenterText.Text += "\nNew best time!";
 
             if (_bestTimeTrial != null || newBest)
             {
@@ -456,10 +309,10 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
                     t.Seconds,
                     t.Milliseconds);
 
-                _centerText.Text += $"\nBest time: {time}";
+                _centralTextNode.CenterText.Text += $"\nBest time: {time}";
             }
 
-            _centerText.Text += "\nPress R to restart";
+            _centralTextNode.CenterText.Text += "\nPress R to restart";
         }
     }
 

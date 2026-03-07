@@ -1,6 +1,7 @@
 ﻿using System.Collections.Frozen;
 using ManagedBass;
 ﻿using System.Diagnostics;
+using System.Reflection;
 using ImGuiNET;
 using ManagedBass;
 using Microsoft.Extensions.Logging;
@@ -12,7 +13,9 @@ using nfm_world_library;
 using nfm_world_library.util;
 using nfm_world.driverinterface;
 using nfm_world.skiadriver;
+using nfm_world.ui.hud;
 using nfm_world.ui.yoga;
+using nfm_world.ui.yoga.xaml;
 using Font = nfm_world.util.Font;
 using Keys = nfm_world.util.Keys;
 
@@ -48,7 +51,13 @@ public class Program : Game
     
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
-    private bool _yogaInspectorEnabled = false;
+    private static bool _yogaInspectorEnabled = false;
+    private static int _yogaInspectorPage = 0;
+
+#if DEBUG
+    internal static string? DebugUiClass;
+    internal static Node? DebugUiRoot;
+#endif
 
     private static Keys TranslateKey(Microsoft.Xna.Framework.Input.Keys key)
     {
@@ -285,6 +294,14 @@ public class Program : Game
 #if USE_BASS
         Bass.Init();
 #endif
+        
+#if DEBUG
+#pragma warning disable IL3050
+#pragma warning disable IL2026
+        XamlHotReload.Initialize();
+#pragma warning restore IL2026
+#pragma warning restore IL3050
+#endif
 
         oldKeyState = Keyboard.GetState();
         oldMouseState = Mouse.GetState();
@@ -516,8 +533,32 @@ public class Program : Game
         GameSparker.CurrentPhase.Render();
         
 #if DEBUG
+        if (DebugUiClass != null)
+        {
+            if (DebugUiRoot == null)
+            {
+#pragma warning disable IL2057 // Never run during AOT compilation
+#pragma warning disable IL2026 // Never run during AOT compilation
+                var type = Type.GetType(DebugUiClass) ?? Assembly.GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(e => e.Name == DebugUiClass);
+#pragma warning restore IL2026
+#pragma warning restore IL2057
+                if (type != null)
+                {
+#pragma warning disable IL2072 // Never run during AOT compilation
+                    DebugUiRoot = Activator.CreateInstance(type) as Node;
+#pragma warning restore IL2072
+                }
+            }
+
+            G.SetColor(Color.CornflowerBlue);
+            G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
+            DebugUiRoot?.LayoutAndRender(G.Viewport);
+        }
+
         if (_yogaInspectorEnabled)
-            YogaDebugger.Render();
+            YogaDebugger.Render(_yogaInspectorPage);
 #endif
 
         FPSCounter.Render();
@@ -536,7 +577,7 @@ public class Program : Game
         _lastFrameTime = (int)t.ElapsedMilliseconds;
     }
 
-    public static void Main()
+    public static void Main(string[] args)
     {
         var fnaLogger = Logging.LoggerFactory.CreateLogger("FNA");
         FNALoggerEXT.LogError += (message) =>
@@ -553,10 +594,18 @@ public class Program : Game
         };
         
         // TODO figure out why SDL ProcessExit doesn't work properly
-        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
             Process.GetCurrentProcess().Kill();
         };
+
+#if DEBUG
+        if (args.IndexOf("-debugui", StringComparer.OrdinalIgnoreCase) is var index and >= 0)
+        {
+            DebugUiClass = args.Length > index + 1 ? args[index + 1] : typeof(CentralTextView).FullName;
+            _yogaInspectorEnabled = true;
+        }
+#endif
         
         BackendGameSparker.Load();
 
@@ -598,6 +647,13 @@ public class Program : Game
             {
                 _yogaInspectorEnabled = !_yogaInspectorEnabled;
             }
+
+            if (key == Keys.F10)
+            {
+                _yogaInspectorPage++;
+                if (_yogaInspectorPage > YogaDebugger.MaxPages)
+                    _yogaInspectorPage = 0;
+            }
 #endif
         }
         else
@@ -619,6 +675,11 @@ public class DummyBackend : IBackend
     }
 
     public IImage LoadImage(string file)
+    {
+        throw new NotImplementedException();
+    }
+    
+    public IImage LoadCachedImage(string file)
     {
         throw new NotImplementedException();
     }
@@ -650,11 +711,11 @@ public class DummyBackend : IBackend
         {
         }
 
-        public void FillPolygon(Span<int> x, Span<int> y, int n)
+        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
         }
 
-        public void DrawPolygon(Span<int> x, Span<int> y, int n)
+        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
         }
 

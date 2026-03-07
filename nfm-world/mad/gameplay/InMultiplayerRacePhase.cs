@@ -148,7 +148,7 @@ public class InMultiplayerRacePhase(
         gamemodeInstance?.Render();
         if (raceState == RaceState.WaitingToStart)
         {
-            G.SetFont(new Font(FontFamily.DroidSans, 0, 26));
+            G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Plain, 26));
             G.SetColor(new Color(255, 255, 255));
             G.DrawStringAligned("Waiting for other players to load...", 0, 150, (int)G.Viewport.X, (int)G.Viewport.Y, TextHorizontalAlignment.Center);
             

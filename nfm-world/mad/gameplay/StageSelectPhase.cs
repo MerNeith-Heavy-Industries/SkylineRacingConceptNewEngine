@@ -6,7 +6,7 @@ using nfm_world_library.util;
 using nfm_world.camera;
 using nfm_world.driverinterface;
 using nfm_world.util;
-using Stride.Core.Extensions;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world.gameplay;
 
@@ -35,7 +35,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         foreach (var dir in directories)
         {
             var entries = Directory.GetFiles(dir);
-            if(entries.IsNullOrEmpty()) continue;
+            if (entries.Length == 0) continue;
 
             var stageName = Path.GetFileName(dir);
             _stageCollections.Add(stageName);
@@ -169,7 +169,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             }
         }
 
-        G.SetFont(new Font(FontFamily.DroidSans, 1, 48));
+        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 48));
         G.SetColor(new Color(0, 0, 0));
         G.DrawStringStrokeAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
@@ -194,7 +194,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
             ImGui.SetKeyboardFocusHere(-1);
         }
 
-        if (_searchQuery.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(_searchQuery))
         {
             _autocompleteMatches = _stagesInCollection.ToArray();
         }

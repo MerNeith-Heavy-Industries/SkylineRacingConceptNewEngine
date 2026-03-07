@@ -20,7 +20,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.2.26081.104" />
         <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
         <PackageReference Include="Sentry.Extensions.Logging" Version="6.1.0-alpha.2" />
-        <PackageReference Include="Stride.Core.Mathematics" Version="4.3.0.2507" />
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
@@ -30,6 +29,7 @@
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.VFS\Maxine.VFS.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
+      <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.Mathematics\Maxine.Extensions.Mathematics.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(OS)' == 'Windows_NT'">

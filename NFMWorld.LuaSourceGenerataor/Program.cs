@@ -6,7 +6,7 @@ using System.Text;
 using nfm_world_library.mad;
 using nfm_world_library.SoftFloat;
 using nfm_world_library.util;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 using File = System.IO.File;
 
 var fields = new List<Field>();
