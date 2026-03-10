@@ -18,9 +18,9 @@ public static class G
 
     public static void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos) => Graphics.SetLinearGradient(x, y, width, height, colors, colorPos);
 
-    public static void FillPolygon(Span<int> x, Span<int> y, int n) => Graphics.FillPolygon(x, y, n);
+    public static void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n) => Graphics.FillPolygon(x, y, n);
 
-    public static void DrawPolygon(Span<int> x, Span<int> y, int n) => Graphics.DrawPolygon(x, y, n);
+    public static void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n) => Graphics.DrawPolygon(x, y, n);
 
     public static void FillRect(int x1, int y1, int width, int height) => Graphics.FillRect(x1, y1, width, height);
 
@@ -28,7 +28,7 @@ public static class G
 
     public static void SetAlpha(float f) => Graphics.SetAlpha(f);
 
-    public static void DrawImage(IImage image, int x, int y)
+    public static void DrawImage(IImage? image, int x, int y)
     {
         if (image == null)
         {

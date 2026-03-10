@@ -1,10 +1,17 @@
+using System.ComponentModel;
+using nfm_world.ui.yoga.xaml;
+
 namespace nfm_world.util;
 
-public readonly record struct Font(FontFamily FontFamily, int Flags, float Size)
+[TypeConverter(typeof(FontTypeConverter))]
+public readonly record struct Font(FontFamily FontFamily, FontStyle Style, float Size);
+
+[Flags]
+public enum FontStyle : byte
 {
-    public const int PLAIN = 0;
-    public const int BOLD = 1;
-    public const int ITALIC = 2;
+    Plain = 0,
+    Bold = 1,
+    Italic = 2,
 }
 
 public enum FontFamily : byte

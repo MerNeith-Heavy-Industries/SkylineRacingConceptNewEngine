@@ -1,34 +1,40 @@
-﻿using System.Collections;
+﻿using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Avalonia;
+using Avalonia.Metadata;
 using Maxine.Extensions;
+using nfm_world.ui.yoga.xaml;
 using Yoga;
 
 namespace nfm_world.ui.yoga;
 
 // ReSharper disable InconsistentNaming
+
+/// <summary>
+/// Represents a single node in the Yoga layout system.
+/// </summary>
 [DebuggerDisplay("{DebugToString()}")]
-public class Node : IDisposable
+public class Node : IDisposable, INamed
 {
     internal static readonly YGConfigPtr Config;
 
     internal YGNodePtr NodeInternal = new(Config);
-    
-    internal string __INTERNAL_CtorCallerFilePath = "";
-    internal int __INTERNAL_CtorCallerLineNumber = 0;
-    internal string __INTERNAL_CtorCallerMemberName = "";
-    
-    internal static List<Node> __INTERNAL_YogaRootsThisFrame = new();
 
-    #if DEBUG
+    internal readonly string __INTERNAL_CtorCallerFilePath = "";
+    internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
+    internal readonly string __INTERNAL_CtorCallerMemberName = "";
+
+    internal static readonly List<Node> __INTERNAL_YogaRootsThisFrame = new();
+
+#if DEBUG
     [MethodImpl(MethodImplOptions.NoInlining)]
-    #endif
+#endif
     public Node()
     {
-        Children = new(this);
-        
 #if DEBUG
         var stackTrace = new StackTrace(1, true);
         // skip inherited constructors
@@ -40,28 +46,17 @@ public class Node : IDisposable
 #endif
     }
 
-    public NodeChildCollection Children { get; }
-    
     public string? Name { get; set; }
 
     public string DebugToString()
     {
-        using var sb = new ValueStringBuilder(stackalloc char[ValueStringBuilder.StackallocCharBufferSizeLimit]);
-        sb.Append($"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})");
-        foreach (var child in Children)
-        {
-            sb.AppendLine();
-            sb.Append('{');
-            sb.Append(child.DebugToString().Replace("\n", "\n  "));
-            sb.Append('}');
-        }
-        return sb.ToString();
+        return $"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
 
     #region Layout
 
     // https://www.w3schools.com/css/css_boxmodel.asp
-    private Vector2 _root;
+    private protected Vector2 _root;
     public Vector2 LayoutMarginPosition => _root + new Vector2(LayoutX, LayoutY);
     public Vector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
     public Vector2 LayoutBorderPosition => _root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
@@ -70,16 +65,16 @@ public class Node : IDisposable
     public Vector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
     public Vector2 LayoutContentPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
     public Vector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
-    
+
     public Vector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
     public Vector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
     public Vector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
-    
+
     public float LayoutWidth => NodeInternal.LayoutWidth;
     public float LayoutHeight => NodeInternal.LayoutHeight;
     public float LayoutX => NodeInternal.LayoutX;
     public float LayoutY => NodeInternal.LayoutY;
-    public YGDirection LayoutDirection => NodeInternal.LayoutDirection;
+    public YgDirection LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
     public bool HadOverflow => NodeInternal.HadOverflow;
     public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
     public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
@@ -111,11 +106,11 @@ public class Node : IDisposable
         set => NodeInternal.IsReferenceBaseline = value;
         get => NodeInternal.IsReferenceBaseline;
     }
-    
-    public YGNodeType NodeType
+
+    public YgNodeType NodeType
     {
-        get => NodeInternal.NodeType;
-        set => NodeInternal.NodeType = value;
+        get => NodeInternal.NodeType.ToNfmNodeType();
+        set => NodeInternal.NodeType = value.ToYogaNodeType();
     }
 
     public bool AlwaysFormsContainingBlock
@@ -125,75 +120,209 @@ public class Node : IDisposable
     }
 
     #endregion
-    
+
     #region Style
-    
+
+    /// <summary>
+    /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
+    /// </summary>
+    public Visibility Visibility { get; set; } = Visibility.Visible;
+
+    /// <summary>
+    /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
+    /// </summary>
+    public float Opacity { get; set; } = 1.0f;
+
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
-    public YGDirection Direction
+    /// <summary>
+    /// CSS: direction - Establishes the main-axis (ltr/rtl/inherit)
+    /// </summary>
+    public YgDirection Direction
     {
-        get => NodeInternal.Direction;
-        set => NodeInternal.Direction = value;
+        get => NodeInternal.Direction.ToNfmDirection();
+        set => NodeInternal.Direction = value.ToYogaDirection();
     }
-    public YGFlexDirection FlexDirection
+
+    /// <summary>
+    /// CSS: flex-direction - Establishes the main-axis (row/column/row-reverse/column-reverse)
+    /// </summary>
+    public YgFlexDirection FlexDirection
     {
-        get => NodeInternal.FlexDirection;
-        set => NodeInternal.FlexDirection = value;
+        get => NodeInternal.FlexDirection.ToNfmFlexDirection();
+        set => NodeInternal.FlexDirection = value.ToYogaFlexDirection();
     }
-    public YGJustify JustifyContent
+
+    /// <summary>
+    /// CSS: justify-content - Defines alignment along the main axis
+    /// </summary>
+    public YgJustify JustifyContent
     {
-        get => NodeInternal.JustifyContent;
-        set => NodeInternal.JustifyContent = value;
+        get => NodeInternal.JustifyContent.ToNfmJustify();
+        set => NodeInternal.JustifyContent = value.ToYogaJustify();
     }
-    public YGAlign AlignItems
+
+    /// <summary>
+    /// CSS: align-items - Defines default alignment for all children along the cross axis
+    /// </summary>
+    public YgAlign AlignItems
     {
-        get => NodeInternal.AlignItems;
-        set => NodeInternal.AlignItems = value;
+        get => NodeInternal.AlignItems.ToNfmAlign();
+        set => NodeInternal.AlignItems = value.ToYogaAlign();
     }
-    public YGAlign AlignSelf
+
+    /// <summary>
+    /// CSS: align-self - Allows a child to override the default cross-axis alignment
+    /// </summary>
+    public YgAlign AlignSelf
     {
-        get => NodeInternal.AlignSelf;
-        set => NodeInternal.AlignSelf = value;
+        get => NodeInternal.AlignSelf.ToNfmAlign();
+        set => NodeInternal.AlignSelf = value.ToYogaAlign();
     }
-    public YGAlign AlignContent
+
+    /// <summary>
+    /// CSS: align-content - Aligns flex container's lines when there is extra space in the cross-axis
+    /// </summary>
+    public YgAlign AlignContent
     {
-        get => NodeInternal.AlignContent;
-        set => NodeInternal.AlignContent = value;
+        get => NodeInternal.AlignContent.ToNfmAlign();
+        set => NodeInternal.AlignContent = value.ToYogaAlign();
     }
-    public YGPositionType Position
+
+    /// <summary>
+    /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)
+    /// </summary>
+    public YgPositionType Position
     {
-        get => NodeInternal.PositionType;
-        set => NodeInternal.PositionType = value;
+        get => NodeInternal.PositionType.ToNfmPositionType();
+        set => NodeInternal.PositionType = value.ToYogaPositionType();
     }
-    public YGWrap FlexWrap
+
+    /// <summary>
+    /// CSS: flex-wrap - Controls whether flex items wrap onto multiple lines (nowrap/wrap/wrap-reverse)
+    /// </summary>
+    public YgWrap FlexWrap
     {
-        get => NodeInternal.FlexWrap;
-        set => NodeInternal.FlexWrap = value;
+        get => NodeInternal.FlexWrap.ToNfmWrap();
+        set => NodeInternal.FlexWrap = value.ToYogaWrap();
     }
-    public YGOverflow Overflow
+
+    /// <summary>
+    /// CSS: overflow - Controls what happens to content that is too big to fit (visible/hidden/scroll)
+    /// </summary>
+    public YgOverflow Overflow
     {
-        get => NodeInternal.Overflow;
-        set => NodeInternal.Overflow = value;
+        get => NodeInternal.Overflow.ToNfmOverflow();
+        set => NodeInternal.Overflow = value.ToYogaOverflow();
     }
-    public YGDisplay Display
+
+    /// <summary>
+    /// CSS: display - Defines the display type of the element (flex/none/block)
+    /// </summary>
+    public YgDisplay Display
     {
-        get => NodeInternal.Display;
-        set => NodeInternal.Display = value;
+        get => NodeInternal.Display.ToNfmDisplay();
+        set => NodeInternal.Display = value.ToYogaDisplay();
     }
-    
-    public float Flex
+
+    public sealed class PixelsConverter : TypeConverter
     {
-        get => NodeInternal.Flex;
-        set => NodeInternal.Flex = value;
+        public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+        {
+            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+        }
+
+        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+        {
+            if (value is string str)
+            {
+                var trimmed = str.AsSpan().Trim();
+                if (trimmed.EndsWith("px"))
+                {
+                    if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                    {
+                        return pointValue;
+                    }
+                }
+                else
+                {
+                    if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                    {
+                        return pointValue;
+                    }
+                }
+
+                throw new FormatException($"Cannot convert '{str}' to pixels.");
+            }
+            return base.ConvertFrom(context, culture, value);
+        }
     }
-    public float FlexGrow
+
+    public class PixelsOrUndefinedConverter : TypeConverter
     {
-        get => NodeInternal.FlexGrow;
-        set => NodeInternal.FlexGrow = value;
+        public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+        {
+            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+        }
+
+        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+        {
+            if (value is string str)
+            {
+                var trimmed = str.AsSpan().Trim();
+                if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+                if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (float?)0;
+                }
+                if (trimmed.EndsWith("px"))
+                {
+                    if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                    {
+                        return (float?)pointValue;
+                    }
+                }
+                else
+                {
+                    if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                    {
+                        return (float?)pointValue;
+                    }
+                }
+
+                throw new FormatException($"Cannot convert '{str}' to pixels or undefined.");
+            }
+            return base.ConvertFrom(context, culture, value);
+        }
     }
-    public float FlexShrink
+
+    /// <summary>
+    /// CSS: flex - Shorthand for flex-grow, flex-shrink, and flex-basis combined
+    /// </summary>
+    public float? Flex
     {
-        get => NodeInternal.FlexShrink;
-        set => NodeInternal.FlexShrink = value;
+        get => NodeInternal.Flex is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.Flex = value ?? float.NaN;
+    }
+
+    /// <summary>
+    /// CSS: flex-grow - Defines the ability for a flex item to grow if necessary
+    /// </summary>
+    public float? FlexGrow
+    {
+        get => NodeInternal.FlexGrow is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexGrow = value ?? float.NaN;
+    }
+
+    /// <summary>
+    /// CSS: flex-shrink - Defines the ability for a flex item to shrink if necessary
+    /// </summary>
+    public float? FlexShrink
+    {
+        get => NodeInternal.FlexShrink is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexShrink = value ?? float.NaN;
     }
 
     public Action<Node> Ref
@@ -201,15 +330,77 @@ public class Node : IDisposable
         set => value(this);
     }
 
+    [TypeConverter(typeof(MeasurementFlexBasisTypeConverter))]
     public struct MeasurementFlexBasis
     {
-        public YGValue InternalValue;
-        
+        public sealed class MeasurementFlexBasisTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+                    if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Auto;
+                    }
+                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return MaxContent;
+                    }
+                    if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Stretch;
+                    }
+                    if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                        {
+                            return Percent(percentValue);
+                        }
+                    }
+                    else if (trimmed.EndsWith("px"))
+                    {
+                        if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+                    else
+                    {
+                        if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementFlexBasis. Expected 'auto', 'max-content', 'stretch', '<number>px', '<number>%', or '<number>'.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
         public static implicit operator MeasurementFlexBasis(float value)
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -228,9 +419,9 @@ public class Node : IDisposable
             return value.InternalValue;
         }
 
-        public static MeasurementFlexBasis Undefined = new MeasurementFlexBasis
+        public static MeasurementFlexBasis Undefined = new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -239,7 +430,7 @@ public class Node : IDisposable
         public static MeasurementFlexBasis Auto =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -248,7 +439,7 @@ public class Node : IDisposable
         public static MeasurementFlexBasis MaxContent =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitMaxContent
                 }
@@ -257,7 +448,7 @@ public class Node : IDisposable
         public static MeasurementFlexBasis Stretch =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitStretch
                 }
@@ -267,19 +458,19 @@ public class Node : IDisposable
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
                 }
             };
         }
-        
+
         public static MeasurementFlexBasis Point(float value)
         {
             return new MeasurementFlexBasis
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -290,7 +481,7 @@ public class Node : IDisposable
         public static MeasurementFlexBasis FitContent =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -307,6 +498,9 @@ public class Node : IDisposable
         }
     }
 
+    /// <summary>
+    /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
+    /// </summary>
     public MeasurementFlexBasis FlexBasis
     {
         get;
@@ -317,15 +511,68 @@ public class Node : IDisposable
         }
     } = MeasurementFlexBasis.Undefined;
 
+    [TypeConverter(typeof(MeasurementMarginPositionTypeConverter))]
     public struct MeasurementMarginPosition
     {
-        public YGValue InternalValue;
-        
+        public sealed class MeasurementMarginPositionTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+                    if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Auto;
+                    }
+                    if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                        {
+                            return Percent(percentValue);
+                        }
+                    }
+                    else if (trimmed.EndsWith("px"))
+                    {
+                        if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+                    else
+                    {
+                        if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMarginPosition. Expected 'auto', '<number>px', '<number>%', or '<number>'.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
         public static implicit operator MeasurementMarginPosition(float value)
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -347,15 +594,15 @@ public class Node : IDisposable
         public static MeasurementMarginPosition Auto =>
             new()
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitAuto
                 }
             };
 
-        public static MeasurementMarginPosition Undefined => new MeasurementMarginPosition
+        public static MeasurementMarginPosition Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -365,7 +612,7 @@ public class Node : IDisposable
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -376,7 +623,7 @@ public class Node : IDisposable
         {
             return new MeasurementMarginPosition
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -395,6 +642,9 @@ public class Node : IDisposable
         }
     }
 
+    /// <summary>
+    /// CSS: left - Specifies the left position of a positioned element
+    /// </summary>
     public MeasurementMarginPosition Left
     {
         get;
@@ -405,6 +655,9 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    /// <summary>
+    /// CSS: top - Specifies the top position of a positioned element
+    /// </summary>
     public MeasurementMarginPosition Top
     {
         get;
@@ -414,7 +667,10 @@ public class Node : IDisposable
             NodeInternal.Top = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
-    
+
+    /// <summary>
+    /// CSS: right - Specifies the right position of a positioned element
+    /// </summary>
     public MeasurementMarginPosition Right
     {
         get;
@@ -424,7 +680,10 @@ public class Node : IDisposable
             NodeInternal.Right = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
-    
+
+    /// <summary>
+    /// CSS: bottom - Specifies the bottom position of a positioned element
+    /// </summary>
     public MeasurementMarginPosition Bottom
     {
         get;
@@ -435,6 +694,151 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    [TypeConverter(typeof(MeasurementMultiMarginTypeConverter))]
+    public struct MeasurementMultiMargin
+    {
+        public class MeasurementMultiMarginTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementMarginPosition.Undefined);
+                    }
+                    if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementMarginPosition.Auto);
+                    }
+
+                    var idx = 0;
+                    var sides = new InlineArray4<MeasurementMarginPosition>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+
+                        if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Percent(percentValue);
+                            }
+                        }
+                        else if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiMargin
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiMargin
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected 'auto', '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<MeasurementMarginPosition> Sides;
+        public MeasurementMarginPosition Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public MeasurementMarginPosition Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public MeasurementMarginPosition Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public MeasurementMarginPosition Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+
+        public static MeasurementMultiMargin Auto => MeasurementMarginPosition.Auto;
+
+        public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
+
+        public static MeasurementMultiMargin All(MeasurementMarginPosition value)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+
+        public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+    }
+
+    /// <summary>
+    /// CSS: margin - Shorthand for setting all margin values (top, right, bottom, left)
+    /// </summary>
+    public MeasurementMultiMargin Margin
+    {
+        set
+        {
+            MarginLeft = value.Left;
+            MarginRight = value.Right;
+            MarginTop = value.Top;
+            MarginBottom = value.Bottom;
+        }
+    }
+
+    /// <summary>
+    /// CSS: margin-top - Sets the top margin space outside the element
+    /// </summary>
     public MeasurementMarginPosition MarginTop
     {
         get;
@@ -445,6 +849,9 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    /// <summary>
+    /// CSS: margin-bottom - Sets the bottom margin space outside the element
+    /// </summary>
     public MeasurementMarginPosition MarginBottom
     {
         get;
@@ -455,6 +862,9 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    /// <summary>
+    /// CSS: margin-left - Sets the left margin space outside the element
+    /// </summary>
     public MeasurementMarginPosition MarginLeft
     {
         get;
@@ -465,6 +875,9 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    /// <summary>
+    /// CSS: margin-right - Sets the right margin space outside the element
+    /// </summary>
     public MeasurementMarginPosition MarginRight
     {
         get;
@@ -475,15 +888,64 @@ public class Node : IDisposable
         }
     } = MeasurementMarginPosition.Undefined;
 
+    [TypeConverter(typeof(MeasurementPaddingTypeConverter))]
     public struct MeasurementPadding
     {
-        public YGValue InternalValue;
-        
+        public sealed class MeasurementPaddingTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+                    if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                        {
+                            return Percent(percentValue);
+                        }
+                    }
+                    else if (trimmed.EndsWith("px"))
+                    {
+                        if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+                    else
+                    {
+                        if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementPadding. Expected '<number>px', '<number>%', or '<number>'.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
         public static implicit operator MeasurementPadding(float value)
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -502,9 +964,9 @@ public class Node : IDisposable
             return value.InternalValue;
         }
 
-        public static MeasurementPadding Undefined => new MeasurementPadding
+        public static MeasurementPadding Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -514,7 +976,7 @@ public class Node : IDisposable
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -525,7 +987,7 @@ public class Node : IDisposable
         {
             return new MeasurementPadding
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -543,18 +1005,146 @@ public class Node : IDisposable
             return this;
         }
     }
-    
-    public MeasurementPadding Padding
+
+    [TypeConverter(typeof(MeasurementMultiPaddingTypeConverter))]
+    public struct MeasurementMultiPadding
+    {
+        public class MeasurementMultiPaddingTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return All(MeasurementPadding.Undefined);
+                    }
+
+                    var idx = 0;
+                    var sides = new InlineArray4<MeasurementPadding>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+
+                        if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                            {
+                                sides[idx] = MeasurementPadding.Percent(percentValue);
+                            }
+                        }
+                        else if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementPadding.Point(pointValue);
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = MeasurementPadding.Point(pointValue);
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiPadding
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiPadding
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<MeasurementPadding> Sides;
+        public MeasurementPadding Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public MeasurementPadding Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public MeasurementPadding Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public MeasurementPadding Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+
+        public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
+
+        public static MeasurementMultiPadding All(MeasurementPadding value)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+
+        public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+    }
+
+    /// <summary>
+    /// CSS: padding - Shorthand for setting all padding values (top, right, bottom, left)
+    /// </summary>
+    public MeasurementMultiPadding Padding
     {
         set
         {
-            PaddingLeft = value;
-            PaddingRight = value;
-            PaddingTop = value;
-            PaddingBottom = value;
+            PaddingLeft = value.Left;
+            PaddingRight = value.Right;
+            PaddingTop = value.Top;
+            PaddingBottom = value.Bottom;
         }
     }
 
+    /// <summary>
+    /// CSS: padding-top - Sets the top padding space inside the element
+    /// </summary>
     public MeasurementPadding PaddingTop
     {
         get;
@@ -565,6 +1155,9 @@ public class Node : IDisposable
         }
     } = MeasurementPadding.Undefined;
 
+    /// <summary>
+    /// CSS: padding-bottom - Sets the bottom padding space inside the element
+    /// </summary>
     public MeasurementPadding PaddingBottom
     {
         get;
@@ -574,7 +1167,10 @@ public class Node : IDisposable
             NodeInternal.PaddingBottom = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
-    
+
+    /// <summary>
+    /// CSS: padding-left - Sets the left padding space inside the element
+    /// </summary>
     public MeasurementPadding PaddingLeft
     {
         get;
@@ -585,6 +1181,9 @@ public class Node : IDisposable
         }
     } = MeasurementPadding.Undefined;
 
+    /// <summary>
+    /// CSS: padding-right - Sets the right padding space inside the element
+    /// </summary>
     public MeasurementPadding PaddingRight
     {
         get;
@@ -595,64 +1194,249 @@ public class Node : IDisposable
         }
     } = MeasurementPadding.Undefined;
 
-    public float Border
+    [TypeConverter(typeof(MeasurementMultiBorderTypeConverter))]
+    public struct MeasurementMultiBorder
+    {
+        public class MeasurementMultiBorderTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+
+                    var idx = 0;
+                    var sides = new InlineArray4<float>();
+                    foreach (var elementRange in trimmed.SplitAny(',', ' '))
+                    {
+                        var element = trimmed[elementRange];
+
+                        if (element.EndsWith("px"))
+                        {
+                            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = pointValue;
+                            }
+                        }
+                        else
+                        {
+                            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                            {
+                                sides[idx] = pointValue;
+                            }
+                        }
+
+                        idx++;
+                    }
+
+                    if (idx == 1)
+                    {
+                        return All(sides[0]);
+                    }
+
+                    if (idx == 2)
+                    {
+                        return new MeasurementMultiBorder
+                        {
+                            Top = sides[0],
+                            Bottom = sides[0],
+                            Left = sides[1],
+                            Right = sides[1]
+                        };
+                    }
+
+                    if (idx == 4)
+                    {
+                        return new MeasurementMultiBorder
+                        {
+                            Top = sides[0],
+                            Right = sides[1],
+                            Bottom = sides[2],
+                            Left = sides[3]
+                        };
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        public InlineArray4<float?> Sides;
+        public float? Top
+        {
+            get => Sides[0];
+            set => Sides[0] = value;
+        }
+        public float? Bottom
+        {
+            get => Sides[1];
+            set => Sides[1] = value;
+        }
+        public float? Left
+        {
+            get => Sides[2];
+            set => Sides[2] = value;
+        }
+        public float? Right
+        {
+            get => Sides[3];
+            set => Sides[3] = value;
+        }
+
+        public static MeasurementMultiBorder Undefined => All(null);
+
+        public static MeasurementMultiBorder All(float? value)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = value,
+                Bottom = value,
+                Left = value,
+                Right = value
+            };
+        }
+
+        public static implicit operator MeasurementMultiBorder(float? value) => All(value);
+    }
+
+    /// <summary>
+    /// CSS: border - Shorthand for setting all border widths
+    /// </summary>
+    public MeasurementMultiBorder Border
     {
         set
         {
-            BorderLeft = value;
-            BorderRight = value;
-            BorderTop = value;
-            BorderBottom = value;
+            BorderLeft = value.Left;
+            BorderRight = value.Right;
+            BorderTop = value.Top;
+            BorderBottom = value.Bottom;
         }
     }
 
+    /// <summary>
+    /// CSS: border-top-width - Sets the width of the top border
+    /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     public float? BorderTop
     {
         get;
         set
         {
             field = value;
-            NodeInternal.BorderTop = value ?? YG.YGUndefined;
+            NodeInternal.BorderTop = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
+    /// <summary>
+    /// CSS: border-bottom-width - Sets the width of the bottom border
+    /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     public float? BorderBottom
     {
         get;
         set
         {
             field = value;
-            NodeInternal.BorderBottom = value ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
+
+    /// <summary>
+    /// CSS: border-left-width - Sets the width of the left border
+    /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     public float? BorderLeft
     {
         get;
         set
         {
             field = value;
-            NodeInternal.BorderLeft = value ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
+
+    /// <summary>
+    /// CSS: border-right-width - Sets the width of the right border
+    /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     public float? BorderRight
     {
         get;
         set
         {
             field = value;
-            NodeInternal.BorderRight = value ?? YG.YGUndefined;
+            NodeInternal.BorderRight = (value * G.Scale) ?? YG.YGUndefined;
         }
     }
-    
+
+    [TypeConverter(typeof(MeasurementGapTypeConverter))]
     public struct MeasurementGap
     {
-        public YGValue InternalValue;
-        
+        public class MeasurementGapTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.AsSpan().Trim();
+                    if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Undefined;
+                    }
+                    if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                        {
+                            return Percent(percentValue);
+                        }
+                    }
+                    else if (trimmed.EndsWith("px"))
+                    {
+                        if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+                    else
+                    {
+                        if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                        {
+                            return Point(pointValue);
+                        }
+                    }
+
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementGap. Expected '<number>px', '<number>%', or '<number>'.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
         public static implicit operator MeasurementGap(float value)
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -671,9 +1455,9 @@ public class Node : IDisposable
             return value.InternalValue;
         }
 
-        public static MeasurementGap Undefined => new MeasurementGap
+        public static MeasurementGap Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -683,7 +1467,7 @@ public class Node : IDisposable
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -694,7 +1478,7 @@ public class Node : IDisposable
         {
             return new MeasurementGap
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -713,6 +1497,9 @@ public class Node : IDisposable
         }
     }
 
+    /// <summary>
+    /// CSS: gap - Shorthand for setting row-gap and column-gap
+    /// </summary>
     public MeasurementGap Gap
     {
         set
@@ -722,6 +1509,9 @@ public class Node : IDisposable
         }
     }
 
+    /// <summary>
+    /// CSS: column-gap - Sets the gap between columns in a flex container
+    /// </summary>
     public MeasurementGap GapColumn
     {
         get;
@@ -731,7 +1521,10 @@ public class Node : IDisposable
             NodeInternal.GapColumn = value;
         }
     } = MeasurementGap.Undefined;
-    
+
+    /// <summary>
+    /// CSS: row-gap - Sets the gap between rows in a flex container
+    /// </summary>
     public MeasurementGap GapRow
     {
         get;
@@ -741,22 +1534,90 @@ public class Node : IDisposable
             NodeInternal.GapRow = value;
         }
     } = MeasurementGap.Undefined;
-    
-    public YGBoxSizing BoxSizing
+
+    /// <summary>
+    /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
+    /// </summary>
+    public YgBoxSizing BoxSizing
     {
-        get => NodeInternal.BoxSizing;
-        set => NodeInternal.BoxSizing = value;
+        get => NodeInternal.BoxSizing.ToNfmBoxSizing();
+        set => NodeInternal.BoxSizing = value.ToYogaBoxSizing();
     }
 
+    [TypeConverter(typeof(MeasurementWidthHeightTypeConverter))]
     public struct MeasurementWidthHeight
     {
-        public YGValue InternalValue;
-        
+        /// <summary>
+        /// Type converter for Node.MeasurementWidthHeight.
+        /// Parses values like "100", "50%", "auto", "stretch", etc.
+        /// </summary>
+        public class MeasurementWidthHeightTypeConverter : TypeConverter
+        {
+            public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
+            {
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
+            }
+
+            public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+            {
+                if (value is string str)
+                {
+                    var trimmed = str.Trim();
+
+                    if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Auto();
+                    }
+                    if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Stretch();
+                    }
+                    if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("fitcontent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return FitContent();
+                    }
+                    if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return MaxContent();
+                    }
+                    if (trimmed.EndsWith('%'))
+                    {
+                        if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                        {
+                            return Percent(percentValue);
+                        }
+                    }
+                    else if (trimmed.EndsWith("px", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+                        {
+                            return Point(floatValue);
+                        }
+                    }
+                    else if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+                    {
+                        return Point(floatValue);
+                    }
+
+                    throw new FormatException($"Cannot convert {str} to MeasurementWidthHeight. Expected a number, percentage, 'auto', 'stretch', 'fit-content', or 'max-content'.");
+                }
+                return base.ConvertFrom(context, culture, value);
+            }
+        }
+
+        internal YGValue InternalValue;
+        public YgUnit Unit => InternalValue.unit.ToNfmUnit();
+        public float Value => InternalValue.value;
+        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
         public static implicit operator MeasurementWidthHeight(float value)
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -775,9 +1636,9 @@ public class Node : IDisposable
             return value.InternalValue;
         }
 
-        public static MeasurementWidthHeight Undefined => new MeasurementWidthHeight
+        public static MeasurementWidthHeight Undefined => new()
         {
-            InternalValue = new YGValue()
+            InternalValue = new YGValue
             {
                 unit = YGUnit.YGUnitUndefined
             }
@@ -787,7 +1648,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitAuto
                 }
@@ -797,7 +1658,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPercent,
                     value = value
@@ -808,7 +1669,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitPoint,
                     value = value
@@ -820,7 +1681,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitFitContent
                 }
@@ -830,7 +1691,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitMaxContent
                 }
@@ -841,7 +1702,7 @@ public class Node : IDisposable
         {
             return new MeasurementWidthHeight
             {
-                InternalValue = new YGValue()
+                InternalValue = new YGValue
                 {
                     unit = YGUnit.YGUnitStretch
                 }
@@ -859,6 +1720,9 @@ public class Node : IDisposable
         }
     }
 
+    /// <summary>
+    /// CSS: width - Sets the width of the element
+    /// </summary>
     public MeasurementWidthHeight Width
     {
         get;
@@ -869,6 +1733,9 @@ public class Node : IDisposable
         }
     } = MeasurementWidthHeight.Undefined;
 
+    /// <summary>
+    /// CSS: height - Sets the height of the element
+    /// </summary>
     public MeasurementWidthHeight Height
     {
         get;
@@ -878,7 +1745,10 @@ public class Node : IDisposable
             NodeInternal.Height = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
+    /// <summary>
+    /// CSS: min-width - Sets the minimum width of the element
+    /// </summary>
     public MeasurementWidthHeight MinWidth
     {
         get;
@@ -888,7 +1758,10 @@ public class Node : IDisposable
             NodeInternal.MinWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
+    /// <summary>
+    /// CSS: min-height - Sets the minimum height of the element
+    /// </summary>
     public MeasurementWidthHeight MinHeight
     {
         get;
@@ -898,7 +1771,10 @@ public class Node : IDisposable
             NodeInternal.MinHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
+    /// <summary>
+    /// CSS: max-width - Sets the maximum width of the element
+    /// </summary>
     public MeasurementWidthHeight MaxWidth
     {
         get;
@@ -908,7 +1784,10 @@ public class Node : IDisposable
             NodeInternal.MaxWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
+
+    /// <summary>
+    /// CSS: max-height - Sets the maximum height of the element
+    /// </summary>
     public MeasurementWidthHeight MaxHeight
     {
         get;
@@ -918,11 +1797,15 @@ public class Node : IDisposable
             NodeInternal.MaxHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
-    
-    public float AspectRatio
+
+    /// <summary>
+    /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
+    /// </summary>
+    [TypeConverter(typeof(PixelsConverter))]
+    public float? AspectRatio
     {
-        get => NodeInternal.AspectRatio;
-        set => NodeInternal.AspectRatio = value;
+        get => NodeInternal.AspectRatio is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.AspectRatio = value ?? float.NaN;
     }
 
     #endregion
@@ -960,7 +1843,11 @@ public class Node : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private bool Rescale()
+    /// <summary>
+    /// Do not use directly.
+    /// </summary>
+    /// <returns>true if scale changed</returns>
+    private protected bool Rescale()
     {
         if (Math.Abs(_lastScale - G.Scale) > 0.001f)
         {
@@ -992,7 +1879,7 @@ public class Node : IDisposable
             Right = Right;
             Bottom = Bottom;
 #pragma warning restore CA2245
-            
+
             _lastScale = G.Scale;
 
             return true;
@@ -1004,19 +1891,18 @@ public class Node : IDisposable
     protected virtual void OnScaleChanged()
     {
     }
-    
-    private void RescaleRecursive()
+
+    /// <summary>
+    /// DO NOT OVERRIDE. Override OnScaleChanged() instead.
+    /// </summary>
+    protected internal virtual void RescaleRecursive()
     {
         if (Rescale())
         {
             OnScaleChanged();
-            foreach (var child in Children)
-            {
-                child.RescaleRecursive();
-            }
         }
     }
-    
+
     protected virtual void RenderBackground(Vector2 position, Vector2 size)
     {
     }
@@ -1024,28 +1910,29 @@ public class Node : IDisposable
     protected virtual void RenderBorder(Vector2 position, Vector2 size)
     {
     }
-    
+
     protected virtual void RenderContent(Vector2 position, Vector2 size)
     {
     }
 
     protected virtual void Render()
     {
+        G.SetAlpha(Opacity);
         RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
         RenderBorder(LayoutBorderPosition, LayoutBorderSize);
         RenderContent(LayoutContentPosition, LayoutContentSize);
+        G.SetAlpha(1f);
     }
 
-    private void RenderRecursive(Vector2 root)
+    protected internal virtual void RenderRecursive(Vector2 root, float rootOpacity = 1f)
     {
         _root = root;
-        if (Display != YGDisplay.YGDisplayNone)
+        if (Display != YgDisplay.None && Visibility == Visibility.Visible && Opacity > 0f)
         {
+            var ownOpacity = rootOpacity * Opacity;
+            G.SetAlpha(ownOpacity);
             Render();
-            foreach (var child in Children)
-            {
-                child.RenderRecursive(root + new Vector2(LayoutX, LayoutY)); // todo should this be LayoutContentPosition
-            }
+            G.SetAlpha(1f);
         }
     }
 
@@ -1058,99 +1945,17 @@ public class Node : IDisposable
 #if DEBUG
         __INTERNAL_YogaRootsThisFrame.Add(this);
 #endif
-        
+
         RescaleRecursive();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
         RenderRecursive(origin ?? Vector2.Zero);
     }
 
-    public void Update()
+    /// <summary>
+    /// DO NOT OVERRIDE. Override GameTick() instead.
+    /// </summary>
+    protected internal virtual void Update()
     {
         GameTick();
-        foreach (var child in Children)
-        {
-            child.Update();
-        }
-    }
-}
-
-public class NodeChildCollection(Node parent) : IList<Node>
-{
-    private List<Node> _internalList = new();
-    
-    public IEnumerator<Node> GetEnumerator()
-    {
-        return _internalList.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-    public void Add(Node item)
-    {
-        parent.NodeInternal.InsertChild(item.NodeInternal, parent.NodeInternal.GetChildCount());
-        _internalList.Add(item);
-    }
-
-    public void Clear()
-    {
-        parent.NodeInternal.RemoveAllChildren();
-        _internalList.Clear();
-    }
-
-    public bool Contains(Node item)
-    {
-        return _internalList.Contains(item);
-    }
-
-    public void CopyTo(Node[] array, int arrayIndex)
-    {
-        _internalList.CopyTo(array, arrayIndex);
-    }
-
-    public bool Remove(Node item)
-    {
-        if (_internalList.Remove(item))
-        {
-            parent.NodeInternal.RemoveChild(item.NodeInternal);
-            return true;
-        }
-
-        return false;
-    }
-
-    public int Count => _internalList.Count;
-    public bool IsReadOnly => false;
-    public int IndexOf(Node item)
-    {
-        return _internalList.IndexOf(item);
-    }
-
-    public void Insert(int index, Node item)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        parent.NodeInternal.InsertChild(item.NodeInternal, (uint)index);
-        _internalList.Insert(index, item);
-    }
-
-    public void RemoveAt(int index)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        var item = _internalList[index];
-        parent.NodeInternal.RemoveChild(item.NodeInternal);
-        _internalList.RemoveAt(index);
-    }
-
-    public Node this[int index]
-    {
-        get => _internalList[index];
-        set
-        {
-            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-            _internalList[index] = value;
-            parent.NodeInternal.SwapChild(value.NodeInternal, (uint)index);
-        }
     }
 }

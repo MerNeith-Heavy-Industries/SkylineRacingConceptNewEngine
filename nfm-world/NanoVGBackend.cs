@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 using FontStashSharp;
 using Microsoft.Xna.Framework.Graphics;
 using NanoSVG;
@@ -30,6 +31,8 @@ public class NanoVGRenderer
 internal class NanoVGBackend(NvgContext context) : IBackend
 {
     public float Scale { get; set; } = 1;
+    
+    private ConcurrentDictionary<string, IImage> _imageCache = new();
 
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
@@ -44,6 +47,12 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             return NanoSVGImage.FromStream(stream);
         }
         return new NanoVGImage(Texture2D.FromStream(context.GraphicsDevice, stream));
+    }
+    
+    public IImage LoadCachedImage(string file)
+    {
+        var fullPath = VFS.Path.GetFullPath(file);
+        return _imageCache.GetOrAdd(fullPath, _ => LoadImage(fullPath));
     }
 
     public IImage LoadImage(ReadOnlySpan<byte> file)
@@ -118,12 +127,12 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _paint = new Paint(new Microsoft.Xna.Framework.Color(c.R, c.G, c.B, c.A));
         }
 
-        public void FillPolygon(Span<int> x, Span<int> y, int n)
+        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
             throw new NotImplementedException(); // TODO
         }
 
-        public void DrawPolygon(Span<int> x, Span<int> y, int n)
+        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
             throw new NotImplementedException(); // TODO
         }

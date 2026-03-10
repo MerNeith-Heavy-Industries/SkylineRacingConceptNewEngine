@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world_library.util;
 

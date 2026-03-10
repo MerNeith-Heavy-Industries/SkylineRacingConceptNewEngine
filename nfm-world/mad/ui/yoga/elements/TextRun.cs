@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using nfm_world_library.util;
+using Avalonia.Metadata;
 using nfm_world.driverinterface;
 using nfm_world.util;
 
@@ -19,8 +19,9 @@ public class TextRun : Node
             SetFontMetrics();
             RelayoutText();
         }
-    } = new Font(FontFamily.DroidSans, 0, 18);
+    } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
+    [Content]
     public string? Text
     {
         get;
@@ -55,7 +56,7 @@ public class TextRun : Node
     {
         base.RenderContent(position, size);
 
-        if (Text == null)
+        if (string.IsNullOrEmpty(Text))
         {
             return;
         }

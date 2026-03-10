@@ -1,4 +1,4 @@
-﻿using nfm_world_library.util;
+﻿using Avalonia.Metadata;
 using nfm_world.driverinterface;
 using nfm_world.util;
 
@@ -7,6 +7,7 @@ namespace nfm_world.ui.yoga;
 public class TextBlock : Node
 {
     public Color Color { get; set; } = new Color(255, 255, 255);
+    
     public Color? StrokeColor { get; set; } = null;
     public Font Font
     {
@@ -16,8 +17,9 @@ public class TextBlock : Node
             field = value;
             _invalidated = true;
         }
-    } = new Font(FontFamily.DroidSans, 0, 18);
+    } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
 
+    [Content]
     public string? Text
     {
         get;
@@ -64,7 +66,7 @@ public class TextBlock : Node
     {
         base.RenderContent(position, size);
 
-        if (Text == null)
+        if (string.IsNullOrEmpty(Text))
         {
             return;
         }

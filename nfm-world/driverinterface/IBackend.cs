@@ -8,6 +8,7 @@ public interface IBackend
     Vector2 Viewport { get; }
     IRadicalMusic LoadMusic(string file, double tempomul);
     IImage LoadImage(string file);
+    IImage LoadCachedImage(string file);
     IImage LoadImage(ReadOnlySpan<byte> file);
     void StopAllSounds();
     ISoundClip GetSound(string filePath);

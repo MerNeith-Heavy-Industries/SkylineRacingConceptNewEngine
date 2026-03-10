@@ -54,8 +54,8 @@ public class MainMenuPhase : BasePhase
         _graphicsDevice = graphicsDevice;
 
         // Create title and button fonts
-        _titleFont = new Font(FontFamily.DroidSans, 1, 48); // Large title
-        _buttonFont = new Font(FontFamily.DroidSans, 1, 24); // Button text
+        _titleFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 48); // Large title
+        _buttonFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24); // Button text
 
         BuildMainMenu();
     }
@@ -288,12 +288,12 @@ public class MainMenuPhase : BasePhase
 
 
         // Debug: Show mouse position
-        G.SetFont(new Font(FontFamily.DroidSans, 0, 12));
+        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Plain, 12));
         G.SetColor(new Color(255, 255, 0)); // Yellow
         G.DrawString($"Mouse: ({_mouseX}, {_mouseY})", 10, 30);
 
         // Draw tooltip at bottom (similar to image)
-        G.SetFont(new Font(FontFamily.DroidSans, 0, 14));
+        G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Plain, 14));
         G.SetColor(new Color(255, 140, 0)); // Orange
 
         // Find hovered button and show description

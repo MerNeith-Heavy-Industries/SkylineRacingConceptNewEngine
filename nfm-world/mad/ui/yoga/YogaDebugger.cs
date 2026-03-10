@@ -2,7 +2,7 @@
 using nfm_world;
 using nfm_world.driverinterface;
 using nfm_world.util;
-using Stride.Core.Mathematics;
+using Maxine.Extensions.Mathematics;
 
 namespace nfm_world.ui.yoga;
 
@@ -11,7 +11,167 @@ public static class YogaDebugger
     private static Vector2 _mousePosition;
     private static string slnDir = ProjectUtils.TryGetSolutionDirectory() ?? Directory.GetCurrentDirectory();
 
-    public static void Render()
+    public const int MaxPages = 2;
+
+    public static void Render(int page = 0)
+    {
+        if (page == 0)
+            RenderPage1();
+        else if (page == 1)
+            RenderPage2();
+        else if (page == 2)
+            RenderPage3();
+        
+        // draw two lines intersecting the mouse position
+        G.SetColor(Color.Magenta);
+        G.DrawLine(0, (int)_mousePosition.Y, (int)G.Viewport.X, (int)_mousePosition.Y);
+        G.DrawLine((int)_mousePosition.X, 0, (int)_mousePosition.X, (int)G.Viewport.Y);
+        // draw mouse position text
+        G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
+        var mousePosText = $"Mouse: ({(int)_mousePosition.X}, {(int)_mousePosition.Y})";
+        G.SetColor(Color.White);
+        G.DrawStringStroke(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
+        G.SetColor(Color.Magenta);
+        G.DrawString(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
+    }
+
+    private static void RenderPage3()
+    {
+        // draw a tree of all elements and their layout info in the top-left corner,
+        // with a gradient from red to yellow based on depth
+        var maxDepth = 0;
+        foreach (var root in Node.__INTERNAL_YogaRootsThisFrame)
+        {
+            maxDepth = Math.Max(maxDepth, GetMaxDepth(root, 0));
+            continue;
+
+            static int GetMaxDepth(Node node, int depth)
+            {
+                var childMax = depth;
+                if (node is Box box)
+                {
+                    foreach (var child in box.Children)
+                    {
+                        childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    }
+                }
+
+                return childMax;
+            }
+        }
+
+        var y = 24;
+        foreach (var root in Node.__INTERNAL_YogaRootsThisFrame)
+        {
+            DrawElementAndChildren(root, y, 0);
+            y += 24 * (1 + (root is Box box ? GetChildCount(box) : 0));
+        }
+
+        return;
+
+        void DrawElementAndChildren(Node node, int y = 15, int depth = 0)
+        {
+            var color = Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth);
+            G.SetColor(color);
+            G.DrawRect(
+                (int)node.LayoutBorderPosition.X,
+                (int)node.LayoutBorderPosition.Y,
+                (int)node.LayoutBorderSize.X,
+                (int)node.LayoutBorderSize.Y
+            );
+
+            var layoutInfo = $"""
+                              {node.Name ?? ""}[{node.GetType().Name}] {node.LayoutBorderSize.X}px x {node.LayoutBorderSize.Y}px at ({node.LayoutBorderPosition.X}, {node.LayoutBorderPosition.Y})
+                              """;
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 24));
+            var indent = new string(' ', depth * 2);
+            G.SetColor(Color.White);
+            G.DrawStringStroke(indent + layoutInfo, 12, y);
+            G.SetColor(color);
+            G.DrawString(indent + layoutInfo, 12, y);
+            y += 24;
+            if (node is Box box)
+            {
+                foreach (var child in box.Children)
+                {
+                    DrawElementAndChildren(child, y, depth + 1);
+                    y += 24 * (1 + (child is Box childBox ? GetChildCount(childBox) : 0));
+                }
+            }
+        }
+        
+        static int GetChildCount(Box child)
+        {
+            var count = child.Children.Count;
+            foreach (var grandChild in child.Children)
+            {
+                if (grandChild is Box box)
+                    count += GetChildCount(box);
+            }
+            return count;
+        }
+    }
+
+    private static void RenderPage2()
+    {
+        // draw an outline around every element with a gradient from red to yellow based on depth
+        var maxDepth = 0;
+        foreach (var root in Node.__INTERNAL_YogaRootsThisFrame)
+        {
+            maxDepth = Math.Max(maxDepth, GetMaxDepth(root, 0));
+            continue;
+
+            static int GetMaxDepth(Node node, int depth)
+            {
+                var childMax = depth;
+                if (node is Box box)
+                {
+                    foreach (var child in box.Children)
+                    {
+                        childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
+                    }
+                }
+
+                return childMax;
+            }
+        }
+        
+        foreach (var root in Node.__INTERNAL_YogaRootsThisFrame)
+        {
+            DrawNodeAndChildren(root, 0);
+            continue;
+
+            void DrawNodeAndChildren(Node node, int depth)
+            {
+                var color = Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth);
+                G.SetColor(color);
+                G.DrawRect(
+                    (int)node.LayoutBorderPosition.X,
+                    (int)node.LayoutBorderPosition.Y,
+                    (int)node.LayoutBorderSize.X,
+                    (int)node.LayoutBorderSize.Y
+                );
+                
+                // draw text + outline with element name
+                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 24));
+                var info = $"{node.Name ?? ""}[{node.GetType().Name}]";
+                G.SetColor(Color.White);
+                G.DrawStringStroke(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
+                G.SetColor(color);
+                G.DrawString(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
+
+                if (node is Box box)
+                {
+                    foreach (var child in box.Children)
+                    {
+                        DrawNodeAndChildren(child, depth + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void RenderPage1()
     {
         var mouseOverNodeTree = Node.__INTERNAL_YogaRootsThisFrame
             .Select(FindMouseOverNodeTree)
@@ -30,8 +190,8 @@ public static class YogaDebugger
                     (int)node.LayoutBorderSize.Y
                 );
                 
-                G.SetFont(new Font(FontFamily.RobotoMono, 0, 20));
-                var info = $"Node: {node.Name ?? "???"}[{node.GetType().Name}] from {(node.__INTERNAL_CtorCallerFilePath != "" ? Path.GetRelativePath(slnDir, node.__INTERNAL_CtorCallerFilePath) : "")}:{node.__INTERNAL_CtorCallerMemberName}:{node.__INTERNAL_CtorCallerLineNumber}";
+                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 20));
+                var info = $"Node: {node.Name ?? ""}[{node.GetType().Name}] from {(node.__INTERNAL_CtorCallerFilePath != "" ? Path.GetRelativePath(slnDir, node.__INTERNAL_CtorCallerFilePath) : "")}:{node.__INTERNAL_CtorCallerMemberName}:{node.__INTERNAL_CtorCallerLineNumber}";
                 var prefix = new string(' ', i * 2);
                 
                 G.SetColor(Color.White);
@@ -41,14 +201,14 @@ public static class YogaDebugger
             }
             
             var lastEntry = mouseOverNodeTree[^1];
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             var layoutInfo = $"""
-                Layout:
-                Margin: {lastEntry.LayoutMarginSize.X}px x {lastEntry.LayoutMarginSize.Y}px at ({lastEntry.LayoutMarginPosition.X}, {lastEntry.LayoutMarginPosition.Y})
-                Border: {lastEntry.LayoutBorderSize.X}px x {lastEntry.LayoutBorderSize.Y}px at ({lastEntry.LayoutBorderPosition.X}, {lastEntry.LayoutBorderPosition.Y})
-                Padding: {lastEntry.LayoutPaddingSize.X}px x {lastEntry.LayoutPaddingSize.Y}px at ({lastEntry.LayoutPaddingPosition.X}, {lastEntry.LayoutPaddingPosition.Y})
-                Content: {lastEntry.LayoutContentSize.X}px x {lastEntry.LayoutContentSize.Y}px at ({lastEntry.LayoutContentPosition.X}, {lastEntry.LayoutContentPosition.Y})
-                """;
+                              Layout:
+                              Margin: {lastEntry.LayoutMarginSize.X}px x {lastEntry.LayoutMarginSize.Y}px at ({lastEntry.LayoutMarginPosition.X}, {lastEntry.LayoutMarginPosition.Y})
+                              Border: {lastEntry.LayoutBorderSize.X}px x {lastEntry.LayoutBorderSize.Y}px at ({lastEntry.LayoutBorderPosition.X}, {lastEntry.LayoutBorderPosition.Y})
+                              Padding: {lastEntry.LayoutPaddingSize.X}px x {lastEntry.LayoutPaddingSize.Y}px at ({lastEntry.LayoutPaddingPosition.X}, {lastEntry.LayoutPaddingPosition.Y})
+                              Content: {lastEntry.LayoutContentSize.X}px x {lastEntry.LayoutContentSize.Y}px at ({lastEntry.LayoutContentPosition.X}, {lastEntry.LayoutContentPosition.Y})
+                              """;
             G.SetColor(Color.White);
             G.DrawStringStroke(layoutInfo, 12, 24 + (mouseOverNodeTree.Length * 24));
             G.SetColor(Color.Cyan);
@@ -167,13 +327,13 @@ public static class YogaDebugger
             G.SetColor(Color.Blue with { A = 128 });
             G.FillRect((int)content.X, (int)content.Y, (int)content.Width, (int)content.Height);
             
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             G.SetColor(Color.Black);
             G.DrawStringStroke("content", (int)content.X, (int)content.Y + 16);
             G.SetColor(Color.White);
             G.DrawString("content", (int)content.X, (int)content.Y + 16);
 
-            G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             var contentSizeText = $"{(int)lastEntry.LayoutContentSize.X}px x {(int)lastEntry.LayoutContentSize.Y}px";
             G.SetColor(Color.Black);
             G.DrawStringStrokeAligned(
@@ -196,18 +356,6 @@ public static class YogaDebugger
                 TextVerticalAlignment.Center
             );
         }
-        
-        // draw two lines intersecting the mouse position
-        G.SetColor(Color.Magenta);
-        G.DrawLine(0, (int)_mousePosition.Y, (int)G.Viewport.X, (int)_mousePosition.Y);
-        G.DrawLine((int)_mousePosition.X, 0, (int)_mousePosition.X, (int)G.Viewport.Y);
-        // draw mouse position text
-        G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
-        var mousePosText = $"Mouse: ({(int)_mousePosition.X}, {(int)_mousePosition.Y})";
-        G.SetColor(Color.White);
-        G.DrawStringStroke(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
-        G.SetColor(Color.Magenta);
-        G.DrawString(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
     }
 
     private static void DrawBoxWithLabels(Color color, string label, RectangleF area, RectangleF? inner, float top, float right, float bottom, float left)
@@ -222,7 +370,7 @@ public static class YogaDebugger
             G.FillRect((int)area.X, (int)area.Y, (int)area.Width, (int)area.Height);
         }
         
-        G.SetFont(new Font(FontFamily.RobotoMono, 0, 16));
+        G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
         G.SetColor(Color.Black);
         G.DrawStringStroke(label, (int)area.X, (int)area.Y + 16);
         G.SetColor(Color.White);
@@ -296,12 +444,15 @@ public static class YogaDebugger
         );
         if (rect.Contains(_mousePosition))
         {
-            foreach (var child in node.Children)
+            if (node is Box box)
             {
-                var childResult = FindMouseOverNodeTree(child);
-                if (childResult.Length > 0)
+                foreach (var child in box.Children)
                 {
-                    return [node, ..childResult];
+                    var childResult = FindMouseOverNodeTree(child);
+                    if (childResult.Length > 0)
+                    {
+                        return [node, ..childResult];
+                    }
                 }
             }
 
