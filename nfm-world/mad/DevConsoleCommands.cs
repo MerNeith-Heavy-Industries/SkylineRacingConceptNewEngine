@@ -98,7 +98,7 @@ namespace nfm_world
             {
                 if (args.Length < 1)
                 {
-                    console.Log("Usage: debugui <classname>");
+                    Logging.Info("Usage: debugui <classname>");
                     return;
                 }
 
