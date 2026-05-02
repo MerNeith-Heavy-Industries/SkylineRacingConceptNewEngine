@@ -1,4 +1,4 @@
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
 using nfm_world_library.backend;
@@ -174,7 +174,7 @@ public class StageEditorPhase : BasePhase
     // UI state
     private float _hierarchyWidth = 250f;
     private float _inspectorWidth = 300f;
-    private float _partsLibraryHeight = 200f;
+    private float _partsLibraryHeight = 280f;
     
     // Mouse state
     private int _mouseX;
@@ -239,6 +239,32 @@ public class StageEditorPhase : BasePhase
     private bool _showCloseTabWarningDialog = false;
     private int _tabToClose = -1;
     
+    // Hierarchy panel search
+    private string _hierarchySearch = "";
+    
+    // Parts library state
+    private string _partsSearch = "";
+    private int _partsCategory = 0; // 0=All, 1=nfmm, 2=vendor, 3=user
+    
+    // Part preview thumbnails: FileName -> (RenderTarget, ImGui texture ref)
+    private readonly Dictionary<string, (RenderTarget2D RT, ImTextureRef Ref)> _partPreviews = new();
+    private readonly Queue<(string Name, Rad3d Rad)> _previewQueue = new();
+    private const int PreviewSize = 64;
+    
+    // Gizmo state
+    private enum GizmoAxis { None, X, Y, Z, RotY }
+    private GizmoAxis _gizmoHovered = GizmoAxis.None;
+    private GizmoAxis _gizmoDragging = GizmoAxis.None;
+    private int _gizmoDragStartX;
+    private int _gizmoDragStartY;
+    private float _gizmoDragStartPosX;
+    private float _gizmoDragStartPosY;
+    private float _gizmoDragStartPosZ;
+    private float _gizmoDragStartRotY;
+    private const float GIZMO_ARROW_LENGTH = 600f;
+    private const float GIZMO_ARROW_THICKNESS = 12f;
+    private const float GIZMO_ROT_RADIUS = 400f;
+    
     public StageEditorPhase(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice;
@@ -302,6 +328,16 @@ public class StageEditorPhase : BasePhase
     public override void Enter()
     {
         _isOpen = true;
+
+        // Clear stale shadow maps left over from any previous gameplay session.
+        // Scene.RenderInternal always passes Program.shadowRenderTargets to the shader,
+        // so old shadow data would bleed into the editor if not wiped here.
+        foreach (var rt in Program.shadowRenderTargets)
+        {
+            _graphicsDevice.SetRenderTarget(rt);
+            _graphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.White, 1.0f, 0);
+        }
+        _graphicsDevice.SetRenderTarget(null);
         
         // Initialize camera
         camera.Fov = 60f;
@@ -546,33 +582,32 @@ public class StageEditorPhase : BasePhase
                     }
                     else if (piece.PieceType == StagePieceInstance.PieceTypeEnum.Chk)
                     {
-                        // chk(id,x,z,rot) or chk(id,x,z,rot,y/-y)
-                        // Stage.cs loads with ymult: -1 for regular checkpoints, +1 for aircheckpoint
-                        // So we need to reverse: regular chk gets negated, aircheckpoint doesn't
+                        // chk(id,x,z,rot) or chk(id,x,z,rot,fileY)
                         bool isAirCheckpoint = numericId == 64 || piece.Name.Contains("nfmm/aircheckpoint");
                         
-                        if (yCoord == 250) // Ground level, omit Y
+                        // Regular chk: loader does chkheight = fileY * -1 + Ground, so fileY = Ground - yCoord
+                        // Air chk:     loader does chkheight = fileY * 1  + 0,     so fileY = yCoord  (raw world Y)
+                        if (yCoord == 250) // Ground level — default chkheight = World.Ground, omit Y
                         {
                             writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
                         }
                         else
                         {
-                            // Regular checkpoint: negate Y (will be negated again on load)
-                            // Aircheckpoint: don't negate Y (won't be negated on load)
-                            int fileY = isAirCheckpoint ? yCoord : -yCoord;
+                            int fileY = isAirCheckpoint ? yCoord : (250 - yCoord);
                             writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{fileY})");
                         }
                     }
                     else // PieceTypeEnum.Set
                     {
-                        // set(id,x,z,rot) or set(id,x,z,rot,-y)
+                        // set(id,x,z,rot) or set(id,x,z,rot,fileY)
+                        // Loader: setheight = fileY * -1 + Ground, so fileY = Ground - yCoord
                         if (yCoord == 250) // Ground level, omit Y
                         {
                             writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
                         }
                         else
                         {
-                            writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{-yCoord})");
+                            writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{250 - yCoord})");
                         }
                     }
                 }
@@ -683,10 +718,10 @@ public class StageEditorPhase : BasePhase
             
             // Load the stage using the Stage class (it expects filename without extension)
             tab.Stage = new BackendStage($"user/{stageFileName}");
-            tab.StageRenderer = new ClientStageRenderer(_graphicsDevice, tab.Stage);
             tab.TabName = tab.Stage.Name;
             
-            // Remove all wall pieces from the stage immediately (we'll manage them separately)
+            // Remove all wall pieces from the stage BEFORE creating the ClientStageRenderer
+            // so it never includes them as children
             int removedCount = 0;
             for (int i = tab.Stage.pieces.Count - 1; i >= 0; i--)
             {
@@ -698,6 +733,8 @@ public class StageEditorPhase : BasePhase
                 }
             }
             Logging.Info($"Removed {removedCount} wall pieces from stage");
+            
+            tab.StageRenderer = new ClientStageRenderer(_graphicsDevice, tab.Stage);
             
             // First pass: detect wall groups and piece tags by reading the original file
             var stageFilePath = $"data/stages/user/{stageFileName}.txt";
@@ -816,18 +853,11 @@ public class StageEditorPhase : BasePhase
                     instance.PieceType = StagePieceInstance.PieceTypeEnum.Set;
                 }
                 
-                // For aircheckpoints loaded from file, Stage.cs uses ymult=1 which doesn't negate the Y
-                // But the file has negative Y values, so we need to negate them to get the correct position
-                bool isAirCheckpoint = pieceName.Contains("nfmm/aircheckpoint");
-                var loadedY = piece.Position.Y;
-                if (isAirCheckpoint && instance.PieceType == StagePieceInstance.PieceTypeEnum.Chk)
-                {
-                    loadedY = -loadedY;
-                }
-                
+                // For aircheckpoints the StageLoader uses ymult=1 (chkheight = fileY * 1 + 0), so the
+                // loaded Position.Y is already the correct world Y — no adjustment needed.
                 instance.Position = new f64Vector3(
                     piece.Position.X,
-                    loadedY,
+                    piece.Position.Y,
                     piece.Position.Z
                 );
                 
@@ -910,13 +940,76 @@ public class StageEditorPhase : BasePhase
     {
         if (ActiveTab?.Stage == null || ActiveTab?.StageRenderer == null) return;
         
-        // Create scene with the stage
+        // Create scene with the stage renderer and all current wall meshes
+        var sceneObjects = new List<GameObject> { ActiveTab.StageRenderer };
+        sceneObjects.AddRange(ActiveTab.WallMeshes);
         ActiveTab.Scene = new Scene(
             _graphicsDevice,
-            [ActiveTab.StageRenderer],
+            sceneObjects,
             camera,
             [] // No shadow cameras for now
         );
+    }
+    
+    /// <summary>
+    /// Rebuilds the ClientStageRenderer from scratch using the current Stage.pieces,
+    /// then re-applies the tab's World settings and recreates the Scene + walls.
+    /// Call this whenever pieces are added or removed.
+    /// </summary>
+    private void RebuildClientRenderer()
+    {
+        if (ActiveTab?.Stage == null) return;
+        
+        ActiveTab.StageRenderer = new ClientStageRenderer(_graphicsDevice, ActiveTab.Stage);
+        
+        // ClientStageRenderer.ctor calls World.ResetValues(), re-apply our tab settings
+        ApplyTabWorldValuesToWorld();
+        RecreateEnvironment();
+        RecreateScene();
+        RebuildAllWalls();
+    }
+    
+    private void ApplyTabWorldValuesToWorld()
+    {
+        if (ActiveTab == null) return;
+        World.Sky = new Color3((short)ActiveTab.SkyColor.X, (short)ActiveTab.SkyColor.Y, (short)ActiveTab.SkyColor.Z);
+        World.Fog = new Color3((short)ActiveTab.FogColor.X, (short)ActiveTab.FogColor.Y, (short)ActiveTab.FogColor.Z);
+        World.GroundColor = new Color3((short)ActiveTab.GroundColor.X, (short)ActiveTab.GroundColor.Y, (short)ActiveTab.GroundColor.Z);
+        World.FadeFrom = ActiveTab.FadeFrom;
+        World.HasPolys = ActiveTab.PolysEnabled;
+        World.DrawPolys = ActiveTab.PolysEnabled;
+        if (ActiveTab.PolysEnabled)
+            World.GroundPolysColor = new Color3((short)ActiveTab.PolysColor.X, (short)ActiveTab.PolysColor.Y, (short)ActiveTab.PolysColor.Z);
+        World.HasClouds = ActiveTab.CloudsEnabled;
+        World.DrawClouds = ActiveTab.CloudsEnabled;
+        if (ActiveTab.CloudsEnabled)
+        {
+            World.Clouds = [(int)ActiveTab.CloudsColor.X, (int)ActiveTab.CloudsColor.Y, (int)ActiveTab.CloudsColor.Z, ActiveTab.CloudsParam4, ActiveTab.CloudsHeight];
+            World.CloudCoverage = ActiveTab.CloudCoverage;
+        }
+        World.DrawMountains = ActiveTab.MountainsEnabled;
+        if (ActiveTab.MountainsEnabled)
+            World.MountainSeed = ActiveTab.MountainsSeed;
+        World.Snap = new Color3((short)ActiveTab.SnapA, (short)ActiveTab.SnapB, (short)ActiveTab.SnapC);
+    }
+    
+    private void RecreateEnvironment()
+    {
+        if (ActiveTab?.StageRenderer == null) return;
+        ActiveTab.StageRenderer.sky = new Sky(_graphicsDevice);
+        ActiveTab.StageRenderer.ground = new Ground(_graphicsDevice);
+        if (ActiveTab.PolysEnabled && ActiveTab.Stage != null)
+            ActiveTab.StageRenderer.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+        else
+            ActiveTab.StageRenderer.polys = null;
+        if (ActiveTab.CloudsEnabled)
+            ActiveTab.StageRenderer.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
+        else
+            ActiveTab.StageRenderer.clouds = null;
+        if (ActiveTab.MountainsEnabled)
+            ActiveTab.StageRenderer.mountains = Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
+        else
+            ActiveTab.StageRenderer.mountains = null;
     }
     
     private void UpdateCameraPosition()
@@ -985,9 +1078,22 @@ public class StageEditorPhase : BasePhase
                 var piece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
                 if (piece != null)
                 {
+                    // Remove from stage pieces array
+                    if (ActiveTab.Stage != null)
+                    {
+                        for (int i = 0; i < ActiveTab.Stage.pieces.Count; i++)
+                        {
+                            if (ActiveTab.Stage.pieces[i] == piece.Obj)
+                            {
+                                ActiveTab.Stage.pieces.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
                     ActiveTab.ScenePieces.Remove(piece);
                     ActiveTab.SelectedPieceId = -1;
-                    RecreateScene();
+                    ActiveTab.HasUnsavedChanges = true;
+                    RebuildClientRenderer();
                 }
             }
         }
@@ -1089,6 +1195,9 @@ public class StageEditorPhase : BasePhase
         }
         
         Logging.Debug($"Total wall meshes created: {ActiveTab.WallMeshes.Count}");
+        
+        // Rebuild scene so new wall meshes are included in instanced rendering
+        RecreateScene();
     }
     
     private void RenderSelectionHighlight(StagePieceInstance piece)
@@ -1191,6 +1300,252 @@ public class StageEditorPhase : BasePhase
         
         // Restore depth state
         _graphicsDevice.DepthStencilState = oldDepthStencilState;
+    }
+    
+    // Project a world-space point to screen coordinates (returns false if behind camera)
+    private bool WorldToScreen(Vector3 worldPos, out System.Numerics.Vector2 screenPos)
+    {
+        var viewport = _graphicsDevice.Viewport;
+        var clip = Microsoft.Xna.Framework.Vector4.Transform(new Microsoft.Xna.Framework.Vector4(worldPos, 1f),
+            camera.ViewMatrix * camera.ProjectionMatrix);
+        screenPos = default;
+        if (clip.W <= 0f) return false;
+        var ndc = new Vector3(clip.X / clip.W, clip.Y / clip.W, clip.Z / clip.W); // XNA Vector3
+        screenPos = new System.Numerics.Vector2(
+            (ndc.X + 1f) * 0.5f * viewport.Width,
+            (1f - ndc.Y) * 0.5f * viewport.Height);
+        return true;
+    }
+    
+    private void RenderGizmo(StagePieceInstance piece)
+    {
+        var piecePos = new Vector3((float)piece.Position.X, (float)piece.Position.Y, (float)piece.Position.Z);
+        var xEnd = piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0);
+        // Y arrow points up in world space (negative Y in FNA because Y is flipped)
+        var yEnd = piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0);
+        var zEnd = piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH);
+        
+        var oldDepth = _graphicsDevice.DepthStencilState;
+        _graphicsDevice.DepthStencilState = DepthStencilState.None;
+        
+        var effect = new BasicEffect(_graphicsDevice);
+        effect.View = camera.ViewMatrix;
+        effect.Projection = camera.ProjectionMatrix;
+        effect.VertexColorEnabled = true;
+        
+        // Colors: red=X, yellow=Y(up), blue=Z, green=RotY ring
+        var colX = _gizmoHovered == GizmoAxis.X || _gizmoDragging == GizmoAxis.X
+            ? new Microsoft.Xna.Framework.Color(1f, 0.6f, 0.6f, 1f)
+            : new Microsoft.Xna.Framework.Color(1f, 0.1f, 0.1f, 1f);
+        var colY = _gizmoHovered == GizmoAxis.Y || _gizmoDragging == GizmoAxis.Y
+            ? new Microsoft.Xna.Framework.Color(1f, 1f, 0.6f, 1f)
+            : new Microsoft.Xna.Framework.Color(1f, 0.9f, 0.1f, 1f);
+        var colZ = _gizmoHovered == GizmoAxis.Z || _gizmoDragging == GizmoAxis.Z
+            ? new Microsoft.Xna.Framework.Color(0.6f, 0.6f, 1f, 1f)
+            : new Microsoft.Xna.Framework.Color(0.1f, 0.1f, 1f, 1f);
+        var colRot = _gizmoHovered == GizmoAxis.RotY || _gizmoDragging == GizmoAxis.RotY
+            ? new Microsoft.Xna.Framework.Color(0.6f, 1f, 0.6f, 1f)
+            : new Microsoft.Xna.Framework.Color(0.1f, 0.9f, 0.1f, 1f);
+        
+        // Arrowhead side fins and tip offsets for each axis
+        var xSide     = new Vector3(0, GIZMO_ARROW_THICKNESS * 2, 0);
+        var ySide     = new Vector3(GIZMO_ARROW_THICKNESS * 2, 0, 0);
+        var zSide     = new Vector3(GIZMO_ARROW_THICKNESS * 2, 0, 0);
+        var xTipOffset = new Vector3(GIZMO_ARROW_LENGTH * 0.15f, 0, 0);
+        var yTipOffset = new Vector3(0, -GIZMO_ARROW_LENGTH * 0.15f, 0); // negative = upward
+        var zTipOffset = new Vector3(0, 0, GIZMO_ARROW_LENGTH * 0.15f);
+        
+        var verts = new List<VertexPositionColor>();
+        
+        // X arrow shaft
+        verts.Add(new(piecePos, colX)); verts.Add(new(xEnd, colX));
+        // X arrowhead
+        verts.Add(new(xEnd - xTipOffset + xSide, colX)); verts.Add(new(xEnd, colX));
+        verts.Add(new(xEnd - xTipOffset - xSide, colX)); verts.Add(new(xEnd, colX));
+        
+        // Y arrow shaft (points up)
+        verts.Add(new(piecePos, colY)); verts.Add(new(yEnd, colY));
+        // Y arrowhead
+        verts.Add(new(yEnd - yTipOffset + ySide, colY)); verts.Add(new(yEnd, colY));
+        verts.Add(new(yEnd - yTipOffset - ySide, colY)); verts.Add(new(yEnd, colY));
+        
+        // Z arrow shaft
+        verts.Add(new(piecePos, colZ)); verts.Add(new(zEnd, colZ));
+        // Z arrowhead
+        verts.Add(new(zEnd - zTipOffset + zSide, colZ)); verts.Add(new(zEnd, colZ));
+        verts.Add(new(zEnd - zTipOffset - zSide, colZ)); verts.Add(new(zEnd, colZ));
+        
+        // Rotation ring (circle of line segments at piece Y level)
+        const int ringSegs = 32;
+        for (int i = 0; i < ringSegs; i++)
+        {
+            float a0 = i / (float)ringSegs * (2f * MathF.PI);
+            float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
+            verts.Add(new(piecePos + new Vector3(MathF.Cos(a0) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a0) * GIZMO_ROT_RADIUS), colRot));
+            verts.Add(new(piecePos + new Vector3(MathF.Cos(a1) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a1) * GIZMO_ROT_RADIUS), colRot));
+        }
+        
+        var arr = verts.ToArray();
+        
+        // Compute camera-relative perpendicular offsets so lines appear ~5px wide at any distance.
+        // Camera right/up come from the columns of the view matrix (orthonormal rotation part).
+        float dist = Vector3.Distance(camera.Position, piecePos);
+        float halfFovRad = camera.Fov * MathF.PI / 180f * 0.5f;
+        // World units that map to 1 screen pixel at this distance
+        float pixelSize = dist * MathF.Tan(halfFovRad) * 2f / _graphicsDevice.Viewport.Height;
+        float s = pixelSize * 2f; // 2 px each side = ~5px total visual width
+        var camRight = new Vector3(camera.ViewMatrix.M11, camera.ViewMatrix.M21, camera.ViewMatrix.M31);
+        var camUp    = new Vector3(camera.ViewMatrix.M12, camera.ViewMatrix.M22, camera.ViewMatrix.M32);
+        var thickOffsets = new[]
+        {
+            Vector3.Zero,
+            camRight *  s, camRight * -s,
+            camUp    *  s, camUp    * -s,
+        };
+        
+        foreach (var offset in thickOffsets)
+        {
+            var offsetArr = offset == Vector3.Zero
+                ? arr
+                : arr.Select(v => new VertexPositionColor(v.Position + offset, v.Color)).ToArray();
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _graphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, offsetArr, 0, offsetArr.Length / 2);
+            }
+        }
+        
+        _graphicsDevice.DepthStencilState = oldDepth;
+        
+        // Update hover state based on screen-space distances
+        UpdateGizmoHover(piecePos);
+    }
+    
+    private void UpdateGizmoHover(Vector3 piecePos)
+    {
+        if (_gizmoDragging != GizmoAxis.None) return;
+        
+        float mx = _mouseX, my = _mouseY;
+        float closestDist = 20f; // hover threshold in pixels
+        _gizmoHovered = GizmoAxis.None;
+        
+        // Check X arrow
+        if (WorldToScreen(piecePos, out var ss0) &&
+            WorldToScreen(piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0), out var ss1))
+        {
+            float d = DistanceToSegment(new System.Numerics.Vector2(mx, my), ss0, ss1);
+            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.X; }
+        }
+        // Check Y arrow (up)
+        if (WorldToScreen(piecePos, out ss0) &&
+            WorldToScreen(piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0), out ss1))
+        {
+            float d = DistanceToSegment(new System.Numerics.Vector2(mx, my), ss0, ss1);
+            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Y; }
+        }
+        // Check Z arrow
+        if (WorldToScreen(piecePos, out ss0) &&
+            WorldToScreen(piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH), out ss1))
+        {
+            float d = DistanceToSegment(new System.Numerics.Vector2(mx, my), ss0, ss1);
+            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Z; }
+        }
+        // Check rotation ring (test each segment)
+        const int ringSegs = 32;
+        for (int i = 0; i < ringSegs; i++)
+        {
+            float a0 = i / (float)ringSegs * (2f * MathF.PI);
+            float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
+            var p0 = piecePos + new Vector3(MathF.Cos(a0) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a0) * GIZMO_ROT_RADIUS);
+            var p1 = piecePos + new Vector3(MathF.Cos(a1) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a1) * GIZMO_ROT_RADIUS);
+            if (WorldToScreen(p0, out ss0) && WorldToScreen(p1, out ss1))
+            {
+                float d = DistanceToSegment(new System.Numerics.Vector2(mx, my), ss0, ss1);
+                if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.RotY; }
+            }
+        }
+    }
+    
+    private static float DistanceToSegment(System.Numerics.Vector2 p, System.Numerics.Vector2 a, System.Numerics.Vector2 b)
+    {
+        var ab = b - a;
+        var ap = p - a;
+        float t = System.Numerics.Vector2.Dot(ap, ab) / System.Numerics.Vector2.Dot(ab, ab);
+        t = Math.Clamp(t, 0f, 1f);
+        return System.Numerics.Vector2.Distance(p, a + t * ab);
+    }
+    
+    private void ProcessOnePreviewThumbnail()
+    {
+        if (_previewQueue.Count == 0) return;
+        var (name, rad) = _previewQueue.Dequeue();
+        if (_partPreviews.ContainsKey(name)) return;
+        
+        // Find bounding sphere to set up camera
+        float maxR = rad.MaxRadius > 0 ? rad.MaxRadius : 300;
+        
+        var rt = new RenderTarget2D(_graphicsDevice, PreviewSize, PreviewSize,
+            false, SurfaceFormat.Color, DepthFormat.Depth24);
+        
+        var prevRTs = _graphicsDevice.GetRenderTargets();
+        _graphicsDevice.SetRenderTarget(rt);
+        _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(45, 45, 48));
+        
+        // Set up a simple isometric-ish view camera for the preview
+        float camDist = maxR * 3f;
+        var eye = new Vector3(camDist * 0.7f, camDist * 0.6f, camDist * 0.7f);
+        var target = Vector3.Zero;
+        var view = Matrix.CreateLookAt(eye, target, Vector3.Up);
+        var proj = Matrix.CreatePerspectiveFieldOfView(40f * (MathF.PI / 180f), 1f, 1f, camDist * 5f);
+        
+        var effect = new BasicEffect(_graphicsDevice)
+        {
+            View = view,
+            Projection = proj,
+            VertexColorEnabled = true
+        };
+        
+        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+        _graphicsDevice.BlendState = BlendState.Opaque;
+        
+        // Build vertex buffer from Rad3d polygons
+        var verts = new List<VertexPositionColor>();
+        foreach (var poly in rad.Polys)
+        {
+            if (poly.Points.Length < 3) continue;
+            // Fan triangulation
+            for (int i = 2; i < poly.Points.Length; i++)
+            {
+                var p0 = new Vector3(poly.Points[0].X, poly.Points[0].Y, poly.Points[0].Z);
+                var p1 = new Vector3(poly.Points[i - 1].X, poly.Points[i - 1].Y, poly.Points[i - 1].Z);
+                var p2 = new Vector3(poly.Points[i].X, poly.Points[i].Y, poly.Points[i].Z);
+                var xnaColor = new Microsoft.Xna.Framework.Color((int)poly.Color.R, (int)poly.Color.G, (int)poly.Color.B, 255);
+                verts.Add(new(p0, xnaColor));
+                verts.Add(new(p1, xnaColor));
+                verts.Add(new(p2, xnaColor));
+            }
+        }
+        
+        if (verts.Count > 0)
+        {
+            var arr = verts.ToArray();
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _graphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, arr, 0, arr.Length / 3);
+            }
+        }
+        
+        _graphicsDevice.SetRenderTargets(prevRTs);
+        
+        var texRef = Program.ImguiRenderer.BindTexture(rt);
+        _partPreviews[name] = (rt, texRef);
+    }
+    
+    private void QueuePartPreview(string name, Rad3d rad)
+    {
+        if (!_partPreviews.ContainsKey(name))
+            _previewQueue.Enqueue((name, rad));
     }
     
     private int PerformRayPicking(int screenX, int screenY)
@@ -1414,6 +1769,93 @@ public class StageEditorPhase : BasePhase
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
         
+        // Handle gizmo dragging before anything else
+        if (_gizmoDragging != GizmoAxis.None && ActiveTab != null)
+        {
+            var selectedPiece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+            if (selectedPiece != null)
+            {
+                int dx = x - _gizmoDragStartX;
+                int dy = y - _gizmoDragStartY;
+                
+                if (_gizmoDragging == GizmoAxis.X)
+                {
+                    // Project the gizmo arrow onto screen to get pixels-per-world-unit ratio
+                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0), out var ss1))
+                    {
+                        var screenArrow = ss1 - ss0;
+                        float screenLen = screenArrow.Length();
+                        if (screenLen > 1f)
+                        {
+                            var axisDir = screenArrow / screenLen;
+                            float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
+                            float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            selectedPiece.Position = new f64Vector3(
+                                (fix64)(_gizmoDragStartPosX + worldDelta),
+                                selectedPiece.Position.Y,
+                                selectedPiece.Position.Z);
+                            ActiveTab.HasUnsavedChanges = true;
+                        }
+                    }
+                }
+                else if (_gizmoDragging == GizmoAxis.Y)
+                {
+                    // Y axis: project the upward arrow (world -Y direction) to screen
+                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0), out var ss1))
+                    {
+                        var screenArrow = ss1 - ss0;
+                        float screenLen = screenArrow.Length();
+                        if (screenLen > 1f)
+                        {
+                            var axisDir = screenArrow / screenLen;
+                            float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
+                            // Moving up on screen decreases world Y (camera is flipped), so negate
+                            float worldDelta = -pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            selectedPiece.Position = new f64Vector3(
+                                selectedPiece.Position.X,
+                                (fix64)(_gizmoDragStartPosY + worldDelta),
+                                selectedPiece.Position.Z);
+                            ActiveTab.HasUnsavedChanges = true;
+                        }
+                    }
+                }
+                else if (_gizmoDragging == GizmoAxis.Z)
+                {
+                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH), out var ss1))
+                    {
+                        var screenArrow = ss1 - ss0;
+                        float screenLen = screenArrow.Length();
+                        if (screenLen > 1f)
+                        {
+                            var axisDir = screenArrow / screenLen;
+                            float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
+                            float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            selectedPiece.Position = new f64Vector3(
+                                selectedPiece.Position.X,
+                                selectedPiece.Position.Y,
+                                (fix64)(_gizmoDragStartPosZ + worldDelta));
+                            ActiveTab.HasUnsavedChanges = true;
+                        }
+                    }
+                }
+                else if (_gizmoDragging == GizmoAxis.RotY)
+                {
+                    // Angle delta based on horizontal drag
+                    float angleDelta = dx * 0.5f; // degrees per pixel
+                    selectedPiece.Rotation = new f64Vector3(
+                        selectedPiece.Rotation.X,
+                        (fix64)((_gizmoDragStartRotY + angleDelta) % 360f),
+                        selectedPiece.Rotation.Z);
+                    ActiveTab.HasUnsavedChanges = true;
+                }
+            }
+            _mouseX = x; _mouseY = y;
+            return;
+        }
+        
         _mouseX = x;
         _mouseY = y;
         
@@ -1467,7 +1909,7 @@ public class StageEditorPhase : BasePhase
             // Right-click for camera rotation (only in Scene view)
             _isRightButtonDown = true;
             
-            if (IsMouseInViewport(x, y) && !_isRightDragging && ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.Scene)
+            if (IsMouseInViewport(x, y) && !_isRightDragging && ActiveTab?.ViewMode == StageEditorTab.ViewModeEnum.Scene)
             {
                 _isRightDragging = true;
                 _rightDragStartX = x;
@@ -1478,8 +1920,24 @@ public class StageEditorPhase : BasePhase
         }
         else
         {
-            // Left-click (for future selection)
+            // Left-click
             _isLeftButtonDown = true;
+            
+            // Check if clicking a gizmo handle first
+            if (_gizmoHovered != GizmoAxis.None && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+            {
+                var piece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+                if (piece != null)
+                {
+                    _gizmoDragging = _gizmoHovered;
+                    _gizmoDragStartX = x;
+                    _gizmoDragStartY = y;
+                    _gizmoDragStartPosX = (float)piece.Position.X;
+                    _gizmoDragStartPosY = (float)piece.Position.Y;
+                    _gizmoDragStartPosZ = (float)piece.Position.Z;
+                    _gizmoDragStartRotY = (float)piece.Rotation.Y;
+                }
+            }
         }
     }
     
@@ -1523,6 +1981,13 @@ public class StageEditorPhase : BasePhase
         else if (mouseState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Released && _isLeftButtonDown)
         {
             _isLeftButtonDown = false;
+            
+            // If we were dragging gizmo, stop and skip ray picking
+            if (_gizmoDragging != GizmoAxis.None)
+            {
+                _gizmoDragging = GizmoAxis.None;
+                return;
+            }
             
             if (ActiveTab != null)
             {
@@ -1633,17 +2098,8 @@ public class StageEditorPhase : BasePhase
                 }
             }
             
-            // GameTick the stage pieces
-            foreach (var piece in ActiveTab.ScenePieces)
-            {
-                piece.Obj?.GameTick();
-            }
-            
-            // GameTick the wall meshes
-            foreach (var wallMesh in ActiveTab.WallMeshes)
-            {
-                wallMesh.GameTick();
-            }
+            // GameTick the renderer so StageObjectGameObjects sync position from piece.Obj
+            ActiveTab.StageRenderer?.GameTick();
         }
     }
     
@@ -1726,12 +2182,7 @@ public class StageEditorPhase : BasePhase
         
         // Render wall meshes separately (editor-only visualization) - BEFORE restoring scissor state
         if (ActiveTab != null)
-        {
-            foreach (var wallMesh in ActiveTab.WallMeshes)
-            {
-                wallMesh.Render(camera, null);
-            }
-        }
+        // Wall meshes are now part of the Scene (added in RecreateScene), no separate render needed
         
         // Restore old state
         _graphicsDevice.ScissorRectangle = oldScissorRect;
@@ -1744,8 +2195,12 @@ public class StageEditorPhase : BasePhase
             if (selectedPiece?.Obj != null)
             {
                 RenderSelectionHighlight(selectedPiece);
+                RenderGizmo(selectedPiece);
             }
         }
+        
+        // Process one pending preview thumbnail per frame
+        ProcessOnePreviewThumbnail();
     }
     
     public override void RenderImgui()
@@ -1863,18 +2318,19 @@ public class StageEditorPhase : BasePhase
             // Display camera info and stage name
             if (ActiveTab?.Stage != null)
             {
-                ImGui.Text($"    Stage: {ActiveTab.TabName}");
+                ImGui.SetNextItemWidth(200);
+                ImGui.Text($"  |  Stage: {ActiveTab.TabName}");
                 if (ActiveTab.HasUnsavedChanges)
                 {
                     ImGui.SameLine();
-                    ImGui.TextColored(new System.Numerics.Vector4(1.0f, 0.5f, 0.0f, 1.0f), "*");
+                    ImGui.TextColored(new System.Numerics.Vector4(1.0f, 0.6f, 0.1f, 1.0f), "(unsaved)");
                 }
-                ImGui.Text($"    Camera: Yaw={ActiveTab.CameraYaw:F1}° Pitch={ActiveTab.CameraPitch:F1}° Dist={ActiveTab.CameraDistance:F0}");
-                ImGui.Text($"    Pieces: {ActiveTab.ScenePieces.Count}");
+                ImGui.SameLine();
+                ImGui.TextDisabled($"  Yaw={ActiveTab.CameraYaw:F1}°  Pitch={ActiveTab.CameraPitch:F1}°  |  {ActiveTab.ScenePieces.Count} pieces");
             }
             else
             {
-                ImGui.Text("    No stage loaded - use File > New Stage or Load Stage");
+                ImGui.TextDisabled("  |  No stage loaded — File > New Stage or Load Stage");
             }
             
             ImGui.EndMainMenuBar();
@@ -1914,9 +2370,7 @@ public class StageEditorPhase : BasePhase
                             ActiveTab.GroundColor = new System.Numerics.Vector3(World.GroundColor.R, World.GroundColor.G, World.GroundColor.B);
                             ActiveTab.PolysEnabled = World.HasPolys;
                             if (World.HasPolys)
-                            {
                                 ActiveTab.PolysColor = new System.Numerics.Vector3(World.GroundPolysColor.R, World.GroundPolysColor.G, World.GroundPolysColor.B);
-                            }
                             ActiveTab.CloudsEnabled = World.HasClouds;
                             if (World.HasClouds)
                             {
@@ -1936,100 +2390,11 @@ public class StageEditorPhase : BasePhase
                         _activeTabIndex = i;
                         UpdateCameraPosition();
                         
-                        // Restore this tab's World properties
-                        if (ActiveTab != null)
-                        {
-                            World.Sky = new Color3(
-                                (short)(ActiveTab.SkyColor.X),
-                                (short)(ActiveTab.SkyColor.Y),
-                                (short)(ActiveTab.SkyColor.Z)
-                            );
-                            World.Fog = new Color3(
-                                (short)(ActiveTab.FogColor.X),
-                                (short)(ActiveTab.FogColor.Y),
-                                (short)(ActiveTab.FogColor.Z)
-                            );
-                            World.GroundColor = new Color3(
-                                (short)(ActiveTab.GroundColor.X),
-                                (short)(ActiveTab.GroundColor.Y),
-                                (short)(ActiveTab.GroundColor.Z)
-                            );
-                            World.HasPolys = ActiveTab.PolysEnabled;
-                            World.DrawPolys = ActiveTab.PolysEnabled;
-                            if (ActiveTab.PolysEnabled)
-                            {
-                                World.GroundPolysColor = new Color3(
-                                    (short)(ActiveTab.PolysColor.X),
-                                    (short)(ActiveTab.PolysColor.Y),
-                                    (short)(ActiveTab.PolysColor.Z)
-                                );
-                            }
-                            World.HasClouds = ActiveTab.CloudsEnabled;
-                            World.DrawClouds = ActiveTab.CloudsEnabled;
-                            if (ActiveTab.CloudsEnabled)
-                            {
-                                World.Clouds = new int[]
-                                {
-                                    (int)ActiveTab.CloudsColor.X,
-                                    (int)ActiveTab.CloudsColor.Y,
-                                    (int)ActiveTab.CloudsColor.Z,
-                                    ActiveTab.CloudsParam4,
-                                    ActiveTab.CloudsHeight
-                                };
-                                World.CloudCoverage = ActiveTab.CloudCoverage;
-                            }
-                            World.DrawMountains = ActiveTab.MountainsEnabled;
-                            if (ActiveTab.MountainsEnabled)
-                            {
-                                World.MountainSeed = ActiveTab.MountainsSeed;
-                            }
-                            World.Snap = new Color3(
-                                (short)ActiveTab.SnapA,
-                                (short)ActiveTab.SnapB,
-                                (short)ActiveTab.SnapC
-                            );
-                            World.FadeFrom = ActiveTab.FadeFrom;
-                            
-                            // Recreate environment elements with new colors
-                            if (ActiveTab.Stage != null && ActiveTab.StageRenderer != null)
-                            {
-                                ActiveTab.StageRenderer.sky = new Sky(_graphicsDevice);
-                                ActiveTab.StageRenderer.ground = new Ground(_graphicsDevice);
-                                
-                                // Recreate polys, clouds, and mountains based on tab settings
-                                if (ActiveTab.PolysEnabled)
-                                {
-                                    ActiveTab.StageRenderer.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
-                                }
-                                else
-                                {
-                                    ActiveTab.StageRenderer.polys = null;
-                                }
-                                
-                                if (ActiveTab.CloudsEnabled)
-                                {
-                                    ActiveTab.StageRenderer.clouds = Environment.MakeClouds(-10000, 10000, -10000, 10000, _graphicsDevice);
-                                }
-                                else
-                                {
-                                    ActiveTab.StageRenderer.clouds = null;
-                                }
-                                
-                                if (ActiveTab.MountainsEnabled)
-                                {
-                                    ActiveTab.StageRenderer.mountains = Environment.MakeMountains(-10000, 10000, -10000, 10000, _graphicsDevice);
-                                }
-                                else
-                                {
-                                    ActiveTab.StageRenderer.mountains = null;
-                                }
-                            }
-                            
-                            // Rebuild walls for this tab
-                            RebuildAllWalls();
-                            
-                            RecreateScene();
-                        }
+                        // Restore this tab's World properties and rebuild environment
+                        ApplyTabWorldValuesToWorld();
+                        RecreateEnvironment();
+                        RebuildAllWalls();
+                        RecreateScene();
                     }
                     ImGui.EndTabItem();
                 }
@@ -2158,7 +2523,7 @@ public class StageEditorPhase : BasePhase
             ImGui.Separator();
             
             ImGui.Text("Sky Color:");
-            if (ImGui.ColorEdit3("##skycolor", ref _editSkyColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRGB))
+            if (ImGui.ColorEdit3("##skycolor", ref _editSkyColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRgb))
             {
                 // Live preview
                 World.Sky = new Color3((short)(_editSkyColor.X * 255), (short)(_editSkyColor.Y * 255), (short)(_editSkyColor.Z * 255));
@@ -2166,14 +2531,14 @@ public class StageEditorPhase : BasePhase
             }
             
             ImGui.Text("Fog Color:");
-            if (ImGui.ColorEdit3("##fogcolor", ref _editFogColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRGB))
+            if (ImGui.ColorEdit3("##fogcolor", ref _editFogColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRgb))
             {
                 // Live preview
                 World.Fog = new Color3((short)(_editFogColor.X * 255), (short)(_editFogColor.Y * 255), (short)(_editFogColor.Z * 255));
             }
             
             ImGui.Text("Ground Color:");
-            if (ImGui.ColorEdit3("##groundcolor", ref _editGroundColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRGB))
+            if (ImGui.ColorEdit3("##groundcolor", ref _editGroundColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRgb))
             {
                 // Live preview
                 World.GroundColor = new Color3((short)(_editGroundColor.X * 255), (short)(_editGroundColor.Y * 255), (short)(_editGroundColor.Z * 255));
@@ -2204,7 +2569,7 @@ public class StageEditorPhase : BasePhase
             if (_editPolysEnabled)
             {
                 ImGui.Text("Polys Color:");
-                if (ImGui.ColorEdit3("##polyscolor", ref _editPolysColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRGB))
+                if (ImGui.ColorEdit3("##polyscolor", ref _editPolysColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRgb))
                 {
                     // Live preview
                     World.GroundPolysColor = new Color3(
@@ -2247,7 +2612,7 @@ public class StageEditorPhase : BasePhase
             if (_editCloudsEnabled)
             {
                 ImGui.Text("Clouds Color:");
-                if (ImGui.ColorEdit3("##cloudscolor", ref _editCloudsColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRGB))
+                if (ImGui.ColorEdit3("##cloudscolor", ref _editCloudsColor, ImGuiColorEditFlags.Uint8 | ImGuiColorEditFlags.DisplayRgb))
                 {
                     // Live preview
                     World.Clouds[0] = (int)(_editCloudsColor.X * 255);
@@ -2372,33 +2737,13 @@ public class StageEditorPhase : BasePhase
                     ActiveTab.TabName = _editStageName;
                     
                     // Store all properties in the active tab
-                    ActiveTab.SkyColor = new System.Numerics.Vector3(
-                        _editSkyColor.X * 255,
-                        _editSkyColor.Y * 255,
-                        _editSkyColor.Z * 255
-                    );
-                    ActiveTab.FogColor = new System.Numerics.Vector3(
-                        _editFogColor.X * 255,
-                        _editFogColor.Y * 255,
-                        _editFogColor.Z * 255
-                    );
-                    ActiveTab.GroundColor = new System.Numerics.Vector3(
-                        _editGroundColor.X * 255,
-                        _editGroundColor.Y * 255,
-                        _editGroundColor.Z * 255
-                    );
-                    ActiveTab.PolysColor = new System.Numerics.Vector3(
-                        _editPolysColor.X * 255,
-                        _editPolysColor.Y * 255,
-                        _editPolysColor.Z * 255
-                    );
+                    ActiveTab.SkyColor = new System.Numerics.Vector3(_editSkyColor.X * 255, _editSkyColor.Y * 255, _editSkyColor.Z * 255);
+                    ActiveTab.FogColor = new System.Numerics.Vector3(_editFogColor.X * 255, _editFogColor.Y * 255, _editFogColor.Z * 255);
+                    ActiveTab.GroundColor = new System.Numerics.Vector3(_editGroundColor.X * 255, _editGroundColor.Y * 255, _editGroundColor.Z * 255);
+                    ActiveTab.PolysColor = new System.Numerics.Vector3(_editPolysColor.X * 255, _editPolysColor.Y * 255, _editPolysColor.Z * 255);
                     ActiveTab.PolysEnabled = _editPolysEnabled;
                     ActiveTab.CloudsEnabled = _editCloudsEnabled;
-                    ActiveTab.CloudsColor = new System.Numerics.Vector3(
-                        _editCloudsColor.X * 255,
-                        _editCloudsColor.Y * 255,
-                        _editCloudsColor.Z * 255
-                    );
+                    ActiveTab.CloudsColor = new System.Numerics.Vector3(_editCloudsColor.X * 255, _editCloudsColor.Y * 255, _editCloudsColor.Z * 255);
                     ActiveTab.CloudsParam4 = _editCloudsParam4;
                     ActiveTab.CloudsHeight = _editCloudsHeight;
                     ActiveTab.CloudCoverage = _editCloudCoverage;
@@ -2409,76 +2754,9 @@ public class StageEditorPhase : BasePhase
                     ActiveTab.SnapC = _editSnapC;
                     ActiveTab.FadeFrom = _editFadeFrom;
                     
-                    // Update World values directly for immediate visual effect
-                    World.Sky = new Color3(
-                        (short)ActiveTab.SkyColor.X,
-                        (short)ActiveTab.SkyColor.Y,
-                        (short)ActiveTab.SkyColor.Z
-                    );
-                    World.Fog = new Color3(
-                        (short)ActiveTab.FogColor.X,
-                        (short)ActiveTab.FogColor.Y,
-                        (short)ActiveTab.FogColor.Z
-                    );
-                    World.GroundColor = new Color3(
-                        (short)ActiveTab.GroundColor.X,
-                        (short)ActiveTab.GroundColor.Y,
-                        (short)ActiveTab.GroundColor.Z
-                    );
-                    
-                    // Update polys
-                    World.HasPolys = ActiveTab.PolysEnabled;
-                    World.DrawPolys = ActiveTab.PolysEnabled;
-                    if (ActiveTab.PolysEnabled)
-                    {
-                        World.GroundPolysColor = new Color3(
-                            (short)ActiveTab.PolysColor.X,
-                            (short)ActiveTab.PolysColor.Y,
-                            (short)ActiveTab.PolysColor.Z
-                        );
-                    }
-                    
-                    // Update clouds
-                    World.HasClouds = ActiveTab.CloudsEnabled;
-                    World.DrawClouds = ActiveTab.CloudsEnabled;
-                    if (ActiveTab.CloudsEnabled)
-                    {
-                        World.Clouds = new int[]
-                        {
-                            (int)ActiveTab.CloudsColor.X,
-                            (int)ActiveTab.CloudsColor.Y,
-                            (int)ActiveTab.CloudsColor.Z,
-                            ActiveTab.CloudsParam4,
-                            ActiveTab.CloudsHeight
-                        };
-                        World.CloudCoverage = ActiveTab.CloudCoverage;
-                    }
-                    
-                    // Update mountains
-                    World.DrawMountains = ActiveTab.MountainsEnabled;
-                    if (ActiveTab.MountainsEnabled)
-                    {
-                        World.MountainSeed = ActiveTab.MountainsSeed;
-                    }
-                    
-                    World.Snap = new Color3(
-                        (short)ActiveTab.SnapA,
-                        (short)ActiveTab.SnapB,
-                        (short)ActiveTab.SnapC
-                    );
-                    World.FadeFrom = ActiveTab.FadeFrom;
-                    
-                    // Recreate sky and ground objects to reflect color changes
-                    if (ActiveTab.StageRenderer != null)
-                    {
-                        ActiveTab.StageRenderer.sky = new Sky(_graphicsDevice);
-                        ActiveTab.StageRenderer.ground = new Ground(_graphicsDevice);
-                    }
-                    
-                    // Recreate scene to apply visual changes
+                    ApplyTabWorldValuesToWorld();
+                    RecreateEnvironment();
                     RecreateScene();
-                    
-                    // Mark as dirty since properties changed
                     ActiveTab.HasUnsavedChanges = true;
                 }
                 
@@ -2718,38 +2996,87 @@ public class StageEditorPhase : BasePhase
             return;
         }
         
-        ImGui.Text($"Hierarchy - {ActiveTab.TabName}");
+        ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.6f, 0.6f, 0.6f, 1f));
+        ImGui.Text($"Hierarchy — {ActiveTab.TabName}");
+        ImGui.PopStyleColor();
         ImGui.Separator();
         
-        // List stage walls
+        // Hierarchy search filter
+        ImGui.SetNextItemWidth(-1);
+        ImGui.InputText("##hiersearch", ref _hierarchySearch, 128);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Filter by name");
+        ImGui.Spacing();
+        
+        bool hasFilter = !string.IsNullOrWhiteSpace(_hierarchySearch);
+        
+        // Stage Borders section
         if (ActiveTab.StageWalls.Count > 0)
         {
-            ImGui.TextColored(new System.Numerics.Vector4(0.7f, 0.7f, 1.0f, 1.0f), "Stage Borders:");
-            foreach (var wall in ActiveTab.StageWalls)
+            bool bordersOpen = ImGui.TreeNodeEx("Stage Borders", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+            if (bordersOpen)
             {
-                bool isSelected = wall.Id == ActiveTab.SelectedWallId;
-                
-                if (ImGui.Selectable($"{wall.GetDisplayName()} ({wall.Count} walls)", isSelected))
+                foreach (var wall in ActiveTab.StageWalls)
                 {
-                    ActiveTab.SelectedWallId = wall.Id;
-                    ActiveTab.SelectedPieceId = -1; // Deselect pieces
+                    string label = $"{wall.GetDisplayName()} ({wall.Count} walls)";
+                    if (hasFilter && !label.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    
+                    bool isSelected = wall.Id == ActiveTab.SelectedWallId;
+                    if (isSelected)
+                        ImGui.PushStyleColor(ImGuiCol.Header, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.45f));
+                    
+                    if (ImGui.Selectable($"  {label}##wall{wall.Id}", isSelected, ImGuiSelectableFlags.SpanAllColumns))
+                    {
+                        ActiveTab.SelectedWallId = wall.Id;
+                        ActiveTab.SelectedPieceId = -1;
+                    }
+                    
+                    if (isSelected)
+                        ImGui.PopStyleColor();
                 }
+                ImGui.TreePop();
             }
-            ImGui.Separator();
+            ImGui.Spacing();
         }
         
-        // List all non-wall pieces in the scene
-        ImGui.TextColored(new System.Numerics.Vector4(0.7f, 1.0f, 0.7f, 1.0f), "Stage Pieces:");
-        for (int i = 0; i < ActiveTab.ScenePieces.Count; i++)
+        // Group pieces by type
+        var setPieces  = ActiveTab.ScenePieces.Where(p => p.PieceType == StagePieceInstance.PieceTypeEnum.Set).ToList();
+        var chkPieces  = ActiveTab.ScenePieces.Where(p => p.PieceType == StagePieceInstance.PieceTypeEnum.Chk).ToList();
+        var fixPieces  = ActiveTab.ScenePieces.Where(p => p.PieceType == StagePieceInstance.PieceTypeEnum.Fix).ToList();
+        
+        RenderHierarchyGroup("Set Pieces", setPieces, hasFilter);
+        RenderHierarchyGroup("Checkpoints", chkPieces, hasFilter);
+        RenderHierarchyGroup("Fix Hoops", fixPieces, hasFilter);
+    }
+    
+    private void RenderHierarchyGroup(string label, List<StagePieceInstance> pieces, bool hasFilter)
+    {
+        if (pieces.Count == 0 && !hasFilter) return;
+        
+        bool open = ImGui.TreeNodeEx($"{label} ({pieces.Count})", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+        if (open)
         {
-            var piece = ActiveTab.ScenePieces[i];
-            bool isSelected = piece.Id == ActiveTab.SelectedPieceId;
-            
-            if (ImGui.Selectable($"{piece.Name} (ID: {piece.Id})", isSelected))
+            foreach (var piece in pieces)
             {
-                ActiveTab.SelectedPieceId = piece.Id;
-                ActiveTab.SelectedWallId = -1; // Deselect walls
+                string displayName = $"{piece.Name} (ID: {piece.Id})";
+                if (hasFilter && !displayName.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                
+                bool isSelected = piece.Id == ActiveTab!.SelectedPieceId;
+                if (isSelected)
+                    ImGui.PushStyleColor(ImGuiCol.Header, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.45f));
+                
+                if (ImGui.Selectable($"  {displayName}##piece{piece.Id}", isSelected, ImGuiSelectableFlags.SpanAllColumns))
+                {
+                    ActiveTab!.SelectedPieceId = piece.Id;
+                    ActiveTab!.SelectedWallId = -1;
+                }
+                
+                if (isSelected)
+                    ImGui.PopStyleColor();
             }
+            ImGui.TreePop();
         }
     }
     
@@ -2798,173 +3125,306 @@ public class StageEditorPhase : BasePhase
     
     private void RenderInspector()
     {
+        ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.6f, 0.6f, 0.6f, 1f));
         ImGui.Text("Inspector");
+        ImGui.PopStyleColor();
         ImGui.Separator();
         
         if (ActiveTab == null) return;
         
-        // Check if a wall is selected
+        // Wall selected
         if (ActiveTab.SelectedWallId >= 0)
         {
             var wall = ActiveTab.StageWalls.Find(w => w.Id == ActiveTab.SelectedWallId);
             if (wall != null)
             {
-                ImGui.Text($"Selected: {wall.GetDisplayName()}");
-                ImGui.Separator();
+                ImGui.TextColored(new System.Numerics.Vector4(0.7f, 0.7f, 1f, 1f), wall.GetDisplayName());
+                ImGui.Spacing();
                 
-                // Wall Count
-                var count = wall.Count;
-                if (ImGui.DragInt("Wall Count", ref count, 1f, 1, 100))
+                if (ImGui.CollapsingHeader("Border Settings", ImGuiTreeNodeFlags.DefaultOpen))
                 {
-                    if (wall.Count != count)
+                    ImGui.Spacing();
+                    var count = wall.Count;
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.DragInt("Wall Count##wc", ref count, 1f, 1, 100))
                     {
-                        wall.Count = count;
-                        ActiveTab!.HasUnsavedChanges = true;
-                        RebuildAllWalls();
+                        if (wall.Count != count) { wall.Count = count; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
                     }
+                    var pos = wall.Position;
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.DragInt("Position##wp", ref pos, 10f))
+                    {
+                        if (wall.Position != pos) { wall.Position = pos; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
+                    }
+                    var offset = wall.Offset;
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.DragInt("Offset##wo", ref offset, 10f))
+                    {
+                        if (wall.Offset != offset) { wall.Offset = offset; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
+                    }
+                    ImGui.Spacing();
                 }
                 
-                // Position
-                var pos = wall.Position;
-                if (ImGui.DragInt("Position", ref pos, 10f))
-                {
-                    if (wall.Position != pos)
-                    {
-                        wall.Position = pos;
-                        ActiveTab!.HasUnsavedChanges = true;
-                        RebuildAllWalls();
-                    }
-                }
-                
-                // Offset
-                var offset = wall.Offset;
-                if (ImGui.DragInt("Offset", ref offset, 10f))
-                {
-                    if (wall.Offset != offset)
-                    {
-                        wall.Offset = offset;
-                        ActiveTab!.HasUnsavedChanges = true;
-                        RebuildAllWalls();
-                    }
-                }
-                
-                ImGui.Separator();
-                
-                if (ImGui.Button("Delete Border"))
+                ImGui.Spacing();
+                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.6f, 0.15f, 0.15f, 1f));
+                if (ImGui.Button("Delete Border", new System.Numerics.Vector2(-1, 0)))
                 {
                     ActiveTab.StageWalls.Remove(wall);
                     ActiveTab.SelectedWallId = -1;
-                    ActiveTab!.HasUnsavedChanges = true;
+                    ActiveTab.HasUnsavedChanges = true;
+                    RebuildAllWalls();
                 }
+                ImGui.PopStyleColor();
             }
+            return;
         }
-        else if (ActiveTab.SelectedPieceId >= 0)
+        
+        // Piece selected
+        if (ActiveTab.SelectedPieceId >= 0)
         {
             var piece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
             if (piece != null)
             {
-                ImGui.Text($"Selected: {piece.Name}");
-                ImGui.Separator();
+                string shortName = piece.Name.Contains('/') ? piece.Name.Substring(piece.Name.LastIndexOf('/') + 1) : piece.Name;
+                ImGui.TextColored(new System.Numerics.Vector4(0.7f, 1f, 0.7f, 1f), shortName);
+                ImGui.TextDisabled(piece.Name);
+                ImGui.Spacing();
                 
-                // Position (Y is displayed with -250 offset, so 250 ground level shows as 0)
-                var displayPos = new System.Numerics.Vector3((float)piece.Position.X, (float)piece.Position.Y - 250, (float)piece.Position.Z);
-                if (ImGui.DragFloat3("Position", ref displayPos, 10f))
+                // Transform section
+                if (ImGui.CollapsingHeader("Transform", ImGuiTreeNodeFlags.DefaultOpen))
                 {
-                    piece.Position = new f64Vector3((fix64)displayPos.X, (fix64)displayPos.Y + 250, (fix64)displayPos.Z);
-                    ActiveTab!.HasUnsavedChanges = true;
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("Y is offset by 250 for clarity.\nY=0 represents ground level (actual Y=250)");
-                }
-                
-                // Rotation (Y only - Yaw)
-                var rotY = (float)piece.Rotation.Y;
-                if (ImGui.DragFloat("Rotation (Yaw)", ref rotY, 1f, -180f, 180f))
-                {
-                    piece.Rotation = new f64Vector3(piece.Rotation.X, (fix64)rotY, piece.Rotation.Z);
-                    ActiveTab!.HasUnsavedChanges = true;
-                }
-                
-                // Piece Type
-                var pieceType = (int)piece.PieceType;
-                string[] typeNames = { "Set", "Checkpoint", "Fix Hoop" };
-                if (ImGui.Combo("Type", ref pieceType, typeNames, typeNames.Length))
-                {
-                    piece.PieceType = (StagePieceInstance.PieceTypeEnum)pieceType;
-                    ActiveTab!.HasUnsavedChanges = true;
-                }
-                
-                ImGui.Separator();
-                
-                if (ImGui.Button("Delete"))
-                {
-                    if (ActiveTab?.Stage != null)
+                    ImGui.Spacing();
+                    // Position: display Y offset by 250 so ground=0 for the user
+                    var displayPos = new System.Numerics.Vector3((float)piece.Position.X, (float)piece.Position.Y - 250, (float)piece.Position.Z);
+                    ImGui.Text("Position");
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.DragFloat3("##pos", ref displayPos, 10f))
                     {
-                        // Find and remove from stage pieces array
-                        for (int i = 0; i < ActiveTab?.Stage.pieces.Count; i++)
+                        piece.Position = new f64Vector3((fix64)displayPos.X, (fix64)displayPos.Y + 250, (fix64)displayPos.Z);
+                        ActiveTab.HasUnsavedChanges = true;
+                    }
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip("Y=0 is ground level (internal Y=250).");
+                    
+                    ImGui.Text("Rotation (Yaw)");
+                    float rotY = (float)piece.Rotation.Y;
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.DragFloat("##roty", ref rotY, 1f, -180f, 180f))
+                    {
+                        piece.Rotation = new f64Vector3(piece.Rotation.X, (fix64)rotY, piece.Rotation.Z);
+                        ActiveTab.HasUnsavedChanges = true;
+                    }
+                    ImGui.Spacing();
+                }
+                
+                // Piece settings section
+                if (ImGui.CollapsingHeader("Piece Settings", ImGuiTreeNodeFlags.DefaultOpen))
+                {
+                    ImGui.Spacing();
+                    ImGui.Text("Type");
+                    int pieceType = (int)piece.PieceType;
+                    string[] typeNames = { "Set", "Checkpoint", "Fix Hoop" };
+                    ImGui.SetNextItemWidth(-1);
+                    if (ImGui.Combo("##type", ref pieceType, typeNames, typeNames.Length))
+                    {
+                        piece.PieceType = (StagePieceInstance.PieceTypeEnum)pieceType;
+                        ActiveTab.HasUnsavedChanges = true;
+                    }
+                    
+                    ImGui.Text("AI Tags");
+                    ImGui.SetNextItemWidth(-1);
+                    string tags = piece.Tags;
+                    if (ImGui.InputText("##tags", ref tags, 64))
+                    {
+                        piece.Tags = tags;
+                        ActiveTab.HasUnsavedChanges = true;
+                    }
+                    if (ImGui.IsItemHovered())
+                        ImGui.SetTooltip("AI waypoint tags: p=road, pr=ramp, pt=turn, ph=halfpipe, po=fixroad start");
+                    ImGui.Spacing();
+                }
+                
+                ImGui.Spacing();
+                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.6f, 0.15f, 0.15f, 1f));
+                if (ImGui.Button("Delete Piece", new System.Numerics.Vector2(-1, 0)))
+                {
+                    if (ActiveTab.Stage != null)
+                    {
+                        for (int i = 0; i < ActiveTab.Stage.pieces.Count; i++)
                         {
-                            if (ActiveTab?.Stage.pieces[i] == piece.Obj)
+                            if (ActiveTab.Stage.pieces[i] == piece.Obj)
                             {
-                                ActiveTab?.Stage.pieces.RemoveAt(i);
+                                ActiveTab.Stage.pieces.RemoveAt(i);
                                 break;
                             }
                         }
                     }
-                    
                     ActiveTab.ScenePieces.Remove(piece);
                     ActiveTab.SelectedPieceId = -1;
-                    ActiveTab!.HasUnsavedChanges = true;
+                    ActiveTab.HasUnsavedChanges = true;
+                    RebuildClientRenderer();
                 }
+                ImGui.PopStyleColor();
+                return;
             }
         }
-        else
-        {
-            ImGui.TextDisabled("No piece selected");
-        }
+        
+        // Nothing selected
+        ImGui.Spacing();
+        ImGui.TextDisabled("No piece selected.");
+        ImGui.TextDisabled("Click a piece in the viewport");
+        ImGui.TextDisabled("or select from the Hierarchy.");
     }
     
     private void RenderPartsLibrary()
     {
+        // Header row: title + counts
+        ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.6f, 0.6f, 0.6f, 1f));
         ImGui.Text("Stage Parts Library");
+        ImGui.PopStyleColor();
+        ImGui.SameLine();
+        ImGui.TextDisabled($"({_availableParts.Count} parts)");
         ImGui.Separator();
         
-        ImGui.Text($"Available parts: {_availableParts.Count}");
+        // Search bar
+        float searchWidth = ImGui.GetContentRegionAvail().X - 4;
+        ImGui.SetNextItemWidth(searchWidth);
+        ImGui.InputText("##partssearch", ref _partsSearch, 128);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Search parts by name");
+        ImGui.Spacing();
         
-        // Simple list for now - we'll add thumbnails later
-        ImGui.BeginChild("PartsScroll");
+        // Category filter tabs
+        string[] catLabels = { "All", "nfmm/", "Vendor", "User" };
+        for (int c = 0; c < catLabels.Length; c++)
+        {
+            if (c > 0) ImGui.SameLine();
+            bool active = _partsCategory == c;
+            if (active)
+                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.7f));
+            if (ImGui.SmallButton(catLabels[c]))
+                _partsCategory = c;
+            if (active)
+                ImGui.PopStyleColor();
+        }
+        ImGui.Separator();
+        
+        // Build filtered list
+        bool hasSearchFilter = !string.IsNullOrWhiteSpace(_partsSearch);
+        
+        ImGui.BeginChild("##partsgrid", new System.Numerics.Vector2(0, 0), ImGuiChildFlags.None);
+        
+        const float tileImgSize = 56f;  // image / button area height
+        const float tileLabelH  = 16f;  // label height below image
+        const float tileW       = 64f;  // total tile width
+        const float tileH       = tileImgSize + tileLabelH + 4f;
+        const float tilePad     = 6f;
+        
+        float regionW = ImGui.GetContentRegionAvail().X;
+        int   cols    = Math.Max(1, (int)(regionW / (tileW + tilePad)));
+        int   col     = 0;
+        
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new System.Numerics.Vector2(tilePad, tilePad));
         
         for (int i = 0; i < _availableParts.Count; i++)
         {
             var part = _availableParts[i];
             
-            if (ImGui.Selectable(part.Name))
+            // Category filter
+            bool inCategory = _partsCategory switch
             {
-                // Create a new mesh instance and add it to the stage (stage is guaranteed to exist here since we return early if null)
-                var newMesh = new StageObject(
-                    part.Rad!,
-                    f64Vector3.Zero,
-                    f64Euler.Identity
-                );
-                
-                var instance = new StagePieceInstance(
-                    part.Name,
-                    newMesh,
-                    ActiveTab.GetNextPieceId()
-                );
-                
-                ActiveTab.ScenePieces.Add(instance);
-                ActiveTab!.Stage!.pieces[ActiveTab!.Stage.stagePartCount] = newMesh;
-                ActiveTab.SelectedPieceId = instance.Id;
-                ActiveTab!.HasUnsavedChanges = true;
+                1 => part.Name.StartsWith("nfmm/"),
+                2 => part.Name.StartsWith("nfmv/") || part.Name.StartsWith("vendor/"),
+                3 => part.Name.StartsWith("user/"),
+                _ => true
+            };
+            if (!inCategory) continue;
+            
+            // Name search
+            if (hasSearchFilter && !part.Name.Contains(_partsSearch, StringComparison.OrdinalIgnoreCase))
+                continue;
+            
+            // Queue preview generation if not yet done
+            if (part.Rad != null)
+                QueuePartPreview(part.Name, part.Rad);
+            
+            if (col > 0)
+                ImGui.SameLine(0, tilePad);
+            
+            ImGui.PushID(i);
+            ImGui.BeginGroup();
+            
+            bool clicked;
+            if (_partPreviews.TryGetValue(part.Name, out var preview))
+            {
+                // Show 3D thumbnail
+                // Flip UVs vertically — FNA (OpenGL) render targets are stored bottom-up
+                ImGui.Image(preview.Ref, new System.Numerics.Vector2(tileW, tileImgSize),
+                    new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
+                clicked = ImGui.IsItemClicked();
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(part.Name);
+            }
+            else
+            {
+                // Fallback: colored button while preview is loading
+                var tileColor = GetPartTileColor(part.Name);
+                ImGui.PushStyleColor(ImGuiCol.Button, tileColor);
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new System.Numerics.Vector4(
+                    Math.Min(tileColor.X + 0.15f, 1f),
+                    Math.Min(tileColor.Y + 0.15f, 1f),
+                    Math.Min(tileColor.Z + 0.15f, 1f),
+                    tileColor.W));
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.9f));
+                clicked = ImGui.Button("##tile", new System.Numerics.Vector2(tileW, tileImgSize));
+                ImGui.PopStyleColor(3);
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip(part.Name);
             }
             
-            // TODO: Add drag-and-drop support
+            // Label centered under thumbnail
+            string shortName = part.Name.Contains('/') ? part.Name[(part.Name.LastIndexOf('/') + 1)..] : part.Name;
+            var textSize = ImGui.CalcTextSize(shortName, false, tileW);
+            float textOffX = Math.Max(0, (tileW - textSize.X) * 0.5f);
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + textOffX);
+            ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + textSize.X);
+            ImGui.TextUnformatted(shortName);
+            ImGui.PopTextWrapPos();
+            
+            ImGui.EndGroup();
+            ImGui.PopID();
+            
+            if (clicked && ActiveTab?.Stage != null && part.Rad != null)
+            {
+                var newMesh = new StageObject(part.Rad, f64Vector3.Zero, f64Euler.Identity);
+                var instance = new StagePieceInstance(part.Name, newMesh, ActiveTab.GetNextPieceId());
+                ActiveTab.ScenePieces.Add(instance);
+                ActiveTab.Stage.pieces[ActiveTab.Stage.stagePartCount] = newMesh;
+                ActiveTab.SelectedPieceId = instance.Id;
+                ActiveTab.HasUnsavedChanges = true;
+                RebuildClientRenderer();
+            }
+            
+            col++;
+            if (col >= cols) col = 0;
         }
         
+        ImGui.PopStyleVar(); // ItemSpacing
         ImGui.EndChild();
     }
+    
+    private static System.Numerics.Vector4 GetPartTileColor(string name)
+    {
+        if (name.Contains("checkpoint") || name.Contains("chk"))
+            return new System.Numerics.Vector4(0.18f, 0.55f, 0.18f, 0.85f); // green
+        if (name.Contains("fix") || name.Contains("hoop"))
+            return new System.Numerics.Vector4(0.65f, 0.20f, 0.20f, 0.85f); // red
+        if (name.Contains("road") || name.Contains("ramp") || name.Contains("roll"))
+            return new System.Numerics.Vector4(0.38f, 0.30f, 0.20f, 0.85f); // brown
+        if (name.Contains("wall") || name.Contains("border"))
+            return new System.Numerics.Vector4(0.25f, 0.25f, 0.45f, 0.85f); // blue-grey
+        if (name.Contains("turn") || name.Contains("twist") || name.Contains("bend"))
+            return new System.Numerics.Vector4(0.45f, 0.30f, 0.10f, 0.85f); // orange-brown
+        return new System.Numerics.Vector4(0.25f, 0.30f, 0.38f, 0.85f); // default slate
+    }
 }
-
-
-

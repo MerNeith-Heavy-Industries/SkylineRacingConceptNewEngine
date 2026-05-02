@@ -1,8 +1,8 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using ManagedBass;
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Reflection;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using ManagedBass;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
@@ -36,6 +36,7 @@ public class Program : Game
     public static Effect _mountainsShader { get; private set; }
     public static RenderTarget2D[] shadowRenderTargets { get; private set; }
     private ImGuiRenderer _imguiRenderer;
+    public static ImGuiRenderer ImguiRenderer { get; private set; }
 
     internal static int _lastFrameTime;
     internal static int _lastTickTime;
@@ -290,6 +291,7 @@ public class Program : Game
     protected override void Initialize()
     {
         _imguiRenderer = new ImGuiRenderer(this);
+        ImguiRenderer = _imguiRenderer;
 
 #if USE_BASS
         Bass.Init();

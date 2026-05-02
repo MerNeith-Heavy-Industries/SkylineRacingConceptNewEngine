@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using nfm_world_library;
@@ -147,7 +147,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
         foreach (var player in _players)
         {
             ImGui.PushStyleColor(ImGuiCol.Text, player.Color);
-            ImGui.Text($"• {player.Name}");
+            ImGui.Text($"� {player.Name}");
             ImGui.PopStyleColor();
             
             ImGui.Indent(20);

@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Numerics;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using nfm_world_library;
 using nfm_world_library.mad;
 using nfm_world.camera;
@@ -101,7 +101,7 @@ public class SettingsMenu(Program game)
 
         // Set window size and position
         var viewport = ImGui.GetMainViewport();
-        var center = viewport.GetCenter();
+        var center = ImGui.GetCenter(viewport);
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(new Vector2(570, 390), ImGuiCond.Appearing);
 

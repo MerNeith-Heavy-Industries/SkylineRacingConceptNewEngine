@@ -1,4 +1,4 @@
-using ImGuiNET;
+using Hexa.NET.ImGui;
 
 namespace nfm_world.ui;
 
@@ -122,7 +122,7 @@ public class MessageWindow
 
         // Center the window on screen
         var viewport = ImGui.GetMainViewport();
-        var center = viewport.GetCenter();
+        var center = ImGui.GetCenter(viewport);
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new System.Numerics.Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(new System.Numerics.Vector2(400, 0), ImGuiCond.Appearing);
 
