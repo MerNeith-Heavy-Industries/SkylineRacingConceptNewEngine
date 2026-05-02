@@ -1,6 +1,3 @@
-[submodule "MonoGame.ImGuiNet"]
-	path = MonoGame.ImGuiNet
-	url = https://github.com/uwx/FNA.ImGuiNet
 [submodule "FNA"]
 	path = FNA
 	url = https://github.com/uwx/FNA
