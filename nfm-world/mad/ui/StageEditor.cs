@@ -214,7 +214,7 @@ public class StageEditorPhase : BasePhase
     private bool _snapEnabled = false;
     private float _snapSize = 100f; // world units; standard road spacing is 5600
     // Preset snap sizes (shown as labels in the UI)
-    private static readonly float[] SnapPresets = { 100f, 200f, 400f, 560f, 1000f, 2800f, 5600f };
+    private static readonly float[] SnapPresets = { 50f, 100f, 200f, 400f, 560f, 1000f, 2800f, 5600f };
     private int _snapPresetIndex = 0;
     
     // New stage dialog state
@@ -3301,7 +3301,7 @@ public class StageEditorPhase : BasePhase
                     ImGui.TextColored(new System.Numerics.Vector4(0.1f, 0.9f, 1.0f, 1.0f), $"Placing: {placingName}");
                     ImGui.SameLine();
                     string snapInfo = _snapEnabled ? $"Snap:{_snapSize:F0}" : "Snap:OFF";
-                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]   [Q/E] Rotate  [S] Snap  [LMB] Place  [RMB/Esc] Cancel");
+                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]   [Q/E] Rotate  [LMB] Place  [Esc] Cancel");
                 }
                 else
                 {
