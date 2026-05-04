@@ -79,6 +79,15 @@ public class StageWall
     }
 }
 
+// Editor-only group for organizing pieces in the hierarchy — no gameplay effect
+public class HierarchyGroup
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "Group";
+    public List<int> PieceIds { get; set; } = new(); // editor-assigned piece IDs
+    public bool IsExpanded { get; set; } = true;
+}
+
 // Main viewport tab for the stage editor
 public class StageEditorTab
 {
@@ -87,6 +96,14 @@ public class StageEditorTab
     public List<StageWall> StageWalls { get; set; } = new();
     public List<MeshedGameObject> WallMeshes { get; set; } = new(); // Visual representation of walls
     public List<string> UnknownParameters { get; set; } = new(); // Unknown/unhandled stage parameters to preserve
+    // Editor-only groups for hierarchy organisation (saved as metadata comments in stage file)
+    public List<HierarchyGroup> HierarchyGroups { get; set; } = new();
+    private int _nextGroupId = 0;
+    public int GetNextGroupId() => _nextGroupId++;
+    // Where the "Ungrouped" section appears relative to the group list (-1 = after all groups)
+    public int UngroupedOrderIndex { get; set; } = -1;
+    // Temporary storage during LoadStage for raw group key strings before piece resolution
+    public List<List<string>> _pendingGroupKeys = new();
     // Camera/view controls
     public Vector3 CameraPosition { get; set; } = new Vector3(0, -300, -1500);
     public float CameraYaw { get; set; } = 0f;
@@ -94,6 +111,7 @@ public class StageEditorTab
     public float CameraDistance { get; set; } = 1000f;
     public float TopDownHeight { get; set; } = 2000f;
     public Vector3 TopDownPanPosition { get; set; } = Vector3.Zero;
+    public bool TopDownOrtho { get; set; } = false;
     
     // Mouse drag state for camera control
     public bool IsDragging { get; set; } = false;
@@ -105,6 +123,7 @@ public class StageEditorTab
     // Selection state
     public int SelectedPieceId { get; set; } = -1;
     public int SelectedWallId { get; set; } = -1;
+    public HashSet<int> SelectedPieceIds { get; set; } = new(); // multi-selection set
     
     // View mode
     public enum ViewModeEnum { Scene, TopDown }
@@ -266,6 +285,9 @@ public class StageEditorPhase : BasePhase
     private string _partsSearch = "";
     private int _partsCategory = 0; // 0=All, 1=nfmm, 2=vendor, 3=user
     
+    // Swap piece mode
+    private bool _isSwapMode = false;
+    
     // Part preview thumbnails: FileName -> (RenderTarget, ImGui texture ref)
     private readonly Dictionary<string, (RenderTarget2D RT, ImTextureRef Ref)> _partPreviews = new();
     private readonly Queue<(string Name, Rad3d Rad)> _previewQueue = new();
@@ -281,6 +303,11 @@ public class StageEditorPhase : BasePhase
     private float _gizmoDragStartPosY;
     private float _gizmoDragStartPosZ;
     private float _gizmoDragStartRotY;
+    // Centroid of the selection at drag start (used for rotation pivot and axis projection)
+    private float _gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ;
+    // Start positions of ALL selected pieces at gizmo drag start (id -> position/rotY)
+    private Dictionary<int, f64Vector3> _gizmoDragStartPositions = new();
+    private Dictionary<int, float> _gizmoDragStartRotations = new();
     private const float GIZMO_ARROW_LENGTH = 600f;
     private const float GIZMO_ARROW_THICKNESS = 12f;
     private const float GIZMO_ROT_RADIUS = 400f;
@@ -294,6 +321,21 @@ public class StageEditorPhase : BasePhase
     
     // Hierarchy drag-reorder state
     private int _hierDragSourceId = -1;
+    
+    // Rectangle selection state (viewport LMB drag)
+    private bool _isRectSelecting = false;
+    private int _rectSelectStartX, _rectSelectStartY;
+    private int _rectSelectEndX, _rectSelectEndY;
+    
+    // Hierarchy group context menu state
+    private int _groupContextMenuGroupId = -1;
+    private string _renameGroupBuffer = "";
+    private bool _showRenameGroupDialog = false;
+    
+    // Copy/paste clipboard: stores (name, relativePos, rotation, type, tags, rad)
+    private record ClipboardPiece(string Name, f64Vector3 RelPos, f64Vector3 Rotation,
+        StagePieceInstance.PieceTypeEnum PieceType, string Tags, Rad3d? Rad);
+    private List<ClipboardPiece> _clipboard = new();
     
     public StageEditorPhase(GraphicsDevice graphicsDevice)
     {
@@ -587,101 +629,97 @@ public class StageEditorPhase : BasePhase
             
             writer.WriteLine();
             
-            // Write all stage pieces
-            foreach (var piece in ActiveTab.ScenePieces)
+            // ── Build piece lists ──────────────────────────────────────────────────
+            var allNonWall = ActiveTab.ScenePieces
+                .Where(p => !p.Name.Contains("thewall") && p.PieceType != StagePieceInstance.PieceTypeEnum.Wall)
+                .ToList();
+            var groupedIds = new HashSet<int>(ActiveTab.HierarchyGroups.SelectMany(g => g.PieceIds));
+            var ungroupedPieces = allNonWall.Where(p => !groupedIds.Contains(p.Id)).ToList();
+            int ungroupedSlotSave = ActiveTab.UngroupedOrderIndex >= 0
+                ? Math.Clamp(ActiveTab.UngroupedOrderIndex, 0, ActiveTab.HierarchyGroups.Count)
+                : ActiveTab.HierarchyGroups.Count; // default: after all groups
+            
+            // Local helper: serialise one piece as set/chk/fix
+            void WritePiece(StagePieceInstance piece)
             {
-                // Skip thewall pieces - they're handled by StageWalls
-                if (piece.Name.Contains("thewall") || piece.PieceType == StagePieceInstance.PieceTypeEnum.Wall)
-                    continue;
-                    
-                if (piece.Obj != null)
+                if (piece.Obj == null) return;
+                var pos = piece.Position;
+                var rot = piece.Rotation;
+                string pieceId;
+                int numericId = -1;
+                if (piece.Name.StartsWith("nfmm/"))
                 {
-                    var pos = piece.Position;
-                    var rot = piece.Rotation;
-                    
-                    // Determine piece identifier (numeric ID or string name)
-                    string pieceId;
-                    int numericId = -1;
-                    if (piece.Name.StartsWith("nfmm/"))
-                    {
-                        // For nfmm pieces, find the numeric index and add offset of 10
-                        var baseName = piece.Name.Substring(5); // Remove "nfmm/" prefix
-                        var index = Array.IndexOf(BackendGameSparker.StageRads, baseName);
-                        if (index >= 0)
-                        {
-                            numericId = index + 10;
-                            pieceId = numericId.ToString();
-                        }
-                        else
-                        {
-                            pieceId = piece.Name; // Fallback to string name
-                        }
-                    }
-                    else
-                    {
-                        // For other pieces, use string name
-                        pieceId = piece.Name;
-                    }
-                    
-                    int yCoord = (int)pos.Y;
-                    int rotX = (int)rot.Y; // Yaw is the rotation around Y axis
-                    
-                    // Write based on piece type
-                    if (piece.PieceType == StagePieceInstance.PieceTypeEnum.Fix)
-                    {
-                        // fix(id,x,z,-y,rot)
-                        writer.WriteLine($"fix({pieceId},{(int)pos.X},{(int)pos.Z},{yCoord},{rotX})");
-                    }
-                    else if (piece.PieceType == StagePieceInstance.PieceTypeEnum.Chk)
-                    {
-                        // chk(id,x,z,rot) or chk(id,x,z,rot,fileY)
-                        bool isAirCheckpoint = numericId == 64 || piece.Name.Contains("nfmm/aircheckpoint");
-                        
-                        // Regular chk: loader does chkheight = fileY * -1 + Ground, so fileY = Ground - yCoord
-                        // Air chk:     loader does chkheight = fileY * 1  + 0,     so fileY = yCoord  (raw world Y)
-                        if (yCoord == 250) // Ground level — default chkheight = World.Ground, omit Y
-                        {
-                            writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
-                        }
-                        else
-                        {
-                            int fileY = isAirCheckpoint ? yCoord : (250 - yCoord);
-                            writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{fileY})");
-                        }
-                    }
-                    else // PieceTypeEnum.Set
-                    {
-                        // set(id,x,z,rot) or set(id,x,z,rot,fileY)
-                        // Loader: setheight = fileY * -1 + Ground, so fileY = Ground - yCoord
-                        if (yCoord == 250) // Ground level, omit Y
-                        {
-                            writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
-                        }
-                        else
-                        {
-                            writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{250 - yCoord})");
-                        }
-                    }
+                    var baseName = piece.Name.Substring(5);
+                    var idx = Array.IndexOf(BackendGameSparker.StageRads, baseName);
+                    if (idx >= 0) { numericId = idx + 10; pieceId = numericId.ToString(); }
+                    else pieceId = piece.Name;
+                }
+                else { pieceId = piece.Name; }
+                int yCoord = (int)pos.Y;
+                int rotX   = (int)rot.Y;
+                if (piece.PieceType == StagePieceInstance.PieceTypeEnum.Fix)
+                {
+                    writer.WriteLine($"fix({pieceId},{(int)pos.X},{(int)pos.Z},{yCoord},{rotX})");
+                }
+                else if (piece.PieceType == StagePieceInstance.PieceTypeEnum.Chk)
+                {
+                    bool isAir = numericId == 64 || piece.Name.Contains("nfmm/aircheckpoint");
+                    if (yCoord == 250) writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
+                    else { int fileY = isAir ? yCoord : 250 - yCoord; writer.WriteLine($"chk({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{fileY})"); }
+                }
+                else
+                {
+                    if (yCoord == 250) writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX})");
+                    else writer.WriteLine($"set({pieceId},{(int)pos.X},{(int)pos.Z},{rotX},{250 - yCoord})");
                 }
             }
             
-            // Write stage walls at the end
+            // ── Write pieces in visual order ────────────────────────────────────────
+            // New format: each group is preceded by  #editor_group(Name)
+            // and its pieces appear immediately below.  Ungrouped pieces appear at
+            // ungroupedSlotSave (0 = before all groups, groups.Count = after all groups).
+            for (int slot = 0; slot <= ActiveTab.HierarchyGroups.Count; slot++)
+            {
+                if (slot == ungroupedSlotSave && ungroupedPieces.Count > 0)
+                {
+                    foreach (var piece in ungroupedPieces)
+                        WritePiece(piece);
+                    writer.WriteLine();
+                }
+                if (slot < ActiveTab.HierarchyGroups.Count)
+                {
+                    var group = ActiveTab.HierarchyGroups[slot];
+                    var groupPieces = group.PieceIds
+                        .Select(id => allNonWall.Find(p => p.Id == id))
+                        .Where(p => p != null).ToList()!;
+                    writer.WriteLine($"#editor_group({group.Name})");
+                    foreach (var piece in groupPieces)
+                        WritePiece(piece);
+                    writer.WriteLine();
+                }
+            }
+            
+            // ── Stage walls ─────────────────────────────────────────────────────────
             if (ActiveTab.StageWalls.Count > 0)
             {
-                writer.WriteLine();
                 foreach (var wall in ActiveTab.StageWalls)
                 {
                     string command = wall.Direction switch
                     {
-                        StageWall.WallDirection.Right => "maxr",
-                        StageWall.WallDirection.Left => "maxl",
-                        StageWall.WallDirection.Top => "maxt",
+                        StageWall.WallDirection.Right  => "maxr",
+                        StageWall.WallDirection.Left   => "maxl",
+                        StageWall.WallDirection.Top    => "maxt",
                         StageWall.WallDirection.Bottom => "maxb",
-                        _ => "maxr"
+                        _                              => "maxr"
                     };
                     writer.WriteLine($"{command}({wall.Count},{wall.Position},{wall.Offset})");
                 }
+                writer.WriteLine();
             }
+            
+            // ── Editor metadata (non-default ungrouped order) ────────────────────────
+            if (ActiveTab.UngroupedOrderIndex >= 0)
+                writer.WriteLine($"#editor_ungrouped_order({ActiveTab.UngroupedOrderIndex})");
             
             Logging.Info($"Stage saved to: {filePath}");
             ActiveTab.HasUnsavedChanges = false;
@@ -715,33 +753,6 @@ public class StageEditorPhase : BasePhase
     
     private void LoadStage(string stageFileName)
     {
-        // Save current tab's World properties before loading new stage
-        if (ActiveTab != null)
-        {
-            ActiveTab.SkyColor = new System.Numerics.Vector3(World.Sky.R, World.Sky.G, World.Sky.B);
-            ActiveTab.FogColor = new System.Numerics.Vector3(World.Fog.R, World.Fog.G, World.Fog.B);
-            ActiveTab.GroundColor = new System.Numerics.Vector3(World.GroundColor.R, World.GroundColor.G, World.GroundColor.B);
-            ActiveTab.PolysEnabled = World.HasPolys;
-            if (World.HasPolys)
-            {
-                ActiveTab.PolysColor = new System.Numerics.Vector3(World.GroundPolysColor.R, World.GroundPolysColor.G, World.GroundPolysColor.B);
-            }
-            ActiveTab.CloudsEnabled = World.HasClouds;
-            if (World.HasClouds)
-            {
-                ActiveTab.CloudsColor = new System.Numerics.Vector3(World.Clouds[0], World.Clouds[1], World.Clouds[2]);
-                ActiveTab.CloudsParam4 = World.Clouds[3];
-                ActiveTab.CloudsHeight = World.Clouds[4];
-                ActiveTab.CloudCoverage = World.CloudCoverage;
-            }
-            ActiveTab.MountainsEnabled = World.DrawMountains;
-            ActiveTab.MountainsSeed = World.MountainSeed;
-            ActiveTab.SnapA = World.Snap.R;
-            ActiveTab.SnapB = World.Snap.G;
-            ActiveTab.SnapC = World.Snap.B;
-            ActiveTab.FadeFrom = World.FadeFrom;
-        }
-        
         // Check if this stage is already open in a tab
         foreach (var tab in _tabs)
         {
@@ -792,6 +803,10 @@ public class StageEditorPhase : BasePhase
             var stageFilePath = $"data/stages/user/{stageFileName}.txt";
             var pieceTags = new Dictionary<string, string>(); // key: "set_x_z" or "chk_x_z" or "fix_x_z", value: tags
             
+            int currentGroupForPieces = -1; // index into HierarchyGroups; -1 = ungrouped
+            int newFmtPieceParseIdx = 0;    // increments for every set/chk/fix line
+            var newFmtPieceGroup = new Dictionary<int, int>(); // pieceIdx → groupIdx (new format only)
+            
             if (System.IO.File.Exists(stageFilePath))
             {
                 var wallId = 0;
@@ -828,27 +843,65 @@ public class StageEditorPhase : BasePhase
                         var p = int.Parse(trimmed.Split(',')[2].TrimEnd(')'));
                         tab.StageWalls.Add(new StageWall(StageWall.WallDirection.Bottom, n, o, p, wallId++));
                     }
-                    // Capture piece tags
+                    // Capture piece tags AND track new-format group membership
                     else if (trimmed.StartsWith("set(") || trimmed.StartsWith("chk(") || trimmed.StartsWith("fix("))
                     {
+                        // New-format group tracking: record which group this file-order piece index belongs to
+                        if (currentGroupForPieces >= 0)
+                            newFmtPieceGroup[newFmtPieceParseIdx] = currentGroupForPieces;
+                        newFmtPieceParseIdx++;
+                        
+                        // Tags (extra characters after the closing parenthesis)
                         var parenIndex = trimmed.IndexOf(')');
                         if (parenIndex != -1 && parenIndex < trimmed.Length - 1)
                         {
                             var tags = trimmed.Substring(parenIndex + 1);
                             if (!string.IsNullOrEmpty(tags))
                             {
-                                // Extract coordinates to create unique key
-                                var type = trimmed.Substring(0, 3);
+                                var type   = trimmed.Substring(0, 3);
                                 var coords = trimmed.Substring(4, parenIndex - 4).Split(',');
                                 if (coords.Length >= 3)
-                                {
-                                    var x = coords[1];
-                                    var z = coords[2];
-                                    var key = $"{type}_{x}_{z}";
-                                    pieceTags[key] = tags;
-                                }
+                                    pieceTags[$"{type}_{coords[1]}_{coords[2]}"] = tags;
                             }
                         }
+                    }
+                    // Capture editor group metadata
+                    else if (trimmed.StartsWith("#editor_group(") && trimmed.EndsWith(")"))
+                    {
+                        var inner = trimmed.Substring(14, trimmed.Length - 15);
+                        if (!inner.Contains(','))
+                        {
+                            // ── New format: #editor_group(Name) — no X:Z keys ──
+                            // Pieces that follow (until next #editor_group) belong to this group.
+                            tab.HierarchyGroups.Add(new HierarchyGroup
+                            {
+                                Id   = tab.GetNextGroupId(),
+                                Name = inner
+                            });
+                            currentGroupForPieces = tab.HierarchyGroups.Count - 1;
+                        }
+                        else
+                        {
+                            // ── Old format: #editor_group(Name,x:z,...) — coordinate keys ──
+                            var gparts = inner.Split(',');
+                            if (gparts.Length >= 1)
+                            {
+                                var keys = gparts.Skip(1).Select(s => s.Trim()).ToList();
+                                tab.HierarchyGroups.Add(new HierarchyGroup
+                                {
+                                    Id      = tab.GetNextGroupId(),
+                                    Name    = gparts[0],
+                                    PieceIds = new List<int>()
+                                });
+                                tab._pendingGroupKeys.Add(keys);
+                            }
+                        }
+                    }
+                    else if (trimmed.StartsWith("#editor_ungrouped_order(") && trimmed.EndsWith(")"))
+                    {
+                        var inner = trimmed.Substring(24, trimmed.Length - 25);
+                        if (int.TryParse(inner.Trim(), out int uoi))
+                            tab.UngroupedOrderIndex = uoi;
                     }
                     // Capture unknown parameters
                     else if (!string.IsNullOrWhiteSpace(trimmed) &&
@@ -859,8 +912,11 @@ public class StageEditorPhase : BasePhase
                              !trimmed.StartsWith("polys(") &&
                              !trimmed.StartsWith("snap(") &&
                              !trimmed.StartsWith("clouds(") &&
+                             !trimmed.StartsWith("cloudcoverage(") &&
                              !trimmed.StartsWith("mountains(") &&
-                             !trimmed.StartsWith("fadefrom("))
+                             !trimmed.StartsWith("fadefrom(") &&
+                             !trimmed.StartsWith("#editor_group(") &&
+                             !trimmed.StartsWith("#editor_ungrouped_order("))
                     {
                         tab.UnknownParameters.Add(trimmed);
                     }
@@ -934,6 +990,58 @@ public class StageEditorPhase : BasePhase
             
             // Remove any thewall pieces that might have slipped through
             tab.ScenePieces.RemoveAll(p => p.Name.Contains("thewall"));
+            
+            // ── Resolve group membership ────────────────────────────────────────────
+            if (newFmtPieceGroup.Count > 0 || (tab.HierarchyGroups.Count > 0 && tab._pendingGroupKeys.Count == 0))
+            {
+                // New format: assign by file-order index
+                int pidx = 0;
+                foreach (var instance in tab.ScenePieces)
+                {
+                    if (instance.PieceType != StagePieceInstance.PieceTypeEnum.Wall)
+                    {
+                        if (newFmtPieceGroup.TryGetValue(pidx, out int grpIdx) &&
+                            grpIdx >= 0 && grpIdx < tab.HierarchyGroups.Count)
+                            tab.HierarchyGroups[grpIdx].PieceIds.Add(instance.Id);
+                        pidx++;
+                    }
+                }
+            }
+            else
+            {
+                // Old format: resolve X:Z coordinate keys
+                for (int gi = 0; gi < tab.HierarchyGroups.Count; gi++)
+                {
+                    var group = tab.HierarchyGroups[gi];
+                    var keys  = gi < tab._pendingGroupKeys.Count ? tab._pendingGroupKeys[gi] : new List<string>();
+                    var resolved = new List<int>();
+                    foreach (var key in keys)
+                    {
+                        if (key.Contains(':'))
+                        {
+                            var kparts = key.Split(':');
+                            if (kparts.Length == 2 &&
+                                int.TryParse(kparts[0], out int kx) &&
+                                int.TryParse(kparts[1], out int kz))
+                            {
+                                var match = tab.ScenePieces.Find(p =>
+                                    Math.Abs((int)p.Position.X - kx) <= 1 &&
+                                    Math.Abs((int)p.Position.Z - kz) <= 1);
+                                if (match != null && !resolved.Contains(match.Id))
+                                    resolved.Add(match.Id);
+                            }
+                        }
+                        else if (int.TryParse(key, out int legacyIdx) && legacyIdx >= 0 && legacyIdx < tab.ScenePieces.Count)
+                        {
+                            var legacyPiece = tab.ScenePieces[legacyIdx];
+                            if (!resolved.Contains(legacyPiece.Id))
+                                resolved.Add(legacyPiece.Id);
+                        }
+                    }
+                    group.PieceIds = resolved;
+                }
+            }
+            tab._pendingGroupKeys.Clear();
             
             // Store properties in the tab from World (set by Stage constructor)
             tab.TabName = tab.Stage.Name;
@@ -1084,6 +1192,7 @@ public class StageEditorPhase : BasePhase
             camera.Position = ActiveTab.CameraPosition;
             camera.LookAt = ActiveTab.CameraPosition + lookDirection;
             camera.Up = -Vector3.UnitY;
+            camera.IsOrthographic = false;
         }
         else
         {
@@ -1091,6 +1200,14 @@ public class StageEditorPhase : BasePhase
             camera.Position = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
             camera.LookAt = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
             camera.Up = Vector3.UnitZ;
+            camera.IsOrthographic = ActiveTab.TopDownOrtho;
+            if (ActiveTab.TopDownOrtho)
+            {
+                // Match the visible world area that perspective would show at this height.
+                // half_height_world = TopDownHeight * tan(Fov/2)
+                float halfH = ActiveTab.TopDownHeight * MathF.Tan(camera.Fov * MathF.PI / 180f * 0.5f);
+                camera.OrthoScale = (camera.Height > 0) ? (2f * halfH / camera.Height) : 1f;
+            }
         }
     }
     
@@ -1155,30 +1272,117 @@ public class StageEditorPhase : BasePhase
         // Handle keyboard shortcuts here
         if (key == Keys.Delete)
         {
-            if (ActiveTab.SelectedPieceId >= 0)
+            // Build the set of IDs to delete (multi-selection or single)
+            var idsToDelete = ActiveTab.SelectedPieceIds.Count > 0
+                ? new List<int>(ActiveTab.SelectedPieceIds)
+                : ActiveTab.SelectedPieceId >= 0 ? new List<int> { ActiveTab.SelectedPieceId } : new List<int>();
+            
+            if (idsToDelete.Count > 0)
             {
-                var piece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
-                if (piece != null)
+                PushUndoSnapshot();
+                foreach (var deleteId in idsToDelete)
                 {
-                    PushUndoSnapshot();
-                    // Remove from stage pieces array
+                    var piece = ActiveTab.ScenePieces.Find(p => p.Id == deleteId);
+                    if (piece == null) continue;
                     if (ActiveTab.Stage != null)
-                    {
                         for (int i = 0; i < ActiveTab.Stage.pieces.Count; i++)
-                        {
-                            if (ActiveTab.Stage.pieces[i] == piece.Obj)
-                            {
-                                ActiveTab.Stage.pieces.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
+                            if (ActiveTab.Stage.pieces[i] == piece.Obj) { ActiveTab.Stage.pieces.RemoveAt(i); break; }
                     ActiveTab.ScenePieces.Remove(piece);
-                    ActiveTab.SelectedPieceId = -1;
-                    ActiveTab.HasUnsavedChanges = true;
-                    RebuildClientRenderer();
+                    foreach (var grp in ActiveTab.HierarchyGroups) grp.PieceIds.Remove(piece.Id);
                 }
+                ActiveTab.SelectedPieceIds.Clear();
+                ActiveTab.SelectedPieceId = -1;
+                ActiveTab.HasUnsavedChanges = true;
+                RebuildClientRenderer();
             }
+        }
+        
+        if (key == Keys.S && _isCtrlPressed)
+        {
+            if (ActiveTab?.Stage != null) SaveStage();
+        }
+        
+        if (key == Keys.C && _isCtrlPressed && ActiveTab != null)
+        {
+            // Copy all selected pieces (or primary if no multi-selection)
+            var ids = ActiveTab.SelectedPieceIds.Count > 0
+                ? ActiveTab.SelectedPieceIds
+                : (ActiveTab.SelectedPieceId >= 0 ? new HashSet<int> { ActiveTab.SelectedPieceId } : new HashSet<int>());
+            if (ids.Count > 0)
+            {
+                var pieces = ActiveTab.ScenePieces.Where(p => ids.Contains(p.Id)).ToList();
+                // Compute centroid so paste is relative
+                var centroid = new f64Vector3(
+                    (fix64)(pieces.Average(p => (double)p.Position.X)),
+                    (fix64)(pieces.Average(p => (double)p.Position.Y)),
+                    (fix64)(pieces.Average(p => (double)p.Position.Z)));
+                _clipboard = pieces.Select(p => new ClipboardPiece(
+                    p.Name,
+                    new f64Vector3(p.Position.X - centroid.X, p.Position.Y - centroid.Y, p.Position.Z - centroid.Z),
+                    p.Rotation, p.PieceType, p.Tags,
+                    _availableParts.FirstOrDefault(a => a.Name == p.Name).Rad)).ToList();
+            }
+        }
+        
+        if (key == Keys.V && _isCtrlPressed && ActiveTab?.Stage != null && _clipboard.Count > 0)
+        {
+            PushUndoSnapshot();
+            ActiveTab.SelectedPieceIds.Clear();
+            // Determine paste offset — use snap size when enabled, otherwise a small fixed nudge
+            float pasteOffsetXZ = _snapEnabled && _snapSize > 0f ? _snapSize : 200f;
+            var primaryPiece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+            f64Vector3 pasteOrigin;
+            if (primaryPiece != null)
+            {
+                float ox = (float)primaryPiece.Position.X + pasteOffsetXZ;
+                float oz = (float)primaryPiece.Position.Z + pasteOffsetXZ;
+                if (_snapEnabled && _snapSize > 0f)
+                {
+                    ox = MathF.Round(ox / _snapSize) * _snapSize;
+                    oz = MathF.Round(oz / _snapSize) * _snapSize;
+                }
+                pasteOrigin = new f64Vector3((fix64)ox, primaryPiece.Position.Y, (fix64)oz);
+            }
+            else
+            {
+                pasteOrigin = f64Vector3.Zero;
+            }
+            int lastId = -1;
+            foreach (var clip in _clipboard)
+            {
+                float wx = (float)pasteOrigin.X + (float)clip.RelPos.X;
+                float wy = (float)pasteOrigin.Y + (float)clip.RelPos.Y;
+                float wz = (float)pasteOrigin.Z + (float)clip.RelPos.Z;
+                if (_snapEnabled && _snapSize > 0f)
+                {
+                    wx = MathF.Round(wx / _snapSize) * _snapSize;
+                    wz = MathF.Round(wz / _snapSize) * _snapSize;
+                }
+                var worldPos = new f64Vector3((fix64)wx, (fix64)wy, (fix64)wz);
+                StageObject? mesh = null;
+                if (clip.Rad != null)
+                {
+                    var euler = new f64Euler(
+                        f64AngleSingle.FromDegrees(clip.Rotation.Y),
+                        f64AngleSingle.ZeroAngle,
+                        f64AngleSingle.ZeroAngle);
+                    mesh = new StageObject(clip.Rad, worldPos, euler);
+                    ActiveTab.Stage.pieces[ActiveTab.Stage.stagePartCount] = mesh;
+                }
+                var instance = new StagePieceInstance(clip.Name, mesh, ActiveTab.GetNextPieceId())
+                {
+                    Position = worldPos,
+                    Rotation = clip.Rotation,
+                    PieceType = clip.PieceType,
+                    Tags = clip.Tags
+                };
+                ActiveTab.ScenePieces.Add(instance);
+                ActiveTab.SelectedPieceIds.Add(instance.Id);
+                lastId = instance.Id;
+            }
+            if (lastId >= 0) ActiveTab.SelectedPieceId = lastId;
+            ActiveTab.HasUnsavedChanges = true;
+            RebuildClientRenderer();
         }
         
         if (key == Keys.Z && _isCtrlPressed)
@@ -1193,9 +1397,11 @@ public class StageEditorPhase : BasePhase
         
         if (key == Keys.Escape)
         {
-            // Cancel placement mode
+            // Cancel placement mode, swap mode, and rect selection
             _pendingPlacementPartIndex = -1;
             _hasValidPlacementPos = false;
+            _isSwapMode = false;
+            _isRectSelecting = false;
         }
     }
     
@@ -1507,9 +1713,23 @@ public class StageEditorPhase : BasePhase
         return true;
     }
     
-    private void RenderGizmo(StagePieceInstance piece)
+    private Vector3 ComputeSelectionCentroid()
     {
-        var piecePos = new Vector3((float)piece.Position.X, (float)piece.Position.Y, (float)piece.Position.Z);
+        if (ActiveTab == null) return Vector3.Zero;
+        var ids = ActiveTab.SelectedPieceIds.Count > 0
+            ? ActiveTab.SelectedPieceIds
+            : ActiveTab.SelectedPieceId >= 0 ? (IEnumerable<int>)new[] { ActiveTab.SelectedPieceId } : Array.Empty<int>();
+        var pieces = ActiveTab.ScenePieces.Where(p => ids.Contains(p.Id)).ToList();
+        if (pieces.Count == 0) return Vector3.Zero;
+        return new Vector3(
+            (float)pieces.Average(p => (double)p.Position.X),
+            (float)pieces.Average(p => (double)p.Position.Y),
+            (float)pieces.Average(p => (double)p.Position.Z));
+    }
+
+    private void RenderGizmo(Vector3 gizmoPos)
+    {
+        var piecePos = gizmoPos;
         var xEnd = piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0);
         // Y arrow points up in world space (negative Y in FNA because Y is flipped)
         var yEnd = piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0);
@@ -2004,8 +2224,8 @@ public class StageEditorPhase : BasePhase
                 
                 if (_gizmoDragging == GizmoAxis.X)
                 {
-                    // Project the gizmo arrow onto screen to get pixels-per-world-unit ratio
-                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    // Project the gizmo arrow from the centroid to get pixels-per-world-unit ratio
+                    var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
                     if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
@@ -2015,13 +2235,16 @@ public class StageEditorPhase : BasePhase
                             var axisDir = screenArrow / screenLen;
                             float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
                             float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
-                            float newX = _gizmoDragStartPosX + worldDelta;
-                            if (_snapEnabled && _snapSize > 0f)
-                                newX = MathF.Round(newX / _snapSize) * _snapSize;
-                            selectedPiece.Position = new f64Vector3(
-                                (fix64)newX,
-                                selectedPiece.Position.Y,
-                                selectedPiece.Position.Z);
+                            // Apply delta to every selected piece using its own start position
+                            foreach (var (sid, spos) in _gizmoDragStartPositions)
+                            {
+                                var sp = ActiveTab.ScenePieces.Find(p => p.Id == sid);
+                                if (sp == null) continue;
+                                float newX = (float)spos.X + worldDelta;
+                                if (_snapEnabled && _snapSize > 0f)
+                                    newX = MathF.Round(newX / _snapSize) * _snapSize;
+                                sp.Position = new f64Vector3((fix64)newX, spos.Y, spos.Z);
+                            }
                             ActiveTab.HasUnsavedChanges = true;
                         }
                     }
@@ -2029,7 +2252,7 @@ public class StageEditorPhase : BasePhase
                 else if (_gizmoDragging == GizmoAxis.Y)
                 {
                     // Y axis: project the upward arrow (world -Y direction) to screen
-                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
                     if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
@@ -2040,20 +2263,22 @@ public class StageEditorPhase : BasePhase
                             float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
                             // Moving up on screen decreases world Y (camera is flipped), so negate
                             float worldDelta = -pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
-                            float newY = _gizmoDragStartPosY + worldDelta;
-                            if (_snapEnabled && _snapSize > 0f)
-                                newY = MathF.Round(newY / _snapSize) * _snapSize;
-                            selectedPiece.Position = new f64Vector3(
-                                selectedPiece.Position.X,
-                                (fix64)newY,
-                                selectedPiece.Position.Z);
+                            foreach (var (sid, spos) in _gizmoDragStartPositions)
+                            {
+                                var sp = ActiveTab.ScenePieces.Find(p => p.Id == sid);
+                                if (sp == null) continue;
+                                float newY = (float)spos.Y + worldDelta;
+                                if (_snapEnabled && _snapSize > 0f)
+                                    newY = MathF.Round(newY / _snapSize) * _snapSize;
+                                sp.Position = new f64Vector3(spos.X, (fix64)newY, spos.Z);
+                            }
                             ActiveTab.HasUnsavedChanges = true;
                         }
                     }
                 }
                 else if (_gizmoDragging == GizmoAxis.Z)
                 {
-                    var piecePos = new Vector3((float)selectedPiece.Position.X, (float)selectedPiece.Position.Y, (float)selectedPiece.Position.Z);
+                    var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
                     if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
@@ -2063,13 +2288,15 @@ public class StageEditorPhase : BasePhase
                             var axisDir = screenArrow / screenLen;
                             float pixelDelta = System.Numerics.Vector2.Dot(new System.Numerics.Vector2(dx, dy), axisDir);
                             float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
-                            float newZ = _gizmoDragStartPosZ + worldDelta;
-                            if (_snapEnabled && _snapSize > 0f)
-                                newZ = MathF.Round(newZ / _snapSize) * _snapSize;
-                            selectedPiece.Position = new f64Vector3(
-                                selectedPiece.Position.X,
-                                selectedPiece.Position.Y,
-                                (fix64)newZ);
+                            foreach (var (sid, spos) in _gizmoDragStartPositions)
+                            {
+                                var sp = ActiveTab.ScenePieces.Find(p => p.Id == sid);
+                                if (sp == null) continue;
+                                float newZ = (float)spos.Z + worldDelta;
+                                if (_snapEnabled && _snapSize > 0f)
+                                    newZ = MathF.Round(newZ / _snapSize) * _snapSize;
+                                sp.Position = new f64Vector3(spos.X, spos.Y, (fix64)newZ);
+                            }
                             ActiveTab.HasUnsavedChanges = true;
                         }
                     }
@@ -2078,10 +2305,25 @@ public class StageEditorPhase : BasePhase
                 {
                     // Angle delta based on horizontal drag
                     float angleDelta = dx * 0.5f; // degrees per pixel
-                    selectedPiece.Rotation = new f64Vector3(
-                        selectedPiece.Rotation.X,
-                        (fix64)((_gizmoDragStartRotY + angleDelta) % 360f),
-                        selectedPiece.Rotation.Z);
+                    float radians = angleDelta * MathF.PI / 180f;
+                    float cosA = MathF.Cos(radians);
+                    float sinA = MathF.Sin(radians);
+                    // Rotate every selected piece's position around the centroid and its own yaw
+                    foreach (var (sid, startPos) in _gizmoDragStartPositions)
+                    {
+                        var sp = ActiveTab.ScenePieces.Find(p => p.Id == sid);
+                        if (sp == null) continue;
+                        float relX = (float)startPos.X - _gizmoCentroidX;
+                        float relZ = (float)startPos.Z - _gizmoCentroidZ;
+                        float newRelX = relX * cosA - relZ * sinA;
+                        float newRelZ = relX * sinA + relZ * cosA;
+                        sp.Position = new f64Vector3(
+                            (fix64)(_gizmoCentroidX + newRelX),
+                            startPos.Y,
+                            (fix64)(_gizmoCentroidZ + newRelZ));
+                        float startRot = _gizmoDragStartRotations.TryGetValue(sid, out var r) ? r : 0f;
+                        sp.Rotation = new f64Vector3(sp.Rotation.X, (fix64)((startRot + angleDelta) % 360f), sp.Rotation.Z);
+                    }
                     ActiveTab.HasUnsavedChanges = true;
                 }
             }
@@ -2091,6 +2333,13 @@ public class StageEditorPhase : BasePhase
         
         _mouseX = x;
         _mouseY = y;
+        
+        // Update rect selection end while LMB is held
+        if (_isRectSelecting)
+        {
+            _rectSelectEndX = x;
+            _rectSelectEndY = y;
+        }
         
         // Update placement preview position while hovering over the viewport
         if (_pendingPlacementPartIndex >= 0)
@@ -2190,11 +2439,37 @@ public class StageEditorPhase : BasePhase
                     _gizmoDragging = _gizmoHovered;
                     _gizmoDragStartX = x;
                     _gizmoDragStartY = y;
-                    _gizmoDragStartPosX = (float)piece.Position.X;
-                    _gizmoDragStartPosY = (float)piece.Position.Y;
-                    _gizmoDragStartPosZ = (float)piece.Position.Z;
                     _gizmoDragStartRotY = (float)piece.Rotation.Y;
+                    // Compute centroid of the whole selection as pivot
+                    var centroid = ComputeSelectionCentroid();
+                    _gizmoCentroidX = centroid.X;
+                    _gizmoCentroidY = centroid.Y;
+                    _gizmoCentroidZ = centroid.Z;
+                    _gizmoDragStartPosX = centroid.X;
+                    _gizmoDragStartPosY = centroid.Y;
+                    _gizmoDragStartPosZ = centroid.Z;
+                    // Capture start positions of all selected pieces for group drag
+                    _gizmoDragStartPositions.Clear();
+                    _gizmoDragStartRotations.Clear();
+                    foreach (var selId in ActiveTab.SelectedPieceIds)
+                    {
+                        var selP = ActiveTab.ScenePieces.Find(p => p.Id == selId);
+                        if (selP != null)
+                        {
+                            _gizmoDragStartPositions[selId] = selP.Position;
+                            _gizmoDragStartRotations[selId] = (float)selP.Rotation.Y;
+                        }
+                    }
                 }
+            }
+            else if (IsMouseInViewport(x, y) && _pendingPlacementPartIndex < 0 && !_isSwapMode)
+            {
+                // Begin potential rect selection
+                _isRectSelecting = true;
+                _rectSelectStartX = x;
+                _rectSelectStartY = y;
+                _rectSelectEndX = x;
+                _rectSelectEndY = y;
             }
         }
     }
@@ -2211,7 +2486,7 @@ public class StageEditorPhase : BasePhase
             if (ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown)
             {
                 // Adjust top-down height
-                ActiveTab.TopDownHeight = Math.Clamp(ActiveTab.TopDownHeight - delta * 50f, 500f, 50000f);
+                ActiveTab.TopDownHeight = Math.Clamp(ActiveTab.TopDownHeight - delta * 15f, 500f, 50000f);
                 UpdateCameraPosition();
             }
             else
@@ -2252,14 +2527,46 @@ public class StageEditorPhase : BasePhase
                 _gizmoDragging = GizmoAxis.None;
                 return;
             }
+        
+        // Finalise rect selection if active
+        if (_isRectSelecting)
+        {
+            _isRectSelecting = false;
+            int rw = Math.Abs(_rectSelectEndX - _rectSelectStartX);
+            int rh = Math.Abs(_rectSelectEndY - _rectSelectStartY);
+            bool isRectDrag = rw > 5 || rh > 5;
             
-            if (ActiveTab != null)
+            if (isRectDrag && ActiveTab != null && !imguiWantsMouse)
             {
-                if (ActiveTab.IsDragging)
-                {
-                    ActiveTab.IsDragging = false;
-                }
+                int minX = Math.Min(_rectSelectStartX, _rectSelectEndX);
+                int maxX = Math.Max(_rectSelectStartX, _rectSelectEndX);
+                int minY = Math.Min(_rectSelectStartY, _rectSelectEndY);
+                int maxY = Math.Max(_rectSelectStartY, _rectSelectEndY);
                 
+                if (!_isShiftPressed) ActiveTab.SelectedPieceIds.Clear();
+                int lastId = -1;
+                foreach (var piece in ActiveTab.ScenePieces)
+                {
+                    if (piece.Obj == null) continue;
+                    var wp = new Vector3((float)piece.Position.X, (float)piece.Position.Y, (float)piece.Position.Z);
+                    if (WorldToScreen(wp, out var sp))
+                    {
+                        if (sp.X >= minX && sp.X <= maxX && sp.Y >= minY && sp.Y <= maxY)
+                        {
+                            ActiveTab.SelectedPieceIds.Add(piece.Id);
+                            lastId = piece.Id;
+                        }
+                    }
+                }
+                if (lastId >= 0)
+                {
+                    ActiveTab.SelectedPieceId = lastId;
+                    ActiveTab.SelectedWallId = -1;
+                }
+                return;
+            }
+            // else fall through to normal single click logic
+        }
                 // Handle piece selection on left click
                 if (!imguiWantsMouse && IsMouseInViewport(x, y))
                 {
@@ -2294,14 +2601,30 @@ public class StageEditorPhase : BasePhase
                     var pickedPieceId = PerformRayPicking(x, y);
                     if (pickedPieceId >= 0)
                     {
-                        ActiveTab.SelectedPieceId = pickedPieceId;
+                        if (_isCtrlPressed)
+                        {
+                            // Toggle in multi-selection
+                            if (!ActiveTab.SelectedPieceIds.Remove(pickedPieceId))
+                                ActiveTab.SelectedPieceIds.Add(pickedPieceId);
+                            ActiveTab.SelectedPieceId = pickedPieceId;
+                        }
+                        else
+                        {
+                            ActiveTab.SelectedPieceIds.Clear();
+                            ActiveTab.SelectedPieceIds.Add(pickedPieceId);
+                            ActiveTab.SelectedPieceId = pickedPieceId;
+                        }
+                        ActiveTab.SelectedWallId = -1;
                     }
                     else
                     {
-                        ActiveTab.SelectedPieceId = -1;
+                        if (!_isCtrlPressed)
+                        {
+                            ActiveTab.SelectedPieceIds.Clear();
+                            ActiveTab.SelectedPieceId = -1;
+                        }
                     }
                 }
-            }
         }
     }
     
@@ -2484,14 +2807,23 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.ScissorRectangle = oldScissorRect;
         _graphicsDevice.RasterizerState = oldRasterizerState;
         
-        // Render selection highlight for selected piece
-        if (ActiveTab.SelectedPieceId >= 0)
+        // Render selection highlight for all selected pieces, gizmo on primary
+        var highlightIds = ActiveTab.SelectedPieceIds.Count > 0
+            ? ActiveTab.SelectedPieceIds
+            : ActiveTab.SelectedPieceId >= 0 ? (IEnumerable<int>)new[] { ActiveTab.SelectedPieceId } : null;
+        if (highlightIds != null)
         {
-            var selectedPiece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
-            if (selectedPiece?.Obj != null)
+            foreach (var hid in highlightIds)
             {
-                RenderSelectionHighlight(selectedPiece);
-                RenderGizmo(selectedPiece);
+                var hp = ActiveTab.ScenePieces.Find(p => p.Id == hid);
+                if (hp?.Obj != null)
+                    RenderSelectionHighlight(hp);
+            }
+            if (ActiveTab.SelectedPieceId >= 0)
+            {
+                var selectedPiece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+                if (selectedPiece?.Obj != null)
+                    RenderGizmo(ComputeSelectionCentroid());
             }
         }
         
@@ -2501,6 +2833,11 @@ public class StageEditorPhase : BasePhase
         // Render placement ghost if in placement mode and mouse is over viewport
         if (_pendingPlacementPartIndex >= 0 && _hasValidPlacementPos)
             RenderPlacementPreview();
+        
+        // Clear the depth buffer so ImGui always renders on top of the 3D scene.
+        // Without this, geometry close to the camera writes near-zero depth values and
+        // ImGui pixels (rendered later with DepthRead) fail the depth test at those positions.
+        _graphicsDevice.Clear(ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.Black, 1.0f, 0);
     }
     
     public override void RenderImgui()
@@ -2600,16 +2937,21 @@ public class StageEditorPhase : BasePhase
             
             if (ImGui.BeginMenu("View"))
             {
-                if (ImGui.MenuItem("Scene View", "", ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.Scene))
+                if (ActiveTab == null)
                 {
-                    ActiveTab.ViewMode = StageEditorTab.ViewModeEnum.Scene;
-                    UpdateCameraPosition();
+                    ImGui.TextDisabled("No stage loaded");
                 }
-                
-                if (ImGui.MenuItem("Top Down View", "", ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown))
+                else if (ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown)
                 {
-                    ActiveTab.ViewMode = StageEditorTab.ViewModeEnum.TopDown;
-                    UpdateCameraPosition();
+                    if (ImGui.MenuItem("Orthographic", "", ActiveTab.TopDownOrtho))
+                    {
+                        ActiveTab.TopDownOrtho = !ActiveTab.TopDownOrtho;
+                        UpdateCameraPosition();
+                    }
+                }
+                else
+                {
+                    ImGui.TextDisabled("Switch to Top Down View for options");
                 }
                 
                 ImGui.EndMenu();
@@ -2662,35 +3004,10 @@ public class StageEditorPhase : BasePhase
                 {
                     if (_activeTabIndex != i)
                     {
-                        // Save current tab's World properties before switching
-                        if (ActiveTab != null)
-                        {
-                            ActiveTab.SkyColor = new System.Numerics.Vector3(World.Sky.R, World.Sky.G, World.Sky.B);
-                            ActiveTab.FogColor = new System.Numerics.Vector3(World.Fog.R, World.Fog.G, World.Fog.B);
-                            ActiveTab.GroundColor = new System.Numerics.Vector3(World.GroundColor.R, World.GroundColor.G, World.GroundColor.B);
-                            ActiveTab.PolysEnabled = World.HasPolys;
-                            if (World.HasPolys)
-                                ActiveTab.PolysColor = new System.Numerics.Vector3(World.GroundPolysColor.R, World.GroundPolysColor.G, World.GroundPolysColor.B);
-                            ActiveTab.CloudsEnabled = World.HasClouds;
-                            if (World.HasClouds)
-                            {
-                                ActiveTab.CloudsColor = new System.Numerics.Vector3(World.Clouds[0], World.Clouds[1], World.Clouds[2]);
-                                ActiveTab.CloudsParam4 = World.Clouds[3];
-                                ActiveTab.CloudsHeight = World.Clouds[4];
-                                ActiveTab.CloudCoverage = World.CloudCoverage;
-                            }
-                            ActiveTab.MountainsEnabled = World.DrawMountains;
-                            ActiveTab.MountainsSeed = World.MountainSeed;
-                            ActiveTab.SnapA = World.Snap.R;
-                            ActiveTab.SnapB = World.Snap.G;
-                            ActiveTab.SnapC = World.Snap.B;
-                            ActiveTab.FadeFrom = World.FadeFrom;
-                        }
-                        
+                        // Switch to new tab: tab stored values are authoritative — never read World back into them.
+                        // Just restore this tab's World properties and rebuild environment.
                         _activeTabIndex = i;
                         UpdateCameraPosition();
-                        
-                        // Restore this tab's World properties and rebuild environment
                         ApplyTabWorldValuesToWorld();
                         RecreateEnvironment();
                         RebuildAllWalls();
@@ -3085,6 +3402,9 @@ public class StageEditorPhase : BasePhase
             
             if (ImGui.Button("Cancel", new System.Numerics.Vector2(120, 0)))
             {
+                // Undo any live-preview changes to World by restoring from the tab's stored values
+                ApplyTabWorldValuesToWorld();
+                RecreateEnvironment();
                 _showPropertiesDialog = false;
             }
             
@@ -3312,6 +3632,16 @@ public class StageEditorPhase : BasePhase
             }
         }
         
+        // Draw selection rectangle overlay on viewport
+        if (_isRectSelecting)
+        {
+            var dl = ImGui.GetForegroundDrawList();
+            var ra = new System.Numerics.Vector2(_rectSelectStartX, _rectSelectStartY);
+            var rb = new System.Numerics.Vector2(_rectSelectEndX, _rectSelectEndY);
+            dl.AddRectFilled(ra, rb, ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.15f)));
+            dl.AddRect(ra, rb, ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.9f)), 0f, ImDrawFlags.None, 1.5f);
+        }
+        
         if (!_isOpen)
         {
             GameSparker.ReturnToMainMenu();
@@ -3369,6 +3699,7 @@ public class StageEditorPhase : BasePhase
 
         ActiveTab.ScenePieces = newPieces;
         ActiveTab.SelectedPieceId = -1;
+        ActiveTab.SelectedPieceIds.Clear();
         ActiveTab.HasUnsavedChanges = true;
 
         if (needsRebuild)
@@ -3409,6 +3740,29 @@ public class StageEditorPhase : BasePhase
         // Adjust for the removal shifting indices
         int insertAt = draggedIndex < targetIndex ? targetIndex : targetIndex;
         ActiveTab.ScenePieces.Insert(insertAt, dragged);
+
+        // ── Sync group membership when dragging across groups ──────────────────
+        HierarchyGroup? srcGroup = ActiveTab.HierarchyGroups.Find(g => g.PieceIds.Contains(draggedId));
+        HierarchyGroup? dstGroup = ActiveTab.HierarchyGroups.Find(g => g.PieceIds.Contains(targetId));
+        if (srcGroup != dstGroup)
+        {
+            // Move piece from source group to destination group (or ungrouped if dstGroup == null)
+            srcGroup?.PieceIds.Remove(draggedId);
+            if (dstGroup != null)
+            {
+                int tpos = dstGroup.PieceIds.IndexOf(targetId);
+                if (tpos < 0) dstGroup.PieceIds.Add(draggedId);
+                else dstGroup.PieceIds.Insert(tpos + 1, draggedId);
+            }
+        }
+        else if (srcGroup != null)
+        {
+            // Reorder within the same group
+            srcGroup.PieceIds.Remove(draggedId);
+            int tpos = srcGroup.PieceIds.IndexOf(targetId);
+            if (tpos < 0) srcGroup.PieceIds.Add(draggedId);
+            else srcGroup.PieceIds.Insert(tpos + 1, draggedId);
+        }
 
         // Sync Stage.pieces order (only non-wall pieces end up there)
         if (ActiveTab.Stage != null)
@@ -3464,6 +3818,7 @@ public class StageEditorPhase : BasePhase
                     {
                         ActiveTab.SelectedWallId = wall.Id;
                         ActiveTab.SelectedPieceId = -1;
+                        ActiveTab.SelectedPieceIds.Clear();
                     }
                     
                     if (isSelected)
@@ -3474,86 +3829,357 @@ public class StageEditorPhase : BasePhase
             ImGui.Spacing();
         }
         
-        // All pieces in file order (walls are shown separately above)
+        // All non-wall pieces
         var allPieces = ActiveTab.ScenePieces.Where(p => p.PieceType != StagePieceInstance.PieceTypeEnum.Wall).ToList();
-        RenderHierarchyGroup("Pieces", allPieces, hasFilter);
-    }
-    
-    private void RenderHierarchyGroup(string label, List<StagePieceInstance> pieces, bool hasFilter)
-    {
-        if (pieces.Count == 0 && !hasFilter) return;
+        var groupedIds = new HashSet<int>(ActiveTab.HierarchyGroups.SelectMany(g => g.PieceIds));
+        var ungrouped = allPieces.Where(p => !groupedIds.Contains(p.Id)).ToList();
+        string ungroupedLabel = ActiveTab.HierarchyGroups.Count > 0 ? "Ungrouped" : "Pieces";
         
-        bool open = ImGui.TreeNodeEx($"{label} ({pieces.Count})", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
-        if (open)
+        int ungroupedSlot = ActiveTab.UngroupedOrderIndex >= 0
+            ? Math.Clamp(ActiveTab.UngroupedOrderIndex, 0, ActiveTab.HierarchyGroups.Count)
+            : ActiveTab.HierarchyGroups.Count;
+        
+        // Deferred mutations — applied AFTER the render loop to avoid mid-loop ImGui stack corruption
+        int pendingDeleteGrpId = -1;
+        int pendingReorderFrom = -1;
+        int pendingReorderInsertBefore = -1; // insert dragged group BEFORE this slot index
+        
+        // Render slots 0..Count inclusive; each slot has a drop-zone then optional content
+        for (int ri = 0; ri <= ActiveTab.HierarchyGroups.Count; ri++)
         {
-            for (int i = 0; i < pieces.Count; i++)
+            // ── Drop zone before slot ri (thin invisible target for drag-reorder) ──
+            ImGui.PushID($"dz_{ri}");
+            ImGui.Dummy(new System.Numerics.Vector2(-1f, 4f));
+            if (ImGui.BeginDragDropTarget())
             {
-                var piece = pieces[i];
-                string typeTag = piece.PieceType switch
+                unsafe
                 {
-                    StagePieceInstance.PieceTypeEnum.Chk => " [Chk]",
-                    StagePieceInstance.PieceTypeEnum.Fix => " [Fix]",
-                    _ => " [Set]"
-                };
-                string displayName = $"{piece.Name}{typeTag} (ID: {piece.Id})";
-                if (hasFilter && !displayName.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                
-                bool isSelected = piece.Id == ActiveTab!.SelectedPieceId;
-                if (isSelected)
-                    ImGui.PushStyleColor(ImGuiCol.Header, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.45f));
-                
-                // Show drag handle indicator while dragging this item
-                string rowLabel = _hierDragSourceId == piece.Id
-                    ? $"↕ {displayName}##piece{piece.Id}"
-                    : $"  {displayName}##piece{piece.Id}";
-                
-                if (ImGui.Selectable(rowLabel, isSelected, ImGuiSelectableFlags.SpanAllColumns))
-                {
-                    ActiveTab!.SelectedPieceId = piece.Id;
-                    ActiveTab!.SelectedWallId = -1;
+                    var pl = ImGui.AcceptDragDropPayload("HIER_GROUP");
+                    if (pl.Handle != null && pl.DataSize == sizeof(int))
+                    {
+                        int src = *(int*)pl.Data;
+                        pendingReorderFrom = src;
+                        pendingReorderInsertBefore = ri;
+                    }
                 }
+                ImGui.EndDragDropTarget();
+            }
+            ImGui.PopID();
+            
+            // ── Ungrouped block at this slot ──
+            if (ri == ungroupedSlot)
+                RenderHierarchyGroupFlat(ungroupedLabel, ungrouped, hasFilter);
+            
+            // ── Named group at slot ri ──
+            if (ri < ActiveTab.HierarchyGroups.Count)
+            {
+                var group = ActiveTab.HierarchyGroups[ri];
+                var gpPieces = group.PieceIds
+                    .Select(id => allPieces.Find(p => p.Id == id))
+                    .Where(p => p != null).ToList()!;
                 
-                if (isSelected)
-                    ImGui.PopStyleColor();
+                ImGui.PushID($"grp{group.Id}");
                 
-                // Drag source — begin drag when user holds LMB and moves on this row
+                // ≡ drag handle — drag source for group reordering
+                ImGui.SmallButton("=");
                 if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
                 {
-                    _hierDragSourceId = piece.Id;
-                    unsafe
-                    {
-                        int dragId = piece.Id;
-                        ImGui.SetDragDropPayload("HIER_PIECE", &dragId, (nuint)sizeof(int));
-                    }
-                    ImGui.TextUnformatted($"↕ Move: {displayName}");
+                    unsafe { int giv = ri; ImGui.SetDragDropPayload("HIER_GROUP", &giv, (nuint)sizeof(int)); }
+                    ImGui.Text($"Moving: {group.Name}");
                     ImGui.EndDragDropSource();
                 }
+                ImGui.SameLine();
                 
-                // Drop target — accept when another piece is dragged onto this row
+                bool open = ImGui.TreeNodeEx($"[G] {group.Name} ({gpPieces.Count})##grp{group.Id}",
+                    ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+                
+                // Accept piece drops onto this group header (right after TreeNodeEx so the target is on that item)
                 if (ImGui.BeginDragDropTarget())
                 {
                     unsafe
                     {
-                        var payload = ImGui.AcceptDragDropPayload("HIER_PIECE");
-                        if (payload.Handle != null && payload.DataSize == sizeof(int))
+                        var pl = ImGui.AcceptDragDropPayload("HIER_PIECE");
+                        if (pl.Handle != null && pl.DataSize == sizeof(int))
                         {
-                            int sourceId = *(int*)payload.Data;
-                            if (sourceId != piece.Id)
-                            {
-                                PushUndoSnapshot();
-                                ReorderPiece(sourceId, piece.Id);
-                            }
+                            int srcId = *(int*)pl.Data;
+                            foreach (var g2 in ActiveTab.HierarchyGroups) g2.PieceIds.Remove(srcId);
+                            if (!group.PieceIds.Contains(srcId)) group.PieceIds.Add(srcId);
+                            ActiveTab.HasUnsavedChanges = true;
                         }
                     }
-                    _hierDragSourceId = -1;
                     ImGui.EndDragDropTarget();
                 }
+                
+                // Right-click context menu — after drag target so it doesn't steal the item
+                if (ImGui.BeginPopupContextItem($"##grpctx{group.Id}"))
+                {
+                    ImGui.TextDisabled(group.Name);
+                    ImGui.Separator();
+                    if (ImGui.MenuItem("Rename..."))
+                    {
+                        _groupContextMenuGroupId = group.Id;
+                        _renameGroupBuffer = group.Name;
+                        _showRenameGroupDialog = true;
+                        ImGui.CloseCurrentPopup();
+                    }
+                    if (ImGui.MenuItem("Select All in Group"))
+                    {
+                        ActiveTab.SelectedPieceIds.Clear();
+                        foreach (var gp in gpPieces) ActiveTab.SelectedPieceIds.Add(gp.Id);
+                        if (gpPieces.Count > 0) ActiveTab.SelectedPieceId = gpPieces[^1].Id;
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.Separator();
+                    if (ImGui.MenuItem("Delete Group (keep pieces)"))
+                    {
+                        pendingDeleteGrpId = group.Id; // deferred — not safe to remove here
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.EndPopup();
+                }
+                
+                // Render children — ALWAYS call TreePop when open==true
+                if (open)
+                {
+                    RenderHierarchyGroup(gpPieces, hasFilter, group);
+                    ImGui.TreePop();
+                }
+                
+                ImGui.PopID();
             }
-            ImGui.TreePop();
+        }
+        
+        // ── Apply deferred mutations (safe: loop is finished, no ImGui stack mid-state) ──
+        if (pendingDeleteGrpId >= 0)
+        {
+            ActiveTab.HierarchyGroups.RemoveAll(g => g.Id == pendingDeleteGrpId);
+            if (ActiveTab.UngroupedOrderIndex >= 0)
+                ActiveTab.UngroupedOrderIndex = Math.Clamp(ActiveTab.UngroupedOrderIndex, 0, ActiveTab.HierarchyGroups.Count);
+            ActiveTab.HasUnsavedChanges = true;
+        }
+        if (pendingReorderFrom >= 0 && pendingReorderInsertBefore >= 0 &&
+            pendingReorderFrom != pendingReorderInsertBefore &&
+            pendingReorderFrom != pendingReorderInsertBefore - 1) // not a no-op (insert right after itself)
+        {
+            var grp = ActiveTab.HierarchyGroups[pendingReorderFrom];
+            ActiveTab.HierarchyGroups.RemoveAt(pendingReorderFrom);
+            // After removal, insertion index shifts when src was before the target
+            int insertIdx = pendingReorderInsertBefore > pendingReorderFrom
+                ? pendingReorderInsertBefore - 1
+                : pendingReorderInsertBefore;
+            insertIdx = Math.Clamp(insertIdx, 0, ActiveTab.HierarchyGroups.Count);
+            ActiveTab.HierarchyGroups.Insert(insertIdx, grp);
+            if (ActiveTab.UngroupedOrderIndex >= 0)
+                ActiveTab.UngroupedOrderIndex = Math.Clamp(ActiveTab.UngroupedOrderIndex, 0, ActiveTab.HierarchyGroups.Count);
+            // Also reorder ScenePieces so save order matches visual order
+            ReorderScenePiecesForGroupOrder();
+            ActiveTab.HasUnsavedChanges = true;
+        }
+        
+        // Rename group dialog (modal)
+        if (_showRenameGroupDialog)
+        {
+            ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 90), ImGuiCond.Always);
+            ImGui.OpenPopup("##renamegroup");
+        }
+        if (ImGui.BeginPopupModal("##renamegroup", ref _showRenameGroupDialog, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize))
+        {
+            ImGui.Text("Rename Group:");
+            ImGui.SetNextItemWidth(-1);
+            if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
+            ImGui.InputText("##renbuf", ref _renameGroupBuffer, 64);
+            if (ImGui.Button("OK", new System.Numerics.Vector2(130, 0)))
+            {
+                var g = ActiveTab.HierarchyGroups.Find(gr => gr.Id == _groupContextMenuGroupId);
+                if (g != null) { g.Name = _renameGroupBuffer; ActiveTab.HasUnsavedChanges = true; }
+                _showRenameGroupDialog = false;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel", new System.Numerics.Vector2(-1, 0))) { _showRenameGroupDialog = false; ImGui.CloseCurrentPopup(); }
+            ImGui.EndPopup();
+        }
+        
+        // "+ New Group" button
+        ImGui.Spacing();
+        ImGui.SetNextItemWidth(-1);
+        if (ImGui.Button("+ New Group from Selection", new System.Numerics.Vector2(-1, 0)))
+        {
+            var newGroup = new HierarchyGroup { Id = ActiveTab.GetNextGroupId(), Name = "Group" };
+            var selIds = ActiveTab.SelectedPieceIds.Count > 0
+                ? new List<int>(ActiveTab.SelectedPieceIds)
+                : ActiveTab.SelectedPieceId >= 0 ? new List<int> { ActiveTab.SelectedPieceId } : new List<int>();
+            foreach (var sid in selIds)
+            {
+                foreach (var g in ActiveTab.HierarchyGroups) g.PieceIds.Remove(sid);
+                newGroup.PieceIds.Add(sid);
+            }
+            ActiveTab.HierarchyGroups.Add(newGroup);
+            ActiveTab.HasUnsavedChanges = true;
+            // Open rename immediately
+            _groupContextMenuGroupId = newGroup.Id;
+            _renameGroupBuffer = newGroup.Name;
+            _showRenameGroupDialog = true;
         }
     }
     
+    // Reorders ScenePieces so pieces appear in group order (grouped first, then ungrouped).
+    // Call after any group reorder so the save file reflects the visual hierarchy.
+    private void ReorderScenePiecesForGroupOrder()
+    {
+        if (ActiveTab == null) return;
+        var walls = ActiveTab.ScenePieces
+            .Where(p => p.PieceType == StagePieceInstance.PieceTypeEnum.Wall).ToList();
+        var nonWalls = ActiveTab.ScenePieces
+            .Where(p => p.PieceType != StagePieceInstance.PieceTypeEnum.Wall).ToList();
+        var allGroupedIds = new HashSet<int>(ActiveTab.HierarchyGroups.SelectMany(g => g.PieceIds));
+        var grouped = new List<StagePieceInstance>();
+        foreach (var group in ActiveTab.HierarchyGroups)
+            foreach (var id in group.PieceIds)
+            {
+                var piece = nonWalls.Find(p => p.Id == id);
+                if (piece != null) grouped.Add(piece);
+            }
+        var ungroupedPieces = nonWalls.Where(p => !allGroupedIds.Contains(p.Id)).ToList();
+        ActiveTab.ScenePieces.Clear();
+        ActiveTab.ScenePieces.AddRange(walls);
+        ActiveTab.ScenePieces.AddRange(grouped);
+        ActiveTab.ScenePieces.AddRange(ungroupedPieces);
+    }
+    
+    // Renders a list of pieces with Ctrl+click multi-select, drag-drop reorder, and right-click group context menu
+    private void RenderHierarchyGroup(List<StagePieceInstance> pieces, bool hasFilter, HierarchyGroup? owningGroup = null)
+    {
+        for (int i = 0; i < pieces.Count; i++)
+        {
+            var piece = pieces[i];
+            string typeTag = piece.PieceType switch
+            {
+                StagePieceInstance.PieceTypeEnum.Chk => " [Chk]",
+                StagePieceInstance.PieceTypeEnum.Fix => " [Fix]",
+                _ => " [Set]"
+            };
+            string displayName = $"{piece.Name}{typeTag} (ID: {piece.Id})";
+            if (hasFilter && !displayName.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
+                continue;
+            
+            bool isSelected = ActiveTab!.SelectedPieceIds.Contains(piece.Id) || piece.Id == ActiveTab.SelectedPieceId;
+            if (isSelected)
+                ImGui.PushStyleColor(ImGuiCol.Header, new System.Numerics.Vector4(0.26f, 0.59f, 0.98f, 0.45f));
+            
+            string rowLabel = _hierDragSourceId == piece.Id
+                ? $"\u2195 {displayName}##piece{piece.Id}"
+                : $"  {displayName}##piece{piece.Id}";
+            
+            if (ImGui.Selectable(rowLabel, isSelected, ImGuiSelectableFlags.SpanAllColumns))
+            {
+                if (_isCtrlPressed)
+                {
+                    if (!ActiveTab.SelectedPieceIds.Remove(piece.Id))
+                        ActiveTab.SelectedPieceIds.Add(piece.Id);
+                    ActiveTab.SelectedPieceId = piece.Id;
+                }
+                else
+                {
+                    ActiveTab.SelectedPieceIds.Clear();
+                    ActiveTab.SelectedPieceIds.Add(piece.Id);
+                    ActiveTab.SelectedPieceId = piece.Id;
+                }
+                ActiveTab.SelectedWallId = -1;
+            }
+            
+            if (isSelected) ImGui.PopStyleColor();
+            
+            // Right-click: group management
+            if (ImGui.BeginPopupContextItem($"##piecectx{piece.Id}"))
+            {
+                ImGui.TextDisabled(piece.Name);
+                ImGui.Separator();
+                if (owningGroup != null && ImGui.MenuItem("Remove from Group"))
+                {
+                    owningGroup.PieceIds.Remove(piece.Id);
+                    ActiveTab!.HasUnsavedChanges = true;
+                    ImGui.EndPopup();
+                    continue;
+                }
+                if (ActiveTab!.HierarchyGroups.Count > 0 && ImGui.BeginMenu("Move to Group"))
+                {
+                    foreach (var g in ActiveTab.HierarchyGroups)
+                    {
+                        if (g == owningGroup) continue;
+                        if (ImGui.MenuItem(g.Name))
+                        {
+                            if (owningGroup != null) owningGroup.PieceIds.Remove(piece.Id);
+                            if (!g.PieceIds.Contains(piece.Id)) g.PieceIds.Add(piece.Id);
+                            ActiveTab.HasUnsavedChanges = true;
+                        }
+                    }
+                    ImGui.EndMenu();
+                }
+                ImGui.EndPopup();
+            }
+            
+            // Drag source
+            if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
+            {
+                _hierDragSourceId = piece.Id;
+                unsafe
+                {
+                    int dragId = piece.Id;
+                    ImGui.SetDragDropPayload("HIER_PIECE", &dragId, (nuint)sizeof(int));
+                }
+                ImGui.TextUnformatted($"\u2195 Move: {displayName}");
+                ImGui.EndDragDropSource();
+            }
+            
+            // Drop target: reorder
+            if (ImGui.BeginDragDropTarget())
+            {
+                unsafe
+                {
+                    var payload = ImGui.AcceptDragDropPayload("HIER_PIECE");
+                    if (payload.Handle != null && payload.DataSize == sizeof(int))
+                    {
+                        int sourceId = *(int*)payload.Data;
+                        if (sourceId != piece.Id)
+                        {
+                            PushUndoSnapshot();
+                            ReorderPiece(sourceId, piece.Id);
+                        }
+                    }
+                }
+                _hierDragSourceId = -1;
+                ImGui.EndDragDropTarget();
+            }
+        }
+    }
+    
+    // Wrapper: renders under a collapsible TreeNode header (for "Pieces" / "Ungrouped")
+    private void RenderHierarchyGroupFlat(string label, List<StagePieceInstance> pieces, bool hasFilter)
+    {
+        if (pieces.Count == 0 && !hasFilter) return;
+        bool open = ImGui.TreeNodeEx($"{label} ({pieces.Count})", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+        // The tree-node item itself is a drop target: dropping a piece here removes it from any group
+        if (ImGui.BeginDragDropTarget())
+        {
+            unsafe
+            {
+                var pl = ImGui.AcceptDragDropPayload("HIER_PIECE");
+                if (pl.Handle != null && pl.DataSize == sizeof(int))
+                {
+                    int srcId = *(int*)pl.Data;
+                    foreach (var g in ActiveTab!.HierarchyGroups) g.PieceIds.Remove(srcId);
+                    ActiveTab!.HasUnsavedChanges = true;
+                }
+            }
+            ImGui.EndDragDropTarget();
+        }
+        if (open)
+        {
+            RenderHierarchyGroup(pieces, hasFilter, null);
+            ImGui.TreePop();
+        }
+    }
     private void RenderViewport()
     {
         // Viewport tabs
@@ -3656,6 +4282,39 @@ public class StageEditorPhase : BasePhase
         // Piece selected
         if (ActiveTab.SelectedPieceId >= 0)
         {
+            // Multi-selection banner
+            int selCount = ActiveTab.SelectedPieceIds.Count;
+            if (selCount > 1)
+            {
+                ImGui.TextColored(new System.Numerics.Vector4(0.26f, 0.8f, 0.98f, 1f), $"{selCount} pieces selected");
+                ImGui.Spacing();
+                ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.6f, 0.15f, 0.15f, 1f));
+                if (ImGui.Button("Delete All Selected", new System.Numerics.Vector2(-1, 0)))
+                {
+                    PushUndoSnapshot();
+                    var toDelete = new List<int>(ActiveTab.SelectedPieceIds);
+                    foreach (var did in toDelete)
+                    {
+                        var dp = ActiveTab.ScenePieces.Find(p => p.Id == did);
+                        if (dp == null) continue;
+                        if (ActiveTab.Stage != null)
+                            for (int si = 0; si < ActiveTab.Stage.pieces.Count; si++)
+                                if (ActiveTab.Stage.pieces[si] == dp.Obj) { ActiveTab.Stage.pieces.RemoveAt(si); break; }
+                        ActiveTab.ScenePieces.Remove(dp);
+                        foreach (var grp in ActiveTab.HierarchyGroups) grp.PieceIds.Remove(dp.Id);
+                    }
+                    ActiveTab.SelectedPieceIds.Clear();
+                    ActiveTab.SelectedPieceId = -1;
+                    ActiveTab.HasUnsavedChanges = true;
+                    RebuildClientRenderer();
+                }
+                ImGui.PopStyleColor();
+                ImGui.Spacing();
+                ImGui.TextDisabled("(showing primary piece below)");
+                ImGui.Separator();
+                ImGui.Spacing();
+            }
+            
             var piece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
             if (piece != null)
             {
@@ -3675,7 +4334,18 @@ public class StageEditorPhase : BasePhase
                     if (ImGui.IsItemActivated()) PushUndoSnapshot();
                     if (ImGui.DragFloat3("##pos", ref displayPos, 10f))
                     {
-                        piece.Position = new f64Vector3((fix64)displayPos.X, (fix64)displayPos.Y + 250, (fix64)displayPos.Z);
+                        var newPos = new f64Vector3((fix64)displayPos.X, (fix64)(displayPos.Y + 250), (fix64)displayPos.Z);
+                        var deltaX = newPos.X - piece.Position.X;
+                        var deltaY = newPos.Y - piece.Position.Y;
+                        var deltaZ = newPos.Z - piece.Position.Z;
+                        piece.Position = newPos;
+                        // Apply same delta to all other selected pieces
+                        foreach (var selId in ActiveTab.SelectedPieceIds)
+                        {
+                            if (selId == piece.Id) continue;
+                            var sp = ActiveTab.ScenePieces.Find(p => p.Id == selId);
+                            if (sp != null) sp.Position = new f64Vector3(sp.Position.X + deltaX, sp.Position.Y + deltaY, sp.Position.Z + deltaZ);
+                        }
                         ActiveTab.HasUnsavedChanges = true;
                     }
                     if (ImGui.IsItemHovered())
@@ -3687,7 +4357,15 @@ public class StageEditorPhase : BasePhase
                     if (ImGui.IsItemActivated()) PushUndoSnapshot();
                     if (ImGui.DragFloat("##roty", ref rotY, 1f, -180f, 180f))
                     {
+                        float rotDelta = rotY - (float)piece.Rotation.Y;
                         piece.Rotation = new f64Vector3(piece.Rotation.X, (fix64)rotY, piece.Rotation.Z);
+                        // Apply same rotation delta to all other selected pieces
+                        foreach (var selId in ActiveTab.SelectedPieceIds)
+                        {
+                            if (selId == piece.Id) continue;
+                            var sp = ActiveTab.ScenePieces.Find(p => p.Id == selId);
+                            if (sp != null) sp.Rotation = new f64Vector3(sp.Rotation.X, (fix64)(((float)sp.Rotation.Y + rotDelta) % 360f), sp.Rotation.Z);
+                        }
                         ActiveTab.HasUnsavedChanges = true;
                     }
                     ImGui.Spacing();
@@ -3717,6 +4395,39 @@ public class StageEditorPhase : BasePhase
                     }
                     if (ImGui.IsItemHovered())
                         ImGui.SetTooltip("AI waypoint tags: p=road, pr=ramp, pt=turn, ph=halfpipe, po=fixroad start");
+                    ImGui.Spacing();
+                    
+                    if (!_isSwapMode)
+                    {
+                        // Only allow swap when all selected pieces share the same model
+                        bool swapAllowed = true;
+                        if (ActiveTab.SelectedPieceIds.Count > 1)
+                        {
+                            var allSelected = ActiveTab.ScenePieces
+                                .Where(p => ActiveTab.SelectedPieceIds.Contains(p.Id)).ToList();
+                            var firstName = allSelected.Count > 0 ? allSelected[0].Name : piece.Name;
+                            swapAllowed = allSelected.All(p => p.Name == firstName);
+                        }
+                        if (!swapAllowed) ImGui.BeginDisabled();
+                        if (ImGui.Button("Swap Piece...", new System.Numerics.Vector2(-1, 0)))
+                        {
+                            _isSwapMode = true;
+                            _pendingPlacementPartIndex = -1;
+                        }
+                        if (!swapAllowed)
+                        {
+                            ImGui.EndDisabled();
+                            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                                ImGui.SetTooltip("All selected pieces must use the same model to swap");
+                        }
+                    }
+                    else
+                    {
+                        ImGui.PushStyleColor(ImGuiCol.Button, new System.Numerics.Vector4(0.6f, 0.4f, 0.05f, 1f));
+                        if (ImGui.Button("Cancel Swap", new System.Numerics.Vector2(-1, 0)))
+                            _isSwapMode = false;
+                        ImGui.PopStyleColor();
+                    }
                     ImGui.Spacing();
                 }
                 
@@ -3755,11 +4466,22 @@ public class StageEditorPhase : BasePhase
     private void RenderPartsLibrary()
     {
         // Header row: title + counts
-        ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.6f, 0.6f, 0.6f, 1f));
-        ImGui.Text("Stage Parts Library");
-        ImGui.PopStyleColor();
-        ImGui.SameLine();
-        ImGui.TextDisabled($"({_availableParts.Count} parts)");
+        if (_isSwapMode)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(1f, 0.75f, 0.1f, 1f));
+            ImGui.Text("Stage Parts Library");
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.TextColored(new System.Numerics.Vector4(1f, 0.75f, 0.1f, 1f), "— Click a part to swap. [Esc] to cancel.");
+        }
+        else
+        {
+            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.6f, 0.6f, 0.6f, 1f));
+            ImGui.Text("Stage Parts Library");
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.TextDisabled($"({_availableParts.Count} parts)");
+        }
         ImGui.Separator();
         
         // Search bar
@@ -3879,6 +4601,14 @@ public class StageEditorPhase : BasePhase
             
             var groupTopLeft = ImGui.GetCursorScreenPos();
             bool isPendingPlacement = i == _pendingPlacementPartIndex;
+            
+            // In swap mode, determine if this tile is the current piece
+            bool isCurrentSwapPiece = false;
+            if (_isSwapMode && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+            {
+                var sp = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+                isCurrentSwapPiece = sp != null && sp.Name == part.Name;
+            }
             ImGui.PushID(i);
             ImGui.BeginGroup();
             
@@ -3933,13 +4663,58 @@ public class StageEditorPhase : BasePhase
                 );
             }
             
+            // Highlight the current piece when in swap mode
+            if (isCurrentSwapPiece)
+            {
+                var drawList = ImGui.GetWindowDrawList();
+                uint borderColor = ImGui.ColorConvertFloat4ToU32(new System.Numerics.Vector4(1.0f, 0.75f, 0.1f, 1.0f));
+                drawList.AddRect(
+                    groupTopLeft,
+                    new System.Numerics.Vector2(groupTopLeft.X + tileW, groupTopLeft.Y + tileH),
+                    borderColor, 2f, ImDrawFlags.None, 2.5f
+                );
+            }
+            
             ImGui.PopID();
             
             if (clicked && part.Rad != null)
             {
-                // Enter placement mode: the user will click in the viewport to place the part
-                _pendingPlacementPartIndex = i;
-                _hasValidPlacementPos = false;
+                if (_isSwapMode && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+                {
+                    // Swap the selected piece to this part
+                    var swapPiece = ActiveTab.ScenePieces.Find(p => p.Id == ActiveTab.SelectedPieceId);
+                    if (swapPiece != null && part.Name != swapPiece.Name)
+                    {
+                        PushUndoSnapshot();
+                        var newRot = new f64Euler(
+                            f64AngleSingle.FromDegrees((fix64)(float)swapPiece.Rotation.Y),
+                            f64AngleSingle.ZeroAngle,
+                            f64AngleSingle.ZeroAngle);
+                        var newMesh = new StageObject(part.Rad, swapPiece.Position, newRot);
+                        if (ActiveTab.Stage != null)
+                        {
+                            for (int si = 0; si < ActiveTab.Stage.pieces.Count; si++)
+                            {
+                                if (ActiveTab.Stage.pieces[si] == swapPiece.Obj)
+                                {
+                                    ActiveTab.Stage.pieces[si] = newMesh;
+                                    break;
+                                }
+                            }
+                        }
+                        swapPiece.Name = part.Name;
+                        swapPiece.Obj = newMesh;
+                        ActiveTab.HasUnsavedChanges = true;
+                        RebuildClientRenderer();
+                    }
+                    _isSwapMode = false;
+                }
+                else
+                {
+                    // Enter placement mode: the user will click in the viewport to place the part
+                    _pendingPlacementPartIndex = i;
+                    _hasValidPlacementPos = false;
+                }
             }
             
             col++;
