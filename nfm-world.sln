@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -58,6 +57,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avalonia.Generators", "Avalonia.Generators\Avalonia.Generators.csproj", "{96D69E51-59A1-4F6A-BCB7-4961076BBED5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NFMWorld.XamlX.Core", "NFMWorld.XamlX.Core\NFMWorld.XamlX.Core.csproj", "{5C0B721A-34E7-4388-B0A2-AEBFE53739F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
