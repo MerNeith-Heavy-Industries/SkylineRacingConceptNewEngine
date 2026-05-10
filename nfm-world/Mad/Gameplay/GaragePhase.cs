@@ -138,6 +138,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void GameTick()
     {
+        base.GameTick();
         _garageUiView.Update();
     }
 

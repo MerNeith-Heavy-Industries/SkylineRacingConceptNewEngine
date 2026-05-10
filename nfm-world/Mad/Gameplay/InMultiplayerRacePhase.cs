@@ -79,10 +79,6 @@ public class InMultiplayerRacePhase(
 
     public override void GameTick()
     {
-        current_scene.OnBeforeUpdate();
-        
-        base.GameTick();
-        
         FrameTrace.AddMessage($"race state: {raceState}, player car index: {playerCarIndex}, spectating: {spectating}");
         
         foreach (var packet in transport.GetNewPackets())
@@ -117,11 +113,12 @@ public class InMultiplayerRacePhase(
                 // Medium.Around(CarsInRace[playerCarIndex].Conto, true);
                 break;
         }
+        
+        base.GameTick();
+        
         // camera.Position = new Vector3(0, 10000, 0);
         // camera.LookAt = new Vector3(1, 250, 0);
         
-        current_scene.GameTick(CurrentStage);
-
         if (raceState == RaceState.InProgress)
         {
             transport.SendPacketToServer(new C2S_PlayerState()
