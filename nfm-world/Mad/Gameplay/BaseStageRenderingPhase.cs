@@ -123,10 +123,22 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         camera.Height = height;
     }
 
+    public override void BeginGameTick()
+    {
+        base.BeginGameTick();
+        current_scene.OnBeforeUpdate();
+    }
+
+    public override void GameTick()
+    {
+        base.GameTick();
+        current_scene.GameTick(CurrentStage);
+    }
+
     public override void Render(float alpha)
     {
         base.Render(alpha);
-
+        
         foreach (var lightCamera in lightCameras)
         {
             lightCamera.Position = camera.Position + new Vector3(0, -5000, 0);

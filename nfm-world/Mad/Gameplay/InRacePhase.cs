@@ -66,10 +66,6 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
 
     public override void GameTick()
     {
-        current_scene.OnBeforeUpdate();
-
-        base.GameTick();
-        
         gamemodeInstance!.GameTick();
 
         switch (currentViewMode)
@@ -81,10 +77,8 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
                 PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
                 break;
         }
-        // camera.Position = new Vector3(0, 10000, 0);
-        // camera.LookAt = new Vector3(1, 250, 0);
-
-        current_scene.GameTick(CurrentStage);
+        
+        base.GameTick();
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
