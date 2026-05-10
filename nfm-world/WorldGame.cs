@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using ManagedBass;
 using Maxine.Extensions.Collections.SpanLinq;
@@ -611,6 +612,9 @@ public class WorldGame : Game
         {
             Process.GetCurrentProcess().Kill();
         };
+        
+        NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(WorldGame).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
         
@@ -640,6 +644,161 @@ public class WorldGame : Game
 
         var program = new WorldGame();
         program.Run();
+    }
+
+    private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        static string GetPlatformName()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return "windows";
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                return  "osx";
+            }
+
+            if (OperatingSystem.IsLinux())
+            {
+                return "linux";
+            }
+
+            if (OperatingSystem.IsFreeBSD())
+            {
+                return "freebsd";
+            }
+
+            if (OperatingSystem.IsAndroid())
+            {
+                return "android";
+            }
+
+            // What is this platform??
+            return "unknown";
+        }
+
+        if (OperatingSystem.IsIOS() || OperatingSystem.IsTvOS())
+        {
+            return NativeLibrary.GetMainProgramHandle(); // statically linked
+        }
+
+        string os = GetPlatformName();
+        string cpu = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        string wordsize = (IntPtr.Size * 8).ToString();
+        
+        var newLibraryName = libraryName switch
+        {
+            "SDL3" => os switch
+            {
+                "windows" => "SDL3.dll",
+                "osx" => "libSDL3.0.dylib",
+                "linux" or "freebsd" or "netbsd" => "libSDL3.so.0",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "FNA3D" => os switch
+            {
+                "windows" => "FNA3D.dll",
+                "osx" => "libFNA3D.0.dylib",
+                "linux" or "freebsd" or "netbsd" => "libFNA3D.so.0",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "FAudio" => os switch
+            {
+                "windows" => "FAudio.dll",
+                "osx" => "libFAudio.0.dylib",
+                "linux" or "freebsd" or "netbsd" => "libFAudio.so.0",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "dav1dfile" => os switch
+            {
+                "windows" => "dav1dfile.dll",
+                "osx" => "dav1dfile.1.dylib",
+                "linux" or "freebsd" or "netbsd" => "dav1dfile.so.0",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "SDL2" => os switch
+            {
+                "windows" => "SDL2.dll",
+                "osx" => "libSDL2-2.0.0.dylib",
+                "linux" or "freebsd" or "netbsd" => "libSDL2-2.0.so.0",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "bass" => os switch
+            {
+                "windows" => "bass.dll",
+                "osx" => "libbass.dylib",
+                "linux" or "freebsd" or "netbsd" => "libbass.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "bass_fx" => os switch
+            {
+                "windows" => "bass_fx.dll",
+                "osx" => "libbass_fx.dylib",
+                "linux" or "freebsd" or "netbsd" => "libbass_fx.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "bassopus" => os switch
+            {
+                "windows" => "bassopus.dll",
+                "osx" => "libbassopus.dylib",
+                "linux" or "freebsd" or "netbsd" => "libbassopus.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "steam_api" or "steam_api64" => os switch
+            {
+                "windows" => wordsize is "64" ? "steam_api64.dll" : "steam_api.dll",
+                "osx" => "libsteam_api.dylib",
+                "linux" or "freebsd" or "netbsd" => "libsteam_api.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            "nanosvg" => os switch
+            {
+                "windows" => "nanosvg.dll",
+                "osx" => "libnanosvg.dylib",
+                "linux" or "freebsd" or "netbsd" => "libnanosvg.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            _ => os switch
+            {
+                "windows" => $"{libraryName}.dll",
+                "osx" => $"lib{libraryName}.dylib",
+                "linux" or "freebsd" or "netbsd" => $"lib{libraryName}.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            }
+        };
+        
+        var dir = os switch
+        {
+            "windows" => cpu switch
+            {
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "arm64",
+                "x64" or "x86_64" or "amd64" => "x64",
+                "x86" or "x86_32" or "i386" => "x86",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            "osx" => "osx",
+            "linux" or "freebsd" or "netbsd" => cpu switch
+            {
+                "arm32" or "armv7" or "aarch32" or "armeabi-v7a" => "libarmhf",
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "libaarch64",
+                "x64" or "x86_64" or "amd64" => "lib64",
+                "x86" or "x86_32" or "i386" => "lib32",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            "android" => cpu switch
+            {
+                "arm32" or "armv7" or "aarch32" or "armeabi-v7a" => "android-armeabi-v7a",
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "android-arm64-v8a",
+                "x64" or "x86_64" or "amd64" => "android-x86_64",
+                "x86" or "x86_32" or "i386" => "android-x86",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+        };
+        
+        return NativeLibrary.Load($"{dir}/{newLibraryName}");
     }
 
     private void KeyDown(Keys key)
