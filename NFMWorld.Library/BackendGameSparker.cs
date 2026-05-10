@@ -75,11 +75,13 @@ public static class BackendGameSparker
         });
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
         
-        var realFs = new RelativeFileSystem(Directory.GetCurrentDirectory());
-        VFS.MountNewFileTarget(realFs);
+        var realFs = new RelativeFileSystem(AppDomain.CurrentDomain.BaseDirectory);
+        var realFs2 = new RelativeFileSystem(Directory.GetCurrentDirectory());
+        VFS.MountNewFileTarget(realFs2);
         
         // VFS.MountFileSystem(new HttpFileSystem());
         VFS.MountFileSystem(realFs);
+        VFS.MountFileSystem(realFs2);
         var modsFolder = Path.Combine(Directory.GetCurrentDirectory(), "mods");
         if (Directory.Exists(modsFolder))
             VFS.MountFileSystem(new RelativeFileSystem(modsFolder));
