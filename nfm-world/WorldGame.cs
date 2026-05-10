@@ -37,6 +37,7 @@ public class WorldGame : Game
     private MouseState oldMouseState;
     private NanoVGRenderer _nvg;
     private TimeStep _tickTimeStep = new((1000f / Physics.TargetTps) / 1000f);
+    public static bool LowLatency = false;
     public static int NumCascades = 3;
     public static int ShadowResolution = 2048;
 
@@ -544,7 +545,7 @@ public class WorldGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        var alpha = (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
+        var alpha = LowLatency ? 1f : (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
         
         GraphicsDevice.Clear(Color.CornflowerBlue);
 

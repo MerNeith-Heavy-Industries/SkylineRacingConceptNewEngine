@@ -70,6 +70,7 @@ public class SettingsMenu(WorldGame game)
     private static readonly string[] ShadowResolutions = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
+    private bool _lowLatency = false;
 
     // Audio settings
     private float _masterVolume = 1.0f;
@@ -284,6 +285,8 @@ public class SettingsMenu(WorldGame game)
         
         ImGui.Text("Shadow Resolution");
         ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutions, ShadowResolutions.Length);
+        
+        ImGui.Checkbox("Low Latency (Disable interpolation)", ref _lowLatency);
 
         ImGui.Spacing();
         ImGui.Text("Outline Width");
@@ -478,6 +481,8 @@ public class SettingsMenu(WorldGame game)
         FollowCamera.FollowYOffset = _followY;
         FollowCamera.FollowZOffset = _followZ;
 
+        WorldGame.LowLatency = _lowLatency;
+
         var graphicsChanged = false;
         requireRestart = false;
         if (game._graphics.SynchronizeWithVerticalRetrace != _vsync)
@@ -608,6 +613,7 @@ public class SettingsMenu(WorldGame game)
                 cfgWriter.WriteLine($"video_linewidth2 {_lineWidth.ToString("F4", CultureInfo.InvariantCulture)}");
                 cfgWriter.WriteLine($"video_shadow_cascade {_shadowCascadeLevel}");
                 cfgWriter.WriteLine($"video_shadow_res {_shadowResolution}");
+                cfgWriter.WriteLine($"video_low_latency {(_lowLatency ? 1 : 0)}");
                 cfgWriter.WriteLine();
                 
                 // Audio settings
@@ -797,6 +803,9 @@ public class SettingsMenu(WorldGame game)
                             break;
                         case "video_shadow_res":
                             _shadowResolution = int.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "video_low_latency":
+                            _lowLatency = int.Parse(value) != 0;
                             break;
                         
                         // Audio settings
