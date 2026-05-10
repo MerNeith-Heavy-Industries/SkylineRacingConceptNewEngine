@@ -1,11 +1,16 @@
-﻿namespace NFMWorld;
+﻿using NFMWorld.Interp;
+
+namespace NFMWorld;
 
 public class OrthoLightCamera : OrthoCamera
 {
-    public override void OnBeforeRender()
+    public override void OnBeforeRender(float alpha)
     {
         ProjectionMatrix = Matrix.CreateOrthographic(Width, Height, Near, Far);
-        ViewMatrix = Matrix.CreateLookAt(Position, LookAt, Up);
+        var interpolatedPosition = Interpolation.InterpolateCoord(Position, PreviousState.Position, alpha);
+        var interpolatedLookAt = Interpolation.InterpolateCoord(LookAt, PreviousState.LookAt, alpha);
+        var interpolatedUp = Interpolation.InterpolateCoord(Up, PreviousState.Up, alpha);
+        ViewMatrix = Matrix.CreateLookAt(interpolatedPosition, interpolatedLookAt, interpolatedUp);
         
         // Calculate world units per texel
         float shadowMapSize = 2048f;

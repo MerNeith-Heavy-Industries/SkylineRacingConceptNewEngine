@@ -2,7 +2,7 @@
 
 public interface IImmediateRenderable
 {
-    void OnBeforeRender()
+    void OnBeforeRender(float alpha)
     {
     }
 

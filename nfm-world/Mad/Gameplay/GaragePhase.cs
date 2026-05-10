@@ -141,9 +141,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         _garageUiView.Update();
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
     }
 
     public override void RenderImgui()

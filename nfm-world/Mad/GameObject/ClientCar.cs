@@ -65,8 +65,8 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
         Chips = new Chips(this, graphicsDevice);
         Sparks = new Sparks(this, graphicsDevice);
         
-        Position = backendCar.Position;
-        Rotation = backendCar.Rotation;
+        PositionWithoutInterpolation = backendCar.Position;
+        RotationWithoutInterpolation = backendCar.Rotation;
     }
 
     public ClientCar(GraphicsDevice graphicsDevice, IInGameCar backendCar)
@@ -133,11 +133,15 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
 
     public override void GameTick(IStage? stage = null)
     {
+        base.GameTick(stage);
+        foreach (var wheel in _wheels)
+        {
+            wheel.GameTick(stage);
+        }
         Flames.GameTick();
         Dust.GameTick(stage);
         Chips.GameTick();
         Sparks.GameTick();
-        base.GameTick(stage);
         GameTicked?.Invoke();
     }
 
@@ -188,13 +192,13 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
         }
     }
 
-    public override void OnBeforeRender()
+    public override void OnBeforeRender(float alpha)
     {
-        base.OnBeforeRender();
+        base.OnBeforeRender(alpha);
         
         foreach (var wheel in _wheels)
         {
-            wheel.OnBeforeRender();
+            wheel.OnBeforeRender(alpha);
         }
     }
 

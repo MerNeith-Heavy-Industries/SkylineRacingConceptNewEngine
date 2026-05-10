@@ -23,17 +23,17 @@ public class Scene
         _renderDataCache = new RenderDataCache(graphicsDevice);
     }
     
-    public void Render(bool useShadowMapping, bool clearRenderBuffer = true)
+    public void Render(float alpha, bool useShadowMapping, bool clearRenderBuffer = true)
     {
-        _camera.OnBeforeRender();
+        _camera.OnBeforeRender(alpha);
         foreach (var lightCamera in _lightCameras)
         {
-            lightCamera.OnBeforeRender();
+            lightCamera.OnBeforeRender(alpha);
         }
         
         foreach (var renderable in Objects)
         {
-            renderable.OnBeforeRender();
+            renderable.OnBeforeRender(alpha);
         }
         
         _graphicsDevice.BlendState = BlendState.Opaque;
@@ -244,6 +244,15 @@ public class Scene
         foreach (var (buffer, instanceCount, element) in _renderDataCache)
         {
             element.Render(_camera, lighting, buffer, instanceCount);
+        }
+    }
+
+    public void OnBeforeUpdate()
+    {
+        _camera.OnBeforeGameTick();
+        foreach (var lightCamera in _lightCameras)
+        {
+            lightCamera.OnBeforeGameTick();
         }
     }
 

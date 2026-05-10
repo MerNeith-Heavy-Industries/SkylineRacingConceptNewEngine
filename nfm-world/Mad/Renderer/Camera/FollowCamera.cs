@@ -11,6 +11,8 @@ public class FollowCamera
     private Euler _angle;
     public static int FollowZOffset = 0;
 
+    private static int _oldlookback = 0;
+
     public void Follow(PerspectiveCamera camera, ITransform obj, float cxz, int lookback)
     {
         // x: yaw = xz
@@ -22,6 +24,14 @@ public class FollowCamera
         {
             i28 = 20;
         }
+
+        var interpolateAngle = true;
+        if (lookback != _oldlookback)
+        {
+            _oldlookback = lookback;
+            interpolateAngle = false;
+        }
+
         if (lookback != 0)
         {
             if (lookback == 2)   //look right
@@ -89,6 +99,13 @@ public class FollowCamera
         var lookDirection = (_angle * Vector3.UnitZ) * 100;
         // LookAt should be a target point, not a direction - add direction to position
         var lookAtPoint = camera.Position + lookDirection;
-        camera.LookAt = lookAtPoint;
+        if (interpolateAngle)
+        {
+            camera.LookAt = lookAtPoint;
+        }
+        else
+        {
+            camera.LookAtWithoutInterpolation = lookAtPoint;
+        }
     }
 }

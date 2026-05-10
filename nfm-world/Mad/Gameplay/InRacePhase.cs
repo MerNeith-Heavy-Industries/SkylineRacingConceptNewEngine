@@ -66,6 +66,8 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
 
     public override void GameTick()
     {
+        current_scene.OnBeforeUpdate();
+
         base.GameTick();
         
         gamemodeInstance!.GameTick();
@@ -97,9 +99,9 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         gamemodeInstance?.KeyReleased(key);
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
         gamemodeInstance?.Render();
     }
     

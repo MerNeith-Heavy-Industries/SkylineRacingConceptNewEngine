@@ -23,7 +23,7 @@ public abstract class BasePhase
     /// Use <see cref="G"/> here to draw 2D overlays.
     /// Use <see cref="Scene"/> here to draw 3D content.
     /// </summary>
-    public virtual void Render()
+    public virtual void Render(float alpha)
     {
     }
 

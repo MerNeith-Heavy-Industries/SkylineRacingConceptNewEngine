@@ -2714,7 +2714,7 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void Render()
+    public override void Render(float alpha)
     {
         if (!_isOpen) return;
         if (ActiveTab == null) return;
@@ -2777,7 +2777,7 @@ public class StageEditorPhase : BasePhase
                 World.FadeFrom = 9999999;
                 
                 // Render with lighting preserved
-                ActiveTab?.Scene.Render(false);
+                ActiveTab?.Scene.Render(alpha, false);
                 
                 // Restore environment elements
                 ActiveTab?.StageRenderer.ground = oldGround;
@@ -2790,7 +2790,7 @@ public class StageEditorPhase : BasePhase
             else
             {
                 // Normal 3D view with lighting and ground
-                ActiveTab?.Scene.Render(false);
+                ActiveTab?.Scene.Render(alpha, false);
             }
         }
         

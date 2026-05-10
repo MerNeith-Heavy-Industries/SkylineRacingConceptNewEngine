@@ -544,7 +544,9 @@ public class WorldGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.CornflowerBlue);
+        var alpha = (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
+        
+        GraphicsDevice.Clear(Color.CornflowerBlue);
 
         var t = Stopwatch.StartNew();
         
@@ -555,7 +557,7 @@ public class WorldGame : Game
         GameSparker.Render();
         
         // Render based on game state
-        GameSparker.CurrentPhase.Render();
+        GameSparker.CurrentPhase.Render(alpha);
         
 #if DEBUG
         if (DebugUiClass != null)

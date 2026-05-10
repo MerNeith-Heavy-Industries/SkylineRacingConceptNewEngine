@@ -95,9 +95,9 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         _aroundStageCamera.AroundStage(camera, CurrentStage);
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
     }
 
     public override void RenderImgui()

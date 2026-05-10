@@ -1,4 +1,5 @@
-﻿using NFMWorldLibrary;
+﻿using NFMWorld.Interp;
+using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
@@ -6,64 +7,53 @@ namespace NFMWorld;
 
 public abstract class Transform : ITransform
 {
+    public readonly record struct TransformState(f64Vector3 Position, f64Euler Rotation);
+    
+    public TransformState PreviousState { get; private set; }
+    
     public abstract IReadOnlyList<ITransform> ChildTransforms { get; }
 
-    public f64Vector3 Position {
-        get;
-        set
-        {
-            MatrixWorldNeedsUpdate = true;
-            field = value;
-        }
-    } = f64Vector3.Zero;
-    public f64Euler Rotation {
-        get;
-        set
-        {
-            MatrixWorldNeedsUpdate = true;
-            field = value;
-        }
-    } = new();
+    public f64Vector3 Position { get; set; } = f64Vector3.Zero;
+    public f64Euler Rotation { get; set; } = new();
+    public Transform? Parent { get; set; }
 
-    public Transform? Parent
+    public f64Vector3 PositionWithoutInterpolation
     {
-        get;
         set
         {
-            MatrixWorldNeedsUpdate = true;
-            field = value;
+            PreviousState = PreviousState with { Position = value };
+            Position = value;
+        }
+    }
+
+    public f64Euler RotationWithoutInterpolation
+    {
+        set
+        {
+            PreviousState = PreviousState with { Rotation = value };
+            Rotation = value;
         }
     }
 
     ITransform? ITransform.Parent => Parent;
 
-    public Matrix MatrixWorld
-    {
-        get
-        {
-            if (MatrixWorldNeedsUpdate)
-            {
-                var ownMatrixWorld = Matrix.CreateFromEuler((Euler)Rotation) * Matrix.CreateTranslation((Vector3)Position);
-                if (Parent != null)
-                {
-                    ownMatrixWorld = ownMatrixWorld * Parent.MatrixWorld;
-                }
-
-                field = ownMatrixWorld;
-                MatrixWorldNeedsUpdate = false;
-            }
-
-            return field;
-        }
-    }
-
-    private bool MatrixWorldNeedsUpdate
-    {
-        get => field || (Parent?.MatrixWorldNeedsUpdate ?? false);
-        set;
-    } = true;
+    public Matrix MatrixWorld { get; private set; }
 
     public virtual void GameTick(IStage? stage = null)
     {
+        PreviousState = new TransformState(Position, Rotation);
+    }
+
+    public virtual void OnBeforeRender(float alpha)
+    {
+        var interpolatedPosition = Interpolation.InterpolateCoord((Vector3)Position, (Vector3)PreviousState.Position, alpha);
+        var interpolatedRotation = Interpolation.InterpolateEuler((Euler)Rotation, (Euler)PreviousState.Rotation, alpha);
+
+        var ownMatrixWorld = Matrix.CreateFromEuler(interpolatedRotation) * Matrix.CreateTranslation(interpolatedPosition);
+        if (Parent != null)
+        {
+            ownMatrixWorld = ownMatrixWorld * Parent.MatrixWorld;
+        }
+        MatrixWorld = ownMatrixWorld;
     }
 }

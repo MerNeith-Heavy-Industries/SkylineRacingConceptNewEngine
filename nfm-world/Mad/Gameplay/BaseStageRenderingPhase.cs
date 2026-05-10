@@ -123,9 +123,9 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         camera.Height = height;
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
 
         foreach (var lightCamera in lightCameras)
         {
@@ -135,7 +135,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
         camera.Fov = FovOverride ?? CameraSettings.Fov;
 
-        current_scene.Render(true);
+        current_scene.Render(alpha, true);
 
         if (DebugDisplay)
         {
