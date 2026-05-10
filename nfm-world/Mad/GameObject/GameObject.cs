@@ -30,11 +30,12 @@ public class GameObject : Transform, IImmediateRenderable
         }
     }
 
-    public virtual void OnBeforeRender()
+    public override void OnBeforeRender(float alpha)
     {
+        base.OnBeforeRender(alpha);
         foreach (var child in Children)
         {
-            child.OnBeforeRender();
+            child.OnBeforeRender(alpha);
         }
     }
 

@@ -46,7 +46,6 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         GameSparker.CurrentMusic?.Unload();
     }
 
-
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
     {
         base.KeyPressed(key, imguiWantsKeyboard);
@@ -184,9 +183,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         camera.Height = height;
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
 
         if(DebugDisplay) {
             RenderMessages();

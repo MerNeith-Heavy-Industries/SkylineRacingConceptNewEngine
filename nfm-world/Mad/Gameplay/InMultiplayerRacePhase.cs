@@ -79,6 +79,8 @@ public class InMultiplayerRacePhase(
 
     public override void GameTick()
     {
+        current_scene.OnBeforeUpdate();
+        
         base.GameTick();
         
         FrameTrace.AddMessage($"race state: {raceState}, player car index: {playerCarIndex}, spectating: {spectating}");
@@ -141,9 +143,9 @@ public class InMultiplayerRacePhase(
         gamemodeInstance?.KeyPressed(key);
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
         gamemodeInstance?.Render();
         if (raceState == RaceState.WaitingToStart)
         {

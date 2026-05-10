@@ -773,7 +773,7 @@ public class ModelEditorPhase : BasePhase
         };
         
         // Call OnBeforeRender to compute the View and Projection matrices
-        tempCamera.OnBeforeRender();
+        tempCamera.OnBeforeRender(1);
         
         var view = tempCamera.ViewMatrix;
         var projection = tempCamera.ProjectionMatrix;
@@ -892,7 +892,7 @@ public class ModelEditorPhase : BasePhase
             Far = camera.Far
         };
         
-        tempCamera.OnBeforeRender();
+        tempCamera.OnBeforeRender(1);
         
         var view = tempCamera.ViewMatrix;
         var projection = tempCamera.ProjectionMatrix;
@@ -1310,9 +1310,9 @@ public class ModelEditorPhase : BasePhase
         UpdateTabCameraPosition(tab);
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
 
         _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(135, 206, 235));
     }
@@ -2375,7 +2375,7 @@ public class ModelEditorPhase : BasePhase
         scene.Objects.Add(tab.Object);
         
         // Render main model first
-        scene.Render(false);
+        scene.Render(1, false);
         
         // Render reference car overlay with transparency (rendered separately after main model)
         if (tab.ShowReferenceOverlay && tab.ReferenceCarIndex >= 0 && tab.ReferenceCarIndex < BackendGameSparker.cars[Collection.NFMM].Count)
@@ -2413,7 +2413,7 @@ public class ModelEditorPhase : BasePhase
             
             overlayScene.Objects.Clear();
             overlayScene.Objects.Add(referenceCar);
-            overlayScene.Render(false, false);
+            overlayScene.Render(1, false, false);
             
             // Restore states
             _graphicsDevice.BlendState = previousBlendState;
@@ -2483,7 +2483,7 @@ public class ModelEditorPhase : BasePhase
         // Render the overlay
         overlayScene.Objects.Clear();
         overlayScene.Objects.Add(overlayMesh);
-        overlayScene.Render(false, false);
+        overlayScene.Render(1, false, false);
         
         // Restore previous states
         GameSparker._graphicsDevice.BlendState = oldBlendState;

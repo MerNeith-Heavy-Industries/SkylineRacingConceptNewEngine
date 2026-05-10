@@ -6,7 +6,7 @@ namespace NFMWorld;
 public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollection<IInGameCar> backendCars) : GameObject
 {
     private Dictionary<IInGameCar, ClientCar> _clientCars = backendCars.ToDictionary(car => car, car => new ClientCar(graphicsDevice, car));
-    
+
     private void RemoveExcessCars()
     {
         var toRemove = _clientCars.Keys.Except(backendCars).ToArray();
@@ -52,9 +52,9 @@ public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollect
         }
     }
 
-    public override void OnBeforeRender()
+    public override void OnBeforeRender(float alpha)
     {
-        base.OnBeforeRender();
+        base.OnBeforeRender(alpha);
         
         foreach (var car in backendCars)
         {
@@ -63,7 +63,7 @@ public class ClientCarCollection(GraphicsDevice graphicsDevice, IReadOnlyCollect
                 clientCar = _clientCars[car] = new ClientCar(graphicsDevice, car);
             }
 
-            clientCar.OnBeforeRender();
+            clientCar.OnBeforeRender(alpha);
         }
     }
 

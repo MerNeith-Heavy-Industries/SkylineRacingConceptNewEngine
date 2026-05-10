@@ -244,9 +244,9 @@ public class MainMenuPhase : BasePhase
                y >= button.Y && y <= button.Y + button.Height;
     }
 
-    public override void Render()
+    public override void Render(float alpha)
     {
-        base.Render();
+        base.Render(alpha);
 
         // Clear to dark purple background
         G.SetColor(new Color(15, 0, 35));

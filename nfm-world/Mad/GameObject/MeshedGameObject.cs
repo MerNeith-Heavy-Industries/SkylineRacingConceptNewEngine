@@ -9,8 +9,8 @@ public class MeshedGameObject(Mesh mesh) : GameObject
 
     public MeshedGameObject(Mesh mesh, f64Vector3 position, f64Euler rotation) : this(mesh)
     {
-        Position = position;
-        Rotation = rotation;
+        PositionWithoutInterpolation = position;
+        RotationWithoutInterpolation = rotation;
     }
 
     public bool CastsShadow { get; set; } = mesh.CastsShadow;
