@@ -26,7 +26,7 @@ public abstract class Camera
     
     public Vector3 LookAtWithoutInterpolation
     {
-        set 
+        set
         {
             PreviousState = PreviousState with { LookAt = value };
             LookAt = value;

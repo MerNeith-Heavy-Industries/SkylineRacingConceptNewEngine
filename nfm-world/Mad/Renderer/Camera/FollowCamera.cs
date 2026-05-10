@@ -88,23 +88,37 @@ public class FollowCamera
         _angle.Yaw = AngleSingle.FromDegrees(-cxz);
 
         var followDistance = 800 + FollowZOffset;
-        camera.Position = camera.Position with
-        {
-            X = (float)(obj.Position.X + (followDistance * UMath.Sin(cxz))),
-            Z = (float)(obj.Position.Z - (followDistance * UMath.Cos(cxz))),
-            Y = (float)(obj.Position.Y - 250 - FollowYOffset),
-        };
         
-        // Calculate the look direction by rotating the forward vector
-        var lookDirection = (_angle * Vector3.UnitZ) * 100;
-        // LookAt should be a target point, not a direction - add direction to position
-        var lookAtPoint = camera.Position + lookDirection;
         if (interpolateAngle)
         {
+            camera.Position = camera.Position with
+            {
+                X = (float)(obj.Position.X + (followDistance * UMath.Sin(cxz))),
+                Z = (float)(obj.Position.Z - (followDistance * UMath.Cos(cxz))),
+                Y = (float)(obj.Position.Y - 250 - FollowYOffset),
+            };
+            
+            // Calculate the look direction by rotating the forward vector
+            var lookDirection = (_angle * Vector3.UnitZ) * 100;
+            // LookAt should be a target point, not a direction - add direction to position
+            var lookAtPoint = camera.Position + lookDirection;
+            
             camera.LookAt = lookAtPoint;
         }
         else
         {
+            camera.PositionWithoutInterpolation = camera.Position with
+            {
+                X = (float)(obj.Position.X + (followDistance * UMath.Sin(cxz))),
+                Z = (float)(obj.Position.Z - (followDistance * UMath.Cos(cxz))),
+                Y = (float)(obj.Position.Y - 250 - FollowYOffset),
+            };
+            
+            // Calculate the look direction by rotating the forward vector
+            var lookDirection = (_angle * Vector3.UnitZ) * 100;
+            // LookAt should be a target point, not a direction - add direction to position
+            var lookAtPoint = camera.Position + lookDirection;
+
             camera.LookAtWithoutInterpolation = lookAtPoint;
         }
     }
