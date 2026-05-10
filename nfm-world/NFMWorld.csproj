@@ -98,53 +98,6 @@
         <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup"/>
     </ItemGroup>
 
-    <!-- windows builds -->
-    <Target Name="CopyCustomContentWindows" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
-        <ItemGroup>
-            <DllFiles Include="SkiaDriver/*.dll"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(DllFiles)" DestinationFolder="$(OutDir)"/>
-    </Target>
-
-    <Target Name="CopyCustomContentWindows_Publish" AfterTargets="Publish" Condition="'$(OS)' == 'Windows_NT'">
-        <ItemGroup>
-            <DllFiles Include="SkiaDriver/*.dll"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(DllFiles)" DestinationFolder="$(PublishDir)"/>
-    </Target>
-
-    <!-- linux builds -->
-    <Target Name="CopyCustomContentLinux" AfterTargets="AfterBuild" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-        <ItemGroup>
-            <SoFiles Include="SkiaDriver/*.so"/>
-            <SoFiles Include="SkiaDriver/*.so.0"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(SoFiles)" DestinationFolder="$(OutDir)"/>
-    </Target>
-
-    <Target Name="CopyCustomContentLinux_Publish" AfterTargets="Publish" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-        <ItemGroup>
-            <SoFiles Include="SkiaDriver/*.so"/>
-            <SoFiles Include="SkiaDriver/*.so.0"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(SoFiles)" DestinationFolder="$(PublishDir)"/>
-    </Target>
-
-    <!-- mac builds -->
-    <Target Name="CopyCustomContentLinux" AfterTargets="AfterBuild" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-        <ItemGroup>
-            <DylibFiles Include="SkiaDriver/*.dylib"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(DylibFiles)" DestinationFolder="$(OutDir)"/>
-    </Target>
-
-    <Target Name="CopyCustomContentLinux_Publish" AfterTargets="Publish" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
-        <ItemGroup>
-            <DylibFiles Include="SkiaDriver/*.dylib"/>
-        </ItemGroup>
-        <Copy SourceFiles="@(DylibFiles)" DestinationFolder="$(PublishDir)"/>
-    </Target>
-
     <!-- Run mgfxc if on Windows -->
     <ItemGroup>
         <AvailableItemName Include="CompileShader"/>
