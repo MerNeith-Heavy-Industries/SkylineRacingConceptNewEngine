@@ -9,9 +9,9 @@
 
 #include "./Mad.fxh"
 
-matrix View;
-matrix Projection;
-matrix ViewProj;
+float4x4 View;
+float4x4 Projection;
+float4x4 ViewProj;
 float3 SnapColor;
 bool IsFullbright;
 bool UseBaseColor;

@@ -184,7 +184,6 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Effects.Line.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         Effects.Line.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
         Effects.Line.DepthBias?.SetValue(0.00005f);
-        Effects.Line.GetsShadowed?.SetValue(false);
         Effects.Line.Alpha?.SetValue(1f);
 
         Effects.Line.View?.SetValue(camera.ViewMatrix);
@@ -197,8 +196,6 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Effects.Line.Expand?.SetValue(false);
         Effects.Line.Darken?.SetValue(1.0f);
         Effects.Line.RandomFloat?.SetValue(URandom.Single());
-
-        Effects.Line.Glow?.SetValue(false);
         
         GameSparker._graphicsDevice.RasterizerState = RasterizerState.CullNone;
         foreach (var pass in Effects.Line.CurrentTechnique.Passes)

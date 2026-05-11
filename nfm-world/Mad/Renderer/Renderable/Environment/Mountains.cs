@@ -84,7 +84,7 @@ public class Mountains : Transform, IImmediateRenderable
         Effects.Mountains.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
         Effects.Mountains.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
 
-        lighting?.SetShadowMapParameters(Effects.Mountains);
+        lighting?.SetShadowMapParameters(Effects.Mountains.UnderlyingEffect);
         foreach (var pass in Effects.Mountains.CurrentTechnique.Passes)
         {
             pass.Apply();

@@ -84,7 +84,7 @@ public class GroundPolys : Transform, IImmediateRenderable
         Effects.Ground.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
         Effects.Ground.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
 
-        lighting?.SetShadowMapParameters(Effects.Ground);
+        lighting?.SetShadowMapParameters(Effects.Ground.UnderlyingEffect);
 
         foreach (var pass in Effects.Ground.CurrentTechnique.Passes)
         {
