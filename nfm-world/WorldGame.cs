@@ -615,6 +615,7 @@ public class WorldGame : Game
         
         NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(WorldGame).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
         
