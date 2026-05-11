@@ -2,7 +2,9 @@
   <ItemGroup>
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup"/>
   </ItemGroup>
-  <Target Name="_InjectAdditionalFiles" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
+
+  <!-- https://platform.uno/blog/using-msbuild-items-and-properties-in-c-9-source-generators/ -->
+  <Target Name="_InjectAdditionalFiles2" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
     <ItemGroup>
       <AdditionalFiles Include="@(FnaEffect)" SourceItemGroup="FnaEffect" />
     </ItemGroup>
