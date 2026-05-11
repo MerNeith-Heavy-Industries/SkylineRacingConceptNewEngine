@@ -44,12 +44,26 @@ public class FnaShaderIncrementalGenerator : IIncrementalGenerator
             var sourceText = text.GetText();
             var effectName = Path.GetFileNameWithoutExtension(path);
 
+            var sb = new IndentedStringBuilder();
+                
+            var shaderDir = Path.GetDirectoryName(path);
+            var pp = new HLSLPreprocessor(
+                predefined: [],
+#pragma warning disable RS1035
+                includeResolver: path => File.ReadAllText(Path.Combine(shaderDir ?? "", path))
+#pragma warning restore RS1035
+            );
+            var processedShader = pp.Process(sourceText?.ToString() ?? string.Empty, path);
+                
+            sb.AppendLine("/*");
+            sb.AppendLine(processedShader);
+            sb.AppendLine("*/");
+
             try
             {
-                var parser = new HLSLParser(path, sourceText?.ToString() ?? string.Empty);
+                var parser = new HLSLParser(path, processedShader);
                 var tree = new HLSLTree();
                 
-                var sb = new IndentedStringBuilder();
                 if (!parser.Parse(tree))
                 {
                     sb.AppendLine("// Failed to parse HLSL file:");
@@ -145,7 +159,9 @@ public class FnaShaderIncrementalGenerator : IIncrementalGenerator
             }
             catch (Exception ex)
             {
-                context.AddSource($"{effectName}.g.cs", ex.ToString());
+                sb.AppendLine(ex.ToString());
+                
+                context.AddSource($"{effectName}.g.cs", sb.ToString());
             }
         });
     }
