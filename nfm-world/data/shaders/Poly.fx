@@ -16,13 +16,13 @@ float3 SnapColor;
 bool IsFullbright;
 bool UseBaseColor;
 float3 BaseColor;
-float3 LightDirection;
 float3 FogColor;
 float FogDistance;
 float FogDensity;
 float2 EnvironmentLight;
 float3 CameraPosition;
 float Alpha;
+
 
 // Damage
 bool Expand;
@@ -44,6 +44,7 @@ struct VertexShaderOutput
 	float4 Color : COLOR0;
     float4 WorldPos : TEXCOORD2;
     float GetsShadowed : TEXCOORD3;
+    float3 Normal : TEXCOORD4;
 };
 
 VertexShaderOutput MainVS(
@@ -112,6 +113,8 @@ VertexShaderOutput MainVS(
     VS_ColorCorrect(color);
 
     output.Color = float4(color, min(alphaOverride, Alpha));
+    
+    output.Normal = input.Normal;
 
 	return output;
 }
@@ -123,7 +126,7 @@ float4 MainPS(VertexShaderOutput input) : SV_TARGET
     if (input.GetsShadowed > 0.0)
     {
         float3 diffuseRGB = diffuse.xyz;
-        PS_ApplyShadowing(diffuseRGB, input.WorldPos);
+        PS_ApplyShadowing(diffuseRGB, input.WorldPos, input.Normal);
         diffuse = float4(diffuseRGB, diffuse.w);
     }
 

@@ -47,7 +47,11 @@ float4 PixelShaderFunction(VertexShaderOutput input) : SV_TARGET
 {
     float3 diffuse = input.Color.xyz;
 
-    PS_ApplyShadowing(diffuse, float4(input.WorldPos.xyz, 1));
+    // Mountains have no vertex normal — reconstruct from world-pos derivatives.
+    // This is fine for mountains since they are regular polygon geometry.
+    float3 faceNormal = normalize(cross(ddx(input.WorldPos.xyz), ddy(input.WorldPos.xyz)));
+
+    PS_ApplyShadowing(diffuse, float4(input.WorldPos.xyz, 1), faceNormal);
     return float4(diffuse, input.Color.w);
 }
 

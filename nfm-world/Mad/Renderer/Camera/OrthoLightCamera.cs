@@ -12,28 +12,23 @@ public class OrthoLightCamera : OrthoCamera
         var interpolatedUp = Interpolation.InterpolateCoord(Up, PreviousState.Up, alpha);
         ViewMatrix = Matrix.CreateLookAt(interpolatedPosition, interpolatedLookAt, interpolatedUp);
         
-        // Calculate world units per texel
-        float shadowMapSize = 2048f;
-        float texelSize = Width / shadowMapSize;
+        // Snap the light camera to shadow map texel boundaries to prevent
+        // shadow "swimming" / shimmer when the main camera moves.
+        // For an orthographic projection, each texel covers a fixed world-space size.
+        float texelSizeX = (float)Width / WorldGame.ShadowResolution;
+        float texelSizeY = (float)Height / WorldGame.ShadowResolution;
 
-        // Get light's world position in light view space
-        Matrix lightView = ViewMatrix;
-        Vector3 shadowOrigin = Vector3.Transform(Vector3.Zero, lightView);
+        // Transform the origin into light view space to find the current sub-texel offset
+        Vector3 originInView = Vector3.Transform(Vector3.Zero, ViewMatrix);
 
-        // Snap to texel grid in light view space
-        shadowOrigin.X = MathF.Round(shadowOrigin.X / texelSize) * texelSize;
-        shadowOrigin.Y = MathF.Round(shadowOrigin.Y / texelSize) * texelSize;
+        // Round to texel boundaries
+        float snappedX = MathF.Floor(originInView.X / texelSizeX) * texelSizeX;
+        float snappedY = MathF.Floor(originInView.Y / texelSizeY) * texelSizeY;
+        float offsetX = snappedX - originInView.X;
+        float offsetY = snappedY - originInView.Y;
 
-        // Calculate rounding offset
-        Vector3 roundOffset = shadowOrigin - Vector3.Transform(Vector3.Zero, lightView);
-
-        // Apply offset by adjusting the view matrix translation
-        var viewMatrix = ViewMatrix;
-        viewMatrix.M41 += roundOffset.X;
-        viewMatrix.M42 += roundOffset.Y;
-        viewMatrix.M43 += roundOffset.Z;
-        ViewMatrix = viewMatrix;
-
+        // Apply the rounding as a translation in view space (before projection)
+        ViewMatrix = ViewMatrix * Matrix.CreateTranslation(offsetX, offsetY, 0);
         ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
     }
 }

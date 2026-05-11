@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Graphics;
+using NFMWorldLibrary;
 
 namespace NFMWorld;
 
@@ -90,5 +91,7 @@ public class Lighting
         }
         
         effect.Parameters["NumCascades"]?.SetValue(TotalCascades);
+
+        effect.Parameters["LightDirection"]?.SetValue(World.LightDirection);
     }
 }
