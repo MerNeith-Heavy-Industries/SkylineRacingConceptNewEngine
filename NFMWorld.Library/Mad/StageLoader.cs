@@ -23,6 +23,24 @@ public enum PiecePlacementType : byte
     FixHoop
 }
 
+// colors have to be processed in order, so we provide a list of instructions in order
+[MessagePackObject]
+[Union(0, typeof(SnapInstruction))]
+[Union(1, typeof(SkyInstruction))]
+[Union(2, typeof(FogInstruction))]
+[Union(3, typeof(CloudsInstruction))]
+[Union(4, typeof(GroundInstruction))]
+[Union(5, typeof(TextureInstruction))]
+[Union(6, typeof(PolysInstruction))]
+public abstract record EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record SnapInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record SkyInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record FogInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record CloudsInstruction([property: Key(0)] InlineArray5<int> Clouds) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record GroundInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record TextureInstruction([property: Key(0)] InlineArray4<int> Texture) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record PolysInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+
 [MessagePackObject]
 public class StageLoader
 {
@@ -57,15 +75,6 @@ public class StageLoader
     // height
     [Key(11)] public int Ncz;
 
-    [Key(12)] public Color3? Snap;
-    [Key(13)] public Color3? Sky;
-    [Key(14)] public Color3? GroundColor;
-    [Key(15)] public Color3? GroundPolysColor;
-    [Key(16)] public bool DrawPolys = true;
-    [Key(17)] public Color3? Fog;
-    [Key(18)] public InlineArray4<int>? Texture;
-    [Key(19)] public InlineArray5<int>? Clouds;
-    [Key(20)] public bool DrawClouds = true;
     [Key(21)] public float? CloudCoverage;
     [Key(22)] public int? FogDensity;
     [Key(23)] public int? FadeFrom;
@@ -80,6 +89,10 @@ public class StageLoader
     [Key(32)] public int maxl = 100;
     [Key(33)] public int maxt = 0;
     [Key(34)] public int maxb = 100;
+
+    [Key(35)] public UnlimitedArray<EnvironmentInstruction> EnvironmentInstructions = new();
+    [Key(36)] public bool DrawPolys = true;
+    [Key(37)] public bool DrawClouds = true;
 
     public StageLoader(string stageName)
     {
@@ -98,29 +111,29 @@ public class StageLoader
                 
                 if (line.StartsWith("snap"))
                 {
-                    Snap = new Color3(
+                    EnvironmentInstructions.Add(new SnapInstruction(new Color3(
                         (short)Utility.GetInt("snap", line, 0),
                         (short)Utility.GetInt("snap", line, 1),
                         (short)Utility.GetInt("snap", line, 2)
-                    );
+                    )));
                 }
 
                 if (line.StartsWith("sky"))
                 {
-                    Sky = new Color3(
+                    EnvironmentInstructions.Add(new SkyInstruction(new Color3(
                         (short)Utility.GetInt("sky", line, 0),
                         (short)Utility.GetInt("sky", line, 1),
                         (short)Utility.GetInt("sky", line, 2)
-                    );
+                    )));
                 }
 
                 if (line.StartsWith("ground"))
                 {
-                    GroundColor = new Color3(
+                    EnvironmentInstructions.Add(new GroundInstruction(new Color3(
                         (short)Utility.GetInt("ground", line, 0),
                         (short)Utility.GetInt("ground", line, 1),
                         (short)Utility.GetInt("ground", line, 2)
-                    );
+                    )));
                 }
 
                 if (line.StartsWith("polys"))
@@ -131,21 +144,21 @@ public class StageLoader
                     }
                     else
                     {
-                        GroundPolysColor = new Color3(
+                        EnvironmentInstructions.Add(new PolysInstruction(new Color3(
                             (short)Utility.GetInt("polys", line, 0),
                             (short)Utility.GetInt("polys", line, 1),
                             (short)Utility.GetInt("polys", line, 2)
-                        );
+                        )));
                     }
                 }
 
                 if (line.StartsWith("fog"))
                 {
-                    Fog = new Color3(
+                    EnvironmentInstructions.Add(new FogInstruction(new Color3(
                         (short)Utility.GetInt("fog", line, 0),
                         (short)Utility.GetInt("fog", line, 1),
                         (short)Utility.GetInt("fog", line, 2)
-                    );
+                    )));
                 }
 
                 if (line.StartsWith("texture"))
@@ -155,7 +168,7 @@ public class StageLoader
                     texture[1] = Utility.GetInt("texture", line, 1);
                     texture[2] = Utility.GetInt("texture", line, 2);
                     texture[3] = Utility.GetInt("texture", line, 3);
-                    Texture = texture;
+                    EnvironmentInstructions.Add(new TextureInstruction(texture));
                 }
 
                 if (line.StartsWith("clouds"))
@@ -168,7 +181,7 @@ public class StageLoader
                     {
                         // Support both single seed value and full cloud parameters
                         var cloudParams = line.Split(',');
-                        if (cloudParams.Length == 2) // clouds(seed) format
+                        if (cloudParams.Length == 1) // clouds(seed) format
                         {
                             CloudCoverage = Utility.GetInt("clouds", line, 0);
                         }
@@ -180,7 +193,7 @@ public class StageLoader
                             clouds[2] = Utility.GetInt("clouds", line, 2);
                             clouds[3] = Utility.GetInt("clouds", line, 3);
                             clouds[4] = Utility.GetInt("clouds", line, 4);
-                            Clouds = clouds;
+                            EnvironmentInstructions.Add(new CloudsInstruction(clouds));
                         }
                     }
                 }
