@@ -798,7 +798,7 @@ public class WorldGame : Game
             _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
         };
         
-        return NativeLibrary.Load($"libs/{dir}/{newLibraryName}");
+        return NativeLibrary.Load($"{dir}/{newLibraryName}");
     }
 
     private void KeyDown(Keys key)
