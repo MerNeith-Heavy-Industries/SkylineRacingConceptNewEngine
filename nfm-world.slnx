@@ -58,4 +58,5 @@
   <Project Path="NFMWorld.Library/NFMWorld.Library.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
+  <Project Path="NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.csproj" />
 </Solution>
