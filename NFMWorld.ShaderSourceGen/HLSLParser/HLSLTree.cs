@@ -63,7 +63,6 @@ public enum HLSLBaseType : byte
     Unknown,
     Void,
     Float,
-    FirstNumeric = Float,
     Float2,
     Float3,
     Float4,
@@ -76,7 +75,6 @@ public enum HLSLBaseType : byte
     Half3x3,
     Half4x4,
     Bool,
-    FirstInteger = Bool,
     Int,
     Int2,
     Int3,
@@ -85,8 +83,6 @@ public enum HLSLBaseType : byte
     Uint2,
     Uint3,
     Uint4,
-    LastInteger = Uint4,
-    LastNumeric = Uint4,
     Texture,
     Sampler,
     Sampler2D,
@@ -94,9 +90,16 @@ public enum HLSLBaseType : byte
     UserDefined,
     Expression,
     Auto,
+}
 
-    Count,
-    NumericCount = LastNumeric - FirstNumeric + 1,
+public static class HLSLBaseType_Ext
+{
+    public const HLSLBaseType Count = HLSLBaseType.Auto + 1;
+    public const HLSLBaseType FirstInteger = HLSLBaseType.Bool;
+    public const HLSLBaseType FirstNumeric = HLSLBaseType.Float;
+    public const HLSLBaseType NumericCount = (HLSLBaseType)(LastNumeric - FirstNumeric + 1);
+    public const HLSLBaseType LastInteger = HLSLBaseType.Uint4;
+    public const HLSLBaseType LastNumeric = HLSLBaseType.Uint4;
 }
 
 public enum HLSLBinaryOp : sbyte
@@ -808,7 +811,7 @@ public class HLSLTree
 
 public static class HLSLTypeTables
 {
-    public static readonly HLSLTypeDimension[] BaseTypeDimension = new HLSLTypeDimension[(int)HLSLBaseType.Count]
+    public static readonly HLSLTypeDimension[] BaseTypeDimension = new HLSLTypeDimension[(int)HLSLBaseType_Ext.Count]
     {
         HLSLTypeDimension.None,     // Unknown
         HLSLTypeDimension.None,     // Void
@@ -842,7 +845,7 @@ public static class HLSLTypeTables
         HLSLTypeDimension.None,     // Auto
     };
 
-    public static readonly HLSLBaseType[] ScalarBaseType = new HLSLBaseType[(int)HLSLBaseType.Count]
+    public static readonly HLSLBaseType[] ScalarBaseType = new HLSLBaseType[(int)HLSLBaseType_Ext.Count]
     {
         HLSLBaseType.Unknown,     // Unknown
         HLSLBaseType.Void,     // Void
