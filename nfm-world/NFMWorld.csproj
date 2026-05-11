@@ -70,9 +70,12 @@
         <ProjectReference Include="..\WorldXaml\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj"/>
         <!-- Reference WorldXaml.Generator for XAML source generation -->
         <ProjectReference Include="..\WorldXaml\WorldXaml.Generator\WorldXaml.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\NFMWorld.ShaderSourceGen\NFMWorld.ShaderSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
     <Import Project="../WorldXaml/WorldXaml.Generator/WorldXaml.Generator.props" />
+
+    <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
 
     <ItemGroup>
         <ProjectReference Include="..\WorldXaml\XamlX\src\XamlX\XamlX.csproj"/>
@@ -85,6 +88,11 @@
         <AvaloniaXaml Include="Mad\UI\Hud\PowerDamageBars.xaml" />
         <AvaloniaXaml Include="Mad\UI\Hud\TTLapTimerSplitsView.xaml" />
         <AvaloniaXaml Include="Mad\UI\Menu\GarageUiView.xaml" />
+    </ItemGroup>
+    
+    <!-- Shaders to compile -->
+    <ItemGroup>
+        <FnaEffect Include="data\shaders\*.fx" />
     </ItemGroup>
 
     <!-- https://platform.uno/blog/using-msbuild-items-and-properties-in-c-9-source-generators/ -->
