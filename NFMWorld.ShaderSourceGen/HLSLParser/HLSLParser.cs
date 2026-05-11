@@ -1576,8 +1576,8 @@ public ref struct HLSLParser(ReadOnlySpan<char> fileName, ReadOnlySpan<char> buf
         var numMatched = 0;
         var nameMatches = false;
 
-        foreach (var fn in _functions) MatchFunctionCall_TryMatch(call, fn, fn.Name == name, ref nameMatches, matched, ref numMatched);
-        foreach (var intr in _intrinsics) MatchFunctionCall_TryMatch(call, intr.Function, intr.Function.Name == name, ref nameMatches, matched, ref numMatched);
+        foreach (var fn in _functions) MatchFunctionCall_TryMatch(call, fn, fn.Name == name, ref nameMatches, ref matched, ref numMatched);
+        foreach (var intr in _intrinsics) MatchFunctionCall_TryMatch(call, intr.Function, intr.Function.Name == name, ref nameMatches, ref matched, ref numMatched);
 
         if (matched != null && numMatched > 1) { _tokenizer.Error("'{0}' {1} overloads have similar conversions", name, numMatched); return null; }
         if (matched == null)
@@ -1588,7 +1588,7 @@ public ref struct HLSLParser(ReadOnlySpan<char> fileName, ReadOnlySpan<char> buf
         return matched;
     }
 
-    private void MatchFunctionCall_TryMatch(HLSLFunctionCall call, HLSLFunction fn, bool nameEqual, ref bool nameMatches, HLSLFunction? matched, ref int numMatched)
+    private void MatchFunctionCall_TryMatch(HLSLFunctionCall call, HLSLFunction fn, bool nameEqual, ref bool nameMatches, ref HLSLFunction? matched, ref int numMatched)
     {
         if (!nameEqual) return;
         nameMatches = true;
