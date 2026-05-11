@@ -180,7 +180,7 @@ public ref struct HLSLTokenizer
         if (c0 == '|' && c1 == '|') { _token = (int)HLSLToken.BarBar; _pos += 2; return; }
 
         // ++, --
-        if ((c0 == '+' || c0 == '-') && c1 == c0)
+        if (c0 is '+' or '-' && c1 == c0)
         {
             _token = c0 == '+' ? (int)HLSLToken.PlusPlus : (int)HLSLToken.MinusMinus;
             _pos += 2;
