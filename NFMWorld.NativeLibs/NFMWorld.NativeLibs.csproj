@@ -5,21 +5,13 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <None Include="**\*">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Include="bin\**">
+        <None Include="libs\**\*">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </None>
-        <None Include="obj\**">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </None>
-        <None Include="*.csproj">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </None>
-        <None Include="*.lscache">
-            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </None>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="libs\" />
     </ItemGroup>
 
 </Project>
