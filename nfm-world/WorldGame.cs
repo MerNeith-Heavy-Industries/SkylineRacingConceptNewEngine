@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using ManagedBass;
+using ManagedBass.Fx;
+using ManagedBass.Opus;
 using Maxine.Extensions.Collections.SpanLinq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
@@ -616,6 +618,8 @@ public class WorldGame : Game
         NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(WorldGame).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(BassFx).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(BassOpus).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
         
