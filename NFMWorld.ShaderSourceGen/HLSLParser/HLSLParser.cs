@@ -231,28 +231,30 @@ public ref struct HLSLParser(ReadOnlySpan<char> fileName, ReadOnlySpan<char> buf
     private static readonly EffectStateValue[] IntegerValues = [];
     private static readonly EffectStateValue[] FloatValues = [];
 
-    private static readonly EffectStateValue[] TextureFilteringValues = [new("None", 0), new("Point", 1), new("Linear", 2), new("Anisotropic", 3)
-    ];
-    private static readonly EffectStateValue[] TextureAddressingValues = [new("Wrap", 1), new("Mirror", 2), new("Clamp", 3), new("Border", 4), new("MirrorOnce", 5)
-    ];
+    private static readonly EffectStateValue[] TextureFilteringValues = [new("None", 0), new("Point", 1), new("Linear", 2), new("Anisotropic", 3)];
+    private static readonly EffectStateValue[] TextureAddressingValues = [new("Wrap", 1), new("Mirror", 2), new("Clamp", 3), new("Border", 4), new("MirrorOnce", 5)];
     private static readonly EffectStateValue[] CullValues = [new("None", 1), new("CW", 2), new("CCW", 3)];
-    private static readonly EffectStateValue[] CmpValues = [new("Never", 1), new("Less", 2), new("Equal", 3), new("LessEqual", 4), new("Greater", 5), new("NotEqual", 6), new("GreaterEqual", 7), new("Always", 8)
-    ];
-    private static readonly EffectStateValue[] BlendValues = [new("Zero", 1), new("One", 2), new("SrcColor", 3), new("InvSrcColor", 4), new("SrcAlpha", 5), new("InvSrcAlpha", 6), new("DestAlpha", 7), new("InvDestAlpha", 8), new("DestColor", 9), new("InvDestColor", 10), new("SrcAlphaSat", 11), new("BothSrcAlpha", 12), new("BothInvSrcAlpha", 13), new("BlendFactor", 14), new("InvBlendFactor", 15), new("SrcColor2", 16), new("InvSrcColor2", 17)
-    ];
-    private static readonly EffectStateValue[] BlendOpValues = [new("Add", 1), new("Subtract", 2), new("RevSubtract", 3), new("Min", 4), new("Max", 5)
-    ];
+    private static readonly EffectStateValue[] CmpValues = [new("Never", 1), new("Less", 2), new("Equal", 3), new("LessEqual", 4), new("Greater", 5), new("NotEqual", 6), new("GreaterEqual", 7), new("Always", 8)];
+    private static readonly EffectStateValue[] BlendValues = [new("Zero", 1), new("One", 2), new("SrcColor", 3), new("InvSrcColor", 4), new("SrcAlpha", 5), new("InvSrcAlpha", 6), new("DestAlpha", 7), new("InvDestAlpha", 8), new("DestColor", 9), new("InvDestColor", 10), new("SrcAlphaSat", 11), new("BothSrcAlpha", 12), new("BothInvSrcAlpha", 13), new("BlendFactor", 14), new("InvBlendFactor", 15), new("SrcColor2", 16), new("InvSrcColor2", 17)];
+    private static readonly EffectStateValue[] BlendOpValues = [new("Add", 1), new("Subtract", 2), new("RevSubtract", 3), new("Min", 4), new("Max", 5)];
     private static readonly EffectStateValue[] FillModeValues = [new("Point", 1), new("Wireframe", 2), new("Solid", 3)];
-    private static readonly EffectStateValue[] StencilOpValues = [new("Keep", 1), new("Zero", 2), new("Replace", 3), new("IncrSat", 4), new("DecrSat", 5), new("Invert", 6), new("Incr", 7), new("Decr", 8)
-    ];
-    private static readonly EffectStateValue[] ColorMaskValues = [new("False", 0), new("Red", 1), new("Green", 2), new("Blue", 4), new("Alpha", 8), new("X", 1), new("Y", 2), new("Z", 4), new("W", 8)
-    ];
+    private static readonly EffectStateValue[] StencilOpValues = [new("Keep", 1), new("Zero", 2), new("Replace", 3), new("IncrSat", 4), new("DecrSat", 5), new("Invert", 6), new("Incr", 7), new("Decr", 8)];
+    private static readonly EffectStateValue[] ColorMaskValues = [new("False", 0), new("Red", 1), new("Green", 2), new("Blue", 4), new("Alpha", 8), new("X", 1), new("Y", 2), new("Z", 4), new("W", 8)];
 
     private static readonly EffectState[] SamplerStates =
     [
-        new("AddressU", 1, TextureAddressingValues), new("AddressV", 2, TextureAddressingValues), new("AddressW", 3, TextureAddressingValues),
-        new("MagFilter", 5, TextureFilteringValues), new("MinFilter", 6, TextureFilteringValues), new("MipFilter", 7, TextureFilteringValues),
-        new("MipMapLodBias", 8, FloatValues), new("MaxMipLevel", 9, IntegerValues), new("MaxAnisotropy", 10, IntegerValues), new("sRGBTexture", 11, BooleanValues)
+        new("AddressU", 1, TextureAddressingValues),
+        new("AddressV", 2, TextureAddressingValues),
+        new("AddressW", 3, TextureAddressingValues),
+        new("MagFilter", 5, TextureFilteringValues),
+        new("MinFilter", 6, TextureFilteringValues),
+        new("MipFilter", 7, TextureFilteringValues),
+        new("MipMapLodBias", 8, FloatValues),
+        new("MaxMipLevel", 9, IntegerValues),
+        new("MaxAnisotropy", 10, IntegerValues),
+        new("sRGBTexture", 11, BooleanValues),
+        new("Texture", 12, null),
+        new("Filter", 13, TextureFilteringValues),
     ];
 
     private static readonly EffectState[] EffectStates =
@@ -1303,9 +1305,15 @@ public ref struct HLSLParser(ReadOnlySpan<char> fileName, ReadOnlySpan<char> buf
     private bool ParseStateName(bool isSamplerState, bool isPipeline, out string name, out EffectState state)
     {
         name = ""; state = default;
-        if (_tokenizer.GetToken() != (int)HLSLToken.Identifier) { _tokenizer.Error("Syntax error: expected identifier"); return false; }
-        var found = GetEffectState(_tokenizer.GetIdentifier(), isSamplerState, isPipeline);
-        if (found == null) { _tokenizer.Error("Syntax error: unexpected identifier '{0}'", _tokenizer.GetIdentifier()); return false; }
+        // State names may coincide with reserved words (e.g. "Texture" is both a keyword and a sampler state)
+        ReadOnlySpan<char> ident;
+        if (_tokenizer.GetToken() == (int)HLSLToken.Identifier)
+            ident = _tokenizer.GetIdentifier();
+        else if (_tokenizer.GetToken() == (int)HLSLToken.Texture)
+            ident = "texture";
+        else { _tokenizer.Error("Syntax error: expected identifier"); return false; }
+        var found = GetEffectState(ident, isSamplerState, isPipeline);
+        if (found == null) { _tokenizer.Error("Syntax error: unexpected identifier '{0}'", ident); return false; }
         state = found.Value; name = state.Name;
         _tokenizer.Next();
         return true;
@@ -1527,12 +1535,12 @@ public ref struct HLSLParser(ReadOnlySpan<char> fileName, ReadOnlySpan<char> buf
 
     private static bool GetBinaryOpResultType(HLSLBinaryOp op, HLSLType type1, HLSLType type2, HLSLType result)
     {
-        if (type1.BaseType < HLSLBaseType.FirstNumeric || type1.BaseType > HLSLBaseType.LastNumeric || type1.Array ||
-            type2.BaseType < HLSLBaseType.FirstNumeric || type2.BaseType > HLSLBaseType.LastNumeric || type2.Array)
+        if (type1.BaseType < HLSLBaseType_Ext.FirstNumeric || type1.BaseType > HLSLBaseType_Ext.LastNumeric || type1.Array ||
+            type2.BaseType < HLSLBaseType_Ext.FirstNumeric || type2.BaseType > HLSLBaseType_Ext.LastNumeric || type2.Array)
             return false;
 
         if (op is HLSLBinaryOp.BitAnd or HLSLBinaryOp.BitOr or HLSLBinaryOp.BitXor)
-            if (type1.BaseType < HLSLBaseType.FirstInteger || type1.BaseType > HLSLBaseType.LastInteger) return false;
+            if (type1.BaseType < HLSLBaseType_Ext.FirstInteger || type1.BaseType > HLSLBaseType_Ext.LastInteger) return false;
 
         switch (op)
         {
