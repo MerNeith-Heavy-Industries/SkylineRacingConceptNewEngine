@@ -1184,17 +1184,17 @@ public class StageEditorPhase : BasePhase
                 (float)(Math.Cos(pitch) * Math.Cos(yaw))
             );
             
-            camera.Position = ActiveTab.CameraPosition;
-            camera.LookAt = ActiveTab.CameraPosition + lookDirection;
-            camera.Up = -Vector3.UnitY;
+            camera.PositionWithoutInterpolation = ActiveTab.CameraPosition;
+            camera.LookAtWithoutInterpolation = ActiveTab.CameraPosition + lookDirection;
+            camera.UpWithoutInterpolation = -Vector3.UnitY;
             camera.IsOrthographic = false;
         }
         else
         {
             // Top down view - look from above at pan position (negative Y is up in this coordinate system)
-            camera.Position = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
-            camera.LookAt = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
-            camera.Up = Vector3.UnitZ;
+            camera.PositionWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
+            camera.LookAtWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
+            camera.UpWithoutInterpolation = Vector3.UnitZ;
             camera.IsOrthographic = ActiveTab.TopDownOrtho;
             if (ActiveTab.TopDownOrtho)
             {
@@ -2623,8 +2623,17 @@ public class StageEditorPhase : BasePhase
         }
     }
     
+    public override void BeginGameTick()
+    {
+        base.BeginGameTick();
+        ActiveTab?.Scene?.OnBeforeUpdate();
+    }
+
     public override void GameTick()
     {
+
+        base.GameTick();
+
         if (!_isOpen) return;
         if (ActiveTab == null) return;
         
