@@ -210,11 +210,11 @@ public ref struct HLSLTokenizer
         while (_pos < _length && !IsSymbol(_buffer[_pos]) && !char.IsWhiteSpace(_buffer[_pos]))
             _pos++;
 
-        _identifier = _buffer.Slice(start, _pos);
+        _identifier = _buffer.Slice(start, _pos - start);
 
         for (var i = 0; i < ReservedWords.Length; i++)
         {
-            if (ReservedWords[i] == _identifier)
+            if (_identifier.SequenceEqual(ReservedWords[i]))
             {
                 _token = 256 + i;
                 return;
