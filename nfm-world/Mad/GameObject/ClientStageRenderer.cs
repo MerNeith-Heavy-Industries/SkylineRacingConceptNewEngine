@@ -38,8 +38,8 @@ public class ClientStageRenderer : GameObject
     }
 
     /**
- * Loads stage currently set by checkpoints.stage onto stageContos
- */
+     * Loads stage currently set by checkpoints.stage onto stageContos
+     */
     public ClientStageRenderer(GraphicsDevice graphicsDevice, BackendStage backendStage)
     {
         var children = new List<GameObject>();
@@ -49,45 +49,43 @@ public class ClientStageRenderer : GameObject
         {
             var stageLoader = backendStage.stageLoader;
 
-            if (stageLoader.Snap is { } snap)
+            foreach (var instruction in stageLoader.EnvironmentInstructions)
             {
-                World.Snap = snap;
-            }
-
-            if (stageLoader.Sky is { } sky)
-            {
-                World.Sky = sky;
-            }
-
-            if (stageLoader.GroundColor is { } ground)
-            {
-                World.GroundColor = ground;
+                switch (instruction)
+                {
+                    case CloudsInstruction clouds:
+                        World.HasClouds = true;
+                        break;
+                    case FogInstruction fog:
+                        World.Fog = fog.Color;
+                        break;
+                    case GroundInstruction ground:
+                        World.SetGround(ground.Color);
+                        break;
+                    case PolysInstruction polys:
+                        World.GroundPolysColor = polys.Color;
+                        World.HasPolys = true;
+                        break;
+                    case SkyInstruction sky:
+                        World.SetSky(sky.Color);
+                        break;
+                    case SnapInstruction snap:
+                        World.Snap = snap.Color;
+                        break;
+                    case TextureInstruction texture:
+                        World.SetTexture(texture.Texture);
+                        World.HasTexture = true;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(instruction), instruction, null);
+                }
             }
 
             World.DrawPolys = stageLoader.DrawPolys;
-            World.HasPolys = stageLoader.DrawPolys && stageLoader.GroundPolysColor is not null;
-            if (stageLoader.GroundPolysColor is { } groundPolys)
-            {
-                World.GroundPolysColor = groundPolys;
-            }
-
-            if (stageLoader.Fog is { } fog)
-            {
-                World.Fog = fog;
-            }
-
-            if (stageLoader.Texture is { } texture)
-            {
-                World.HasTexture = true;
-                World.Texture = [..texture];
-            }
+            World.HasPolys = stageLoader.DrawPolys && World.HasPolys;
 
             World.DrawClouds = stageLoader.DrawClouds;
-            World.HasClouds = stageLoader.DrawClouds && stageLoader.Clouds is not null;
-            if (stageLoader.Clouds is { } aclouds)
-            {
-                World.Clouds = [..aclouds];
-            }
+            World.HasClouds = stageLoader.DrawClouds && World.HasClouds;
 
             if (stageLoader.CloudCoverage is { } cloudCoverage)
             {
