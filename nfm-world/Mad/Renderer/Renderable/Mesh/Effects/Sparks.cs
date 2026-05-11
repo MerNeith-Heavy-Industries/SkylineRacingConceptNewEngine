@@ -200,6 +200,12 @@ public class Sparks : IDisposable
                 var start = new Vector3(_rx[i], _ry[i], _rz[i]);
                 var end = new Vector3(_rx[i] + _vrx[i], _ry[i] + _vry[i], _rz[i] + _vrz[i]);
                 var color = new Color3(255, (short)(197 - 30 * _rtg[i]), 0);
+                if ((start - end).LengthSquared() < 0.01f)
+                {
+                    // Console.WriteLine("Degenerate line!!!");
+                    continue;
+                }
+                
                 // TODO apply fog to color
                 
                 // draw line
