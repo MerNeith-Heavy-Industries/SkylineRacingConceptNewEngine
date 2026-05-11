@@ -7,7 +7,7 @@
 	#define PS_SHADERMODEL ps_3_0
 #endif
 
-matrix WorldViewProj;
+float4x4 WorldViewProj;
 
 struct VertexShaderOutput
 {

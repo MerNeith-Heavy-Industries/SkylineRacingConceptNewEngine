@@ -122,29 +122,35 @@ void VS_ApplyFog(
 	color = color * float3(f, f, f) + FogColor * float3(1.0 - f, 1.0 - f, 1.0 - f);
 }
 
-matrix LightViewProj0;
+float4x4 LightViewProj0;
 texture ShadowMap0;
 sampler ShadowMapSampler0 = sampler_state
 {
-    Filter = MIN_MAG_MIP_POINT;
+    MipFilter = POINT;
+    MinFilter = POINT;
+    MagFilter = POINT;
     Texture = <ShadowMap0>;
     AddressU = Clamp;
     AddressV = Clamp;
 };
-matrix LightViewProj1;
+float4x4 LightViewProj1;
 texture ShadowMap1;
 sampler ShadowMapSampler1 = sampler_state
 {
-    Filter = MIN_MAG_MIP_POINT;
+    MipFilter = POINT;
+    MinFilter = POINT;
+    MagFilter = POINT;
     Texture = <ShadowMap1>;
     AddressU = Clamp;
     AddressV = Clamp;
 };
-matrix LightViewProj2;
+float4x4 LightViewProj2;
 texture ShadowMap2;
 sampler ShadowMapSampler2 = sampler_state
 {
-    Filter = MIN_MAG_MIP_POINT;
+    MipFilter = POINT;
+    MinFilter = POINT;
+    MagFilter = POINT;
     Texture = <ShadowMap2>;
     AddressU = Clamp;
     AddressV = Clamp;
@@ -155,7 +161,7 @@ float NumCascades = 3;
 void applyShadowingSingle(
     inout float3 diffuse,
     in float4 worldPos,
-    in matrix lightViewProj,
+    in float4x4 lightViewProj,
     in sampler shadowMapSampler,
     out bool isInLight
 )

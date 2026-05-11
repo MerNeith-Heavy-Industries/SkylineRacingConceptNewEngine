@@ -9,8 +9,8 @@
 
 #include "./Mad.fxh"
 
-matrix WorldView;
-matrix WorldViewProj;
+float4x4 WorldView;
+float4x4 WorldViewProj;
 
 float3 FogColor;
 float FogDistance;

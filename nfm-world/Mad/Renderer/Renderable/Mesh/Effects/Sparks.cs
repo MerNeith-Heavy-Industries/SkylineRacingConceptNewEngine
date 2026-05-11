@@ -259,7 +259,6 @@ public class Sparks : IDisposable
         Effects.Line.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         Effects.Line.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
         Effects.Line.DepthBias?.SetValue(0.00005f);
-        Effects.Line.GetsShadowed?.SetValue(false);
         Effects.Line.Alpha?.SetValue(1f);
 
         Effects.Line.View?.SetValue(camera.ViewMatrix);
@@ -273,8 +272,6 @@ public class Sparks : IDisposable
         Effects.Line.Darken?.SetValue(1.0f);
         Effects.Line.RandomFloat?.SetValue(URandom.Single());
 
-        Effects.Line.Glow?.SetValue(false);
-        
         Effects.Line.Resolution?.SetValue(new Vector2(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height));
 
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
