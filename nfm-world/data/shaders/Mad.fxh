@@ -157,6 +157,7 @@ sampler ShadowMapSampler2 = sampler_state
 };
 float DepthBias = 0.25f;
 float NumCascades = 3;
+float3 LightDirection;
 
 void applyShadowingSingle(
     inout float3 diffuse,
@@ -185,7 +186,15 @@ void applyShadowingSingle(
         // Calculate the current pixel depth
         // The bias is used to prevent floating point errors that occur when
         // the pixel of the occluder is being drawn
-        float ourdepth = (lightingPosition.z / lightingPosition.w) - DepthBias;
+        float ourdepth = (lightingPosition.z / lightingPosition.w);
+
+        // Slope-scaled bias from light-space depth derivatives
+        float dzdx = ddx(ourdepth);
+        float dzdy = ddy(ourdepth);
+        float slopeFactor = sqrt(dzdx * dzdx + dzdy * dzdy);
+        float bias = DepthBias + clamp(slopeFactor * 2.0, 0.0, 0.05); // bias min, max
+
+        ourdepth -= bias;
 
         // Check to see if this pixel is in front or behind the value in the shadow map
         if (shadowdepth < ourdepth)
@@ -202,23 +211,35 @@ void applyShadowingSingle(
 
 void PS_ApplyShadowing(
     inout float3 diffuse,
-    in float4 worldPos
+    in float4 worldPos,
+    in float3 faceNormal
 )
 {
     if (NumCascades > 0)
     {
-        bool isInLight0 = false;
-        applyShadowingSingle(diffuse, worldPos, LightViewProj0, ShadowMapSampler0, isInLight0);
+        // How much does this surface face the light?
+        // LightDirection points TOWARD the light (e.g. (0,1,0) = light above).
+        // A dot product near 0 means the surface is parallel to the light rays
+        // — these are the surfaces that flicker. Skip shadowing for them.
+        float NdotL = abs(dot(faceNormal, LightDirection));
     
-        if (isInLight0 == false && NumCascades > 1)
+        // Threshold below which we consider the surface too parallel to shadow reliably.
+        // 0.1 ≈ surfaces within ~84° of the light direction are excluded.
+        if (NdotL >= 0.05)
         {
-            bool isInLight1 = false;
-            applyShadowingSingle(diffuse, worldPos, LightViewProj1, ShadowMapSampler1, isInLight1);
-    
-            if (isInLight1 == false && NumCascades > 2)
+            bool isInLight0 = false;
+            applyShadowingSingle(diffuse, worldPos, LightViewProj0, ShadowMapSampler0, isInLight0);
+        
+            if (isInLight0 == false && NumCascades > 1)
             {
-                bool isInLight2 = false;
-                applyShadowingSingle(diffuse, worldPos, LightViewProj2, ShadowMapSampler2, isInLight2);
+                bool isInLight1 = false;
+                applyShadowingSingle(diffuse, worldPos, LightViewProj1, ShadowMapSampler1, isInLight1);
+        
+                if (isInLight1 == false && NumCascades > 2)
+                {
+                    bool isInLight2 = false;
+                    applyShadowingSingle(diffuse, worldPos, LightViewProj2, ShadowMapSampler2, isInLight2);
+                }
             }
         }
     }
