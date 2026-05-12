@@ -1,8 +1,9 @@
 // Ported from HLSLTokenizer.h / HLSLTokenizer.cpp (M4 / Unknown Worlds Entertainment)
 
 using System;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 // ReSharper disable InconsistentNaming
 
@@ -129,9 +130,8 @@ public ref struct HLSLTokenizer
     private int _pos;
     private readonly int _length;
     private int _lineNumber;
-    private bool _error;
 
-    private int _token;
+    private ushort _token;
     private float _fValue;
     private int _iValue;
     private ReadOnlySpan<char> _identifier = ReadOnlySpan<char>.Empty;
@@ -146,7 +146,6 @@ public ref struct HLSLTokenizer
         _pos = 0;
         _lineNumber = 1;
         _tokenLineNumber = 1;
-        _error = false;
         Next();
     }
 
@@ -157,17 +156,11 @@ public ref struct HLSLTokenizer
     {
         while (SkipWhitespace() || SkipComment() || ScanLineDirective() || SkipPragmaDirective()) { }
 
-        if (_error)
-        {
-            _token = (int)HLSLToken.EndOfStream;
-            return;
-        }
-
         _tokenLineNumber = _lineNumber;
 
         if (_pos >= _length)
         {
-            _token = (int)HLSLToken.EndOfStream;
+            _token = (ushort)HLSLToken.EndOfStream;
             return;
         }
 
@@ -175,21 +168,21 @@ public ref struct HLSLTokenizer
         var c1 = _pos + 1 < _length ? _buffer[_pos + 1] : '\0';
 
         // Two-character operators
-        if (c0 == '+' && c1 == '=') { _token = (int)HLSLToken.PlusEqual; _pos += 2; return; }
-        if (c0 == '-' && c1 == '=') { _token = (int)HLSLToken.MinusEqual; _pos += 2; return; }
-        if (c0 == '*' && c1 == '=') { _token = (int)HLSLToken.TimesEqual; _pos += 2; return; }
-        if (c0 == '/' && c1 == '=') { _token = (int)HLSLToken.DivideEqual; _pos += 2; return; }
-        if (c0 == '=' && c1 == '=') { _token = (int)HLSLToken.EqualEqual; _pos += 2; return; }
-        if (c0 == '!' && c1 == '=') { _token = (int)HLSLToken.NotEqual; _pos += 2; return; }
-        if (c0 == '<' && c1 == '=') { _token = (int)HLSLToken.LessEqual; _pos += 2; return; }
-        if (c0 == '>' && c1 == '=') { _token = (int)HLSLToken.GreaterEqual; _pos += 2; return; }
-        if (c0 == '&' && c1 == '&') { _token = (int)HLSLToken.AndAnd; _pos += 2; return; }
-        if (c0 == '|' && c1 == '|') { _token = (int)HLSLToken.BarBar; _pos += 2; return; }
+        if (c0 == '+' && c1 == '=') { _token = (ushort)HLSLToken.PlusEqual; _pos += 2; return; }
+        if (c0 == '-' && c1 == '=') { _token = (ushort)HLSLToken.MinusEqual; _pos += 2; return; }
+        if (c0 == '*' && c1 == '=') { _token = (ushort)HLSLToken.TimesEqual; _pos += 2; return; }
+        if (c0 == '/' && c1 == '=') { _token = (ushort)HLSLToken.DivideEqual; _pos += 2; return; }
+        if (c0 == '=' && c1 == '=') { _token = (ushort)HLSLToken.EqualEqual; _pos += 2; return; }
+        if (c0 == '!' && c1 == '=') { _token = (ushort)HLSLToken.NotEqual; _pos += 2; return; }
+        if (c0 == '<' && c1 == '=') { _token = (ushort)HLSLToken.LessEqual; _pos += 2; return; }
+        if (c0 == '>' && c1 == '=') { _token = (ushort)HLSLToken.GreaterEqual; _pos += 2; return; }
+        if (c0 == '&' && c1 == '&') { _token = (ushort)HLSLToken.AndAnd; _pos += 2; return; }
+        if (c0 == '|' && c1 == '|') { _token = (ushort)HLSLToken.BarBar; _pos += 2; return; }
 
         // ++, --
         if (c0 is '+' or '-' && c1 == c0)
         {
-            _token = c0 == '+' ? (int)HLSLToken.PlusPlus : (int)HLSLToken.MinusMinus;
+            _token = c0 == '+' ? (ushort)HLSLToken.PlusPlus : (ushort)HLSLToken.MinusMinus;
             _pos += 2;
             return;
         }
@@ -210,13 +203,13 @@ public ref struct HLSLTokenizer
         while (_pos < _length && !IsSymbol(_buffer[_pos]) && !char.IsWhiteSpace(_buffer[_pos]))
             _pos++;
 
-        _identifier = _buffer.Slice(start, _pos - start);
+        _identifier = _buffer[start.._pos];
 
         for (var i = 0; i < ReservedWords.Length; i++)
         {
             if (_identifier.SequenceEqual(ReservedWords[i]))
             {
-                _token = 256 + i;
+                _token = (ushort)(256 + i);
                 return;
             }
         }
@@ -224,22 +217,30 @@ public ref struct HLSLTokenizer
         _token = (int)HLSLToken.Identifier;
     }
 
-    public int GetToken() => _token;
-    public float GetFloat() => _fValue;
-    public int GetInt() => _iValue;
-    public ReadOnlySpan<char> GetIdentifier() => _identifier;
-    public int GetLineNumber() => _tokenLineNumber;
-    public ReadOnlySpan<char> GetFileName() => _fileName;
+    public int Token => _token;
 
-    public ReadOnlySpan<char> GetTokenName()
+    public float Float => _fValue;
+
+    public int Int => _iValue;
+
+    public ReadOnlySpan<char> Identifier => _identifier;
+
+    public int LineNumber => _tokenLineNumber;
+
+    public ReadOnlySpan<char> FileName => _fileName;
+
+    public ReadOnlySpan<char> TokenName
     {
-        if (_token is (int)HLSLToken.FloatLiteral or (int)HLSLToken.HalfLiteral)
-            return _fValue.ToString(CultureInfo.InvariantCulture);
-        if (_token == (int)HLSLToken.IntLiteral)
-            return _iValue.ToString(CultureInfo.InvariantCulture);
-        if (_token == (int)HLSLToken.Identifier)
-            return _identifier;
-        return GetTokenName(_token);
+        get
+        {
+            if (_token is (int)HLSLToken.FloatLiteral or (int)HLSLToken.HalfLiteral)
+                return _fValue.ToString(CultureInfo.InvariantCulture);
+            if (_token == (int)HLSLToken.IntLiteral)
+                return _iValue.ToString(CultureInfo.InvariantCulture);
+            if (_token == (int)HLSLToken.Identifier)
+                return _identifier;
+            return GetTokenName(_token);
+        }
     }
 
     public static string GetTokenName(int token)
@@ -270,36 +271,16 @@ public ref struct HLSLTokenizer
         };
     }
 
-    public void Error(string format, ReadOnlySpan<char> arg0)
+    [DoesNotReturn]
+    internal bool Error(ReadOnlySpan<char> error)
     {
-        if (_error) return;
-        _error = true;
-        var msg = string.Format(format, string.FromSpan(arg0));
-        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {msg}");
+        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {error}");
     }
 
-    public void Error(string format, ReadOnlySpan<char> arg0, ReadOnlySpan<char> arg1)
+    [DoesNotReturn]
+    internal bool Error(DefaultInterpolatedStringHandler handler)
     {
-        if (_error) return;
-        _error = true;
-        var msg = string.Format(format, string.FromSpan(arg0), string.FromSpan(arg1));
-        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {msg}");
-    }
-
-    public void Error(string format, ReadOnlySpan<char> arg0, ReadOnlySpan<char> arg1, ReadOnlySpan<char> arg2)
-    {
-        if (_error) return;
-        _error = true;
-        var msg = string.Format(format, string.FromSpan(arg0), string.FromSpan(arg1), string.FromSpan(arg2));
-        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {msg}");
-    }
-
-    public void Error(string format, params object[] args)
-    {
-        if (_error) return;
-        _error = true;
-        var msg = string.Format(format, args);
-        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {msg}");
+        throw new InvalidOperationException($"{_fileName}({_lineNumber}) : {handler.ToStringAndClear()}");
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────
@@ -420,7 +401,7 @@ public ref struct HLSLTokenizer
             {
                 _fValue = (float)dv;
                 _pos = fEnd;
-                _token = suffix == 'h' ? (int)HLSLToken.HalfLiteral : (int)HLSLToken.FloatLiteral;
+                _token = suffix == 'h' ? (ushort)HLSLToken.HalfLiteral : (ushort)HLSLToken.FloatLiteral;
                 return true;
             }
         }

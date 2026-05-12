@@ -19,11 +19,10 @@ public sealed class HLSLPreprocessor
     private readonly Func<string, string?>? _includeResolver;
     private bool _emitLineDirectives = true;
 
-    private readonly struct FunctionMacro
+    private readonly struct FunctionMacro(string[] parameters, string body)
     {
-        public readonly string[] Parameters;
-        public readonly string Body;
-        public FunctionMacro(string[] parameters, string body) { Parameters = parameters; Body = body; }
+        public readonly string[] Parameters = parameters;
+        public readonly string Body = body;
     }
 
     /// <param name="predefined">Pre-set defines (e.g. "OPENGL").</param>
@@ -136,7 +135,7 @@ public sealed class HLSLPreprocessor
         // Find end of macro name
         int nameEnd = 0;
         while (nameEnd < rest.Length && IsIdentChar(rest[nameEnd])) nameEnd++;
-        var name = rest.Substring(0, nameEnd);
+        var name = rest[..nameEnd];
 
         // Function-like macro: NAME( immediately after identifier (no space before paren)
         if (nameEnd < rest.Length && rest[nameEnd] == '(')
@@ -157,7 +156,7 @@ public sealed class HLSLPreprocessor
                     parameters[i] = parts[i].Trim();
             }
 
-            var body = (parenEnd + 1 < rest.Length) ? rest.Substring(parenEnd + 1).Trim() : "";
+            var body = (parenEnd + 1 < rest.Length) ? rest[(parenEnd + 1)..].Trim() : "";
             _functionMacros[name] = new FunctionMacro(parameters, body);
             return;
         }
@@ -170,7 +169,7 @@ public sealed class HLSLPreprocessor
         }
         else
         {
-            var value = rest.Substring(sep + 1).Trim();
+            var value = rest[(sep + 1)..].Trim();
             _defines[name] = value;
         }
     }
@@ -350,7 +349,7 @@ public sealed class HLSLPreprocessor
                 pos++;
             var numStr = s.Substring(start, pos - start);
             if (numStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                return Convert.ToInt64(numStr.Substring(2), 16);
+                return Convert.ToInt64(numStr[2..], 16);
             return long.TryParse(numStr, out long n) ? n : 0;
         }
 
@@ -378,7 +377,6 @@ public sealed class HLSLPreprocessor
             // Look up macro value — undefined = 0
             if (_defines.TryGetValue(ident, out var val) && long.TryParse(val, out long v))
                 return v;
-            return 0;
         }
 
         return 0;
@@ -544,9 +542,9 @@ public sealed class HLSLPreprocessor
         // Skip whitespace between directive name and rest
         while (i < trimmedLine.Length && trimmedLine[i] == ' ') i++;
         // Strip trailing single-line comment
-        var rest = i < trimmedLine.Length ? trimmedLine.Substring(i) : "";
+        var rest = i < trimmedLine.Length ? trimmedLine[i..] : "";
         int commentIdx = rest.IndexOf("//", StringComparison.Ordinal);
-        if (commentIdx >= 0) rest = rest.Substring(0, commentIdx);
+        if (commentIdx >= 0) rest = rest[..commentIdx];
         return new Directive(name, rest);
     }
 

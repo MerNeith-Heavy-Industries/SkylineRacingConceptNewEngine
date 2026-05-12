@@ -263,11 +263,50 @@ public class HLSLType
 
 // ─── AST Nodes ──────────────────────────────────────────────────────────────
 
-public class HLSLNode
+public abstract class HLSLNode
 {
     public HLSLNodeType NodeType;
     public string? FileName;
     public int Line;
+
+    public static readonly Dictionary<Type, (HLSLNodeType Type, Func<HLSLNode> Ctor)> NodeTypes =
+        new()
+        {
+            [typeof(HLSLRoot)] = (HLSLRoot.SType, static () => new HLSLRoot()),
+            [typeof(HLSLAttribute)] = (HLSLAttribute.SType, static () => new HLSLAttribute()),
+            [typeof(HLSLDeclaration)] = (HLSLDeclaration.SType, static () => new HLSLDeclaration()),
+            [typeof(HLSLStruct)] = (HLSLStruct.SType, static () => new HLSLStruct()),
+            [typeof(HLSLStructField)] = (HLSLStructField.SType, static () => new HLSLStructField()),
+            [typeof(HLSLBuffer)] = (HLSLBuffer.SType, static () => new HLSLBuffer()),
+            [typeof(HLSLFunction)] = (HLSLFunction.SType, static () => new HLSLFunction()),
+            [typeof(HLSLArgument)] = (HLSLArgument.SType, static () => new HLSLArgument()),
+            [typeof(HLSLExpressionStatement)] = (HLSLExpressionStatement.SType, static () => new HLSLExpressionStatement()),
+            [typeof(HLSLExpression)] = (HLSLExpression.SType, static () => new HLSLExpression()),
+            [typeof(HLSLReturnStatement)] = (HLSLReturnStatement.SType, static () => new HLSLReturnStatement()),
+            [typeof(HLSLDiscardStatement)] = (HLSLDiscardStatement.SType, static () => new HLSLDiscardStatement()),
+            [typeof(HLSLBreakStatement)] = (HLSLBreakStatement.SType, static () => new HLSLBreakStatement()),
+            [typeof(HLSLContinueStatement)] = (HLSLContinueStatement.SType, static () => new HLSLContinueStatement()),
+            [typeof(HLSLIfStatement)] = (HLSLIfStatement.SType, static () => new HLSLIfStatement()),
+            [typeof(HLSLForStatement)] = (HLSLForStatement.SType, static () => new HLSLForStatement()),
+            [typeof(HLSLBlockStatement)] = (HLSLBlockStatement.SType, static () => new HLSLBlockStatement()),
+            [typeof(HLSLUnaryExpression)] = (HLSLUnaryExpression.SType, static () => new HLSLUnaryExpression()),
+            [typeof(HLSLBinaryExpression)] = (HLSLBinaryExpression.SType, static () => new HLSLBinaryExpression()),
+            [typeof(HLSLConditionalExpression)] = (HLSLConditionalExpression.SType, static () => new HLSLConditionalExpression()),
+            [typeof(HLSLCastingExpression)] = (HLSLCastingExpression.SType, static () => new HLSLCastingExpression()),
+            [typeof(HLSLLiteralExpression)] = (HLSLLiteralExpression.SType, static () => new HLSLLiteralExpression()),
+            [typeof(HLSLIdentifierExpression)] = (HLSLIdentifierExpression.SType, static () => new HLSLIdentifierExpression()),
+            [typeof(HLSLConstructorExpression)] = (HLSLConstructorExpression.SType, static () => new HLSLConstructorExpression()),
+            [typeof(HLSLMemberAccess)] = (HLSLMemberAccess.SType, static () => new HLSLMemberAccess()),
+            [typeof(HLSLArrayAccess)] = (HLSLArrayAccess.SType, static () => new HLSLArrayAccess()),
+            [typeof(HLSLFunctionCall)] = (HLSLFunctionCall.SType, static () => new HLSLFunctionCall()),
+            [typeof(HLSLStateAssignment)] = (HLSLStateAssignment.SType, static () => new HLSLStateAssignment()),
+            [typeof(HLSLSamplerState)] = (HLSLSamplerState.SType, static () => new HLSLSamplerState()),
+            [typeof(HLSLPass)] = (HLSLPass.SType, static () => new HLSLPass()),
+            [typeof(HLSLTechnique)] = (HLSLTechnique.SType, static () => new HLSLTechnique()),
+            [typeof(HLSLAttribute)] = (HLSLAttribute.SType, static () => new HLSLAttribute()),
+            [typeof(HLSLPipeline)] = (HLSLPipeline.SType, static () => new HLSLPipeline()),
+            [typeof(HLSLStage)] = (HLSLStage.SType, static () => new HLSLStage()),
+        };
 }
 
 public class HLSLRoot : HLSLNode
@@ -286,7 +325,7 @@ public class HLSLRoot : HLSLNode
     }
 }
 
-public class HLSLStatement : HLSLNode
+public abstract class HLSLStatement : HLSLNode
 {
     public HLSLStatement? NextStatement;
     public HLSLAttribute? Attributes;
@@ -568,45 +607,20 @@ public class HLSLTree
         _root = AddNode<HLSLRoot>(null, 1);
     }
 
-    public string AddString(ReadOnlySpan<char> s) => s.IsEmpty ? string.Empty : AddString(string.FromSpan(s));
-
-    public string AddString(string? s)
-    {
-        if (s == null) return string.Empty;
-        if (_stringPool.TryGetValue(s, out var existing))
-            return existing;
-        _stringPool.Add(s);
-        return s;
-    }
-
-    public string AddStringFormat(string fmt, params object[] args)
-    {
-        return AddString(string.Format(fmt, args));
-    }
-
-    public bool GetContainsString(string s) => _stringPool.Contains(s);
-
     public HLSLRoot Root => _root;
 
-    public T AddNode<T>(string? fileName, int line) where T : HLSLNode, new()
+    public static T AddNode<T>(string? fileName, int line) where T : HLSLNode
     {
-        var node = new T
+        if (HLSLNode.NodeTypes.TryGetValue(typeof(T), out var nodeInfo))
         {
-            FileName = fileName,
-            Line = line,
-        };
-        // Set nodeType from the SType const field if available via convention
-        node.NodeType = GetNodeTypeFor<T>();
-        return node;
-    }
-
-    private static HLSLNodeType GetNodeTypeFor<T>() where T : HLSLNode
-    {
-        var t = typeof(T);
-        var field = t.GetField("SType", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.FlattenHierarchy);
-        if (field != null && field.FieldType == typeof(HLSLNodeType))
-            return (HLSLNodeType)field.GetValue(null)!;
-        return HLSLNodeType.Root;
+            var node = nodeInfo.Ctor();
+            node.FileName = fileName;
+            node.Line = line;
+            node.NodeType = nodeInfo.Type;
+            return (T)node;
+        }
+        
+        throw new InvalidOperationException($"Type {typeof(T)} is not a valid {nameof(HLSLNode)} type.");
     }
 
     public HLSLFunction? FindFunction(string name)
@@ -781,9 +795,6 @@ public class HLSLTree
 
     public bool NeedsFunction(string name)
     {
-        if (!GetContainsString(name))
-            return false;
-
         var visitor = new NeedsFunctionVisitor { Name = name };
         visitor.VisitRoot(_root);
         return visitor.Result;
@@ -853,14 +864,14 @@ public static class HLSLTypeTables
         HLSLBaseType.Float,  // Float2
         HLSLBaseType.Float,  // Float3
         HLSLBaseType.Float,  // Float4
-        HLSLBaseType.Float,// Float3x3
-        HLSLBaseType.Float,// Float4x4
+        HLSLBaseType.Float,  // Float3x3
+        HLSLBaseType.Float,  // Float4x4
         HLSLBaseType.Half,   // Half
-        HLSLBaseType.Half,  // Half2
-        HLSLBaseType.Half,  // Half3
-        HLSLBaseType.Half,  // Half4
-        HLSLBaseType.Half,// Half3x3
-        HLSLBaseType.Half,// Half4x4
+        HLSLBaseType.Half,   // Half2
+        HLSLBaseType.Half,   // Half3
+        HLSLBaseType.Half,   // Half4
+        HLSLBaseType.Half,   // Half3x3
+        HLSLBaseType.Half,   // Half4x4
         HLSLBaseType.Bool,   // Bool
         HLSLBaseType.Int,   // Int
         HLSLBaseType.Int,  // Int2
@@ -1183,8 +1194,10 @@ public static class HLSLTreeOperations
         void Chain(HLSLStatement? head, HLSLStatement? tail)
         {
             if (head == null) return;
-            if (first == null) { first = head; last = tail; }
-            else { last!.NextStatement = head; last = tail; }
+            if (first == null) first = head;
+            else last!.NextStatement = head;
+
+            last = tail;
         }
         Chain(constDecls, lastConstDecl);
         Chain(decls, lastDecl);
