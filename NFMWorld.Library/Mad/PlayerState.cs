@@ -2,7 +2,7 @@
 using MessagePack;
 using NFMWorldLibrary.Files.Demo;
 
-namespace NFMWorldLibrary.Multiplayer;
+namespace NFMWorldLibrary;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PlayerState

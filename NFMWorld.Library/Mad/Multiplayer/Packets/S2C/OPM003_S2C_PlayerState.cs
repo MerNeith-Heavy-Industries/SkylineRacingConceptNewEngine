@@ -3,6 +3,7 @@
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 [MessagePackObject(AllowPrivate = true)]
+[PacketServerToClient(-3)]
 public partial struct S2C_PlayerState : IPacketServerToClient<S2C_PlayerState>
 {
     [Key(0)] public required uint PlayerClientId { get; set; } = 0;

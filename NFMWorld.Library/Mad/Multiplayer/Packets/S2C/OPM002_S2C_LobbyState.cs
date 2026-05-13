@@ -4,7 +4,8 @@ using MessagePack;
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 [MessagePackObject]
-public struct S2C_LobbyState : IPacketServerToClient<S2C_LobbyState>
+[PacketServerToClient(-2)]
+public partial struct S2C_LobbyState : IPacketServerToClient<S2C_LobbyState>
 {
     [Key(0)] public required uint PlayerClientId { get; set; }
     [Key(1)] public required IList<PlayerInfo> Players { get; set; }

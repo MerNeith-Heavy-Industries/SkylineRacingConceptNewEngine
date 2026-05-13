@@ -6,8 +6,6 @@ using FixedMathSharp.Utility;
 using Maxine.Extensions.Mathematics;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
-using Steamworks;
-using Steamworks.Data;
 
 namespace NFMWorldLibrary;
 
@@ -452,23 +450,6 @@ public static class Extensions2
         }
     }
     
-    extension(Connection connection)
-    {
-        public unsafe Result SendMessage<T>(Span<T> data, SendType sendType = SendType.Reliable)
-            where T : unmanaged
-        {
-            fixed (T* ptr = data)
-                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
-        }
-
-        public unsafe Result SendMessage<T>(ReadOnlySpan<T> data, SendType sendType = SendType.Reliable)
-            where T : unmanaged
-        {
-            fixed (T* ptr = data)
-                return connection.SendMessage((IntPtr) ptr, data.AsBytes().Length, sendType);
-        }
-    }
-
     extension(Encoding encoding)
     {
         public unsafe string GetString(byte* bytes)

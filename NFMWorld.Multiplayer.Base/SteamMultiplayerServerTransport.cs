@@ -10,7 +10,7 @@ public class SteamMultiplayerServerTransport : BaseMultiplayerServerTransport, I
 {
     private readonly SocketManager _server;
     private bool _isRunning = true;
-    private Thread _receiveThread;
+    private Thread? _receiveThread;
     private readonly ConcurrentDictionary<uint, Connection> _connectedClients = [];
 
     public override IReadOnlyCollection<uint> Connections { get; }

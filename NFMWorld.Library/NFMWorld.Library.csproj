@@ -7,10 +7,16 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RootNamespace>NFMWorldLibrary</RootNamespace>
         <OptimizationPreference>Speed</OptimizationPreference>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
+        <Compile Remove="Generated/**" />
+    </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="ENet-CSharp" Version="2.4.8" />
         <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
         <PackageReference Include="FixedMathSharp" Version="1.3.3" />
         <PackageReference Include="Lua.NET" Version="6.0.1" />
@@ -21,6 +27,7 @@
         <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
         <PackageReference Include="Sentry.Extensions.Logging" Version="6.1.0-alpha.2" />
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,14 +37,6 @@
       <ProjectReference Include="..\Maxine.Extensions\Maxine.VFS\Maxine.VFS.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.Mathematics\Maxine.Extensions.Mathematics.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
-        <ProjectReference Include="..\Facepunch.Steamworks\Facepunch.Steamworks\Facepunch.Steamworks.Win64.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
-        <ProjectReference Include="..\Facepunch.Steamworks\Facepunch.Steamworks\Facepunch.Steamworks.Posix.csproj" />
     </ItemGroup>
 
     <ItemGroup>

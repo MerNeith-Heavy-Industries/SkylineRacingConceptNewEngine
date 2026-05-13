@@ -4,7 +4,8 @@ using MessagePack;
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 [MessagePackObject]
-public struct S2C_RaceStarted : IPacketServerToClient<S2C_RaceStarted>
+[PacketServerToClient(-6)]
+public partial struct S2C_RaceStarted : IPacketServerToClient<S2C_RaceStarted>
 {
     [StructLayout(LayoutKind.Sequential)]
     [MessagePackObject]

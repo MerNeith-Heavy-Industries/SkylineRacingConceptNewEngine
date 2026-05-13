@@ -19,7 +19,7 @@ public abstract class BaseMultiplayerServerTransport : IMultiplayerServerTranspo
     public void SendPacketToClient<T>(uint clientIndex, T packet, bool reliable = true) where T : IPacketServerToClient<T>
     {
         using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-        arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
+        arrayWriter.Write(packet.Opcode);
         packet.Write(arrayWriter);
         SendRawPacketToClients([clientIndex], arrayWriter.WrittenSpan, reliable);
     }
@@ -27,7 +27,7 @@ public abstract class BaseMultiplayerServerTransport : IMultiplayerServerTranspo
     public void SendPacketToClients<T>(ReadOnlySpan<uint> clientIndices, T packet, bool reliable = true) where T : IPacketServerToClient<T>
     {
         using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-        arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
+        arrayWriter.Write(packet.Opcode);
         packet.Write(arrayWriter);
         SendRawPacketToClients(clientIndices, arrayWriter.WrittenSpan, reliable);
     }
@@ -35,7 +35,7 @@ public abstract class BaseMultiplayerServerTransport : IMultiplayerServerTranspo
     public void BroadcastPacket<T>(T packet, bool reliable = true) where T : IPacketServerToClient<T>
     {
         using var arrayWriter = new ArrayPoolBufferWriter<byte>();
-        arrayWriter.Write(MultiplayerUtils.OpcodesS2CReverse[typeof(T)]);
+        arrayWriter.Write(packet.Opcode);
         packet.Write(arrayWriter);
         SendRawPacketToClients(Connections.ToArray(), arrayWriter.WrittenSpan, reliable);
     }

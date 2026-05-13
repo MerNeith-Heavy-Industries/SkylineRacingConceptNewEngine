@@ -7,10 +7,10 @@ namespace NFMWorldLibrary.Multiplayer;
 public class ENetMultiplayerServerTransport : BaseMultiplayerServerTransport
 {
     private bool _isRunning = true;
-    private Thread _receiveThread;
+    private Thread? _receiveThread;
     private readonly ConcurrentDictionary<uint, Peer> _connectedClients = [];
     private readonly Host _server;
-    private ConcurrentQueue<(uint Peer, Packet Packet)> _sendPacketQueue = new();
+    private readonly ConcurrentQueue<(uint Peer, Packet Packet)> _sendPacketQueue = [];
 
     public override IReadOnlyCollection<uint> Connections { get; }
     

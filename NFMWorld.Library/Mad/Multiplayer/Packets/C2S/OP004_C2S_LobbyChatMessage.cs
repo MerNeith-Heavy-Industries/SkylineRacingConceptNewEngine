@@ -3,7 +3,8 @@
 namespace NFMWorldLibrary.Multiplayer.Packets.C2S;
 
 [MessagePackObject]
-public struct C2S_LobbyChatMessage : IPacketClientToServer<C2S_LobbyChatMessage>
+[PacketClientToServer(4)]
+public partial struct C2S_LobbyChatMessage : IPacketClientToServer<C2S_LobbyChatMessage>
 {
     [Key(0)] public required string Message { get; set; } = string.Empty;
 

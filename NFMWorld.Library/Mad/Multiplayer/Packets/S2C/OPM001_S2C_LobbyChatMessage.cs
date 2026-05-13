@@ -3,7 +3,8 @@
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 [MessagePackObject]
-public struct S2C_LobbyChatMessage : IPacketServerToClient<S2C_LobbyChatMessage>
+[PacketServerToClient(-1)]
+public partial struct S2C_LobbyChatMessage : IPacketServerToClient<S2C_LobbyChatMessage>
 {
     [Key(0)] public required string Sender { get; set; } = string.Empty;
     [Key(1)] public required uint SenderClientId { get; set; } = 0;

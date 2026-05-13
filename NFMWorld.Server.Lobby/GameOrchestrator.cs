@@ -2,6 +2,7 @@
 using Maxine.Extensions;
 using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Multiplayer;
 
@@ -365,7 +366,7 @@ public class GameOrchestrator
         public ClientState State { get; set; }
         public string Name { get; set; } = "hogan rewish";
         public string Vehicle { get; set; } = "nfmm/radicalone";
-        public Color3 Color { get; set; } = new Color3();
+        public Color3 Color { get; set; }
         public (byte PlayerIndex, uint SessionIndex)? InSession { get; set; }
         public bool IsInGame { get; set; }
     }
