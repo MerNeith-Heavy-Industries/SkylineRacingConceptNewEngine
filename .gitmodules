@@ -28,3 +28,6 @@
 [submodule "Maxine.RustBindGen"]
 	path = Maxine.RustBindGen
 	url = https://github.com/uwx/Maxine.RustBindGen
+[submodule "nfm-world/data"]
+	path = nfm-world/data
+	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineData
