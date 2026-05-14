@@ -21,13 +21,11 @@ public static class JoltPhysics
     public static JoltCollision? ResolveCollision(IStage stage, f64Vector3 position, f64Vector3 velocity)
     {
         var physicsSystem = stage.PhysicsSystem;
-        using var sphereShape = new SphereShape(50f);
+        using var sphereShape = new SphereShape(100f);
         var collideShapeSettings = new CollideShapeSettings()
         {
             ActiveEdgeMode = ActiveEdgeMode.CollideWithAll,
             BackFaceMode = BackFaceMode.CollideWithBackFaces,
-            CollisionTolerance = 100f,
-            CollectFacesMode = CollectFacesMode.CollectFaces
         };
 
         var posVec3 = new System.Numerics.Vector3((float)position.X, (float)position.Y, (float)position.Z);
@@ -63,8 +61,7 @@ public static class JoltPhysics
         }
 
         totalDirection = Vector3.Normalize(totalDirection);
-        const float addedRebound = 3;
-        var impactComponent = (totalDirection * Vector3.Dot(totalDirection, velVec3)) * addedRebound;
+        var impactComponent = totalDirection * Vector3.Dot(totalDirection, velVec3);
 
         return new JoltCollision(
             PositionDelta: new f64Vector3((fix64)totalResolve.X, (fix64)totalResolve.Y, (fix64)totalResolve.Z),
