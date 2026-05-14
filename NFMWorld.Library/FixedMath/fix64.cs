@@ -24,12 +24,14 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using FixedMathSharp;
 
 namespace NFMWorldLibrary.FixedMath;
 
 [DebuggerDisplay("{ToString()}")]
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)] 
+[JsonConverter(typeof(fix64Converter))]
 public readonly partial struct fix64(Fixed64 value) : IEquatable<fix64>, IComparable<fix64>, IComparable, IFormattable
 {
     public const int FRACTION_BITS = FixedMathSharp.FixedMath.SHIFT_AMOUNT_I;

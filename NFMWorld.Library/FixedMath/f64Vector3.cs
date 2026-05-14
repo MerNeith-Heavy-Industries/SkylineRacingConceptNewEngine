@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework.Design;
 
 namespace NFMWorldLibrary.FixedMath;
@@ -109,16 +110,19 @@ public struct f64Vector3 : IEquatable<f64Vector3>
 	/// <summary>
 	/// The x coordinate of this <see cref="f64Vector3"/>.
 	/// </summary>
+	[JsonPropertyName("x")]
 	public fix64 X;
 
 	/// <summary>
 	/// The y coordinate of this <see cref="f64Vector3"/>.
 	/// </summary>
+	[JsonPropertyName("y")]
 	public fix64 Y;
 
 	/// <summary>
 	/// The z coordinate of this <see cref="f64Vector3"/>.
 	/// </summary>
+	[JsonPropertyName("z")]
 	public fix64 Z;
 
 	#endregion
