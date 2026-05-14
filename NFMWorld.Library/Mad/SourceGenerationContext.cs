@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorldLibrary;
@@ -21,4 +22,8 @@ namespace NFMWorldLibrary;
 [JsonSerializable(typeof(Int3[]))]
 [JsonSerializable(typeof(Vector3[]))]
 [JsonSerializable(typeof(Vector2[]))]
+[JsonSerializable(typeof(f64Vector3))]
+[JsonSerializable(typeof(fix64))]
+[JsonSerializable(typeof(f64Vector3))]
+[JsonSerializable(typeof(fix64[]))]
 public partial class SourceGenerationContext : JsonSerializerContext;
