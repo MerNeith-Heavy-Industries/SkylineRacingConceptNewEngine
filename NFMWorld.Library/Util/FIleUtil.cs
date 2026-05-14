@@ -19,6 +19,7 @@ public class FileUtil
             }
         }
     }
+    
     public static void LoadFiles(string folder, Action<byte[], string> action)
     {
         if (!VFS.Exists(folder))

@@ -28,3 +28,6 @@
 [submodule "Maxine.RustBindGen"]
 	path = Maxine.RustBindGen
 	url = https://github.com/uwx/Maxine.RustBindGen
+[submodule "JoltPhysicsSharp"]
+	path = JoltPhysicsSharp
+	url = https://github.com/uwx/JoltPhysicsSharp

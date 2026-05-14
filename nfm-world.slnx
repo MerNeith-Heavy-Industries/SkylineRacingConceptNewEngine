@@ -24,6 +24,11 @@
   <Folder Name="/ImGui/">
     <Project Path="MonoGame.ImGuiNet/MonoGame.ImGuiNet/Monogame.ImGuiNet.csproj" />
   </Folder>
+  <Folder Name="/Jolt/">
+    <Project Path="JoltPhysicsSharp/src/JoltPhysics.Native.Debug/JoltPhysics.Native.Debug.csproj" />
+    <Project Path="JoltPhysicsSharp/src/JoltPhysics.Native/JoltPhysics.Native.csproj" />
+    <Project Path="JoltPhysicsSharp/src/JoltPhysicsSharp/JoltPhysicsSharp.csproj" />
+  </Folder>
   <Folder Name="/Maxine.Extensions/">
     <Project Path="Maxine.Extensions/Maxine.Extensions.Mathematics.Tests/Maxine.Extensions.Mathematics.Tests.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions.Mathematics/Maxine.Extensions.Mathematics.csproj" />

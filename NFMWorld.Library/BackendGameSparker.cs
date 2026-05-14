@@ -1,8 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using JoltPhysicsSharp;
 using Maxine.Extensions;
 using Maxine.VFS;
+using Microsoft.Extensions.Logging;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Files;
@@ -45,6 +48,26 @@ public static class BackendGameSparker
         if (_loaded)
             return;
         _loaded = true;
+        
+        NativeLibrary.SetDllImportResolver(typeof(JoltApi).Assembly, ImportResolver);
+        
+        Foundation.SetTraceHandler(Logging.Info);
+
+        Foundation.SetAssertFailureHandler((inExpression, inMessage, inFile, inLine) =>
+        {
+            string message = inMessage ?? inExpression;
+
+            string outMessage = $"[JoltPhysics] Assertion failure at {inFile}:{inLine}: {message}";
+
+            Logging.Error(outMessage);
+
+            throw new Exception(outMessage);
+        });
+
+        if (!Foundation.Init(false))
+        {
+            return;
+        }
         
         SentrySdk.Init(options =>
         {
@@ -199,6 +222,109 @@ public static class BackendGameSparker
                 throw new Exception("No valid ContO (Vehicle) has been assigned to ID " + i + " (" + StageRads[i] + ")");
             }
         }
+    }
+
+    private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        static string GetPlatformName()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return "windows";
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                return  "osx";
+            }
+
+            if (OperatingSystem.IsLinux())
+            {
+                return "linux";
+            }
+
+            if (OperatingSystem.IsFreeBSD())
+            {
+                return "freebsd";
+            }
+
+            if (OperatingSystem.IsAndroid())
+            {
+                return "android";
+            }
+
+            // What is this platform??
+            return "unknown";
+        }
+
+        if (OperatingSystem.IsIOS() || OperatingSystem.IsTvOS())
+        {
+            return NativeLibrary.GetMainProgramHandle(); // statically linked
+        }
+
+        string os = GetPlatformName();
+        string cpu = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        string wordsize = (IntPtr.Size * 8).ToString();
+        
+#if DEBUG
+        string debugLibrarySuffix = "d";
+#else
+        string debugLibrarySuffix = Debugger.IsAttached ? "d" : string.Empty;
+#endif
+
+        if (libraryName == "Kernel32.dll")
+        {
+            return NativeLibrary.Load("kernel32.dll", assembly, searchPath);
+        }
+
+        var newLibraryName = libraryName switch
+        {
+            "joltc" => os switch
+            {
+                "windows" => JoltApi.DoublePrecision ? $"joltc_double{debugLibrarySuffix}.dll" : $"joltc{debugLibrarySuffix}.dll",
+                "osx" => JoltApi.DoublePrecision ? $"libjoltc_double{debugLibrarySuffix}.dylib" : $"libjoltc{debugLibrarySuffix}.dylib",
+                "linux" or "freebsd" or "netbsd" => JoltApi.DoublePrecision ? $"libjoltc_double{debugLibrarySuffix}.so" : $"libjoltc{debugLibrarySuffix}.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            },
+            _ => os switch
+            {
+                "windows" => $"{libraryName}.dll",
+                "osx" => $"lib{libraryName}.dylib",
+                "linux" or "freebsd" or "netbsd" => $"lib{libraryName}.so",
+                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+            }
+        };
+        
+        var dir = os switch
+        {
+            "windows" => cpu switch
+            {
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "arm64",
+                "x64" or "x86_64" or "amd64" => "x64",
+                "x86" or "x86_32" or "i386" => "x86",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            "osx" => "osx",
+            "linux" or "freebsd" or "netbsd" => cpu switch
+            {
+                "arm32" or "armv7" or "aarch32" or "armeabi-v7a" => "libarmhf",
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "libaarch64",
+                "x64" or "x86_64" or "amd64" => "lib64",
+                "x86" or "x86_32" or "i386" => "lib32",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            "android" => cpu switch
+            {
+                "arm32" or "armv7" or "aarch32" or "armeabi-v7a" => "android-armeabi-v7a",
+                "arm64" or "armv8" or "armv8-a" or "aarch64" or "arm64-v8a" => "android-arm64-v8a",
+                "x64" or "x86_64" or "amd64" => "android-x86_64",
+                "x86" or "x86_32" or "i386" => "android-x86",
+                _ => throw new PlatformNotSupportedException($"Unsupported CPU architecture: {cpu}, please update {nameof(ImportResolver)}")
+            },
+            _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
+        };
+        
+        return NativeLibrary.Load($"libs/{dir}/{newLibraryName}");
     }
 
     public static (int Id, Rad3d? Rad) GetCar(string name)
