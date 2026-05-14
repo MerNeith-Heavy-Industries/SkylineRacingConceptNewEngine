@@ -21,18 +21,18 @@ public static class JoltPhysics
     public static JoltCollision? ResolveCollision(IStage stage, f64Vector3 position, f64Vector3 velocity)
     {
         var physicsSystem = stage.PhysicsSystem;
-        using var sphereShape = new SphereShape(100f);
+        using var sphereShape = new SphereShape(75f);
         var collideShapeSettings = new CollideShapeSettings()
         {
             ActiveEdgeMode = ActiveEdgeMode.CollideWithAll,
-            BackFaceMode = BackFaceMode.CollideWithBackFaces,
+            BackFaceMode = BackFaceMode.IgnoreBackFaces,
         };
 
         var posVec3 = new System.Numerics.Vector3((float)position.X, (float)position.Y, (float)position.Z);
         var comTransform = System.Numerics.Matrix4x4.CreateTranslation(posVec3);
         
         results.Clear();
-        var hadHit = physicsSystem.NarrowPhaseQuery.CollideShape(
+        var hadHit = physicsSystem.NarrowPhaseQuery.CollideShape( // TODO add bindings for CollideShapeWithInternalEdgeRemoval
             shape: sphereShape,
             scale: System.Numerics.Vector3.One,
             centerOfMassTransform: comTransform,
@@ -43,29 +43,50 @@ public static class JoltPhysics
         );
 
         if (!hadHit) return null;
-        Logging.Info("Hit");
         
         var velVec3 = new Vector3((float)velocity.X, (float)velocity.Y, (float)velocity.Z);
 
         var totalResolve = Vector3.Zero;
-        var totalDirection = Vector3.Zero;
+        var weightedNormal = Vector3.Zero;
+        var totalDepth = 0f;
         foreach (var hit in results)
         {
             if (hit.PenetrationDepth < 0) continue;
-            var resolve = System.Numerics.Vector3.Normalize(hit.PenetrationAxis) * hit.PenetrationDepth;
+            var normalizedAxis = System.Numerics.Vector3.Normalize(hit.PenetrationAxis);
+            var resolve = normalizedAxis * hit.PenetrationDepth;
             totalResolve += -new Vector3(resolve.X, resolve.Y, resolve.Z);
 
-            var normalizedAxis = System.Numerics.Vector3.Normalize(hit.PenetrationAxis);
-            var penetration = new Vector3(normalizedAxis.X, normalizedAxis.Y, normalizedAxis.Z);
-            totalDirection += penetration;
+            var normal = new Vector3(normalizedAxis.X, normalizedAxis.Y, normalizedAxis.Z);
+            weightedNormal += normal * hit.PenetrationDepth;
+            totalDepth += hit.PenetrationDepth;
         }
 
-        totalDirection = Vector3.Normalize(totalDirection);
-        var impactComponent = totalDirection * Vector3.Dot(totalDirection, velVec3);
+        if (totalDepth <= 0) return null;
+
+        var avgNormal = Vector3.Normalize(weightedNormal);
+        // In Y-down, "up" is -Y. Dot with -Y gives how ground-like the surface is.
+        // 1.0 = flat ground, 0.0 = vertical wall, -1.0 = ceiling
+        var groundness = Vector3.Dot(avgNormal, new Vector3(0, -1, 0));
+        const float groundThreshold = 0.5f; // ~60° from horizontal ground
+        var isGround = groundness > groundThreshold;
+        
+        
+        Logging.Info($"Hit {groundness}");
+
+        var impactComponent = avgNormal * Vector3.Dot(avgNormal, velVec3);
+
+        if (!isGround)
+        {
+            // Wall/cliff: zero out the vertical resolve to prevent climbing
+            totalResolve = new Vector3(totalResolve.X, 0, totalResolve.Z);
+            impactComponent = new Vector3(impactComponent.X, 0, impactComponent.Z);
+        }
 
         return new JoltCollision(
             PositionDelta: new f64Vector3((fix64)totalResolve.X, (fix64)totalResolve.Y, (fix64)totalResolve.Z),
-            ImpactComponent: new f64Vector3((fix64)impactComponent.X, (fix64)impactComponent.Y, (fix64)impactComponent.Z)
+            ImpactComponent: new f64Vector3((fix64)impactComponent.X, (fix64)impactComponent.Y, (fix64)impactComponent.Z),
+            IsGround: isGround,
+            Groundness: groundness
         );
     }
 
@@ -74,5 +95,7 @@ public static class JoltPhysics
     /// </summary>
     /// <param name="PositionDelta">The difference between the input position and the position after the intersections is represented by this vector.</param>
     /// <param name="ImpactComponent">The component of the impact force applied during the collision.</param>
-    public readonly record struct JoltCollision(f64Vector3 PositionDelta, f64Vector3 ImpactComponent);
+    /// <param name="IsGround">True if the average collision surface is ground-like (within ~60° of horizontal).</param>
+    /// <param name="Groundness">How ground-like the surface is: 1.0 = flat ground, 0.0 = vertical wall, -1.0 = ceiling.</param>
+    public readonly record struct JoltCollision(f64Vector3 PositionDelta, f64Vector3 ImpactComponent, bool IsGround, float Groundness);
 }
