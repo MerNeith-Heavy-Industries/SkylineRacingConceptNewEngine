@@ -1,3 +1,4 @@
 {
-    "dotnet.defaultSolution": "nfm-world.sln"
+    "dotnet.defaultSolution": "nfm-world.sln",
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
