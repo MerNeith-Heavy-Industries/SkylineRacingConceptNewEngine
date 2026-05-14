@@ -9,7 +9,8 @@ public readonly record struct Rad3dWheelDef(
     [property: JsonPropertyName("pos"), Key(0)] f64Vector3 Position,
     [property: JsonPropertyName("rotates"), Key(1)] int Rotates,
     [property: JsonPropertyName("w"), Key(2)] fix64 Width,
-    [property: JsonPropertyName("h"), Key(3)] fix64 Height
+    [property: JsonPropertyName("h"), Key(3)] fix64 Height,
+    [property: JsonPropertyName("polys"), Key(4)] Rad3dPoly[]? Polys
 )
 {
     [IgnoreMember]

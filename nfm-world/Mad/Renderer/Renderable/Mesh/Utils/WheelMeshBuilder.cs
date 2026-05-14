@@ -41,7 +41,14 @@ public class WheelMeshBuilder
             }
         }
 
-        Make(_planes, 0, 0, 0, wheelDef.Rotates, (float)wheelDef.Width, (float)wheelDef.Height);
+        if (wheelDef.Polys == null)
+        {
+            Make(_planes, 0, 0, 0, wheelDef.Rotates, (float)wheelDef.Width, (float)wheelDef.Height);
+        }
+        else
+        {
+            _planes = wheelDef.Polys.ToList();
+        }
     }
 
     public MeshedGameObject BuildGameObject(GraphicsDevice graphicsDevice, Transform parent)

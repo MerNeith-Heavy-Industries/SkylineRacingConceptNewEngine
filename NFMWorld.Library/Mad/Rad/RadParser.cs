@@ -15,14 +15,24 @@ public class RadParser
     private List<Rad3dWheelDef> _wheels = new();
     private Rad3dRimsDef? _rims;
     private List<Rad3dBoxDef> _boxes = new();
-    private List<Rad3dPoly> _polys = new();
+    private List<Rad3dPoly> _mainCarPolys = new();
     private List<Vector3> _points = new();
     private List<Vector2> _atp = new();
     private bool _road;
     private bool _castsShadow;
+
+    private List<List<Rad3dPoly>> _wheelPolys = new();
+
+    private List<Rad3dPoly> _currentPolys;
+    
+    private List<Vector3> _meshCollisionVerts = new();
+    private List<ushort> _meshCollisionIndices = new();
+    
+    private List<Vector3> _hullVerts = new();
     
     private RadParser()
     {
+        _currentPolys = _mainCarPolys;
     }
 
     public static Rad3d ParseRad(string radFile)
@@ -51,9 +61,11 @@ public class RadParser
             Wheels: parser._wheels.ToArray(),
             Rims: parser._rims,
             Boxes: parser._boxes.ToArray(),
-            Polys: parser._polys.ToArray(),
+            Polys: parser._mainCarPolys.ToArray(),
             CastsShadow: parser._castsShadow,
-            Atp: parser._atp.ToArray()
+            Atp: parser._atp.ToArray(),
+            CollisionMesh: parser._meshCollisionVerts.Count > 0 ? new SrcRad3dCollisionMesh(parser._meshCollisionVerts.ToArray(), parser._meshCollisionIndices.ToArray()) : null,
+            CollisionHull: parser._hullVerts.Count > 0 ? parser._hullVerts.ToArray() : null
         ));
     }
 
@@ -189,7 +201,8 @@ public class RadParser
                 ),
                 Rotates: rotates,
                 Width: width * idiv * iwid,
-                Height: height * idiv
+                Height: height * idiv,
+                Polys: _wheelPolys.Count > _wheels.Count ? _wheelPolys[_wheels.Count].ToArray() : null
             ));
         }
 
@@ -225,6 +238,37 @@ public class RadParser
                 NotWall: false,
                 Color: new Color3()
             ));
+        }
+        
+        // SRC extension
+        else if (line.StartsWith("mv("))
+        {
+            var vec = Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc float[3]));
+            _meshCollisionVerts.Add(vec);
+        }
+        
+        // SRC extension
+        else if (line.StartsWith("mtri("))
+        {
+            var tri = BracketParser.GetNumbers(line, stackalloc ushort[3]);
+            foreach (var idx in tri)
+            {
+                _meshCollisionIndices.Add(idx);
+            }
+        }
+
+        // SRC extension
+        else if (line.StartsWith("hullv("))
+        {
+            var vec = Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc float[3]));
+            _hullVerts.Add(vec);
+        }
+        
+        // NFMW extension
+        else if (line.StartsWith("atp("))
+        {
+            var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc int[2]);
+            _atp.Add(new Vector2(x, z));
         }
 
         if (_boxes.Count > 0)
@@ -295,15 +339,27 @@ public class RadParser
                 currentBox = currentBox with { NotWall = true };
         }
 
-        if (line.StartsWith("<p>"))
+        // SRC custom wheel format
+        if (line.StartsWith("<wheel>"))
         {
-            _polys.Add(new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []));
-            _noOutline = false;
+            _wheelPolys.Add(_currentPolys = []);
         }
 
-        if (_polys.Count > 0)
+        // SRC custom wheel format
+        if (line.StartsWith("</wheel>"))
         {
-            ref var poly = ref _polys.GetValueRef(^1);
+            _currentPolys = _mainCarPolys;
+        }
+
+        if (line.StartsWith("<p>"))
+        {
+            _currentPolys.Add(new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []));
+            _noOutline = false;
+        }
+        
+        if (_currentPolys.Count > 0)
+        {
+            ref var poly = ref _currentPolys.GetValueRef(^1);
             if (line.StartsWith("c("))
             {
                 var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
@@ -321,6 +377,9 @@ public class RadParser
             else if (line.StartsWith("gr(-10)")) poly = poly with { LineType = LineType.BrightColored };
             else if (line.StartsWith("gr(-18)")) poly = poly with { LineType = LineType.Charged };
             else if (line.StartsWith("gr(-13)")) poly = poly with { PolyType = PolyType.Finish };
+            // SRC extension
+            else if (line.StartsWith("proad")) poly = poly with { LineType = LineType.Colored };
+            // NFMW extension
             else if (line.StartsWith("decal"))
             {
                 // Parse decal with optional value: decal or decal(value)
@@ -330,13 +389,6 @@ public class RadParser
                     decalValue = BracketParser.GetNumber<float>(line);
                 }
                 poly = poly with { DecalOffset = decalValue };
-            }
-            else if(line.StartsWith("atp("))
-            {
-                var x = Utility.GetInt("atp(", line, 0);
-                var z = Utility.GetInt("atp(", line, 0);
-
-                _atp.Add(new Vector2(x, z));
             }
             else if (line.StartsWith("p("))
             {
