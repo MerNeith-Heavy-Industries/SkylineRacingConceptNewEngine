@@ -21,11 +21,13 @@ public static class JoltPhysics
     public static JoltCollision? ResolveCollision(IStage stage, f64Vector3 position, f64Vector3 velocity)
     {
         var physicsSystem = stage.PhysicsSystem;
-        using var sphereShape = new SphereShape(100f);
+        using var sphereShape = new SphereShape(50f);
         var collideShapeSettings = new CollideShapeSettings()
         {
             ActiveEdgeMode = ActiveEdgeMode.CollideWithAll,
             BackFaceMode = BackFaceMode.CollideWithBackFaces,
+            CollisionTolerance = 100f,
+            CollectFacesMode = CollectFacesMode.CollectFaces
         };
 
         var posVec3 = new System.Numerics.Vector3((float)position.X, (float)position.Y, (float)position.Z);
@@ -48,7 +50,7 @@ public static class JoltPhysics
         var velVec3 = new Vector3((float)velocity.X, (float)velocity.Y, (float)velocity.Z);
 
         var totalResolve = Vector3.Zero;
-        var totalVelocity = Vector3.Zero;
+        var totalDirection = Vector3.Zero;
         foreach (var hit in results)
         {
             if (hit.PenetrationDepth < 0) continue;
@@ -57,13 +59,16 @@ public static class JoltPhysics
 
             var normalizedAxis = System.Numerics.Vector3.Normalize(hit.PenetrationAxis);
             var penetration = new Vector3(normalizedAxis.X, normalizedAxis.Y, normalizedAxis.Z);
-            var impactComponent = penetration * Vector3.Dot(penetration, velVec3);
-            totalVelocity += impactComponent;
+            totalDirection += penetration;
         }
+
+        totalDirection = Vector3.Normalize(totalDirection);
+        const float addedRebound = 3;
+        var impactComponent = (totalDirection * Vector3.Dot(totalDirection, velVec3)) * addedRebound;
 
         return new JoltCollision(
             PositionDelta: new f64Vector3((fix64)totalResolve.X, (fix64)totalResolve.Y, (fix64)totalResolve.Z),
-            ImpactComponent: new f64Vector3((fix64)totalVelocity.X, (fix64)totalVelocity.Y, (fix64)totalVelocity.Z)
+            ImpactComponent: new f64Vector3((fix64)impactComponent.X, (fix64)impactComponent.Y, (fix64)impactComponent.Z)
         );
     }
 

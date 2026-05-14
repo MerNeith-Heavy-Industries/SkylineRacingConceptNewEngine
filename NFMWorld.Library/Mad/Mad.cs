@@ -2195,31 +2195,28 @@ public class Mad
         {
             var position = new f64Vector3(wheelx[k], wheely[k] - wheelGround, wheelz[k]);
             var velocity = new f64Vector3(Scx[k], Scy[k], Scz[k]);
+            
+            var joltCollision = JoltPhysics.ResolveCollision(stage, position, velocity);
+            if (joltCollision is { } joltCollisionValue)
+            {
+                for (int w = 0; w < 4; w++)
+                {
+                    wheelx[w] += joltCollisionValue.PositionDelta.X;
+                    wheely[w] += joltCollisionValue.PositionDelta.Y;
+                    wheelz[w] += joltCollisionValue.PositionDelta.Z;
+                }
+                    
+                // z rebound CHK5
+                var reboundVelocityDelta = joltCollisionValue.ImpactComponent * (-GetReboundMul(wasMtouch));
+                const int damage = 1;
+                Regz(k, reboundVelocityDelta.Length() * damage, conto, random);
+                Scx[k] += reboundVelocityDelta.X;
+                Scy[k] += reboundVelocityDelta.Y;
+                Scz[k] += reboundVelocityDelta.Z;
+            }
 
             if (!isWheelTouchingPiece[k])
             {
-                var joltCollision = JoltPhysics.ResolveCollision(stage, position, velocity);
-                if (joltCollision is { } joltCollisionValue)
-                {
-                    for (int w = 0; w < 4; w++)
-                    {
-                        wheelx[w] += joltCollisionValue.PositionDelta.X;
-                        wheely[w] += joltCollisionValue.PositionDelta.Y;
-                        wheelz[w] += joltCollisionValue.PositionDelta.Z;
-                    }
-                    
-                    // z rebound CHK5
-                    var reboundVelocityDelta = joltCollisionValue.ImpactComponent * (-GetReboundMul(wasMtouch));
-                    const int damage = 1;
-                    Regz(k, reboundVelocityDelta.Length() * damage, conto, random);
-                    Scx[k] += reboundVelocityDelta.X;
-                    Scy[k] += reboundVelocityDelta.Y;
-                    Scz[k] += reboundVelocityDelta.Z;
-
-                    isWheelTouchingPiece[k] = true;
-                    continue;
-                }
-                
                 foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
                     if (collidable.BoxRoad is {} boxRoad)
