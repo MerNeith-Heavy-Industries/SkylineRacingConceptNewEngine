@@ -31,3 +31,6 @@
 [submodule "nfm-world/data"]
 	path = nfm-world/data
 	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineData
+[submodule "JoltPhysicsSharp"]
+	path = JoltPhysicsSharp
+	url = https://github.com/uwx/JoltPhysicsSharp

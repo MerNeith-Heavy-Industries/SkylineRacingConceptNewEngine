@@ -1,4 +1,5 @@
-﻿using NFMWorldLibrary.Collision;
+﻿using JoltPhysicsSharp;
+using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary;
@@ -12,4 +13,5 @@ public interface IStage
     IReadOnlyList<IAiNode> fixHoops { get; }
     ushort nlaps { get; }
     ITransform CreateObject(string objectName, int x, int y, int z, int xz);
+    PhysicsSystem PhysicsSystem { get; }
 }

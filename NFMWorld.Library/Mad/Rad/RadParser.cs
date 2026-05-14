@@ -189,7 +189,6 @@ public class RadParser
         else if (line.StartsWith("name(")) _stats = _stats with { Name = BracketParser.GetString(line) };
         else if (line.StartsWith("enginsignature(")) _stats = _stats with { Enginsignature = BracketParser.GetNumber<sbyte>(line) };
 
-
         else if (line.StartsWith("w("))
         {
             var (cx, (cy, (cz, (rotates, (width, (height, _)))))) = BracketParser.GetNumbers(line, stackalloc int[6]);
@@ -351,7 +350,7 @@ public class RadParser
             _currentPolys = _mainCarPolys;
         }
 
-        if (line.StartsWith("<p>"))
+        if (line.StartsWith("<p>") || line.StartsWith("[p]"))
         {
             _currentPolys.Add(new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []));
             _noOutline = false;
@@ -403,7 +402,7 @@ public class RadParser
             
             else if (line.StartsWith("noOutline")) _noOutline = true;
 
-            else if (line.StartsWith("</p>"))
+            else if (line.StartsWith("</p>") || line.StartsWith("[/p]"))
             {
                 poly = poly with { Points = _points.ToArray() };
                 _points.Clear();
