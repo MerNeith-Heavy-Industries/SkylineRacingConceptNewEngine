@@ -16,7 +16,7 @@ name(Dances with Monsters)
 
 nlaps(3)
 
-set(user/canyonturn,0,0,0)
+//set(user/canyonturn,0,0,0)
 set(user/lasagna,0,1500,0)
 set(47,0,0,0)p
 set(10,0,5600,0)p
