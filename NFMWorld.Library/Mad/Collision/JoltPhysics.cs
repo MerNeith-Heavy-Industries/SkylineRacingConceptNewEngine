@@ -20,6 +20,7 @@ public static class JoltPhysics
     private static readonly List<CollideShapeResult> results = [];
     public static JoltCollision? ResolveCollision(IStage stage, f64Vector3 position, f64Vector3 velocity)
     {
+        
         var physicsSystem = stage.PhysicsSystem;
         using var sphereShape = new SphereShape(75f);
         var collideShapeSettings = new CollideShapeSettings()
@@ -98,4 +99,58 @@ public static class JoltPhysics
     /// <param name="IsGround">True if the average collision surface is ground-like (within ~60° of horizontal).</param>
     /// <param name="Groundness">How ground-like the surface is: 1.0 = flat ground, 0.0 = vertical wall, -1.0 = ceiling.</param>
     public readonly record struct JoltCollision(f64Vector3 PositionDelta, f64Vector3 ImpactComponent, bool IsGround, float Groundness);
+
+    /// <summary>
+    /// Casts a ray downward (+Y in Y-down space) from the given position to find the ground/ramp surface.
+    /// Returns the Y position of the surface hit and the surface normal, or null if no ground found.
+    /// </summary>
+    public static JoltGroundHit? RaycastGround(IStage stage, f64Vector3 position, float maxDistance = 500f)
+    {
+        var physicsSystem = stage.PhysicsSystem;
+
+        // Start the ray above the wheel position to avoid starting inside a mesh surface.
+        // In Y-down, "above" is -Y.
+        const float upwardOffset = 100f;
+        var origin = new System.Numerics.Vector3((float)position.X, (float)position.Y - upwardOffset, (float)position.Z);
+        // Cast downward (+Y in Y-down coordinate system) for the full range
+        var direction = new System.Numerics.Vector3(0, upwardOffset + maxDistance, 0);
+
+        var ray = new Ray(origin, direction);
+
+        if (!physicsSystem.NarrowPhaseQuery.CastRay(ray, out var hit))
+            return null;
+
+        // hit.Fraction is 0..1 along the ray direction
+        var hitPoint = origin + direction * hit.Fraction;
+        
+        Logging.Info($"RaycastGround: origin.Y={origin.Y}, dir.Y={direction.Y}, fraction={hit.Fraction}, hitPoint.Y={hitPoint.Y}, posY={(float)position.Y}");
+
+        // Get the surface normal via body lock
+        var bodyLockInterface = physicsSystem.BodyLockInterfaceNoLock;
+        bodyLockInterface.LockRead(hit.BodyID, out var bodyLock);
+        if (!bodyLock.Succeeded)
+            return null;
+
+        var body = bodyLock.Body!;
+        body.GetWorldSpaceSurfaceNormal(new SubShapeID(hit.subShapeID2), hitPoint, out var hitNormal);
+        bodyLockInterface.UnlockRead(bodyLock);
+
+        var normal = new Vector3(hitNormal.X, hitNormal.Y, hitNormal.Z);
+
+        // groundness: dot with -Y (up direction in Y-down space)
+        var groundness = -normal.Y;
+
+        return new JoltGroundHit(
+            SurfaceY: (fix64)hitPoint.Y,
+            Normal: new f64Vector3((fix64)normal.X, (fix64)normal.Y, (fix64)normal.Z),
+            Groundness: groundness,
+            IsGround: groundness > 0.3f
+        );
+    }
+
+    /// <param name="SurfaceY">The Y position of the ground/ramp surface hit.</param>
+    /// <param name="Normal">The surface normal at the hit point.</param>
+    /// <param name="Groundness">How ground-like the surface is: 1.0 = flat ground, 0.0 = vertical wall.</param>
+    /// <param name="IsGround">True if the surface is ground-like (within ~60° of horizontal).</param>
+    public readonly record struct JoltGroundHit(fix64 SurfaceY, f64Vector3 Normal, float Groundness, bool IsGround);
 }
