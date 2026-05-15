@@ -2198,11 +2198,18 @@ public class Mad
             
             if (!isWheelTouchingPiece[k])
             {
+                // --- Ground/ramp snap (raycast) + Wall push (CollideShape) run independently ---
+                var joltGrounded = false;
+
+                // 1. Ground/ramp: raycast downward to find surface, snap wheel Y
                 var groundHit = JoltPhysics.RaycastGround(stage, position);
-                if (groundHit is { IsGround: true } ground)
+                if (groundHit is { IsGround: true } ground
+                    && ground.SurfaceY >= position.Y
+                    && ground.SurfaceY - position.Y < (fix64)100)
                 {
                     wheely[k] = ground.SurfaceY + wheelGround;
-                    
+                    joltGrounded = true;
+
                     touching |= 1 << k;
                     ++nGroundedWheels;
                     Wtouch = true;
@@ -2220,41 +2227,36 @@ public class Mad
                         conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k],
                             dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
                     }
+                }
 
-                    if (BadLanding /*&& collidable.Box.Skid is 0 or 1*/) // TODO road/offroad setting!
+                // 2. Wall collision: CollideShape for horizontal push-back
+                //    Use post-snap position so the sphere isn't embedded in the ground
+                var wallPosition = joltGrounded
+                    ? new f64Vector3(wheelx[k], wheely[k] - wheelGround, wheelz[k])
+                    : position;
+                var joltCollision = JoltPhysics.ResolveCollision(stage, wallPosition, velocity);
+                if (joltCollision is { } joltCollisionValue)
+                {
+                    for (int w = 0; w < 4; w++)
                     {
-                        conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1,
-                            (int)wheelGround);
-                        //if (Im == /*this.xt.im*/ 0)
-                        SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                        wheelx[w] += joltCollisionValue.PositionDelta.X;
+                        wheely[w] += joltCollisionValue.PositionDelta.Y;
+                        wheelz[w] += joltCollisionValue.PositionDelta.Z;
                     }
 
-                    isWheelTouchingPiece[k] = true;
-                    continue;
-                }
-                else
-                {
-                    var joltCollision = JoltPhysics.ResolveCollision(stage, position, velocity);
-                    if (joltCollision is { } joltCollisionValue)
+                    const int additionalReboundForJolt = 1; // TODO rebound setting!
+
+                    // z rebound CHK5
+                    var reboundVelocityDelta = joltCollisionValue.ImpactComponent * (-GetReboundMul(wasMtouch)) *
+                                               additionalReboundForJolt;
+                    const int damage = 1; // TODO damage setting!
+                    Regz(k, reboundVelocityDelta.Length() * damage, conto, random);
+                    Scx[k] += reboundVelocityDelta.X;
+                    Scy[k] += reboundVelocityDelta.Y;
+                    Scz[k] += reboundVelocityDelta.Z;
+
+                    if (!joltGrounded)
                     {
-                        for (int w = 0; w < 4; w++)
-                        {
-                            wheelx[w] += joltCollisionValue.PositionDelta.X;
-                            wheely[w] += joltCollisionValue.PositionDelta.Y;
-                            wheelz[w] += joltCollisionValue.PositionDelta.Z;
-                        }
-
-                        const int additionalReboundForJolt = 1; // TODO rebound setting!
-
-                        // z rebound CHK5
-                        var reboundVelocityDelta = joltCollisionValue.ImpactComponent * (-GetReboundMul(wasMtouch)) *
-                                                   additionalReboundForJolt;
-                        const int damage = 1; // TODO damage setting!
-                        Regz(k, reboundVelocityDelta.Length() * damage, conto, random);
-                        Scx[k] += reboundVelocityDelta.X;
-                        Scy[k] += reboundVelocityDelta.Y;
-                        Scz[k] += reboundVelocityDelta.Z;
-
                         // prevent the car getting shot into the ground for 1 frame
                         for (var w = 0; w < 4; w++)
                         {
@@ -2264,24 +2266,22 @@ public class Mad
                                 isWheelGrounded[w] = true;
                             }
                         }
-
-                        // sparks and scrapes
-                        // if (collidable.Box.Skid != 2) // TODO road/offroad setting!
-                        _crank[0, k]++;
-                        // if (collidable.Box.Skid == 5 && random.NextF64() > (fix64)0.5f)
-                        //     _crank[0, k]++;
-                        if (_crank[0, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
-                                (int)wheelGround);
-                            //if (Im == /*this.xt.im*/ 0)
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        isWheelTouchingPiece[k] = true;
-                        continue;
                     }
+
+                    // sparks and scrapes
+                    _crank[0, k]++;
+                    if (_crank[0, k] > 1)
+                    {
+                        conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
+                            (int)wheelGround);
+                        SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                    }
+
+                    isWheelTouchingPiece[k] = true;
                 }
+
+                if (joltGrounded) isWheelTouchingPiece[k] = true;
+                if (isWheelTouchingPiece[k]) continue;
 
                 foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
