@@ -19,6 +19,55 @@ public class CollisionBoxRef : IQuadObject
     public readonly BoxWall? BoxWall;
     public readonly BoxRamp? BoxRamp;
 
+    public readonly SrcRad3dCollisionMesh? CollisionMesh = null;
+    public readonly f64Vector3[]? CollisionHull = null;
+
+    public CollisionBoxRef(
+        fix64 gameObjectX,
+        fix64 gameObjectY,
+        fix64 gameObjectZ,
+        fix64 gameObjectRotXz,
+        SrcRad3dCollisionMesh colMesh,
+        fix64 radius,
+        int index)
+    {
+        Index = index;
+        GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
+        GameObjectXz = gameObjectRotXz;
+
+        CollisionMesh = colMesh;
+        
+        _bounds = new f64Bounds(
+            gameObjectX - radius,
+            gameObjectZ - radius,
+            radius * 2,
+            radius * 2
+        );
+    }
+
+    public CollisionBoxRef(
+        fix64 gameObjectX,
+        fix64 gameObjectY,
+        fix64 gameObjectZ,
+        fix64 gameObjectRotXz,
+        f64Vector3[]? colHull,
+        fix64 radius,
+        int index)
+    {
+        Index = index;
+        GameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
+        GameObjectXz = gameObjectRotXz;
+
+        CollisionHull = colHull;
+        
+        _bounds = new f64Bounds(
+            gameObjectX - radius,
+            gameObjectZ - radius,
+            radius * 2,
+            radius * 2
+        );
+    }
+
     public CollisionBoxRef(
         fix64 gameObjectX,
         fix64 gameObjectY,
@@ -33,7 +82,7 @@ public class CollisionBoxRef : IQuadObject
         GameObjectXz = gameObjectRotXz;
 
         Box = box;
-            
+
         var rad = box.Radius;
         var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);
         var trackersPosition = box.Translation;

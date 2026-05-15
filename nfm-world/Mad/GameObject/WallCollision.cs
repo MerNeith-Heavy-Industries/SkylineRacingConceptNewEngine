@@ -25,4 +25,8 @@ public class WallCollision : GameObject, ICollidable
     public Rad3dBoxDef[] Boxes { get; }
 
     public int MaxRadius { get; }
+    
+    public SrcRad3dCollisionMesh? CollisionMesh => null;
+    
+    public f64Vector3[]? CollisionHull => null;
 }

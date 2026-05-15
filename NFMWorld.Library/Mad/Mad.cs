@@ -2198,86 +2198,92 @@ public class Mad
             
             if (!isWheelTouchingPiece[k])
             {
-                // --- Unified collision: single CollideShape classifies ground vs wall via surface normals ---
-                var joltResult = JoltPhysics.ResolveCollision(stage, position, velocity);
-                if (joltResult is { } jr)
+                foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
-                    // Ground/ramp: snap wheel Y to the surface contact point
-                    if (jr.HasGround)
+                    if (collidable.CollisionMesh is { } collisionMesh)
                     {
-                        wheely[k] = jr.GroundSurfaceY + wheelGround;
-
-                        touching |= 1 << k;
-                        ++nGroundedWheels;
-                        Wtouch = true;
-                        Gtouch = true;
-
-                        if (!wasMtouch && Scy[k] != 7 /* * checkpoints.gravity */ * _tickRate)
+                        for (var i = 0; i < collisionMesh.Indices.Length; i += 3)
                         {
-                            fix64 dustMag = Scy[k] / (fix64)(333.33F);
-                            if (dustMag > (fix64)(0.3F))
-                                dustMag = (fix64)(0.3F);
-                            if (surfaceType == 0)
-                                dustMag += (fix64)1.1f;
-                            else
-                                dustMag += (fix64)1.2f;
-                            conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k],
-                                dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
-                        }
+                            // Transform vertices from object-local to world space
+                            var p0 = collisionMesh.Vertices[collisionMesh.Indices[i]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
+                            var p1 = collisionMesh.Vertices[collisionMesh.Indices[i + 1]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
+                            var p2 = collisionMesh.Vertices[collisionMesh.Indices[i + 2]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
 
-                        isWheelTouchingPiece[k] = true;
-                    }
-
-                    // Wall: horizontal push-back applied to all wheels
-                    if (jr.HasWall)
-                    {
-                        for (int w = 0; w < 4; w++)
-                        {
-                            wheelx[w] += jr.WallDelta.X;
-                            wheelz[w] += jr.WallDelta.Z;
-                        }
-
-                        const int additionalReboundForJolt = 1; // TODO rebound setting!
-
-                        // velocity rebound
-                        var reboundVelocityDelta = jr.WallImpact * (-GetReboundMul(wasMtouch)) *
-                                                   additionalReboundForJolt;
-                        const int damage = 1; // TODO damage setting!
-                        Regz(k, reboundVelocityDelta.Length() * damage, conto, random);
-                        Scx[k] += reboundVelocityDelta.X;
-                        Scz[k] += reboundVelocityDelta.Z;
-
-                        if (!jr.HasGround)
-                        {
-                            // prevent the car getting shot into the ground for 1 frame
-                            for (var w = 0; w < 4; w++)
+                            var edge1 = p1 - p0;
+                            var edge2 = p2 - p0;
+                            var normal = f64Vector3.Cross(edge1, edge2);
+                            var lengthSq = f64Vector3.Dot(normal, normal);
+                            if (lengthSq < (fix64)1e-6) continue; // degenerate triangle
+                            var length = fix64.Sqrt(lengthSq);
+                            var groundness = (float)(-normal.Y / length);
+                            var toPoint = position - p0;
+                            var triangleData = new TriangleMesh.TriangleData(edge1, edge2, normal, lengthSq, length, groundness, toPoint);
+                            
+                            // Ground/ramp triangle: snap wheel Y to surface
+                            if (triangleData.IsGround)
                             {
-                                if (wheely[w] > (groundY - (fix64)5))
+                                if (TriangleMesh.ResolveGround(p0, p1, p2, position, triangleData) is { } groundHit)
                                 {
-                                    wheely[w] = groundY;
-                                    isWheelGrounded[w] = true;
+                                    touching |= 1 << k;
+                                    ++nGroundedWheels;
+                                    Wtouch = true;
+                                    Gtouch = true;
+
+                                    if (!wasMtouch && Scy[k] != 7 /* * checkpoints.gravity */ * _tickRate)
+                                    {
+                                        fix64 dustMag = Scy[k] / (fix64)(333.33F);
+                                        if (dustMag > (fix64)(0.3F))
+                                            dustMag = (fix64)(0.3F);
+                                        if (surfaceType == 0)
+                                            dustMag += (fix64)1.1f;
+                                        else
+                                            dustMag += (fix64)1.2f;
+                                        conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k],
+                                            dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
+                                    }
+
+                                    wheely[k] = groundHit.newY + wheelGround;
+                                    bounceRebound(k, conto, random);
+                                    isWheelTouchingPiece[k] = true;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                // Wall triangle: horizontal push-back
+                                if (TriangleMesh.ResolveWall(p0, p1, p2, position, velocity, triangleData) is { } wallHit)
+                                {
+                                    for (int w = 0; w < 4; w++)
+                                    {
+                                        wheelx[w] += wallHit.positionDelta.X;
+                                        wheelz[w] += wallHit.positionDelta.Z;
+                                    }
+
+                                    _crank[0, k]++;
+                                    if (_crank[0, k] > 1)
+                                    {
+                                        conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
+                                            (int)wheelGround);
+                                        SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                    }
+
+                                    var reboundVelocityDelta = wallHit.impactComponent * (-GetReboundMul(wasMtouch));
+                                    Regz(k, reboundVelocityDelta.Length() * 1, conto, random);
+                                    Scx[k] += reboundVelocityDelta.X;
+                                    Scz[k] += reboundVelocityDelta.Z;
+
+                                    hitVertical = true;
+                                    isWheelTouchingPiece[k] = true;
+                                    break;
                                 }
                             }
                         }
-
-                        // sparks and scrapes
-                        _crank[0, k]++;
-                        if (_crank[0, k] > 1)
-                        {
-                            conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
-                                (int)wheelGround);
-                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
-                        }
-
-                        isWheelTouchingPiece[k] = true;
                     }
-                }
-
-                if (isWheelTouchingPiece[k]) continue;
-
-                foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
-                {
-                    if (collidable.BoxRoad is {} boxRoad)
+                    else if (collidable.CollisionHull is { } collisionHull)
+                    {
+                        // TODO later
+                    }
+                    else if (collidable.BoxRoad is {} boxRoad)
                     {
                         if (boxRoad.ResolveCollision(position) is { } collision)
                         {
