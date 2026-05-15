@@ -1,9 +1,12 @@
-﻿using NFMWorldLibrary.Rad;
+﻿using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Rad;
 
 namespace NFMWorldLibrary;
 
 public interface ICollidable : ITransform
 {
-    public Rad3dBoxDef[] Boxes { get; }
-    public int MaxRadius { get; }
+    Rad3dBoxDef[] Boxes { get; }
+    int MaxRadius { get; }
+    SrcRad3dCollisionMesh? CollisionMesh { get; }
+    f64Vector3[]? CollisionHull { get; }
 }

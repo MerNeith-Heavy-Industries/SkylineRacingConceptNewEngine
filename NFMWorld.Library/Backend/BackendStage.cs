@@ -38,38 +38,11 @@ public class BackendStage : IStage
 
     public readonly StageLoader stageLoader;
 
-    public PhysicsSystem PhysicsSystem { get; }
-
     protected BackendStage()
     {
         // Creates an empty stage for inheritance
         Path = "~empty~";
-        
-        var settings = new PhysicsSystemSettings();
-        
-        // We use only 2 layers: one for non-moving objects and one for moving objects
-        ObjectLayerPairFilterTable objectLayerPairFilter = new(2);
-        objectLayerPairFilter.EnableCollision(JoltPhysics.Layers.NonMoving, JoltPhysics.Layers.Moving);
-        objectLayerPairFilter.EnableCollision(JoltPhysics.Layers.Moving, JoltPhysics.Layers.Moving);
-
-        // We use a 1-to-1 mapping between object layers and broadphase layers
-        BroadPhaseLayerInterfaceTable broadPhaseLayerInterface = new(2, 2);
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer(JoltPhysics.Layers.NonMoving, JoltPhysics.BroadPhaseLayers.NonMoving);
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer(JoltPhysics.Layers.Moving, JoltPhysics.BroadPhaseLayers.Moving);
-
-        ObjectVsBroadPhaseLayerFilterTable objectVsBroadPhaseLayerFilter = new(broadPhaseLayerInterface, 2, objectLayerPairFilter, 2);
-
-        settings.ObjectLayerPairFilter = objectLayerPairFilter;
-        settings.BroadPhaseLayerInterface = broadPhaseLayerInterface;
-        settings.ObjectVsBroadPhaseLayerFilter = objectVsBroadPhaseLayerFilter;
-        
-        PhysicsSystem = new PhysicsSystem(settings);
         stageLoader = new StageLoader();
-    }
-
-    ~BackendStage()
-    {
-        PhysicsSystem.Dispose();
     }
 
     public BackendStage(string stageName, StageLoader stageLoader) : this()
@@ -101,7 +74,6 @@ public class BackendStage : IStage
         try
         {
             stageLoader = new StageLoader(stageName);
-
             LoadStageInternal(stageLoader);
         }
         catch (StageLoadException exception)
@@ -195,124 +167,6 @@ public class BackendStage : IStage
         }
 
         SetBounds(stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb);
-
-        InstallPhysics();
-    }
-
-    private void InstallPhysics()
-    {
-        const float floorHalfExtent = 500;
-        var floorShape = new BoxShapeSettings(
-            new System.Numerics.Vector3(Ncx, floorHalfExtent, Ncz)
-        ).Create();
-        
-        var floorBcs = new BodyCreationSettings(
-            floorShape,
-            new System.Numerics.Vector3(Sx + Ncx / 2f, World.Ground + floorHalfExtent, Sz + Ncz / 2f), // extra wiggle room because wheel colliders are circular
-            System.Numerics.Quaternion.Identity,
-            MotionType.Static,
-            JoltPhysics.Layers.NonMoving
-        );
-
-        PhysicsSystem.BodyInterface.CreateAndAddBody(floorBcs, Activation.Activate);
-
-        var meshShapes = new Dictionary<SrcRad3dCollisionMesh, Shape>();
-        var hullShapes = new Dictionary<Vector3[], Shape>();
-
-        var verts = ArrayPool<System.Numerics.Vector3>.Shared.Rent(65536);
-        var tris = ArrayPool<IndexedTriangle>.Shared.Rent(65536);
-        try
-        {
-            foreach (var transform in pieces)
-            {
-                if (transform is StageObject obj)
-                {
-                    if (obj.CollisionMesh is { } mesh)
-                    {
-                        if (!meshShapes.TryGetValue(mesh, out var shape))
-                        {
-                            for (var i = 0; i < mesh.Vertices.Length; i++)
-                            {
-                                verts[i] = new System.Numerics.Vector3(
-                                    mesh.Vertices[i].X,
-                                    mesh.Vertices[i].Y,
-                                    mesh.Vertices[i].Z
-                                );
-                            }
-
-                            for (var i = 0; i < mesh.Indices.Length; i += 3)
-                            {
-                                tris[i / 3] = new IndexedTriangle(
-                                    mesh.Indices[i],
-                                    mesh.Indices[i + 1],
-                                    mesh.Indices[i + 2]
-                                );
-                            }
-
-                            meshShapes[mesh] = shape = new MeshShapeSettings(
-                                verts.AsSpan(0, mesh.Vertices.Length),
-                                tris.AsSpan(0, mesh.Indices.Length / 3)
-                            ).Create();
-                        }
-                        
-                        var bodySettings = new BodyCreationSettings(
-                            shape,
-                            new System.Numerics.Vector3((float)transform.Position.X, (float)transform.Position.Y, (float)transform.Position.Z),
-                            System.Numerics.Quaternion.CreateFromYawPitchRoll(
-                                (float)transform.Rotation.Yaw.Radians,
-                                (float)transform.Rotation.Pitch.Radians,
-                                (float)transform.Rotation.Roll.Radians
-                            ),
-                            MotionType.Static,
-                            JoltPhysics.Layers.NonMoving
-                        );
-                        
-                        PhysicsSystem.BodyInterface.CreateAndAddBody(bodySettings, Activation.Activate);
-                    }
-
-                    if (obj.CollisionHull is { } hull)
-                    {
-                        if (!hullShapes.TryGetValue(hull, out var shape))
-                        {
-                            for (var i = 0; i < hull.Length; i++)
-                            {
-                                verts[i] = new System.Numerics.Vector3(
-                                    hull[i].X,
-                                    hull[i].Y,
-                                    hull[i].Z
-                                );
-                            }
-                            
-                            hullShapes[hull] = shape = new MeshShapeSettings(
-                                verts.AsSpan(0, hull.Length),
-                                tris.AsSpan(0, hull.Length / 3)
-                            ).Create();
-                        }
-                        
-                        var bodySettings = new BodyCreationSettings(
-                            shape,
-                            new System.Numerics.Vector3((float)transform.Position.X, (float)transform.Position.Y, (float)transform.Position.Z),
-                            System.Numerics.Quaternion.CreateFromYawPitchRoll(
-                                (float)transform.Rotation.Yaw.Radians,
-                                (float)transform.Rotation.Pitch.Radians,
-                                (float)transform.Rotation.Roll.Radians
-                            ),
-                            MotionType.Static,
-                            JoltPhysics.Layers.NonMoving
-                        );
-
-                        PhysicsSystem.BodyInterface.CreateAndAddBody(bodySettings, Activation.Activate);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            ArrayPool<System.Numerics.Vector3>.Shared.Return(verts);
-            ArrayPool<IndexedTriangle>.Shared.Return(tris);
-        }
-
-        PhysicsSystem.OptimizeBroadPhase();
     }
 
     private void SetBounds(int sx, int ncx, int sz, int ncz)
@@ -403,6 +257,34 @@ public class BackendStage : IStage
                 index: _quadTreeInsertionIndex++
             ));
         }
+
+        if (mesh.CollisionMesh is { } colMesh)
+        {
+            var maxR = mesh.MaxRadius;
+            CollisionQuadTree.Insert(new CollisionBoxRef(
+                gameObjectX: x,
+                gameObjectY: y,
+                gameObjectZ: z,
+                gameObjectRotXz: xz,
+                colMesh: colMesh,
+                maxR,
+                index: _quadTreeInsertionIndex++
+            ));
+        }
+
+        if (mesh.CollisionHull is { } colHull)
+        {
+            var maxR = mesh.MaxRadius;
+            CollisionQuadTree.Insert(new CollisionBoxRef(
+                gameObjectX: x,
+                gameObjectY: y,
+                gameObjectZ: z,
+                gameObjectRotXz: xz,
+                colHull: colHull,
+                maxR,
+                index: _quadTreeInsertionIndex++
+            ));
+        }
     }
     
     private List<CollisionBoxRef> _tempTrackers = new();
@@ -425,7 +307,9 @@ public class WallCollision : ITransform, ICollidable
     public ITransform? Parent => null;
     public Rad3dBoxDef[] Boxes { get; }
     public int MaxRadius { get; }
-    
+    public SrcRad3dCollisionMesh? CollisionMesh => null;
+    public f64Vector3[]? CollisionHull => null;
+
     public WallCollision(Rad3dBoxDef[] boxes)
     {
         Boxes = boxes;
@@ -457,7 +341,7 @@ public class StageObject(Rad3d rad) : ITransform, IAiNode, ICollidable
     public string FileName => Rad.FileName;
 
     public SrcRad3dCollisionMesh? CollisionMesh { get; set; } = rad.CollisionMesh;
-    public Vector3[]? CollisionHull { get; set; } = rad.CollisionHull;
+    public f64Vector3[]? CollisionHull { get; set; } = rad.CollisionHull;
 
     public StageObject(Rad3d rad, f64Vector3 position, f64Euler rotation) : this(rad)
     {

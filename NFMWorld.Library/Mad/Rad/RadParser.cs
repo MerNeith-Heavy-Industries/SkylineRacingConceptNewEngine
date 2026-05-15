@@ -25,10 +25,10 @@ public class RadParser
 
     private List<Rad3dPoly> _currentPolys;
     
-    private List<Vector3> _meshCollisionVerts = new();
+    private List<f64Vector3> _meshCollisionVerts = new();
     private List<ushort> _meshCollisionIndices = new();
     
-    private List<Vector3> _hullVerts = new();
+    private List<f64Vector3> _hullVerts = new();
     
     private RadParser()
     {
@@ -242,7 +242,7 @@ public class RadParser
         // SRC extension
         else if (line.StartsWith("mv("))
         {
-            var vec = Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc float[3]));
+            var vec = f64Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc fix64[3]));
             _meshCollisionVerts.Add(vec);
         }
         
@@ -259,7 +259,7 @@ public class RadParser
         // SRC extension
         else if (line.StartsWith("hullv("))
         {
-            var vec = Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc float[3]));
+            var vec = f64Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc fix64[3]));
             _hullVerts.Add(vec);
         }
         

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using MessagePack;
+using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;
 
@@ -16,7 +17,7 @@ public sealed record Rad3d(
     [property: JsonPropertyName("atp"), Key(7)] Vector2[] Atp,
     [property: JsonPropertyName("fileName"), Key(8)] string FileName = "hogan rewish",
     [property: JsonPropertyName("collisionMesh"), Key(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
-    [property: JsonPropertyName("collisionHull"), Key(10)] Vector3[]? CollisionHull = null
+    [property: JsonPropertyName("collisionHull"), Key(10)] f64Vector3[]? CollisionHull = null
 )
 {
     [IgnoreMember] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
