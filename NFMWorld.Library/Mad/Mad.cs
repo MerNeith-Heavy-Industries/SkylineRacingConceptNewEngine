@@ -2198,6 +2198,7 @@ public class Mad
             
             if (!isWheelTouchingPiece[k])
             {
+                Logging.Info("start wheel");
                 foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
                     if (collidable.CollisionMesh is { } collisionMesh)
@@ -2212,12 +2213,29 @@ public class Mad
                             var edge1 = p1 - p0;
                             var edge2 = p2 - p0;
                             var normal = f64Vector3.Cross(edge1, edge2);
-                            var lengthSq = f64Vector3.Dot(normal, normal);
-                            if (lengthSq < (fix64)1e-6) continue; // degenerate triangle
-                            var length = fix64.Sqrt(lengthSq);
-                            var groundness = (float)(-normal.Y / length);
+                            // Compute length via float to avoid fix64 overflow on large triangles
+                            var nf = new System.Numerics.Vector3((float)normal.X, (float)normal.Y, (float)normal.Z);
+                            var floatLength = nf.Length();
+                            if (floatLength < 1e-3f) continue; // degenerate triangle
+                            var normalizedNormal = new f64Vector3((fix64)(nf.X / floatLength), (fix64)(nf.Y / floatLength), (fix64)(nf.Z / floatLength));
+                            var groundness = -nf.Y / floatLength;
                             var toPoint = position - p0;
-                            var triangleData = new TriangleMesh.TriangleData(edge1, edge2, normal, lengthSq, length, groundness, toPoint);
+                            var triangleData = new TriangleMesh.TriangleData(edge1, edge2, normalizedNormal, groundness, toPoint);
+
+                            if (k == 0)
+                            {
+                                // Find closest triangle center to wheel in XZ
+                                var center = (p0 + p1 + p2) / (fix64)3;
+                                var dxz = fix64.Sqrt((center.X - position.X) * (center.X - position.X) + (center.Z - position.Z) * (center.Z - position.Z));
+                                if ((float)dxz < 500 && groundness > 0.3f)
+                                {
+                                    var inTri = TriangleMesh.DebugPointInTriangle(edge1, edge2, toPoint);
+                                    var surfaceY = fix64.Abs(normalizedNormal.Y) > (fix64)1e-6
+                                        ? p0.Y - (normalizedNormal.X * (position.X - p0.X) + normalizedNormal.Z * (position.Z - p0.Z)) / normalizedNormal.Y
+                                        : (fix64)999;
+                                    Logging.Info($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) p1=({(float)p1.X:F0},{(float)p1.Y:F0},{(float)p1.Z:F0}) p2=({(float)p2.X:F0},{(float)p2.Y:F0},{(float)p2.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} wheelY={(float)position.Y:F0} wheel=({(float)position.X:F0},{(float)position.Z:F0})");
+                                }
+                            }
                             
                             // Ground/ramp triangle: snap wheel Y to surface
                             if (triangleData.IsGround)

@@ -10,7 +10,7 @@ public static class TriangleMesh
     private const float GroundThreshold = 0.3f; // ~73° from horizontal
 
     // Tolerance for barycentric point-in-triangle test (prevents falling through edge seams)
-    private static readonly fix64 EdgeTolerance = (fix64)(-0.02f);
+    private const float EdgeTolerance = -0.02f;
 
     // Max distance above a ground triangle to snap (prevents snapping to far-away surfaces)
     private static readonly fix64 MaxGroundSnapDistance = (fix64)100;
@@ -19,17 +19,14 @@ public static class TriangleMesh
     private static readonly fix64 MaxWallPenetration = (fix64)200;
 
     public readonly ref struct TriangleData(
-        in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 normal,
-        fix64 lengthSq, fix64 length, float groundness, in f64Vector3 toPoint)
+        in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 normalizedNormal,
+        float groundness, in f64Vector3 toPoint)
     {
         public readonly ref f64Vector3 Edge1 = ref Unsafe.AsRef(in edge1);
         public readonly ref f64Vector3 Edge2 = ref Unsafe.AsRef(in edge2);
-        public readonly ref f64Vector3 Normal = ref Unsafe.AsRef(in normal);
-        public readonly fix64 LengthSq = lengthSq;
-        public readonly fix64 Length = length;
+        public readonly ref f64Vector3 NormalizedNormal = ref Unsafe.AsRef(in normalizedNormal);
         public readonly float Groundness = groundness;
         public readonly ref f64Vector3 ToPoint = ref Unsafe.AsRef(in toPoint);
-        public f64Vector3 NormalizedNormal => Normal / Length;
         public bool IsGround => Groundness > GroundThreshold;
     }
 
@@ -52,25 +49,20 @@ public static class TriangleMesh
         in f64Vector3 p0, in f64Vector3 p1, in f64Vector3 p2,
         in f64Vector3 position, in TriangleData tri)
     {
-        // Signed distance from the point to the triangle plane (positive = above in normal direction)
-        var distToPlane = f64Vector3.Dot(tri.Normal, tri.ToPoint) / tri.Length;
+        if (fix64.Abs(tri.NormalizedNormal.Y) < (fix64)1e-6) return null; // nearly vertical triangle
 
-        // In Y-down with upward-facing normals (-Y), the normal points "up" (negative Y).
-        // If the wheel is above the surface, distToPlane is positive (same direction as normal).
-        // If the wheel is below the surface, distToPlane is negative.
-        // We want the wheel to be slightly above or at the surface — NOT way below it.
-        if (distToPlane < (fix64)(-5)) return null; // wheel is way below the surface, skip
-        if (distToPlane > MaxGroundSnapDistance) return null; // too far above, skip
-
-        // Barycentric test (using the method that works for arbitrary 3D triangles)
+        // Barycentric test: is the wheel's XZ within the triangle?
         if (!PointInTriangle(tri.Edge1, tri.Edge2, tri.ToPoint)) return null;
 
-        // Compute the Y at the wheel's XZ position on the triangle plane
-        // Plane equation: normal . (P - p0) = 0
-        // Solve for Y: normal.X*(x-p0.X) + normal.Y*(y-p0.Y) + normal.Z*(z-p0.Z) = 0
-        // y = p0.Y - (normal.X*(x-p0.X) + normal.Z*(z-p0.Z)) / normal.Y
-        if (fix64.Abs(tri.Normal.Y) < (fix64)1e-6) return null; // nearly vertical triangle
-        var surfaceY = p0.Y - (tri.Normal.X * (position.X - p0.X) + tri.Normal.Z * (position.Z - p0.Z)) / tri.Normal.Y;
+        // Compute the Y height on the triangle plane at the wheel's XZ position
+        // Plane equation: n . (P - p0) = 0  =>  y = p0.Y - (n.X*(x-p0.X) + n.Z*(z-p0.Z)) / n.Y
+        var surfaceY = p0.Y - (tri.NormalizedNormal.X * (position.X - p0.X) + tri.NormalizedNormal.Z * (position.Z - p0.Z)) / tri.NormalizedNormal.Y;
+
+        // In Y-down: smaller Y = higher up. The surface should be at or above the wheel.
+        // surfaceY <= position.Y means the surface is at or above the wheel (snap up onto it).
+        // Allow a small tolerance below (wheel slightly above the surface) to maintain contact.
+        if (surfaceY > position.Y + (fix64)5) return null; // surface is below the wheel, skip
+        if (position.Y - surfaceY > MaxGroundSnapDistance) return null; // surface is way too far above, skip
 
         return new GroundCollision(surfaceY);
     }
@@ -83,21 +75,19 @@ public static class TriangleMesh
         in f64Vector3 p0, in f64Vector3 p1, in f64Vector3 p2,
         in f64Vector3 position, in f64Vector3 velocity, in TriangleData tri)
     {
-        var normalizedNormal = tri.NormalizedNormal;
-
         // Signed distance from point to triangle plane
-        var distToPlane = f64Vector3.Dot(normalizedNormal, tri.ToPoint);
+        var distToPlane = f64Vector3.Dot(tri.NormalizedNormal, tri.ToPoint);
 
         // Only collide if the wheel is behind the front face (penetrating)
         if (distToPlane > (fix64)5) return null; // in front of the wall, no collision
         if (distToPlane < -MaxWallPenetration) return null; // too deep, likely on the other side
 
         // Check if moving toward the wall (dot of velocity with normal < 0 means approaching)
-        var approachSpeed = f64Vector3.Dot(velocity, normalizedNormal);
+        var approachSpeed = f64Vector3.Dot(velocity, tri.NormalizedNormal);
         if (approachSpeed > 0 && distToPlane > 0) return null; // moving away and not penetrating
 
         // Project the position onto the plane and test if it's inside the triangle
-        var projectedPoint = position - normalizedNormal * distToPlane;
+        var projectedPoint = position - tri.NormalizedNormal * distToPlane;
         var toProjected = projectedPoint - p0;
         if (!PointInTriangle(tri.Edge1, tri.Edge2, toProjected)) return null;
 
@@ -106,7 +96,7 @@ public static class TriangleMesh
         if (penetration <= 0) return null;
 
         // Push direction: along the triangle's face normal, but zero out Y to prevent climbing
-        var pushDir = new f64Vector3(normalizedNormal.X, fix64.Zero, normalizedNormal.Z);
+        var pushDir = new f64Vector3(tri.NormalizedNormal.X, fix64.Zero, tri.NormalizedNormal.Z);
         var pushDirLenSq = f64Vector3.Dot(pushDir, pushDir);
         if (pushDirLenSq < (fix64)1e-6) return null; // nearly horizontal normal (ceiling), skip
         pushDir = pushDir / fix64.Sqrt(pushDirLenSq); // normalize horizontal component
@@ -120,26 +110,49 @@ public static class TriangleMesh
     }
 
     /// <summary>
-    /// Barycentric point-in-triangle test for a 3D point projected onto the triangle plane.
-    /// Uses the pre-computed edge vectors and the vector from p0 to the test point.
-    /// Includes edge tolerance to prevent gaps at triangle seams.
+    /// Barycentric point-in-triangle test using float to avoid fix64 overflow.
+    /// Edge vectors of ~2000 units produce dot products of ~4M; their products (~16T) overflow fix64.
     /// </summary>
     private static bool PointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
     {
-        // Compute barycentric coordinates using the dot-product method
-        var d11 = f64Vector3.Dot(edge1, edge1);
-        var d12 = f64Vector3.Dot(edge1, edge2);
-        var d22 = f64Vector3.Dot(edge2, edge2);
-        var d1p = f64Vector3.Dot(edge1, toPoint);
-        var d2p = f64Vector3.Dot(edge2, toPoint);
+        float e1x = (float)edge1.X, e1y = (float)edge1.Y, e1z = (float)edge1.Z;
+        float e2x = (float)edge2.X, e2y = (float)edge2.Y, e2z = (float)edge2.Z;
+        float tpx = (float)toPoint.X, tpy = (float)toPoint.Y, tpz = (float)toPoint.Z;
 
-        var denom = d11 * d22 - d12 * d12;
-        if (fix64.Abs(denom) < (fix64)1e-9) return false; // degenerate
+        float d11 = e1x * e1x + e1y * e1y + e1z * e1z;
+        float d12 = e1x * e2x + e1y * e2y + e1z * e2z;
+        float d22 = e2x * e2x + e2y * e2y + e2z * e2z;
+        float d1p = e1x * tpx + e1y * tpy + e1z * tpz;
+        float d2p = e2x * tpx + e2y * tpy + e2z * tpz;
 
-        var u = (d22 * d1p - d12 * d2p) / denom; // barycentric coord for edge1
-        var v = (d11 * d2p - d12 * d1p) / denom; // barycentric coord for edge2
+        float denom = d11 * d22 - d12 * d12;
+        if (MathF.Abs(denom) < 1e-6f) return false; // degenerate
 
-        // Point is inside if u >= 0, v >= 0, u + v <= 1 (with tolerance for edge seams)
-        return u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= (fix64)1 - EdgeTolerance;
+        float u = (d22 * d1p - d12 * d2p) / denom;
+        float v = (d11 * d2p - d12 * d1p) / denom;
+
+        return u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1f - EdgeTolerance;
+    }
+
+    public static string DebugPointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
+    {
+        float e1x = (float)edge1.X, e1y = (float)edge1.Y, e1z = (float)edge1.Z;
+        float e2x = (float)edge2.X, e2y = (float)edge2.Y, e2z = (float)edge2.Z;
+        float tpx = (float)toPoint.X, tpy = (float)toPoint.Y, tpz = (float)toPoint.Z;
+
+        float d11 = e1x * e1x + e1y * e1y + e1z * e1z;
+        float d12 = e1x * e2x + e1y * e2y + e1z * e2z;
+        float d22 = e2x * e2x + e2y * e2y + e2z * e2z;
+        float d1p = e1x * tpx + e1y * tpy + e1z * tpz;
+        float d2p = e2x * tpx + e2y * tpy + e2z * tpz;
+
+        float denom = d11 * d22 - d12 * d12;
+        if (MathF.Abs(denom) < 1e-6f) return "degen";
+
+        float u = (d22 * d1p - d12 * d2p) / denom;
+        float v = (d11 * d2p - d12 * d1p) / denom;
+
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1f - EdgeTolerance;
+        return $"{inside} u={u:F3} v={v:F3}";
     }
 }
