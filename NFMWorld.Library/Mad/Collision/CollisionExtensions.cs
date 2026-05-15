@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using NFMWorldLibrary.FixedMath;
-using nfm_world_library.util;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Collision;
 
