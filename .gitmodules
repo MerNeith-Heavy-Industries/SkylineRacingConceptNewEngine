@@ -34,3 +34,6 @@
 [submodule "JoltPhysicsSharp"]
 	path = JoltPhysicsSharp
 	url = https://github.com/uwx/JoltPhysicsSharp
+[submodule "FixedMathSharp"]
+	path = FixedMathSharp
+	url = https://github.com/uwx/FixedMathSharp
