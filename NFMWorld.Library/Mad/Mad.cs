@@ -2204,12 +2204,16 @@ public class Mad
                 {
                     if (collidable.CollisionMesh is { } collisionMesh)
                     {
+                        // Transform wheel into object-local space (1 transform per mesh, not 3 per triangle)
+                        var localPosition = (position - collidable.GameObjectPosition).RotateXz(-collidable.GameObjectXz);
+                        var localVelocity = velocity.RotateXz(-collidable.GameObjectXz);
+
                         for (var i = 0; i < collisionMesh.Indices.Length; i += 3)
                         {
-                            // Transform vertices from object-local to world space
-                            var p0 = collisionMesh.Vertices[collisionMesh.Indices[i]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
-                            var p1 = collisionMesh.Vertices[collisionMesh.Indices[i + 1]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
-                            var p2 = collisionMesh.Vertices[collisionMesh.Indices[i + 2]].RotateXz(collidable.GameObjectXz) + collidable.GameObjectPosition;
+                            // Vertices are already in object-local space — no transform needed
+                            var p0 = collisionMesh.Vertices[collisionMesh.Indices[i]];
+                            var p1 = collisionMesh.Vertices[collisionMesh.Indices[i + 1]];
+                            var p2 = collisionMesh.Vertices[collisionMesh.Indices[i + 2]];
 
                             var edge1 = p1 - p0;
                             var edge2 = p2 - p0;
@@ -2220,28 +2224,28 @@ public class Mad
                             if (floatLength < 1e-3f) continue; // degenerate triangle
                             var normalizedNormal = new f64Vector3((fix64)(nf.X / floatLength), (fix64)(nf.Y / floatLength), (fix64)(nf.Z / floatLength));
                             var groundness = -nf.Y / floatLength;
-                            var toPoint = position - p0;
+                            var toPoint = localPosition - p0;
                             var triangleData = new TriangleMesh.TriangleData(edge1, edge2, normalizedNormal, groundness, toPoint);
 
                             if (k == 0)
                             {
-                                // Find closest triangle center to wheel in XZ
+                                // Find closest triangle center to wheel in XZ (local space)
                                 var center = (p0 + p1 + p2) / (fix64)3;
-                                var dxz = fix64.Sqrt((center.X - position.X) * (center.X - position.X) + (center.Z - position.Z) * (center.Z - position.Z));
+                                var dxz = fix64.Sqrt((center.X - localPosition.X) * (center.X - localPosition.X) + (center.Z - localPosition.Z) * (center.Z - localPosition.Z));
                                 if ((float)dxz < 500 && groundness > 0.3f)
                                 {
                                     var inTri = TriangleMesh.DebugPointInTriangle(edge1, edge2, toPoint);
                                     var surfaceY = fix64.Abs(normalizedNormal.Y) > (fix64)1e-6
-                                        ? p0.Y - (normalizedNormal.X * (position.X - p0.X) + normalizedNormal.Z * (position.Z - p0.Z)) / normalizedNormal.Y
+                                        ? p0.Y - (normalizedNormal.X * (localPosition.X - p0.X) + normalizedNormal.Z * (localPosition.Z - p0.Z)) / normalizedNormal.Y
                                         : (fix64)999;
-                                    Logging.Info($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) p1=({(float)p1.X:F0},{(float)p1.Y:F0},{(float)p1.Z:F0}) p2=({(float)p2.X:F0},{(float)p2.Y:F0},{(float)p2.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} wheelY={(float)position.Y:F0} wheel=({(float)position.X:F0},{(float)position.Z:F0})");
+                                    Logging.Info($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} localWheel=({(float)localPosition.X:F0},{(float)localPosition.Y:F0},{(float)localPosition.Z:F0})");
                                 }
                             }
                             
-                            // Ground/ramp triangle: snap wheel Y to surface
+                            // Ground/ramp triangle: snap wheel Y to surface (local space, then convert back)
                             if (triangleData.IsGround)
                             {
-                                if (TriangleMesh.ResolveGround(p0, p1, p2, position, triangleData) is { } groundHit)
+                                if (TriangleMesh.ResolveGround(p0, p1, p2, localPosition, triangleData) is { } groundHit)
                                 {
                                     touching |= 1 << k;
                                     ++nGroundedWheels;
@@ -2261,7 +2265,8 @@ public class Mad
                                             dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);
                                     }
 
-                                    wheely[k] = groundHit.newY + wheelGround;
+                                    // newY is in local space; RotateXz doesn't affect Y, so just add object Y
+                                    wheely[k] = groundHit.newY + collidable.GameObjectPosition.Y + wheelGround;
                                     bounceRebound(k, conto, random);
                                     isWheelTouchingPiece[k] = true;
                                     break;
@@ -2269,13 +2274,17 @@ public class Mad
                             }
                             else
                             {
-                                // Wall triangle: horizontal push-back
-                                if (TriangleMesh.ResolveWall(p0, p1, p2, position, velocity, triangleData) is { } wallHit)
+                                // Wall triangle: horizontal push-back (in local space, then rotate back)
+                                if (TriangleMesh.ResolveWall(p0, p1, p2, localPosition, localVelocity, triangleData) is { } wallHit)
                                 {
+                                    // Rotate local-space push/impact back to world space
+                                    var worldDelta = wallHit.positionDelta.RotateXz(collidable.GameObjectXz);
+                                    var worldImpact = wallHit.impactComponent.RotateXz(collidable.GameObjectXz);
+
                                     for (int w = 0; w < 4; w++)
                                     {
-                                        wheelx[w] += wallHit.positionDelta.X;
-                                        wheelz[w] += wallHit.positionDelta.Z;
+                                        wheelx[w] += worldDelta.X;
+                                        wheelz[w] += worldDelta.Z;
                                     }
 
                                     _crank[0, k]++;
@@ -2286,7 +2295,7 @@ public class Mad
                                         SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
                                     }
 
-                                    var reboundVelocityDelta = wallHit.impactComponent * (-GetReboundMul(wasMtouch));
+                                    var reboundVelocityDelta = worldImpact * (-GetReboundMul(wasMtouch));
                                     Regz(k, reboundVelocityDelta.Length() * 1, conto, random);
                                     Scx[k] += reboundVelocityDelta.X;
                                     Scz[k] += reboundVelocityDelta.Z;
