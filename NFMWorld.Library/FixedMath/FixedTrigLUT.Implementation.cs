@@ -12,7 +12,7 @@ public static partial class FixedTrigLUT
             degrees += 360;
         // scale to 0-36000, interpolate with fractional part
         var scaled = degrees * 100;
-        var index = (int)(scaled.m_rawValue >> FixedMath.SHIFT_AMOUNT_I); // integer part
+        var index = (int)(scaled.rawValue >> FixedMath.SHIFT_AMOUNT_I); // integer part
         var frac = scaled - fix64.FromRaw((long)index << FixedMath.SHIFT_AMOUNT_I); // fractional part
         var nextIndex = index + 1;
         if (nextIndex >= 36000)
@@ -36,7 +36,7 @@ public static partial class FixedTrigLUT
             degrees += 360;
         // scale to 0-36000, interpolate with fractional part
         var scaled = degrees * 100;
-        var index = (int)(scaled.m_rawValue >> FixedMath.SHIFT_AMOUNT_I); // integer part
+        var index = (int)(scaled.rawValue >> FixedMath.SHIFT_AMOUNT_I); // integer part
         var frac = scaled - fix64.FromRaw((long)index << FixedMath.SHIFT_AMOUNT_I); // fractional part
         var nextIndex = index + 1;
         if (nextIndex >= 36000)

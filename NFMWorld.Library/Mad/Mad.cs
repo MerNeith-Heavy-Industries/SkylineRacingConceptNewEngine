@@ -126,7 +126,7 @@ public class Mad
 
     public void Colide(ContO conto, Mad othermad, ContO otherconto)
     {
-        var random = new DeterministicRandom((ulong)(conto.X.m_rawValue ^ otherconto.X.m_rawValue ^ conto.Z.m_rawValue ^ otherconto.Z.m_rawValue ^ conto.Y.m_rawValue ^ otherconto.Y.m_rawValue));
+        var random = new DeterministicRandom((ulong)(conto.X.rawValue ^ otherconto.X.rawValue ^ conto.Z.rawValue ^ otherconto.Z.rawValue ^ conto.Y.rawValue ^ otherconto.Y.rawValue));
         
         var wheelx = new InlineArray4<fix64>();
         var wheely = new InlineArray4<fix64>();
@@ -420,7 +420,7 @@ public class Mad
 
     public void Drive(Control control, ContO conto, IStage stage)
     {
-        DeterministicRandom random = new((ulong)(conto.X.m_rawValue ^ conto.Y.m_rawValue ^ conto.Z.m_rawValue));
+        DeterministicRandom random = new((ulong)(conto.X.rawValue ^ conto.Y.rawValue ^ conto.Z.rawValue));
 
         FrameTrace.AddMessage($"xz: {conto.Xz:0.00}, mxz: {Mxz:0.00}, lxz: {_lxz:0.00}, fxz: {_fxz:0.00}, cxz: {Cxz:0.00}");
         FrameTrace.AddMessage($"xy: {conto.Xy:0.00}, pxy: {Pxy:0.00}, zy: {conto.Zy:0.00}, pzy: {Pzy:0.00}");

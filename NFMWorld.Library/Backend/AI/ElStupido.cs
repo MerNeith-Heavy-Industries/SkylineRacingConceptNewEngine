@@ -64,7 +64,7 @@ public class ElStupido(BaseGamemode gamemode, IRaceValues racePhase) : BaseAi
 
         // Initialize random number generator with deterministic seed based on car position
         var conto = new ContO(car);
-        DeterministicRandom random = new((ulong)(conto.X.m_rawValue ^ conto.Y.m_rawValue ^ conto.Z.m_rawValue));
+        DeterministicRandom random = new((ulong)(conto.X.rawValue ^ conto.Y.rawValue ^ conto.Z.rawValue));
         
         // Calculate rubberbanding factor
         // 1.0 = last place, 0.0 = first place
