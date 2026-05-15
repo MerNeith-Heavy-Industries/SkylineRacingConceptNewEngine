@@ -2214,7 +2214,7 @@ public class Mad
                             var edge2 = p2 - p0;
                             var normal = f64Vector3.Cross(edge1, edge2);
                             // Compute length via float to avoid fix64 overflow on large triangles
-                            var nf = new System.Numerics.Vector3((float)normal.X, (float)normal.Y, (float)normal.Z);
+                            var nf = new Vector3((float)normal.X, (float)normal.Y, (float)normal.Z);
                             var floatLength = nf.Length();
                             if (floatLength < 1e-3f) continue; // degenerate triangle
                             var normalizedNormal = new f64Vector3((fix64)(nf.X / floatLength), (fix64)(nf.Y / floatLength), (fix64)(nf.Z / floatLength));

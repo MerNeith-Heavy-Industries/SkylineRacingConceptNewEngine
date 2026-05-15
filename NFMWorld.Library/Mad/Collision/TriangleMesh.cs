@@ -115,15 +115,15 @@ public static class TriangleMesh
     /// </summary>
     private static bool PointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
     {
-        float e1x = (float)edge1.X, e1y = (float)edge1.Y, e1z = (float)edge1.Z;
-        float e2x = (float)edge2.X, e2y = (float)edge2.Y, e2z = (float)edge2.Z;
-        float tpx = (float)toPoint.X, tpy = (float)toPoint.Y, tpz = (float)toPoint.Z;
-
-        float d11 = e1x * e1x + e1y * e1y + e1z * e1z;
-        float d12 = e1x * e2x + e1y * e2y + e1z * e2z;
-        float d22 = e2x * e2x + e2y * e2y + e2z * e2z;
-        float d1p = e1x * tpx + e1y * tpy + e1z * tpz;
-        float d2p = e2x * tpx + e2y * tpy + e2z * tpz;
+        var e1v = new Vector3((float)edge1.X, (float)edge1.Y, (float)edge1.Z);
+        var e2v = new Vector3((float)edge2.X, (float)edge2.Y, (float)edge2.Z);
+        var tpv = new Vector3((float)toPoint.X, (float)toPoint.Y, (float)toPoint.Z);
+        
+        float d11 = Vector3.Dot(e1v, e1v);
+        float d12 = Vector3.Dot(e1v, e2v);
+        float d22 = Vector3.Dot(e2v, e2v);
+        float d1p = Vector3.Dot(e1v, tpv);
+        float d2p = Vector3.Dot(e2v, tpv);
 
         float denom = d11 * d22 - d12 * d12;
         if (MathF.Abs(denom) < 1e-6f) return false; // degenerate
@@ -136,15 +136,15 @@ public static class TriangleMesh
 
     public static string DebugPointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
     {
-        float e1x = (float)edge1.X, e1y = (float)edge1.Y, e1z = (float)edge1.Z;
-        float e2x = (float)edge2.X, e2y = (float)edge2.Y, e2z = (float)edge2.Z;
-        float tpx = (float)toPoint.X, tpy = (float)toPoint.Y, tpz = (float)toPoint.Z;
-
-        float d11 = e1x * e1x + e1y * e1y + e1z * e1z;
-        float d12 = e1x * e2x + e1y * e2y + e1z * e2z;
-        float d22 = e2x * e2x + e2y * e2y + e2z * e2z;
-        float d1p = e1x * tpx + e1y * tpy + e1z * tpz;
-        float d2p = e2x * tpx + e2y * tpy + e2z * tpz;
+        var e1v = new Vector3((float)edge1.X, (float)edge1.Y, (float)edge1.Z);
+        var e2v = new Vector3((float)edge2.X, (float)edge2.Y, (float)edge2.Z);
+        var tpv = new Vector3((float)toPoint.X, (float)toPoint.Y, (float)toPoint.Z);
+        
+        float d11 = Vector3.Dot(e1v, e1v);
+        float d12 = Vector3.Dot(e1v, e2v);
+        float d22 = Vector3.Dot(e2v, e2v);
+        float d1p = Vector3.Dot(e1v, tpv);
+        float d2p = Vector3.Dot(e2v, tpv);
 
         float denom = d11 * d22 - d12 * d12;
         if (MathF.Abs(denom) < 1e-6f) return "degen";
