@@ -8,6 +8,11 @@
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Posix.csproj" />
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Win64.csproj" />
   </Folder>
+  <Folder Name="/FixedMathSharp/">
+    <Project Path="FixedMathSharp/src/FixedMathSharp.FluentAssertions/FixedMathSharp.FluentAssertions.csproj" />
+    <Project Path="FixedMathSharp/src/FixedMathSharp/FixedMathSharp.csproj" />
+    <Project Path="FixedMathSharp/tests/FixedMathSharp.Tests/FixedMathSharp.Tests.csproj" />
+  </Folder>
   <Folder Name="/FNA/">
     <Project Path="FNA.Math/FNA.Math.csproj" />
     <Project Path="FNA/FNA.Core.csproj" />
@@ -58,9 +63,6 @@
     <Project Path="WorldXaml/XamlX/src/XamlX.IL.Cecil/XamlX.IL.Cecil.csproj" />
     <Project Path="WorldXaml/XamlX/src/XamlX/XamlX.csproj" />
   </Folder>
-  <Project Path="FixedMathSharp/src/FixedMathSharp.FluentAssertions/FixedMathSharp.FluentAssertions.csproj" />
-  <Project Path="FixedMathSharp/src/FixedMathSharp/FixedMathSharp.csproj" />
-  <Project Path="FixedMathSharp/tests/FixedMathSharp.Tests/FixedMathSharp.Tests.csproj" />
   <Project Path="nfm-world/NFMWorld.csproj" />
   <Project Path="NFMW.GenerateSinCosTable/NFMW.GenerateSinCosTable.csproj" />
   <Project Path="NFMWorld.Library/NFMWorld.Library.csproj" />
