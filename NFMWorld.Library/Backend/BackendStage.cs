@@ -208,7 +208,7 @@ public class BackendStage : IStage
         
         var floorBcs = new BodyCreationSettings(
             floorShape,
-            new System.Numerics.Vector3(Sx + Ncx / 2f, World.Ground + floorHalfExtent + 100, Sz + Ncz / 2f), // extra wiggle room because wheel colliders are circular
+            new System.Numerics.Vector3(Sx + Ncx / 2f, World.Ground + floorHalfExtent, Sz + Ncz / 2f), // extra wiggle room because wheel colliders are circular
             System.Numerics.Quaternion.Identity,
             MotionType.Static,
             JoltPhysics.Layers.NonMoving
