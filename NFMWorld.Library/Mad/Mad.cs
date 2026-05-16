@@ -19,6 +19,13 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary;
 
+// public struct CollisionSubstep
+// {
+//     public InlineArray4<fix64> wheelx;
+//     public InlineArray4<fix64> wheely;
+//     public InlineArray4<fix64> wheelz;
+// }
+
 public class Mad
 {
     private static readonly fix64 _tickRate = Physics.PHYSICS_MULTIPLIER_F64;
@@ -107,6 +114,38 @@ public class Mad
     public event EventHandler<(int i, int i2, int i3)> SfxPlayScrape;
     public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
     public event EventHandler<float> PowerUp;
+
+    // private InlineArray2<CollisionSubstep> collisionSubsteps;
+    // private bool collisionSubstepSwitch; // if false: [0] is current, if true: [1] is current
+    // private const int NumSubsteps = 2;
+    //
+    // // Gets collision substeps in order [previous, current]
+    // private void GetCollisionSubsteps(out InlineArray2<CollisionSubstep> substeps)
+    // {
+    //     if (collisionSubstepSwitch)
+    //     {
+    //         substeps = collisionSubsteps;
+    //         return;
+    //     }
+    //     substeps = new InlineArray2<CollisionSubstep>();
+    //     substeps[0] = collisionSubsteps[1];
+    //     substeps[1] = collisionSubsteps[0];
+    // }
+    //
+    // // Call this at the end of the collision step to set the current substep's wheel positions for use in the next tick's collisions
+    // private void SetCurrentCollisionSubstep(in CollisionSubstep currentSubstep)
+    // {
+    //     if (collisionSubstepSwitch)
+    //     {
+    //         collisionSubsteps[0] = currentSubstep;
+    //     }
+    //     else
+    //     {
+    //         collisionSubsteps[1] = currentSubstep;
+    //     }
+    //
+    //     collisionSubstepSwitch = !collisionSubstepSwitch;
+    // }
 
     public Mad(CarStats stat, int im, bool isClientPlayer)
     {
@@ -2182,7 +2221,9 @@ public class Mad
 
     // input: number of grounded wheels to medium
     // output: hitVertical when colliding against a wall
-    private void PhyTrackPieceCollision(IStage stage, Control control, ContO conto, Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
+    private void PhyTrackPieceCollision(
+        IStage stage, Control control, ContO conto,
+        Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
         fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch,
         int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, DeterministicRandom random)
     {

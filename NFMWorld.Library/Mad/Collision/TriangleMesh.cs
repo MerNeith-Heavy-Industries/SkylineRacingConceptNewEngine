@@ -83,9 +83,9 @@ public static class TriangleMesh
         if (distToPlane > (fix64)5) return null; // in front of the wall, no collision
         if (distToPlane < -MaxWallPenetration) return null; // too deep, likely on the other side
 
-        // Check if moving toward the wall (dot of velocity with normal < 0 means approaching)
-        var approachSpeed = f64Vector3.Dot(velocity, tri.NormalizedNormal);
-        if (approachSpeed > 0 && distToPlane > 0) return null; // moving away and not penetrating
+        // // Check if moving toward the wall (dot of velocity with normal < 0 means approaching)
+        // var approachSpeed = f64Vector3.Dot(velocity, tri.NormalizedNormal);
+        // if (approachSpeed > 0 && distToPlane > 0) return null; // moving away and not penetrating
 
         // Project the position onto the plane and test if it's inside the triangle
         var projectedPoint = position - tri.NormalizedNormal * distToPlane;
@@ -93,7 +93,7 @@ public static class TriangleMesh
         if (!PointInTriangle(tri.Edge1, tri.Edge2, toProjected)) return null;
 
         // Penetration depth: push out along the face normal
-        var penetration = -distToPlane + (fix64)5; // push slightly past the surface
+        var penetration = -distToPlane + (fix64)30; // push slightly past the surface
         if (penetration <= 0) return null;
 
         // Push direction: along the triangle's face normal, but zero out Y to prevent climbing
