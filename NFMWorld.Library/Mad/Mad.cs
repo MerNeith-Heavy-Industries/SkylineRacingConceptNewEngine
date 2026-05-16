@@ -2220,11 +2220,10 @@ public class Mad
                             var edge2 = p2 - p0;
                             var normal = f64Vector3.Cross(edge1, edge2);
                             // Compute length via float to avoid fix64 overflow on large triangles
-                            var nf = new Vector3((float)normal.X, (float)normal.Y, (float)normal.Z);
-                            var floatLength = nf.Length();
-                            if (floatLength < 1e-3f) continue; // degenerate triangle
-                            var normalizedNormal = new f64Vector3((fix64)(nf.X / floatLength), (fix64)(nf.Y / floatLength), (fix64)(nf.Z / floatLength));
-                            var groundness = -nf.Y / floatLength;
+                            var floatLength = normal.LengthNoOverflow();
+                            if (floatLength < (fix64)1e-3f) continue; // degenerate triangle
+                            var normalizedNormal = new f64Vector3(normal.X / floatLength, normal.Y / floatLength, normal.Z / floatLength);
+                            var groundness = -normal.Y / floatLength;
                             var toPoint = localPosition - p0;
                             var triangleData = new TriangleMesh.TriangleData(edge1, edge2, normalizedNormal, groundness, toPoint);
 
@@ -2233,12 +2232,12 @@ public class Mad
                                 // Find closest triangle center to wheel in XZ (local space)
                                 var center = (p0 + p1 + p2) / (fix64)3;
                                 var dxz = fix64.Sqrt((center.X - localPosition.X) * (center.X - localPosition.X) + (center.Z - localPosition.Z) * (center.Z - localPosition.Z));
-                                if ((float)dxz < 500 && groundness > 0.3f)
+                                if ((float)dxz < 500 && groundness > (fix64)0.3f)
                                 {
                                     var inTri = TriangleMesh.DebugPointInTriangle(edge1, edge2, toPoint);
                                     var surfaceY = fix64.Abs(normalizedNormal.Y) > (fix64)1e-6
                                         ? p0.Y - (normalizedNormal.X * (localPosition.X - p0.X) + normalizedNormal.Z * (localPosition.Z - p0.Z)) / normalizedNormal.Y
-                                        : (fix64)999;
+                                        : 999;
                                     Logging.Info($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} localWheel=({(float)localPosition.X:F0},{(float)localPosition.Y:F0},{(float)localPosition.Z:F0})");
                                 }
                             }
@@ -2262,7 +2261,7 @@ public class Mad
                                     var zTmp = localPosition.Y - groundHit.newY;
                                     // if (zTmp > 0 && zTmp < 200)
                                     {
-                                        var rampAngleDeg = (fix64)(MathF.Acos(triangleData.Groundness) * (180f / MathF.PI));
+                                        var rampAngleDeg = fix64.Acos(fix64.Clamp(triangleData.Groundness, -1, 1)) * fix64.RadToDeg;
                                         var liftDivider = 1 + (50 - fix64.Abs(rampAngleDeg)) / (fix64)30;
                                         if (liftDivider < 4) liftDivider = 4;
                                         Logging.Info($"ramp lift: {zTmp} liftDivider: {liftDivider:F2} total: {zTmp / liftDivider:F2}");
@@ -2286,7 +2285,7 @@ public class Mad
                                     wheely[k] = groundHit.newY + collidable.GameObjectPosition.Y + wheelGround;
                                     bounceRebound(k, conto, random);
                                     isWheelTouchingPiece[k] = true;
-                                    break;
+                                    // break; this makes it possible to phase through walls when on top of a raised mesh ground, but prevents being snapped out the side of a ramp, as long as the ground collision happens first
                                 }
                             }
                             else
@@ -2323,7 +2322,7 @@ public class Mad
 
                                     hitVertical = true;
                                     isWheelTouchingPiece[k] = true;
-                                    break;
+                                    // break; this makes it possible to phase through walls when on top of a raised mesh ground, but prevents being snapped out the side of a ramp, as long as the ground collision happens first
                                 }
                             }
                         }
