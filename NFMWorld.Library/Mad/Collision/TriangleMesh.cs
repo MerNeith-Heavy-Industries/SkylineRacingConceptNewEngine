@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using FixedMathSharp;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Collision;
@@ -7,25 +8,25 @@ public static class TriangleMesh
 {
     // Groundness threshold: triangles with face normal dot(up) > this are ground/ramp, otherwise wall
     // In Y-down, "up" is -Y, so groundness = -normal.Y
-    private const float GroundThreshold = 0.3f; // ~73° from horizontal
+    private static readonly fix64 GroundThreshold = (fix64)0.3f; // ~73° from horizontal
 
     // Tolerance for barycentric point-in-triangle test (prevents falling through edge seams)
-    private const float EdgeTolerance = -0.02f;
+    private static readonly Fixed128 EdgeTolerance = (Fixed128)(-0.04f);
 
     // Max distance above a ground triangle to snap (prevents snapping to far-away surfaces)
     private static readonly fix64 MaxGroundSnapDistance = (fix64)100;
 
     // Max penetration into a wall triangle to resolve
-    private static readonly fix64 MaxWallPenetration = (fix64)200;
+    private static readonly fix64 MaxWallPenetration = (fix64)50; // increasing this prevents phasing through walls at high speed, but may lead to being shot out the side of a ramp
 
     public readonly ref struct TriangleData(
         in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 normalizedNormal,
-        float groundness, in f64Vector3 toPoint)
+        fix64 groundness, in f64Vector3 toPoint)
     {
         public readonly ref f64Vector3 Edge1 = ref Unsafe.AsRef(in edge1);
         public readonly ref f64Vector3 Edge2 = ref Unsafe.AsRef(in edge2);
         public readonly ref f64Vector3 NormalizedNormal = ref Unsafe.AsRef(in normalizedNormal);
-        public readonly float Groundness = groundness;
+        public readonly fix64 Groundness = groundness;
         public readonly ref f64Vector3 ToPoint = ref Unsafe.AsRef(in toPoint);
         public bool IsGround => Groundness > GroundThreshold;
     }
@@ -115,44 +116,36 @@ public static class TriangleMesh
     /// </summary>
     private static bool PointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
     {
-        var e1v = new Vector3((float)edge1.X, (float)edge1.Y, (float)edge1.Z);
-        var e2v = new Vector3((float)edge2.X, (float)edge2.Y, (float)edge2.Z);
-        var tpv = new Vector3((float)toPoint.X, (float)toPoint.Y, (float)toPoint.Z);
-        
-        float d11 = Vector3.Dot(e1v, e1v);
-        float d12 = Vector3.Dot(e1v, e2v);
-        float d22 = Vector3.Dot(e2v, e2v);
-        float d1p = Vector3.Dot(e1v, tpv);
-        float d2p = Vector3.Dot(e2v, tpv);
+        var d11 = f64Vector3.Dot128(edge1, edge1);
+        var d12 = f64Vector3.Dot128(edge1, edge2);
+        var d22 = f64Vector3.Dot128(edge2, edge2);
+        var d1p = f64Vector3.Dot128(edge1, toPoint);
+        var d2p = f64Vector3.Dot128(edge2, toPoint);
 
-        float denom = d11 * d22 - d12 * d12;
-        if (MathF.Abs(denom) < 1e-6f) return false; // degenerate
+        var denom = d11 * d22 - d12 * d12;
+        if (denom.Abs() < (Fixed128)1e-6f) return false; // degenerate
 
-        float u = (d22 * d1p - d12 * d2p) / denom;
-        float v = (d11 * d2p - d12 * d1p) / denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
 
-        return u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1f - EdgeTolerance;
+        return u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
     }
 
     public static string DebugPointInTriangle(in f64Vector3 edge1, in f64Vector3 edge2, in f64Vector3 toPoint)
     {
-        var e1v = new Vector3((float)edge1.X, (float)edge1.Y, (float)edge1.Z);
-        var e2v = new Vector3((float)edge2.X, (float)edge2.Y, (float)edge2.Z);
-        var tpv = new Vector3((float)toPoint.X, (float)toPoint.Y, (float)toPoint.Z);
-        
-        float d11 = Vector3.Dot(e1v, e1v);
-        float d12 = Vector3.Dot(e1v, e2v);
-        float d22 = Vector3.Dot(e2v, e2v);
-        float d1p = Vector3.Dot(e1v, tpv);
-        float d2p = Vector3.Dot(e2v, tpv);
+        var d11 = f64Vector3.Dot128(edge1, edge1);
+        var d12 = f64Vector3.Dot128(edge1, edge2);
+        var d22 = f64Vector3.Dot128(edge2, edge2);
+        var d1p = f64Vector3.Dot128(edge1, toPoint);
+        var d2p = f64Vector3.Dot128(edge2, toPoint);
 
-        float denom = d11 * d22 - d12 * d12;
-        if (MathF.Abs(denom) < 1e-6f) return "degen";
+        var denom = d11 * d22 - d12 * d12;
+        if (denom.Abs() < (Fixed128)1e-6f) return "degen";
 
-        float u = (d22 * d1p - d12 * d2p) / denom;
-        float v = (d11 * d2p - d12 * d1p) / denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
 
-        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1f - EdgeTolerance;
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
         return $"{inside} u={u:F3} v={v:F3}";
     }
 }
