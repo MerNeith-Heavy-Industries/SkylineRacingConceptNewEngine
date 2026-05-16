@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using FixedMathSharp;
 using FixedMathSharp.Utility;
+using Microsoft.Extensions.Logging;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
@@ -2247,10 +2248,26 @@ public class Mad
                             {
                                 if (TriangleMesh.ResolveGround(p0, p1, p2, localPosition, triangleData) is { } groundHit)
                                 {
+                                    Logging.Info(triangleData.IsGround
+                                        ? $"ground triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2}, groundness {(float)groundness:F2})"
+                                        : $"wall triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2})");
+
                                     touching |= 1 << k;
                                     ++nGroundedWheels;
                                     Wtouch = true;
                                     Gtouch = true;
+
+                                    // Lift: reduce downward velocity proportional to ramp penetration depth
+                                    // Matches BoxRamp's Scy[k] -= zTmp / liftDivider logic
+                                    var zTmp = localPosition.Y - groundHit.newY;
+                                    // if (zTmp > 0 && zTmp < 200)
+                                    {
+                                        var rampAngleDeg = (fix64)(MathF.Acos(triangleData.Groundness) * (180f / MathF.PI));
+                                        var liftDivider = 1 + (50 - fix64.Abs(rampAngleDeg)) / (fix64)30;
+                                        if (liftDivider < 4) liftDivider = 4;
+                                        Logging.Info($"ramp lift: {zTmp} liftDivider: {liftDivider:F2} total: {zTmp / liftDivider:F2}");
+                                        Scy[k] -= zTmp / liftDivider;
+                                    }
 
                                     if (!wasMtouch && Scy[k] != 7 /* * checkpoints.gravity */ * _tickRate)
                                     {
@@ -2277,6 +2294,10 @@ public class Mad
                                 // Wall triangle: horizontal push-back (in local space, then rotate back)
                                 if (TriangleMesh.ResolveWall(p0, p1, p2, localPosition, localVelocity, triangleData) is { } wallHit)
                                 {
+                                    Logging.Info(triangleData.IsGround
+                                        ? $"ground triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2}, groundness {(float)groundness:F2})"
+                                        : $"wall triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2})");
+
                                     // Rotate local-space push/impact back to world space
                                     var worldDelta = wallHit.positionDelta.RotateXz(collidable.GameObjectXz);
                                     var worldImpact = wallHit.impactComponent.RotateXz(collidable.GameObjectXz);
@@ -2392,6 +2413,7 @@ public class Mad
                             if (liftDivider < 1)
                                 liftDivider = 1;
                             if (collision.zTmp > 0 && collision.zTmp < 200) {
+                                Logging.Info($"ramp lift: {collision.zTmp} liftDivider: {liftDivider:F2} total: {collision.zTmp / liftDivider}");
                                 Scy[k] -= collision.zTmp / liftDivider;
                             }
 
