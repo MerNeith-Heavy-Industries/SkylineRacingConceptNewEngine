@@ -80,7 +80,7 @@ public static class TriangleMesh
         var distToPlane = f64Vector3.Dot(tri.NormalizedNormal, tri.ToPoint);
 
         // Only collide if the wheel is behind the front face (penetrating)
-        if (distToPlane > (fix64)5) return null; // in front of the wall, no collision
+        if (distToPlane > (fix64)30) return null; // in front of the wall, no collision
         if (distToPlane < -MaxWallPenetration) return null; // too deep, likely on the other side
 
         // // Check if moving toward the wall (dot of velocity with normal < 0 means approaching)
