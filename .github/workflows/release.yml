@@ -115,7 +115,6 @@ jobs:
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
             $extraArgs `
             -o ./publish/${{ matrix.rid }} `
-            -v diag
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
