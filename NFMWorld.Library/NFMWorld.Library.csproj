@@ -26,7 +26,6 @@
         <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
         <PackageReference Include="Sentry.Extensions.Logging" Version="6.1.0-alpha.2" />
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
-        <ProjectReference Include="..\JoltPhysicsSharp\src\JoltPhysicsSharp\JoltPhysicsSharp.csproj" />
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 

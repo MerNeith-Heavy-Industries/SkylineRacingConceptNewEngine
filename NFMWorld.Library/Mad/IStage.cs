@@ -1,5 +1,4 @@
-﻿using JoltPhysicsSharp;
-using NFMWorldLibrary.Collision;
+﻿using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary;
