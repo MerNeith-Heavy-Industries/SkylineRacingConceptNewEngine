@@ -110,7 +110,6 @@ jobs:
           dotnet publish nfm-world/NFMWorld.csproj `
             -c Release `
             -r $publishRid `
-            --self-contained `
             -p:Version="${{ steps.version.outputs.semantic_version }}" `
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
             $extraArgs `
@@ -238,7 +237,6 @@ jobs:
           dotnet publish nfm-world/NFMWorld.csproj \
             -c Release \
             -r $PUBLISH_RID \
-            --self-contained \
             -p:Version="${{ steps.version.outputs.semantic_version }}" \
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
             $EXTRA_ARGS \
@@ -338,7 +336,6 @@ jobs:
           for RID in osx-x64 osx-arm64; do
             dotnet publish nfm-world/NFMWorld.csproj \
               -c Release \
-              --self-contained \
               -r $RID \
               -p:Version="${{ steps.version.outputs.semantic_version }}" \
               -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
