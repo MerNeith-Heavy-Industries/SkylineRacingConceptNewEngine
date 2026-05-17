@@ -248,7 +248,7 @@ public static class BackendGameSparker
 #if DEBUG
         string debugLibrarySuffix = "d";
 #else
-        string debugLibrarySuffix = Debugger.IsAttached ? "d" : string.Empty;
+        string debugLibrarySuffix = System.Diagnostics.Debugger.IsAttached ? "d" : string.Empty;
 #endif
 
         if (libraryName == "Kernel32.dll")
