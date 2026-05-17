@@ -117,7 +117,8 @@ jobs:
             -o ./publish/${{ matrix.rid }} `
             -p:PublishSingleFile=true `
             -p:SelfContained=true `
-            -p:IncludeNativeLibrariesForSelfExtract=false
+            -p:IncludeNativeLibrariesForSelfExtract=false `
+            -p:IncludeAllContentForSelfExtract=false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -244,7 +245,8 @@ jobs:
             -o ./publish/${{ matrix.rid }} \
             -p:PublishSingleFile=true \
             -p:SelfContained=true \
-            -p:IncludeNativeLibrariesForSelfExtract=false
+            -p:IncludeNativeLibrariesForSelfExtract=false \
+            -p:IncludeAllContentForSelfExtract=false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -343,7 +345,8 @@ jobs:
               -o ./publish/$RID \
               -p:PublishSingleFile=true \
               -p:SelfContained=true \
-              -p:IncludeNativeLibrariesForSelfExtract=false
+              -p:IncludeNativeLibrariesForSelfExtract=false \
+              -p:IncludeAllContentForSelfExtract=false
           done
 
       - name: Create universal binary
