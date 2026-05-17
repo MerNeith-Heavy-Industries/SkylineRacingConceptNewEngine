@@ -114,7 +114,6 @@ jobs:
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
             $extraArgs `
             -o ./publish/${{ matrix.rid }} `
-            -p:PublishSingleFile=true `
             -p:SelfContained=true `
             -p:IncludeNativeLibrariesForSelfExtract=false `
             -p:IncludeAllContentForSelfExtract=false
@@ -241,7 +240,6 @@ jobs:
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
             $EXTRA_ARGS \
             -o ./publish/${{ matrix.rid }} \
-            -p:PublishSingleFile=true \
             -p:SelfContained=true \
             -p:IncludeNativeLibrariesForSelfExtract=false \
             -p:IncludeAllContentForSelfExtract=false
@@ -340,7 +338,6 @@ jobs:
               -p:Version="${{ steps.version.outputs.semantic_version }}" \
               -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
               -o ./publish/$RID \
-              -p:PublishSingleFile=true \
               -p:SelfContained=true \
               -p:IncludeNativeLibrariesForSelfExtract=false \
               -p:IncludeAllContentForSelfExtract=false
