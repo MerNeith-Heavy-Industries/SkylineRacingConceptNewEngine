@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using JoltPhysicsSharp;
 using Maxine.Extensions;
 using Maxine.VFS;
 using Microsoft.Extensions.Logging;
@@ -48,26 +47,6 @@ public static class BackendGameSparker
         if (_loaded)
             return;
         _loaded = true;
-        
-        NativeLibrary.SetDllImportResolver(typeof(JoltApi).Assembly, ImportResolver);
-        
-        Foundation.SetTraceHandler(Logging.Info);
-
-        Foundation.SetAssertFailureHandler((inExpression, inMessage, inFile, inLine) =>
-        {
-            string message = inMessage ?? inExpression;
-
-            string outMessage = $"[JoltPhysics] Assertion failure at {inFile}:{inLine}: {message}";
-
-            Logging.Error(outMessage);
-
-            throw new Exception(outMessage);
-        });
-
-        if (!Foundation.Init(false))
-        {
-            return;
-        }
         
         SentrySdk.Init(options =>
         {
@@ -269,7 +248,7 @@ public static class BackendGameSparker
 #if DEBUG
         string debugLibrarySuffix = "d";
 #else
-        string debugLibrarySuffix = Debugger.IsAttached ? "d" : string.Empty;
+        string debugLibrarySuffix = System.Diagnostics.Debugger.IsAttached ? "d" : string.Empty;
 #endif
 
         if (libraryName == "Kernel32.dll")
@@ -279,13 +258,6 @@ public static class BackendGameSparker
 
         var newLibraryName = libraryName switch
         {
-            "joltc" => os switch
-            {
-                "windows" => JoltApi.DoublePrecision ? $"joltc_double{debugLibrarySuffix}.dll" : $"joltc{debugLibrarySuffix}.dll",
-                "osx" => JoltApi.DoublePrecision ? $"libjoltc_double{debugLibrarySuffix}.dylib" : $"libjoltc{debugLibrarySuffix}.dylib",
-                "linux" or "freebsd" or "netbsd" => JoltApi.DoublePrecision ? $"libjoltc_double{debugLibrarySuffix}.so" : $"libjoltc{debugLibrarySuffix}.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
             _ => os switch
             {
                 "windows" => $"{libraryName}.dll",
