@@ -617,10 +617,12 @@ public class StageLoader
             {
                 if (setindex >= 33)
                 {
-                    setindex += 35;
+                    mesh = BackendGameSparker.src_stage_parts[setindex - 33];
                 }
-
-                mesh = BackendGameSparker.src_stage_parts[setindex];
+                else
+                {
+                    mesh = BackendGameSparker.stage_parts[setindex];
+                }
             }
             else
             {
