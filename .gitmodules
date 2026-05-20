@@ -34,3 +34,6 @@
 [submodule "FixedMathSharp"]
 	path = FixedMathSharp
 	url = https://github.com/uwx/FixedMathSharp
+[submodule "NFMWorld.Library/data"]
+	path = NFMWorld.Library/data
+	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineServerData
