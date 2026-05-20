@@ -101,6 +101,12 @@ public class StageLoader
         var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
         var line = "";
         int lineNumber = 0;
+
+        if (Path.Contains("src"))
+        {
+            swapYandRot = true;
+        }
+        
         try
         {
             foreach (var aline in System.IO.File.ReadAllLines(customStagePath))
@@ -607,7 +613,20 @@ public class StageLoader
         if (int.TryParse(setstring, out var setindex))
         {
             setindex -= indexOffset;
-            mesh = BackendGameSparker.stage_parts[setindex];
+            if (Path.Contains("src"))
+            {
+                if (setindex >= 33)
+                {
+                    setindex += 35;
+                }
+
+                mesh = BackendGameSparker.src_stage_parts[setindex];
+            }
+            else
+            {
+                mesh = BackendGameSparker.stage_parts[setindex];
+            }
+
             if (mesh == null!)
             {
                 SentrySdk.CaptureMessage($"Stage part '{setstring}' not found.");

@@ -18,6 +18,7 @@ public static class BackendGameSparker
     public static Dictionary<Collection, UnlimitedArray<Rad3d>> cars = new();
     public static UnlimitedArray<Rad3d> stage_parts = [];
     public static UnlimitedArray<Rad3d> vendor_stage_parts = [];
+    public static UnlimitedArray<Rad3d> src_stage_parts = [];
     public static UnlimitedArray<Rad3d> user_stage_parts = [];
     public static Dictionary<string, (int Index, Rad3d Rad)> dynamic_models = new();
     public static Rad3d error_mesh;
@@ -132,6 +133,15 @@ public static class BackendGameSparker
             });
         });
 
+        cars.Add(Collection.Skyline, []);
+        FileUtil.LoadFiles("./data/models/src/cars", (ais, fileName) =>
+        {
+            cars[Collection.Skyline].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
+            {
+                FileName = "src/" + fileName
+            });
+        });
+
         FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) =>
         {
             vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
@@ -145,6 +155,14 @@ public static class BackendGameSparker
             vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
             {
                 FileName = "football/" + fileName
+            });
+        });
+
+        FileUtil.LoadFiles("./data/models/src/stage", (ais, fileName) =>
+        {
+            src_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
+            {
+                FileName = "src/" + fileName
             });
         });
 
