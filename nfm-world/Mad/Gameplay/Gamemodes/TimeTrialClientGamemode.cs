@@ -195,7 +195,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;
-                _centralTextNode.CenterText.Display = YgDisplay.None;
+                _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
                 _raceTimer.Start();
             }
         }
@@ -275,27 +275,27 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         {
             RenderInfo();
 
-            _centralTextNode.CenterText.Display = YgDisplay.Flex;
-            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            _centralTextNode.CenterText.Color = new Color(255, 255, 255);
-            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
-            _centralTextNode.CenterText.Text = $"Starting in {_countdownTime}";
+            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
         }
         else if (_currentState == TimeTrialState.Finished)
         {
             RenderInfo();
 
             string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            _centralTextNode.CenterText.Display = YgDisplay.Flex;
-            _centralTextNode.CenterText.Color = new Color(128, 255, 128);
-            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
-            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
-            _centralTextNode.CenterText.Text = $"Finished! Time: {finalTime}";
+            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+            _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}";
 
             bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
 
             if (newBest)
-                _centralTextNode.CenterText.Text += "\nNew best time!";
+                _centralTextNode.DataContext.CenterText += "\nNew best time!";
 
             if (_bestTimeTrial != null || newBest)
             {
@@ -308,10 +308,10 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
                     t.Seconds,
                     t.Milliseconds);
 
-                _centralTextNode.CenterText.Text += $"\nBest time: {time}";
+                _centralTextNode.DataContext.CenterText += $"\nBest time: {time}";
             }
 
-            _centralTextNode.CenterText.Text += "\nPress R to restart";
+            _centralTextNode.DataContext.CenterText += "\nPress R to restart";
         }
     }
 

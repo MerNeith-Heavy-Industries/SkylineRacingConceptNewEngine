@@ -48,6 +48,7 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9"/>
         <PackageReference Include="ManagedBass" Version="4.0.1"/>
         <PackageReference Include="ManagedBass.Fx" Version="4.0.1"/>
@@ -197,6 +198,11 @@
 
     <ItemGroup>
       <Folder Include="Mad\Renderer\Renderable\" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <Reference Include="System.Xaml" />
     </ItemGroup>
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">

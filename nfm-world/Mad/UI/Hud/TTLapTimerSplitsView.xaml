@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <yoga:View
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:yoga="clr-namespace:WorldXaml.UI.Yoga;assembly=WorldXaml.UI.Yoga"
