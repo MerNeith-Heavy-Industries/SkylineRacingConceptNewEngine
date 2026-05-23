@@ -1,20 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<yoga:View
+<View
+    xmlns="https://github.com/uwx/worldxaml"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:yoga="clr-namespace:WorldXaml.UI.Yoga;assembly=WorldXaml.UI.Yoga"
-    xmlns:ui="clr-namespace:NFMWorld.UI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:w="https://github.com/needforrewrite/nfm-world"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d" d:DataContext="{d:DesignInstance w:CentralTextViewModel}"
     x:Class="NFMWorld.UI.Hud.CentralTextView"
-    Name="CentralText"
+    DataType="w:CentralTextViewModel"
     AlignItems="Center"
     FlexDirection="Column">
 
-    <yoga:Box AlignItems="Center" Flex="1">
-        <ui:TextRun Name="CenterText"
-                      Color="black"
-                      Font="bold 1px Adventure"
-                      Display="None" />
-    </yoga:Box>
+    <Box AlignItems="Center" Flex="1">
+        <w:TextRun
+            Color="{Binding CenterTextColor}"
+            Visibility="{Binding CenterTextVisibility}"
+            Font="{Binding CenterTextFont}"
+            Text="{Binding CenterText}"
+            StrokeColor="{Binding CenterTextStrokeColor}"
+            Display="Flex" />
+    </Box>
 
-    <yoga:Node Flex="1" />
-</yoga:View>
+    <Node Flex="1" />
+</View>

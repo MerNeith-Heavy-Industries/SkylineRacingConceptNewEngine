@@ -51,7 +51,6 @@
   </Folder>
   <Folder Name="/XamlX/">
     <Project Path="WorldXaml/XamlX/src/XamlX.Runtime/XamlX.Runtime.csproj" />
-    <Project Path="WorldXaml.XamlX/WorldXaml.XamlX.csproj" />
     <Project Path="WorldXaml/WorldXaml.Core/WorldXaml.Core.csproj" />
     <Project Path="WorldXaml/WorldXaml.Generator/WorldXaml.Generator.csproj" />
     <Project Path="WorldXaml/WorldXaml.UI.Base/WorldXaml.UI.Base.csproj" />

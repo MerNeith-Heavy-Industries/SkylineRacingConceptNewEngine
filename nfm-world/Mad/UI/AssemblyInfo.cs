@@ -1,5 +1,8 @@
-﻿using Avalonia.Metadata;
+﻿using System.Windows.Markup;
+using Avalonia.Metadata;
 
-[assembly: XmlnsDefinition("clr-namespace:NFMWorld.UI.Yoga", "NFMWorld.UI.Yoga")]
-[assembly: XmlnsDefinition("clr-namespace:NFMWorld.UI.Elements", "NFMWorld.UI.Elements")]
-[assembly: XmlnsDefinition("clr-namespace:NFMWorld.UI.Yoga.Xaml", "NFMWorld.UI.Yoga.Xaml")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Yoga")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Elements")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Yoga.Xaml")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Hud")]

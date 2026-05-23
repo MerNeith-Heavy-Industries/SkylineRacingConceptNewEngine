@@ -64,22 +64,24 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 
         if (_currentState == InnerRaceState.Countdown)
         {
-            _centralTextNode.CenterText.Display = YgDisplay.Flex;
-            _centralTextNode.CenterText.Font = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            _centralTextNode.CenterText.Color = new Color(255, 255, 255);
-            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
-            _centralTextNode.CenterText.Text = $"Starting in {_countdownTime}";
+            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
         }
         else if (_currentState == InnerRaceState.Finished)
         {
+            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
             string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            _centralTextNode.CenterText.Display = YgDisplay.Flex;
-            _centralTextNode.CenterText.Color = new Color(128, 255, 128);
-            _centralTextNode.CenterText.StrokeColor = new Color(0, 0, 0);
-            _centralTextNode.CenterText.Font = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
-            _centralTextNode.CenterText.Text = $"Finished! Time: {finalTime}";
-
-            _centralTextNode.CenterText.Text += "\nPress R to restart";
+            _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
+            _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+        }
+        else
+        {
+            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
         }
     }
 
@@ -92,7 +94,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centralTextNode.CenterText.Display = YgDisplay.None;
+                _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
             }
         }
     }

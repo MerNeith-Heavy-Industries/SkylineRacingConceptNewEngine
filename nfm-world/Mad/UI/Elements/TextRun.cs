@@ -1,37 +1,47 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Avalonia;
 using Avalonia.Metadata;
 using NFMWorld.DriverInterface;
 using NFMWorld.Util;
+using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI;
 
-public class TextRun : Node
+public partial class TextRun : Node
 {
     private IFontMetrics? _fontMetrics;
-    public Color Color { get; set; } = new Color(255, 255, 255);
-    public Color? StrokeColor { get; set; } = null;
-    public Font Font
-    {
-        get;
-        set
+
+    public static StyledProperty<Color> ColorProperty { get; } = AvaloniaProperty.Register<TextRun, Color>(
+        nameof(Color),
+        defaultValue: new Color(255, 255, 255));
+
+    [Property]
+    public partial Color Color { get; set; }
+    
+    [Property]
+    public partial Color? StrokeColor { get; set; }
+    
+    public static StyledProperty<Font> FontProperty { get; } = AvaloniaProperty.Register<TextRun, Font>(
+        nameof(Font),
+        defaultValue: new Font(FontFamily.DroidSans, FontStyle.Plain, 18),
+        onChanged: (run, font) =>
         {
-            field = value;
-            SetFontMetrics();
-            RelayoutText();
-        }
-    } = new Font(FontFamily.DroidSans, FontStyle.Plain, 18);
+            run.SetFontMetrics();
+            run.RelayoutText();
+        });
+
+    [Property]
+    public partial Font Font { get; set; }
+    
+    public static StyledProperty<string> TextProperty { get; } = AvaloniaProperty.Register<TextRun, string>(
+        nameof(Text),
+        defaultValue: string.Empty,
+        onChanged: (run, text) => run.RelayoutText());
 
     [Content]
-    public string? Text
-    {
-        get;
-        set
-        {
-            field = value;
-            RelayoutText();
-        }
-    }
+    [Property]
+    public partial string? Text { get; set; }
 
     [MemberNotNull(nameof(_fontMetrics))]
     private void SetFontMetrics()
@@ -50,8 +60,11 @@ public class TextRun : Node
         Height = _fontMetrics!.Height(Text ?? string.Empty);
     }
 
-    public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
-    public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
+    [Property(defaultValue: TextHorizontalAlignment.Left)]
+    public partial TextHorizontalAlignment HorizontalAlignment { get; set; }
+
+    [Property(defaultValue: TextVerticalAlignment.Top)]
+    public partial TextVerticalAlignment VerticalAlignment { get; set; }
 
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
@@ -71,10 +84,5 @@ public class TextRun : Node
 
         G.SetColor(Color);
         G.DrawStringAligned(Text, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
-    }
-
-    public new Action<TextRun> Ref
-    {
-        set => value(this);
     }
 }
