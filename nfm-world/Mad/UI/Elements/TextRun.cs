@@ -12,36 +12,40 @@ public partial class TextRun : Node
 {
     private IFontMetrics? _fontMetrics;
 
-    public static StyledProperty<Color> ColorProperty { get; } = AvaloniaProperty.Register<TextRun, Color>(
-        nameof(Color),
-        defaultValue: new Color(255, 255, 255));
-
-    [Property]
+    /// <summary>
+    /// Sets the fill color of the text. The default value is white.
+    /// </summary>
+    [Property(DefaultValueMember = nameof(DefaultColor))]
     public partial Color Color { get; set; }
     
+    private static partial Color DefaultColor => new(255, 255, 255);
+    
+    /// <summary>
+    /// Sets the stroke color of the text. Or set to null to disable the stroke.
+    /// </summary>
     [Property]
     public partial Color? StrokeColor { get; set; }
-    
-    public static StyledProperty<Font> FontProperty { get; } = AvaloniaProperty.Register<TextRun, Font>(
-        nameof(Font),
-        defaultValue: new Font(FontFamily.DroidSans, FontStyle.Plain, 18),
-        onChanged: (run, font) =>
-        {
-            run.SetFontMetrics();
-            run.RelayoutText();
-        });
 
-    [Property]
+    [Property(OnChangedMethod = nameof(OnFontChanged))]
     public partial Font Font { get; set; }
     
-    public static StyledProperty<string> TextProperty { get; } = AvaloniaProperty.Register<TextRun, string>(
-        nameof(Text),
-        defaultValue: string.Empty,
-        onChanged: (run, text) => run.RelayoutText());
-
+    private partial void OnFontChanged(Font newFont)
+    {
+        SetFontMetrics();
+        RelayoutText();
+    }
+    
+    /// <summary>
+    /// Sets the text.
+    /// </summary>
     [Content]
-    [Property]
+    [Property(DefaultValue = "", OnChangedMethod = nameof(OnTextChanged))]
     public partial string? Text { get; set; }
+    
+    private partial void OnTextChanged(string? newText)
+    {
+        RelayoutText();
+    }
 
     [MemberNotNull(nameof(_fontMetrics))]
     private void SetFontMetrics()
@@ -60,10 +64,16 @@ public partial class TextRun : Node
         Height = _fontMetrics!.Height(Text ?? string.Empty);
     }
 
-    [Property(defaultValue: TextHorizontalAlignment.Left)]
+    /// <summary>
+    /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
+    /// </summary>
+    [Property(DefaultValue = TextHorizontalAlignment.Left)]
     public partial TextHorizontalAlignment HorizontalAlignment { get; set; }
 
-    [Property(defaultValue: TextVerticalAlignment.Top)]
+    /// <summary>
+    /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
+    /// </summary>
+    [Property(DefaultValue = TextVerticalAlignment.Top)]
     public partial TextVerticalAlignment VerticalAlignment { get; set; }
 
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)

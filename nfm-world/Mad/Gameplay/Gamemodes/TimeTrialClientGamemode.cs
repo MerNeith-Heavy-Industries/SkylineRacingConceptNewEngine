@@ -195,7 +195,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             if (_countdownTime <= 0)
             {
                 _currentState = TimeTrialState.InProgress;
-                _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
+                _centralTextNode.DataContext.CenterTextOpacity = 0;
                 _raceTimer.Start();
             }
         }
@@ -275,7 +275,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         {
             RenderInfo();
 
-            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
             _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
             _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
             _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
@@ -286,7 +286,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
             RenderInfo();
 
             string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
             _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
             _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
             _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);

@@ -11,9 +11,13 @@
     FlexDirection="Column">
 
     <Box AlignItems="Center" Flex="1">
+        <!--
+            alternatively: Opacity="{Animation Shown, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}"
+            but there's no way to combine animations yet (e.g shown + hidden) so we use transitions instead
+        -->
         <w:TextRun
+            Opacity="{Binding CenterTextOpacity, Easing=Linear, TransitionDuration=250}"
             Color="{Binding CenterTextColor}"
-            Visibility="{Binding CenterTextVisibility}"
             Font="{Binding CenterTextFont}"
             Text="{Binding CenterText}"
             StrokeColor="{Binding CenterTextStrokeColor}"
