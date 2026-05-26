@@ -35,7 +35,8 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
 
     public void SetLapText(int currentLap)
     {
-        _lapTimerSplits.LapText.Text = $"{currentLap + 1}/{currentStage.nlaps}";
+        _lapTimerSplits.DataContext.CurrentLap = currentLap + 1;
+        _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
     }
 
     public void SetTimeText()

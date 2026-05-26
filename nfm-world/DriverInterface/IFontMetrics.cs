@@ -2,6 +2,6 @@ namespace NFMWorld.DriverInterface;
 
 public interface IFontMetrics
 {
-    public float StringWidth(string astring);
-    public float Height(string astring);
+    public Vector2 MeasureText(ReadOnlySpan<char> text);
+    public float LineHeight { get; }
 }

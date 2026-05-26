@@ -41,6 +41,8 @@ public static class G
 
     public static IFontMetrics GetFontMetrics() => Graphics.GetFontMetrics();
 
+    public static IFontMetrics GetFontMetrics(Font font) => Graphics.GetFontMetrics(font);
+
     public static void DrawString(string text, int x, int y) => Graphics.DrawString(text, x, y);
     public static void DrawStringAligned(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
         => Graphics.DrawStringAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign);
@@ -84,10 +86,6 @@ public static class G
     }
 
     public static void SetAntialiasing(bool useAntialias) => Graphics.SetAntialiasing(useAntialias);
-    public static string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
-    {
-        return Graphics.LayoutText(text, width, height, breakType);
-    }
 
     public static Vector2 Viewport => IBackend.Backend.Viewport;
 }
