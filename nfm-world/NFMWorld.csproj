@@ -197,11 +197,7 @@
     <ItemGroup>
       <Folder Include="Mad\Renderer\Renderable\" />
     </ItemGroup>
-
-
-    <ItemGroup>
-      <Reference Include="System.Xaml" />
-    </ItemGroup>
+    
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
         <ItemGroup>
