@@ -1004,5 +1004,7 @@ file class NfmwInterpolatorProvider : IInterpolatorProvider
                 if (alpha < 0.5f) return from;
                 return to;
             });
+
+        return null;
     }
 }
