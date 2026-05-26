@@ -64,7 +64,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
 
         if (_currentState == InnerRaceState.Countdown)
         {
-            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
             _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
             _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
             _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
@@ -72,7 +72,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         }
         else if (_currentState == InnerRaceState.Finished)
         {
-            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Visible;
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
             string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
             _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
             _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
@@ -81,7 +81,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         }
         else
         {
-            _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
+            _centralTextNode.DataContext.CenterTextOpacity = 0;
         }
     }
 
@@ -94,7 +94,7 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centralTextNode.DataContext.CenterTextVisibility = Visibility.Hidden;
+                _centralTextNode.DataContext.CenterTextOpacity = 0;
             }
         }
     }
