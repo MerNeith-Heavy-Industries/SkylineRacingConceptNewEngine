@@ -15,10 +15,12 @@ using NFMWorld.UI;
 using NFMWorld.UI.Hud;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Base;
 using WorldXaml.UI.Base.Xaml;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Xaml;
 using Keys = NFMWorld.Util.Keys;
+using Logging = NFMWorldLibrary.Logging;
 
 namespace NFMWorld;
 
@@ -230,7 +232,7 @@ public class WorldGame : Game
         GameThreadContext.Install();
 
         var xamlLogger = Logging.LoggerFactory.CreateLogger("WorldXaml");
-        WorldXaml.UI.Base.Logging.LogMessage = (level, message) =>
+        XamlConfig.LogMessage = (level, message) =>
         {
 #pragma warning disable CA2254
             if (level == WorldXaml.UI.Base.LogLevel.Info)
@@ -245,6 +247,7 @@ public class WorldGame : Game
                 throw new ArgumentOutOfRangeException(nameof(level), level, null);
 #pragma warning restore CA2254
         };
+        XamlConfig.InterpolatorProvider = new FallbackInterpolatorProvider(new NfmwInterpolatorProvider(), new YogaInterpolatorProvider());
         
         _graphics = new GraphicsDeviceManager(this);
         _graphics.GraphicsProfile = GraphicsProfile.Reach;
@@ -854,5 +857,152 @@ public class WorldGame : Game
             GameSparker.KeyReleased(key);
             GameSparker.CurrentPhase.KeyReleased(key, ImGui.GetIO().WantCaptureKeyboard);
         }
+    }
+}
+
+file class NfmwInterpolatorProvider : IInterpolatorProvider
+{
+    public Interpolator<T>? GetInterpolator<T>()
+    {
+        if (typeof(T) == typeof(Color))
+            return (Interpolator<T>)(object)(Interpolator<Color>)((from, to, alpha) =>
+            {
+                var fromR = from.R;
+                var fromG = from.G;
+                var fromB = from.B;
+                var fromA = from.A;
+                var toR = to.R;
+                var toG = to.G;
+                var toB = to.B;
+                var toA = to.A;
+                var r = (byte)(fromR + (toR - fromR) * alpha);
+                var g = (byte)(fromG + (toG - fromG) * alpha);
+                var b = (byte)(fromB + (toB - fromB) * alpha);
+                var a = (byte)(fromA + (toA - fromA) * alpha);
+                return new Color(r, g, b, a);
+            });
+        if (typeof(T) == typeof(Color?))
+            return (Interpolator<T>)(object)(Interpolator<Color?>)((from, to, alpha) =>
+            {
+                if (from is { } fromValue && to is { } toValue)
+                {
+                    var fromR = fromValue.R;
+                    var fromG = fromValue.G;
+                    var fromB = fromValue.B;
+                    var fromA = fromValue.A;
+                    var toR = toValue.R;
+                    var toG = toValue.G;
+                    var toB = toValue.B;
+                    var toA = toValue.A;
+                    var r = (byte)(fromR + (toR - fromR) * alpha);
+                    var g = (byte)(fromG + (toG - fromG) * alpha);
+                    var b = (byte)(fromB + (toB - fromB) * alpha);
+                    var a = (byte)(fromA + (toA - fromA) * alpha);
+                    return new Color(r, g, b, a);
+                }
+
+                if (alpha < 0.5f) return from;
+                return to;
+            });
+        if (typeof(T) == typeof(Color3))
+            return (Interpolator<T>)(object)(Interpolator<Color3>)((from, to, alpha) =>
+            {
+                var fromR = from.R;
+                var fromG = from.G;
+                var fromB = from.B;
+                var toR = to.R;
+                var toG = to.G;
+                var toB = to.B;
+                var r = (byte)(fromR + (toR - fromR) * alpha);
+                var g = (byte)(fromG + (toG - fromG) * alpha);
+                var b = (byte)(fromB + (toB - fromB) * alpha);
+                return new Color3(r, g, b);
+            });
+        if (typeof(T) == typeof(Color3?))
+            return (Interpolator<T>)(object)(Interpolator<Color3?>)((from, to, alpha) =>
+            {
+                if (from is { } fromValue && to is { } toValue)
+                {
+                    var fromR = fromValue.R;
+                    var fromG = fromValue.G;
+                    var fromB = fromValue.B;
+                    var toR = toValue.R;
+                    var toG = toValue.G;
+                    var toB = toValue.B;
+                    var r = (byte)(fromR + (toR - fromR) * alpha);
+                    var g = (byte)(fromG + (toG - fromG) * alpha);
+                    var b = (byte)(fromB + (toB - fromB) * alpha);
+                    return new Color3(r, g, b);
+                }
+
+                if (alpha < 0.5f) return from;
+                return to;
+            });
+        if (typeof(T) == typeof(Vector2))
+            return (Interpolator<T>)(object)(Interpolator<Vector2>)((from, to, alpha) => new Vector2(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha));
+        if (typeof(T) == typeof(Vector3))
+            return (Interpolator<T>)(object)(Interpolator<Vector3>)((from, to, alpha) => new Vector3(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha));
+        if (typeof(T) == typeof(Vector4))
+            return (Interpolator<T>)(object)(Interpolator<Vector4>)((from, to, alpha) => new Vector4(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha, from.W + (to.W - from.W) * alpha));
+        if (typeof(T) == typeof(Vector2?))
+            return (Interpolator<T>)(object)(Interpolator<Vector2?>)((from, to, alpha) =>
+            {
+                if (from is { } fromValue && to is { } toValue)
+                {
+                    var fromX = fromValue!.X;
+                    var fromY = fromValue!.Y;
+                    var toX = toValue!.X;
+                    var toY = toValue!.Y;
+                    var x = fromX + (toX - fromX) * alpha;
+                    var y = fromY + (toY - fromY) * alpha;
+                    return new Vector2(x, y);
+                }
+
+                if (alpha < 0.5f) return from;
+                return to;
+            });
+        if (typeof(T) == typeof(Vector3?))
+            return (Interpolator<T>)(object)(Interpolator<Vector3?>)((from, to, alpha) =>
+            {
+                if (from is { } fromValue && to is { } toValue)
+                {
+                    var fromX = fromValue!.X;
+                    var fromY = fromValue!.Y;
+                    var fromZ = fromValue!.Z;
+                    var toX = toValue!.X;
+                    var toY = toValue!.Y;
+                    var toZ = toValue!.Z;
+                    var x = fromX + (toX - fromX) * alpha;
+                    var y = fromY + (toY - fromY) * alpha;
+                    var z = fromZ + (toZ - fromZ) * alpha;
+                    return new Vector3(x, y, z);
+                }
+
+                if (alpha < 0.5f) return from;
+                return to;
+            });
+        if (typeof(T) == typeof(Vector4?))
+            return (Interpolator<T>)(object)(Interpolator<Vector4?>)((from, to, alpha) =>
+            {
+                if (from is { } fromValue && to is { } toValue)
+                {
+                    var fromX = fromValue!.X;
+                    var fromY = fromValue!.Y;
+                    var fromZ = fromValue!.Z;
+                    var fromW = fromValue!.W;
+                    var toX = toValue!.X;
+                    var toY = toValue!.Y;
+                    var toZ = toValue!.Z;
+                    var toW = toValue!.W;
+                    var x = fromX + (toX - fromX) * alpha;
+                    var y = fromY + (toY - fromY) * alpha;
+                    var z = fromZ + (toZ - fromZ) * alpha;
+                    var w = fromW + (toW - fromW) * alpha;
+                    return new Vector4(x, y, z, w);
+                }
+
+                if (alpha < 0.5f) return from;
+                return to;
+            });
     }
 }
