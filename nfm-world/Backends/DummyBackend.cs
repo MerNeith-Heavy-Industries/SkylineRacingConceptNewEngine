@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.Extensions.Primitives;
 using Monogame.ImGuiNet;
 using NFMWorld.DriverInterface;
 using NFMWorld.SkiaDriver;
@@ -88,14 +89,19 @@ public class DummyBackend : IBackend
             throw new NotImplementedException();
         }
 
-        public void DrawString(string text, int x, int y)
+        public IFontMetrics GetFontMetrics(Font font)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DrawString(StringSegment text, int x, int y)
         {
         }
-        public void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
+        public void DrawStringAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
         }
 
-        public void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        public void DrawStringStrokeAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
         }
 

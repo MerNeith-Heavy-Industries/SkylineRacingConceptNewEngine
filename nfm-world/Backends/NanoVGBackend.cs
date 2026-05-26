@@ -198,13 +198,18 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             return new NanoVGFontMetrics(_font);
         }
 
-        public void DrawString(string text, int x, int y)
+        public IFontMetrics GetFontMetrics(Font font)
+        {
+            return new NanoVGFontMetrics(_fontSystems[font.FontFamily].GetFont(font.Size));
+        }
+
+        public void DrawString(Microsoft.Extensions.Primitives.StringSegment text, int x, int y)
         {
             _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
-        public void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
+        public void DrawStringAligned(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
             _context.FillPaint(_paint);
 
@@ -215,13 +220,13 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _context.Text(_font, text, xFloat, yFloat, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
-        public void DrawStringStroke(string text, int x, int y, int effectAmount = 1)
+        public void DrawStringStroke(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int effectAmount = 1)
         {
             _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
-        public void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        public void DrawStringStrokeAligned(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
             _context.FillPaint(_paint);
 
@@ -232,12 +237,7 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _context.Text(_font, text, xFloat, yFloat, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
-        public string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
-        {
-            return new TextLayout(_font, text, new Vector2(width, height), breakType, overflowBehavior).LaidOutText;
-        }
-
-        private void AlignText(string text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, ref float x, ref float y)
+        private void AlignText(ReadOnlySpan<char> text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, ref float x, ref float y)
         {
             if (hAlign != TextHorizontalAlignment.Left)
             {
@@ -309,90 +309,14 @@ internal class NanoVGBackend(NvgContext context) : IBackend
     public Vector2 Viewport => new(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);
 }
 
-internal struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetrics
+internal readonly struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetrics
 {
-    public float StringWidth(string astring)
+    public Vector2 MeasureText(ReadOnlySpan<char> text)
     {
-        return font.MeasureString(astring).X;
+        return font.MeasureString(text);
     }
-
-    public float Height(string astring)
-    {
-        return font.MeasureString(astring).Y;
-    }
-}
-
-public enum BreakType
-{
-    None,
-    Word,
-    Character
-}
-
-public enum OverflowBehavior
-{
-    ContinueVertically,
-    ContinueHorizontally
-}
-
-public readonly struct TextLayout(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
-{
-    public string LaidOutText { get; } = LayoutText(font, text, bounds, breakType, overflowBehavior);
-
-    private static string LayoutText(DynamicSpriteFont font, string text, Vector2 bounds, BreakType breakType, OverflowBehavior overflowBehavior)
-    {
-        if (breakType == BreakType.None)
-        {
-            return text;
-        }
-        
-        var sb = new StringBuilder(text.Length);
-        var spaceWidth = font.MeasureString(" ").X;
-        var lineWidth = 0.0f;
-        
-        var textHeight = 0f;
-
-        foreach (var wordRange in text.AsSpan().Split(' '))
-        {
-            var word = text.AsSpan(wordRange);
-            
-            var wordSize = font.MeasureString(word);
-
-            if (lineWidth + wordSize.X > bounds.X &&
-                (textHeight + (wordSize.Y * 2) < bounds.Y || overflowBehavior == OverflowBehavior.ContinueVertically))
-            {
-                if (breakType == BreakType.Word)
-                {
-                    sb.Append('\n');
-                    textHeight += wordSize.Y;
-                    lineWidth = 0.0f;
-                }
-                else if (breakType == BreakType.Character)
-                {
-                    foreach (var ch in word)
-                    {
-                        var charWidth = font.MeasureString([ch]).X;
-                        if (lineWidth + charWidth > bounds.X)
-                        {
-                            sb.Append('\n');
-                            textHeight += wordSize.Y;
-                            lineWidth = 0.0f;
-                        }
-                        sb.Append(ch);
-                        lineWidth += charWidth;
-                    }
-                    sb.Append(' ');
-                    lineWidth += spaceWidth;
-                    continue;
-                }
-            }
-
-            sb.Append(word).Append(' ');
-            lineWidth += wordSize.X + spaceWidth;
-        }
-
-        return sb.ToString().TrimEnd();
-    }
+    
+    public float LineHeight => font.LineHeight;
 }
 
 internal class NanoVGImage(Texture2D texture) : IImage

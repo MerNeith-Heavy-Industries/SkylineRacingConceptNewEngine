@@ -7,11 +7,11 @@ namespace NFMWorld.UI.Hud;
 /// </summary>
 public partial class LapTimerSplitsView : View
 {
-    /// <summary>
-    /// Creates a new LapTimerSplitsView and initializes it from XAML.
-    /// </summary>
+    public new LapTimerSplitsViewModel DataContext => (LapTimerSplitsViewModel)base.DataContext!;
+
     public LapTimerSplitsView()
     {
+        base.DataContext = new LapTimerSplitsViewModel();
         InitializeComponent();
     }
 
@@ -22,6 +22,6 @@ public partial class LapTimerSplitsView : View
     /// <param name="totalLaps">Total number of laps.</param>
     public void SetLapText(int currentLap, int totalLaps)
     {
-        LapText?.Text = $"{currentLap + 1}/{totalLaps}";
+        // LapText?.Text = $"{currentLap + 1}/{totalLaps}";
     }
 }

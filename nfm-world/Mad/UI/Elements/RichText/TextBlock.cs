@@ -75,7 +75,7 @@ public class TextBlock : Node
         G.SetFont(Font with { Size = Font.Size * G.Scale });
         if (HasNewLayout || _invalidated || _formattedText == null)
         {
-            _formattedText = G.LayoutText(Text, size.X, size.Y, BreakType, OverflowBehavior);
+            _formattedText = ComplexTextMetrics.LayoutText(G.GetFontMetrics(), Text, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
             _invalidated = false;
             HasNewLayout = false;
         }

@@ -1,5 +1,6 @@
 #nullable enable
 
+using Microsoft.Extensions.Primitives;
 using NFMWorld.Util;
 using WorldXaml.UI.Yoga;
 
@@ -22,10 +23,11 @@ public interface IGraphics : IXamlGraphics
     void DrawImage(IImage image, int x, int y);
     void SetFont(Font font);
     IFontMetrics GetFontMetrics();
-    void DrawString(string text, int x, int y);
-    void DrawStringAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
-    void DrawStringStrokeAligned(string text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
-    void DrawStringStroke(string text, int x, int y, int effectAmount = 1)
+    IFontMetrics GetFontMetrics(Font font);
+    void DrawString(StringSegment text, int x, int y);
+    void DrawStringAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
+    void DrawStringStrokeAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
+    void DrawStringStroke(StringSegment text, int x, int y, int effectAmount = 1)
     {
     }
     void FillOval(int p0, int p1, int p2, int p3);
@@ -33,13 +35,11 @@ public interface IGraphics : IXamlGraphics
     void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei);
     void DrawRect(int x1, int y1, int width, int height);
     void DrawImage(IImage image, int x, int y, int width, int height);
-    string LayoutText(string text, float width, float height, BreakType breakType = BreakType.Word, OverflowBehavior overflowBehavior = OverflowBehavior.ContinueHorizontally)
-    {
-        return text;
-    }
 
     void SetAntialiasing(bool useAntialias)
     {
         // empty
     }
+
+
 }
