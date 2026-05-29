@@ -10,9 +10,26 @@ using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI;
 
+
+public enum BreakType
+{
+    None,
+    Word,
+    Character
+}
+
+public enum OverflowBehavior
+{
+    None,
+    Stretch,
+    ContinueVertically,
+    ContinueHorizontally
+}
+
 public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
 {
-    private IFontMetrics? _fontMetrics;
+    private bool _invalidated = true;
+    private string? _laidOutText;
     private ComplexTextMetrics.RichTextContainer? _laidOutComplexText;
 
     /// <summary>
@@ -38,61 +55,17 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
     [Property(OnChangedMethod = nameof(OnFontChanged))]
     public partial Font Font { get; set; }
     
-    private partial void OnFontChanged(Font newFont)
-    {
-        SetFontMetrics();
-        RelayoutText();
-    }
-    
+    [Property(DefaultValue = BreakType.Word, OnChangedMethod = nameof(OnBreakTypeChanged))]
+    public partial BreakType BreakType { get; set; }
+
+    [Property(DefaultValue = OverflowBehavior.Stretch, OnChangedMethod = nameof(OnOverflowBehaviorChanged))]
+    public partial OverflowBehavior OverflowBehavior { get; set; }
+
     /// <summary>
     /// Sets the text.
     /// </summary>
     [Property(DefaultValue = "", OnChangedMethod = nameof(OnTextChanged))]
     public partial string? Text { get; set; }
-
-    public TextRun()
-    {
-        Inlines = new InlineCollection(this);
-    }
-    
-    private partial void OnTextChanged(string? newText)
-    {
-        if (HasComplexContent && !_clearTextInternal)
-        {
-            Inlines.Clear();
-        }
-
-        RelayoutText();
-    }
-
-    [MemberNotNull(nameof(_fontMetrics))]
-    private void SetFontMetrics()
-    {
-        G.SetFont(Font with { Size = Font.Size }); // Does not use scale here
-        _fontMetrics = G.GetFontMetrics();
-    }
-
-    private void RelayoutText()
-    {
-        if (_fontMetrics == null)
-        {
-            SetFontMetrics();
-        }
-
-        if (!HasComplexContent)
-        {
-            var measurements = _fontMetrics.MeasureText(Text ?? string.Empty);
-            Width = measurements.X;
-            Height = measurements.Y;
-        }
-        else
-        {
-            var measurements = ComplexTextMetrics.MeasureRichText(Inlines.OfType<IRichTextElement>(), Font);
-            Width = measurements.Size.X;
-            Height = measurements.Size.Y;
-            _laidOutComplexText = measurements;
-        }
-    }
 
     /// <summary>
     /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
@@ -106,13 +79,87 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
     [Property(DefaultValue = TextVerticalAlignment.Top)]
     public partial TextVerticalAlignment VerticalAlignment { get; set; }
 
+    private partial void OnBreakTypeChanged(BreakType prop)
+    {
+        Invalidate();
+    }
+
+    private partial void OnOverflowBehaviorChanged(OverflowBehavior prop)
+    {
+        Invalidate();
+    }
+
+    private partial void OnFontChanged(Font newFont)
+    {
+        Invalidate();
+    }
+    
+    public TextRun()
+    {
+        Inlines = new InlineCollection(this);
+    }
+    
+    private partial void OnTextChanged(string? newText)
+    {
+        if (HasComplexContent && !_clearTextInternal)
+        {
+            Inlines.Clear();
+        }
+
+        Invalidate();
+    }
+
+    private void RelayoutText(System.Numerics.Vector2 size)
+    {
+        if (!HasComplexContent)
+        {
+            if (!string.IsNullOrEmpty(Text))
+            {
+                IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened = [Text];
+                if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+                {
+                    flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+                }
+                var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+                Width = measurements.Size.X;
+                Height = measurements.Size.Y;
+                _laidOutText = measurements.Elements[0].Text;
+            }
+        }
+        else
+        {
+            var flattened = ComplexTextMetrics.FlattenText(Inlines.OfType<IRichTextElement>());
+            if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+            {
+                flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+            }
+            var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+            Width = measurements.Size.X;
+            Height = measurements.Size.Y;
+            _laidOutComplexText = measurements;
+        }
+
+        _invalidated = false;
+    }
+
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
         base.RenderContent(position, size);
+        
+        if (HasNewLayout && OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+        {
+            _invalidated = true;
+            HasNewLayout = false;
+        }
+        
+        if (_invalidated)
+        {
+            RelayoutText(size);
+        }
 
         if (!HasComplexContent)
         {
-            if (string.IsNullOrEmpty(Text))
+            if (string.IsNullOrEmpty(_laidOutText))
             {
                 return;
             }
@@ -121,12 +168,12 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
             if (StrokeColor != null)
             {
                 G.SetColor((Color)StrokeColor);
-                G.DrawStringStrokeAligned(Text, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y,
+                G.DrawStringStrokeAligned(_laidOutText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y,
                     HorizontalAlignment, VerticalAlignment);
             }
 
             G.SetColor(Color);
-            G.DrawStringAligned(Text, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
+            G.DrawStringAligned(_laidOutText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
         }
         else
         {
@@ -176,7 +223,7 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
         
     void IAddChild<Inline>.AddChild(Inline child)
     {
-        Inlines?.Add(child);
+        Inlines.Add(child);
     }
 
     void IAddChild.AddChild(object child)
@@ -189,7 +236,7 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
 
     public void Invalidate()
     {
-        RelayoutText();
+        _invalidated = true;
     }
 
 
