@@ -12,7 +12,8 @@
     AlignItems="FlexStart"
     JustifyContent="Center"
     Gap="10"
-    Padding="10">
+    Padding="10"
+    Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
 
     <Box
         FlexDirection="Row">

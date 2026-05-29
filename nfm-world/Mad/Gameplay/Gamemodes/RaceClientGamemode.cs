@@ -30,12 +30,13 @@ public class RaceClientGamemode(BaseGamemodeParameters gamemodeParameters, BaseR
         _pdBars.Reset();
         IBackend.Backend.StopAllSounds();
 
-        _lapTimerSplits.SetLapText(1, currentStage.nlaps);
+        _lapTimerSplits.DataContext.CurrentLap = 1;
+        _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
     }
 
     protected override void InRace()
     {
-        _lapTimerSplits.SetLapText(carsInRace[playerCarIndex].currentLap, currentStage.nlaps);
+        _lapTimerSplits.DataContext.CurrentLap = carsInRace[playerCarIndex].currentLap + 1;
 
         _pdBars.SetDamageBarFill(carsInRace[playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
         _pdBars.UpdateDamageBarColor();
