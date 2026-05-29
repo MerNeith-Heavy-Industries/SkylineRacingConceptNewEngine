@@ -1,9 +1,11 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using RayTech.RayLog.MEL;
+using ZLogger;
 
 #pragma warning disable CA2254
 
@@ -26,6 +28,7 @@ public static class Logging
             })
             .AddConsoleFormatter<RayLogConsoleFormatter, ConsoleFormatterOptions>()
             .AddSentry(o => o.Dsn = SentryDsn)
+            .AddZLoggerRollingFile((dt, index) => $"{dt:yyyy-MM-dd}_{index}.log", 1024 * 1024)
             .AddProvider(new NfmwLoggerProvider())
             .SetMinimumLevel(
 #if DEBUG
@@ -73,182 +76,262 @@ public static class Logging
 
     #region InterpolatedStringHandler
     
-    public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler)
+    public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
     {
         if (General.IsEnabled(LogLevel.Information))
         {
-            handler.GetTemplateAndArguments(out var template, out var arguments);
-            General.LogInformation(template, arguments);
+            General.ZLog(LogLevel.Information, default, null, ref handler._handler, context, memberName, filePath, lineNumber);
         }
     }
-    public static void Warning([InterpolatedStringHandlerArgument] ref StructuredLoggingWarningInterpolatedStringHandler handler)
+    public static void Warning([InterpolatedStringHandlerArgument] ref StructuredLoggingWarningInterpolatedStringHandler handler, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
     {
         if (General.IsEnabled(LogLevel.Warning))
         {
-            handler.GetTemplateAndArguments(out var template, out var arguments);
-            General.LogWarning(template, arguments);
+            General.ZLog(LogLevel.Warning, default, null, ref handler._handler, context, memberName, filePath, lineNumber);
         }
     }
-    public static void Error([InterpolatedStringHandlerArgument] ref StructuredLoggingErrorInterpolatedStringHandler handler)
+    public static void Error([InterpolatedStringHandlerArgument] ref StructuredLoggingErrorInterpolatedStringHandler handler, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
     {
         if (General.IsEnabled(LogLevel.Error))
         {
-            handler.GetTemplateAndArguments(out var template, out var arguments);
-            General.LogError(template, arguments);
+            General.ZLog(LogLevel.Error, default, null, ref handler._handler, context, memberName, filePath, lineNumber);
         }
     }
-    public static void Debug([InterpolatedStringHandlerArgument] ref StructuredLoggingDebugInterpolatedStringHandler handler)
+    public static void Debug([InterpolatedStringHandlerArgument] ref StructuredLoggingDebugInterpolatedStringHandler handler, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
     {
         if (General.IsEnabled(LogLevel.Debug))
         {
-            handler.GetTemplateAndArguments(out var template, out var arguments);
-            General.LogDebug(template, arguments);
+            General.ZLog(LogLevel.Debug, default, null, ref handler._handler, context, memberName, filePath, lineNumber);
         }
     }
-    
+
+    public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler, EventId eventId, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Information))
+        {
+            General.ZLog(LogLevel.Information, eventId, null, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Warning([InterpolatedStringHandlerArgument] ref StructuredLoggingWarningInterpolatedStringHandler handler, EventId eventId, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Warning))
+        {
+            General.ZLog(LogLevel.Warning, eventId, null, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Error([InterpolatedStringHandlerArgument] ref StructuredLoggingErrorInterpolatedStringHandler handler, EventId eventId, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Error))
+        {
+            General.ZLog(LogLevel.Error, eventId, null, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Debug([InterpolatedStringHandlerArgument] ref StructuredLoggingDebugInterpolatedStringHandler handler, EventId eventId, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Debug))
+        {
+            General.ZLog(LogLevel.Debug, eventId, null, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+
+    public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Information))
+        {
+            General.ZLog(LogLevel.Information, default, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Warning([InterpolatedStringHandlerArgument] ref StructuredLoggingWarningInterpolatedStringHandler handler, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Warning))
+        {
+            General.ZLog(LogLevel.Warning, default, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Error([InterpolatedStringHandlerArgument] ref StructuredLoggingErrorInterpolatedStringHandler handler, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Error))
+        {
+            General.ZLog(LogLevel.Error, default, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Debug([InterpolatedStringHandlerArgument] ref StructuredLoggingDebugInterpolatedStringHandler handler, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Debug))
+        {
+            General.ZLog(LogLevel.Debug, default, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+
+    public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler, EventId eventId, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Information))
+        {
+            General.ZLog(LogLevel.Information, eventId, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Warning([InterpolatedStringHandlerArgument] ref StructuredLoggingWarningInterpolatedStringHandler handler, EventId eventId, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Warning))
+        {
+            General.ZLog(LogLevel.Warning, eventId, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Error([InterpolatedStringHandlerArgument] ref StructuredLoggingErrorInterpolatedStringHandler handler, EventId eventId, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Error))
+        {
+            General.ZLog(LogLevel.Error, eventId, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+    public static void Debug([InterpolatedStringHandlerArgument] ref StructuredLoggingDebugInterpolatedStringHandler handler, EventId eventId, Exception? exception, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        if (General.IsEnabled(LogLevel.Debug))
+        {
+            General.ZLog(LogLevel.Debug, eventId, exception, ref handler._handler, context, memberName, filePath, lineNumber);
+        }
+    }
+
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingTraceInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingTraceInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Trace, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Trace, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);
     }
 
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingDebugInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingDebugInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Debug, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Debug, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
+
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);
     }
 
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingInformationInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingInformationInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Information, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Information, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
-    }
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);    }
 
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingWarningInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingWarningInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Warning, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Warning, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
-    }
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);    }
 
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingErrorInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingErrorInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Error, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Error, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
-    }
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);    }
 
     [InterpolatedStringHandler]
     public ref struct StructuredLoggingCriticalInterpolatedStringHandler
     {
-        private StructuredLoggingInterpolatedStringHandler _handler;
+        internal ZLoggerInterpolatedStringHandler _handler;
 
         public StructuredLoggingCriticalInterpolatedStringHandler(int literalLength, int formattedCount, out bool isEnabled)
         {
-            _handler = new StructuredLoggingInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Critical, out isEnabled);
+            _handler = new ZLoggerInterpolatedStringHandler(literalLength, formattedCount, General, LogLevel.Critical, out isEnabled);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendLiteral(string s) => _handler.AppendLiteral(s);
+        public void AppendLiteral([ConstantExpected] string s)
+            => _handler.AppendLiteral(s);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        // ReSharper disable once MethodOverloadWithOptionalParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void AppendFormatted<T>(T value, string? format, [CallerArgumentExpression("value")] string name = "") => _handler.AppendFormatted(value, format, name);
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T? value, int alignment = 0, string? format = null, [CallerArgumentExpression("value")] string? argumentName = null)
+            where T : struct
+            => _handler.AppendFormatted(value, alignment, format, argumentName);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetTemplateAndArguments(out string template, out object?[] arguments) => _handler.GetTemplateAndArguments(out template, out arguments);
-    }
+        public void AppendFormatted<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>((string, T) namedValue, int alignment = 0, string? format = null, string? _ = null)
+            => _handler.AppendFormatted(namedValue, alignment, format);    }
 
 
     #endregion
