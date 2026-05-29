@@ -4,7 +4,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:w="https://github.com/needforrewrite/nfm-world"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:documents="clr-namespace:Avalonia.Controls.Documents;assembly=WorldXaml.UI.Base"
     mc:Ignorable="d" d:DataContext="{d:DesignInstance w:LapTimerSplitsViewModel}"
     x:Class="NFMWorld.UI.Hud.LapTimerSplitsView"
     DataType="w:LapTimerSplitsViewModel"
@@ -12,7 +11,8 @@
     AlignItems="FlexStart"
     JustifyContent="Center"
     Gap="10"
-    Padding="10">
+    Padding="10"
+    Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
 
     <!-- Lap Display Row -->
     <Box
