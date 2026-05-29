@@ -1,4 +1,5 @@
-﻿using NFMWorldLibrary.FixedMath;
+﻿using System.Runtime.InteropServices;
+using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Rad;
@@ -65,7 +66,7 @@ public class RadParser
             CastsShadow: parser._castsShadow,
             Atp: parser._atp.ToArray(),
             CollisionMesh: parser._meshCollisionVerts.Count > 0 ? new SrcRad3dCollisionMesh(parser._meshCollisionVerts.ToArray(), parser._meshCollisionIndices.ToArray()) : null,
-            CollisionHull: parser._hullVerts.Count > 0 ? parser._hullVerts.ToArray() : null
+            CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null
         ));
     }
 
@@ -91,8 +92,8 @@ public class RadParser
             wheelZTranslation += wheel.Position.Z;
         }
 
-        wheelXTranslation /= (fix64)4f;
-        wheelZTranslation /= (fix64)4f;
+        wheelXTranslation /= (fix64)4;
+        wheelZTranslation /= (fix64)4;
         
         // maxine: this code is incredibly crucial!
         // in theory we should be moving the car to the wheel center, because otherwise the car drifts off of its center
@@ -243,7 +244,11 @@ public class RadParser
         else if (line.StartsWith("mv("))
         {
             var vec = f64Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc fix64[3]));
-            _meshCollisionVerts.Add(vec);
+            _meshCollisionVerts.Add(new f64Vector3(
+                vec.X * idiv * iwid * scaleX,
+                vec.Y * idiv * scaleY,
+                vec.Z * idiv * scaleZ
+            ));
         }
         
         // SRC extension
