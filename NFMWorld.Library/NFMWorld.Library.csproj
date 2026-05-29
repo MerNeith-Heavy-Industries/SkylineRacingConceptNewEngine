@@ -28,6 +28,7 @@
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
         <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
+        <PackageReference Include="ZLogger" Version="2.5.10" />
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
