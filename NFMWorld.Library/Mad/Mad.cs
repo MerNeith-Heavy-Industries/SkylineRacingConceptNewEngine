@@ -204,9 +204,11 @@ public class Mad
         {
             if (!_caught[othermad.Im] && (Speed != 0 || othermad.Speed != 0))
             {
-                if (fix64.Abs(fix64.Abs(Power * Speed * Stat.Moment) - fix64.Abs(othermad.Power * othermad.Speed * othermad.Stat.Moment)) > (fix64)0.001f)
+                var ownMoment = fix64.Abs(Power * Speed * Stat.Moment);
+                var otherMoment = fix64.Abs(othermad.Power * othermad.Speed * othermad.Stat.Moment);
+                if (fix64.Abs(ownMoment - otherMoment) > (fix64)0.001f)
                 {
-                    _dominate[othermad.Im] = fix64.Abs(Power * Speed * Stat.Moment) > fix64.Abs(othermad.Power * othermad.Speed * othermad.Stat.Moment);
+                    _dominate[othermad.Im] = ownMoment > otherMoment;
                 }
                 else
                 {
