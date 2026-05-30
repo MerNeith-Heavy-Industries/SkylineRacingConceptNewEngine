@@ -337,10 +337,7 @@ public static class BackendGameSparker
         cars.Add(Collection.Skyline, []);
         FileUtil.LoadFiles("./data/models/src/cars", (ais, fileName) =>
         {
-            cars[Collection.Skyline].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "src/" + fileName
-            });
+            cars[Collection.Skyline].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "src/" + fileName));
         });
 
         FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) =>
@@ -355,10 +352,7 @@ public static class BackendGameSparker
 
         FileUtil.LoadFiles("./data/models/src/stage", srcStageParts, (ais, id, fileName) =>
         {
-            src_stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "src/" + fileName
-            };
+            src_stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "src/" + fileName);
         });
 
         cars.Add(Collection.User, []);

@@ -277,6 +277,40 @@ public class RadParser
             var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc int[2]);
             _atp.Add(new Vector2(x, z));
         }
+        
+        else if (line.StartsWith("loadOldSrcStats()")) // SRC extension
+        {
+            var car = OldSrcStats.cars.IndexOf(_fileName.Remove("src/".Length));
+            if (car > -1)
+            {
+                _stats = _stats with { Acelf = new f64Vector3(OldSrcStats.acelf[car,0], OldSrcStats.acelf[car,1], OldSrcStats.acelf[car,2]) };
+                _stats = _stats with { Swits = new Int3(OldSrcStats.swits[car,0], OldSrcStats.swits[car,1], OldSrcStats.swits[car,2]) };
+                _stats = _stats with { Handb = OldSrcStats.handb[car] };
+                _stats = _stats with { Airs = (fix64)OldSrcStats.airs[car] };
+                _stats = _stats with { Airc = OldSrcStats.airc[car] };
+                _stats = _stats with { Turn = OldSrcStats.turn[car] };
+                _stats = _stats with { Grip = (fix64)OldSrcStats.grip[car] };
+                _stats = _stats with { Bounce = (fix64)OldSrcStats.bounce[car] };
+                _stats = _stats with { Simag = (fix64)OldSrcStats.simag[car] };
+                _stats = _stats with { Moment = (fix64)OldSrcStats.moment[car] };
+                _stats = _stats with { Comprad = (fix64)OldSrcStats.comprad[car] };
+                _stats = _stats with { Push = OldSrcStats.push[car] };
+                _stats = _stats with { Revpush = OldSrcStats.revpush[car] };
+                _stats = _stats with { Lift = OldSrcStats.lift[car] };
+                _stats = _stats with { Revlift = OldSrcStats.revlift[car] };
+                _stats = _stats with { Powerloss = OldSrcStats.powerloss[car] };
+                _stats = _stats with { Flipy = OldSrcStats.flipy[car] };
+                _stats = _stats with { Msquash = OldSrcStats.msquash[car] };
+                _stats = _stats with { Clrad = OldSrcStats.clrad[car] };
+                _stats = _stats with { Dammult = (fix64)OldSrcStats.dammult[car] };
+                _stats = _stats with { Maxmag = OldSrcStats.maxmag[car] };
+                _stats = _stats with { Dishandle = (fix64)OldSrcStats.dishandle[car] };
+                _stats = _stats with { Dishandle = (fix64)OldSrcStats.dishandle[car] };
+                _stats = _stats with { Outdam = (fix64)OldSrcStats.outdam[car] };
+                _stats = _stats with { Name = OldSrcStats.names[car] };
+                _stats = _stats with { Enginsignature = (sbyte)OldSrcStats.enginsignature[car] };
+            }
+        }
 
         if (_boxes.Count > 0)
         {
