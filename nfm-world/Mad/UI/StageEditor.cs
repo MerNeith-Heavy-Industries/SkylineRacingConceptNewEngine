@@ -251,7 +251,9 @@ public class StageEditorPhase : BasePhase
     private const float CAMERA_MOVE_SPEED = 50f;
     
     // 3D Camera
-    public static PerspectiveCamera camera = new();
+    public static OrthoCamera orthoCamera = new();
+    public static PerspectiveCamera perspectiveCamera = new();
+    public static Camera activeCamera = perspectiveCamera;
     
     // Drag and drop state
     private int _draggedPartIndex = -1;
@@ -452,15 +454,31 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.SetRenderTarget(null);
         
         // Initialize camera
-        camera.Fov = 60f;
-        camera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
-        camera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+        perspectiveCamera.Fov = 60f;
+        perspectiveCamera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
+        perspectiveCamera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+        
+        orthoCamera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
+        orthoCamera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
         
         UpdateCameraPosition();
         
         Logging.Debug("Stage Editor opened");
     }
+
+    public override void WindowSizeChanged(int width, int height)
+    {
+        base.WindowSizeChanged(width, height);
+        
+        perspectiveCamera.Width = width;
+        perspectiveCamera.Height = height;
+        
+        orthoCamera.Width = width;
+        orthoCamera.Height = height;
     
+        UpdateCameraPosition();
+    }
+
     public override void Exit()
     {
         _isOpen = false;
@@ -976,7 +994,7 @@ public class StageEditorPhase : BasePhase
         ActiveTab.Scene = new Scene(
             _graphicsDevice,
             sceneObjects,
-            camera,
+            activeCamera,
             [] // No shadow cameras for now
         );
     }
@@ -1058,25 +1076,27 @@ public class StageEditorPhase : BasePhase
                 (float)Math.Sin(pitch),
                 (float)(Math.Cos(pitch) * Math.Cos(yaw))
             );
-            
-            camera.PositionWithoutInterpolation = ActiveTab.CameraPosition;
-            camera.LookAtWithoutInterpolation = ActiveTab.CameraPosition + lookDirection;
-            camera.UpWithoutInterpolation = -Vector3.UnitY;
-            camera.IsOrthographic = false;
+
+            activeCamera = perspectiveCamera;
+            if (ActiveTab.Scene != null) ActiveTab.Scene.ActiveCamera = activeCamera;
+            activeCamera.PositionWithoutInterpolation = ActiveTab.CameraPosition;
+            activeCamera.LookAtWithoutInterpolation = ActiveTab.CameraPosition + lookDirection;
+            activeCamera.UpWithoutInterpolation = -Vector3.UnitY;
         }
         else
         {
             // Top down view - look from above at pan position (negative Y is up in this coordinate system)
-            camera.PositionWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
-            camera.LookAtWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
-            camera.UpWithoutInterpolation = Vector3.UnitZ;
-            camera.IsOrthographic = ActiveTab.TopDownOrtho;
+            activeCamera = ActiveTab.TopDownOrtho ? orthoCamera : perspectiveCamera;
+            if (ActiveTab.Scene != null) ActiveTab.Scene.ActiveCamera = activeCamera;
+            activeCamera.PositionWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
+            activeCamera.LookAtWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
+            activeCamera.UpWithoutInterpolation = Vector3.UnitZ;
             if (ActiveTab.TopDownOrtho)
             {
                 // Match the visible world area that perspective would show at this height.
                 // half_height_world = TopDownHeight * tan(Fov/2)
-                float halfH = ActiveTab.TopDownHeight * MathF.Tan(camera.Fov * MathF.PI / 180f * 0.5f);
-                camera.OrthoScale = (camera.Height > 0) ? (2f * halfH / camera.Height) : 1f;
+                float halfH = ActiveTab.TopDownHeight * MathF.Tan(perspectiveCamera.Fov * MathF.PI / 180f * 0.5f);
+                orthoCamera.OrthoScale = (orthoCamera.Height > 0) ? (2f * halfH / orthoCamera.Height) : 1f;
             }
         }
     }
@@ -1391,8 +1411,8 @@ public class StageEditorPhase : BasePhase
         
         // Draw wireframe box using BasicEffect
         var effect = new BasicEffect(_graphicsDevice);
-        effect.View = camera.ViewMatrix;
-        effect.Projection = camera.ProjectionMatrix;
+        effect.View = activeCamera.ViewMatrix;
+        effect.Projection = activeCamera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
         
         var color = new Color(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
@@ -1500,8 +1520,8 @@ public class StageEditorPhase : BasePhase
         var oldRasterizer = _graphicsDevice.RasterizerState;
         
         var effect = new BasicEffect(_graphicsDevice);
-        effect.View = camera.ViewMatrix;
-        effect.Projection = camera.ProjectionMatrix;
+        effect.View = activeCamera.ViewMatrix;
+        effect.Projection = activeCamera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
         
         // Semi-transparent fill (both faces so it looks solid from any angle)
@@ -1568,7 +1588,7 @@ public class StageEditorPhase : BasePhase
     {
         var viewport = _graphicsDevice.Viewport;
         var clip = Vector4.Transform(new Vector4(worldPos, 1f),
-            camera.ViewMatrix * camera.ProjectionMatrix);
+            activeCamera.ViewMatrix * activeCamera.ProjectionMatrix);
         screenPos = default;
         if (clip.W <= 0f) return false;
         var ndc = new Vector3(clip.X / clip.W, clip.Y / clip.W, clip.Z / clip.W); // XNA Vector3
@@ -1602,8 +1622,8 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
         
         var effect = new BasicEffect(_graphicsDevice);
-        effect.View = camera.ViewMatrix;
-        effect.Projection = camera.ProjectionMatrix;
+        effect.View = activeCamera.ViewMatrix;
+        effect.Projection = activeCamera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
         
         // Colors: red=X, yellow=Y(up), blue=Z, green=RotY ring
@@ -1662,13 +1682,13 @@ public class StageEditorPhase : BasePhase
         
         // Compute camera-relative perpendicular offsets so lines appear ~5px wide at any distance.
         // Camera right/up come from the columns of the view matrix (orthonormal rotation part).
-        float dist = Vector3.Distance(camera.Position, piecePos);
-        float halfFovRad = camera.Fov * MathF.PI / 180f * 0.5f;
+        float dist = Vector3.Distance(activeCamera.Position, piecePos);
+        float halfFovRad = perspectiveCamera.Fov * MathF.PI / 180f * 0.5f;
         // World units that map to 1 screen pixel at this distance
         float pixelSize = dist * MathF.Tan(halfFovRad) * 2f / _graphicsDevice.Viewport.Height;
         float s = pixelSize * 2f; // 2 px each side = ~5px total visual width
-        var camRight = new Vector3(camera.ViewMatrix.M11, camera.ViewMatrix.M21, camera.ViewMatrix.M31);
-        var camUp    = new Vector3(camera.ViewMatrix.M12, camera.ViewMatrix.M22, camera.ViewMatrix.M32);
+        var camRight = new Vector3(activeCamera.ViewMatrix.M11, activeCamera.ViewMatrix.M21, activeCamera.ViewMatrix.M31);
+        var camUp    = new Vector3(activeCamera.ViewMatrix.M12, activeCamera.ViewMatrix.M22, activeCamera.ViewMatrix.M32);
         var thickOffsets = new[]
         {
             Vector3.Zero,
@@ -1822,29 +1842,54 @@ public class StageEditorPhase : BasePhase
     }
     
     /// <summary>
+    /// Constructs a pick ray from screen coordinates, handling both perspective and orthographic cameras.
+    /// For perspective, the ray originates at the camera position and goes through the near plane.
+    /// For orthographic, the ray originates on the near plane at the mouse position and goes
+    /// in the camera's forward direction (all rays are parallel).
+    /// </summary>
+    private (Vector3 Origin, Vector3 Direction) GetPickRay(int screenX, int screenY)
+    {
+        var viewport = _graphicsDevice.Viewport;
+        float ndcX = (2.0f * screenX) / viewport.Width - 1.0f;
+        float ndcY = 1.0f - (2.0f * screenY) / viewport.Height;
+        
+        var projMatrix = activeCamera.ProjectionMatrix;
+        Matrix.Invert(ref projMatrix, out var invProj);
+        var viewMatrix = activeCamera.ViewMatrix;
+        Matrix.Invert(ref viewMatrix, out var invView);
+        
+        if (activeCamera is OrthoCamera)
+        {
+            // Orthographic: all rays are parallel in the camera's forward direction.
+            // The origin varies per pixel — unproject the NDC point on the near plane.
+            var nearView = Vector4.Transform(new Vector4(ndcX, ndcY, 0f, 1f), invProj);
+            var nearWorld = Vector4.Transform(new Vector4(nearView.X, nearView.Y, nearView.Z, 1f), invView);
+            var origin = new Vector3(nearWorld.X, nearWorld.Y, nearWorld.Z);
+            var forward = Vector3.Normalize(activeCamera.LookAt - activeCamera.Position);
+            return (origin, forward);
+        }
+        else
+        {
+            // Perspective: ray from camera position through the near plane point.
+            var rayClip = new Vector4(ndcX, ndcY, -1f, 1f);
+            var rayEye = Vector4.Transform(rayClip, invProj);
+            rayEye.Z = -1.0f;
+            rayEye.W = 0.0f;
+            var rayWorld4 = Vector4.Transform(rayEye, invView);
+            var direction = Vector3.Normalize(new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z));
+            return (activeCamera.Position, direction);
+        }
+    }
+
+    /// <summary>
     /// Computes the intersection of the mouse ray with the horizontal ground plane (Y = 250)
     /// in world space. Returns false if the ray doesn't hit the plane (parallel or behind camera).
     /// </summary>
     private bool TryGetGroundPositionAtMouse(int screenX, int screenY, out Vector3 result)
     {
         result = default;
-        var viewport = _graphicsDevice.Viewport;
-        float ndcX = (2.0f * screenX) / viewport.Width - 1.0f;
-        float ndcY = 1.0f - (2.0f * screenY) / viewport.Height;
         
-        var rayClip = new Vector4(ndcX, ndcY, -1.0f, 1.0f);
-        var projMatrix = camera.ProjectionMatrix;
-        Matrix.Invert(ref projMatrix, out var invProj);
-        var rayEye = Vector4.Transform(rayClip, invProj);
-        rayEye.Z = -1.0f;
-        rayEye.W = 0.0f;
-        
-        var viewMatrix = camera.ViewMatrix;
-        Matrix.Invert(ref viewMatrix, out var invView);
-        var rayWorld4 = Vector4.Transform(rayEye, invView);
-        var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
-        rayDirection.Normalize();
-        var rayOrigin = camera.Position;
+        var (rayOrigin, rayDirection) = GetPickRay(screenX, screenY);
         
         const float groundY = 250f;
         if (Math.Abs(rayDirection.Y) < 0.0001f) return false;
@@ -1859,30 +1904,7 @@ public class StageEditorPhase : BasePhase
     {
         if (ActiveTab.ScenePieces.Count == 0) return -1;
         
-        var viewport = _graphicsDevice.Viewport;
-        
-        // Convert screen coords to normalized device coordinates
-        float ndcX = (2.0f * screenX) / viewport.Width - 1.0f;
-        float ndcY = 1.0f - (2.0f * screenY) / viewport.Height;
-        
-        // Create ray in clip space
-        var rayClip = new Vector4(ndcX, ndcY, -1.0f, 1.0f);
-        
-        // Transform to view space
-        var projMatrix = camera.ProjectionMatrix;
-        Matrix.Invert(ref projMatrix, out var invProj);
-        var rayEye = Vector4.Transform(rayClip, invProj);
-        rayEye.Z = -1.0f;
-        rayEye.W = 0.0f;
-        
-        // Transform to world space
-        var viewMatrix = camera.ViewMatrix;
-        Matrix.Invert(ref viewMatrix, out var invView);
-        var rayWorld4 = Vector4.Transform(rayEye, invView);
-        var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
-        rayDirection.Normalize();
-        
-        var rayOrigin = camera.Position;
+        var (rayOrigin, rayDirection) = GetPickRay(screenX, screenY);
         
         // Find closest intersected piece using proper ray-triangle intersection
         float closestDistance = float.MaxValue;
@@ -2104,7 +2126,7 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newX = (float)spos.X + worldDelta;
-                                if (_snapEnabled && _snapSize > 0f)
+                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
                                     newX = MathF.Round(newX / _snapSize) * _snapSize;
                                 sp.Position = new f64Vector3((fix64)newX, spos.Y, spos.Z);
                             }
@@ -2131,7 +2153,7 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newY = (float)spos.Y + worldDelta;
-                                if (_snapEnabled && _snapSize > 0f)
+                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
                                     newY = MathF.Round(newY / _snapSize) * _snapSize;
                                 sp.Position = new f64Vector3(spos.X, (fix64)newY, spos.Z);
                             }
@@ -2156,7 +2178,7 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newZ = (float)spos.Z + worldDelta;
-                                if (_snapEnabled && _snapSize > 0f)
+                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
                                     newZ = MathF.Round(newZ / _snapSize) * _snapSize;
                                 sp.Position = new f64Vector3(spos.X, spos.Y, (fix64)newZ);
                             }
@@ -2185,7 +2207,15 @@ public class StageEditorPhase : BasePhase
                             startPos.Y,
                             (fix64)(_gizmoCentroidZ + newRelZ));
                         float startRot = _gizmoDragStartRotations.TryGetValue(sid, out var r) ? r : 0f;
-                        sp.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)((startRot + angleDelta) % 360f)), sp.Rotation.Pitch, sp.Rotation.Roll);
+
+                        fix64 rot = (fix64)((startRot + angleDelta) % 360f);
+                        if (_isShiftPressed)
+                        {
+                            // snap to 15deg
+                            rot = fix64.Round(rot / 15) * 15;
+                        }
+                        
+                        sp.Rotation = new f64Euler(f64AngleSingle.FromDegrees(rot), sp.Rotation.Pitch, sp.Rotation.Roll);
                     }
                     ActiveTab.HasUnsavedChanges = true;
                 }
@@ -3412,24 +3442,8 @@ public class StageEditorPhase : BasePhase
         _viewportMax = new Vector2(screenWidth - _inspectorWidth, screenHeight - _partsLibraryHeight);
         if (IsMouseInViewport(_mouseX, _mouseY))
         {
-            // Calculate 3D world position at ground level (Y = -250)
-            var viewport = _graphicsDevice.Viewport;
-            float ndcX = (2.0f * _mouseX) / viewport.Width - 1.0f;
-            float ndcY = 1.0f - (2.0f * _mouseY) / viewport.Height;
-            
-            var rayClip = new Vector4(ndcX, ndcY, -1.0f, 1.0f);
-            var projMatrix = camera.ProjectionMatrix;
-            Matrix.Invert(ref projMatrix, out var invProj);
-            var rayEye = Vector4.Transform(rayClip, invProj);
-            rayEye.Z = -1.0f;
-            rayEye.W = 0.0f;
-            
-            var viewMatrix = camera.ViewMatrix;
-            Matrix.Invert(ref viewMatrix, out var invView);
-            var rayWorld4 = Vector4.Transform(rayEye, invView);
-            var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
-            rayDirection.Normalize();
-            var rayOrigin = camera.Position;
+            // Calculate 3D world position at ground level (Y = 250)
+            var (rayOrigin, rayDirection) = GetPickRay(_mouseX, _mouseY);
             
             // Intersect with ground plane (Y = 250)
             float groundY = 250f;
@@ -4371,7 +4385,7 @@ public class StageEditorPhase : BasePhase
         ImGui.Spacing();
         
         // Category filter tabs
-        string[] catLabels = { "All", "nfmm/", "Vendor", "User" };
+        string[] catLabels = ["All", "NFMM", "Vendor", "User"];
         for (int c = 0; c < catLabels.Length; c++)
         {
             if (c > 0) ImGui.SameLine();
