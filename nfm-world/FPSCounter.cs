@@ -16,13 +16,13 @@ public class FPSCounter
     /// <summary>
     /// The msgFrequency here is the reporting time to update the message.
     /// </summary>
-    public static void Update(GameTime gameTime)
+    public static void Update(GameTime gameTime, long tickUs, long frameUs)
     {
         now = gameTime.TotalGameTime.TotalSeconds;
         elapsed = now - last;
         if (elapsed > msgFrequency)
         {
-            msg = $"Fps: {frames / elapsed:0.00}\nElapsed time: {elapsed:0.00}\nUpdates: {updates}\nFrames: {frames}";
+            msg = $"Fps: {frames / elapsed:0.00}\nElapsed time: {elapsed:0.00}\nTick: {tickUs}us\nFrame (CPU): {frameUs}ms\nUpdates: {updates}\nFrames: {frames}";
             //Console.WriteLine(msg);
             elapsed = 0;
             frames = 0;

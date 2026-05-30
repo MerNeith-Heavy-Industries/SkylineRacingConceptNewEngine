@@ -35,8 +35,8 @@ public class WorldGame : Game
     private ImGuiRenderer _imguiRenderer;
     public static ImGuiRenderer ImguiRenderer { get; private set; }
 
-    internal static int _lastFrameTime;
-    internal static int _lastTickTime;
+    internal static long _lastFrameTime;
+    internal static long _lastTickTime;
     internal static int _lastTickCount;
     private KeyboardState oldKeyState;
     private MouseState oldMouseState;
@@ -276,7 +276,7 @@ public class WorldGame : Game
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
-        FPSCounter.Update(gameTime);
+        FPSCounter.Update(gameTime, _lastTickTime, _lastFrameTime);
         
         UpdateInput();
         UpdateMouse();
@@ -286,22 +286,28 @@ public class WorldGame : Game
             loaded = true;
         }
 
-        var tick = new MicroStopwatch();
-        tick.Start();
-
         var timesToTick = _tickTimeStep.Update(gameTime);
-        for (int i = 0; i < timesToTick; i++)
+        if (timesToTick > 0)
         {
-            GameSparker.CurrentPhase.BeginGameTick();
-            GameSparker.GameTick();
-            GameSparker.CurrentPhase.GameTick();
-            GameSparker.CurrentPhase.EndGameTick();
+            _lastTickTime = 0;
+
+            for (int i = 0; i < timesToTick; i++)
+            {
+                var tick = new MicroStopwatch();
+                tick.Start();
+
+                GameSparker.CurrentPhase.BeginGameTick();
+                GameSparker.GameTick();
+                GameSparker.CurrentPhase.GameTick();
+                GameSparker.CurrentPhase.EndGameTick();
+            
+                _lastTickTime += tick.ElapsedMicroseconds;
+            }
+
+            _lastTickCount = timesToTick;
         }
         
         GameThreadContext.Current.ExecutePendingTasks();
-
-        _lastTickCount = timesToTick;
-        _lastTickTime = (int)tick.ElapsedMicroseconds;
     }
 
     protected override void Initialize()
@@ -606,7 +612,7 @@ public class WorldGame : Game
         _imguiRenderer.EndLayout();
         
         base.Draw(gameTime);
-        _lastFrameTime = (int)t.ElapsedMilliseconds;
+        _lastFrameTime = t.ElapsedMilliseconds;
     }
 
     public static void Main(string[] args)
