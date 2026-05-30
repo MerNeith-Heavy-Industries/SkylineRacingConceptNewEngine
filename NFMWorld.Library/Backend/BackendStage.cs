@@ -237,23 +237,13 @@ public class BackendStage : IStage
         
         foreach (var box in mesh.Boxes)
         {
-            var maxR = fix64.Max(
-                mesh.MaxRadius,
-                fix64.Max(
-                    fix64.Max(
-                        fix64.Abs(box.Translation.X) + fix64.Abs(box.Radius.X),
-                        fix64.Abs(box.Translation.Z) + fix64.Abs(box.Radius.Z)
-                    ),
-                    fix64.Abs(box.Translation.Y) + fix64.Abs(box.Radius.Y)
-                )
-            );
             CollisionQuadTree.Insert(new CollisionShapeRef(
                 gameObjectX: x,
                 gameObjectY: y,
                 gameObjectZ: z,
                 gameObjectRotXz: xz,
                 box: box,
-                maxR,
+                radius: 0, // bounds are now computed from world-space box position inside the constructor
                 index: _quadTreeInsertionIndex++
             ));
         }

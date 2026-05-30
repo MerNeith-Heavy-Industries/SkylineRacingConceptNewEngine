@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Collision;
@@ -22,11 +23,13 @@ public struct f64Bounds(fix64 x, fix64 y, fix64 width, fix64 height)
     public readonly fix64 CenterX => X + Width * fix64.Half;
     public readonly fix64 CenterY => Y + Height * fix64.Half;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Contains(fix64 px, fix64 py)
     {
         return px >= Left && px <= Right && py >= Top && py <= Bottom;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Intersects(f64Bounds other)
     {
         return !(other.Left > Right || other.Right < Left || other.Top > Bottom || other.Bottom < Top);
@@ -105,6 +108,9 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
     private f64Bounds _bounds = bounds;
     private QuadNodeArray? _nodes;
 
+    private fix64 verticalMidpoint = bounds.X + (bounds.Width * fix64.Half);
+    private fix64 horizontalMidpoint = bounds.Y + (bounds.Height * fix64.Half);
+
     public new void Clear()
     {
         base.Clear();
@@ -151,11 +157,9 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
         return nodes;
     }
 
-    private int GetIndex(f64Bounds objBounds)
+    private sbyte GetIndex(f64Bounds objBounds)
     {
-        int index = -1;
-        fix64 verticalMidpoint = _bounds.X + (_bounds.Width * fix64.Half);
-        fix64 horizontalMidpoint = _bounds.Y + (_bounds.Height * fix64.Half);
+        sbyte index = -1;
 
         bool topQuadrant = (objBounds.Y < horizontalMidpoint && objBounds.Bottom < horizontalMidpoint);
         bool bottomQuadrant = (objBounds.Y > horizontalMidpoint);
@@ -237,7 +241,12 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
             }
         }
 
-        returnObjects.AddRange(this);
+        var span = CollectionsMarshal.AsSpan(this);
+        foreach (ref readonly var obj in span)
+        {
+            if (obj.Bounds.Intersects(area))
+                returnObjects.Add(obj);
+        }
     }
     
     public IEnumerable<T> RetrieveEnumerable(f64Bounds area)
@@ -264,7 +273,10 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
         }
 
         foreach (var obj in this)
-            yield return obj;
+        {
+            if (obj.Bounds.Intersects(area))
+                yield return obj;
+        }
     }
 
     public void RetrievePoint(List<T> returnObjects, fix64 x, fix64 y)
@@ -286,7 +298,12 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
             }
         }
 
-        returnObjects.AddRange(this);
+        var span = CollectionsMarshal.AsSpan(this);
+        foreach (ref readonly var obj in span)
+        {
+            if (obj.Bounds.Contains(x, y))
+                returnObjects.Add(obj);
+        }
     }
     
     public IEnumerable<T> RetrievePointEnumerable(fix64 x, fix64 y)
@@ -313,7 +330,10 @@ internal class QuadNode<T>(int level, f64Bounds bounds) : List<T>
         }
 
         foreach (var obj in this)
-            yield return obj;
+        {
+            if (obj.Bounds.Contains(x, y))
+                yield return obj;
+        }
     }
 
     public int CountObjects()
