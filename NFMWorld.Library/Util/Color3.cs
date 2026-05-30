@@ -11,6 +11,9 @@ public record struct Color3(
 )
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator Color3(Vector3 c) => new((short)(c.X * 255), (short)(c.Y * 255), (short)(c.Z * 255));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Vector3(Color3 c) => new(c.R / 255f, c.G / 255f, c.B / 255f);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
