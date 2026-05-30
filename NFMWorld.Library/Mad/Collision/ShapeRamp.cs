@@ -2,7 +2,7 @@
 
 namespace NFMWorldLibrary.Collision;
 
-public readonly struct BoxRamp(
+public readonly struct ShapeRamp(
     f64Vector3 rad,
     fix64 trackersZy,
     fix64 trackersXz,
@@ -10,6 +10,12 @@ public readonly struct BoxRamp(
     fix64 contoXz,
     f64Vector3 contoPosition)
 {
+    public f64Vector3 GameObjectPosition => contoPosition;
+    public f64Vector3 TrackersPosition => trackersPosition;
+    public fix64 GameObjectXz => contoXz;
+    public fix64 TrackersXz => trackersXz;
+    public fix64 TrackersZy => trackersZy;
+
     public readonly struct Collision(fix64 zTmp, f64Vector3 newPosition)
     {
         public readonly fix64 zTmp = zTmp;

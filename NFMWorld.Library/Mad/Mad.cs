@@ -1118,20 +1118,22 @@ public class Mad
         var surfaceType = 1;
         foreach (var collidable in stage.RetrievePointCollidables(conto.X, conto.Z))
         {
-            var box = collidable.Box;
-            // bumps don't have rady defined so it is 0
-            // the collision check that was here only checks x and z and allows y to be anything
-            // this means if there is a floating road over a bumpy side road, you still hit the bumps on the road above
-            // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
-            var rad = new f64Vector3(box.Radius.X, 1000000000, box.Radius.Z);
-            var trackersPosition = box.Translation;
-            var contoXz = collidable.GameObjectXz;
-            var contoPosition = collidable.GameObjectPosition;
-            var position = new f64Vector3(conto.X, conto.Y, conto.Z);
-            var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
-            if (theBox.ResolveCollision(position) is not null)
+            if (collidable.TryGetValue(out ShapeRoad boxRoad))
             {
-                surfaceType = box.Skid;
+                // bumps don't have rady defined so it is 0
+                // the collision check that was here only checks x and z and allows y to be anything
+                // this means if there is a floating road over a bumpy side road, you still hit the bumps on the road above
+                // to fix this fix the bumpy side models to have some proper rady and propagate the rady value instead of 10^9
+                var rad = new f64Vector3(boxRoad.Radius.X, 1000000000, boxRoad.Radius.Z);
+                var trackersPosition = boxRoad.TrackersPosition;
+                var contoXz = boxRoad.GameObjectXz;
+                var contoPosition = boxRoad.GameObjectPosition;
+                var position = new f64Vector3(conto.X, conto.Y, conto.Z);
+                var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
+                if (theBox.ResolveCollision(position) is not null)
+                {
+                    surfaceType = collidable.Skid;
+                }
             }
         }
 
@@ -2246,11 +2248,13 @@ public class Mad
                 Logging.Info("start wheel");
                 foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
-                    if (collidable.CollisionMesh is { } collisionMesh)
+                    if (collidable.TryGetValue(out ShapeMesh boxMesh))
                     {
+                        var collisionMesh = boxMesh.CollisionMesh;
+
                         // Transform wheel into object-local space (1 transform per mesh, not 3 per triangle)
-                        var localPosition = (position - collidable.GameObjectPosition).RotateXz(-collidable.GameObjectXz);
-                        var localVelocity = velocity.RotateXz(-collidable.GameObjectXz);
+                        var localPosition = (position - boxMesh.GameObjectPosition).RotateXz(-boxMesh.GameObjectXz);
+                        var localVelocity = velocity.RotateXz(-boxMesh.GameObjectXz);
 
                         for (var i = 0; i < collisionMesh.Indices.Length; i += 3)
                         {
@@ -2325,7 +2329,7 @@ public class Mad
                                     }
 
                                     // newY is in local space; RotateXz doesn't affect Y, so just add object Y
-                                    wheely[k] = groundHit.newY + collidable.GameObjectPosition.Y + wheelGround;
+                                    wheely[k] = groundHit.newY + boxMesh.GameObjectPosition.Y + wheelGround;
                                     bounceRebound(k, conto, random);
                                     isWheelTouchingPiece[k] = true;
                                     // break; this makes it possible to phase through walls when on top of a raised mesh ground, but prevents being snapped out the side of a ramp, as long as the ground collision happens first
@@ -2341,8 +2345,8 @@ public class Mad
                                         : $"wall triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2})");
 
                                     // Rotate local-space push/impact back to world space
-                                    var worldDelta = wallHit.positionDelta.RotateXz(collidable.GameObjectXz);
-                                    var worldImpact = wallHit.impactComponent.RotateXz(collidable.GameObjectXz);
+                                    var worldDelta = wallHit.positionDelta.RotateXz(boxMesh.GameObjectXz);
+                                    var worldImpact = wallHit.impactComponent.RotateXz(boxMesh.GameObjectXz);
 
                                     for (int w = 0; w < 4; w++)
                                     {
@@ -2370,11 +2374,11 @@ public class Mad
                             }
                         }
                     }
-                    else if (collidable.CollisionHull is { } collisionHull)
+                    else if (collidable.TryGetValue(out ShapeHull boxHull))
                     {
                         // TODO later
                     }
-                    else if (collidable.BoxRoad is {} boxRoad)
+                    else if (collidable.TryGetValue(out ShapeRoad boxRoad))
                     {
                         if (boxRoad.ResolveCollision(position) is { } collision)
                         {
@@ -2397,7 +2401,7 @@ public class Mad
                             wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
                             
                             // sparks and scrape
-                            if (BadLanding && collidable.Box.Skid is 0 or 1)
+                            if (BadLanding && collidable.Skid is 0 or 1)
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
@@ -2409,7 +2413,7 @@ public class Mad
                             break;
                         }
                     }
-                    else if (collidable.BoxWall is {} boxWall)
+                    else if (collidable.TryGetValue(out ShapeWall boxWall))
                     {
                         if (boxWall.ResolveCollision(position, velocity) is { } collision)
                         {
@@ -2420,9 +2424,9 @@ public class Mad
                             }
                             
                             // sparks and scrapes
-                            if (collidable.Box.Skid != 2)
+                            if (collidable.Skid != 2)
                                 _crank[0, k]++;
-                            if (collidable.Box.Skid == 5 && random.NextFixed6401() > fix64.Half)
+                            if (collidable.Skid == 5 && random.NextFixed6401() > fix64.Half)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2433,7 +2437,7 @@ public class Mad
 
                             // z rebound CHK5
                             f64Vector3 reboundVelocityDelta = collision.impactComponent * (-GetReboundMul(wasMtouch));
-                            Regz(k, reboundVelocityDelta.Length() * collidable.Box.Damage, conto, random);
+                            Regz(k, reboundVelocityDelta.Length() * collidable.Damage, conto, random);
                             Scx[k] += reboundVelocityDelta.X;
                             Scy[k] += reboundVelocityDelta.Y;
                             Scz[k] += reboundVelocityDelta.Z;
@@ -2441,17 +2445,17 @@ public class Mad
                             Skid = 2;
                             hitVertical = true;
                             isWheelTouchingPiece[k] = true;
-                            if (!collidable.Box.NotWall) {
+                            if (!collidable.NotWall) {
                                 control.Wall = 9999;
                             }
                             break;
                         }
                     }
-                    else if (collidable.BoxRamp is {} boxRamp)
+                    else if (collidable.TryGetValue(out ShapeRamp boxRamp))
                     {
                         if (boxRamp.ResolveCollision(position) is { } collision)
                         {
-                            var liftDivider = 1 + (50 - Math.Abs(collidable.Box.Zy)) / (fix64)30;
+                            var liftDivider = 1 + (50 - fix64.Abs(boxRamp.TrackersZy)) / (fix64)30;
                             if (liftDivider < 1)
                                 liftDivider = 1;
                             if (collision.zTmp > 0 && collision.zTmp < 200) {
@@ -2461,7 +2465,7 @@ public class Mad
 
                             if (collision.zTmp > -30)
                             {
-                                if (collidable.Box.Skid == 2)
+                                if (collidable.Skid == 2)
                                     nWheelsDirtRamp++;
                                 else
                                     nWheelsRoadRamp++;
@@ -2470,7 +2474,7 @@ public class Mad
                                 Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && (collidable.Box.Skid == 0 || collidable.Box.Skid == 1))
+                                if (BadLanding && (collidable.Skid == 0 || collidable.Skid == 1))
                                 {
                                     conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                     //if (Im == /*this.xt.im*/ 0)

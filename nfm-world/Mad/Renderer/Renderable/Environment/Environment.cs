@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
@@ -46,25 +47,25 @@ public class Environment
 
                 foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
                 {
-                    if (tracker.BoxRoad is not null)
+                    if (tracker.TryGetValue(out ShapeRoad boxRoad))
                     {
-                        var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
-                        var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
+                        var x = boxRoad.GameObjectPosition.X + boxRoad.TrackersPosition.X;
+                        var z = boxRoad.GameObjectPosition.Z + boxRoad.TrackersPosition.Z;
                         
-                        if (tracker.Box.Radius.X < tracker.Box.Radius.Z &&
-                            fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
+                        if (boxRoad.Radius.X < boxRoad.Radius.Z &&
+                            fix64.Abs((fix64)cgpz[i41] - z) < boxRoad.Radius.Z)
                         {
-                            while (fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
+                            while (fix64.Abs((fix64)cgpx[i41] - x) < boxRoad.Radius.X)
                             {
-                                cgpx[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.X * 2 - tracker.Box.Radius.X);
+                                cgpx[i41] += (int)((fix64)random.NextDouble() * boxRoad.Radius.X * 2 - boxRoad.Radius.X);
                             }
                         }
-                        else if (tracker.Box.Radius.Z < tracker.Box.Radius.X &&
-                                 fix64.Abs((fix64)cgpx[i41] - x) < tracker.Box.Radius.X)
+                        else if (boxRoad.Radius.Z < boxRoad.Radius.X &&
+                                 fix64.Abs((fix64)cgpx[i41] - x) < boxRoad.Radius.X)
                         {
-                            while (fix64.Abs((fix64)cgpz[i41] - z) < tracker.Box.Radius.Z)
+                            while (fix64.Abs((fix64)cgpz[i41] - z) < boxRoad.Radius.Z)
                             {
-                                cgpz[i41] += (int)((fix64)random.NextDouble() * tracker.Box.Radius.Z * 2 - tracker.Box.Radius.Z);
+                                cgpz[i41] += (int)((fix64)random.NextDouble() * boxRoad.Radius.Z * 2 - boxRoad.Radius.Z);
                             }
                         }
                     }

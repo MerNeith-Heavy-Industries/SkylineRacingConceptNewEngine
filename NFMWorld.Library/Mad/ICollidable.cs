@@ -8,5 +8,5 @@ public interface ICollidable : ITransform
     Rad3dBoxDef[] Boxes { get; }
     int MaxRadius { get; }
     SrcRad3dCollisionMesh? CollisionMesh { get; }
-    f64Vector3[]? CollisionHull { get; }
+    SrcRad3dCollisionHull? CollisionHull { get; }
 }
