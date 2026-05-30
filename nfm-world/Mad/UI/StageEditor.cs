@@ -320,7 +320,7 @@ public class StageEditorPhase : BasePhase
     
     // Parts library state
     private string _partsSearch = "";
-    private int _partsCategory = 0; // 0=All, 1=nfmm, 2=vendor, 3=user
+    private int _partsCategory = 0; // 0=All, 1=nfmm, 2=vendor, 3=user, 4=src
     
     // Swap piece mode
     private bool _isSwapMode = false;
@@ -401,6 +401,11 @@ public class StageEditorPhase : BasePhase
         }
         
         foreach (var part in BackendGameSparker.user_stage_parts)
+        {
+            _availableParts.Add((part.FileName, part));
+        }
+        
+        foreach (var part in BackendGameSparker.src_stage_parts)
         {
             _availableParts.Add((part.FileName, part));
         }
@@ -4385,7 +4390,7 @@ public class StageEditorPhase : BasePhase
         ImGui.Spacing();
         
         // Category filter tabs
-        string[] catLabels = ["All", "NFMM", "Vendor", "User"];
+        string[] catLabels = ["All", "NFMM", "Vendor", "User", "SRC"];
         for (int c = 0; c < catLabels.Length; c++)
         {
             if (c > 0) ImGui.SameLine();
@@ -4476,6 +4481,7 @@ public class StageEditorPhase : BasePhase
                 1 => part.Name.StartsWith("nfmm/"),
                 2 => part.Name.StartsWith("nfmv/") || part.Name.StartsWith("vendor/"),
                 3 => part.Name.StartsWith("user/"),
+                4 => part.Name.StartsWith("src/"),
                 _ => true
             };
             if (!inCategory) continue;
