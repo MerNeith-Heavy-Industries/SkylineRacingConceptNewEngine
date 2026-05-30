@@ -76,6 +76,8 @@
         <!-- Reference WorldXaml.Generator for XAML source generation -->
         <ProjectReference Include="..\WorldXaml\WorldXaml.Generator\WorldXaml.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ShaderSourceGen\NFMWorld.ShaderSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen\Maxine.Extensions.UnionGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj"/>
     </ItemGroup>
 
     <Import Project="../WorldXaml/WorldXaml.Generator/WorldXaml.Generator.props" />

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorld;
@@ -117,27 +118,29 @@ public class Dust
                 var sz = (fix64)Sz[dust];
                 foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
                 {
-                    var x = tracker.GameObjectPosition.X + tracker.Box.Translation.X;
-                    var z = tracker.GameObjectPosition.Z + tracker.Box.Translation.Z;
-                    if (tracker.BoxRoad is not null &&
-                        fix64.Abs(sx - x) < tracker.Box.Radius.X &&
-                        fix64.Abs(sz - z) < tracker.Box.Radius.Z)
+                    if (tracker.TryGetValue(out ShapeRoad boxRoad))
                     {
-                        _sbln[dust] = tracker.Box.Skid switch
+                        var x = boxRoad.GameObjectPosition.X + boxRoad.TrackersPosition.X;
+                        var z = boxRoad.GameObjectPosition.Z + boxRoad.TrackersPosition.Z;
+                        if (fix64.Abs(sx - x) < boxRoad.Radius.X &&
+                            fix64.Abs(sz - z) < boxRoad.Radius.Z)
                         {
-                            0 => 0.2F,
-                            1 => 0.4F,
-                            2 => 0.45F,
-                            _ => _sbln[dust]
-                        };
+                            _sbln[dust] = tracker.Skid switch
+                            {
+                                0 => 0.2F,
+                                1 => 0.4F,
+                                2 => 0.45F,
+                                _ => _sbln[dust]
+                            };
 
-                        for (var rgb = 0; rgb < 3; rgb++)
-                        {
-                            _srgb[dust, rgb] = (tracker.Box.Color[rgb] + baseColor[rgb]) / 2;
+                            for (var rgb = 0; rgb < 3; rgb++)
+                            {
+                                _srgb[dust, rgb] = (tracker.DustColor[rgb] + baseColor[rgb]) / 2;
+                            }
+
+                            trackersColor = true;
+                            break;
                         }
-
-                        trackersColor = true;
-                        break;
                     }
                 }
             }

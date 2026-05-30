@@ -183,7 +183,7 @@ public class BackendStage : IStage
             Ncz = 1;
         }
         
-        CollisionQuadTree = new QuadTree<CollisionBoxRef>(sx, sz, ncx, ncz);
+        CollisionQuadTree = new QuadTree<CollisionShapeRef>(sx, sz, ncx, ncz);
         foreach (var piece in pieces)
         {
             if (piece is ICollidable collidable)
@@ -217,7 +217,7 @@ public class BackendStage : IStage
         return mesh;
     }
     
-    private QuadTree<CollisionBoxRef> CollisionQuadTree = new(0,0,0,0);
+    private QuadTree<CollisionShapeRef> CollisionQuadTree = new(0,0,0,0);
     private int _quadTreeInsertionIndex = 0;
 
     private void AddToQuadTree(ICollidable mesh)
@@ -246,7 +246,7 @@ public class BackendStage : IStage
                     fix64.Abs(box.Translation.Y) + fix64.Abs(box.Radius.Y)
                 )
             );
-            CollisionQuadTree.Insert(new CollisionBoxRef(
+            CollisionQuadTree.Insert(new CollisionShapeRef(
                 gameObjectX: x,
                 gameObjectY: y,
                 gameObjectZ: z,
@@ -260,7 +260,7 @@ public class BackendStage : IStage
         if (mesh.CollisionMesh is { } colMesh)
         {
             var maxR = mesh.MaxRadius;
-            CollisionQuadTree.Insert(new CollisionBoxRef(
+            CollisionQuadTree.Insert(new CollisionShapeRef(
                 gameObjectX: x,
                 gameObjectY: y,
                 gameObjectZ: z,
@@ -274,7 +274,7 @@ public class BackendStage : IStage
         if (mesh.CollisionHull is { } colHull)
         {
             var maxR = mesh.MaxRadius;
-            CollisionQuadTree.Insert(new CollisionBoxRef(
+            CollisionQuadTree.Insert(new CollisionShapeRef(
                 gameObjectX: x,
                 gameObjectY: y,
                 gameObjectZ: z,
@@ -286,9 +286,9 @@ public class BackendStage : IStage
         }
     }
     
-    private List<CollisionBoxRef> _tempTrackers = new();
+    private List<CollisionShapeRef> _tempTrackers = new();
 
-    public ReadOnlySpan<CollisionBoxRef> RetrievePointCollidables(fix64 x, fix64 z)
+    public ReadOnlySpan<CollisionShapeRef> RetrievePointCollidables(fix64 x, fix64 z)
     {
         _tempTrackers.Clear();
         CollisionQuadTree.RetrievePoint(_tempTrackers, x, z);
@@ -307,7 +307,7 @@ public class WallCollision : ITransform, ICollidable
     public Rad3dBoxDef[] Boxes { get; }
     public int MaxRadius { get; }
     public SrcRad3dCollisionMesh? CollisionMesh => null;
-    public f64Vector3[]? CollisionHull => null;
+    public SrcRad3dCollisionHull? CollisionHull => null;
 
     public WallCollision(Rad3dBoxDef[] boxes)
     {
@@ -340,7 +340,7 @@ public class StageObject(Rad3d rad) : ITransform, IAiNode, ICollidable
     public string FileName => Rad.FileName;
 
     public SrcRad3dCollisionMesh? CollisionMesh { get; set; } = rad.CollisionMesh;
-    public f64Vector3[]? CollisionHull { get; set; } = rad.CollisionHull;
+    public SrcRad3dCollisionHull? CollisionHull { get; set; } = rad.CollisionHull;
 
     public StageObject(Rad3d rad, f64Vector3 position, f64Euler rotation) : this(rad)
     {

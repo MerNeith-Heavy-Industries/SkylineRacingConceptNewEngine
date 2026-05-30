@@ -28,5 +28,5 @@ public class WallCollision : GameObject, ICollidable
     
     public SrcRad3dCollisionMesh? CollisionMesh => null;
     
-    public f64Vector3[]? CollisionHull => null;
+    public SrcRad3dCollisionHull? CollisionHull => null;
 }

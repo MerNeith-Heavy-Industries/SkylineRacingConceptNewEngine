@@ -3,13 +3,18 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Collision;
 
-public readonly struct BoxWall(
+public readonly struct ShapeWall(
     f64Vector3 rad,
     fix64 trackersXz,
     f64Vector3 trackersPosition,
     fix64 contoXz,
     f64Vector3 contoPosition)
 {
+    public f64Vector3 GameObjectPosition => contoPosition;
+    public f64Vector3 TrackersPosition => trackersPosition;
+    public fix64 GameObjectXz => contoXz;
+    public fix64 TrackersXz => trackersXz;
+
     private static f64Vector3 zDir { get; } = new f64Vector3(0, 0, 1); // We push toward +Z
     private readonly f64Vector3 pushDir = zDir.RotateXz(trackersXz).RotateXz(contoXz);
 

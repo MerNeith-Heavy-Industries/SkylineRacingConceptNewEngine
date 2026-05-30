@@ -2,8 +2,13 @@
 
 namespace NFMWorldLibrary.Collision;
 
-public readonly struct BoxRoad(f64Vector3 rad, f64Vector3 trackersPosition, fix64 contoXz, f64Vector3 contoPosition)
+public readonly struct ShapeRoad(f64Vector3 rad, f64Vector3 trackersPosition, fix64 contoXz, f64Vector3 contoPosition)
 {
+    public f64Vector3 Radius => rad;
+    public f64Vector3 GameObjectPosition => contoPosition;
+    public f64Vector3 TrackersPosition => trackersPosition;
+    public fix64 GameObjectXz => contoXz;
+    
     private readonly f64Vector3 worldBoxPosition = trackersPosition.RotateXz(contoXz) + contoPosition;
 
     public readonly struct Collision(fix64 newY)

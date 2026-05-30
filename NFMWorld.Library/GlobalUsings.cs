@@ -13,3 +13,4 @@ global using RectangleF = Maxine.Extensions.Mathematics.RectangleF;
 global using static NFMWorldLibrary.TheVFS;
 global using fix64 = FixedMathSharp.Fixed64;
 global using f64Vector3 = FixedMathSharp.Vector3d;
+global using Union = MessagePack.UnionAttribute;

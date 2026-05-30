@@ -33,6 +33,8 @@
     <Project Path="Maxine.Extensions/Maxine.Extensions.Mathematics.Tests/Maxine.Extensions.Mathematics.Tests.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions.Mathematics/Maxine.Extensions.Mathematics.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions.MessagePack/Maxine.Extensions.MessagePack.csproj" />
+    <Project Path="Maxine.Extensions/Maxine.Extensions.UnionGen.Base/Maxine.Extensions.UnionGen.Base.csproj" />
+    <Project Path="Maxine.Extensions/Maxine.Extensions.UnionGen/Maxine.Extensions.UnionGen.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions/Maxine.Extensions.csproj" />
     <Project Path="Maxine.Extensions/Maxine.VFS/Maxine.VFS.csproj" />
     <Project Path="Maxine.Extensions/RayTech.RayLog.MEL/RayTech.RayLog.MEL.csproj">
