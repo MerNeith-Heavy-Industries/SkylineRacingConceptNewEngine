@@ -84,6 +84,7 @@ public class StageLoader
     [Key(7)] public int indexOffset = 10;
 
     private bool swapYandRot = false;
+    private bool srcStageLoading = false;
     private bool reverseChkY = false;
 
     // left
@@ -323,6 +324,12 @@ public class StageLoader
                 else if (line.StartsWith("modeloffset"))
                 {
                     indexOffset = Utility.GetInt("modeloffset", line, 0);
+                }
+                
+                else if (line.StartsWith("srcMode"))
+                {
+                    swapYandRot = true;
+                    srcStageLoading = true;
                 }
 
                 else if (line.StartsWith("swapRotY"))
@@ -721,7 +728,7 @@ public class StageLoader
         if (int.TryParse(setstring, out var setindex))
         {
             setindex -= indexOffset;
-            if (Path.Contains("src"))
+            if (srcStageLoading)
             {
                 if (setindex >= 33)
                 {
