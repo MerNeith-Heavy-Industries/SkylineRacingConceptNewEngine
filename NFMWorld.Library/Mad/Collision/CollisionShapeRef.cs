@@ -126,11 +126,15 @@ public readonly struct CollisionShapeRef : IQuadObject
             }
         }
 
+        // Compute world-space center of this box for tight quadtree bounds
+        var worldBoxPos = trackersPosition.RotateXz(gameObjectRotXz) + gameObjectPosition;
+        // Conservative AABB extent: max of all radius components covers any local rotation (Xy/Zy)
+        var extent = fix64.Max(rad.X, fix64.Max(rad.Y, rad.Z));
         Bounds = new f64Bounds(
-            gameObjectX - radius,
-            gameObjectZ - radius,
-            radius * 2,
-            radius * 2
+            worldBoxPos.X - extent,
+            worldBoxPos.Z - extent,
+            extent * 2,
+            extent * 2
         );
     }
 
