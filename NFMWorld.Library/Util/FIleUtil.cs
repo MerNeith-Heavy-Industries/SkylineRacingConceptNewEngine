@@ -9,6 +9,8 @@ public class FileUtil
             Logging.Info($"Folder not found: {folder}");
             return;
         }
+
+        var extraFiles = new List<string>();
         foreach (var file in VFS.GetFiles(folder))
         {
             var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
@@ -17,6 +19,18 @@ public class FileUtil
             {
                 action(VFS.ReadAllBytes(file), a, fileNameWithoutExtension);
             }
+            else
+            {
+                Logging.Debug($"Extra file found: {file}");
+                extraFiles.Add(file);
+            }
+        }
+
+        var idx = fileNames.Length;
+        foreach (var file in extraFiles)
+        {
+            var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
+            action(VFS.ReadAllBytes(file), idx++, fileNameWithoutExtension);
         }
     }
     
