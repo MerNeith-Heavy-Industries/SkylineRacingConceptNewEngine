@@ -35,6 +35,24 @@ public static class BracketParser
 
         return n[..i];
     }
+    
+    public static Span<short> GetShorts(ReadOnlySpan<char> line, Span<short> n)
+    {
+        // Logging.Info(line);
+        var lineSlice = GetLineSlice(line);
+
+        var i = 0;
+        foreach (var range in lineSlice.Split(','))
+        {
+            if (i >= n.Length)
+                break;
+            // Logging.Info($"{i},{lineSlice[range]}");
+            n[i] = (short)int.Parse(lineSlice[range], CultureInfo.InvariantCulture);
+            i++;
+        }
+
+        return n[..i];
+    }
 
     public static string GetString(ReadOnlySpan<char> line)
     {

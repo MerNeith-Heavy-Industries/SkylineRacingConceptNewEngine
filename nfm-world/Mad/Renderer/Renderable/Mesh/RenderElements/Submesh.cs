@@ -57,8 +57,16 @@ public class Submesh : IInstancedRenderElement, IDisposable
         // If a parameter is null that means the HLSL compiler optimized it out.
         Effects.Poly.SnapColor?.SetValue((Vector3)World.Snap);
         Effects.Poly.IsFullbright?.SetValue((PolyType is PolyType.BrakeLight or PolyType.Light or PolyType.ReverseLight && World.LightsOn));
-        Effects.Poly.UseBaseColor?.SetValue(PolyType is PolyType.Glass);
-        Effects.Poly.BaseColor?.SetValue((Vector3)World.Sky);
+        Effects.Poly.UseBaseColor?.SetValue(PolyType is PolyType.Glass or PolyType.CGround);
+        if (PolyType is PolyType.CGround) // SRC extension
+        {
+            Effects.Poly.BaseColor?.SetValue((Vector3)World.GroundColor);
+        }
+        else
+        {
+            Effects.Poly.BaseColor?.SetValue((Vector3)World.Sky);
+        }
+
         Effects.Poly.LightDirection?.SetValue(World.LightDirection);
         Effects.Poly.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
         Effects.Poly.FogDistance?.SetValue(World.FadeFrom);
