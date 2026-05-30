@@ -8,6 +8,7 @@ public class Interpolation
 {
     public static Vector3 InterpolateCoord(Vector3 current, Vector3 prev, float alpha)
     {
+        if (current == prev) return current;
         return current * alpha + prev * (1.0f - alpha);
     }
     
