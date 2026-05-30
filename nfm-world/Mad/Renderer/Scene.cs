@@ -9,10 +9,16 @@ namespace NFMWorld;
 public class Scene
 {
     private readonly GraphicsDevice _graphicsDevice;
-    private readonly Camera _camera;
+    private Camera _camera;
     private readonly Camera[] _lightCameras;
     public readonly List<GameObject> Objects;
     private readonly RenderDataCache _renderDataCache;
+
+    public Camera ActiveCamera
+    {
+        get => _camera;
+        set => _camera = value;
+    }
 
     public Scene(GraphicsDevice graphicsDevice, IEnumerable<GameObject> objects, Camera camera, Camera[] lightCameras)
     {
