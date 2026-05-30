@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace NFMWorldLibrary;
 
@@ -6,22 +8,53 @@ namespace NFMWorldLibrary;
 // at the start of a frame.
 public static class FrameTrace
 {
-    private static readonly List<string> _messages = [];
+    internal static readonly StringBuilder stringBuilder = new();
 
     public static bool IsEnabled = true;
-    
+
     public static void AddMessage(string message)
     {
-        _messages.Add(message);
+        stringBuilder.AppendLine(message);
+    }
+    
+    public static void AddMessage(ref AppendInterpolatedStringHandler message)
+    {
+        stringBuilder.AppendLine();
     }
 
-    public static ReadOnlySpan<string> GetMessages()
+    public static string GetMessageString()
     {
-        return CollectionsMarshal.AsSpan(_messages);
+        return stringBuilder.ToString();
     }
 
     public static void ClearMessages()
     {
-        _messages.Clear();
+        stringBuilder.Clear();
     }
+}
+
+[InterpolatedStringHandler]
+public ref struct AppendInterpolatedStringHandler(int literalLength, int formattedCount)
+{
+    public StringBuilder.AppendInterpolatedStringHandler handler = new(literalLength, formattedCount, FrameTrace.stringBuilder);
+
+    public void AppendLiteral(string value) => handler.AppendLiteral(value);
+
+    public void AppendFormatted<T>(T value) => handler.AppendFormatted(value);
+
+    public void AppendFormatted<T>(T value, string? format) => handler.AppendFormatted(value, format);
+
+    public void AppendFormatted<T>(T value, int alignment) => handler.AppendFormatted(value, alignment);
+
+    public void AppendFormatted<T>(T value, int alignment, string? format) => handler.AppendFormatted(value, alignment, format);
+
+    public void AppendFormatted(ReadOnlySpan<char> value) => handler.AppendFormatted(value);
+
+    public void AppendFormatted(ReadOnlySpan<char> value, int alignment = 0, string? format = null) => handler.AppendFormatted(value, alignment, format);
+
+    public void AppendFormatted(string? value) => handler.AppendFormatted(value);
+
+    public void AppendFormatted(string? value, int alignment = 0, string? format = null) => handler.AppendFormatted(value, alignment, format);
+
+    public void AppendFormatted(object? value, int alignment = 0, string? format = null) => handler.AppendFormatted(value, alignment, format);
 }
