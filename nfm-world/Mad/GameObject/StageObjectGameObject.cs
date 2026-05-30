@@ -10,6 +10,10 @@ public class StageObjectGameObject : MeshedGameObject
     public StageObjectGameObject(Mesh mesh, StageObject obj) : base(mesh, obj.Position, obj.Rotation)
     {
         _obj = obj;
+        Children = [new CollisionDebugMesh(obj.Boxes)
+        {
+            Parent = this
+        }];
     }
 
     public override void GameTick(IStage? stage = null)
