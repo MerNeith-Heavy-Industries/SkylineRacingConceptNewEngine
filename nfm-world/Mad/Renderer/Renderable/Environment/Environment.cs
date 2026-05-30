@@ -45,7 +45,7 @@ public class Environment
                 cgpx[i41] = sgpx + i39 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
                 cgpz[i41] = sgpz + i40 * 1200 + (int)(random.NextDouble() * 1000.0 - 500.0);
 
-                foreach (var tracker in stage.RetrievePointCollidables(sx, sz))
+                foreach (var tracker in stage.RetrievePointCollidables(cgpx[i41], cgpz[i41]))
                 {
                     if (tracker.TryGetValue(out ShapeRoad boxRoad))
                     {
