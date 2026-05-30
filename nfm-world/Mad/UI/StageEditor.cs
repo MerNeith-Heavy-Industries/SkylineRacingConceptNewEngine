@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Hexa.NET.ImGui;
 using Maxine.Extensions;
 using Maxine.Extensions.Collections;
-using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Gameplay;
 using NFMWorld.Util;
@@ -215,7 +214,7 @@ public class StageEditorPhase : BasePhase
     private int _activeTabIndex = -1;
     
     // Available stage parts
-    private List<(string Name, Rad3d? Rad)> _availableParts = new();
+    private KeyedCollection<string, Rad3d> _availableParts = KeyedCollection.From<string, Rad3d>(p => p.FileName);
     
     // Active tab property
     private StageEditorTab? ActiveTab => _activeTabIndex >= 0 && _activeTabIndex < _tabs.Count ? _tabs[_activeTabIndex] : null;
@@ -392,22 +391,22 @@ public class StageEditorPhase : BasePhase
         // Add all stage parts from the loaded collections
         foreach (var part in BackendGameSparker.stage_parts)
         {
-            _availableParts.Add((part.FileName, part));
+            _availableParts.TryAdd(part);
         }
         
         foreach (var part in BackendGameSparker.vendor_stage_parts)
         {
-            _availableParts.Add((part.FileName, part));
+            _availableParts.TryAdd(part);
         }
         
         foreach (var part in BackendGameSparker.user_stage_parts)
         {
-            _availableParts.Add((part.FileName, part));
+            _availableParts.TryAdd(part);
         }
         
         foreach (var part in BackendGameSparker.src_stage_parts)
         {
-            _availableParts.Add((part.FileName, part));
+            _availableParts.TryAdd(part);
         }
     }
     
@@ -1514,7 +1513,6 @@ public class StageEditorPhase : BasePhase
     {
         if (_pendingPlacementPartIndex < 0 || _pendingPlacementPartIndex >= _availableParts.Count) return;
         var part = _availableParts[_pendingPlacementPartIndex];
-        if (part.Rad == null) return;
         
         var pos = new Vector3((float)_pendingPlacementPos.X, (float)_pendingPlacementPos.Y + _pendingPlacementYOff, (float)_pendingPlacementPos.Z);
         float yawRad = -_pendingPlacementYaw * (float)Math.PI / 180f; // negate to match engine convention
@@ -1537,7 +1535,7 @@ public class StageEditorPhase : BasePhase
         var fillColor = new Color(0.3f, 0.8f, 1.0f, 0.35f);
         var fillVerts = new List<VertexPositionColor>();
         
-        foreach (var poly in part.Rad.Polys)
+        foreach (var poly in part.Polys)
         {
             if (poly.Points.Length < 3) continue;
             for (int i = 1; i < poly.Points.Length - 1; i++)
@@ -1563,7 +1561,7 @@ public class StageEditorPhase : BasePhase
         var wireColor = new Color(0.1f, 0.9f, 1.0f, 1.0f);
         var wireVerts = new List<VertexPositionColor>();
         
-        foreach (var poly in part.Rad.Polys)
+        foreach (var poly in part.Polys)
         {
             if (poly.Points.Length < 2) continue;
             for (int i = 0; i < poly.Points.Length; i++)
@@ -2489,24 +2487,21 @@ public class StageEditorPhase : BasePhase
                     if (_hasValidPlacementPos && ActiveTab?.Stage != null)
                     {
                         var pendingPart = _availableParts[_pendingPlacementPartIndex];
-                        if (pendingPart.Rad != null)
-                        {
-                            var placementRot = new f64Euler(
-                                f64AngleSingle.FromDegrees((fix64)_pendingPlacementYaw),
-                                f64AngleSingle.ZeroAngle,
-                                f64AngleSingle.ZeroAngle);
-                            var newMesh = StageObject.CreateDefaultObject(pendingPart.Rad, _pendingPlacementPos + new f64Vector3(0, _pendingPlacementYOff, 0), placementRot);
-                            var instance = new StagePieceInstance(newMesh, ActiveTab.GetNextPieceId());
-                            PushUndoSnapshot();
-                            ActiveTab.ScenePieces.Add(instance);
-                            ActiveTab.Stage.pieces[ActiveTab.Stage.stagePartCount] = newMesh;
-                            ActiveTab.ActivePieceId = instance.Id;
-                            ActiveTab.SelectedPieceIds.Clear();
-                            ActiveTab.SelectedPieceIds.Add(instance.Id);
-                            ActiveTab.HasUnsavedChanges = true;
-                            RebuildClientRenderer();
-                            // Stay in placement mode so the user can keep placing the same part
-                        }
+                        var placementRot = new f64Euler(
+                            f64AngleSingle.FromDegrees((fix64)_pendingPlacementYaw),
+                            f64AngleSingle.ZeroAngle,
+                            f64AngleSingle.ZeroAngle);
+                        var newMesh = StageObject.CreateDefaultObject(pendingPart, _pendingPlacementPos + new f64Vector3(0, _pendingPlacementYOff, 0), placementRot);
+                        var instance = new StagePieceInstance(newMesh, ActiveTab.GetNextPieceId());
+                        PushUndoSnapshot();
+                        ActiveTab.ScenePieces.Add(instance);
+                        ActiveTab.Stage.pieces[ActiveTab.Stage.stagePartCount] = newMesh;
+                        ActiveTab.ActivePieceId = instance.Id;
+                        ActiveTab.SelectedPieceIds.Clear();
+                        ActiveTab.SelectedPieceIds.Add(instance.Id);
+                        ActiveTab.HasUnsavedChanges = true;
+                        RebuildClientRenderer();
+                        // Stay in placement mode so the user can keep placing the same part
                     }
                     return; // Don't do ray picking while in placement mode
                 }
@@ -3478,7 +3473,7 @@ public class StageEditorPhase : BasePhase
                 if (_pendingPlacementPartIndex >= 0)
                 {
                     var placingPart = _availableParts[_pendingPlacementPartIndex];
-                    string placingName = placingPart.Name.Contains('/') ? placingPart.Name[(placingPart.Name.LastIndexOf('/') + 1)..] : placingPart.Name;
+                    string placingName = placingPart.FileName.Contains('/') ? placingPart.FileName[(placingPart.FileName.LastIndexOf('/') + 1)..] : placingPart.FileName;
                     ImGui.TextColored(new Vector4(0.1f, 0.9f, 1.0f, 1.0f), $"Placing: {placingName}");
                     ImGui.SameLine();
                     string snapInfo = _snapEnabled ? $"Snap:{_snapSize:F0}" : "Snap:OFF";
@@ -4478,21 +4473,20 @@ public class StageEditorPhase : BasePhase
             // Category filter
             bool inCategory = _partsCategory switch
             {
-                1 => part.Name.StartsWith("nfmm/"),
-                2 => part.Name.StartsWith("nfmv/") || part.Name.StartsWith("vendor/"),
-                3 => part.Name.StartsWith("user/"),
-                4 => part.Name.StartsWith("src/"),
+                1 => part.FileName.StartsWith("nfmm/"),
+                2 => part.FileName.StartsWith("nfmw/") || part.FileName.StartsWith("vendor/"),
+                3 => part.FileName.StartsWith("user/"),
+                4 => part.FileName.StartsWith("src/"),
                 _ => true
             };
             if (!inCategory) continue;
             
             // Name search
-            if (hasSearchFilter && !part.Name.Contains(_partsSearch, StringComparison.OrdinalIgnoreCase))
+            if (hasSearchFilter && !part.FileName.Contains(_partsSearch, StringComparison.OrdinalIgnoreCase))
                 continue;
             
             // Queue preview generation if not yet done
-            if (part.Rad != null)
-                QueuePartPreview(part.Name, part.Rad);
+            QueuePartPreview(part.FileName, part);
             
             if (col > 0)
                 ImGui.SameLine(0, tilePad);
@@ -4505,13 +4499,13 @@ public class StageEditorPhase : BasePhase
             if (_isSwapMode && ActiveTab != null && ActiveTab.ActivePieceId >= 0)
             {
                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
-                isCurrentSwapPiece = sp != null && sp.Name == part.Name;
+                isCurrentSwapPiece = sp != null && sp.Name == part.FileName;
             }
             ImGui.PushID(i);
             ImGui.BeginGroup();
             
             bool clicked;
-            if (_partPreviews.TryGetValue(part.Name, out var preview))
+            if (_partPreviews.TryGetValue(part.FileName, out var preview))
             {
                 // Show 3D thumbnail
                 // Flip UVs vertically — FNA (OpenGL) render targets are stored bottom-up
@@ -4519,12 +4513,12 @@ public class StageEditorPhase : BasePhase
                     new Vector2(0, 1), new Vector2(1, 0));
                 clicked = ImGui.IsItemClicked();
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(part.Name);
+                    ImGui.SetTooltip(part.FileName);
             }
             else
             {
                 // Fallback: colored button while preview is loading
-                var tileColor = GetPartTileColor(part.Name);
+                var tileColor = GetPartTileColor(part.FileName);
                 ImGui.PushStyleColor(ImGuiCol.Button, tileColor);
                 ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(
                     Math.Min(tileColor.X + 0.15f, 1f),
@@ -4535,11 +4529,11 @@ public class StageEditorPhase : BasePhase
                 clicked = ImGui.Button("##tile", new Vector2(tileW, tileImgSize));
                 ImGui.PopStyleColor(3);
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(part.Name);
+                    ImGui.SetTooltip(part.FileName);
             }
             
             // Label centered under thumbnail
-            string shortName = part.Name.Contains('/') ? part.Name[(part.Name.LastIndexOf('/') + 1)..] : part.Name;
+            string shortName = part.FileName.Contains('/') ? part.FileName[(part.FileName.LastIndexOf('/') + 1)..] : part.FileName;
             var textSize = ImGui.CalcTextSize(shortName, false, tileW);
             float textOffX = Math.Max(0, (tileW - textSize.X) * 0.5f);
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + textOffX);
@@ -4575,7 +4569,7 @@ public class StageEditorPhase : BasePhase
             
             ImGui.PopID();
             
-            if (clicked && part.Rad != null)
+            if (clicked)
             {
                 if (_isSwapMode && ActiveTab != null && ActiveTab.ActivePieceId >= 0)
                 {
@@ -4585,11 +4579,11 @@ public class StageEditorPhase : BasePhase
                     {
                         var swapPiece = ActiveTab.ScenePieces[swapPieceIdx];
                         
-                        if (part.Rad != swapPiece.Rad)
+                        if (part != swapPiece.Rad)
                         {
                             PushUndoSnapshot();
                             var newRot = swapPiece.Rotation;
-                            var newMesh = StageObject.CreateDefaultObject(part.Rad, swapPiece.Position, newRot);
+                            var newMesh = StageObject.CreateDefaultObject(part, swapPiece.Position, newRot);
                             if (ActiveTab.Stage != null)
                             {
                                 for (int si = 0; si < ActiveTab.Stage.pieces.Count; si++)
