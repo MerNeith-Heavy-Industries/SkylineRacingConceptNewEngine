@@ -101,7 +101,8 @@ public class BackendStage : IStage
                     var obj = new StageObject(
                         piece.Object,
                         piece.Position,
-                        piece.Rotation
+                        piece.Rotation,
+                        piece
                     );
                     pieces[stagePartCount] = obj;
                     if (piece.NodeKind is { } nodeKind)
@@ -117,7 +118,8 @@ public class BackendStage : IStage
                     var obj = new StageObject(
                         piece.Object,
                         piece.Position,
-                        piece.Rotation
+                        piece.Rotation,
+                        piece
                     )
                     {
                         Kind = AiNodeKind.CheckPoint
@@ -133,7 +135,8 @@ public class BackendStage : IStage
                     var fix = new StageObject(
                         piece.Object,
                         piece.Position,
-                        piece.Rotation
+                        piece.Rotation,
+                        piece
                     )
                     {
                         Kind = AiNodeKind.FixHoop
@@ -203,11 +206,9 @@ public class BackendStage : IStage
             part = (-1, BackendGameSparker.error_mesh);
         }
 
-        var mesh = new StageObject(
-            part.Rad,
-            new f64Vector3(x, 250 - y, z), 
-            new f64Euler(f64AngleSingle.FromDegrees(r), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)
-        );
+        var position = new f64Vector3(x, 250 - y, z);
+        var rotation = new f64Euler(f64AngleSingle.FromDegrees(r), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle);
+        var mesh = StageObject.CreateDefaultObject(part.Rad, position, rotation);
         pieces[stagePartCount] = mesh;
 
         Logging.Info($"Created {objectName} at ({x}, {y}, {z}), rotation: {r}");
@@ -328,6 +329,8 @@ public class WallCollision : ITransform, ICollidable
 
 public class StageObject(Rad3d rad) : ITransform, IAiNode, ICollidable
 {
+    public PiecePlacement OriginalPlacement { get; set; }
+
     public Rad3d Rad { get; } = rad;
     public IReadOnlyList<ITransform> ChildTransforms => [];
     public f64Vector3 Position { get; set; }
@@ -342,10 +345,16 @@ public class StageObject(Rad3d rad) : ITransform, IAiNode, ICollidable
     public SrcRad3dCollisionMesh? CollisionMesh { get; set; } = rad.CollisionMesh;
     public SrcRad3dCollisionHull? CollisionHull { get; set; } = rad.CollisionHull;
 
-    public StageObject(Rad3d rad, f64Vector3 position, f64Euler rotation) : this(rad)
+    public StageObject(Rad3d rad, f64Vector3 position, f64Euler rotation, PiecePlacement originalPlacement) : this(rad)
     {
         Position = position;
         Rotation = rotation;
+        OriginalPlacement = originalPlacement;
+    }
+
+    public static StageObject CreateDefaultObject(Rad3d rad, f64Vector3 position, f64Euler rotation, PiecePlacementType placementType = PiecePlacementType.CollisionObject, AiNodeKind? aiNodeKind = null, bool isSpecial = false, bool isWall = false)
+    {
+        return new StageObject(rad, position, rotation, new PiecePlacement(placementType, rad, position, rotation, aiNodeKind, isSpecial, isWall));
     }
 
     public void GameTick()

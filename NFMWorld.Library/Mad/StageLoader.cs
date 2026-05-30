@@ -13,7 +13,8 @@ public readonly record struct PiecePlacement(
     [property: Key(2)] f64Vector3 Position,
     [property: Key(3)] f64Euler Rotation,
     [property: Key(4)] AiNodeKind? NodeKind = null,
-    [property: Key(5)] bool IsSpecial = false
+    [property: Key(5)] bool IsSpecial = false,
+    [property: Key(6)] bool IsWall = false
 );
 
 public enum PiecePlacementType : byte
@@ -22,6 +23,28 @@ public enum PiecePlacementType : byte
     CheckPoint,
     FixHoop
 }
+
+// count = n parameter
+// position = o parameter
+// offset = p parameter
+[MessagePackObject]
+public readonly record struct StageWall([property: Key(0)] WallDirection Direction, [property: Key(1)] int Count, [property: Key(2)] int Position, [property: Key(3)] int Offset);
+
+public enum WallDirection : byte
+{
+    Right,
+    Left,
+    Top,
+    Bottom
+}
+
+[MessagePackObject]
+public readonly record struct HierarchyGroup(
+    [property: Key(0)] string Name,
+    [property: Key(1)] UnlimitedArray<PiecePlacement> Pieces,
+    // Old group format: #editor_group(Name,x:z,...)
+    [property: Key(2)] UnlimitedArray<string> CoordinateKeys
+);
 
 // colors have to be processed in order, so we provide a list of instructions in order
 [MessagePackObject]
@@ -94,28 +117,61 @@ public class StageLoader
     [Key(36)] public bool DrawPolys = true;
     [Key(37)] public bool DrawClouds = true;
 
+    [IgnoreMember] public UnlimitedArray<StageWall> wallDefs = [];
+
+    [IgnoreMember] public UnlimitedArray<HierarchyGroup> groups = [];
+    [IgnoreMember] public HierarchyGroup ungrouped = new("Ungrouped", [], []);
+    [IgnoreMember] public HierarchyGroup currentGroup;
+    [IgnoreMember] public int UngroupedOrderIndex = -1;
+
+    [IgnoreMember] public UnlimitedArray<string> unknownParameters = [];
+
     public StageLoader(string stageName)
     {
+        currentGroup = ungrouped;
+
         Path = stageName;
         //var customStagePath = "stages/" + CheckPoints.Stage + ".txt";
         var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
         var line = "";
         int lineNumber = 0;
 
-        if (Path.Contains("src"))
-        {
-            swapYandRot = true;
-        }
-        
         try
         {
-            foreach (var aline in System.IO.File.ReadAllLines(customStagePath))
+            foreach (var aline in File.ReadAllLines(customStagePath))
             {
                 line = aline.Trim();
                 lineNumber++;
+
+                if (line.StartsWith("#editor_group"))
+                {
+                    HierarchyGroup group;
+                    if (!line.Contains(','))
+                    {
+                        group = new HierarchyGroup(Utility.GetString("#editor_group", line, 0), [], []);
+                    }
+                    else
+                    {
+                        // Old format
+                        var gparts = line["#editor_group(".Length..^1].Split(',');
+                        group = new HierarchyGroup(gparts[0], [], []);
+                        if (gparts.Length >= 1)
+                        {
+                            var keys = gparts.Skip(1).Select(s => s.Trim());
+                            group = group with { CoordinateKeys = [..keys] };
+                        }
+                    }
+                    
+                    groups.Add(group);
+                    currentGroup = group;
+                }
+
+                else if (line.StartsWith("#editor_ungrouped_order"))
+                {
+                    UngroupedOrderIndex = Utility.GetInt("#editor_ungrouped_order", line, 0);
+                }
                 
-                
-                if (line.StartsWith("snap"))
+                else if (line.StartsWith("snap"))
                 {
                     EnvironmentInstructions.Add(new SnapInstruction(new Color3(
                         (short)Utility.GetInt("snap", line, 0),
@@ -124,7 +180,7 @@ public class StageLoader
                     )));
                 }
 
-                if (line.StartsWith("sky"))
+                else if (line.StartsWith("sky"))
                 {
                     EnvironmentInstructions.Add(new SkyInstruction(new Color3(
                         (short)Utility.GetInt("sky", line, 0),
@@ -133,7 +189,7 @@ public class StageLoader
                     )));
                 }
 
-                if (line.StartsWith("ground"))
+                else if (line.StartsWith("ground"))
                 {
                     EnvironmentInstructions.Add(new GroundInstruction(new Color3(
                         (short)Utility.GetInt("ground", line, 0),
@@ -142,7 +198,7 @@ public class StageLoader
                     )));
                 }
 
-                if (line.StartsWith("polys"))
+                else if (line.StartsWith("polys"))
                 {
                     if (line.Contains("false", StringComparison.OrdinalIgnoreCase))
                     {
@@ -158,7 +214,7 @@ public class StageLoader
                     }
                 }
 
-                if (line.StartsWith("fog"))
+                else if (line.StartsWith("fog"))
                 {
                     EnvironmentInstructions.Add(new FogInstruction(new Color3(
                         (short)Utility.GetInt("fog", line, 0),
@@ -167,7 +223,7 @@ public class StageLoader
                     )));
                 }
 
-                if (line.StartsWith("texture"))
+                else if (line.StartsWith("texture"))
                 {
                     var texture = new InlineArray4<int>();
                     texture[0] = Utility.GetInt("texture", line, 0);
@@ -177,7 +233,7 @@ public class StageLoader
                     EnvironmentInstructions.Add(new TextureInstruction(texture));
                 }
 
-                if (line.StartsWith("clouds"))
+                else if (line.StartsWith("clouds"))
                 {
                     if (line.Contains("false", StringComparison.OrdinalIgnoreCase))
                     {
@@ -204,12 +260,12 @@ public class StageLoader
                     }
                 }
 
-                if (line.StartsWith("cloudcoverage"))
+                else if (line.StartsWith("cloudcoverage"))
                 {
                     CloudCoverage = Utility.GetFloat("cloudcoverage", line, 0);
                 }
 
-                if (line.StartsWith("density"))
+                else if (line.StartsWith("density"))
                 {
                     FogDensity = (Utility.GetInt("density", line, 0) + 1) * 2 - 1;
                     if (FogDensity < 1)
@@ -222,22 +278,22 @@ public class StageLoader
                     }
                 }
 
-                if (line.StartsWith("fadefrom"))
+                else if (line.StartsWith("fadefrom"))
                 {
                     FadeFrom = Utility.GetInt("fadefrom", line, 0);
                 }
 
-                if (line.StartsWith("distfog"))
+                else if (line.StartsWith("distfog"))
                 {
                     FadeFrom = Utility.GetInt("distfog", line, 0);
                 }
 
-                if (line.StartsWith("lightson"))
+                else if (line.StartsWith("lightson"))
                 {
                     LightsOn = true;
                 }
 
-                if (line.StartsWith("mountains"))
+                else if (line.StartsWith("mountains"))
                 {
                     // Check for mountains(false) first
                     if (line.Contains("false", StringComparison.OrdinalIgnoreCase))
@@ -250,12 +306,12 @@ public class StageLoader
                     }
                 }
 
-                if (line.StartsWith("mountaincoverage"))
+                else if (line.StartsWith("mountaincoverage"))
                 {
                     MountainCoverage = Utility.GetFloat("mountaincoverage", line, 0);
                 }
 
-                if (line.StartsWith("lightdir"))
+                else if (line.StartsWith("lightdir"))
                 {
                     LightDirection = new Vector3(
                         Utility.GetFloat("lightdir", line, 0),
@@ -264,22 +320,22 @@ public class StageLoader
                     );
                 }
 
-                if (line.StartsWith("modeloffset"))
+                else if (line.StartsWith("modeloffset"))
                 {
                     indexOffset = Utility.GetInt("modeloffset", line, 0);
                 }
 
-                if (line.StartsWith("swapRotY"))
+                else if (line.StartsWith("swapRotY"))
                 {
                     swapYandRot = true;
                 }
 
-                if (line.StartsWith("reverseChkY"))
+                else if (line.StartsWith("reverseChkY"))
                 {
                     reverseChkY = true;
                 }
 
-                if (line.StartsWith("set"))
+                else if (line.StartsWith("set"))
                 {
                     if (!TryGetPieceToPlace(Utility.GetString("set", line, 0), out var set)) continue;
 
@@ -319,26 +375,42 @@ public class StageLoader
                         {
                             obj = obj with { NodeKind = AiNodeKind.Turn };
                         }
-                        if (line.Contains(")pr"))
+                        else if (line.Contains(")pr"))
                         {
                             obj = obj with { NodeKind = AiNodeKind.Ramp };
                         }
-                        if (line.Contains(")po"))
+                        else if (line.Contains(")po"))
                         {
                             obj = obj with { NodeKind = AiNodeKind.FixRoadStart };
                         }
-                        if (line.Contains(")ph"))
+                        else if (line.Contains(")ph"))
                         {
                             obj = obj with { NodeKind = AiNodeKind.Halfpipe };
                         }
                     }
+                    else if (line.Contains(")nfmw_CheckPoint")) obj = obj with { NodeKind = AiNodeKind.CheckPoint };
+                    else if (line.Contains(")nfmw_Road")) obj = obj with { NodeKind = AiNodeKind.Road };
+                    else if (line.Contains(")nfmw_Turn")) obj = obj with { NodeKind = AiNodeKind.Turn };
+                    else if (line.Contains(")nfmw_Auto")) obj = obj with { NodeKind = AiNodeKind.Auto };
+                    else if (line.Contains(")nfmw_Ramp")) obj = obj with { NodeKind = AiNodeKind.Ramp };
+                    else if (line.Contains(")nfmw_Halfpipe")) obj = obj with { NodeKind = AiNodeKind.Halfpipe };
+                    else if (line.Contains(")nfmw_SequenceStart")) obj = obj with { NodeKind = AiNodeKind.SequenceStart };
+                    else if (line.Contains(")nfmw_SequenceEnd")) obj = obj with { NodeKind = AiNodeKind.SequenceEnd };
+                    else if (line.Contains(")nfmw_FixRoadStart")) obj = obj with { NodeKind = AiNodeKind.FixRoadStart };
+                    else if (line.Contains(")nfmw_FixRamp")) obj = obj with { NodeKind = AiNodeKind.FixRamp };
+                    else if (line.Contains(")nfmw_FixHoop")) obj = obj with { NodeKind = AiNodeKind.FixHoop };
+                    else if (line.Contains(")nfmw_FixRoadEnd")) obj = obj with { NodeKind = AiNodeKind.FixRoadEnd };
+                    else if (line.Contains(")nfmw_Avoid")) obj = obj with { NodeKind = AiNodeKind.Avoid };
+                    else if (line.Contains(")nfmw_Reset")) obj = obj with { NodeKind = AiNodeKind.Reset };
                     pieces.Add(obj);
                     // if (Medium.Loadnew)
                     // {
                     //     Medium.Loadnew = false;
                     // }
+
+                    currentGroup.Pieces.Add(obj);
                 }
-                if (line.StartsWith("chk"))
+                else if (line.StartsWith("chk"))
                 {
                     var ymult = -1;
                     var isAirCheckpoint = false;
@@ -406,8 +478,10 @@ public class StageLoader
                     // CheckPoints.N++;
                     //stage_parts[stagePartCount].Checkpoint = CheckPoints.Nsp + 1;
                     //CheckPoints.Nsp++;
+                    
+                    currentGroup.Pieces.Add(obj);
                 }
-                if (line.StartsWith("fix"))
+                else if (line.StartsWith("fix"))
                 {
                     if (!TryGetPieceToPlace(Utility.GetString("set", line, 0), out var mesh)) continue;
 
@@ -424,6 +498,8 @@ public class StageLoader
                         fix = fix with { IsSpecial = true };
                     }
                     pieces.Add(fix);
+                    
+                    currentGroup.Pieces.Add(fix);
                 }
                 // oteek: FUCK PILES IM NGL
                 // if (!CheckPoints.Notb && astring.StartsWith("pile"))
@@ -433,73 +509,79 @@ public class StageLoader
                 //         Medium.Ground);
                 //     _nob++;
                 // }
-                if (line.StartsWith("nlaps"))
+                else if (line.StartsWith("nlaps"))
                 {
                     nlaps = (ushort)Utility.GetInt("nlaps", line, 0);
                 }
-                if (line.StartsWith("name"))
+                else if (line.StartsWith("name"))
                 {
                     Name = Utility.GetString("name", line, 0);
                 }
-                if (line.StartsWith("stagemaker"))
+                else if (line.StartsWith("stagemaker"))
                 {
                     //CheckPoints.Maker = Getastring("stagemaker", astring, 0);
                 }
-                if (line.StartsWith("publish"))
+                else if (line.StartsWith("publish"))
                 {
                     //CheckPoints.Pubt = Utility.GetInt("publish", astring, 0);
                 }
-                if (line.StartsWith("soundtrack("))
+                else if (line.StartsWith("soundtrack("))
                 {
                     string folder = Utility.GetString("soundtrack", line, 0);
                     string fileName = Utility.GetString("soundtrack", line, 1);
 
                     if(folder.Contains(".") || folder.Contains("/") || fileName.Contains("..") || fileName.Contains("/"))
                     {
-                        throw new Exception("Invalid folder or file name in soundtrack() directive");
+                        Logging.Error("Invalid folder or file name in soundtrack() directive");
                     }
-
-                    musicPath = $"{folder}/{fileName}";
+                    else
+                    {
+                        musicPath = $"{folder}/{fileName}";
+                    }
                 }
-                if(line.StartsWith("soundtrackfreqmul"))
+                else if(line.StartsWith("soundtrackfreqmul"))
                 {
                     float mul = Utility.GetFloat("soundtrackfreqmul", line, 0);
                     musicFreqMul = mul;
                 }
-                if(line.StartsWith("soundtracktempomul"))
+                else if(line.StartsWith("soundtracktempomul"))
                 {
                     float mul = Utility.GetFloat("soundtracktempomul", line, 0);
                     musicTempoMul = mul;
                 }
-                if(line.StartsWith("soundtrackremaster"))
+                else if(line.StartsWith("soundtrackremaster"))
                 {
                     string folder = Utility.GetString("soundtrackremaster", line, 0);
                     string fileName = Utility.GetString("soundtrackremaster", line, 1);
 
                     if(folder.Contains(".") || folder.Contains("/") || fileName.Contains("..") || fileName.Contains("/"))
                     {
-                        throw new Exception("Invalid folder or file name in soundtrackremaster() directive");
+                        Logging.Error("Invalid folder or file name in soundtrackremaster() directive");
                     }
-
-                    remasteredMusicPath = $"{folder}/{fileName}";
+                    else
+                    {
+                        remasteredMusicPath = $"{folder}/{fileName}";
+                    }
                 }
 
                 // stage walls
-                if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
-
-                if (line.StartsWith("maxr"))
+                else if (line.StartsWith("maxr"))
                 {
+                    if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
+
                     var n = Utility.GetInt("maxr", line, 0);
                     var o = Utility.GetInt("maxr", line, 1);
                     maxr = o;
                     var p = Utility.GetInt("maxr", line, 2);
+
                     for (var q = 0; q < n; q++)
                     {
                         pieces.Add(new PiecePlacement(
                             PiecePlacementType.CollisionObject,
                             wall,
                             new f64Vector3(o, World.Ground, q * 4800 + p),
-                            f64Euler.Identity                        
+                            f64Euler.Identity,
+                            IsWall: true
                         ));
                     }
 
@@ -513,20 +595,26 @@ public class StageLoader
                         Color: new Color3(),
                         Damage: 1
                     ));
+                    
+                    wallDefs.Add(new StageWall(WallDirection.Right, n, o, p));
                 }
-                if (line.StartsWith("maxl"))
+                else if (line.StartsWith("maxl"))
                 {
+                    if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
+
                     var n = Utility.GetInt("maxl", line, 0);
                     var o = Utility.GetInt("maxl", line, 1);
                     maxl = o;
                     var p = Utility.GetInt("maxl", line, 2);
+
                     for (var q = 0; q < n; q++)
                     {
                         pieces.Add(new PiecePlacement(
                             PiecePlacementType.CollisionObject,
                             wall,
                             new f64Vector3(o, World.Ground, q * 4800 + p),
-                            new f64Euler(f64AngleSingle.FromDegrees(180), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)       
+                            new f64Euler(f64AngleSingle.FromDegrees(180), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle),
+                            IsWall: true
                         ));
                     }
 
@@ -540,20 +628,26 @@ public class StageLoader
                         Color: new Color3(),
                         Damage: 1
                     ));
+                    
+                    wallDefs.Add(new StageWall(WallDirection.Left, n, o, p));
                 }
-                if (line.StartsWith("maxt"))
+                else if (line.StartsWith("maxt"))
                 {
+                    if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
+
                     var n = Utility.GetInt("maxt", line, 0);
                     var o = Utility.GetInt("maxt", line, 1);
                     maxt = o;
                     var p = Utility.GetInt("maxt", line, 2);
+                    
                     for (var q = 0; q < n; q++)
                     {
                         pieces.Add(new PiecePlacement(
                             PiecePlacementType.CollisionObject,
                             wall,
                             new f64Vector3(q * 4800 + p, World.Ground, o),
-                            new f64Euler(f64AngleSingle.FromDegrees(90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)       
+                            new f64Euler(f64AngleSingle.FromDegrees(90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle),
+                            IsWall: true
                         ));
                     }
 
@@ -567,22 +661,29 @@ public class StageLoader
                         Color: new Color3(),
                         Damage: 1
                     ));
+                    
+                    wallDefs.Add(new StageWall(WallDirection.Top, n, o, p));
                 }
-                if (line.StartsWith("maxb"))
+                else if (line.StartsWith("maxb"))
                 {
+                    if (!TryGetPieceToPlace("nfmm/thewall", out var wall)) continue;
+
                     var n = Utility.GetInt("maxb", line, 0);
                     var o = Utility.GetInt("maxb", line, 1);
                     maxb = o;
                     var p = Utility.GetInt("maxb", line, 2);
+
                     for (var q = 0; q < n; q++)
                     {
                         pieces.Add(new PiecePlacement(
                             PiecePlacementType.CollisionObject,
                             wall,
                             new f64Vector3(q * 4800 + p, World.Ground, o),
-                            new f64Euler(f64AngleSingle.FromDegrees(-90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle)       
+                            new f64Euler(f64AngleSingle.FromDegrees(-90), f64AngleSingle.ZeroAngle, f64AngleSingle.ZeroAngle),
+                            IsWall: true
                         ));
                     }
+
                     walls.Add(new Rad3dBoxDef(
                         Translation: new f64Vector3(n * 4800 / 2 + p - 2400, -5000, o - 500),
                         Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
@@ -593,6 +694,12 @@ public class StageLoader
                         Color: new Color3(),
                         Damage: 1
                     ));
+                    
+                    wallDefs.Add(new StageWall(WallDirection.Bottom, n, o, p));
+                }
+                else
+                {
+                    unknownParameters.Add(line);
                 }
             }
         }
@@ -605,6 +712,7 @@ public class StageLoader
     public StageLoader()
     {
         // Create an empty stage loader for editor purposes
+        currentGroup = ungrouped;
         Path = "default_stage";
     }
 

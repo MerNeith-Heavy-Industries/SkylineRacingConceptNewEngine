@@ -97,18 +97,18 @@ public class DevConsole
     private void RenderConsole()
     {
         // windows size
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(50, 50), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(540, 400), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowPos(new Vector2(50, 50), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(540, 400), ImGuiCond.FirstUseEver);
 
         // console pos on screen so autocomplete window moves with it
-        System.Numerics.Vector2 consolePos = default;
-        System.Numerics.Vector2 consoleSize = default;
+        Vector2 consolePos = default;
+        Vector2 consoleSize = default;
 
         bool isOpen = _isOpen;
         if (ImGui.Begin("Console", ref isOpen, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus))
         {
             // output log
-            if (ImGui.BeginChild("ScrollingRegion", new System.Numerics.Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.None, ImGuiWindowFlags.None))
+            if (ImGui.BeginChild("ScrollingRegion", new Vector2(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.None, ImGuiWindowFlags.None))
             {
                 foreach (var (message, level) in NfmwLoggerProvider.GetLogs())
                 {
@@ -116,19 +116,19 @@ public class DevConsole
                     switch (level)
                     {
                         case "warning":
-                            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(1.0f, 1.0f, 0.0f, 1.0f)); // Yellow
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1.0f, 1.0f, 0.0f, 1.0f)); // Yellow
                             break;
                         case "error":
-                            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(1.0f, 0.4f, 0.4f, 1.0f)); // Red
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1.0f, 0.4f, 0.4f, 1.0f)); // Red
                             break;
                         case "info":
-                            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.34f, 0.8f, 1.0f, 1.0f)); // Aqua Blue
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.34f, 0.8f, 1.0f, 1.0f)); // Aqua Blue
                             break;
                         case "debug":
-                            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(0.612f, 1f, 0f, 1.0f)); // Green
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.612f, 1f, 0f, 1.0f)); // Green
                             break;
                         default:
-                            ImGui.PushStyleColor(ImGuiCol.Text, new System.Numerics.Vector4(1f, 1f, 1f, 1f)); // Default (White)
+                            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 1f, 1f, 1f)); // Default (White)
                             break;
                     }
 
@@ -288,18 +288,18 @@ public class DevConsole
         if (_autocompleteMatches.Count > 0 && !string.IsNullOrWhiteSpace(_currentInput) && _isOpen)
         {
             // Position popup below the console input field using captured position
-            var popupPos = new System.Numerics.Vector2(consolePos.X, consolePos.Y + consoleSize.Y + 5);
+            var popupPos = new Vector2(consolePos.X, consolePos.Y + consoleSize.Y + 5);
                 
             ImGui.SetNextWindowPos(popupPos, ImGuiCond.Always);
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(400, Math.Min(_autocompleteMatches.Count * 25 + 10, 200)));
+            ImGui.SetNextWindowSize(new Vector2(400, Math.Min(_autocompleteMatches.Count * 25 + 10, 200)));
                 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4.0f);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new System.Numerics.Vector2(8, 8));
-            ImGui.PushStyleColor(ImGuiCol.WindowBg, new System.Numerics.Vector4(0.1f, 0.1f, 0.1f, 0.95f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8, 8));
+            ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.1f, 0.1f, 0.1f, 0.95f));
                 
             if (ImGui.Begin("##Autocomplete", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoInputs))
             {
-                if (ImGui.BeginChild("##AutocompleteScroll", new System.Numerics.Vector2(0, 0), ImGuiChildFlags.None, ImGuiWindowFlags.None))
+                if (ImGui.BeginChild("##AutocompleteScroll", new Vector2(0, 0), ImGuiChildFlags.None, ImGuiWindowFlags.None))
                 {
                     for (int i = 0; i < _autocompleteMatches.Count; i++)
                     {
@@ -312,9 +312,9 @@ public class DevConsole
                             var textPos = ImGui.GetCursorScreenPos();
                             var textSize = ImGui.CalcTextSize(_autocompleteMatches[i]);
                             drawList.AddRectFilled(
-                                new System.Numerics.Vector2(textPos.X - 4, textPos.Y),
-                                new System.Numerics.Vector2(textPos.X + textSize.X + 4, textPos.Y + textSize.Y),
-                                ImGui.GetColorU32(new System.Numerics.Vector4(0.3f, 0.3f, 0.8f, 0.6f))
+                                new Vector2(textPos.X - 4, textPos.Y),
+                                new Vector2(textPos.X + textSize.X + 4, textPos.Y + textSize.Y),
+                                ImGui.GetColorU32(new Vector4(0.3f, 0.3f, 0.8f, 0.6f))
                             );
                         }
                             
