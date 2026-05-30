@@ -206,11 +206,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         const float increment = 20;
         
         G.SetColor(new Color(0, 0, 0));
-        foreach (var message in FrameTrace.GetMessages())
-        {
-            y += increment;
-            G.DrawString(message, (int)x, (int)y);
-        }
+        G.DrawString(FrameTrace.GetMessageString(), (int)x, (int)y);
     }
 
 }

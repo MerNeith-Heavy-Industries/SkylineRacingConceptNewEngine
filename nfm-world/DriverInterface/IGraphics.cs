@@ -1,6 +1,5 @@
 #nullable enable
 
-using Microsoft.Extensions.Primitives;
 using NFMWorld.Util;
 using WorldXaml.UI.Yoga;
 
@@ -24,10 +23,10 @@ public interface IGraphics : IXamlGraphics
     void SetFont(Font font);
     IFontMetrics GetFontMetrics();
     IFontMetrics GetFontMetrics(Font font);
-    void DrawString(StringSegment text, int x, int y);
-    void DrawStringAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
-    void DrawStringStrokeAligned(StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
-    void DrawStringStroke(StringSegment text, int x, int y, int effectAmount = 1)
+    void DrawString(ReadOnlySpan<char> text, int x, int y);
+    void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
+    void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
+    void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
     {
     }
     void FillOval(int p0, int p1, int p2, int p3);

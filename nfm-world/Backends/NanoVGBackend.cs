@@ -203,13 +203,13 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             return new NanoVGFontMetrics(_fontSystems[font.FontFamily].GetFont(font.Size));
         }
 
-        public void DrawString(Microsoft.Extensions.Primitives.StringSegment text, int x, int y)
+        public void DrawString(ReadOnlySpan<char> text, int x, int y)
         {
             _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
-        public void DrawStringAligned(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
+        public void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
             _context.FillPaint(_paint);
 
@@ -220,13 +220,13 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             _context.Text(_font, text, xFloat, yFloat, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
-        public void DrawStringStroke(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int effectAmount = 1)
+        public void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
         {
             _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
-        public void DrawStringStrokeAligned(Microsoft.Extensions.Primitives.StringSegment text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        public void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
             _context.FillPaint(_paint);
 
