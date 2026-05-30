@@ -347,7 +347,7 @@ public static class BackendGameSparker
             
             src_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes(path))) with
             {
-                FileName = "src/" + path
+                FileName = "src/" + Path.GetRelativePath("./data/models/src/stage", path)
             });
         }
 
