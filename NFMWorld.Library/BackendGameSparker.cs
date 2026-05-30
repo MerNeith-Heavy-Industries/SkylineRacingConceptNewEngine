@@ -91,53 +91,35 @@ public static class BackendGameSparker
         cars.Add(Collection.NFMM, []);
         FileUtil.LoadFiles("./data/models/nfmm/cars", CarRads, (ais, id, fileName) =>
         {
-            cars[Collection.NFMM][id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "nfmm/" + fileName
-            };
+            cars[Collection.NFMM][id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
         });
 
         FileUtil.LoadFiles("./data/models/nfmm/stage", StageRads, (ais, id, fileName) =>
         {
-            stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "nfmm/" + fileName
-            };
+            stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
         });
 
         cars.Add(Collection.World, []);
         FileUtil.LoadFiles("./data/models/world/cars", (ais, fileName) =>
         {
-            cars[Collection.World].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "world/" + fileName
-            });
+            cars[Collection.World].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
         });
 
         cars.Add(Collection.Elo, []);
         FileUtil.LoadFiles("./data/models/elo/cars", (ais, fileName) =>
         {
-            cars[Collection.Elo].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "elo/" + fileName
-            });
+            cars[Collection.Elo].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "elo/" + fileName));
         });
 
         cars.Add(Collection.Football, []);
         FileUtil.LoadFiles("./data/models/football/cars", (ais, fileName) =>
         {
-            cars[Collection.Football].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "football/" + fileName
-            });
+            cars[Collection.Football].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName));
         });
 
         FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) =>
         {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "world/" + fileName
-            });
+            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
         });
 
         FileUtil.LoadFiles("./data/models/football/stage", (ais, fileName) =>
@@ -153,10 +135,7 @@ public static class BackendGameSparker
         {
             try
             {
-                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-                {
-                    FileName = "user/" + fileName
-                });
+                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
             }
             catch (Exception ex)
             {
@@ -168,10 +147,7 @@ public static class BackendGameSparker
         {
             try
             {
-                user_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-                {
-                    FileName = "user/" + fileName
-                });
+                user_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
             }
             catch (Exception ex)
             {

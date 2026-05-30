@@ -30,15 +30,17 @@ public class RadParser
     private List<ushort> _meshCollisionIndices = new();
     
     private List<f64Vector3> _hullVerts = new();
-    
-    private RadParser()
+    private readonly string _fileName;
+
+    private RadParser(string fileName)
     {
         _currentPolys = _mainCarPolys;
+        _fileName = fileName;
     }
 
-    public static Rad3d ParseRad(string radFile)
+    public static Rad3d ParseRad(string radFile, string fileName = "hogan rewish")
     {
-        var parser = new RadParser();
+        var parser = new RadParser(fileName);
         var lines = radFile.AsSpan().Split("\n");
         int lineNumber = 0;
         foreach (var lineRange in lines)
@@ -66,7 +68,8 @@ public class RadParser
             CastsShadow: parser._castsShadow,
             Atp: parser._atp.ToArray(),
             CollisionMesh: parser._meshCollisionVerts.Count > 0 ? new SrcRad3dCollisionMesh(parser._meshCollisionVerts.ToArray(), parser._meshCollisionIndices.ToArray()) : null,
-            CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null
+            CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null,
+            FileName: fileName
         ));
     }
 
@@ -141,25 +144,25 @@ public class RadParser
 
         else if (line.StartsWith("1stColor("))
         {
-            var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+            var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
             _colors[color] = 0;
         }
 
         else if (line.StartsWith("2ndColor("))
         {
-            var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+            var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
             _colors[color] = 1;
         }
 
         else if (line.StartsWith("3rdColor("))
         {
-            var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+            var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
             _colors[color] = 2;
         }
 
         else if (line.StartsWith("4thColor("))
         {
-            var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+            var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
             _colors[color] = 3;
         }
 
@@ -280,7 +283,7 @@ public class RadParser
             ref var currentBox = ref _boxes.GetValueRef(^1);
             if (line.StartsWith("c("))
             {
-                var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+                var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
                 currentBox = currentBox with { Color = color };
             }
             else if (line.StartsWith("xy("))
@@ -364,9 +367,13 @@ public class RadParser
         if (_currentPolys.Count > 0)
         {
             ref var poly = ref _currentPolys.GetValueRef(^1);
-            if (line.StartsWith("c("))
+            if (line.StartsWith("c(g)")) // SRC extension
             {
-                var color = Color3.FromSpan(BracketParser.GetNumbers(line, stackalloc short[3]));
+                poly = poly with { PolyType = PolyType.CGround };
+            }
+            else if (line.StartsWith("c("))
+            {
+                var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
                 poly = poly with { Color = color };
                 if (_colors.TryGetValue(color, out var colNum))
                 {
