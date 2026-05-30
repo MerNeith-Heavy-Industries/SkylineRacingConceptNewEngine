@@ -43,6 +43,14 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     private ClientCarCollection clientCarCollection;
     public ClientStageRenderer clientStageRenderer;
 
+    public override void Enter()
+    {
+        base.Enter();
+        
+        camera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
+        camera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+    }
+
     public override void Exit()
     {
         base.Exit();
