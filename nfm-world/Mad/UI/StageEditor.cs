@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Hexa.NET.ImGui;
 using Maxine.Extensions;
 using Maxine.Extensions.Collections;
+using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Gameplay;
 using NFMWorld.Util;
@@ -154,7 +155,7 @@ public class StageEditorTab
     public float DragStartCameraPitch { get; set; } = 0f;
     
     // Selection state
-    public int SelectedPieceId { get; set; } = -1;
+    public int ActivePieceId { get; set; } = -1;
     public int SelectedWallId { get; set; } = -1;
     public HashSet<int> SelectedPieceIds { get; set; } = new(); // multi-selection set
     
@@ -261,6 +262,7 @@ public class StageEditorPhase : BasePhase
     private f64Vector3 _pendingPlacementPos = f64Vector3.Zero;
     private bool _hasValidPlacementPos = false;
     private float _pendingPlacementYaw = 0f;  // degrees, modified by Q/E while in placement mode
+    private int _pendingPlacementYOff = 0;
     
     // Snapping
     private bool _snapEnabled = false;
@@ -445,7 +447,7 @@ public class StageEditorPhase : BasePhase
         foreach (var rt in WorldGame.shadowRenderTargets)
         {
             _graphicsDevice.SetRenderTarget(rt);
-            _graphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.White, 1.0f, 0);
+            _graphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
         }
         _graphicsDevice.SetRenderTarget(null);
         
@@ -453,8 +455,6 @@ public class StageEditorPhase : BasePhase
         camera.Fov = 60f;
         camera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
         camera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
-        camera.Near = 1f;
-        camera.Far = 100000f;
         
         UpdateCameraPosition();
         
@@ -1086,10 +1086,10 @@ public class StageEditorPhase : BasePhase
         if (imguiWantsKeyboard) return;
         if (!_isOpen) return;
         
-        // In placement mode: Q/E rotate the pending piece by 45°; Q is also the camera-down key so
-        // we handle rotation first and skip the camera binding.
+        // In placement mode
         if (_pendingPlacementPartIndex >= 0)
         {
+            // Q/E rotate the pending piece by 45°. Q is also the camera-down key so we handle rotation first and skip the camera binding.
             if (key == Keys.E)
             {
                 _pendingPlacementYaw = (_pendingPlacementYaw + 45f) % 360f;
@@ -1104,6 +1104,12 @@ public class StageEditorPhase : BasePhase
             {
                 // Reset rotation
                 _pendingPlacementYaw = 0f;
+                return;
+            }
+
+            if (key == Keys.G)
+            {
+                _snapEnabled = !_snapEnabled;
                 return;
             }
         }
@@ -1143,11 +1149,9 @@ public class StageEditorPhase : BasePhase
         if (key == Keys.Delete)
         {
             // Build the set of IDs to delete (multi-selection or single)
-            var idsToDelete = ActiveTab.SelectedPieceIds.Count > 0
-                ? new List<int>(ActiveTab.SelectedPieceIds)
-                : ActiveTab.SelectedPieceId >= 0 ? new List<int> { ActiveTab.SelectedPieceId } : new List<int>();
+            int[] idsToDelete = [..ActiveTab.SelectedPieceIds];
             
-            if (idsToDelete.Count > 0)
+            if (idsToDelete.Length > 0)
             {
                 PushUndoSnapshot();
                 foreach (var deleteId in idsToDelete)
@@ -1161,7 +1165,7 @@ public class StageEditorPhase : BasePhase
                     foreach (var grp in ActiveTab.HierarchyGroups) grp.PieceIds.Remove(piece.Id);
                 }
                 ActiveTab.SelectedPieceIds.Clear();
-                ActiveTab.SelectedPieceId = -1;
+                ActiveTab.ActivePieceId = -1;
                 ActiveTab.HasUnsavedChanges = true;
                 RebuildClientRenderer();
             }
@@ -1175,9 +1179,7 @@ public class StageEditorPhase : BasePhase
         if (key == Keys.C && _isCtrlPressed && ActiveTab != null)
         {
             // Copy all selected pieces (or primary if no multi-selection)
-            var ids = ActiveTab.SelectedPieceIds.Count > 0
-                ? ActiveTab.SelectedPieceIds
-                : (ActiveTab.SelectedPieceId >= 0 ? new HashSet<int> { ActiveTab.SelectedPieceId } : new HashSet<int>());
+            var ids = ActiveTab.SelectedPieceIds;
             if (ids.Count > 0)
             {
                 var pieces = ActiveTab.ScenePieces.Where(p => ids.Contains(p.Id)).ToList();
@@ -1203,7 +1205,7 @@ public class StageEditorPhase : BasePhase
             ActiveTab.SelectedPieceIds.Clear();
             // Determine paste offset — use snap size when enabled, otherwise a small fixed nudge
             float pasteOffsetXZ = _snapEnabled && _snapSize > 0f ? _snapSize : 200f;
-            var primaryPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.SelectedPieceId);
+            var primaryPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
             f64Vector3 pasteOrigin;
             if (primaryPiece != null)
             {
@@ -1243,7 +1245,7 @@ public class StageEditorPhase : BasePhase
                 ActiveTab.SelectedPieceIds.Add(instance.Id);
                 lastId = instance.Id;
             }
-            if (lastId >= 0) ActiveTab.SelectedPieceId = lastId;
+            if (lastId >= 0) ActiveTab.ActivePieceId = lastId;
             ActiveTab.HasUnsavedChanges = true;
             RebuildClientRenderer();
         }
@@ -1393,7 +1395,7 @@ public class StageEditorPhase : BasePhase
         effect.Projection = camera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
         
-        var color = new Microsoft.Xna.Framework.Color(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
+        var color = new Color(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
         
         // Get rotation from piece only - match game engine's rotation order
         // Negate yaw to match game engine's coordinate system
@@ -1489,7 +1491,7 @@ public class StageEditorPhase : BasePhase
         var part = _availableParts[_pendingPlacementPartIndex];
         if (part.Rad == null) return;
         
-        var pos = new Vector3((float)_pendingPlacementPos.X, (float)_pendingPlacementPos.Y, (float)_pendingPlacementPos.Z);
+        var pos = new Vector3((float)_pendingPlacementPos.X, (float)_pendingPlacementPos.Y + _pendingPlacementYOff, (float)_pendingPlacementPos.Z);
         float yawRad = -_pendingPlacementYaw * (float)Math.PI / 180f; // negate to match engine convention
         var rotMatrix = Matrix.CreateRotationY(yawRad);
         
@@ -1507,7 +1509,7 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.BlendState = BlendState.AlphaBlend;
         _graphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
         
-        var fillColor = new Microsoft.Xna.Framework.Color(0.3f, 0.8f, 1.0f, 0.35f);
+        var fillColor = new Color(0.3f, 0.8f, 1.0f, 0.35f);
         var fillVerts = new List<VertexPositionColor>();
         
         foreach (var poly in part.Rad.Polys)
@@ -1533,7 +1535,7 @@ public class StageEditorPhase : BasePhase
         // Bright wireframe on top (depth-ignore so it's always visible)
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
         _graphicsDevice.BlendState = BlendState.Opaque;
-        var wireColor = new Microsoft.Xna.Framework.Color(0.1f, 0.9f, 1.0f, 1.0f);
+        var wireColor = new Color(0.1f, 0.9f, 1.0f, 1.0f);
         var wireVerts = new List<VertexPositionColor>();
         
         foreach (var poly in part.Rad.Polys)
@@ -1579,9 +1581,7 @@ public class StageEditorPhase : BasePhase
     private Vector3 ComputeSelectionCentroid()
     {
         if (ActiveTab == null) return Vector3.Zero;
-        var ids = ActiveTab.SelectedPieceIds.Count > 0
-            ? ActiveTab.SelectedPieceIds
-            : ActiveTab.SelectedPieceId >= 0 ? (IEnumerable<int>)new[] { ActiveTab.SelectedPieceId } : Array.Empty<int>();
+        var ids = ActiveTab.SelectedPieceIds;
         var pieces = ActiveTab.ScenePieces.Where(p => ids.Contains(p.Id)).ToList();
         if (pieces.Count == 0) return Vector3.Zero;
         return new Vector3(
@@ -1608,17 +1608,17 @@ public class StageEditorPhase : BasePhase
         
         // Colors: red=X, yellow=Y(up), blue=Z, green=RotY ring
         var colX = _gizmoHovered == GizmoAxis.X || _gizmoDragging == GizmoAxis.X
-            ? new Microsoft.Xna.Framework.Color(1f, 0.6f, 0.6f, 1f)
-            : new Microsoft.Xna.Framework.Color(1f, 0.1f, 0.1f, 1f);
+            ? new Color(1f, 0.6f, 0.6f, 1f)
+            : new Color(1f, 0.1f, 0.1f, 1f);
         var colY = _gizmoHovered == GizmoAxis.Y || _gizmoDragging == GizmoAxis.Y
-            ? new Microsoft.Xna.Framework.Color(1f, 1f, 0.6f, 1f)
-            : new Microsoft.Xna.Framework.Color(1f, 0.9f, 0.1f, 1f);
+            ? new Color(1f, 1f, 0.6f, 1f)
+            : new Color(1f, 0.9f, 0.1f, 1f);
         var colZ = _gizmoHovered == GizmoAxis.Z || _gizmoDragging == GizmoAxis.Z
-            ? new Microsoft.Xna.Framework.Color(0.6f, 0.6f, 1f, 1f)
-            : new Microsoft.Xna.Framework.Color(0.1f, 0.1f, 1f, 1f);
+            ? new Color(0.6f, 0.6f, 1f, 1f)
+            : new Color(0.1f, 0.1f, 1f, 1f);
         var colRot = _gizmoHovered == GizmoAxis.RotY || _gizmoDragging == GizmoAxis.RotY
-            ? new Microsoft.Xna.Framework.Color(0.6f, 1f, 0.6f, 1f)
-            : new Microsoft.Xna.Framework.Color(0.1f, 0.9f, 0.1f, 1f);
+            ? new Color(0.6f, 1f, 0.6f, 1f)
+            : new Color(0.1f, 0.9f, 0.1f, 1f);
         
         // Arrowhead side fins and tip offsets for each axis
         var xSide     = new Vector3(0, GIZMO_ARROW_THICKNESS * 2, 0);
@@ -1762,7 +1762,7 @@ public class StageEditorPhase : BasePhase
         
         var prevRTs = _graphicsDevice.GetRenderTargets();
         _graphicsDevice.SetRenderTarget(rt);
-        _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(45, 45, 48));
+        _graphicsDevice.Clear(new Color(45, 45, 48));
         
         // Set up a simple isometric-ish view camera for the preview
         float camDist = maxR * 3f;
@@ -1792,7 +1792,7 @@ public class StageEditorPhase : BasePhase
                 var p0 = new Vector3(poly.Points[0].X, poly.Points[0].Y, poly.Points[0].Z);
                 var p1 = new Vector3(poly.Points[i - 1].X, poly.Points[i - 1].Y, poly.Points[i - 1].Z);
                 var p2 = new Vector3(poly.Points[i].X, poly.Points[i].Y, poly.Points[i].Z);
-                var xnaColor = new Microsoft.Xna.Framework.Color((int)poly.Color.R, (int)poly.Color.G, (int)poly.Color.B, 255);
+                var xnaColor = new Color((int)poly.Color.R, (int)poly.Color.G, (int)poly.Color.B, 255);
                 verts.Add(new(p0, xnaColor));
                 verts.Add(new(p1, xnaColor));
                 verts.Add(new(p2, xnaColor));
@@ -1835,13 +1835,13 @@ public class StageEditorPhase : BasePhase
         var rayClip = new Vector4(ndcX, ndcY, -1.0f, 1.0f);
         var projMatrix = camera.ProjectionMatrix;
         Matrix.Invert(ref projMatrix, out var invProj);
-        var rayEye = Microsoft.Xna.Framework.Vector4.Transform(rayClip, invProj);
+        var rayEye = Vector4.Transform(rayClip, invProj);
         rayEye.Z = -1.0f;
         rayEye.W = 0.0f;
         
         var viewMatrix = camera.ViewMatrix;
         Matrix.Invert(ref viewMatrix, out var invView);
-        var rayWorld4 = Microsoft.Xna.Framework.Vector4.Transform(rayEye, invView);
+        var rayWorld4 = Vector4.Transform(rayEye, invView);
         var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
         rayDirection.Normalize();
         var rayOrigin = camera.Position;
@@ -1871,14 +1871,14 @@ public class StageEditorPhase : BasePhase
         // Transform to view space
         var projMatrix = camera.ProjectionMatrix;
         Matrix.Invert(ref projMatrix, out var invProj);
-        var rayEye = Microsoft.Xna.Framework.Vector4.Transform(rayClip, invProj);
+        var rayEye = Vector4.Transform(rayClip, invProj);
         rayEye.Z = -1.0f;
         rayEye.W = 0.0f;
         
         // Transform to world space
         var viewMatrix = camera.ViewMatrix;
         Matrix.Invert(ref viewMatrix, out var invView);
-        var rayWorld4 = Microsoft.Xna.Framework.Vector4.Transform(rayEye, invView);
+        var rayWorld4 = Vector4.Transform(rayEye, invView);
         var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
         rayDirection.Normalize();
         
@@ -2079,7 +2079,7 @@ public class StageEditorPhase : BasePhase
         // Handle gizmo dragging before anything else
         if (_gizmoDragging != GizmoAxis.None && ActiveTab != null)
         {
-            var selectedPiece = ActiveTab.ScenePieces.FirstOrDefault(p => p.Id == ActiveTab.SelectedPieceId);
+            var selectedPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
             if (selectedPiece != null)
             {
                 int dx = x - _gizmoDragStartX;
@@ -2219,7 +2219,7 @@ public class StageEditorPhase : BasePhase
                         gx = MathF.Round(gx / _snapSize) * _snapSize;
                         gz = MathF.Round(gz / _snapSize) * _snapSize;
                     }
-                    _pendingPlacementPos = new f64Vector3((fix64)gx, (fix64)groundPos.Y, (fix64)gz);
+                    _pendingPlacementPos = new f64Vector3((fix64)gx, (fix64)groundPos.Y + _pendingPlacementYOff, (fix64)gz);
                 }
             }
             else
@@ -2293,9 +2293,9 @@ public class StageEditorPhase : BasePhase
             _isLeftButtonDown = true;
             
             // Check if clicking a gizmo handle first
-            if (_gizmoHovered != GizmoAxis.None && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+            if (_gizmoHovered != GizmoAxis.None && ActiveTab != null && ActiveTab.ActivePieceId >= 0)
             {
-                var piece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.SelectedPieceId);
+                var piece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
                 if (piece != null)
                 {
                     PushUndoSnapshot();
@@ -2343,6 +2343,20 @@ public class StageEditorPhase : BasePhase
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
         
+        // In placement mode
+        if (_pendingPlacementPartIndex >= 0)
+        {
+            if (_isShiftPressed)
+            {
+                _pendingPlacementYOff = (int)(_pendingPlacementYOff + (delta / 120f) * 50f);
+            }
+            else
+            {
+                _pendingPlacementYaw = (_pendingPlacementYaw + (delta / 120f) * 15f) % 360f;
+            }
+            return;
+        }
+
         // Only act if mouse is in viewport
         if (IsMouseInViewport(_mouseX, _mouseY))
         {
@@ -2423,7 +2437,7 @@ public class StageEditorPhase : BasePhase
                     }
                     if (lastId >= 0)
                     {
-                        ActiveTab.SelectedPieceId = lastId;
+                        ActiveTab.ActivePieceId = lastId;
                         ActiveTab.SelectedWallId = -1;
                     }
                     return;
@@ -2446,12 +2460,14 @@ public class StageEditorPhase : BasePhase
                                 f64AngleSingle.FromDegrees((fix64)_pendingPlacementYaw),
                                 f64AngleSingle.ZeroAngle,
                                 f64AngleSingle.ZeroAngle);
-                            var newMesh = StageObject.CreateDefaultObject(pendingPart.Rad, _pendingPlacementPos, placementRot);
+                            var newMesh = StageObject.CreateDefaultObject(pendingPart.Rad, _pendingPlacementPos + new f64Vector3(0, _pendingPlacementYOff, 0), placementRot);
                             var instance = new StagePieceInstance(newMesh, ActiveTab.GetNextPieceId());
                             PushUndoSnapshot();
                             ActiveTab.ScenePieces.Add(instance);
                             ActiveTab.Stage.pieces[ActiveTab.Stage.stagePartCount] = newMesh;
-                            ActiveTab.SelectedPieceId = instance.Id;
+                            ActiveTab.ActivePieceId = instance.Id;
+                            ActiveTab.SelectedPieceIds.Clear();
+                            ActiveTab.SelectedPieceIds.Add(instance.Id);
                             ActiveTab.HasUnsavedChanges = true;
                             RebuildClientRenderer();
                             // Stay in placement mode so the user can keep placing the same part
@@ -2477,7 +2493,7 @@ public class StageEditorPhase : BasePhase
                             ActiveTab.SelectedPieceIds.Add(pickedPieceId);
                         }
 
-                        ActiveTab.SelectedPieceId = pickedPieceId;
+                        ActiveTab.ActivePieceId = pickedPieceId;
                         ActiveTab.SelectedWallId = -1;
                     }
                     else
@@ -2485,7 +2501,7 @@ public class StageEditorPhase : BasePhase
                         if (!_isCtrlPressed)
                         {
                             ActiveTab.SelectedPieceIds.Clear();
-                            ActiveTab.SelectedPieceId = -1;
+                            ActiveTab.ActivePieceId = -1;
                         }
                     }
                 }
@@ -2582,12 +2598,12 @@ public class StageEditorPhase : BasePhase
         if (ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown)
         {
             // Gray background for top-down view
-            _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(128, 128, 128));
+            _graphicsDevice.Clear(new Color(128, 128, 128));
         }
         else
         {
             // Sky blue background for 3D scene view
-            _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(135, 206, 235));
+            _graphicsDevice.Clear(new Color(135, 206, 235));
         }
         
         // Set up scissor rectangle to only render within the viewport area
@@ -2662,23 +2678,18 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.RasterizerState = oldRasterizerState;
         
         // Render selection highlight for all selected pieces, gizmo on primary
-        var highlightIds = ActiveTab.SelectedPieceIds.Count > 0
-            ? ActiveTab.SelectedPieceIds
-            : ActiveTab.SelectedPieceId >= 0 ? (IEnumerable<int>)new[] { ActiveTab.SelectedPieceId } : null;
-        if (highlightIds != null)
+        var highlightIds = ActiveTab.SelectedPieceIds;
+        foreach (var hid in highlightIds)
         {
-            foreach (var hid in highlightIds)
-            {
-                var hp = ActiveTab.ScenePieces.GetValueOrDefault(hid);
-                if (hp?.Obj != null)
-                    RenderSelectionHighlight(hp);
-            }
-            if (ActiveTab.SelectedPieceId >= 0)
-            {
-                var selectedPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.SelectedPieceId);
-                if (selectedPiece?.Obj != null)
-                    RenderGizmo(ComputeSelectionCentroid());
-            }
+            var hp = ActiveTab.ScenePieces.GetValueOrDefault(hid);
+            if (hp?.Obj != null)
+                RenderSelectionHighlight(hp);
+        }
+        if (ActiveTab.ActivePieceId >= 0)
+        {
+            var selectedPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
+            if (selectedPiece?.Obj != null)
+                RenderGizmo(ComputeSelectionCentroid());
         }
         
         // Process one pending preview thumbnail per frame
@@ -2691,7 +2702,7 @@ public class StageEditorPhase : BasePhase
         // Clear the depth buffer so ImGui always renders on top of the 3D scene.
         // Without this, geometry close to the camera writes near-zero depth values and
         // ImGui pixels (rendered later with DepthRead) fail the depth test at those positions.
-        _graphicsDevice.Clear(ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.Black, 1.0f, 0);
+        _graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
     }
     
     public override void RenderImgui()
@@ -3409,13 +3420,13 @@ public class StageEditorPhase : BasePhase
             var rayClip = new Vector4(ndcX, ndcY, -1.0f, 1.0f);
             var projMatrix = camera.ProjectionMatrix;
             Matrix.Invert(ref projMatrix, out var invProj);
-            var rayEye = Microsoft.Xna.Framework.Vector4.Transform(rayClip, invProj);
+            var rayEye = Vector4.Transform(rayClip, invProj);
             rayEye.Z = -1.0f;
             rayEye.W = 0.0f;
             
             var viewMatrix = camera.ViewMatrix;
             Matrix.Invert(ref viewMatrix, out var invView);
-            var rayWorld4 = Microsoft.Xna.Framework.Vector4.Transform(rayEye, invView);
+            var rayWorld4 = Vector4.Transform(rayEye, invView);
             var rayDirection = new Vector3(rayWorld4.X, rayWorld4.Y, rayWorld4.Z);
             rayDirection.Normalize();
             var rayOrigin = camera.Position;
@@ -3452,7 +3463,7 @@ public class StageEditorPhase : BasePhase
                     ImGui.TextColored(new Vector4(0.1f, 0.9f, 1.0f, 1.0f), $"Placing: {placingName}");
                     ImGui.SameLine();
                     string snapInfo = _snapEnabled ? $"Snap:{_snapSize:F0}" : "Snap:OFF";
-                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]   [Q/E] Rotate  [LMB] Place  [Esc] Cancel");
+                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Y:{groundPos.Y + _pendingPlacementYOff:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]   [Q/E] Rotate  [LMB] Place  [Esc] Cancel");
                 }
                 else
                 {
@@ -3528,7 +3539,7 @@ public class StageEditorPhase : BasePhase
         ActiveTab.ScenePieces.Clear();
         ActiveTab.ScenePieces.AddRange(newPieces);
         
-        ActiveTab.SelectedPieceId = -1;
+        ActiveTab.ActivePieceId = -1;
         ActiveTab.SelectedPieceIds.Clear();
         ActiveTab.HasUnsavedChanges = true;
 
@@ -3647,7 +3658,7 @@ public class StageEditorPhase : BasePhase
                     if (ImGui.Selectable($"  {label}##wall{wall.Id}", isSelected, ImGuiSelectableFlags.SpanAllColumns))
                     {
                         ActiveTab.SelectedWallId = wall.Id;
-                        ActiveTab.SelectedPieceId = -1;
+                        ActiveTab.ActivePieceId = -1;
                         ActiveTab.SelectedPieceIds.Clear();
                     }
                     
@@ -3660,9 +3671,9 @@ public class StageEditorPhase : BasePhase
         }
         
         // All non-wall pieces
-        var allPieces = ActiveTab.ScenePieces.Where(p => !p.PiecePlacement.IsWall).ToList();
+        var allPieces = ActiveTab.ScenePieces.Where(p => !p.PiecePlacement.IsWall).ToArray();
         var groupedIds = new HashSet<int>(ActiveTab.HierarchyGroups.SelectMany(g => g.PieceIds));
-        var ungrouped = allPieces.Where(p => !groupedIds.Contains(p.Id)).ToList();
+        var ungrouped = allPieces.Where(p => !groupedIds.Contains(p.Id)).ToArray();
         string ungroupedLabel = ActiveTab.HierarchyGroups.Count > 0 ? "Ungrouped" : "Pieces";
         
         int ungroupedSlot = ActiveTab.UngroupedOrderIndex >= 0
@@ -3705,8 +3716,9 @@ public class StageEditorPhase : BasePhase
             {
                 var group = ActiveTab.HierarchyGroups[ri];
                 var gpPieces = group.PieceIds
-                    .Select(id => allPieces.Find(p => p.Id == id))
-                    .Where(p => p != null).ToList()!;
+                    .Select(id => allPieces.FirstOrDefault(p => p.Id == id)!)
+                    .Where(p => p != null!)
+                    .ToArray();
                 
                 ImGui.PushID($"grp{group.Id}");
                 
@@ -3720,7 +3732,7 @@ public class StageEditorPhase : BasePhase
                 }
                 ImGui.SameLine();
                 
-                bool open = ImGui.TreeNodeEx($"[G] {group.Name} ({gpPieces.Count})##grp{group.Id}",
+                bool open = ImGui.TreeNodeEx($"[G] {group.Name} ({gpPieces.Length})##grp{group.Id}",
                     ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
                 
                 // Accept piece drops onto this group header (right after TreeNodeEx so the target is on that item)
@@ -3756,7 +3768,8 @@ public class StageEditorPhase : BasePhase
                     {
                         ActiveTab.SelectedPieceIds.Clear();
                         foreach (var gp in gpPieces) ActiveTab.SelectedPieceIds.Add(gp.Id);
-                        if (gpPieces.Count > 0) ActiveTab.SelectedPieceId = gpPieces[^1].Id;
+                        if (gpPieces.Length > 0) ActiveTab.ActivePieceId = gpPieces[^1].Id;
+                        else ActiveTab.ActivePieceId = -1;
                         ImGui.CloseCurrentPopup();
                     }
                     ImGui.Separator();
@@ -3836,9 +3849,7 @@ public class StageEditorPhase : BasePhase
         if (ImGui.Button("+ New Group from Selection", new Vector2(-1, 0)))
         {
             var newGroup = new HierarchyGroup { Id = ActiveTab.GetNextGroupId(), Name = "Group" };
-            var selIds = ActiveTab.SelectedPieceIds.Count > 0
-                ? new List<int>(ActiveTab.SelectedPieceIds)
-                : ActiveTab.SelectedPieceId >= 0 ? new List<int> { ActiveTab.SelectedPieceId } : new List<int>();
+            var selIds = ActiveTab.SelectedPieceIds;
             foreach (var sid in selIds)
             {
                 foreach (var g in ActiveTab.HierarchyGroups) g.PieceIds.Remove(sid);
@@ -3880,9 +3891,9 @@ public class StageEditorPhase : BasePhase
     }
     
     // Renders a list of pieces with Ctrl+click multi-select, drag-drop reorder, and right-click group context menu
-    private void RenderHierarchyGroup(List<StagePieceInstance> pieces, bool hasFilter, HierarchyGroup? owningGroup = null)
+    private void RenderHierarchyGroup(StagePieceInstance[] pieces, bool hasFilter, HierarchyGroup? owningGroup = null)
     {
-        for (int i = 0; i < pieces.Count; i++)
+        for (int i = 0; i < pieces.Length; i++)
         {
             var piece = pieces[i];
             string typeTag = piece.PiecePlacement.Type switch
@@ -3895,7 +3906,7 @@ public class StageEditorPhase : BasePhase
             if (hasFilter && !displayName.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
                 continue;
             
-            bool isSelected = ActiveTab!.SelectedPieceIds.Contains(piece.Id) || piece.Id == ActiveTab.SelectedPieceId;
+            bool isSelected = ActiveTab!.SelectedPieceIds.Contains(piece.Id);
             if (isSelected)
                 ImGui.PushStyleColor(ImGuiCol.Header, new Vector4(0.26f, 0.59f, 0.98f, 0.45f));
             
@@ -3916,7 +3927,7 @@ public class StageEditorPhase : BasePhase
                     ActiveTab.SelectedPieceIds.Add(piece.Id);
                 }
 
-                ActiveTab.SelectedPieceId = piece.Id;
+                ActiveTab.ActivePieceId = piece.Id;
                 ActiveTab.SelectedWallId = -1;
             }
             
@@ -3987,10 +3998,10 @@ public class StageEditorPhase : BasePhase
     }
     
     // Wrapper: renders under a collapsible TreeNode header (for "Pieces" / "Ungrouped")
-    private void RenderHierarchyGroupFlat(string label, List<StagePieceInstance> pieces, bool hasFilter)
+    private void RenderHierarchyGroupFlat(string label, StagePieceInstance[] pieces, bool hasFilter)
     {
-        if (pieces.Count == 0 && !hasFilter) return;
-        bool open = ImGui.TreeNodeEx($"{label} ({pieces.Count})", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+        if (pieces.Length == 0 && !hasFilter) return;
+        bool open = ImGui.TreeNodeEx($"{label} ({pieces.Length})", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
         // The tree-node item itself is a drop target: dropping a piece here removes it from any group
         if (ImGui.BeginDragDropTarget())
         {
@@ -4112,7 +4123,7 @@ public class StageEditorPhase : BasePhase
         }
         
         // Piece selected
-        if (ActiveTab.SelectedPieceId >= 0)
+        if (ActiveTab.ActivePieceId >= 0)
         {
             // Multi-selection banner
             int selCount = ActiveTab.SelectedPieceIds.Count;
@@ -4124,7 +4135,7 @@ public class StageEditorPhase : BasePhase
                 if (ImGui.Button("Delete All Selected", new Vector2(-1, 0)))
                 {
                     PushUndoSnapshot();
-                    var toDelete = new List<int>(ActiveTab.SelectedPieceIds);
+                    int[] toDelete = [..ActiveTab.SelectedPieceIds];
                     foreach (var did in toDelete)
                     {
                         var dp = ActiveTab.ScenePieces.GetValueOrDefault(did);
@@ -4136,7 +4147,7 @@ public class StageEditorPhase : BasePhase
                         foreach (var grp in ActiveTab.HierarchyGroups) grp.PieceIds.Remove(dp.Id);
                     }
                     ActiveTab.SelectedPieceIds.Clear();
-                    ActiveTab.SelectedPieceId = -1;
+                    ActiveTab.ActivePieceId = -1;
                     ActiveTab.HasUnsavedChanges = true;
                     RebuildClientRenderer();
                 }
@@ -4147,7 +4158,7 @@ public class StageEditorPhase : BasePhase
                 ImGui.Spacing();
             }
             
-            var piece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.SelectedPieceId);
+            var piece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
             if (piece != null)
             {
                 string shortName = piece.Name.Contains('/') ? piece.Name.Substring(piece.Name.LastIndexOf('/') + 1) : piece.Name;
@@ -4176,7 +4187,7 @@ public class StageEditorPhase : BasePhase
                         {
                             if (selId == piece.Id) continue;
                             var sp = ActiveTab.ScenePieces.GetValueOrDefault(selId);
-                            if (sp != null) sp.Position = new f64Vector3(sp.Position.X + deltaX, sp.Position.Y + deltaY, sp.Position.Z + deltaZ);
+                            sp?.Position = new f64Vector3(sp.Position.X + deltaX, sp.Position.Y + deltaY, sp.Position.Z + deltaZ);
                         }
                         ActiveTab.HasUnsavedChanges = true;
                     }
@@ -4196,7 +4207,7 @@ public class StageEditorPhase : BasePhase
                         {
                             if (selId == piece.Id) continue;
                             var sp = ActiveTab.ScenePieces.GetValueOrDefault(selId);
-                            if (sp != null) sp.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)(((float)sp.Rotation.Yaw.Degrees + rotDelta) % 360f)), sp.Rotation.Pitch, sp.Rotation.Roll);
+                            sp?.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)(((float)sp.Rotation.Yaw.Degrees + rotDelta) % 360f)), sp.Rotation.Pitch, sp.Rotation.Roll);
                         }
                         ActiveTab.HasUnsavedChanges = true;
                     }
@@ -4313,7 +4324,8 @@ public class StageEditorPhase : BasePhase
                         }
                     }
                     ActiveTab.ScenePieces.Remove(piece);
-                    ActiveTab.SelectedPieceId = -1;
+                    ActiveTab.SelectedPieceIds.Remove(piece.Id);
+                    ActiveTab.ActivePieceId = -1;
                     ActiveTab.HasUnsavedChanges = true;
                     RebuildClientRenderer();
                 }
@@ -4380,7 +4392,7 @@ public class StageEditorPhase : BasePhase
         // Snap toggle
         bool snapOn = _snapEnabled;
         if (snapOn) ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.2f, 0.65f, 0.2f, 0.8f));
-        if (ImGui.SmallButton(_snapEnabled ? $"Snap ON: {_snapSize:F0}" : "Snap OFF"))
+        if (ImGui.SmallButton(_snapEnabled ? $"[G] Snap ON: {_snapSize:F0}" : "[G] Snap OFF"))
             _snapEnabled = !_snapEnabled;
         if (snapOn) ImGui.PopStyleColor();
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle grid snapping (S).\nScroll wheel cycles snap size when in placement mode.");
@@ -4470,9 +4482,9 @@ public class StageEditorPhase : BasePhase
             
             // In swap mode, determine if this tile is the current piece
             bool isCurrentSwapPiece = false;
-            if (_isSwapMode && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+            if (_isSwapMode && ActiveTab != null && ActiveTab.ActivePieceId >= 0)
             {
-                var sp = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.SelectedPieceId);
+                var sp = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
                 isCurrentSwapPiece = sp != null && sp.Name == part.Name;
             }
             ImGui.PushID(i);
@@ -4545,10 +4557,10 @@ public class StageEditorPhase : BasePhase
             
             if (clicked && part.Rad != null)
             {
-                if (_isSwapMode && ActiveTab != null && ActiveTab.SelectedPieceId >= 0)
+                if (_isSwapMode && ActiveTab != null && ActiveTab.ActivePieceId >= 0)
                 {
                     // Swap the selected piece to this part
-                    var swapPieceIdx = ActiveTab.ScenePieces.FindIndex(p => p.Id == ActiveTab.SelectedPieceId);
+                    var swapPieceIdx = ActiveTab.ScenePieces.FindIndex(p => p.Id == ActiveTab.ActivePieceId);
                     if (swapPieceIdx != -1)
                     {
                         var swapPiece = ActiveTab.ScenePieces[swapPieceIdx];
