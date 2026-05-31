@@ -8,13 +8,15 @@ namespace NFMWorld;
 public sealed class CollisionDebugMesh : GameObject, IDisposable
 {
     private int lineTriangleCount;
-    private IndexBuffer lineIndexBuffer;
-    private VertexBuffer lineVertexBuffer;
+    private IndexBuffer? lineIndexBuffer;
+    private VertexBuffer? lineVertexBuffer;
     private readonly int lineVertexCount;
-    private VertexBuffer lineInstanceBuffer;
+    private VertexBuffer? lineInstanceBuffer;
 
     public CollisionDebugMesh(Span<Rad3dBoxDef> boxes)
     {
+        if (boxes.Length < 1) return;
+        
         #region Debug boxes
         
         // disp 0
@@ -165,6 +167,8 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
     public override void Render(Camera camera, Lighting? lighting)
     {
         if (lighting?.IsCreateShadowMap == true || !GameSparker.devRenderTrackers) return;
+        if (lineInstanceBuffer == null || lineVertexBuffer == null || lineIndexBuffer == null) return;
+        
         lineInstanceBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(MatrixWorld)]);
 
         GameSparker._graphicsDevice.SetVertexBuffers(lineVertexBuffer, new VertexBufferBinding(lineInstanceBuffer, 0, 1));
@@ -209,9 +213,9 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
 
     private void ReleaseUnmanagedResources()
     {
-        lineIndexBuffer.Dispose();
-        lineVertexBuffer.Dispose();
-        lineInstanceBuffer.Dispose();
+        lineIndexBuffer?.Dispose();
+        lineVertexBuffer?.Dispose();
+        lineInstanceBuffer?.Dispose();
     }
 
     private void Dispose(bool disposing)
