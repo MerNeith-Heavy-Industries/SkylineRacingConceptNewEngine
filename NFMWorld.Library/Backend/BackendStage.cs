@@ -55,15 +55,12 @@ public class BackendStage : IStage
         catch (StageLoadException exception)
         {
             SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}");
-            Logging.Error($"At line: {exception.Line} (number {exception.LineNumber})");
-            Logging.Error(exception.ToString());
+            Logging.Error($"Error in stage: {stageName}\nAt line: {exception.Line} (number {exception.LineNumber})\n{exception.ToString()}");
         }
         catch (Exception exception)
         {
             SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}");
-            Logging.Error(exception.ToString());
+            Logging.Error($"Error in stage: {stageName}\n{exception.ToString()}");
         }
     }
 
@@ -78,15 +75,12 @@ public class BackendStage : IStage
         catch (StageLoadException exception)
         {
             SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}");
-            Logging.Error($"At line: {exception.Line} (number {exception.LineNumber})");
-            Logging.Error(exception.ToString());
+            Logging.Error($"Error in stage: {stageName}\nAt line: {exception.Line} (number {exception.LineNumber})\n{exception.ToString()}");
         }
         catch (Exception exception)
         {
             SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}");
-            Logging.Error(exception.ToString());
+            Logging.Error($"Error in stage: {stageName}\n{exception.ToString()}");
         }
     }
 
