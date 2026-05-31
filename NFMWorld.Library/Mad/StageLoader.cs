@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Maxine.Extensions.Collections;
 using MessagePack;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
@@ -59,9 +60,9 @@ public abstract record EnvironmentInstruction;
 [MessagePackObject] [method: SerializationConstructor] public record SnapInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
 [MessagePackObject] [method: SerializationConstructor] public record SkyInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
 [MessagePackObject] [method: SerializationConstructor] public record FogInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record CloudsInstruction([property: Key(0)] InlineArray5<int> Clouds) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record CloudsInstruction([property: Key(0)] InlineArray5Ex<int> Clouds) : EnvironmentInstruction;
 [MessagePackObject] [method: SerializationConstructor] public record GroundInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record TextureInstruction([property: Key(0)] InlineArray4<int> Texture) : EnvironmentInstruction;
+[MessagePackObject] [method: SerializationConstructor] public record TextureInstruction([property: Key(0)] InlineArray4Ex<int> Texture) : EnvironmentInstruction;
 [MessagePackObject] [method: SerializationConstructor] public record PolysInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
 
 [MessagePackObject]
@@ -226,7 +227,7 @@ public class StageLoader
 
                 else if (line.StartsWith("texture"))
                 {
-                    var texture = new InlineArray4<int>();
+                    var texture = new InlineArray4Ex<int>();
                     texture[0] = Utility.GetInt("texture", line, 0);
                     texture[1] = Utility.GetInt("texture", line, 1);
                     texture[2] = Utility.GetInt("texture", line, 2);
