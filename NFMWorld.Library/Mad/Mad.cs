@@ -2262,6 +2262,8 @@ public class Mad
                             var p0 = collisionMesh.Vertices[collisionMesh.Indices[i]];
                             var p1 = collisionMesh.Vertices[collisionMesh.Indices[i + 1]];
                             var p2 = collisionMesh.Vertices[collisionMesh.Indices[i + 2]];
+                            
+                            if (!TriangleMesh.PointInTriangleAABB(collisionMesh.Aabb[collisionMesh.Indices[i] / 3], localPosition)) continue;
 
                             var edge1 = p1 - p0;
                             var edge2 = p2 - p0;
