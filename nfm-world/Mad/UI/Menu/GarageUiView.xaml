@@ -12,19 +12,19 @@
     Padding="10"
     Margin="50">
 
-    <yoga:Box FlexDirection="Row" Gap="25" MarginBottom="25">
+    <yoga:FlexPanel FlexDirection="Row" Gap="25" MarginBottom="25">
         <ui:GarageDynamicStatBar Name="Bar0" StatName="Top Speed" />
         <ui:GarageDynamicStatBar Name="Bar1" StatName="Acceleration" />
         <ui:GarageDynamicStatBar Name="Bar2" StatName="Handling" />
-    </yoga:Box>
-    <yoga:Box FlexDirection="Row" Gap="25" MarginBottom="25">
+    </yoga:FlexPanel>
+    <yoga:FlexPanel FlexDirection="Row" Gap="25" MarginBottom="25">
         <ui:GarageDynamicStatBar Name="Bar3" StatName="Power Save" />
         <ui:GarageDynamicStatBar Name="Bar4" StatName="Strength" />
         <ui:GarageDynamicStatBar Name="Bar5" StatName="Max Health" />
-    </yoga:Box>
-    <yoga:Box FlexDirection="Row" Gap="25" MarginBottom="25">
+    </yoga:FlexPanel>
+    <yoga:FlexPanel FlexDirection="Row" Gap="25" MarginBottom="25">
         <ui:GarageDynamicStatBar Name="Bar6" StatName="Stunting" />
         <ui:GarageDynamicStatBar Name="Bar7" StatName="Hypergliding" />
         <ui:GarageDynamicStatBar Name="Bar8" StatName="AB'ing" />
-    </yoga:Box>
+    </yoga:FlexPanel>
 </yoga:View>

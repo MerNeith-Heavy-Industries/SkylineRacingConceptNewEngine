@@ -15,7 +15,7 @@
     Padding="10"
     Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
 
-    <Box
+    <FlexPanel
         FlexDirection="Row">
 
         <w:TextRun
@@ -26,9 +26,9 @@
             MarginRight="5">
             Lap: <w:Run Text="{Binding CurrentLap}" />/<w:Run Text="{Binding TotalLaps}" />
         </w:TextRun>
-    </Box>
+    </FlexPanel>
 
-    <Box Name="TimeDisplay" FlexDirection="Row">
+    <FlexPanel Name="TimeDisplay" FlexDirection="Row">
         <w:TextRun Name="TimeIcon"
                       Font="bold 24px Adventure"
                       Color="white"
@@ -44,29 +44,29 @@
                       Flex="1">
             0:00.000
         </w:TextRun>
-    </Box>
+    </FlexPanel>
 
-    <Box>
+    <FlexPanel>
         <w:TextRun Name="LapTimeText"
                       StrokeColor="black"
                       Color="white"
                       Font="bold 24px DroidSans"
                       Flex="1" />
-    </Box>
+    </FlexPanel>
 
-    <Box>
+    <FlexPanel>
         <w:TextRun Name="CheckpointSplitsText"
                       StrokeColor="black"
                       Color="white"
                       Font="bold 24px DroidSans"
                       Flex="1" />
-    </Box>
+    </FlexPanel>
 
-    <Box>
+    <FlexPanel>
         <w:TextRun Name="LapSplitsText"
                       StrokeColor="black"
                       Color="white"
                       Font="bold 24px DroidSans"
                       Flex="1" />
-    </Box>
+    </FlexPanel>
 </View>

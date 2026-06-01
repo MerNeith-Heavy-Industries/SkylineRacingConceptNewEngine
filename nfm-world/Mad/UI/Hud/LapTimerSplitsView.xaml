@@ -15,7 +15,7 @@
     Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
 
     <!-- Lap Display Row -->
-    <Box
+    <FlexPanel
         FlexDirection="Row">
 
         <w:TextRun
@@ -26,6 +26,6 @@
             MarginRight="5">
             Lap: <w:Run Text="{Binding CurrentLap}" />/<w:Run Text="{Binding TotalLaps}" />
         </w:TextRun>
-    </Box>
+    </FlexPanel>
 
 </View>

@@ -10,7 +10,7 @@
     AlignItems="Center"
     FlexDirection="Column">
 
-    <Box AlignItems="Center" Flex="1">
+    <FlexPanel AlignItems="Center" Flex="1">
         <!--
             alternatively: Opacity="{Animation Shown, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}"
             but there's no way to combine animations yet (e.g shown + hidden) so we use transitions instead
@@ -22,7 +22,7 @@
             Text="{Binding CenterText}"
             StrokeColor="{Binding CenterTextStrokeColor}"
             Display="Flex" />
-    </Box>
+    </FlexPanel>
 
     <Node Flex="1" />
 </View>

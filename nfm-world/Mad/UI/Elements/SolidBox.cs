@@ -5,7 +5,7 @@ namespace NFMWorld.UI;
 /// <summary>
 /// Represents a box element with solid colors for border, background, and content.
 /// </summary>
-public class SolidBox : Box
+public class SolidBox : FlexPanel
 {
     public Color BorderColor { get; set; } = new Color(0, 0, 0, 255);
     public Color BackgroundColor { get; set; } = new Color(150, 255, 150, 255);
