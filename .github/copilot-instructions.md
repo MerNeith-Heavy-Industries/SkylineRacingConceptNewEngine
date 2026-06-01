@@ -54,45 +54,6 @@ Key characteristics:
 
 If anything above is unclear or you want examples inserted for a specific task (adding a native plugin, publishing for Linux, or modifying shader flow), tell me which area to expand and I will update this file.
 
---
-
-## Repository Structure
-
-```
-NFM-World/
-├── nfm-world/                  # App entry point (NFMWorld.csproj, net10.0)
-│   ├── NFMWWindow.cs           # Main loop / initialization
-│   ├── NFMWorld.cs             # App class
-│   ├── skiadriver/             # Native Skia libs (copied to output by MSBuild targets)
-│   ├── data/shaders/           # HLSL .fx source; compiled to .fxb at build time
-│   ├── mad/ui/hud/             # HUD XAML views and code-behinds
-│   ├── Generated/              # Source-generator output (Avalonia.Generators *.g.cs)
-│   └── rd.xml                  # Native AOT root descriptor
-├── NFMWorld.Library/           # Game backend / systems
-├── FNA/                        # FNA framework (rendering, input, audio)
-├── NvgSharp/                   # NanoVG rendering glue
-├── FontStashSharp/             # Font rendering
-├── MonoGame.ImGuiNet/          # ImGui integration
-├── Avalonia.Generators/        # Roslyn incremental source generator (XAML → C#)
-│   └── Compiler/               # RoslynTypeSystem, XamlCSharpCompiler
-├── XamlX.IL.CSharp/            # C# emission backend (source-included into Avalonia.Generators)
-│   ├── CSharpEmitter.cs        # IL opcodes → C# statements
-│   ├── CSharpTypeBuilder.cs    # Type/method/field defs → C# source
-│   └── CSharpFormatting.cs     # Type name formatting utilities
-├── Maxine.Extensions/          # Core utility library (logging, VFS, math helpers)
-│   ├── Maxine.VFS/             # Virtual file system
-│   └── Maxine.Extensions.Test/ # MSTest test project
-├── LuaBindings/                # Lua scripting integration
-│   ├── LuaSourceGen/           # Roslyn source generator (.NET → Lua C bindings)
-│   └── LuaBindings.Test/
-├── ShaderSourceGen/            # HLSL shader source generator (C# wrapper emission)
-├── FixedMathSharp/             # Fixed-point math types
-├── Gameplay/                   # Game logic, gamemodes (e.g. TimeTrialClientGamemode)
-│   └── Elements/               # UI element classes: Box, Image, TextBlock, TextRun, MeasureBar
-└── NFMUnited/                  # Classic car racing game companion project
-    └── Assets/Scripts/         # Blender Python scripts (blender_rad.py, RAD3D importer)
-```
-
 ---
 
 ## Build, Run & CI

@@ -30,6 +30,7 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
 {
     private bool _invalidated = true;
     private string? _laidOutText;
+    private Vector2 _laidOutTextSize = Vector2.Zero;
     private ComplexTextMetrics.RichTextContainer? _laidOutComplexText;
 
     /// <summary>
@@ -124,6 +125,7 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
                 Width = measurements.Size.X;
                 Height = measurements.Size.Y;
                 _laidOutText = measurements.Elements[0].Text;
+                _laidOutTextSize = measurements.Size;
             }
         }
         else
@@ -163,17 +165,29 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
             {
                 return;
             }
+            
+            var basePosition = position;
+            ComplexTextMetrics.AlignBounds(_laidOutTextSize, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
+            
+            float yOff = 0;
+            if (VerticalAlignment == TextVerticalAlignment.Center)
+            {
+                yOff = (G.GetFontMetrics(Font).LineHeight / 2.0f);
+            }
+            else
+            {
+                yOff = G.GetFontMetrics(Font).LineHeight;
+            }
 
             G.SetFont(Font with { Size = Font.Size * G.Scale });
             if (StrokeColor != null)
             {
                 G.SetColor((Color)StrokeColor);
-                G.DrawStringStrokeAligned(_laidOutText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y,
-                    HorizontalAlignment, VerticalAlignment);
+                G.DrawStringStroke(_laidOutText, (int)basePosition.X, (int)(basePosition.Y + yOff));
             }
 
             G.SetColor(Color);
-            G.DrawStringAligned(_laidOutText, (int)position.X, (int)position.Y, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment);
+            G.DrawString(_laidOutText, (int)basePosition.X, (int)(basePosition.Y + yOff));
         }
         else
         {
@@ -199,11 +213,11 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
                 float yOff = 0;
                 if (VerticalAlignment == TextVerticalAlignment.Center)
                 {
-                    yOff = -(G.GetFontMetrics(element.Font).LineHeight / 2.0f);
+                    yOff = (G.GetFontMetrics(element.Font).LineHeight / 2.0f);
                 }
-                else if (VerticalAlignment == TextVerticalAlignment.Bottom)
+                else
                 {
-                    yOff = -G.GetFontMetrics(element.Font).LineHeight;
+                    yOff = G.GetFontMetrics(element.Font).LineHeight;
                 }
 
                 int x = (int)(basePosition.X + element.Position.X);

@@ -1,0 +1,19 @@
+<TemplatedControl
+    xmlns="https://github.com/uwx/worldxaml"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:w="https://github.com/needforrewrite/nfm-world"
+    x:Class="NFMWorld.UI.Test.HStack">
+    <TemplatedControl.Template>
+        <ControlTemplate TargetType="w:HStack">
+            <FlexPanel
+                FlexDirection="{Binding BoxFlexDirection, RelativeSource={RelativeSource TemplatedParent}}"
+                AlignItems="Center"
+                GapColumn="{Binding GapColumn, RelativeSource={RelativeSource TemplatedParent}}"
+                GapRow="{Binding GapRow, RelativeSource={RelativeSource TemplatedParent}}">
+                <ContentPresenter />
+            </FlexPanel>
+        </ControlTemplate>
+    </TemplatedControl.Template>
+</TemplatedControl>
