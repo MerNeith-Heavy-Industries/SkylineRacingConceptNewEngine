@@ -91,27 +91,28 @@ public static class DevConsoleCommands
         console.RegisterCommand("music_remastered", RemasteredMusic);
 
 #if DEBUG
-            console.RegisterCommand("debugui", (console, args) =>
+        console.RegisterCommand("xaml_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
+        console.RegisterCommand("debugui", (console, args) =>
+        {
+            if (args.Length < 1)
             {
-                if (args.Length < 1)
-                {
-                    Logging.Info("Usage: debugui <classname>");
-                    return;
-                }
+                Logging.Info("Usage: debugui <classname>");
+                return;
+            }
 
-                WorldGame.DebugUiClass = args[0];
-                WorldGame.DebugUiRoot = null;
-            });
-            console.RegisterArgumentAutocompleter("debugui", (args, position) =>
+            WorldGame.DebugUiClass = args[0];
+            WorldGame.DebugUiRoot = null;
+        });
+        console.RegisterArgumentAutocompleter("debugui", (args, position) =>
 #pragma warning disable IL2026 // Never run during AOT
-                position == 0
-                    ? Assembly.GetExecutingAssembly()
-                        .GetTypes()
-                        .Where(e => e.IsAssignableTo(typeof(View)))
-                        .Select(e => e.Name)
-                        .ToList()
-                    : []
-            );
+            position == 0
+                ? Assembly.GetExecutingAssembly()
+                    .GetTypes()
+                    .Where(e => e.IsAssignableTo(typeof(View)))
+                    .Select(e => e.Name)
+                    .ToList()
+                : []
+        );
 #pragma warning restore IL2026
 #endif
 

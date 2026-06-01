@@ -18,6 +18,9 @@
   <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
         <Compile Remove="Generated/**" />
+        <Compile Update="Mad\UI\Test\HStack.cs">
+          <DependentUpon>HStack.xaml</DependentUpon>
+        </Compile>
   </ItemGroup>
   <PropertyGroup>
       <WorldXamlGeneratorBehavior>WithXamlXCompilation</WorldXamlGeneratorBehavior>
@@ -95,6 +98,8 @@
         <AvaloniaXaml Include="Mad\UI\Hud\PowerDamageBars.xaml" />
         <AvaloniaXaml Include="Mad\UI\Hud\TTLapTimerSplitsView.xaml" />
         <AvaloniaXaml Include="Mad\UI\Menu\GarageUiView.xaml" />
+        <AvaloniaXaml Include="Mad\UI\Test\HStack.xaml" />
+        <AvaloniaXaml Include="Mad\UI\Test\XamlTestView.xaml" />
     </ItemGroup>
     
     <!-- Shaders to compile -->
@@ -194,6 +199,9 @@
         </Compile>
         <Compile Update="Mad\UI\Menu\GarageUiView.cs">
             <DependentUpon>GarageUiView.xaml</DependentUpon>
+        </Compile>
+        <Compile Update="Mad\UI\Test\XamlTestView.cs">
+            <DependentUpon>XamlTestView.xaml</DependentUpon>
         </Compile>
     </ItemGroup>
 

@@ -1,0 +1,148 @@
+<View
+    xmlns="https://github.com/uwx/worldxaml"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:w="https://github.com/needforrewrite/nfm-world"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d" d:DataContext="{d:DesignInstance w:XamlTestViewModel}"
+    x:Class="NFMWorld.UI.Test.XamlTestView"
+    DataType="w:XamlTestViewModel"
+    Name="XamlTest"
+    FlexDirection="Row"
+    AlignItems="Stretch"
+    JustifyContent="FlexStart"
+    Gap="16"
+    Padding="20">
+    
+    <!-- Left side -->
+    <FlexPanel
+        FlexDirection="Column"
+        
+        AlignItems="FlexStart"
+        JustifyContent="FlexStart"
+        Gap="16"
+        Padding="20">
+        
+        <!-- Section 1: Basic text bindings                                     -->
+        <w:TextRun
+            Font="{Binding TitleFont}"
+            Color="{Binding TitleColor}"
+            StrokeColor="0,0,0,255"
+            Text="{Binding Title}" />
+
+        <w:TextRun
+            Font="{Binding BodyFont}"
+            Color="{Binding SubtitleColor}"
+            Text="{Binding Subtitle}" />
+
+        <!-- Section 2: Inline text with Run bindings                           -->
+        <FlexPanel FlexDirection="Row" Gap="4">
+            <w:TextRun Font="bold 18px Adventure" Color="255,255,255,255">
+                Counter: <w:Run Text="{Binding Counter}" />
+            </w:TextRun>
+        </FlexPanel>
+
+        <!-- Section 3: SolidBox color swatches (static)                        -->
+        <FlexPanel FlexDirection="Row" Gap="8" AlignItems="Center">
+            <w:SolidBox ContentColor="#f00" Width="24" Height="24" />
+            <w:SolidBox ContentColor="#0f0" Width="24" Height="24" />
+            <w:SolidBox ContentColor="#00f" Width="24" Height="24" />
+            <w:SolidBox ContentColor="#ff0" Width="24" Height="24" />
+            <w:TextRun Font="18px Adventure" Color="180,180,180,255" MarginLeft="8">
+                Color swatches
+            </w:TextRun>
+        </FlexPanel>
+
+        <!-- Section 4: Visibility binding                                      -->
+        <FlexPanel FlexDirection="Row" Gap="8" AlignItems="Center">
+            <w:SolidBox ContentColor="#0ff" Width="16" Height="16"
+                Visibility="{Binding BadgeVisibility}" />
+            <w:TextRun Font="18px Adventure" Color="255,255,255,255">
+                Badge (visibility-bound)
+            </w:TextRun>
+        </FlexPanel>
+
+        <!-- Section 5: HStack — TemplatedControl with Orientation binding      -->
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">
+            HStack (Horizontal):
+        </w:TextRun>
+        <w:HStack Orientation="Horizontal" GapColumn="8">
+            <w:SolidBox ContentColor="#f80" Width="40" Height="40" />
+            <w:SolidBox ContentColor="#08f" Width="40" Height="40" />
+            <w:SolidBox ContentColor="#8f0" Width="40" Height="40" />
+        </w:HStack>
+
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">
+            HStack (Vertical):
+        </w:TextRun>
+        <w:HStack Orientation="Vertical" GapRow="8">
+            <w:SolidBox ContentColor="#f80" Width="40" Height="40" />
+            <w:SolidBox ContentColor="#08f" Width="40" Height="40" />
+            <w:SolidBox ContentColor="#8f0" Width="40" Height="40" />
+        </w:HStack>
+
+        <!-- Section 6: Nested layout — Row of Columns                          -->
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">
+            Nested layout:
+        </w:TextRun>
+        <FlexPanel FlexDirection="Row" Gap="{Binding CounterModulo}">
+            <FlexPanel FlexDirection="Column" Gap="4">
+                <w:TextRun Font="bold 14px Adventure" Color="255,200,100,255">Column A</w:TextRun>
+                <w:SolidBox ContentColor="#a44" Width="60" Height="20" />
+                <w:SolidBox ContentColor="#a66" Width="60" Height="20" />
+                <w:SolidBox ContentColor="#a88" Width="60" Height="20" />
+            </FlexPanel>
+            <FlexPanel FlexDirection="Column" Gap="4">
+                <w:TextRun Font="bold 14px Adventure" Color="100,200,255,255">Column B</w:TextRun>
+                <w:SolidBox ContentColor="#44a" Width="60" Height="20" />
+                <w:SolidBox ContentColor="#66a" Width="60" Height="20" />
+                <w:SolidBox ContentColor="#88a" Width="60" Height="20" />
+            </FlexPanel>
+        </FlexPanel>
+
+        <!-- Section 7: Transition animation on opacity                         -->
+        <FlexPanel
+            FlexDirection="Row" Gap="8" AlignItems="Center"
+            Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=500, KeyFrameOffset=0}">
+            <w:SolidBox ContentColor="#fff" Width="12" Height="12" />
+            <w:TextRun Font="18px Adventure" Color="255,255,255,255">
+                Fade-in on mount
+            </w:TextRun>
+        </FlexPanel>
+
+        <!-- Section 8: Custom control with content binding                          -->
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">
+            Contents panel:
+        </w:TextRun>
+        <ContentsPanel>
+            <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">Contents panel</w:TextRun>
+        </ContentsPanel>
+    </FlexPanel>
+    
+    <!-- Right side -->
+    <FlexPanel
+        FlexDirection="Column"
+        
+        AlignItems="FlexStart"
+        JustifyContent="FlexStart"
+        Gap="16"
+        Padding="20">
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            <![CDATA[
+            This is some text that
+            
+            contains new lines.
+            It should wrap as intended.
+            ]]>
+        </w:TextRun>
+        
+        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueVertically" Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            This is a really long blob of text that will be wrapped within the bounds of the TextRun. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        </w:TextRun>
+        
+        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueHorizontally" Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            (ContinueHorizontally) This is a really long blob of text that will be wrapped within the bounds of the TextRun. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        </w:TextRun>
+    </FlexPanel>
+
+</View>
