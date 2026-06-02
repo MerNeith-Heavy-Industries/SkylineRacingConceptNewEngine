@@ -26,11 +26,9 @@ public enum OverflowBehavior
     ContinueHorizontally
 }
 
-public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
+public partial class TextRun : Node, IInlineHost
 {
     private bool _invalidated = true;
-    private string? _laidOutText;
-    private Vector2 _laidOutTextSize = Vector2.Zero;
     private ComplexTextMetrics.RichTextContainer? _laidOutComplexText;
 
     /// <summary>
@@ -112,34 +110,37 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
 
     private void RelayoutText(System.Numerics.Vector2 size)
     {
+        IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened;
         if (!HasComplexContent)
         {
             if (!string.IsNullOrEmpty(Text))
             {
-                IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened = [Text];
-                if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
-                {
-                    flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
-                }
-                var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
-                Width = measurements.Size.X;
-                Height = measurements.Size.Y;
-                _laidOutText = measurements.Elements[0].Text;
-                _laidOutTextSize = measurements.Size;
+                flattened = [Text];
+            }
+            else
+            {
+                _laidOutComplexText = new ComplexTextMetrics.RichTextContainer([], Vector2.Zero);
+                return;
             }
         }
         else
         {
-            var flattened = ComplexTextMetrics.FlattenText(Inlines.OfType<IRichTextElement>());
-            if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
-            {
-                flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
-            }
-            var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+            flattened = ComplexTextMetrics.FlattenText(Inlines.OfType<IRichTextElement>());
+        }
+        
+        if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+        {
+            flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+        }
+        var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+
+        if (OverflowBehavior is OverflowBehavior.Stretch)
+        {
             Width = measurements.Size.X;
             Height = measurements.Size.Y;
-            _laidOutComplexText = measurements;
         }
+
+        _laidOutComplexText = measurements;
 
         _invalidated = false;
     }
@@ -159,94 +160,49 @@ public partial class TextRun : Node, IInlineHost, IAddChild<Inline>
             RelayoutText(size);
         }
 
-        if (!HasComplexContent)
+        Debug.Assert(_laidOutComplexText != null, "Complex text layout should have been calculated in RelayoutText method.");
+
+        if (_laidOutComplexText.Value.Elements.Count == 0)
         {
-            if (string.IsNullOrEmpty(_laidOutText))
+            return;
+        }
+
+        var basePosition = position;
+        ComplexTextMetrics.AlignBounds(_laidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
+
+        foreach (var element in _laidOutComplexText.Value.Elements)
+        {
+            G.SetFont(element.Font with { Size = Font.Size * G.Scale });
+            if (element.Background is { } background)
             {
-                return;
+                G.SetColor(background);
+                G.FillRect((int)basePosition.X, (int)basePosition.Y, (int)element.Size.X, (int)element.Size.Y);
             }
-            
-            var basePosition = position;
-            ComplexTextMetrics.AlignBounds(_laidOutTextSize, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
-            
+
             float yOff = 0;
             if (VerticalAlignment == TextVerticalAlignment.Center)
             {
-                yOff = (G.GetFontMetrics(Font).LineHeight / 2.0f);
+                yOff = (G.GetFontMetrics(element.Font).LineHeight / 2.0f);
             }
-            else
+            else if (VerticalAlignment == TextVerticalAlignment.Top)
             {
-                yOff = G.GetFontMetrics(Font).LineHeight;
+                yOff = G.GetFontMetrics(element.Font).LineHeight;
             }
 
-            G.SetFont(Font with { Size = Font.Size * G.Scale });
-            if (StrokeColor != null)
+            int x = (int)(basePosition.X + element.Position.X);
+            int y = (int)(basePosition.Y + element.Position.Y + yOff);
+
+            if ((element.Stroke ?? StrokeColor) is { } stroke)
             {
-                G.SetColor((Color)StrokeColor);
-                G.DrawStringStroke(_laidOutText, (int)basePosition.X, (int)(basePosition.Y + yOff));
+                G.SetColor(stroke);
+                G.DrawStringStroke(element.Text, x, y);
             }
-
-            G.SetColor(Color);
-            G.DrawString(_laidOutText, (int)basePosition.X, (int)(basePosition.Y + yOff));
-        }
-        else
-        {
-            Debug.Assert(_laidOutComplexText != null, "Complex text layout should have been calculated in RelayoutText method.");
-
-            if (_laidOutComplexText.Value.Elements.Count == 0)
-            {
-                return;
-            }
-
-            var basePosition = position;
-            ComplexTextMetrics.AlignBounds(_laidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
-
-            foreach (var element in _laidOutComplexText.Value.Elements)
-            {
-                G.SetFont(element.Font with { Size = Font.Size * G.Scale });
-                if (element.Background is { } background)
-                {
-                    G.SetColor(background);
-                    G.FillRect((int)basePosition.X, (int)basePosition.Y, (int)element.Size.X, (int)element.Size.Y);
-                }
-
-                float yOff = 0;
-                if (VerticalAlignment == TextVerticalAlignment.Center)
-                {
-                    yOff = (G.GetFontMetrics(element.Font).LineHeight / 2.0f);
-                }
-                else
-                {
-                    yOff = G.GetFontMetrics(element.Font).LineHeight;
-                }
-
-                int x = (int)(basePosition.X + element.Position.X);
-                int y = (int)(basePosition.Y + element.Position.Y + yOff);
-
-                if ((element.Stroke ?? StrokeColor) is { } stroke)
-                {
-                    G.SetColor(stroke);
-                    G.DrawStringStroke(element.Text, x, y);
-                }
-                
-                G.SetColor(element.Foreground ?? Color);
-                G.DrawString(element.Text, x, y);
-            }
+            
+            G.SetColor(element.Foreground ?? Color);
+            G.DrawString(element.Text, x, y);
         }
     }
-        
-    void IAddChild<Inline>.AddChild(Inline child)
-    {
-        Inlines.Add(child);
-    }
 
-    void IAddChild.AddChild(object child)
-    {
-        if (child is Inline node)
-        {
-            Inlines.Add(node);
-        }
-    }
 
     public void Invalidate()
     {
