@@ -119,6 +119,33 @@
         </ContentsPanel>
     </FlexPanel>
     
+    <!-- Middle side -->
+    <FlexPanel
+        FlexDirection="Column"
+        
+        AlignItems="FlexStart"
+        JustifyContent="FlexStart"
+        Gap="16"
+        Padding="20">
+        <w:TextRun Font="bold 18px Adventure" Color="{Binding TitleColor}" xml:space="preserve">This is some text that
+
+contains new lines.
+It should wrap as intended.</w:TextRun>
+        
+        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueVertically" Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            This is a really long blob of text that will be wrapped within the bounds of the TextRun. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog.
+        </w:TextRun>
+        
+        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueHorizontally" Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            This is a really long blob of text that will be wrapped within the bounds of the TextRun but overflow on the horizontal axis when it runs out of space. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        </w:TextRun>
+        
+        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueVertically" Font="bold 18px Adventure" Color="{Binding TitleColor}">
+            This is an even longer blob of text that will overflow in the vertical axis, demonstrating how the ContinueVertically behavior allows text to keep flowing outside the bounds of the TextRun. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </w:TextRun>
+
+    </FlexPanel>
+    
     <!-- Right side -->
     <FlexPanel
         FlexDirection="Column"
@@ -127,22 +154,19 @@
         JustifyContent="FlexStart"
         Gap="16"
         Padding="20">
-        <w:TextRun Font="bold 18px Adventure" Color="{Binding TitleColor}">
-            <![CDATA[
-            This is some text that
-            
-            contains new lines.
-            It should wrap as intended.
-            ]]>
-        </w:TextRun>
         
-        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueVertically" Font="bold 18px Adventure" Color="{Binding TitleColor}">
-            This is a really long blob of text that will be wrapped within the bounds of the TextRun. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        <w:TextRun OverflowBehavior="ContinueHorizontally" Width="512" Height="128" Font="bold 18px Adventure" Color="{Binding TitleColor}" VerticalAlignment="Bottom">
+            This is some text that will end up aligned to the bottom.
         </w:TextRun>
-        
-        <w:TextRun Width="256" Height="128" OverflowBehavior="ContinueHorizontally" Font="bold 18px Adventure" Color="{Binding TitleColor}">
-            (ContinueHorizontally) This is a really long blob of text that will be wrapped within the bounds of the TextRun. It should demonstrate how text wrapping works in WorldXAML, and how it interacts with layout and styling. The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+        <w:TextRun OverflowBehavior="ContinueHorizontally" Width="512" Height="128" Font="bold 18px Adventure" Color="{Binding TitleColor}" VerticalAlignment="Center">
+            This is some text that will end up aligned to the middle.
         </w:TextRun>
+
+        <w:TextRun OverflowBehavior="ContinueHorizontally" Width="512" Height="128" Font="bold 18px Adventure" Color="{Binding TitleColor}" VerticalAlignment="Center" HorizontalAlignment="Right">
+            This is some text that will end up aligned to the middle-right.
+        </w:TextRun>
+
     </FlexPanel>
 
 </View>
