@@ -7,7 +7,7 @@ public class PolygonTriangulator
 {
     public struct TriangulationResult
     {
-        public int[] Triangles;
+        public uint[] Triangles;
         public Vector3 PlaneNormal;
         public Vector3 Centroid;
         public int RegionCount;
@@ -141,7 +141,7 @@ public class PolygonTriangulator
         {
             return new TriangulationResult
             {
-                Triangles = Array.Empty<int>(),
+                Triangles = Array.Empty<uint>(),
                 PlaneNormal = normal,
                 Centroid = centroid,
                 RegionCount = 0
@@ -150,7 +150,7 @@ public class PolygonTriangulator
 
         // For polygons with holes, we need to include hole vertices in the triangulation
         // Build a complete vertex list and use constrained triangulation
-        var allTriangles = new List<int>();
+        var allTriangles = new List<uint>();
 
         // If there are holes, we need to use a different approach
         // Since simple centroid filtering doesn't work well, let's try adding hole vertices
@@ -192,7 +192,7 @@ public class PolygonTriangulator
                 // Extract triangles and map back to original vertex indices
                 foreach (var tri in poly.Triangles)
                 {
-                    var triIndices = new List<int>(3);
+                    var triIndices = new List<uint>(3);
                     for (int i = 0; i < 3; i++)
                     {
                         var p = tri.Points[i];
@@ -222,7 +222,7 @@ public class PolygonTriangulator
                             }
                             if (origIdx >= 0)
                             {
-                                triIndices.Add(origIdx);
+                                triIndices.Add((uint)origIdx);
                             }
                         }
                     }
@@ -298,7 +298,7 @@ public class PolygonTriangulator
                             }
                         }
                         if (origIdx >= 0)
-                            allTriangles.Add(origIdx);
+                            allTriangles.Add((uint)origIdx);
                     }
                 }
             }
@@ -334,7 +334,7 @@ public class PolygonTriangulator
                     }
                 }
                 if (origIdx >= 0)
-                    allTriangles.Add(origIdx);
+                    allTriangles.Add((uint)origIdx);
             }
         }
 
@@ -853,7 +853,7 @@ public class PolygonTriangulator
         polygon.AddRange(newPolygon);
     }
 
-    private static Vector3 ComputeCentroid(IReadOnlyList<Vector3> vertices)
+    public static Vector3 ComputeCentroid(IReadOnlyList<Vector3> vertices)
     {
         Vector3 sum = Vector3.Zero;
         foreach (var v in vertices)
@@ -924,7 +924,7 @@ public class PolygonTriangulator
         return hull;
     }
 
-    private static Vector3 ComputeBestFitPlaneNormal(IReadOnlyList<Vector3> vertices, Vector3 centroid)
+    public static Vector3 ComputeBestFitPlaneNormal(IReadOnlyList<Vector3> vertices, Vector3 centroid)
     {
         float xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
 
@@ -1301,9 +1301,9 @@ public class Program
         for (int i = 0; i < result.Triangles.Length; i += 3)
         {
             Console.WriteLine("[");
-            Console.WriteLine($"new Vector3({vertices[result.Triangles[i]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
-            Console.WriteLine($"new Vector3({vertices[result.Triangles[i + 1]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
-            Console.WriteLine($"new Vector3({vertices[result.Triangles[i + 2]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
+            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
+            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i + 1]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
+            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i + 2]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
             Console.WriteLine("],");
             Console.WriteLine();
         }
@@ -1314,11 +1314,11 @@ public class Program
             Console.WriteLine($"c({Random.Shared.Next(0, 256)},{Random.Shared.Next(0, 256)},{Random.Shared.Next(0, 256)})");
             Console.WriteLine("gr(40)");
             Console.WriteLine("fs(1)");
-            Console.WriteLine($"p({vertices[result.Triangles[i]]})".Replace("<", "").Replace(">", "")
+            Console.WriteLine($"p({vertices[(int)result.Triangles[i]]})".Replace("<", "").Replace(">", "")
                 .Replace(", ", ","));
-            Console.WriteLine($"p({vertices[result.Triangles[i + 1]]})".Replace("<", "").Replace(">", "")
+            Console.WriteLine($"p({vertices[(int)result.Triangles[i + 1]]})".Replace("<", "").Replace(">", "")
                 .Replace(", ", ","));
-            Console.WriteLine($"p({vertices[result.Triangles[i + 2]]})".Replace("<", "").Replace(">", "")
+            Console.WriteLine($"p({vertices[(int)result.Triangles[i + 2]]})".Replace("<", "").Replace(">", "")
                 .Replace(", ", ","));
             Console.WriteLine("</p>");
             Console.WriteLine();

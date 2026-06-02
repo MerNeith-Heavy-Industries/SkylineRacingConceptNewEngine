@@ -22,14 +22,14 @@ public class Mountains : Transform, IImmediateRenderable
             poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
 
         var data = new List<VertexPositionColor>();
-        var indices = new List<int>();
+        var indices = new List<uint>();
         
         for (var i = 0; i < polys.Length; i++)
         {
             var poly = polys[i];
             var result = triangulation[i];
 
-            var baseIndex = data.Count;
+            var baseIndex = (uint)data.Count;
             foreach (var point in poly.Points)
             {
                 var color = poly.Color;

@@ -10,10 +10,11 @@ public readonly record struct Rad3dPoly(
     [property: JsonPropertyName("polyType"), Key(2)] PolyType PolyType,
     [property: JsonPropertyName("lineType"), Key(3)] LineType? LineType,
     [property: JsonPropertyName("decalOffset"), Key(4)] float DecalOffset,
-    [property: JsonPropertyName("p"), Key(5)] Vector3[] Points
+    [property: JsonPropertyName("p"), Key(5)] Vector3[] Points,
+    [property: JsonPropertyName("tri"), Key(6)] uint[]? Triangles = null
 )
 {
-    private readonly int _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points);
+    private readonly int _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points, Triangles);
 
     public bool Equals(Rad3dPoly other)
     {
@@ -25,7 +26,7 @@ public readonly record struct Rad3dPoly(
         return Points.SequenceEqual(other.Points);
     }
 
-    private static int CalculateHashCode(Color3 color, int? colNum, PolyType polyType, LineType? lineType, float decalOffset, ReadOnlySpan<Vector3> points)
+    private static int CalculateHashCode(Color3 color, int? colNum, PolyType polyType, LineType? lineType, float decalOffset, ReadOnlySpan<Vector3> points, ReadOnlySpan<uint> triangles)
     {
         var hashCode = new HashCode();
         hashCode.Add(color);
@@ -37,6 +38,11 @@ public readonly record struct Rad3dPoly(
         foreach (var point in points)
         {
             hashCode.Add(point);
+        }
+        hashCode.Add(triangles.Length);
+        foreach (var triangle in triangles)
+        {
+            hashCode.Add(triangle);
         }
         return hashCode.ToHashCode();
     }

@@ -21,7 +21,7 @@ public class Submesh : IInstancedRenderElement, IDisposable
         Mesh supermesh,
         GraphicsDevice graphicsDevice,
         ReadOnlySpan<Mesh.VertexPositionNormalColorCentroid> vertices,
-        ReadOnlySpan<int> indices)
+        ReadOnlySpan<uint> indices)
     {
         _supermesh = supermesh;
         _graphicsDevice = graphicsDevice;
