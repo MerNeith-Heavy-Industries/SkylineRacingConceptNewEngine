@@ -66,7 +66,7 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
         Sparks = new Sparks(this, graphicsDevice);
         
         PositionWithoutInterpolation = backendCar.Position;
-        RotationWithoutInterpolation = backendCar.EulerAngles;
+        RotationWithoutInterpolation = backendCar.Rotation;
     }
 
     public ClientCar(GraphicsDevice graphicsDevice, IInGameCar backendCar)
@@ -155,11 +155,11 @@ public class ClientCar : MeshedGameObject, ICar, IDisposable
             wheel.Parent = this;
             if (Wheels[i].Rotates == 11)
             {
-                wheel.EulerAngles = TurningWheelAngle;
+                wheel.Rotation = TurningWheelAngle;
             }
             else
             {
-                wheel.EulerAngles = WheelAngle;
+                wheel.Rotation = WheelAngle;
             }
 
             foreach (var renderData in wheel.GetRenderData(lighting))

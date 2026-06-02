@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using FixedMathSharp;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary;
@@ -24,13 +23,22 @@ public readonly struct ContO
         get => (fix64) _car.Position.Z;
         set => _car.Position = _car.Position with { Z = value };
     }
-
-    public FixedQuaternion Rotation
+    public fix64 Xz 
     {
-        get => _car.Rotation;
-        set => _car.Rotation = value;
+        get => _car.Rotation.Xz.Degrees;
+        set => _car.Rotation = _car.Rotation with { Xz = f64AngleSingle.FromDegrees(value) };
     }
-    
+    public fix64 Xy 
+    {
+        get => _car.Rotation.Xy.Degrees;
+        set => _car.Rotation = _car.Rotation with { Xy = f64AngleSingle.FromDegrees(value) };
+    }
+    public fix64 Zy 
+    {
+        get => _car.Rotation.Zy.Degrees;
+        set => _car.Rotation = _car.Rotation with { Zy = f64AngleSingle.FromDegrees(value) };
+    }
+
     public int Grat => _car.GroundAt;
     
     // wheel rotation

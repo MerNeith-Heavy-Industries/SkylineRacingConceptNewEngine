@@ -33,7 +33,7 @@ public class StagePieceInstance
         {
             field = value;
             Obj.Position = value.Position;
-            Obj.EulerAngles = value.Rotation;
+            Obj.Rotation = value.Rotation;
         }
     }
     
@@ -58,7 +58,7 @@ public class StagePieceInstance
         set
         {
             PiecePlacement = PiecePlacement with { Rotation = value };
-            Obj.EulerAngles = PiecePlacement.Rotation;
+            Obj.Rotation = PiecePlacement.Rotation;
         }
     }
 

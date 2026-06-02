@@ -1,5 +1,4 @@
-﻿using FixedMathSharp;
-using NFMWorld.Interp;
+﻿using NFMWorld.Interp;
 using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
@@ -15,18 +14,8 @@ public abstract class Transform : ITransform
     public abstract IReadOnlyList<ITransform> ChildTransforms { get; }
 
     public f64Vector3 Position { get; set; } = f64Vector3.Zero;
-    public FixedQuaternion Rotation { get; set; } = new();
+    public f64Euler Rotation { get; set; } = new();
     public Transform? Parent { get; set; }
-    
-    public f64Euler EulerAngles
-    {
-        get
-        {
-            var euler = Rotation.ToEulerAngles();
-            return new f64Euler(f64AngleSingle.FromDegrees(euler.Y), f64AngleSingle.FromDegrees(euler.X), f64AngleSingle.FromDegrees(euler.Z));
-        }
-        set => Rotation = FixedQuaternion.FromEulerAnglesInDegrees(value.Yaw.Degrees, value.Pitch.Degrees, value.Roll.Degrees);
-    }
 
     public f64Vector3 PositionWithoutInterpolation
     {
@@ -42,7 +31,7 @@ public abstract class Transform : ITransform
         set
         {
             PreviousState = PreviousState with { Rotation = value };
-            EulerAngles = value;
+            Rotation = value;
         }
     }
 
@@ -52,13 +41,13 @@ public abstract class Transform : ITransform
 
     public virtual void GameTick(IStage? stage = null)
     {
-        PreviousState = new TransformState(Position, EulerAngles);
+        PreviousState = new TransformState(Position, Rotation);
     }
 
     public virtual void OnBeforeRender(float alpha)
     {
         var interpolatedPosition = Interpolation.InterpolateCoord((Vector3)Position, (Vector3)PreviousState.Position, alpha);
-        var interpolatedRotation = Interpolation.InterpolateEuler((Euler)EulerAngles, (Euler)PreviousState.Rotation, alpha);
+        var interpolatedRotation = Interpolation.InterpolateEuler((Euler)Rotation, (Euler)PreviousState.Rotation, alpha);
 
         var ownMatrixWorld = Matrix.CreateFromEuler(interpolatedRotation) * Matrix.CreateTranslation(interpolatedPosition);
         if (Parent != null)
