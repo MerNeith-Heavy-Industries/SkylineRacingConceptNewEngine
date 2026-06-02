@@ -37,7 +37,7 @@ public class Mesh : IDisposable
 
         GraphicsDevice = graphicsDevice;
 
-        Triangulation = Array.ConvertAll(Polys, poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
+        Triangulation = Array.ConvertAll(Polys, poly => MeshHelpers.TriangulateIfNeeded(poly.Points, poly.Triangles));
         BuildMesh(graphicsDevice);
 
         FileName = rad.FileName;
@@ -83,7 +83,7 @@ public class Mesh : IDisposable
         
         var submeshes = new (
             List<VertexPositionNormalColorCentroid> Data,
-            List<int> Indices
+            List<uint> Indices
         )[(int)(PolyType.MaxValue + 1)];
 
         for (var i = 0; i < submeshes.Length; i++)
@@ -110,7 +110,7 @@ public class Mesh : IDisposable
 
             var (data, indices) = submeshes[(int)poly.PolyType];
             
-            var baseIndex = data.Count;
+            var baseIndex = (uint)data.Count;
             float decalOffset = poly.DecalOffset; // Use the decal offset value from polygon
             foreach (var point in poly.Points)
             {

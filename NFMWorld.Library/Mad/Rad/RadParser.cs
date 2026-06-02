@@ -13,23 +13,24 @@ public class RadParser
     
     private Dictionary<Color3, int> _colors = new();
     private CarStats _stats = new();
-    private List<Rad3dWheelDef> _wheels = new();
+    private List<Rad3dWheelDef> _wheels = [];
     private Rad3dRimsDef? _rims;
-    private List<Rad3dBoxDef> _boxes = new();
-    private List<Rad3dPoly> _mainCarPolys = new();
-    private List<Vector3> _points = new();
-    private List<Vector2> _atp = new();
+    private List<Rad3dBoxDef> _boxes = [];
+    private List<Rad3dPoly> _mainCarPolys = [];
+    private List<Vector3> _points = [];
+    private List<uint> _tris = [];
+    private List<Vector2> _atp = [];
     private bool _road;
     private bool _castsShadow;
 
-    private List<List<Rad3dPoly>> _wheelPolys = new();
+    private List<List<Rad3dPoly>> _wheelPolys = [];
 
     private List<Rad3dPoly> _currentPolys;
     
-    private List<f64Vector3> _meshCollisionVerts = new();
-    private List<ushort> _meshCollisionIndices = new();
+    private List<f64Vector3> _meshCollisionVerts = [];
+    private List<ushort> _meshCollisionIndices = [];
     
-    private List<f64Vector3> _hullVerts = new();
+    private List<f64Vector3> _hullVerts = [];
     private readonly string _fileName;
 
     private RadParser(string fileName)
@@ -415,13 +416,19 @@ public class RadParser
                 );
                 _points.Add(transformedPoint);
             }
+            else if (line.StartsWith("tri("))
+            {
+                var tri = BracketParser.GetNumbers(line, stackalloc uint[3]);
+                _tris.AddRange(tri);
+            }
             
             else if (line.StartsWith("noOutline")) _noOutline = true;
 
             else if (line.StartsWith("</p>") || line.StartsWith("[/p]"))
             {
-                poly = poly with { Points = _points.ToArray() };
+                poly = poly with { Points = _points.ToArray(), Triangles = _tris.Count > 0 ? _tris.ToArray() : null };
                 _points.Clear();
+                _tris.Clear();
                 if (_stonecold || _noOutline)
                 {
                     if (poly.LineType == LineType.Flat)

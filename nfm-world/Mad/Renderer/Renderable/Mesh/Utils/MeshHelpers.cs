@@ -4,7 +4,7 @@ namespace NFMWorld;
 
 public class MeshHelpers
 {
-    internal static PolygonTriangulator.TriangulationResult TriangulateIfNeeded(Vector3[] verts)
+    internal static PolygonTriangulator.TriangulationResult TriangulateIfNeeded(Vector3[] verts, uint[]? triangles = null)
     {
         if (verts.Length <= 2)
         {
@@ -38,6 +38,20 @@ public class MeshHelpers
                 PlaneNormal = normal,
                 Centroid = centroid,
                 Triangles = verts.Length == 3 ? [0, 1, 2] : [],
+                RegionCount = 1
+            };
+        }
+
+        if (triangles != null)
+        {
+            Vector3 centroid = PolygonTriangulator.ComputeCentroid(verts);
+            Vector3 normal = PolygonTriangulator.ComputeBestFitPlaneNormal(verts, centroid);
+
+            return new PolygonTriangulator.TriangulationResult
+            {
+                PlaneNormal = normal,
+                Centroid = centroid,
+                Triangles = triangles,
                 RegionCount = 1
             };
         }
