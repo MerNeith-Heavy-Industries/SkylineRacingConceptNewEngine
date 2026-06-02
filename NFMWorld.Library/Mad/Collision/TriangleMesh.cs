@@ -209,15 +209,10 @@ public static class TriangleMesh
         if (denom.Abs() < (Fixed128)1e-6f) return false; // degenerate
 
         // Equivalent to:
-        // var u = (d22 * d1p - d12 * d2p) / denom;
-        // var v = (d11 * d2p - d12 * d1p) / denom;
-        //
-        // var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
-        var uD = (d22 * d1p - d12 * d2p);
-        var vD = (d11 * d2p - d12 * d1p);
-        var w = EdgeTolerance * denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
         
-        var inside = uD >= w && vD >= w && (uD + vD) <= (denom - w);
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
         return inside;
     }
 
@@ -233,15 +228,10 @@ public static class TriangleMesh
         if (denom.Abs() < (Fixed128)1e-6f) return "degen";
 
         // Equivalent to:
-        // var u = (d22 * d1p - d12 * d2p) / denom;
-        // var v = (d11 * d2p - d12 * d1p) / denom;
-        //
-        // var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
-        var uD = (d22 * d1p - d12 * d2p);
-        var vD = (d11 * d2p - d12 * d1p);
-        var w = EdgeTolerance * denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
         
-        var inside = uD >= w && vD >= w && (uD + vD) <= (denom - w);
-        return $"{inside} u={uD:F3} v={vD:F3}";
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
+        return $"{inside} u={u:F3} v={v:F3}";
     }
 }
