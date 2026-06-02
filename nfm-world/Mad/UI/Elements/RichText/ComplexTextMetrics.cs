@@ -191,6 +191,7 @@ public static class ComplexTextMetrics
                         }
                         else
                         {
+                            cursor.X = 0; // Move cursor to the beginning of the line
                             cursor.Y += currentLineHeight; // Move cursor down by the height of the line
                         }
                         
@@ -198,7 +199,7 @@ public static class ComplexTextMetrics
                         positionedElements.Add(new PositionedRichText(cursor, lineSize, background, foreground, stroke, font, leaf.Text[range]));
 
                         cursor.X = lineSize.X; // Move cursor to the end of the line
-                        currentLineHeight = lineSize.Y; // Store the height of the current line
+                        currentLineHeight = fontMetrics.LineHeight; // Store the height of the current line
                         
                         totalWidth = Math.Max(totalWidth, cursor.X); // Update total width if the current line is wider
                     }
@@ -209,7 +210,7 @@ public static class ComplexTextMetrics
                     positionedElements.Add(new PositionedRichText(cursor, lineSize, background, foreground, stroke, font, leaf.Text));
 
                     cursor.X += lineSize.X; // Move cursor to the end of the line
-                    currentLineHeight = Math.Max(currentLineHeight, lineSize.Y); // Update the previous line height if the current line is taller
+                    currentLineHeight = Math.Max(currentLineHeight, fontMetrics.LineHeight); // Update the previous line height if the current line is taller
                     
                     totalWidth = Math.Max(totalWidth, cursor.X); // Update total width if the current line is wider
                 }
