@@ -268,7 +268,11 @@ public class RadParser
         else if (line.StartsWith("hullv("))
         {
             var vec = f64Vector3.FromSpan(BracketParser.GetNumbers(line, stackalloc fix64[3]));
-            _hullVerts.Add(vec);
+            _hullVerts.Add(new f64Vector3(
+                vec.X * idiv * iwid * scaleX,
+                vec.Y * idiv * scaleY,
+                vec.Z * idiv * scaleZ
+            ));
         }
         
         // NFMW extension
