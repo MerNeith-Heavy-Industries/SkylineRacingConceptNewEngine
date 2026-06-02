@@ -2335,7 +2335,8 @@ public class Mad
 
                                     // newY is in local space; RotateXz doesn't affect Y, so just add object Y
                                     wheely[k] = groundHit.newY + boxMesh.GameObjectPosition.Y + wheelGround;
-                                    bounceRebound(k, conto, random);
+                                    // TODO: this makes going up mesh ramps janky. but we ideally want to allow bouncing on mesh collisions, so we need a better solution 
+                                    // bounceRebound(k, conto, random);
                                     isWheelTouchingPiece[k] = true;
                                     // break; this makes it possible to phase through walls when on top of a raised mesh ground, but prevents being snapped out the side of a ramp, as long as the ground collision happens first
                                 }
