@@ -115,6 +115,10 @@ public class Mad
     public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
     public event EventHandler<float> PowerUp;
 
+    private static f64Vector3 Up => new(0, -1, 0);
+    private static f64Vector3 Forward => new(0, 0, 1);
+    private static f64Vector3 Right => new(1, 0, 0);
+
     // private InlineArray2<CollisionSubstep> collisionSubsteps;
     // private bool collisionSubstepSwitch; // if false: [0] is current, if true: [1] is current
     // private const int NumSubsteps = 2;
@@ -1386,8 +1390,10 @@ public class Mad
             }
         }
 
+        var wheelContactNormal = new InlineArray4<f64Vector3>();
+
         // OmarTrackPieceCollision(control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
-        PhyTrackPieceCollision(stage, control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
+        PhyTrackPieceCollision(stage, control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, wheelContactNormal, random);
 
         // sparks and scrapes
         for (var i79 = 0; i79 < 4; i79++)
@@ -1402,45 +1408,13 @@ public class Mad
             }
         }
 
-        // Jacher: change all this to float. The old code was blatantly wrong:
-        // i_81 = d > 1 ? 0 : (fix64) dAcos(ratio) * sgn;
-        // `d` was an unused double set to 0.0 and never used. GO figure.
-        fix64 i_81 = 0;
-        if (Scy[2] != Scy[0])
-        {
-            fix64 sgn = Scy[2] < Scy[0] ? -1 : 1;
-            fix64 ratio = UMath.Hypot3(wheelz[0] - wheelz[2], wheely[0] - wheely[2], wheelx[0] - wheelx[2]) / (Math.Abs(conto.Keyz[0]) + Math.Abs(conto.Keyz[2]));
-            i_81 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn; // the d > 1 ? 0 part was different in the original code, but this I think makes more sense
-        }
-        fix64 i_82 = 0;
-        if (Scy[3] != Scy[1])
-        {
-            fix64 sgn = Scy[3] < Scy[1] ? -1 : 1;
-            fix64 ratio = UMath.Hypot3(wheelz[1] - wheelz[3], wheely[1] - wheely[3], wheelx[1] - wheelx[3]) / (Math.Abs(conto.Keyz[1]) + Math.Abs(conto.Keyz[3]));
-            i_82 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
-        }
-        fix64 i_83 = 0;
-        if (Scy[1] != Scy[0])
-        {
-            fix64 sgn = Scy[1] < Scy[0] ? -1 : 1;
-            fix64 ratio = UMath.Hypot3(wheelz[0] - wheelz[1], wheely[0] - wheely[1], wheelx[0] - wheelx[1]) / (Math.Abs(conto.Keyx[0]) + Math.Abs(conto.Keyx[1]));
-            i_83 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
-        }
-        fix64 i_84 = 0;
-        if (Scy[3] != Scy[2])
-        {
-            fix64 sgn = Scy[3] < Scy[2] ? -1 : 1;
-            fix64 ratio = UMath.Hypot3(wheelz[2] - wheelz[3], wheely[2] - wheely[3], wheelx[2] - wheelx[3]) / (Math.Abs(conto.Keyx[2]) + Math.Abs(conto.Keyx[3]));
-            i_84 = ratio >= 1 ? sgn : UMath.dAcos(ratio) * sgn;
-        }
-
         if (hitVertical)
         {
-            fix64 i_85;
-            for (i_85 = fix64.Abs(conto.Xz + 45); i_85 > 180; i_85 -= 360) { }
-            _pmlt = fix64.Abs(i_85) > 90 ? 1 : -1;
-            for (i_85 = fix64.Abs(conto.Xz - 45); i_85 > 180; i_85 -= 360) { }
-            _nmlt = fix64.Abs(i_85) > 90 ? 1 : -1;
+            fix64 i;
+            for (i = fix64.Abs(conto.Xz + 45); i > 180; i -= 360) { }
+            _pmlt = fix64.Abs(i) > 90 ? 1 : -1;
+            for (i = fix64.Abs(conto.Xz - 45); i > 180; i -= 360) { }
+            _nmlt = fix64.Abs(i) > 90 ? 1 : -1;
         }
 
         // I think this line, among other things, is responsible for causing flatspins after glitching on the edge of a ramp
@@ -1462,80 +1436,54 @@ public class Mad
             }
             FrameTrace.AddMessage($"assistxz: {assistxz:0.00}, conto.Xz: {conto.Xz:0.00}");
         }
-
-        if (fix64.Abs(i_82) > fix64.Abs(i_81))
-        {
-            i_81 = i_82;
-        }
-        if (fix64.Abs(i_84) > fix64.Abs(i_83))
-        {
-            i_83 = i_84;
-        }
-
-        // CHK11
-        if (!Mtouch && py < 0/* && this.mtCount > 15*/)
-        {
-            var zeroanglezy = fix64.Min(zyangle, 360 - zyangle); //distance from 0 degrees in the zy-plane
-            var flipanglezy = fix64.Abs(zyangle - 180); //distance from 180 degrees in the zy-plane
-            if (zeroanglezy <= flipanglezy && zyangle < 180 || flipanglezy < zeroanglezy && zyangle >= 180) //the landing adjustment mechanism
-            {
-                if (Pzy > 0) //Pzy can be negative, so this needs to be accounted for
-                {
-                    Pzy -= UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
-                }
-                else
-                {
-                    Pzy += UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
-                }
-            }
-            if (zeroanglezy <= flipanglezy && zyangle >= 180 || flipanglezy < zeroanglezy && zyangle < 180) //similar to above, just in reverse
-            {
-                if (Pzy > 0)
-                {
-                    Pzy += UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
-                }
-                else
-                {
-                    Pzy -= UMath.QuantizeTowardsZero(fix64.Abs(i_81) * _tickRate, _tickRate);
-                }
-            }
-            var zeroanglexy = fix64.Min(xyangle, 360 - xyangle); //distance from 0 degrees in the xy-plane
-            var flipanglexy = fix64.Abs(xyangle - 180); //distance from 180 degrees in the xy-plane
-            if (zeroanglexy <= flipanglexy && xyangle < 180 || flipanglexy < zeroanglexy && xyangle >= 180) //same as above, just for the xy-plane
-            {
-                if (Pxy > 0) //again, Pxy can be negative
-                {
-                    Pxy -= UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
-                }
-                else
-                {
-                    Pxy += UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
-                }
-            }
-            if (zeroanglexy <= flipanglexy && xyangle >= 180 || flipanglexy < zeroanglexy && xyangle < 180)
-            {
-                if (Pxy > 0)
-                {
-                    Pxy += UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
-                }
-                else
-                {
-                    Pxy -= UMath.QuantizeTowardsZero(fix64.Abs(i_83) * _tickRate, _tickRate);
-                }
-            }
-        }
-        else
-        {
-            if (!zyinv)
-                Pzy += i_81;
-            else
-                Pzy -= i_81;
-            if (!xyinv)
-                Pxy += i_83;
-            else
-                Pxy -= i_83;
-        }
+        
+        // Surface orientation from contact normals.
         //
+        // Each wheelContactNormal[k] is the actual surface normal from the collision resolver —
+        // geometrically correct for every surface type (flat ground, mesh, road, ShapeRamp).
+        //
+        // Strategy:
+        //   0/≥3 contacts → 
+        //      Fit CarRotation to the terrain plane defined by grounded wheel positions.
+        //   1-2 contacts →
+        //      Average the contact normals and apply a small corrective rotation toward
+        //      that average.
+        {
+            {
+                var wheelpos = new InlineArray4<f64Vector3>();
+
+                for (var i = 0; i < 4; i++)
+                {
+                    wheelpos[i] = new f64Vector3(wheelx[i], wheely[i], wheelz[i]);
+                }
+
+                var terrainNormal1 = f64Vector3.Cross(
+                    wheelpos[1] - wheelpos[0],
+                    wheelpos[2] - wheelpos[0]
+                ).Normal;
+
+                var terrainNormal2 = f64Vector3.Cross(
+                    wheelpos[3] - wheelpos[1],
+                    wheelpos[2] - wheelpos[1]
+                ).Normal;
+
+                var terrainNormal = (terrainNormal1 + terrainNormal2).Normal;
+
+                var cosPxy = UMath.Cos(Pxy);
+                var sinPxy = UMath.Sin(Pxy);
+                var cosPzy = UMath.Cos(Pzy);
+                var sinPzy = UMath.Sin(Pzy);
+                var localUp = new f64Vector3(sinPxy, -cosPxy * cosPzy, -cosPxy * sinPzy);
+
+                // Ensure it faces the same half-space as localUp
+                if (f64Vector3.Dot(terrainNormal, localUp) < fix64.Zero)
+                    terrainNormal = -terrainNormal;
+
+                Pxy = -FixedMathSharp.FixedMath.Asin(terrainNormal.Z);
+                Pzy = fix64.Atan2(terrainNormal.X, -terrainNormal.Y);
+            }
+        }
+
         if (nGroundedWheels == 4)
         {
             int i_86 = 0;
@@ -2229,7 +2177,8 @@ public class Mad
         IStage stage, Control control, ContO conto,
         Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
         fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch,
-        int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, DeterministicRandom random)
+        int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, Span<f64Vector3> wheelContactNormal,
+        DeterministicRandom random)
     {
         hitVertical = false;
 
@@ -2302,6 +2251,12 @@ public class Mad
 
                                     touching |= 1 << k;
                                     ++nGroundedWheels;
+                                    
+                                    isWheelGrounded[k] = true;
+                                    // normalizedNormal is in object-local XZ space; RotateXz brings it to world space.
+                                    // groundness > 0 ⟹ normalizedNormal.Y < 0, which is the -Y (up) direction in Y-down. ✓
+                                    wheelContactNormal[k] = normalizedNormal.RotateXz(boxMesh.GameObjectXz);
+                                    
                                     Wtouch = true;
                                     Gtouch = true;
 
@@ -2386,6 +2341,8 @@ public class Mad
                         {
                             touching |= 1 << k;
                             ++nGroundedWheels;
+                            isWheelGrounded[k] = true;
+                            wheelContactNormal[k] = Up;
                             Wtouch = true;
                             Gtouch = true;
 
@@ -2464,6 +2421,16 @@ public class Mad
                                 Logging.Info($"ramp lift: {collision.zTmp} liftDivider: {liftDivider:F2} total: {collision.zTmp / liftDivider}");
                                 Scy[k] -= collision.zTmp / liftDivider;
                             }
+
+                            isWheelGrounded[k] = true;
+                            // Ramp surface normal in world space.
+                            // In the ramp's zy-rotated local frame the surface is Z=0 and the car
+                            // sits at Z>0, so the surface-up direction is (0,0,-1) in that frame.
+                            // Undo the ZY tilt then the XZ object rotations to reach world space.
+                            wheelContactNormal[k] = new f64Vector3(fix64.Zero, fix64.Zero, (fix64)(-1))
+                                .RotateZy((boxRamp.TrackersZy + 90))
+                                .RotateXz(boxRamp.TrackersXz)
+                                .RotateXz(boxRamp.GameObjectXz);
 
                             if (collision.zTmp > -30)
                             {
