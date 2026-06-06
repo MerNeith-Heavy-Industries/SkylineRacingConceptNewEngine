@@ -469,7 +469,7 @@ public class Mad
         DeterministicRandom random = new((ulong)(conto.X.rawValue ^ conto.Y.rawValue ^ conto.Z.rawValue));
 
         FrameTrace.AddMessage($"xz: {conto.Xz:0.00}, mxz: {Mxz:0.00}, lxz: {_lxz:0.00}, fxz: {_fxz:0.00}, cxz: {Cxz:0.00}");
-        FrameTrace.AddMessage($"xy: {conto.Xy:0.00}, pxy: {Pxy:0.00}, zy: {conto.Zy:0.00}, pzy: {Pzy:0.00}");
+        FrameTrace.AddMessage($"xy: {conto.Xy:0.00}, pxy: {Pxy:0.00}, zy: {conto.Zy:0.00}, pzy: {Pzy:0.00}, xz: {conto.Xz:0.00}");
         FrameTrace.AddMessage($"Travxz: {Travxz:0.00}, Travxy: {Travxy:0.00}, Travzy: {Travzy:0.00}, Surfing: {Surfer}");
 
         var xneg = 1;
@@ -1348,7 +1348,8 @@ public class Mad
         }
 
         var nGroundedWheels = 0;
-        Span<bool> isWheelGrounded = stackalloc bool[4];
+        var isWheelGrounded = new InlineArray4<bool>();
+        var wheelContactNormal = new InlineArray4<f64Vector3>();
         fix64 groundY = 250 + wheelGround;
         fix64 wheelYThreshold = (fix64)5f;
         fix64 f48 = 0;
@@ -1385,12 +1386,11 @@ public class Mad
                 wheely[i49] = groundY;
                 f48 += wheely[i49] - groundY;
                 isWheelGrounded[i49] = true;
+                wheelContactNormal[i49] = Up;
 
                 bounceRebound(i49, conto, random);
             }
         }
-
-        var wheelContactNormal = new InlineArray4<f64Vector3>();
 
         // OmarTrackPieceCollision(control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, random);
         PhyTrackPieceCollision(stage, control, conto, wheelx, wheely, wheelz, groundY, wheelYThreshold, wheelGround, ref nGroundedWheels, wasMtouch, surfaceType, out hitVertical, isWheelGrounded, wheelContactNormal, random);
@@ -1436,25 +1436,28 @@ public class Mad
             }
             FrameTrace.AddMessage($"assistxz: {assistxz:0.00}, conto.Xz: {conto.Xz:0.00}");
         }
-        
+
         // Surface orientation from contact normals.
         //
         // Each wheelContactNormal[k] is the actual surface normal from the collision resolver —
         // geometrically correct for every surface type (flat ground, mesh, road, ShapeRamp).
         //
         // Strategy:
-        //   0/≥3 contacts → 
-        //      Fit CarRotation to the terrain plane defined by grounded wheel positions.
-        //   1-2 contacts →
-        //      Average the contact normals and apply a small corrective rotation toward
-        //      that average.
+        //   ≥3 contacts → plane-fit from all 4 wheel positions (reliable, wheels are planted)
+        //   1-2 contacts → torque toward averaged contact normal (partial contact, gradual)
+        //   0 contacts   → skip — air stabilizer and loop controls handle airborne orientation
         {
+            // Count distinct wheels touching any surface
+            var contactCount = (isWheelGrounded[0] ? 1 : 0) + (isWheelGrounded[1] ? 1 : 0)
+                             + (isWheelGrounded[2] ? 1 : 0) + (isWheelGrounded[3] ? 1 : 0);
+
+            if (contactCount >= 3 || contactCount == 0)
             {
                 var wheelpos = new InlineArray4<f64Vector3>();
 
                 for (var i = 0; i < 4; i++)
                 {
-                    wheelpos[i] = new f64Vector3(wheelx[i], wheely[i], wheelz[i]);
+                    wheelpos[i] = new f64Vector3(wheelx[i], wheely[i] - wheelGround, wheelz[i]);
                 }
 
                 var terrainNormal1 = f64Vector3.Cross(
@@ -1469,18 +1472,104 @@ public class Mad
 
                 var terrainNormal = (terrainNormal1 + terrainNormal2).Normal;
 
-                var cosPxy = UMath.Cos(Pxy);
-                var sinPxy = UMath.Sin(Pxy);
-                var cosPzy = UMath.Cos(Pzy);
-                var sinPzy = UMath.Sin(Pzy);
-                var localUp = new f64Vector3(sinPxy, -cosPxy * cosPzy, -cosPxy * sinPzy);
-
-                // Ensure it faces the same half-space as localUp
-                if (f64Vector3.Dot(terrainNormal, localUp) < fix64.Zero)
+                // Half-space check: terrainNormal must point in the same hemisphere
+                // as the car's up. Only the Y component matters — X and Z depend on
+                // yaw (conto.Xz), which a naive localUp at Xz=0 gets wrong when
+                // Xz ≠ 0 (e.g. facing -Z on a steep ramp).
+                //   terrainNormal.Y < 0  ⟹  world-up    ⟹  car should be upright
+                //   car's up.Y = -cos(Pxy)·cos(Pzy) < 0 ⟹  upright; > 0 ⟹ inverted
+                // Flip the normal if its Y sign differs from the car's up-Y sign.
+                var carUpY = -UMath.Cos(Pxy) * UMath.Cos(Pzy);
+                var needsFlip = terrainNormal.Y * carUpY < fix64.Zero;
+                FrameTrace.AddMessage($"flipCheck: tn.Y={terrainNormal.Y:0.000}, carUpY={carUpY:0.000}, needsFlip={needsFlip}, Pxy={Pxy:0.0}, Pzy={Pzy:0.0}");
+                if (needsFlip)
                     terrainNormal = -terrainNormal;
 
-                Pxy = -FixedMathSharp.FixedMath.Asin(terrainNormal.Z);
-                Pzy = fix64.Atan2(terrainNormal.X, -terrainNormal.Y);
+                // Undo yaw before decomposing into Pxy/Pzy.
+                // Rotation order: Rx(Pxy)·Rz(Pzy)·Ry(Xz) applied to up=(0,-1,0):
+                //   up = (sinP·cosXz + cosP·sinZ·sinXz,  -cosP·cosZ,  sinP·sinXz - cosP·sinZ·cosXz)
+                // Solving for Pxy, Pzy given up=terrainNormal and Xz:
+                var cosXz = UMath.Cos(conto.Xz);
+                var sinXz = UMath.Sin(conto.Xz);
+                var sinP = terrainNormal.X * cosXz + terrainNormal.Z * sinXz;
+                var cosP_sinZ = terrainNormal.X * sinXz - terrainNormal.Z * cosXz;
+                var cosP_cosZ = -terrainNormal.Y; // = cos(Pxy)·cos(Pzy)
+
+                // |cos(Pxy)| = sqrt(cosP_cosZ² + cosP_sinZ²)  because cos²Z+sin²Z=1
+                var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
+
+                // Guard: when |cosP| ≈ 0 (car at ±90° roll) the plane-fit is degenerate
+                // for both axes. Skip the update and let the loop/stabilizer handle it.
+                if (absCosP > (fix64)0.001f)
+                {
+                    // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
+                    //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
+                    //   cosP_cosZ < 0 → one of cosP, cosZ is negative.
+                    //
+                    // Use the same detection the xyinv/zyinv flags use to decide which
+                    // axis carries the inversion: if the raw Pzy is past ±90°, Pzy
+                    // is inverted so cosZ < 0 and cosP > 0. Otherwise Pxy is inverted
+                    // so cosP < 0.
+                    //
+                    // Recompute the raw angles here because loop controls may have
+                    // changed Pxy/Pzy since the top of the tick.
+                    var rawXy = fix64.Abs(Pxy);
+                    while (rawXy > 270) rawXy -= 360;
+                    rawXy = fix64.Abs(rawXy);
+                    var rawZy = fix64.Abs(Pzy);
+                    while (rawZy > 270) rawZy -= 360;
+                    rawZy = fix64.Abs(rawZy);
+
+                    var cosP = cosP_cosZ >= fix64.Zero ? absCosP
+                        : rawZy > (fix64)90 ? absCosP       // Pzy is the inverted axis → cosP > 0
+                        : rawXy > (fix64)90 ? -absCosP       // Pxy is the inverted axis → cosP < 0
+                        : absCosP;                            // neither > 90°, assume upright
+
+                    // Derive sin(Pzy) and cos(Pzy) by dividing the known products
+                    // by cosP — this correctly undoes the 180° shift that atan2
+                    // would introduce when cosP < 0.
+                    var sinZ = cosP_sinZ / cosP;
+                    var cosZ = cosP_cosZ / cosP;
+                    Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
+                    Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
+
+                    // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
+                    // atan2 outputs [-180°, 180°] which wraps at ±180°; the
+                    // interpolation block below would see a 358° jump instead of 2°.
+                    while (Pxy - conto.Xy > (fix64)180) Pxy -= (fix64)360;
+                    while (Pxy - conto.Xy < -(fix64)180) Pxy += (fix64)360;
+                    while (Pzy - conto.Zy > (fix64)180) Pzy -= (fix64)360;
+                    while (Pzy - conto.Zy < -(fix64)180) Pzy += (fix64)360;
+
+                    FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
+                }
+            }
+            else
+            {
+                // 1-2 contacts: average the contact normals and apply a small
+                // corrective torque toward that average. The correction axis
+                // decomposes directly: axis.Z → Pxy (pitch), axis.X → Pzy (roll).
+                var sumNormal = f64Vector3.Zero;
+                for (int k = 0; k < 4; k++)
+                    if (isWheelGrounded[k]) sumNormal += wheelContactNormal[k];
+
+                if (sumNormal.SqrMagnitude > (fix64)0.001f)
+                {
+                    var avgNormal = sumNormal.Normal;
+                    var cosPx = UMath.Cos(Pxy);
+                    var sinPx = UMath.Sin(Pxy);
+                    var cosPz = UMath.Cos(Pzy);
+                    var sinPz = UMath.Sin(Pzy);
+                    var localUp = new f64Vector3(sinPx, -cosPx * cosPz, -cosPx * sinPz);
+                    var corrAxis = f64Vector3.Cross(localUp, avgNormal);
+                    if (corrAxis.SqrMagnitude > (fix64)0.001f)
+                    {
+                        var axis = corrAxis.Normal;
+                        var rate = (fix64)5 * _tickRate;
+                        Pxy += rate * axis.Z; // Z-axis component of correction → pitch
+                        Pzy += rate * axis.X; // X-axis component of correction → roll
+                    }
+                }
             }
         }
 
