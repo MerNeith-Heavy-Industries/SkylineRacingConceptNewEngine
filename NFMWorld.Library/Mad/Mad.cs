@@ -1437,21 +1437,8 @@ public class Mad
             FrameTrace.AddMessage($"assistxz: {assistxz:0.00}, conto.Xz: {conto.Xz:0.00}");
         }
 
-        // Surface orientation from contact normals.
-        //
-        // Each wheelContactNormal[k] is the actual surface normal from the collision resolver —
-        // geometrically correct for every surface type (flat ground, mesh, road, ShapeRamp).
-        //
-        // Strategy:
-        //   ≥3 contacts → plane-fit from all 4 wheel positions (reliable, wheels are planted)
-        //   1-2 contacts → torque toward averaged contact normal (partial contact, gradual)
-        //   0 contacts   → skip — air stabilizer and loop controls handle airborne orientation
+        // Surface orientation from plane fitting.
         {
-            // Count distinct wheels touching any surface
-            var contactCount = (isWheelGrounded[0] ? 1 : 0) + (isWheelGrounded[1] ? 1 : 0)
-                             + (isWheelGrounded[2] ? 1 : 0) + (isWheelGrounded[3] ? 1 : 0);
-
-            if (contactCount >= 3 || contactCount == 0)
             {
                 var wheelpos = new InlineArray4<f64Vector3>();
 
@@ -1520,7 +1507,8 @@ public class Mad
                     while (rawZy > 270) rawZy -= 360;
                     rawZy = fix64.Abs(rawZy);
 
-                    var cosP = cosP_cosZ >= fix64.Zero ? absCosP
+                    var cosP = cosP_cosZ >= fix64.Zero
+                        ? (rawXy > (fix64)90 && rawZy > (fix64)90 ? -absCosP : absCosP)
                         : rawZy > (fix64)90 ? absCosP       // Pzy is the inverted axis → cosP > 0
                         : rawXy > (fix64)90 ? -absCosP       // Pxy is the inverted axis → cosP < 0
                         : absCosP;                            // neither > 90°, assume upright
@@ -1536,39 +1524,12 @@ public class Mad
                     // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
                     // atan2 outputs [-180°, 180°] which wraps at ±180°; the
                     // interpolation block below would see a 358° jump instead of 2°.
-                    while (Pxy - conto.Xy > (fix64)180) Pxy -= (fix64)360;
-                    while (Pxy - conto.Xy < -(fix64)180) Pxy += (fix64)360;
-                    while (Pzy - conto.Zy > (fix64)180) Pzy -= (fix64)360;
-                    while (Pzy - conto.Zy < -(fix64)180) Pzy += (fix64)360;
+                    while (Pxy - conto.Xy > 180) Pxy -= 360;
+                    while (Pxy - conto.Xy < -180) Pxy += 360;
+                    while (Pzy - conto.Zy > 180) Pzy -= 360;
+                    while (Pzy - conto.Zy < -180) Pzy += 360;
 
                     FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
-                }
-            }
-            else
-            {
-                // 1-2 contacts: average the contact normals and apply a small
-                // corrective torque toward that average. The correction axis
-                // decomposes directly: axis.Z → Pxy (pitch), axis.X → Pzy (roll).
-                var sumNormal = f64Vector3.Zero;
-                for (int k = 0; k < 4; k++)
-                    if (isWheelGrounded[k]) sumNormal += wheelContactNormal[k];
-
-                if (sumNormal.SqrMagnitude > (fix64)0.001f)
-                {
-                    var avgNormal = sumNormal.Normal;
-                    var cosPx = UMath.Cos(Pxy);
-                    var sinPx = UMath.Sin(Pxy);
-                    var cosPz = UMath.Cos(Pzy);
-                    var sinPz = UMath.Sin(Pzy);
-                    var localUp = new f64Vector3(sinPx, -cosPx * cosPz, -cosPx * sinPz);
-                    var corrAxis = f64Vector3.Cross(localUp, avgNormal);
-                    if (corrAxis.SqrMagnitude > (fix64)0.001f)
-                    {
-                        var axis = corrAxis.Normal;
-                        var rate = (fix64)5 * _tickRate;
-                        Pxy += rate * axis.Z; // Z-axis component of correction → pitch
-                        Pzy += rate * axis.X; // X-axis component of correction → roll
-                    }
                 }
             }
         }
