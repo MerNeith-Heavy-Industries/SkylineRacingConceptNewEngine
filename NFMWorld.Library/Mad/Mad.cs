@@ -1439,98 +1439,96 @@ public class Mad
 
         // Surface orientation from plane fitting.
         {
+            var wheelpos = new InlineArray4<f64Vector3>();
+
+            for (var i = 0; i < 4; i++)
             {
-                var wheelpos = new InlineArray4<f64Vector3>();
+                wheelpos[i] = new f64Vector3(wheelx[i], wheely[i] - wheelGround, wheelz[i]);
+            }
 
-                for (var i = 0; i < 4; i++)
-                {
-                    wheelpos[i] = new f64Vector3(wheelx[i], wheely[i] - wheelGround, wheelz[i]);
-                }
+            var terrainNormal1 = f64Vector3.Cross(
+                wheelpos[1] - wheelpos[0],
+                wheelpos[2] - wheelpos[0]
+            ).Normal;
 
-                var terrainNormal1 = f64Vector3.Cross(
-                    wheelpos[1] - wheelpos[0],
-                    wheelpos[2] - wheelpos[0]
-                ).Normal;
+            var terrainNormal2 = f64Vector3.Cross(
+                wheelpos[3] - wheelpos[1],
+                wheelpos[2] - wheelpos[1]
+            ).Normal;
 
-                var terrainNormal2 = f64Vector3.Cross(
-                    wheelpos[3] - wheelpos[1],
-                    wheelpos[2] - wheelpos[1]
-                ).Normal;
+            var terrainNormal = (terrainNormal1 + terrainNormal2).Normal;
 
-                var terrainNormal = (terrainNormal1 + terrainNormal2).Normal;
+            // Half-space check: terrainNormal must point in the same hemisphere
+            // as the car's up. Only the Y component matters — X and Z depend on
+            // yaw (conto.Xz), which a naive localUp at Xz=0 gets wrong when
+            // Xz ≠ 0 (e.g. facing -Z on a steep ramp).
+            //   terrainNormal.Y < 0  ⟹  world-up    ⟹  car should be upright
+            //   car's up.Y = -cos(Pxy)·cos(Pzy) < 0 ⟹  upright; > 0 ⟹ inverted
+            // Flip the normal if its Y sign differs from the car's up-Y sign.
+            var carUpY = -UMath.Cos(Pxy) * UMath.Cos(Pzy);
+            var needsFlip = terrainNormal.Y * carUpY < fix64.Zero;
+            FrameTrace.AddMessage($"flipCheck: tn.Y={terrainNormal.Y:0.000}, carUpY={carUpY:0.000}, needsFlip={needsFlip}, Pxy={Pxy:0.0}, Pzy={Pzy:0.0}");
+            if (needsFlip)
+                terrainNormal = -terrainNormal;
 
-                // Half-space check: terrainNormal must point in the same hemisphere
-                // as the car's up. Only the Y component matters — X and Z depend on
-                // yaw (conto.Xz), which a naive localUp at Xz=0 gets wrong when
-                // Xz ≠ 0 (e.g. facing -Z on a steep ramp).
-                //   terrainNormal.Y < 0  ⟹  world-up    ⟹  car should be upright
-                //   car's up.Y = -cos(Pxy)·cos(Pzy) < 0 ⟹  upright; > 0 ⟹ inverted
-                // Flip the normal if its Y sign differs from the car's up-Y sign.
-                var carUpY = -UMath.Cos(Pxy) * UMath.Cos(Pzy);
-                var needsFlip = terrainNormal.Y * carUpY < fix64.Zero;
-                FrameTrace.AddMessage($"flipCheck: tn.Y={terrainNormal.Y:0.000}, carUpY={carUpY:0.000}, needsFlip={needsFlip}, Pxy={Pxy:0.0}, Pzy={Pzy:0.0}");
-                if (needsFlip)
-                    terrainNormal = -terrainNormal;
+            // Undo yaw before decomposing into Pxy/Pzy.
+            // Rotation order: Rx(Pxy)·Rz(Pzy)·Ry(Xz) applied to up=(0,-1,0):
+            //   up = (sinP·cosXz + cosP·sinZ·sinXz,  -cosP·cosZ,  sinP·sinXz - cosP·sinZ·cosXz)
+            // Solving for Pxy, Pzy given up=terrainNormal and Xz:
+            var cosXz = UMath.Cos(conto.Xz);
+            var sinXz = UMath.Sin(conto.Xz);
+            var sinP = terrainNormal.X * cosXz + terrainNormal.Z * sinXz;
+            var cosP_sinZ = terrainNormal.X * sinXz - terrainNormal.Z * cosXz;
+            var cosP_cosZ = -terrainNormal.Y; // = cos(Pxy)·cos(Pzy)
 
-                // Undo yaw before decomposing into Pxy/Pzy.
-                // Rotation order: Rx(Pxy)·Rz(Pzy)·Ry(Xz) applied to up=(0,-1,0):
-                //   up = (sinP·cosXz + cosP·sinZ·sinXz,  -cosP·cosZ,  sinP·sinXz - cosP·sinZ·cosXz)
-                // Solving for Pxy, Pzy given up=terrainNormal and Xz:
-                var cosXz = UMath.Cos(conto.Xz);
-                var sinXz = UMath.Sin(conto.Xz);
-                var sinP = terrainNormal.X * cosXz + terrainNormal.Z * sinXz;
-                var cosP_sinZ = terrainNormal.X * sinXz - terrainNormal.Z * cosXz;
-                var cosP_cosZ = -terrainNormal.Y; // = cos(Pxy)·cos(Pzy)
+            // |cos(Pxy)| = sqrt(cosP_cosZ² + cosP_sinZ²)  because cos²Z+sin²Z=1
+            var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
 
-                // |cos(Pxy)| = sqrt(cosP_cosZ² + cosP_sinZ²)  because cos²Z+sin²Z=1
-                var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
+            // Guard: when |cosP| ≈ 0 (car at ±90° roll) the plane-fit is degenerate
+            // for both axes. Skip the update and let the loop/stabilizer handle it.
+            if (absCosP > (fix64)0.001f)
+            {
+                // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
+                //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
+                //   cosP_cosZ < 0 → one of cosP, cosZ is negative.
+                //
+                // Use the same detection the xyinv/zyinv flags use to decide which
+                // axis carries the inversion: if the raw Pzy is past ±90°, Pzy
+                // is inverted so cosZ < 0 and cosP > 0. Otherwise Pxy is inverted
+                // so cosP < 0.
+                //
+                // Recompute the raw angles here because loop controls may have
+                // changed Pxy/Pzy since the top of the tick.
+                var rawXy = fix64.Abs(Pxy);
+                while (rawXy > 270) rawXy -= 360;
+                rawXy = fix64.Abs(rawXy);
+                var rawZy = fix64.Abs(Pzy);
+                while (rawZy > 270) rawZy -= 360;
+                rawZy = fix64.Abs(rawZy);
 
-                // Guard: when |cosP| ≈ 0 (car at ±90° roll) the plane-fit is degenerate
-                // for both axes. Skip the update and let the loop/stabilizer handle it.
-                if (absCosP > (fix64)0.001f)
-                {
-                    // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
-                    //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
-                    //   cosP_cosZ < 0 → one of cosP, cosZ is negative.
-                    //
-                    // Use the same detection the xyinv/zyinv flags use to decide which
-                    // axis carries the inversion: if the raw Pzy is past ±90°, Pzy
-                    // is inverted so cosZ < 0 and cosP > 0. Otherwise Pxy is inverted
-                    // so cosP < 0.
-                    //
-                    // Recompute the raw angles here because loop controls may have
-                    // changed Pxy/Pzy since the top of the tick.
-                    var rawXy = fix64.Abs(Pxy);
-                    while (rawXy > 270) rawXy -= 360;
-                    rawXy = fix64.Abs(rawXy);
-                    var rawZy = fix64.Abs(Pzy);
-                    while (rawZy > 270) rawZy -= 360;
-                    rawZy = fix64.Abs(rawZy);
-
-                    var cosP = cosP_cosZ >= fix64.Zero
-                        ? (rawXy > (fix64)90 && rawZy > (fix64)90 ? -absCosP : absCosP)
-                        : rawZy > (fix64)90 ? absCosP       // Pzy is the inverted axis → cosP > 0
+                var cosP = cosP_cosZ >= fix64.Zero
+                    ? (rawXy > (fix64)90 && rawZy > (fix64)90 ? -absCosP : absCosP)
+                    : rawZy > (fix64)90 ? absCosP       // Pzy is the inverted axis → cosP > 0
                         : rawXy > (fix64)90 ? -absCosP       // Pxy is the inverted axis → cosP < 0
-                        : absCosP;                            // neither > 90°, assume upright
+                            : absCosP;                            // neither > 90°, assume upright
 
-                    // Derive sin(Pzy) and cos(Pzy) by dividing the known products
-                    // by cosP — this correctly undoes the 180° shift that atan2
-                    // would introduce when cosP < 0.
-                    var sinZ = cosP_sinZ / cosP;
-                    var cosZ = cosP_cosZ / cosP;
-                    Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
-                    Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
+                // Derive sin(Pzy) and cos(Pzy) by dividing the known products
+                // by cosP — this correctly undoes the 180° shift that atan2
+                // would introduce when cosP < 0.
+                var sinZ = cosP_sinZ / cosP;
+                var cosZ = cosP_cosZ / cosP;
+                Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
+                Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
 
-                    // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
-                    // atan2 outputs [-180°, 180°] which wraps at ±180°; the
-                    // interpolation block below would see a 358° jump instead of 2°.
-                    while (Pxy - conto.Xy > 180) Pxy -= 360;
-                    while (Pxy - conto.Xy < -180) Pxy += 360;
-                    while (Pzy - conto.Zy > 180) Pzy -= 360;
-                    while (Pzy - conto.Zy < -180) Pzy += 360;
+                // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
+                // atan2 outputs [-180°, 180°] which wraps at ±180°; the
+                // interpolation block below would see a 358° jump instead of 2°.
+                while (Pxy - conto.Xy > 180) Pxy -= 360;
+                while (Pxy - conto.Xy < -180) Pxy += 360;
+                while (Pzy - conto.Zy > 180) Pzy -= 360;
+                while (Pzy - conto.Zy < -180) Pzy += 360;
 
-                    FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
-                }
+                FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
             }
         }
 
