@@ -53,4 +53,16 @@ public static class CollisionExtensions
             }
         }
     }
+
+    extension(Vector2 vec)
+    {
+        public Vector2 RotateXz(fix64 xz) {
+            var a = -xz;
+            return new Vector2(
+                (float)((fix64)vec.X * UMath.Cos(a) + (fix64)vec.Y * UMath.Sin(a)),
+                (float)((fix64)vec.X * -UMath.Sin(a) + (fix64)vec.Y * UMath.Cos(a))
+            );
+        }
+
+    }
 }

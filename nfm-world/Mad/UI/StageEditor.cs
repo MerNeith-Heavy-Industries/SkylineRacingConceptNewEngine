@@ -7,6 +7,7 @@ using NFMWorld.Gameplay;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
+using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
@@ -267,9 +268,12 @@ public class StageEditorPhase : BasePhase
     
     // Snapping
     private bool _snapEnabled = false;
-    private float _snapSize = 100f; // world units; standard road spacing is 5600
+    
+    // Grid Snapping
+    private bool _gridSnapEnabled = false;
+    private float _gridSnapSize = 100f; // world units; standard road spacing is 5600
     // Preset snap sizes (shown as labels in the UI)
-    private static readonly float[] SnapPresets = { 50f, 100f, 200f, 400f, 560f, 1000f, 2800f, 5600f };
+    private static readonly float[] SnapPresets = [50f, 100f, 200f, 400f, 560f, 1000f, 2800f, 5600f];
     private int _snapPresetIndex = 0;
     
     // New stage dialog state
@@ -1133,7 +1137,7 @@ public class StageEditorPhase : BasePhase
 
             if (key == Keys.G)
             {
-                _snapEnabled = !_snapEnabled;
+                _gridSnapEnabled = !_gridSnapEnabled;
                 return;
             }
         }
@@ -1228,17 +1232,17 @@ public class StageEditorPhase : BasePhase
             PushUndoSnapshot();
             ActiveTab.SelectedPieceIds.Clear();
             // Determine paste offset — use snap size when enabled, otherwise a small fixed nudge
-            float pasteOffsetXZ = _snapEnabled && _snapSize > 0f ? _snapSize : 200f;
+            float pasteOffsetXZ = _gridSnapEnabled && _gridSnapSize > 0f ? _gridSnapSize : 200f;
             var primaryPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
             f64Vector3 pasteOrigin;
             if (primaryPiece != null)
             {
                 float ox = (float)primaryPiece.Position.X + pasteOffsetXZ;
                 float oz = (float)primaryPiece.Position.Z + pasteOffsetXZ;
-                if (_snapEnabled && _snapSize > 0f)
+                if (_gridSnapEnabled && _gridSnapSize > 0f)
                 {
-                    ox = MathF.Round(ox / _snapSize) * _snapSize;
-                    oz = MathF.Round(oz / _snapSize) * _snapSize;
+                    ox = MathF.Round(ox / _gridSnapSize) * _gridSnapSize;
+                    oz = MathF.Round(oz / _gridSnapSize) * _gridSnapSize;
                 }
                 pasteOrigin = new f64Vector3((fix64)ox, primaryPiece.Position.Y, (fix64)oz);
             }
@@ -1252,10 +1256,10 @@ public class StageEditorPhase : BasePhase
                 float wx = (float)pasteOrigin.X + (float)clip.RelativePosition.X;
                 float wy = (float)pasteOrigin.Y + (float)clip.RelativePosition.Y;
                 float wz = (float)pasteOrigin.Z + (float)clip.RelativePosition.Z;
-                if (_snapEnabled && _snapSize > 0f)
+                if (_gridSnapEnabled && _gridSnapSize > 0f)
                 {
-                    wx = MathF.Round(wx / _snapSize) * _snapSize;
-                    wz = MathF.Round(wz / _snapSize) * _snapSize;
+                    wx = MathF.Round(wx / _gridSnapSize) * _gridSnapSize;
+                    wz = MathF.Round(wz / _gridSnapSize) * _gridSnapSize;
                 }
                 var worldPos = new f64Vector3((fix64)wx, (fix64)wy, (fix64)wz);
                 var mesh = new StageObject(clip.Rad, worldPos, clip.Rotation, new PiecePlacement(clip.PlacementType, clip.Rad, worldPos, clip.Rotation, clip.AiNodeKind, IsSpecial: clip.IsSpecial));
@@ -2129,8 +2133,8 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newX = (float)spos.X + worldDelta;
-                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
-                                    newX = MathF.Round(newX / _snapSize) * _snapSize;
+                                if (_isShiftPressed != _gridSnapEnabled && _gridSnapSize > 0f)
+                                    newX = MathF.Round(newX / _gridSnapSize) * _gridSnapSize;
                                 sp.Position = new f64Vector3((fix64)newX, spos.Y, spos.Z);
                             }
                             ActiveTab.HasUnsavedChanges = true;
@@ -2156,8 +2160,8 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newY = (float)spos.Y + worldDelta;
-                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
-                                    newY = MathF.Round(newY / _snapSize) * _snapSize;
+                                if (_isShiftPressed != _gridSnapEnabled && _gridSnapSize > 0f)
+                                    newY = MathF.Round(newY / _gridSnapSize) * _gridSnapSize;
                                 sp.Position = new f64Vector3(spos.X, (fix64)newY, spos.Z);
                             }
                             ActiveTab.HasUnsavedChanges = true;
@@ -2181,8 +2185,8 @@ public class StageEditorPhase : BasePhase
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
                                 if (sp == null) continue;
                                 float newZ = (float)spos.Z + worldDelta;
-                                if (_isShiftPressed != _snapEnabled && _snapSize > 0f)
-                                    newZ = MathF.Round(newZ / _snapSize) * _snapSize;
+                                if (_isShiftPressed != _gridSnapEnabled && _gridSnapSize > 0f)
+                                    newZ = MathF.Round(newZ / _gridSnapSize) * _gridSnapSize;
                                 sp.Position = new f64Vector3(spos.X, spos.Y, (fix64)newZ);
                             }
                             ActiveTab.HasUnsavedChanges = true;
@@ -2247,11 +2251,79 @@ public class StageEditorPhase : BasePhase
                 {
                     float gx = groundPos.X;
                     float gz = groundPos.Z;
-                    if (_snapEnabled && _snapSize > 0f)
+                    if (_gridSnapEnabled && _gridSnapSize > 0f)
                     {
-                        gx = MathF.Round(gx / _snapSize) * _snapSize;
-                        gz = MathF.Round(gz / _snapSize) * _snapSize;
+                        gx = MathF.Round(gx / _gridSnapSize) * _gridSnapSize;
+                        gz = MathF.Round(gz / _gridSnapSize) * _gridSnapSize;
                     }
+
+                    if (_snapEnabled && ActiveTab != null)
+                    {
+                        foreach (var piece in ActiveTab.ScenePieces)
+                        {
+                            if (piece.Rad.AtLines is { } atLines)
+                            {
+                                foreach (var (direction, offset) in atLines)
+                                {
+                                    // Check if the line is close enough to snap to
+                                    var lineDir = direction == AttachmentLineDirection.X
+                                        ? new Vector2(1, 0).RotateXz(piece.Rotation.Xz.Degrees)
+                                        : new Vector2(0, 1).RotateXz(piece.Rotation.Xz.Degrees);
+                                    var linePoint = new Vector2(
+                                        (float)piece.Position.X + (lineDir.X == 0 ? 0 : (float)offset),
+                                        (float)piece.Position.Z + (lineDir.Y == 0 ? 0 : (float)offset));
+                                    var toPoint = new Vector2(gx, gz) - linePoint;
+                                    float projLen = Vector2.Dot(toPoint, lineDir);
+                                    var closestPoint = linePoint + lineDir * projLen;
+                                    float dist = Vector2.Distance(new Vector2(gx, gz), closestPoint);
+                                    if (dist < 500) // snap threshold in world units
+                                    {
+                                        gx = closestPoint.X;
+                                        gz = closestPoint.Y;
+                                        
+                                        if (_gridSnapEnabled && _gridSnapSize > 0f)
+                                        {
+                                            gx = MathF.Round(gx / _gridSnapSize) * _gridSnapSize;
+                                            gz = MathF.Round(gz / _gridSnapSize) * _gridSnapSize;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            foreach (var atp in piece.Rad.Atp)
+                            {
+                                // Check if the hitbox is close enough to snap to
+                                var hbCenter = new Vector2((float)piece.Position.X, (float)piece.Position.Z)
+                                               + new Vector2((float)atp.X, (float)atp.Y).RotateXz(piece.Rotation.Xz.Degrees);
+                                float dist = Vector2.Distance(new Vector2(gx, gz), hbCenter);
+                                if (dist < 500) // snap threshold in world units
+                                {
+                                    gx = hbCenter.X;
+                                    gz = hbCenter.Y;
+
+                                    goto snapped;
+                                }
+
+                                foreach (var ownAtp in _availableParts[_pendingPlacementPartIndex].Atp)
+                                {
+                                    // try to attach the two points together
+
+                                    var ownHbCenter = new Vector2(gx, gz) + new Vector2((float)ownAtp.X, (float)ownAtp.Y).RotateXz((fix64)_pendingPlacementYaw);
+                                    
+                                    dist = Vector2.Distance(ownHbCenter, hbCenter);
+                                    if (dist < 500) // snap threshold in world units
+                                    {
+                                        gx += hbCenter.X - ownHbCenter.X;
+                                        gz += hbCenter.Y - ownHbCenter.Y;
+                                        goto snapped;
+                                    }
+                                }
+                            }
+                            
+                            snapped: ;
+                        }
+                    }
+                    
                     _pendingPlacementPos = new f64Vector3((fix64)gx, (fix64)groundPos.Y + _pendingPlacementYOff, (fix64)gz);
                 }
             }
@@ -2382,12 +2454,13 @@ public class StageEditorPhase : BasePhase
             if (_isShiftPressed)
             {
                 _pendingPlacementYOff = (int)(_pendingPlacementYOff + (delta / 120f) * 50f);
+                return;
             }
-            else
+            else if (_isCtrlPressed)
             {
                 _pendingPlacementYaw = (_pendingPlacementYaw + (delta / 120f) * 15f) % 360f;
+                return;
             }
-            return;
         }
 
         // Only act if mouse is in viewport
@@ -3476,8 +3549,9 @@ public class StageEditorPhase : BasePhase
                     string placingName = placingPart.FileName.Contains('/') ? placingPart.FileName[(placingPart.FileName.LastIndexOf('/') + 1)..] : placingPart.FileName;
                     ImGui.TextColored(new Vector4(0.1f, 0.9f, 1.0f, 1.0f), $"Placing: {placingName}");
                     ImGui.SameLine();
-                    string snapInfo = _snapEnabled ? $"Snap:{_snapSize:F0}" : "Snap:OFF";
-                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Y:{groundPos.Y + _pendingPlacementYOff:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]   [Q/E] Rotate  [LMB] Place  [Esc] Cancel");
+                    string snapInfo = _snapEnabled ? $"Snap:ON" : "Snap:OFF";
+                    string gridSnapInfo = _gridSnapEnabled ? $"Grid:{_gridSnapSize:F0}" : "Grid:OFF";
+                    ImGui.TextDisabled($"  X:{groundPos.X:F0}  Y:{groundPos.Y + _pendingPlacementYOff:F0}  Z:{groundPos.Z:F0}  Yaw:{_pendingPlacementYaw:F0}°  [{snapInfo}]  [{gridSnapInfo}]   [Q/E] Rotate  [LMB] Place  [Esc] Cancel");
                 }
                 else
                 {
@@ -4403,19 +4477,26 @@ public class StageEditorPhase : BasePhase
         ImGui.Spacing();
         ImGui.SameLine();
         
-        // Snap toggle
         bool snapOn = _snapEnabled;
         if (snapOn) ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.2f, 0.65f, 0.2f, 0.8f));
-        if (ImGui.SmallButton(_snapEnabled ? $"[G] Snap ON: {_snapSize:F0}" : "[G] Snap OFF"))
+        if (ImGui.SmallButton(_snapEnabled ? "Snap ON" : "Snap OFF"))
             _snapEnabled = !_snapEnabled;
         if (snapOn) ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle grid snapping (S).\nScroll wheel cycles snap size when in placement mode.");
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle snapping to preset attachment points.");
+
+        // Grid snap toggle
+        bool gridSnapOn = _gridSnapEnabled;
+        if (gridSnapOn) ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.2f, 0.65f, 0.2f, 0.8f));
+        if (ImGui.SmallButton(_gridSnapEnabled ? $"[G] Grid ON: {_gridSnapSize:F0}" : "[G] Grid OFF"))
+            _gridSnapEnabled = !_gridSnapEnabled;
+        if (gridSnapOn) ImGui.PopStyleColor();
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle grid snapping (G).\nScroll wheel cycles snap size when in placement mode.");
         
-        if (_snapEnabled)
+        if (_gridSnapEnabled)
         {
             ImGui.SameLine();
             ImGui.SetNextItemWidth(80f);
-            if (ImGui.BeginCombo("##snapsize", $"{_snapSize:F0}"))
+            if (ImGui.BeginCombo("##snapsize", $"{_gridSnapSize:F0}"))
             {
                 for (int si = 0; si < SnapPresets.Length; si++)
                 {
@@ -4423,7 +4504,7 @@ public class StageEditorPhase : BasePhase
                     if (ImGui.Selectable($"{SnapPresets[si]:F0}", sel))
                     {
                         _snapPresetIndex = si;
-                        _snapSize = SnapPresets[si];
+                        _gridSnapSize = SnapPresets[si];
                     }
                     if (sel) ImGui.SetItemDefaultFocus();
                 }
