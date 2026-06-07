@@ -182,15 +182,15 @@ public partial class TextRun : Node, IInlineHost
             float yOff = 0;
             if (VerticalAlignment == TextVerticalAlignment.Center)
             {
-                yOff = (G.GetFontMetrics(element.Font).LineHeight / 2.0f);
+                yOff = (G.GetFontMetrics().LineHeight / 2.0f);
             }
             else if (VerticalAlignment == TextVerticalAlignment.Top)
             {
-                yOff = G.GetFontMetrics(element.Font).LineHeight;
+                yOff = G.GetFontMetrics().LineHeight;
             }
 
-            int x = (int)(basePosition.X + element.Position.X);
-            int y = (int)(basePosition.Y + element.Position.Y + yOff);
+            int x = (int)(basePosition.X + (element.Position.X * G.Scale));
+            int y = (int)(basePosition.Y + (element.Position.Y * G.Scale) + yOff);
 
             if ((element.Stroke ?? StrokeColor) is { } stroke)
             {
