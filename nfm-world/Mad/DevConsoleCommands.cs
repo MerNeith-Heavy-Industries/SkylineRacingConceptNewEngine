@@ -5,6 +5,8 @@ using NFMWorld.Gameplay.Gamemodes;
 using NFMWorld.UI;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
+using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Files;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Multiplayer;
 using Steamworks;
@@ -39,6 +41,26 @@ public static class DevConsoleCommands
         console.RegisterCommand("connect", Connect);
         console.RegisterCommand("startserversteam", StartServerSteam);
         console.RegisterCommand("connectsteam", ConnectSteam);
+        
+        console.RegisterCommand("replay_trial", (c, args) =>
+        {
+            GameSparker.InRace!.LoadStage(args[1]);
+            GameSparker.InRace!.OverrideGamemode(new TimeTrialPreviewGamemode(new BaseGamemodeParameters
+            {
+                PlayerCarIndex = 0,
+                Players =
+                [
+                    new PlayerParameters
+                    {
+                        CarName = args[0],
+                        Color = new Color3(255, 0, 0),
+                        PlayerName = "Player",
+                        IsBot = false
+                    }
+                ],
+            }, GameSparker.InRace, SavedTimeTrial.Load(args[0], args[1])!));
+            GameSparker.SetPhase(GameSparker.InRace!);
+        });
             
         // rendering
         console.RegisterCommand("r_frametrace", SetFrameTrace);

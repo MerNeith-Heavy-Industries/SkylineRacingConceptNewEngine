@@ -64,6 +64,12 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         gamemodeInstance.Enter();
     }
 
+    internal void OverrideGamemode(IClientGamemode gamemode)
+    {
+        gamemodeInstance = gamemode;
+        gamemodeInstance.Enter();
+    }
+
     public override void GameTick()
     {
         gamemodeInstance!.GameTick();
