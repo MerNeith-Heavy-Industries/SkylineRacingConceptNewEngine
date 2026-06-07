@@ -1,14 +1,14 @@
-﻿using MessagePack;
+﻿using MemoryPack;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-[method: SerializationConstructor]
-public readonly record struct SrcRad3dCollisionMesh([property: Key(0)] f64Vector3[] Vertices, [property: Key(1)] ushort[] Indices)
+[MemoryPackable(GenerateType.VersionTolerant)]
+[method: MemoryPackConstructor]
+public readonly partial record struct SrcRad3dCollisionMesh([property: MemoryPackOrder(0)] f64Vector3[] Vertices, [property: MemoryPackOrder(1)] ushort[] Indices)
 {
-    [IgnoreMember] public (f64Vector3 min, f64Vector3 max)[] Aabb { get; } = CalculateAabb(Vertices, Indices);
+    [MemoryPackIgnore] public (f64Vector3 min, f64Vector3 max)[] Aabb { get; } = CalculateAabb(Vertices, Indices);
 
     private readonly int _hashCode = CalculateHashCode(Vertices, Indices);
 

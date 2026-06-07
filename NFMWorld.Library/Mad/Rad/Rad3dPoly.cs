@@ -1,20 +1,25 @@
 ﻿using System.Text.Json.Serialization;
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-public readonly record struct Rad3dPoly(
-    [property: JsonPropertyName("c"), Key(0)] Color3 Color,
-    [property: JsonPropertyName("colnum"), Key(1)] int? ColNum,
-    [property: JsonPropertyName("polyType"), Key(2)] PolyType PolyType,
-    [property: JsonPropertyName("lineType"), Key(3)] LineType? LineType,
-    [property: JsonPropertyName("decalOffset"), Key(4)] float DecalOffset,
-    [property: JsonPropertyName("p"), Key(5)] Vector3[] Points,
-    [property: JsonPropertyName("tri"), Key(6)] uint[]? Triangles = null
+[MemoryPackable(GenerateType.CircularReference)]
+public readonly partial record struct Rad3dPoly(
+    [property: JsonPropertyName("c"), MemoryPackOrder(0)] Color3 Color,
+    [property: JsonPropertyName("colnum"), MemoryPackOrder(1)] int? ColNum,
+    [property: JsonPropertyName("polyType"), MemoryPackOrder(2)] PolyType PolyType,
+    [property: JsonPropertyName("lineType"), MemoryPackOrder(3)] LineType? LineType,
+    [property: JsonPropertyName("decalOffset"), MemoryPackOrder(4)] float DecalOffset,
+    [property: JsonPropertyName("p"), MemoryPackOrder(5)] Vector3[] Points,
+    [property: JsonPropertyName("tri"), MemoryPackOrder(6)] uint[]? Triangles = null
 )
 {
     private readonly int _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points, Triangles);
+
+    [MemoryPackConstructor]
+    public Rad3dPoly() : this(default, null, default, null, 0, [])
+    {
+    }
 
     public bool Equals(Rad3dPoly other)
     {

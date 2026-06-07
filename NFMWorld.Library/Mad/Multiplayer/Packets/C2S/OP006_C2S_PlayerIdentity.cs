@@ -1,12 +1,12 @@
-﻿using MessagePack;
+﻿using MemoryPack;
 
 namespace NFMWorldLibrary.Multiplayer.Packets.C2S;
 
-[MessagePackObject]
+[MemoryPackable]
 [PacketClientToServer(6)]
 public partial struct C2S_PlayerIdentity : IPacketClientToServer<C2S_PlayerIdentity>
 {
-    [Key(0)] public required string PlayerName { get; set; }
-    [Key(1)] public required string SelectedVehicle { get; set; }
-    [Key(2)] public required Color3 Color { get; set; }
+    [MemoryPackOrder(0)] public required string PlayerName { get; set; }
+    [MemoryPackOrder(1)] public required string SelectedVehicle { get; set; }
+    [MemoryPackOrder(2)] public required Color3 Color { get; set; }
 }

@@ -1,7 +1,7 @@
-﻿using MessagePack;
+﻿using MemoryPack;
 
 namespace NFMWorldLibrary.Multiplayer.Packets.C2S;
 
-[MessagePackObject]
+[MemoryPackable]
 [PacketClientToServer(8)]
 public partial struct C2S_RaceLoaded : IPacketClientToServer<C2S_RaceLoaded>;

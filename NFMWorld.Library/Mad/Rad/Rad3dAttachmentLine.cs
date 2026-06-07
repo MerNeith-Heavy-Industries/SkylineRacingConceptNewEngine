@@ -1,6 +1,6 @@
-﻿using MessagePack;
+﻿using MemoryPack;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-public readonly record struct Rad3dAttachmentLine([property: Key(0)] AttachmentLineDirection Direction, [property: Key(1)] fix64 Offset);
+[MemoryPackable]
+public readonly partial record struct Rad3dAttachmentLine([property: MemoryPackOrder(0)] AttachmentLineDirection Direction, [property: MemoryPackOrder(1)] fix64 Offset);

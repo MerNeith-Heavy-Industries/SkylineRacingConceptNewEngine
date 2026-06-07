@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
-using MessagePack;
+using MemoryPack;
 using NFMWorldLibrary.Collision;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-[method: SerializationConstructor]
-public readonly record struct SrcRad3dCollisionHull([property: Key(0)] f64Vector3[] Vertices, [property: Key(1)] ushort[] Indices)
+[MemoryPackable(GenerateType.VersionTolerant)]
+[method: MemoryPackConstructor]
+public readonly partial record struct SrcRad3dCollisionHull([property: MemoryPackOrder(0)] f64Vector3[] Vertices, [property: MemoryPackOrder(1)] ushort[] Indices)
 {
     private static readonly ConvexHullCalculator _calculator = new();
     

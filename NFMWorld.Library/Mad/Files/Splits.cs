@@ -1,9 +1,9 @@
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Files;
 
-[MessagePackObject]
-public class Splits
+[MemoryPackable(GenerateType.CircularReference)]
+public partial class Splits
 {
-    [Key(0)] public List<long> SplitTimes = [];
+    [MemoryPackOrder(0)] public List<long> SplitTimes = [];
 }

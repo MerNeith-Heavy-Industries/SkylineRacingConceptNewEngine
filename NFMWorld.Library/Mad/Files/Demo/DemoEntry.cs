@@ -1,15 +1,18 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Maxine.Extensions;
+using MemoryPack;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Files.Demo;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct DemoEntry
+[MemoryPackable]
+public partial struct DemoEntry
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct BitFlags
+    [MemoryPackable]
+    public partial struct BitFlags
     {
         public Nibble<uint> Values;
         public bool Right { readonly get => Values[0]; set => Values[0] = value; }

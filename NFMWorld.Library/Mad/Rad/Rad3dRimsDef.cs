@@ -1,11 +1,11 @@
 ﻿using System.Text.Json.Serialization;
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-public readonly record struct Rad3dRimsDef(
-    [property: JsonPropertyName("color"), Key(0)] Color3 Color,
-    [property: JsonPropertyName("size"), Key(1)] float Size,
-    [property: JsonPropertyName("depth"), Key(2)] float Depth
+[MemoryPackable]
+public readonly partial record struct Rad3dRimsDef(
+    [property: JsonPropertyName("color"), MemoryPackOrder(0)] Color3 Color,
+    [property: JsonPropertyName("size"), MemoryPackOrder(1)] float Size,
+    [property: JsonPropertyName("depth"), MemoryPackOrder(2)] float Depth
 );
