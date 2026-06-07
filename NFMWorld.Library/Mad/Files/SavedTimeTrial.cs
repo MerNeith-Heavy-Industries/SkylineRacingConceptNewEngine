@@ -56,11 +56,15 @@ public partial class SavedTimeTrial
     {
         try
         {
-            if (System.IO.File.Exists(GetPathName(carName, stageName)))
+            if (File.Exists(GetPathName(carName, stageName)))
             {
                 using var fileStream = System.IO.File.OpenRead(GetPathName(carName, stageName));
                 using var compressedStream = new DeflateStream(fileStream, CompressionMode.Decompress);
                 return MessagePackSerializer.Deserialize<SavedTimeTrial>(compressedStream, MsgPackHelpers.Options);
+            }
+            else
+            {
+                Logging.Info($"No timetrial file for {carName} on {stageName} found.");
             }
         }
         catch (Exception ex)

@@ -202,7 +202,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
     }
 
-    public void KeyPressed(Keys key)
+    public virtual void KeyPressed(Keys key)
     {
         // Handle key presses specific to Time Trial mode
         if (key == Keys.R)
@@ -211,7 +211,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
     }
 
-    public void KeyReleased(Keys key)
+    public virtual void KeyReleased(Keys key)
     {
         // Handle key releases specific to Time Trial mode
     }
