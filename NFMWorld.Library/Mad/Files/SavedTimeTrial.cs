@@ -9,7 +9,7 @@ namespace NFMWorldLibrary.Files;
 [MessagePackObject(AllowPrivate = true)]
 public partial class SavedTimeTrial
 {
-    public const int CURRENT_VERSION = 2;
+    public const int CURRENT_VERSION = 3;
     
     [Key(0)] public string CarName;
     [Key(1)] public string StageName;
