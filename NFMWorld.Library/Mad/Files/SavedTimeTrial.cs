@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using CommunityToolkit.HighPerformance;
+using Maxine.Extensions.Io;
 using MemoryPack;
 using MemoryPack.Compression;
 using NFMWorldLibrary.Files.Demo;
@@ -97,7 +98,7 @@ public partial class SavedTimeTrial
         using var fileStream = File.Create(GetPathName(CarName, StageName));
         using var compressor = new BrotliCompressor(CompressionLevel.Fastest);
         MemoryPackSerializer.Serialize(compressor, this, MemoryPackHelpers.Options);
-        compressor.AsStream().CopyTo(fileStream);
+        fileStream.Write(compressor.ToArray());
     }
 
     public void RecordTick(IInGameCar car)

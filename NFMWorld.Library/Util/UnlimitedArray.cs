@@ -9,7 +9,7 @@ using MemoryPack.Formatters;
 
 namespace NFMWorldLibrary.Util;
 
-public class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>
+public class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, IMemoryPackable<UnlimitedArray<T>>
 {
     private T[] _items = [];
     private int _size = 0;
@@ -317,14 +317,38 @@ public class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>
     {
         return _items.AsSpan();
     }
+
+    public static void RegisterFormatter()
+    {
+        MemoryPackFormatterProvider.Register(UnlimitedArrayFormatter<T>.Instance);
+    }
+
+    public static void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref UnlimitedArray<T>? value) where TBufferWriter : IBufferWriter<byte>
+    {
+        UnlimitedArrayFormatter<T>.Instance.Serialize(ref writer, ref value);
+    }
+
+    public static void Deserialize(ref MemoryPackReader reader, scoped ref UnlimitedArray<T>? value)
+    {
+        UnlimitedArrayFormatter<T>.Instance.Deserialize(ref reader, ref value);
+    }
+
+    internal static UnlimitedArray<T> MarshalFrom(T[] arr)
+    {
+        return new UnlimitedArray<T>
+        {
+            _items = arr
+        };
+    }
 }
-
     
-public sealed class UnlimitedArrayFormatter<T> : IMemoryPackFormatter<UnlimitedArray<T>?>
+public sealed class UnlimitedArrayFormatter<T> : MemoryPackFormatter<UnlimitedArray<T>?>
 {
-    public static readonly IMemoryPackFormatter<UnlimitedArray<T>?> Instance = new UnlimitedArrayFormatter<T>();
+    public static readonly MemoryPackFormatter<UnlimitedArray<T>?> Instance = new UnlimitedArrayFormatter<T>();
 
-    public void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref UnlimitedArray<T>? value) where TBufferWriter : IBufferWriter<byte>
+    public override void Serialize<TBufferWriter>(
+        ref MemoryPackWriter<TBufferWriter> writer,
+        scoped ref UnlimitedArray<T>? value)
     {
         if (value == null)
         {
@@ -335,16 +359,17 @@ public sealed class UnlimitedArrayFormatter<T> : IMemoryPackFormatter<UnlimitedA
         writer.WriteSpan(value.GetSpan()!);
     }
 
-    public void Deserialize(ref MemoryPackReader reader, scoped ref UnlimitedArray<T>? value)
+    public override void Deserialize(ref MemoryPackReader reader, scoped ref UnlimitedArray<T>? value)
     {
         if (reader.PeekIsNull())
         {
+            reader.Advance(1); // skip null block
             value = null;
             return;
         }
 
-        var span = Span<T>.Empty;
-        reader.ReadSpan(ref span!);
-        value = [..span];
+        T[] arr = [];
+        reader.ReadArray(ref arr!);
+        value = UnlimitedArray<T>.MarshalFrom(arr);
     }
 }
