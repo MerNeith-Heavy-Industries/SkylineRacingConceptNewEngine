@@ -384,10 +384,7 @@ public static class BackendGameSparker
             }
         });
 
-        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad"))) with
-        {
-            FileName = "error.rad"
-        };
+        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad")), "error.rad");
         
         for (var i = 0; i < StageRads.Length; i++) {
             if (stage_parts[i] == null) {
@@ -525,10 +522,7 @@ public static class BackendGameSparker
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
-                {
-                    FileName = name
-                };
+                var rad = RadParser.ParseRad(File.ReadAllText(name), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)
@@ -573,10 +567,7 @@ public static class BackendGameSparker
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
-                {
-                    FileName = name
-                };
+                var rad = RadParser.ParseRad(File.ReadAllText(name), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)

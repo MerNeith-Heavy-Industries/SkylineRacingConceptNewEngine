@@ -5,23 +5,60 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;
 
+// init properties aren't compatible with CircularReference, so can't use record
 [MemoryPackable(GenerateType.CircularReference)]
-public sealed partial record Rad3d(
-    [property: JsonPropertyName("colors"), MemoryPackOrder(0)] Color3[] Colors,
-    [property: JsonPropertyName("stats"), MemoryPackOrder(1)] CarStats Stats,
-    [property: JsonPropertyName("wheels"), MemoryPackOrder(2)] Rad3dWheelDef[] Wheels,
-    [property: JsonPropertyName("rims"), MemoryPackOrder(3)] Rad3dRimsDef? Rims,
-    [property: JsonPropertyName("boxes"), MemoryPackOrder(4)] Rad3dBoxDef[] Boxes,
-    [property: JsonPropertyName("polys"), MemoryPackOrder(5)] Rad3dPoly[] Polys,
-    [property: JsonPropertyName("shadow"), MemoryPackOrder(6)] bool CastsShadow,
-    [property: JsonPropertyName("atp"), MemoryPackOrder(7)] Vector2[] Atp,
-    [property: JsonPropertyName("fileName"), MemoryPackOrder(8)] string FileName = "hogan rewish",
-    [property: JsonPropertyName("collisionMesh"), MemoryPackOrder(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
-    [property: JsonPropertyName("collisionHull"), MemoryPackOrder(10)] SrcRad3dCollisionHull? CollisionHull = null,
-    [property: JsonPropertyName("atLines"), MemoryPackOrder(11)] Rad3dAttachmentLine[]? AtLines = null
+public sealed partial class Rad3d(
+    Color3[] Colors,
+    CarStats Stats,
+    Rad3dWheelDef[] Wheels,
+    Rad3dRimsDef? Rims,
+    Rad3dBoxDef[] Boxes,
+    Rad3dPoly[] Polys,
+    bool CastsShadow,
+    Vector2[] Atp,
+    string FileName = "hogan rewish",
+    SrcRad3dCollisionMesh? CollisionMesh = null,
+    SrcRad3dCollisionHull? CollisionHull = null,
+    Rad3dAttachmentLine[]? AtLines = null
 )
 {
     [MemoryPackIgnore] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
+
+    [JsonPropertyName("colors"), MemoryPackOrder(0)]
+    public Color3[] Colors { get; set; } = Colors;
+
+    [JsonPropertyName("stats"), MemoryPackOrder(1)]
+    public CarStats Stats { get; set; } = Stats;
+
+    [JsonPropertyName("wheels"), MemoryPackOrder(2)]
+    public Rad3dWheelDef[] Wheels { get; set; } = Wheels;
+
+    [JsonPropertyName("rims"), MemoryPackOrder(3)]
+    public Rad3dRimsDef? Rims { get; set; } = Rims;
+
+    [JsonPropertyName("boxes"), MemoryPackOrder(4)]
+    public Rad3dBoxDef[] Boxes { get; set; } = Boxes;
+
+    [JsonPropertyName("polys"), MemoryPackOrder(5)]
+    public Rad3dPoly[] Polys { get; set; } = Polys;
+
+    [JsonPropertyName("shadow"), MemoryPackOrder(6)]
+    public bool CastsShadow { get; set; } = CastsShadow;
+
+    [JsonPropertyName("atp"), MemoryPackOrder(7)]
+    public Vector2[] Atp { get; set; } = Atp;
+
+    [JsonPropertyName("fileName"), MemoryPackOrder(8)]
+    public string FileName { get; set; } = FileName;
+
+    [JsonPropertyName("collisionMesh"), MemoryPackOrder(9)]
+    public SrcRad3dCollisionMesh? CollisionMesh { get; set; } = CollisionMesh;
+
+    [JsonPropertyName("collisionHull"), MemoryPackOrder(10)]
+    public SrcRad3dCollisionHull? CollisionHull { get; set; } = CollisionHull;
+
+    [JsonPropertyName("atLines"), MemoryPackOrder(11)]
+    public Rad3dAttachmentLine[]? AtLines { get; set; } = AtLines;
 
     private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp, CollisionMesh, CollisionHull, AtLines);
     private readonly int _visualHashCode = CalculateVisualHashCode(Colors, Wheels, Rims, Polys, CastsShadow);
@@ -183,5 +220,21 @@ public sealed partial record Rad3d(
         {
             return obj._visualHashCode;
         }
+    }
+
+    public void Deconstruct(out Color3[] Colors, out CarStats Stats, out Rad3dWheelDef[] Wheels, out Rad3dRimsDef? Rims, out Rad3dBoxDef[] Boxes, out Rad3dPoly[] Polys, out bool CastsShadow, out Vector2[] Atp, out string FileName, out SrcRad3dCollisionMesh? CollisionMesh, out SrcRad3dCollisionHull? CollisionHull, out Rad3dAttachmentLine[]? AtLines)
+    {
+        Colors = this.Colors;
+        Stats = this.Stats;
+        Wheels = this.Wheels;
+        Rims = this.Rims;
+        Boxes = this.Boxes;
+        Polys = this.Polys;
+        CastsShadow = this.CastsShadow;
+        Atp = this.Atp;
+        FileName = this.FileName;
+        CollisionMesh = this.CollisionMesh;
+        CollisionHull = this.CollisionHull;
+        AtLines = this.AtLines;
     }
 }
