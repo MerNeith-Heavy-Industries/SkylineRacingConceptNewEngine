@@ -9,6 +9,7 @@ tracks(1)
 
 atp(0,2800)
 atp(0,-2800)
+atline(z,0)
 
 <track>
 c(147,147,147)
