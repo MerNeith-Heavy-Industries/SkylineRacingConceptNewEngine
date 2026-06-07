@@ -1437,6 +1437,59 @@ public class Mad
             FrameTrace.AddMessage($"assistxz: {assistxz:0.00}, conto.Xz: {conto.Xz:0.00}");
         }
 
+        if (nGroundedWheels == 4)
+        {
+            int i_86 = 0;
+            while (Pzy < 360)
+            {
+                Pzy += 360;
+                conto.Zy += 360;
+            }
+            while (Pzy > 360)
+            {
+                Pzy -= 360;
+                conto.Zy -= 360;
+            }
+            if (Pzy < 190 && Pzy > 170)
+            {
+                Pzy = 180;
+                conto.Zy = 180;
+                i_86++;
+            }
+            if (Pzy > 350 || Pzy < 10)
+            {
+                Pzy = 0;
+                conto.Zy = 0;
+                i_86++;
+            }
+            while (Pxy < 360)
+            {
+                Pxy += 360;
+                conto.Xy += 360;
+            }
+            while (Pxy > 360)
+            {
+                Pxy -= 360;
+                conto.Xy -= 360;
+            }
+            if (Pxy < 190 && Pxy > 170)
+            {
+                Pxy = 180;
+                conto.Xy = 180;
+                i_86++;
+            }
+            if (Pxy > 350 || Pxy < 10)
+            {
+                Pxy = 0;
+                conto.Xy = 0;
+                i_86++;
+            }
+            if (i_86 == 2)
+            {
+                Mtouch = true; //DS-addons: Bad landing hotfix
+            }
+        }
+
         // Surface orientation from plane fitting.
         {
             var wheelpos = new InlineArray4<f64Vector3>();
@@ -1530,60 +1583,10 @@ public class Mad
 
                 FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
             }
+
+            skipTerrainFit: ;
         }
 
-        if (nGroundedWheels == 4)
-        {
-            int i_86 = 0;
-            while (Pzy < 360)
-            {
-                Pzy += 360;
-                conto.Zy += 360;
-            }
-            while (Pzy > 360)
-            {
-                Pzy -= 360;
-                conto.Zy -= 360;
-            }
-            if (Pzy < 190 && Pzy > 170)
-            {
-                Pzy = 180;
-                conto.Zy = 180;
-                i_86++;
-            }
-            if (Pzy > 350 || Pzy < 10)
-            {
-                Pzy = 0;
-                conto.Zy = 0;
-                i_86++;
-            }
-            while (Pxy < 360)
-            {
-                Pxy += 360;
-                conto.Xy += 360;
-            }
-            while (Pxy > 360)
-            {
-                Pxy -= 360;
-                conto.Xy -= 360;
-            }
-            if (Pxy < 190 && Pxy > 170)
-            {
-                Pxy = 180;
-                conto.Xy = 180;
-                i_86++;
-            }
-            if (Pxy > 350 || Pxy < 10)
-            {
-                Pxy = 0;
-                conto.Xy = 0;
-                i_86++;
-            }
-            if (i_86 == 2)
-            {
-                Mtouch = true; //DS-addons: Bad landing hotfix
-            }
-        }
         if (!Mtouch && Wtouch)
         {
             if (_cntouch == 10)
