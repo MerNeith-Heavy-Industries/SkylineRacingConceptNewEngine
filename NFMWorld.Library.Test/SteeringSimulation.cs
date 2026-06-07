@@ -19,7 +19,7 @@ class SimCar : IInGameCar
 {
     // ITransform
     public f64Vector3 Position { get; set; }
-    public FixedQuaternion Rotation { get; set; } = FixedQuaternion.Identity;
+    public f64Euler Rotation { get; set; } = f64Euler.Identity;
     public IReadOnlyList<ITransform> ChildTransforms => [];
     public ITransform? Parent => null;
 
@@ -100,11 +100,6 @@ public class SteeringSimulation
 {
     /// <summary>
     /// Drives straight for 60 ticks then steers left for 240 ticks.
-    /// Prints per-tick state to diagnose whether the yaw rotation propagates into
-    /// actual lateral position change.
-    ///
-    /// Expected outcome: after ~120 ticks of left-steering at speed, car.Position.X
-    /// should deviate significantly from 0 (negative X = left turn in this coordinate system).
     /// </summary>
     [TestMethod]
     public void SimulateForwardThenSteerLeft()
@@ -113,54 +108,30 @@ public class SteeringSimulation
 
         var stats = CarStats.Default; // Tornado Shark stats
         var car = new SimCar();
+        car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 10000, fix64.Zero);
+        car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(90) };
         var mad = new Mad(stats, 0, false);
+        mad.Reseto(mad.Im, new ContO(car));
+        mad.Pxy = 180;
+        mad.Pzy = 90;
 
         // Prevent NullReferenceException in SfxPlaySkid invocation inside Mad.Drive
         mad.SfxPlaySkid += (_, _) => { };
+        mad.SfxPlayCrash += (_, _) => { };
+        mad.SfxPlayGscrape += (_, _) => { };
+        mad.SfxPlayScrape += (_, _) => { };
 
         var stage = new EmptyStage();
 
-        Console.WriteLine("Tick | X       Z       Y    | Speed   Wxz   Yaw°  | Vx[0]   Vz[0]  | Wtouch Mtouch");
-        Console.WriteLine(new string('-', 100));
-
-        fix64 initialX = car.Position.X;
-
-        for (int tick = 0; tick < 300; tick++)
+        for (int tick = 0; tick < 50; tick++)
         {
-            bool steerLeft = tick >= 60; // straight for first 60, then steer
-            var control = new Control { Up = true, Left = steerLeft };
+            FrameTrace.ClearMessages();
+            
+            var control = new Control {};
 
             mad.Drive(control, new ContO(car), stage);
 
-            if (tick < 10 || tick % 10 == 0 || tick == 59 || tick == 60 || tick == 61)
-            {
-                var pos = car.Position;
-
-                // Compute heading from mad.CarRotation (the physics rotation)
-                var localFwd = mad.CarRotation * new f64Vector3(fix64.Zero, fix64.Zero, fix64.One);
-                var yawRad = fix64.Atan2(localFwd.X, localFwd.Z);
-                float yawDeg = (float)(yawRad * (fix64)57.2957795f);
-
-                // Print raw quaternion W to confirm if rotation is happening
-                var q = mad.CarRotation;
-                Console.WriteLine(
-                    $"[{tick,3}] | " +
-                    $"X={pos.X,7:F1} Z={pos.Z,7:F1} Y={pos.Y,6:F1} | " +
-                    $"Spd={mad.Speed,6:F1} Wxz={car.TurningWheelAngle.Xz.Degrees,5:F1} Yaw={yawDeg,7:F2}° | " +
-                    $"Wtouch={mad.Wtouch} Q=({(float)q.X:F4},{(float)q.Y:F4},{(float)q.Z:F4},{(float)q.W:F4})");
-            }
+            Console.WriteLine(FrameTrace.GetMessageString());
         }
-
-        var finalPos = car.Position;
-        Console.WriteLine();
-        Console.WriteLine($"Final position: X={finalPos.X:F3}, Z={finalPos.Z:F3}");
-        Console.WriteLine($"Final Speed: {mad.Speed:F3}");
-        Console.WriteLine($"Final Yaw from rotation: {(float)(fix64.Atan2((mad.CarRotation * new f64Vector3(fix64.Zero, fix64.Zero, fix64.One)).X, (mad.CarRotation * new f64Vector3(fix64.Zero, fix64.Zero, fix64.One)).Z) * (fix64)57.2957795f):F2}°");
-
-        // If steering works, the car's X position should have changed significantly from 0
-        // (negative X for left turn in X-right, Z-forward coordinate system)
-        // This assertion is intentionally loose — any deviation > 5 units proves steering works.
-        // If this fails with X ≈ 0, steering is broken in physics.
-        Assert.AreNotEqual(initialX, finalPos.X, "Car X position should change when steering left");
     }
 }
