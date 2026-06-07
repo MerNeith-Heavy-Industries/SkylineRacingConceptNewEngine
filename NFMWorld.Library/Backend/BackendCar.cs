@@ -55,6 +55,7 @@ public class BackendCar : BackendGameObject, IInGameCar
         Wheels = rad.Wheels;
         
         Mad = new Mad(Stats, im, isClientPlayer);
+        Mad.Reseto(Mad.Im, this);
         Control = new Control();
         
         Position = new f64Vector3(x, World.Ground - GroundAt, z);
