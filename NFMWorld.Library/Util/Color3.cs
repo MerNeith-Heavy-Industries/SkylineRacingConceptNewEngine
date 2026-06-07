@@ -1,10 +1,12 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Maxine.Extensions.Mathematics;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Util;
 
-public record struct Color3(
+[MemoryPackable]
+public partial record struct Color3(
     [property: JsonPropertyName("r")] short R,
     [property: JsonPropertyName("g")] short G,
     [property: JsonPropertyName("b")] short B
@@ -19,7 +21,7 @@ public record struct Color3(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Int3(Color3 c) => new(c.R, c.G, c.B);
 
-    [JsonIgnore]
+    [JsonIgnore, MemoryPackIgnore]
     public short this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,44 +1,44 @@
 ﻿using System.Runtime.InteropServices;
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 
-[MessagePackObject]
+[MemoryPackable]
 [PacketServerToClient(-2)]
 public partial struct S2C_LobbyState : IPacketServerToClient<S2C_LobbyState>
 {
-    [Key(0)] public required uint PlayerClientId { get; set; }
-    [Key(1)] public required IList<PlayerInfo> Players { get; set; }
-    [Key(2)] public required IList<GameSession> ActiveSessions { get; set; }
+    [MemoryPackOrder(0)] public required uint PlayerClientId { get; set; }
+    [MemoryPackOrder(1)] public required IList<PlayerInfo> Players { get; set; }
+    [MemoryPackOrder(2)] public required IList<GameSession> ActiveSessions { get; set; }
     
     [StructLayout(LayoutKind.Sequential)]
-    [MessagePackObject]
-    public struct PlayerInfo
+    [MemoryPackable]
+    public partial struct PlayerInfo
     {
-        [Key(0)] public required uint Id { get; set; }
-        [Key(1)] public required string Name { get; set; }
-        [Key(2)] public required string Vehicle { get; set; }
-        [Key(3)] public Color3 Color { get; set; }
+        [MemoryPackOrder(0)] public required uint Id { get; set; }
+        [MemoryPackOrder(1)] public required string Name { get; set; }
+        [MemoryPackOrder(2)] public required string Vehicle { get; set; }
+        [MemoryPackOrder(3)] public Color3 Color { get; set; }
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    [MessagePackObject]
-    public struct GameSession
+    [MemoryPackable]
+    public partial struct GameSession
     {
-        [Key(0)] public required uint Id { get; set; }
-        [Key(1)] public required uint CreatorId { get; set; }
-        [Key(2)] public required string CreatorName { get; set; }
-        [Key(3)] public required string StageName { get; set; }
-        [Key(6)] public required int MaxPlayers { get; set; }
+        [MemoryPackOrder(0)] public required uint Id { get; set; }
+        [MemoryPackOrder(1)] public required uint CreatorId { get; set; }
+        [MemoryPackOrder(2)] public required string CreatorName { get; set; }
+        [MemoryPackOrder(3)] public required string StageName { get; set; }
+        [MemoryPackOrder(6)] public required int MaxPlayers { get; set; }
         
         /// <summary>
         /// Key: player car index
         /// Value: client ID
         /// </summary>
-        [Key(4)] public required IDictionary<byte, uint> PlayerClientIds { get; set; }
-        [Key(5)] public required SessionState State { get; set; } = SessionState.NotStarted;
+        [MemoryPackOrder(4)] public required IDictionary<byte, uint> PlayerClientIds { get; set; }
+        [MemoryPackOrder(5)] public required SessionState State { get; set; } = SessionState.NotStarted;
 
-        [IgnoreMember] public int PlayerCount => PlayerClientIds.Count;
+        [MemoryPackIgnore] public int PlayerCount => PlayerClientIds.Count;
 
         public GameSession()
         {

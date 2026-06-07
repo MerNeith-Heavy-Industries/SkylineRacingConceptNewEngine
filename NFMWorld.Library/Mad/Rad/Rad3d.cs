@@ -1,28 +1,27 @@
 ﻿using System.Text.Json.Serialization;
 using FixedMathSharp;
-using MessagePack;
+using MemoryPack;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-[method: SerializationConstructor]
-public sealed record Rad3d(
-    [property: JsonPropertyName("colors"), Key(0)] Color3[] Colors,
-    [property: JsonPropertyName("stats"), Key(1)] CarStats Stats,
-    [property: JsonPropertyName("wheels"), Key(2)] Rad3dWheelDef[] Wheels,
-    [property: JsonPropertyName("rims"), Key(3)] Rad3dRimsDef? Rims,
-    [property: JsonPropertyName("boxes"), Key(4)] Rad3dBoxDef[] Boxes,
-    [property: JsonPropertyName("polys"), Key(5)] Rad3dPoly[] Polys,
-    [property: JsonPropertyName("shadow"), Key(6)] bool CastsShadow,
-    [property: JsonPropertyName("atp"), Key(7)] Vector2d[] Atp,
-    [property: JsonPropertyName("fileName"), Key(8)] string FileName = "hogan rewish",
-    [property: JsonPropertyName("collisionMesh"), Key(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
-    [property: JsonPropertyName("collisionHull"), Key(10)] SrcRad3dCollisionHull? CollisionHull = null,
-    [property: JsonPropertyName("atLines"), Key(11)] Rad3dAttachmentLine[]? AtLines = null
+[MemoryPackable(GenerateType.CircularReference)]
+public sealed partial record Rad3d(
+    [property: JsonPropertyName("colors"), MemoryPackOrder(0)] Color3[] Colors,
+    [property: JsonPropertyName("stats"), MemoryPackOrder(1)] CarStats Stats,
+    [property: JsonPropertyName("wheels"), MemoryPackOrder(2)] Rad3dWheelDef[] Wheels,
+    [property: JsonPropertyName("rims"), MemoryPackOrder(3)] Rad3dRimsDef? Rims,
+    [property: JsonPropertyName("boxes"), MemoryPackOrder(4)] Rad3dBoxDef[] Boxes,
+    [property: JsonPropertyName("polys"), MemoryPackOrder(5)] Rad3dPoly[] Polys,
+    [property: JsonPropertyName("shadow"), MemoryPackOrder(6)] bool CastsShadow,
+    [property: JsonPropertyName("atp"), MemoryPackOrder(7)] Vector2[] Atp,
+    [property: JsonPropertyName("fileName"), MemoryPackOrder(8)] string FileName = "hogan rewish",
+    [property: JsonPropertyName("collisionMesh"), MemoryPackOrder(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
+    [property: JsonPropertyName("collisionHull"), MemoryPackOrder(10)] SrcRad3dCollisionHull? CollisionHull = null,
+    [property: JsonPropertyName("atLines"), MemoryPackOrder(11)] Rad3dAttachmentLine[]? AtLines = null
 )
 {
-    [IgnoreMember] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
+    [MemoryPackIgnore] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
 
     private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp, CollisionMesh, CollisionHull, AtLines);
     private readonly int _visualHashCode = CalculateVisualHashCode(Colors, Wheels, Rims, Polys, CastsShadow);
@@ -41,6 +40,11 @@ public sealed record Rad3d(
         }
 
         return maxR;
+    }
+
+    [MemoryPackConstructor]
+    private Rad3d() : this([], default, [], null, [], [], false, [])
+    {
     }
 
     public bool Equals(Rad3d? other)
@@ -72,7 +76,7 @@ public sealed record Rad3d(
         Rad3dBoxDef[] boxes,
         Rad3dPoly[] polys,
         bool castsShadow,
-        Vector2d[] atp,
+        Vector2[] atp,
         SrcRad3dCollisionMesh? colMesh,
         SrcRad3dCollisionHull? colHull,
         Rad3dAttachmentLine[]? atLines

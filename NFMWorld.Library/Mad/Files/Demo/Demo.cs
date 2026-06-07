@@ -1,11 +1,11 @@
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Files.Demo;
 
-[MessagePackObject]
-public class Demo
+[MemoryPackable(GenerateType.CircularReference)]
+public partial class Demo
 {
-    [Key(0)] public required List<DemoEntry> Ticks;
+    [MemoryPackOrder(0)] public required List<DemoEntry> Ticks;
 
     public void AddEntry(DemoEntry entry)
     {

@@ -139,13 +139,13 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             sb.AppendLine(
                 $$"""
-                  using MessagePack;
+                  using MemoryPack;
                   
                   namespace {{packetInfo.Namespace}};
 
                   partial {{(packetInfo.IsStruct ? "struct" : packetInfo.IsRecord ? "record" : "class")}} {{packetInfo.Name}}
                   {
-                      [IgnoreMember]
+                      [MemoryPackIgnore]
                       public {{(packetInfo.IsStruct ? "readonly " : "")}}sbyte Opcode => {{packetInfo.Opcode}};
                   }
                   """);

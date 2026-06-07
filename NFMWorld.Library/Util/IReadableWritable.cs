@@ -1,5 +1,5 @@
 ﻿using System.Buffers;
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Util;
 
@@ -7,11 +7,11 @@ public interface IReadableWritable<out TSelf>
 {
     void Write<T>(T writer) where T : IBufferWriter<byte>
     {
-        MessagePackSerializer.Serialize<TSelf>(writer, (TSelf)this, MsgPackHelpers.Options);
+        MemoryPackSerializer.Serialize<TSelf, T>(writer, (TSelf)this, MemoryPackHelpers.Options);
     }
 
-    public static virtual TSelf Read(ReadOnlyMemory<byte> data)
+    public static virtual TSelf? Read(ReadOnlyMemory<byte> data)
     {
-        return MessagePackSerializer.Deserialize<TSelf>(data, MsgPackHelpers.Options);
+        return MemoryPackSerializer.Deserialize<TSelf>(data.Span, MemoryPackHelpers.Options);
     }
 }

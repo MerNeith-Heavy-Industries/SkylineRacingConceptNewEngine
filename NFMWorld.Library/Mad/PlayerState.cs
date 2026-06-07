@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using MessagePack;
+using MemoryPack;
 using NFMWorldLibrary.Files.Demo;
 
 namespace NFMWorldLibrary;
@@ -12,7 +12,7 @@ public struct PlayerState
 
     private ulong _currentTimeInMs;
 
-    [IgnoreMember]
+    [MemoryPackIgnore]
     public required DateTimeOffset CurrentTime
     {
         readonly get => DateTimeOffset.FromUnixTimeMilliseconds((long)_currentTimeInMs);
