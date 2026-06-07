@@ -2387,7 +2387,8 @@ public class StageEditorPhase : BasePhase
                 _rightDragStartPitch = ActiveTab.CameraPitch;
             }
         }
-        else
+        
+        if (mouseState.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
         {
             // Left-click
             _isLeftButtonDown = true;
@@ -2433,6 +2434,15 @@ public class StageEditorPhase : BasePhase
                 _rectSelectStartY = y;
                 _rectSelectEndX = x;
                 _rectSelectEndY = y;
+            }
+        }
+        
+        if (mouseState.MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
+        {
+            // In placement mode
+            if (_pendingPlacementPartIndex >= 0)
+            {
+                _pendingPlacementYaw = (_pendingPlacementYaw + 90) % 360f;
             }
         }
     }
