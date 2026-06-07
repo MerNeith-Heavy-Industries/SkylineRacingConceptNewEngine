@@ -76,7 +76,7 @@ public class Mad
     public bool Pl;
     public int _pmlt = 1;
     public int Point;
-    public fix64 Power = 75;
+    public fix64 Power = 98;
     public fix64 Powerup;
     public bool Pr;
     public bool Pu;
