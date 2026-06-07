@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using FixedMathSharp;
 using MessagePack;
 using NFMWorldLibrary.FixedMath;
 
@@ -14,15 +15,16 @@ public sealed record Rad3d(
     [property: JsonPropertyName("boxes"), Key(4)] Rad3dBoxDef[] Boxes,
     [property: JsonPropertyName("polys"), Key(5)] Rad3dPoly[] Polys,
     [property: JsonPropertyName("shadow"), Key(6)] bool CastsShadow,
-    [property: JsonPropertyName("atp"), Key(7)] Vector2[] Atp,
+    [property: JsonPropertyName("atp"), Key(7)] Vector2d[] Atp,
     [property: JsonPropertyName("fileName"), Key(8)] string FileName = "hogan rewish",
     [property: JsonPropertyName("collisionMesh"), Key(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
-    [property: JsonPropertyName("collisionHull"), Key(10)] SrcRad3dCollisionHull? CollisionHull = null
+    [property: JsonPropertyName("collisionHull"), Key(10)] SrcRad3dCollisionHull? CollisionHull = null,
+    [property: JsonPropertyName("atLines"), Key(11)] Rad3dAttachmentLine[]? AtLines = null
 )
 {
     [IgnoreMember] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
 
-    private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp);
+    private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp, CollisionMesh, CollisionHull, AtLines);
     private readonly int _visualHashCode = CalculateVisualHashCode(Colors, Wheels, Rims, Polys, CastsShadow);
 
     private static int CalculateMaxRadius(Rad3dPoly[] polys)
@@ -52,7 +54,14 @@ public sealed record Rad3d(
         if (!Boxes.SequenceEqual(other.Boxes)) return false;
         if (!Polys.SequenceEqual(other.Polys)) return false;
         if (CastsShadow != other.CastsShadow) return false;
-        return Atp.Equals(other.Atp);
+        if (!Atp.SequenceEqual(other.Atp)) return false;
+        if (CollisionMesh != null && !CollisionMesh.Equals(other.CollisionMesh)) return false;
+        if (CollisionMesh == null && other.CollisionMesh != null) return false;
+        if (CollisionHull != null && !CollisionHull.Equals(other.CollisionHull)) return false;
+        if (CollisionHull == null && other.CollisionHull != null) return false;
+        if (AtLines != null && !AtLines.SequenceEqual(other.AtLines)) return false;
+        if (AtLines == null && other.AtLines != null) return false;
+        return true;
     }
 
     private static int CalculateHashCode(
@@ -63,7 +72,10 @@ public sealed record Rad3d(
         Rad3dBoxDef[] boxes,
         Rad3dPoly[] polys,
         bool castsShadow,
-        Vector2[] atp
+        Vector2d[] atp,
+        SrcRad3dCollisionMesh? colMesh,
+        SrcRad3dCollisionHull? colHull,
+        Rad3dAttachmentLine[]? atLines
     )
     {
         var hashCode = new HashCode();
@@ -94,6 +106,23 @@ public sealed record Rad3d(
         foreach (var at in atp)
         {
             hashCode.Add(at);
+        }
+
+        if (colMesh != null)
+        {
+            hashCode.Add(colMesh);
+        }
+        if (colHull != null)
+        {
+            hashCode.Add(colHull);
+        }
+        if (atLines != null)
+        {
+            hashCode.Add(atLines.Length);
+            foreach (var atLine in atLines)
+            {
+                hashCode.Add(atLine);
+            }
         }
         return hashCode.ToHashCode();
     }

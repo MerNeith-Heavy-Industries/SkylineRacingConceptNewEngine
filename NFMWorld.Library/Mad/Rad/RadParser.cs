@@ -1,5 +1,7 @@
-﻿using System.Runtime.InteropServices;
-using NFMWorldLibrary.FixedMath;
+﻿﻿using System.Globalization;
+ using System.Runtime.InteropServices;
+ using FixedMathSharp;
+ using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Rad;
@@ -19,7 +21,8 @@ public class RadParser
     private List<Rad3dPoly> _mainCarPolys = [];
     private List<Vector3> _points = [];
     private List<uint> _tris = [];
-    private List<Vector2> _atp = [];
+    private List<Vector2d> _atp = [];
+    private List<Rad3dAttachmentLine> _atLines = [];
     private bool _road;
     private bool _castsShadow;
 
@@ -68,6 +71,7 @@ public class RadParser
             Polys: parser._mainCarPolys.ToArray(),
             CastsShadow: parser._castsShadow,
             Atp: parser._atp.ToArray(),
+            AtLines: parser._atLines.Count > 0 ? parser._atLines.ToArray() : null,
             CollisionMesh: parser._meshCollisionVerts.Count > 0 ? new SrcRad3dCollisionMesh(parser._meshCollisionVerts.ToArray(), parser._meshCollisionIndices.ToArray()) : null,
             CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null,
             FileName: fileName
@@ -279,8 +283,55 @@ public class RadParser
         // NFMW extension
         else if (line.StartsWith("atp("))
         {
-            var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc int[2]);
-            _atp.Add(new Vector2(x, z));
+            var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc fix64[2]);
+            _atp.Add(new Vector2d(x, z));
+        }
+        
+        // SRC extension
+        else if (line.StartsWith("atline("))
+        {
+            var (direction, (offset, _)) = BracketParser.GetStrings(line, 2);
+            var dir = direction switch
+            {
+                "x" => AttachmentLineDirection.X,
+                "z" => AttachmentLineDirection.Z,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Invalid attachment line direction")
+            };
+            _atLines.Add(new Rad3dAttachmentLine(dir, fix64.Parse(offset, CultureInfo.InvariantCulture)));
+        }
+
+        else if (line.StartsWith("loadOldSrcStats()")) // SRC extension
+        {
+            var car = OldSrcStats.cars.IndexOf(_fileName.Remove("src/".Length));
+            if (car > -1)
+            {
+                _stats = _stats with { Acelf = new f64Vector3(OldSrcStats.acelf[car,0], OldSrcStats.acelf[car,1], OldSrcStats.acelf[car,2]) };
+                _stats = _stats with { Swits = new Int3(OldSrcStats.swits[car,0], OldSrcStats.swits[car,1], OldSrcStats.swits[car,2]) };
+                _stats = _stats with { Handb = OldSrcStats.handb[car] };
+                _stats = _stats with { Airs = (fix64)OldSrcStats.airs[car] };
+                _stats = _stats with { Airc = OldSrcStats.airc[car] };
+                _stats = _stats with { Turn = OldSrcStats.turn[car] };
+                _stats = _stats with { Grip = (fix64)OldSrcStats.grip[car] };
+                _stats = _stats with { Bounce = (fix64)OldSrcStats.bounce[car] };
+                _stats = _stats with { Simag = (fix64)OldSrcStats.simag[car] };
+                _stats = _stats with { Moment = (fix64)OldSrcStats.moment[car] };
+                _stats = _stats with { Comprad = (fix64)OldSrcStats.comprad[car] };
+                _stats = _stats with { Push = OldSrcStats.push[car] };
+                _stats = _stats with { Revpush = OldSrcStats.revpush[car] };
+                _stats = _stats with { Lift = OldSrcStats.lift[car] };
+                _stats = _stats with { Revlift = OldSrcStats.revlift[car] };
+                _stats = _stats with { Powerloss = OldSrcStats.powerloss[car] };
+                _stats = _stats with { Flipy = OldSrcStats.flipy[car] };
+                _stats = _stats with { Msquash = OldSrcStats.msquash[car] };
+                _stats = _stats with { Clrad = OldSrcStats.clrad[car] };
+                _stats = _stats with { Dammult = (fix64)OldSrcStats.dammult[car] };
+                _stats = _stats with { Maxmag = OldSrcStats.maxmag[car] };
+                _stats = _stats with { Dishandle = (fix64)OldSrcStats.dishandle[car] };
+                _stats = _stats with { Dishandle = (fix64)OldSrcStats.dishandle[car] };
+                _stats = _stats with { Outdam = (fix64)OldSrcStats.outdam[car] };
+                _stats = _stats with { Name = OldSrcStats.names[car] };
+                _stats = _stats with { Enginsignature = (sbyte)OldSrcStats.enginsignature[car] };
+            }
         }
 
         if (_boxes.Count > 0)
