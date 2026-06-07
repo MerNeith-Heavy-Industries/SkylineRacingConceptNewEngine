@@ -414,7 +414,7 @@ public class ModelEditorPhase : BasePhase
         // Try to parse the model, but keep the file loaded even if it fails
         try
         {
-            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(radContent) with { FileName = "editing" });
+            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(radContent, "editing"));
             ResetTabView(tab);
         }
         catch (Exception parseEx)
@@ -1451,7 +1451,7 @@ public class ModelEditorPhase : BasePhase
                             System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
-                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
+                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent, "editing"));
                         }
                     }
                     catch (Exception ex)
@@ -1474,7 +1474,7 @@ public class ModelEditorPhase : BasePhase
                             System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
-                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
+                            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent, "editing"));
                             tab.TextEditorExpanded = false;
                         }
                     }
@@ -2286,7 +2286,7 @@ public class ModelEditorPhase : BasePhase
         // Try to reload the model with the new code
         try
         {
-            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent) with { FileName = "editing" });
+            tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent, "editing"));
             tab.PolygonEditorDirty = false;
             
             if (removeElement)
@@ -2401,7 +2401,7 @@ public class ModelEditorPhase : BasePhase
             _graphicsDevice.BlendState = BlendState.AlphaBlend;
             
             // Clear depth buffer and disable depth testing so reference car always renders in front
-            _graphicsDevice.Clear(ClearOptions.DepthBuffer, Microsoft.Xna.Framework.Color.Transparent, 1.0f, 0);
+            _graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, 1.0f, 0);
             var depthOff = new DepthStencilState
             {
                 DepthBufferEnable = false,

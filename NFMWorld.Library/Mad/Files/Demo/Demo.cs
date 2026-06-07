@@ -2,7 +2,7 @@ using MemoryPack;
 
 namespace NFMWorldLibrary.Files.Demo;
 
-[MemoryPackable(GenerateType.CircularReference)]
+[MemoryPackable(GenerateType.VersionTolerant)]
 public partial class Demo
 {
     [MemoryPackOrder(0)] public List<DemoEntry> Ticks = [];

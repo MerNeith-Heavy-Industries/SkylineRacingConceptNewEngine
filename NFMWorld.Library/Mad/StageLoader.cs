@@ -28,8 +28,8 @@ public enum PiecePlacementType : byte
 // count = n parameter
 // position = o parameter
 // offset = p parameter
-[MemoryPackable(GenerateType.CircularReference)]
-public readonly partial record struct StageWall([property: MemoryPackOrder(0)] WallDirection Direction, [property: MemoryPackOrder(1)] int Count, [property: MemoryPackOrder(2)] int Position, [property: MemoryPackOrder(3)] int Offset);
+[MemoryPackable(GenerateType.VersionTolerant)]
+public partial record StageWall([property: MemoryPackOrder(0)] WallDirection Direction, [property: MemoryPackOrder(1)] int Count, [property: MemoryPackOrder(2)] int Position, [property: MemoryPackOrder(3)] int Offset);
 
 public enum WallDirection : byte
 {
