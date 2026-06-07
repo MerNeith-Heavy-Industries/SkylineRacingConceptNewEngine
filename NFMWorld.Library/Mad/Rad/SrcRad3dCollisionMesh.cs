@@ -10,6 +10,24 @@ public readonly record struct SrcRad3dCollisionMesh([property: Key(0)] f64Vector
 {
     [IgnoreMember] public (f64Vector3 min, f64Vector3 max)[] Aabb { get; } = CalculateAabb(Vertices, Indices);
 
+    private readonly int _hashCode = CalculateHashCode(Vertices, Indices);
+
+    private static int CalculateHashCode(f64Vector3[] vertices, ushort[] indices)
+    {
+        var hashCode = new HashCode();
+        foreach (var vertex in vertices)
+        {
+            hashCode.Add(vertex);
+        }
+
+        foreach (var index in indices)
+        {
+            hashCode.Add(index);
+        }
+
+        return hashCode.ToHashCode();
+    }
+
     private static (f64Vector3 min, f64Vector3 max)[] CalculateAabb(ReadOnlySpan<f64Vector3> vertices, ReadOnlySpan<ushort> indices)
     {
         var aabbs = new (f64Vector3 min, f64Vector3 max)[indices.Length / 3];
@@ -23,5 +41,22 @@ public readonly record struct SrcRad3dCollisionMesh([property: Key(0)] f64Vector
         }
 
         return aabbs;
+    }
+
+    public override int GetHashCode()
+    {
+        return _hashCode;
+    }
+
+    public bool Equals(SrcRad3dCollisionMesh other)
+    {
+        if (!Vertices.SequenceEqual(other.Vertices)) return false;
+        return Indices.SequenceEqual(other.Indices);
+    }
+    
+    public bool Equals(SrcRad3dCollisionMesh? other)
+    {
+        if (other is null) return false;
+        return Equals(other.Value);
     }
 }

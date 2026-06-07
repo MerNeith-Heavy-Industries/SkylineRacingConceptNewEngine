@@ -10,6 +10,41 @@ public readonly record struct SrcRad3dCollisionHull([property: Key(0)] f64Vector
 {
     private static readonly ConvexHullCalculator _calculator = new();
     
+    private readonly int _hashCode = CalculateHashCode(Vertices, Indices);
+
+    private static int CalculateHashCode(f64Vector3[] vertices, ushort[] indices)
+    {
+        var hashCode = new HashCode();
+        foreach (var vertex in vertices)
+        {
+            hashCode.Add(vertex);
+        }
+
+        foreach (var index in indices)
+        {
+            hashCode.Add(index);
+        }
+
+        return hashCode.ToHashCode();
+    }
+
+    public override int GetHashCode()
+    {
+        return _hashCode;
+    }
+
+    public bool Equals(SrcRad3dCollisionHull other)
+    {
+        if (!Vertices.SequenceEqual(other.Vertices)) return false;
+        return Indices.SequenceEqual(other.Indices);
+    }
+    
+    public bool Equals(SrcRad3dCollisionHull? other)
+    {
+        if (other is null) return false;
+        return Equals(other.Value);
+    }
+
     // ReSharper disable once ConditionalTernaryEqualBranch
     public SrcRad3dCollisionHull(ReadOnlySpan<f64Vector3> hullVerts) : this(Parse(hullVerts) is var v ? v.Vertices : v.Vertices, v.Indices)
     {

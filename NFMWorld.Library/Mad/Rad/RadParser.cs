@@ -1,5 +1,7 @@
-﻿﻿using System.Runtime.InteropServices;
-using NFMWorldLibrary.FixedMath;
+﻿﻿using System.Globalization;
+ using System.Runtime.InteropServices;
+ using FixedMathSharp;
+ using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Rad;
@@ -19,7 +21,8 @@ public class RadParser
     private List<Rad3dPoly> _mainCarPolys = [];
     private List<Vector3> _points = [];
     private List<uint> _tris = [];
-    private List<Vector2> _atp = [];
+    private List<Vector2d> _atp = [];
+    private List<Rad3dAttachmentLine> _atLines = [];
     private bool _road;
     private bool _castsShadow;
 
@@ -68,6 +71,7 @@ public class RadParser
             Polys: parser._mainCarPolys.ToArray(),
             CastsShadow: parser._castsShadow,
             Atp: parser._atp.ToArray(),
+            AtLines: parser._atLines.Count > 0 ? parser._atLines.ToArray() : null,
             CollisionMesh: parser._meshCollisionVerts.Count > 0 ? new SrcRad3dCollisionMesh(parser._meshCollisionVerts.ToArray(), parser._meshCollisionIndices.ToArray()) : null,
             CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null,
             FileName: fileName
@@ -279,10 +283,23 @@ public class RadParser
         // NFMW extension
         else if (line.StartsWith("atp("))
         {
-            var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc int[2]);
-            _atp.Add(new Vector2(x, z));
+            var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc fix64[2]);
+            _atp.Add(new Vector2d(x, z));
         }
         
+        // SRC extension
+        else if (line.StartsWith("atline("))
+        {
+            var (direction, (offset, _)) = BracketParser.GetStrings(line, 2);
+            var dir = direction switch
+            {
+                "x" => AttachmentLineDirection.X,
+                "z" => AttachmentLineDirection.Z,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Invalid attachment line direction")
+            };
+            _atLines.Add(new Rad3dAttachmentLine(dir, fix64.Parse(offset, CultureInfo.InvariantCulture)));
+        }
+
         else if (line.StartsWith("loadOldSrcStats()")) // SRC extension
         {
             var car = OldSrcStats.cars.IndexOf(_fileName.Remove("src/".Length));
