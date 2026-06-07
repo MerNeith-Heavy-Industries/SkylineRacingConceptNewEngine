@@ -124,7 +124,7 @@ public static class BackendGameSparker
 
         FileUtil.LoadFiles("./data/models/football/stage", (ais, fileName) =>
         {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName);
+            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName));
         });
 
         cars.Add(Collection.User, []);
