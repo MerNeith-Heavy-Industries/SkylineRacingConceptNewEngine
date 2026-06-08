@@ -33,7 +33,7 @@ public class AroundStageCamera
     {
         if (_hit > 5000f)
         {
-            camera.Fov = 400f;
+            camera.Fov = 90f;
             FallIntoPlace(stage);
         }
         else
