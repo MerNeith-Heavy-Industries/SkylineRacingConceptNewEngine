@@ -20,7 +20,7 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
     public void SetGamemode(GameModes mode)
     {
         gamemode = mode;
-        ReloadGamemode();
+        OverrideGamemode(ReloadGamemode());
     }
 
     protected override IGamemode ReloadGamemode()
