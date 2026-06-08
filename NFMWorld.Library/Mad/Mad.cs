@@ -48,6 +48,7 @@ public class Mad
     public readonly int[,] _crank = new int[4, 4];
     public readonly int[,] _lcrank = new int[4, 4];
     public fix64 Cxz;
+    public fix64 StaticCameraXz;
     public int _dcnt;
     public fix64 Dcomp;
     public bool Wasted;
@@ -550,6 +551,11 @@ public class Mad
         if (Mtouch)
         {
             Loop = 0;
+        }
+
+        if (Loop == 0)
+        {
+            StaticCameraXz = conto.Xz * xneg;
         }
 
         if (Wtouch)
