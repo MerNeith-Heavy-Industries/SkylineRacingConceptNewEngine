@@ -149,8 +149,8 @@ public static class DevConsoleCommands
         // car command: only autocomplete first argument (position 0)
         console.RegisterArgumentAutocompleter("car", (args, position) =>
             position == 0
-                ? [.. BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
-                : new List<string>());
+                ? BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName).ToArray()
+                : []);
             
         // create command: only autocomplete first argument (position 0) - the stage/road name
         console.RegisterArgumentAutocompleter("create", (args, position) => 
@@ -158,13 +158,33 @@ public static class DevConsoleCommands
                 ? BackendGameSparker.stage_parts.Select(part => part.FileName)
                     .Concat(BackendGameSparker.vendor_stage_parts.Select(part => part.FileName))
                     .Concat(BackendGameSparker.user_stage_parts.Select(part => part.FileName))
-                    .ToList()
+                    .ToArray()
                 : []);
             
         // map command: only autocomplete first argument (position 0)
         console.RegisterArgumentAutocompleter("map", (args, position) => 
             position == 0 ? GameSparker.GetAvailableStages() : []);
+        
+        console.RegisterArgumentAutocompleter("replay_trial", (args, position) =>
+        {
+            _tts ??= SavedTimeTrial.GetTimeTrials().ToArray();
+
+            if (position == 0)
+            {
+                return _tts.Select(tt => tt.carName).Distinct().ToArray();
+            }
+
+            if (position == 1)
+            {
+                var carName = args[0];
+                return _tts.Where(tt => tt.carName == carName).Select(tt => tt.stageName).Distinct().ToArray();
+            }
+
+            return [];
+        });
     }
+
+    private static (string stageName, string carName, string fileName)[]? _tts;
 
     private static void RemasteredMusic(DevConsole console, string[] args)
     {
