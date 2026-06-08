@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Maxine.Extensions;
 using Maxine.VFS;
-using Microsoft.Extensions.Logging;
 using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
@@ -771,7 +770,6 @@ public static class BackendGameSparker
 
             var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
             {
-                PlayerCarIndex = 0,
                 Players =
                 [
                     new PlayerParameters()
@@ -779,7 +777,8 @@ public static class BackendGameSparker
                         PlayerName = "Player",
                         CarName = Encoding.UTF8.GetString(args->Cars[0].CarName),
                         Color = new Color3(255, 0, 0),
-                        IsBot = false
+                        IsBot = false,
+                        IsClientPlayer = false
                     }
                 ]
             }, simulator, timeTrial);
