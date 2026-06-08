@@ -1,5 +1,8 @@
+using NFMWorldLibrary.Backend.Gamemodes;
+
 namespace NFMWorld.DriverInterface;
 
+[ClientOnly]
 public interface IImage
 {
     public int Height { get; }

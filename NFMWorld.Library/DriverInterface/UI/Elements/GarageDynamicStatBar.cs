@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
@@ -97,6 +98,7 @@ public class GarageDynamicStatBar : Node
         }
     }
 
+    [ClientOnly]
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
         var x = (int)position.X;
@@ -140,6 +142,7 @@ public class GarageDynamicStatBar : Node
     }
 
     // Draw the black thing that overlays the stat itself...
+    [ClientOnly]
     private void DrawDividers(int x, int y)
     {
         G.SetColor(new Color(0, 0, 0));

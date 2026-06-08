@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls.Documents;
 using Avalonia.Metadata;
 using Microsoft.Xna.Framework;
+using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 
@@ -105,6 +106,7 @@ public partial class TextRun : Node, IInlineHost
         Invalidate();
     }
 
+    [ClientOnly]
     private void RelayoutText(System.Numerics.Vector2 size)
     {
         IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened;
@@ -142,6 +144,7 @@ public partial class TextRun : Node, IInlineHost
         _invalidated = false;
     }
 
+    [ClientOnly]
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
         base.RenderContent(position, size);
