@@ -1471,132 +1471,71 @@ public class Mad
             if (needsFlip)
                 terrainNormal = -terrainNormal;
 
-            // Undo yaw so we can decompose in the car's local XZ frame.
-            // In this frame the three car basis vectors are:
-            //   up_localXZ     = ( sinP,          -cosP·cosZ,  -cosP·sinZ)
-            //   right_localXZ  = ( cosP,           sinP·cosZ,   sinP·sinZ)
-            //   forward_localXZ= (   0,              -sinZ,        cosZ   )
-            //
-            // The terrain normal is the world-space "up" of the surface.
-            // Depending on the car's orientation the normal aligns with a
-            // *different* car basis vector:
-            //   upright car   → normal ≈ car up      → UP regime
-            //   car on its side → normal ≈ car right  → RIGHT regime
-            //   car pitched    → normal ≈ car forward → FORWARD regime
-            //
-            // We pick the regime whose basis vector's Y component (in the
-            // yaw-removed localXZ frame) is closest to the measured localY.
+            // Undo yaw before decomposing into Pxy/Pzy.
+            // Rotation order: Rx(Pxy)·Rz(Pzy)·Ry(Xz) applied to up=(0,-1,0):
+            //   up = (sinP·cosXz + cosP·sinZ·sinXz,  -cosP·cosZ,  sinP·sinXz - cosP·sinZ·cosXz)
+            // Solving for Pxy, Pzy given up=terrainNormal and Xz:
             var cosXz = UMath.Cos(conto.Xz);
             var sinXz = UMath.Sin(conto.Xz);
-            var localX = terrainNormal.X * cosXz + terrainNormal.Z * sinXz;
-            var localY = terrainNormal.Y;
-            var localZ = -terrainNormal.X * sinXz + terrainNormal.Z * cosXz;
+            var sinP = terrainNormal.X * cosXz + terrainNormal.Z * sinXz;
+            var cosP_sinZ = terrainNormal.X * sinXz - terrainNormal.Z * cosXz;
+            var cosP_cosZ = -terrainNormal.Y; // = cos(Pxy)·cos(Pzy)
 
-            // Which basis vector does the terrain normal best align with?
-            // Use the full 3D dot product in the yaw-removed localXZ frame.
-            // (Estimated from current Pxy/Pzy — the fit is a small correction.)
-            var sinP_est = UMath.Sin(Pxy);
-            var cosP_est = UMath.Cos(Pxy);
-            var sinZ_est = UMath.Sin(Pzy);
-            var cosZ_est = UMath.Cos(Pzy);
+            // |cos(Pxy)| = sqrt(cosP_cosZ² + cosP_sinZ²)  because cos²Z+sin²Z=1
+            var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
 
-            // up_localXZ      = ( sinP,         -cosP·cosZ,  -cosP·sinZ)
-            // right_localXZ   = ( cosP,          sinP·cosZ,   sinP·sinZ)
-            // forward_localXZ = (   0,              -sinZ,        cosZ   )
-            var upDot    = fix64.Abs(localX * sinP_est
-                                   + localY * (-cosP_est * cosZ_est)
-                                   + localZ * (-cosP_est * sinZ_est));
-            var rightDot = fix64.Abs(localX * cosP_est
-                                   + localY * (sinP_est * cosZ_est)
-                                   + localZ * (sinP_est * sinZ_est));
-            var fwdDot   = fix64.Abs(localY * (-sinZ_est)
-                                   + localZ * cosZ_est);
-
-            // Recompute raw angles for sign detection (loop controls may
-            // have changed Pxy/Pzy since the top of the tick).
-            var rawXy = fix64.Abs(Pxy);
-            while (rawXy > 270) rawXy -= 360;
-            rawXy = fix64.Abs(rawXy);
-            var rawZy = fix64.Abs(Pzy);
-            while (rawZy > 270) rawZy -= 360;
-            rawZy = fix64.Abs(rawZy);
-
-            if (upDot >= rightDot && upDot >= fwdDot)
+            // Guard: when |cos(Pxy)| ≈ 0 (car within a few degrees of ±90°
+            // roll) the decomposition amplifies noise — sinZ/cosZ both divide
+            // by cosP ≈ 0.  Skip the entire fit and let stabilizers hold.
+            if (absCosP > (fix64)0.05f)
             {
-                // ── UP REGIME ──
-                // up_localXZ = (sinP, -cosP·cosZ, -cosP·sinZ)
-                var sinP    = localX;
-                var cosP_cosZ = -localY;
-                var cosP_sinZ = -localZ;
-                var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
+                // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
+                //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
+                //   cosP_cosZ < 0 → one of cosP, cosZ is negative.
+                //
+                // Use the same detection the xyinv/zyinv flags use to decide which
+                // axis carries the inversion: if the raw Pzy is past ±90°, Pzy
+                // is inverted so cosZ < 0 and cosP > 0. Otherwise Pxy is inverted
+                // so cosP < 0.
+                //
+                // Recompute the raw angles here because loop controls may have
+                // changed Pxy/Pzy since the top of the tick.
+                var rawXy = fix64.Abs(Pxy);
+                while (rawXy > 270) rawXy -= 360;
+                rawXy = fix64.Abs(rawXy);
+                var rawZy = fix64.Abs(Pzy);
+                while (rawZy > 270) rawZy -= 360;
+                rawZy = fix64.Abs(rawZy);
 
-                if (absCosP > (fix64)0.05f)
-                {
-                    // cosP_cosZ > 0 → upright hemisphere → cosP > 0
-                    // cosP_cosZ < 0 → one of cosP, cosZ is negative.
-                    var cosP = cosP_cosZ >= fix64.Zero
-                        ? (rawXy > (fix64)90 && rawZy > (fix64)90 ? -absCosP : absCosP)
-                        : rawZy > (fix64)90 ? absCosP
-                            : rawXy > (fix64)90 ? -absCosP
-                                : absCosP;
+                var cosP = cosP_cosZ >= fix64.Zero
+                    ? (rawXy > (fix64)90 && rawZy > (fix64)90 ? -absCosP : absCosP)
+                    : rawZy > (fix64)90 ? absCosP       // Pzy is the inverted axis → cosP > 0
+                        : rawXy > (fix64)90 ? -absCosP       // Pxy is the inverted axis → cosP < 0
+                            : absCosP;                            // neither > 90°, assume upright
 
-                    var sinZ = cosP_sinZ / cosP;
-                    var cosZ = cosP_cosZ / cosP;
-                    if (fix64.Abs(cosP_cosZ) > (fix64)0.05f)
-                        Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
-                    Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
+                // Derive sin(Pzy) and cos(Pzy) by dividing the known products
+                // by cosP — this correctly undoes the 180° shift that atan2
+                // would introduce when cosP < 0.
+                var sinZ = cosP_sinZ / cosP;
+                var cosZ = cosP_cosZ / cosP;
 
-                    FrameTrace.AddMessage($"terrainFit[UP]: cosP_cosZ={cosP_cosZ:0.000}, absCosP={absCosP:0.000}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
-                }
-            }
-            else if (rightDot >= upDot && rightDot >= fwdDot)
-            {
-                // ── RIGHT REGIME ──
-                // right_localXZ = (cosP, sinP·cosZ, sinP·sinZ)
-                // cosP is directly localX — no division, no sign ambiguity.
-                var cosP = localX;
-
-                // Reconstruct sinP via projection onto (cosZ, sinZ).
-                // sinP = localY·cosZ + localZ·sinZ  (since cos²+sin²=1).
-                // Use current Pzy as estimate; cos(Z-Z_est) ≈ 1 so sign is correct.
-                var sinP    = localY * UMath.Cos(Pzy) + localZ * UMath.Sin(Pzy);
-                var absSinP = fix64.Abs(sinP);
-
-                // Only update when sinP is large enough to be reliable.
-                if (absSinP > (fix64)0.05f)
-                {
-                    Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
-
-                    // Derive Pzy from sinP_cosZ / sinP_sinZ.
-                    // Division by sinP is safe — absSinP > 0.05 in this regime.
-                    var cosZ = localY / sinP;
-                    var sinZ = localZ / sinP;
-                    if (fix64.Abs(localY) > (fix64)0.05f || fix64.Abs(localZ) > (fix64)0.05f)
-                        Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
-
-                    FrameTrace.AddMessage($"terrainFit[RIGHT]: cosP={cosP:0.000}, sinP={sinP:0.000}, absSinP={absSinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
-                }
-            }
-            else
-            {
-                // ── FORWARD REGIME ──
-                // forward_localXZ = (0, -sinZ, cosZ)
-                // Pzy is directly recoverable — no division at all.
-                var sinZ = -localY;
-                var cosZ = localZ;
-                var mag  = fix64.Sqrt(sinZ * sinZ + cosZ * cosZ);
-                if (mag > (fix64)0.001f)
-                {
+                // Guard: when |cosZ| ≈ 0 (Pzy near ±90°), the plane-fit can't
+                // reliably determine Pzy — tiny noise in wheel positions flips
+                // atan2 between +90° and -90°.  Only update Pxy.
+                if (fix64.Abs(cosP_cosZ) > (fix64)0.05f)
                     Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
-                    FrameTrace.AddMessage($"terrainFit[FWD]: sinZ={sinZ:0.000}, cosZ={cosZ:0.000}, → Pzy={Pzy:0.0}° (Pxy unchanged)");
-                }
-            }
+                Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
 
-            // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
-            while (Pxy - conto.Xy > 180) Pxy -= 360;
-            while (Pxy - conto.Xy < -180) Pxy += 360;
-            while (Pzy - conto.Zy > 180) Pzy -= 360;
-            while (Pzy - conto.Zy < -180) Pzy += 360;
+                // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
+                // atan2 outputs [-180°, 180°] which wraps at ±180°; the
+                // interpolation block below would see a 358° jump instead of 2°.
+                while (Pxy - conto.Xy > 180) Pxy -= 360;
+                while (Pxy - conto.Xy < -180) Pxy += 360;
+                while (Pzy - conto.Zy > 180) Pzy -= 360;
+                while (Pzy - conto.Zy < -180) Pzy += 360;
+
+                FrameTrace.AddMessage($"terrainFit: cosP_cosZ={cosP_cosZ:0.000}, rawXy={rawXy:0.0}, rawZy={rawZy:0.0}, cosP={cosP:0.000}, sinP={sinP:0.000}, → Pxy={Pxy:0.0}°, Pzy={Pzy:0.0}°");
+            }
         }
 
         if (nGroundedWheels == 4)
@@ -1694,33 +1633,33 @@ public class Mad
 
         if (fix64.Abs(Speed) > 10 || !Mtouch)
         {
-            if (fix64.Abs(Pxy - conto.Xy) >= 4)
-            {
-                if (Pxy > conto.Xy)
-                {
-                    conto.Xy += (2 + (Pxy - conto.Xy) * fix64.Half);
-                }
-                else
-                {
-                    conto.Xy -= (2 + (conto.Xy - Pxy) * fix64.Half);
-                }
-            }
-            else
+            // if (fix64.Abs(Pxy - conto.Xy) >= 4)
+            // {
+            //     if (Pxy > conto.Xy)
+            //     {
+            //         conto.Xy += (2 + (Pxy - conto.Xy) * fix64.Half);
+            //     }
+            //     else
+            //     {
+            //         conto.Xy -= (2 + (conto.Xy - Pxy) * fix64.Half);
+            //     }
+            // }
+            // else
             {
                 conto.Xy = Pxy;
             }
-            if (fix64.Abs(Pzy - conto.Zy) >= 4)
-            {
-                if (Pzy > conto.Zy)
-                {
-                    conto.Zy += (2 + (Pzy - conto.Zy) * fix64.Half);
-                }
-                else
-                {
-                    conto.Zy -= (2 + (conto.Zy - Pzy) * fix64.Half);
-                }
-            }
-            else
+            // if (fix64.Abs(Pzy - conto.Zy) >= 4)
+            // {
+            //     if (Pzy > conto.Zy)
+            //     {
+            //         conto.Zy += (2 + (Pzy - conto.Zy) * fix64.Half);
+            //     }
+            //     else
+            //     {
+            //         conto.Zy -= (2 + (conto.Zy - Pzy) * fix64.Half);
+            //     }
+            // }
+            // else
             {
                 conto.Zy = Pzy;
             }
