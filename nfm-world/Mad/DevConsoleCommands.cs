@@ -45,6 +45,7 @@ public static class DevConsoleCommands
         console.RegisterCommand("replay_trial", (c, args) =>
         {
             GameSparker.InRace!.LoadStage(args[1]);
+            GameSparker.SetPhase(GameSparker.InRace!);
             GameSparker.InRace!.OverrideGamemode(new TimeTrialPreviewGamemode(new BaseGamemodeParameters
             {
                 PlayerCarIndex = 0,
@@ -59,7 +60,6 @@ public static class DevConsoleCommands
                     }
                 ],
             }, GameSparker.InRace, SavedTimeTrial.Load(args[0], args[1])!));
-            GameSparker.SetPhase(GameSparker.InRace!);
         });
             
         // rendering

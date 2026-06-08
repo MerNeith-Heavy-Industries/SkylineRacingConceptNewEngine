@@ -6,14 +6,19 @@ using NFMWorldLibrary.Files;
 
 namespace NFMWorld.Gameplay.Gamemodes;
 
-public class TimeTrialPreviewGamemode(BaseGamemodeParameters gamemodeParameters, BaseRacePhase raceValues, SavedTimeTrial timeTrial)
+public class TimeTrialPreviewGamemode(
+    BaseGamemodeParameters gamemodeParameters,
+    BaseRacePhase raceValues,
+    SavedTimeTrial timeTrial)
     : TimeTrialClientGamemode(gamemodeParameters, raceValues)
 {
     private int _tick = 0;
     private bool _paused;
     private bool _slow;
     private int _slowTicks;
-    
+    private bool _shift;
+    private bool _ctrl;
+
     public override void Reset()
     {
         base.Reset();
@@ -27,69 +32,90 @@ public class TimeTrialPreviewGamemode(BaseGamemodeParameters gamemodeParameters,
 
     protected override void TimeTrialInRace()
     {
-        if (!_paused)
+        if (_slow && !_paused)
         {
-            if (_slow)
-            {
-                _slowTicks++;
-                if (_slowTicks % 3 == 0)
-                {
-                    if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
-                    {
-                        timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[playerCarIndex]);
-                    }
-
-                    carsInRace[playerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
-                    base.TimeTrialInRace();
-                    
-                    _tick++;
-                }
-            }
-            else
+            _slowTicks++;
+            if (_slowTicks % 3 == 0)
             {
                 if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
                 {
                     timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[playerCarIndex]);
                 }
 
-                carsInRace[playerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
+                carsInRace[playerCarIndex].Control
+                    .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
                 base.TimeTrialInRace();
-                
+
                 _tick++;
             }
         }
-    }
-
-    public int? SimulateToCompletion(int tickLimit = 100_000_000)
-    {
-        while (_currentState != TimeTrialState.Finished)
+        else
         {
-            GameTick();
-            if (_tick > tickLimit)
+            if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
             {
-                return null;
+                timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[playerCarIndex]);
+            }
+
+            carsInRace[playerCarIndex].Control
+                .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
+            base.TimeTrialInRace();
+
+            if (!_paused)
+            {
+                _tick++;
             }
         }
-
-        return _tick;
     }
 
     public override void KeyPressed(Keys key)
     {
         base.KeyPressed(key);
 
+        if (key is Keys.ShiftKey or Keys.LShiftKey or Keys.RShiftKey)
+        {
+            _shift = true;
+        }
+
+        if (key is Keys.ControlKey or Keys.LControlKey or Keys.RControlKey)
+        {
+            _ctrl = true;
+        }
+
         if (key == Keys.Space)
         {
             _paused = !_paused;
         }
+
         if (key == Keys.W)
         {
-            _tick++;
+            if (_ctrl)
+            {
+                _tick += 63 * 60;
+            }
+            else if (_shift)
+            {
+                _tick += 63;
+            }
+            else
+            {
+                _tick++;
+            }
         }
 
         if (key == Keys.S)
         {
-            _tick--;
+            if (_ctrl)
+            {
+                _tick -= 63 * 60;
+            }
+            else if (_shift)
+            {
+                _tick -= 63;
+            }
+            else
+            {
+                _tick--;
+            }
         }
 
         if (key == Keys.A)
@@ -102,5 +128,25 @@ public class TimeTrialPreviewGamemode(BaseGamemodeParameters gamemodeParameters,
     public override void KeyReleased(Keys key)
     {
         base.KeyReleased(key);
+
+        if (key is Keys.ShiftKey or Keys.LShiftKey or Keys.RShiftKey)
+        {
+            _shift = false;
+        }
+
+        if (key is Keys.ControlKey or Keys.LControlKey or Keys.RControlKey)
+        {
+            _ctrl = false;
+        }
+    }
+
+    public override void Render()
+    {
+        base.Render();
+
+        G.SetColor(Color.White);
+        G.DrawStringStroke($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState})", 10, 250);
+        G.SetColor(Color.Black);
+        G.DrawString($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState})", 10, 250);
     }
 }

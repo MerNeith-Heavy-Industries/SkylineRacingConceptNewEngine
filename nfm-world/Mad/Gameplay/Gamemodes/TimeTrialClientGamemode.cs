@@ -262,7 +262,7 @@ public class TimeTrialClientGamemode(BaseGamemodeParameters gamemodeParameters, 
         }
     }
 
-    public void Render()
+    public virtual void Render()
     {
         _pdBars.LayoutAndRender(G.Viewport);
         _lapTimerSplits.LayoutAndRender(G.Viewport);
