@@ -27,12 +27,12 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
 
     private static readonly DiagnosticDescriptor Rule = new(
         id: DiagnosticId,
-        title: "Client-only method called outside NFMWorld or RunIfOnClient",
-        messageFormat: "Method '{0}' is marked [ClientOnly] and can only be called from the NFMWorld assembly or via ClientServer.RunIfOnClient",
+        title: "Client-only member accessed outside NFMWorld or RunIfOnClient",
+        messageFormat: "'{0}' is marked [ClientOnly] and can only be accessed from the NFMWorld assembly or via ClientServer.RunIfOnClient",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "Methods annotated with [ClientOnly] must only be invoked from within the NFMWorld project or passed as a delegate to ClientServer.RunIfOnClient.");
+        description: "Members annotated with [ClientOnly] (or belonging to a [ClientOnly] type) must only be accessed from within the NFMWorld project or passed as a delegate to ClientServer.RunIfOnClient.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -40,48 +40,144 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
+
+        // Method / delegate invocations.
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+
+        // Property / field reads: obj.Member  or  Member  or  obj?.Member
+        context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.SimpleMemberAccessExpression);
+        context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.IdentifierName);
+
+        // Property / field writes: obj.Member = value  or  Member = value
+        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
     }
+
+    // ── shared reporting logic ────────────────────────────────────────
+
+    /// <summary>
+    /// Returns <c>true</c> if a diagnostic should be reported for access to
+    /// <paramref name="symbol"/> at <paramref name="node"/>.
+    /// </summary>
+    private static bool ShouldReport(
+        ISymbol symbol,
+        SyntaxNode node,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (!IsClientOnly(symbol))
+            return false;
+
+        if (context.Compilation.Assembly.Name == NfmWorldAssemblyName)
+            return false;
+
+        if (IsInsideRunIfOnClientArgument(node, context.SemanticModel, context.CancellationToken))
+            return false;
+
+        if (IsInsideClientOnlyChain(node, context.SemanticModel, context.CancellationToken))
+            return false;
+
+        return true;
+    }
+
+    // ── invocation analysis ───────────────────────────────────────────
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
-        // Resolve the invoked method symbol.
         if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol
             is not IMethodSymbol methodSymbol)
         {
             return;
         }
 
-        // Early exit: if the method does not have [ClientOnly], skip.
-        if (!HasClientOnlyAttribute(methodSymbol))
+        if (ShouldReport(methodSymbol, invocation, context))
+        {
+            var diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), methodSymbol.Name);
+            context.ReportDiagnostic(diagnostic);
+        }
+    }
+
+    // ── member access (property / field reads) ────────────────────────
+
+    private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
+    {
+        var node = context.Node;
+
+        // ── skip nameof(…) — the member name is a string literal, not an access.
+        if (IsInsideNameOf(node))
+            return;
+
+        // ── de-duplicate: skip the inner IdentifierName of a
+        //    MemberAccessExpression — the outer node already reports.
+        if (node is IdentifierNameSyntax identifier)
+        {
+            if (identifier.Parent is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name == identifier)
+            {
+                return;
+            }
+        }
+
+        // ── skip the left-hand side of an assignment — AnalyzeAssignment
+        //    already reports those.
+        if (node.Parent is AssignmentExpressionSyntax assignment
+            && assignment.Left == node)
         {
             return;
         }
 
-        // Allowed: the call site is inside the NFMWorld executable assembly.
-        if (context.Compilation.Assembly.Name == NfmWorldAssemblyName)
-        {
+        // ── skip when used as an argument — the member is being passed as a
+        //    delegate or ref, not accessed for its value.
+        if (node.Parent is ArgumentSyntax)
             return;
-        }
 
-        // Allowed: the invocation is nested inside a delegate passed to ClientServer.RunIfOnClient.
-        if (IsInsideRunIfOnClientArgument(invocation, context.SemanticModel, context.CancellationToken))
-        {
+        var symbol = context.SemanticModel.GetSymbolInfo(node, context.CancellationToken).Symbol;
+        if (symbol is not IPropertySymbol and not IFieldSymbol)
             return;
-        }
 
-        // Allowed: the containing method is itself [ClientOnly] or overrides a
-        // [ClientOnly] method (i.e. we're in the "client-only chain").
-        if (IsInsideClientOnlyChain(invocation, context.SemanticModel, context.CancellationToken))
+        if (ShouldReport(symbol, node, context))
         {
-            return;
+            var diagnostic = Diagnostic.Create(Rule, node.GetLocation(), symbol.Name);
+            context.ReportDiagnostic(diagnostic);
         }
+    }
 
-        // Not allowed — report diagnostic.
-        var diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), methodSymbol.Name);
-        context.ReportDiagnostic(diagnostic);
+    // ── assignment (property / field writes) ──────────────────────────
+
+    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
+    {
+        var assignment = (AssignmentExpressionSyntax)context.Node;
+
+        var symbol = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
+        if (symbol is not IPropertySymbol and not IFieldSymbol)
+            return;
+
+        if (ShouldReport(symbol, assignment, context))
+        {
+            var diagnostic = Diagnostic.Create(Rule, assignment.Left.GetLocation(), symbol.Name);
+            context.ReportDiagnostic(diagnostic);
+        }
+    }
+
+    // ── [ClientOnly] detection ────────────────────────────────────────
+
+    /// <summary>
+    /// Returns <c>true</c> if <paramref name="symbol"/> is considered
+    /// [ClientOnly], either directly or via a type-level annotation.
+    /// </summary>
+    private static bool IsClientOnly(ISymbol symbol)
+    {
+        switch (symbol)
+        {
+            case IMethodSymbol method:
+                return IsClientOnlyMethod(method);
+            case IPropertySymbol property:
+                return IsClientOnlyProperty(property);
+            case IFieldSymbol field:
+                return IsClientOnlyField(field);
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -89,15 +185,14 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
     /// Checks the method itself, its <c>OriginalDefinition</c>, overridden
     /// methods, explicitly implemented interface methods, and — for methods
     /// resolved on a class that inherits a default interface method — the
-    /// corresponding interface method declaration.
+    /// corresponding interface method declaration.  Also checks the declaring
+    /// type for a type-level <c>[ClientOnly]</c>.
     /// </summary>
-    private static bool HasClientOnlyAttribute(IMethodSymbol methodSymbol)
+    private static bool IsClientOnlyMethod(IMethodSymbol methodSymbol)
     {
         // Check the method symbol itself.
         if (HasAttributeOnSymbol(methodSymbol))
-        {
             return true;
-        }
 
         // Check the original definition (e.g., for overrides or base. calls
         // Roslyn may resolve to a symbol that strips attributes).
@@ -105,9 +200,7 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
             && !SymbolEqualityComparer.Default.Equals(original, methodSymbol))
         {
             if (HasAttributeOnSymbol(original))
-            {
                 return true;
-            }
         }
 
         // Check overridden method chain.
@@ -116,18 +209,14 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
              overridden = overridden.OverriddenMethod)
         {
             if (HasAttributeOnSymbol(overridden))
-            {
                 return true;
-            }
         }
 
         // Check explicitly implemented interface methods.
         foreach (var ifaceMethod in methodSymbol.ExplicitInterfaceImplementations)
         {
             if (HasAttributeOnSymbol(ifaceMethod))
-            {
                 return true;
-            }
         }
 
         // When Roslyn resolves a base.X() call for a default interface method,
@@ -141,35 +230,78 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
                 foreach (var ifaceMember in iface.GetMembers(methodSymbol.Name))
                 {
                     if (ifaceMember is not IMethodSymbol ifaceMethod)
-                    {
                         continue;
-                    }
 
-                    // Match on parameter count (the type system already
-                    // resolved the call, so this is sufficient).
                     if (ifaceMethod.Parameters.Length != methodSymbol.Parameters.Length)
-                    {
                         continue;
-                    }
 
                     if (HasAttributeOnSymbol(ifaceMethod))
-                    {
                         return true;
-                    }
                 }
             }
         }
 
-        // Also check the associated symbol for property getters/setters, etc.
-        if (methodSymbol.AssociatedSymbol is { } associated)
+        // Check the associated symbol (e.g. property getter/setter).
+        if (methodSymbol.AssociatedSymbol is { } associated
+            && HasAttributeOnSymbol(associated))
         {
-            if (HasAttributeOnSymbol(associated))
-            {
-                return true;
-            }
+            return true;
+        }
+
+        // Check declaring type for type-level [ClientOnly].
+        if (methodSymbol.ContainingType is { } ct
+            && HasTypeLevelClientOnly(ct))
+        {
+            return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if the property itself, its getter, its setter,
+    /// or its declaring type has <c>[ClientOnly]</c>.
+    /// </summary>
+    private static bool IsClientOnlyProperty(IPropertySymbol property)
+    {
+        if (HasAttributeOnSymbol(property))
+            return true;
+
+        if (property.GetMethod is { } getter && IsClientOnlyMethod(getter))
+            return true;
+
+        if (property.SetMethod is { } setter && IsClientOnlyMethod(setter))
+            return true;
+
+        if (property.ContainingType is { } ct && HasTypeLevelClientOnly(ct))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if the field itself or its declaring type has
+    /// <c>[ClientOnly]</c>.
+    /// </summary>
+    private static bool IsClientOnlyField(IFieldSymbol field)
+    {
+        if (HasAttributeOnSymbol(field))
+            return true;
+
+        if (field.ContainingType is { } ct && HasTypeLevelClientOnly(ct))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if <paramref name="type"/> is annotated with
+    /// <c>[ClientOnly]</c> (allowing the type itself to be the gate for
+    /// all its members).
+    /// </summary>
+    private static bool HasTypeLevelClientOnly(INamedTypeSymbol type)
+    {
+        return HasAttributeOnSymbol(type);
     }
 
     /// <summary>
@@ -191,50 +323,58 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Walks up the syntax tree from <paramref name="invocation"/> to determine
-    /// whether the call is nested inside a method that is itself in the
-    /// "client-only chain" — i.e. the containing method has <c>[ClientOnly]</c>
-    /// or overrides a method that has it. Also checks local functions and
-    /// anonymous functions, walking up to the nearest enclosing method.
+    /// Returns <c>true</c> if <paramref name="node"/> is inside a
+    /// <c>nameof(...)</c> expression.
+    /// </summary>
+    private static bool IsInsideNameOf(SyntaxNode node)
+    {
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is InvocationExpressionSyntax invocation
+                && invocation.Expression is IdentifierNameSyntax name
+                && name.Identifier.Text == "nameof")
+            {
+                return true;
+            }
+
+            // Stop at member or type declarations.
+            if (current is MemberDeclarationSyntax or TypeDeclarationSyntax)
+                break;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Walks up the syntax tree from <paramref name="node"/> to determine
+    /// whether the access is nested inside a member that is itself in the
+    /// "client-only chain" — i.e. the containing member (method, property,
+    /// accessor, constructor, etc.) has <c>[ClientOnly]</c> or belongs to a
+    /// <c>[ClientOnly]</c> type. Also checks local functions, walking up to
+    /// the nearest enclosing member.
     /// </summary>
     private static bool IsInsideClientOnlyChain(
-        InvocationExpressionSyntax invocation,
+        SyntaxNode node,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        // Walk up through all enclosing function-like scopes.
-        SyntaxNode? current = invocation.Parent;
+        SyntaxNode? current = node.Parent;
         while (current is not null)
         {
-            if (current is MethodDeclarationSyntax methodDecl)
+            if (GetMemberSymbol(current, semanticModel, cancellationToken) is { } symbol
+                && IsClientOnly(symbol))
             {
-                var method = semanticModel.GetDeclaredSymbol(methodDecl, cancellationToken);
-                if (method is not null && HasClientOnlyAttribute(method))
-                {
-                    return true;
-                }
-            }
-            else if (current is LocalFunctionStatementSyntax localFunc)
-            {
-                if (semanticModel.GetDeclaredSymbol(localFunc, cancellationToken) is IMethodSymbol method
-                    && HasClientOnlyAttribute(method))
-                {
-                    return true;
-                }
-            }
-            else if (current is AnonymousFunctionExpressionSyntax)
-            {
-                // Anonymous functions (lambdas, delegate () {}) don't have
-                // their own attributes — keep walking up to the enclosing
-                // named method.
+                return true;
             }
 
-            // Stop walking once we hit a type declaration — we've left
-            // all method scopes.
-            if (current is TypeDeclarationSyntax)
+            if (current is AnonymousFunctionExpressionSyntax)
             {
-                break;
+                // Lambdas / delegate {} don't carry attributes — keep
+                // walking up to the enclosing named member.
             }
+
+            if (current is TypeDeclarationSyntax)
+                break;
 
             current = current.Parent;
         }
@@ -243,17 +383,57 @@ public sealed class ClientOnlyAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Walks up the syntax tree from <paramref name="invocation"/> to determine
-    /// whether the call is nested inside a delegate (lambda or anonymous method)
-    /// that is passed as an argument to <c>ClientServer.RunIfOnClient</c>.
+    /// Returns the <see cref="ISymbol"/> for a member declaration node,
+    /// or <c>null</c> if the node does not declare a member.
     /// </summary>
-    private static bool IsInsideRunIfOnClientArgument(
-        InvocationExpressionSyntax invocation,
+    private static ISymbol? GetMemberSymbol(
+        SyntaxNode node,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        // Walk up from the invocation through its ancestors.
-        SyntaxNode? current = invocation.Parent;
+        switch (node)
+        {
+            // Methods, constructors, operators, destructors.
+            case BaseMethodDeclarationSyntax m:
+                return semanticModel.GetDeclaredSymbol(m, cancellationToken);
+
+            // Properties (including expression-bodied).
+            case PropertyDeclarationSyntax p:
+                return semanticModel.GetDeclaredSymbol(p, cancellationToken);
+
+            // Property / event accessors (get, set, add, remove).
+            case AccessorDeclarationSyntax a:
+                return semanticModel.GetDeclaredSymbol(a, cancellationToken);
+
+            // Events (including expression-bodied).
+            case EventDeclarationSyntax e:
+                return semanticModel.GetDeclaredSymbol(e, cancellationToken);
+
+            // Local functions.
+            case LocalFunctionStatementSyntax l:
+                return semanticModel.GetDeclaredSymbol(l, cancellationToken);
+
+            // Field initializers: walk up to the VariableDeclarator.
+            case VariableDeclaratorSyntax v:
+                return semanticModel.GetDeclaredSymbol(v, cancellationToken);
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// Walks up the syntax tree from <paramref name="node"/> to determine
+    /// whether the access is nested inside a delegate (lambda or anonymous
+    /// method) that is passed as an argument to
+    /// <c>ClientServer.RunIfOnClient</c>.
+    /// </summary>
+    private static bool IsInsideRunIfOnClientArgument(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode? current = node.Parent;
 
         while (current is not null)
         {
