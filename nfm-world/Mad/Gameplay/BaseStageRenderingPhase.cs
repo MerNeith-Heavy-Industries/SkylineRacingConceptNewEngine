@@ -153,7 +153,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             lightCamera.LookAt = camera.Position + new Vector3(1f, 0, 0); // 0,0,0 causes shadows to break
         }
 
-        camera.Fov = FovOverride ?? CameraSettings.Fov;
+        camera.Fov = FovOverride ?? camera.Fov;
 
         current_scene.Render(alpha, true);
 
