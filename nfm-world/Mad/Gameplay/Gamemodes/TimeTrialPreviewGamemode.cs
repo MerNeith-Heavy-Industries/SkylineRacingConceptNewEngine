@@ -18,6 +18,7 @@ public class TimeTrialPreviewGamemode(
     private int _slowTicks;
     private bool _shift;
     private bool _ctrl;
+    private bool _simulating;
 
     public override void Reset()
     {
@@ -32,34 +33,28 @@ public class TimeTrialPreviewGamemode(
 
     protected override void TimeTrialInRace()
     {
-        if (_slow && !_paused)
-        {
-            _slowTicks++;
-            if (_slowTicks % 3 == 0)
-            {
-                if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
-                {
-                    timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[playerCarIndex]);
-                }
-
-                carsInRace[playerCarIndex].Control
-                    .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
-                base.TimeTrialInRace();
-
-                _tick++;
-            }
-        }
-        else
+        if (!_simulating || _paused)
         {
             if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
             {
                 timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[playerCarIndex]);
             }
+        }
 
-            carsInRace[playerCarIndex].Control
-                .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
-            base.TimeTrialInRace();
+        carsInRace[playerCarIndex].Control
+            .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
+        base.TimeTrialInRace();
 
+        if (_slow && !_paused)
+        {
+            _slowTicks++;
+            if (_slowTicks % 3 == 0)
+            {
+                _tick++;
+            }
+        }
+        else
+        {
             if (!_paused)
             {
                 _tick++;
@@ -123,6 +118,11 @@ public class TimeTrialPreviewGamemode(
             _slow = true;
             _slowTicks = 0;
         }
+
+        if (key == Keys.M)
+        {
+            _simulating = !_simulating;
+        }
     }
 
     public override void KeyReleased(Keys key)
@@ -144,9 +144,10 @@ public class TimeTrialPreviewGamemode(
     {
         base.Render();
 
-        G.SetColor(Color.White);
-        G.DrawStringStroke($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState})", 10, 250);
+        G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
         G.SetColor(Color.Black);
-        G.DrawString($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState})", 10, 250);
+        G.DrawStringStroke($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState}) (Simulating: {_simulating})", 10, 250);
+        G.SetColor(Color.White);
+        G.DrawString($"Tick: {_tick} / {timeTrial.DemoData.Ticks.Count} ({_currentState}) (Simulating: {_simulating})", 10, 250);
     }
 }
