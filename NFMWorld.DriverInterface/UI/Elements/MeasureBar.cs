@@ -1,4 +1,6 @@
-namespace NFMWorld.UI;
+using Microsoft.Xna.Framework;
+
+namespace NFMWorld.DriverInterface.UI;
 
 public class MeasureBar : Image
 {

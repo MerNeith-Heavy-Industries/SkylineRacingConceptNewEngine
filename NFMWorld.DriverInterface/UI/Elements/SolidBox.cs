@@ -1,6 +1,7 @@
-﻿using WorldXaml.UI.Yoga;
+﻿using Microsoft.Xna.Framework;
+using WorldXaml.UI.Yoga;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 /// <summary>
 /// Represents a box element with solid colors for border, background, and content.

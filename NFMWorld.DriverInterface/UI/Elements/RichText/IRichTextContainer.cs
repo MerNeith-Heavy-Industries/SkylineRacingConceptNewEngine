@@ -1,4 +1,4 @@
-﻿namespace NFMWorld.UI;
+﻿namespace NFMWorld.DriverInterface.UI;
 
 public interface IRichTextContainer : IRichTextElement
 {

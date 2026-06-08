@@ -1,7 +1,6 @@
-using NFMWorld.DriverInterface;
-using NFMWorld.Util;
+using Microsoft.Xna.Framework;
 
-namespace NFMWorld;
+namespace NFMWorld.DriverInterface;
 
 public static class G
 {

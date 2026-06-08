@@ -1,7 +1,7 @@
 ﻿<yoga:FlexPanel
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:yoga="clr-namespace:WorldXaml.UI.Yoga;assembly=WorldXaml.UI.Yoga"
-    xmlns:ui="clr-namespace:NFMWorld.UI"
+    xmlns:w="https://github.com/needforrewrite/nfm-world"
     x:Class="NFMWorld.UI.Hud.PowerDamageBars"
     Top="0"
     Padding="10"
@@ -9,15 +9,15 @@
     Gap="10"
     AlignItems="FlexEnd">
 
-    <ui:MeasureBar
+    <w:MeasureBar
         Name="DamageBar"
         FillAmount="0"
-        ImageData="{ui:StaticImage data/images/damage.gif}"
+        ImageData="{w:StaticImage data/images/damage.gif}"
         Scale="1.2" />
 
-    <ui:MeasureBar
+    <w:MeasureBar
         Name="PowerBar"
         FillAmount="0.98"
-        ImageData="{ui:StaticImage data/images/power.gif}"
+        ImageData="{w:StaticImage data/images/power.gif}"
         Scale="1.2" />
 </yoga:FlexPanel>

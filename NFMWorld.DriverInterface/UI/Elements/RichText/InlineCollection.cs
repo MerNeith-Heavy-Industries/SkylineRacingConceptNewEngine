@@ -3,8 +3,9 @@ using System.Collections.Specialized;
 using Avalonia.LogicalTree;
 using Avalonia.Metadata;
 using JetBrains.Annotations;
-using NFMWorld.UI;
+using NFMWorld.DriverInterface.UI;
 
+// ReSharper disable once CheckNamespace
 namespace Avalonia.Controls.Documents;
 
 [WhitespaceSignificantCollection]

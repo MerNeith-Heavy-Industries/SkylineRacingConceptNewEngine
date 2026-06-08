@@ -1,56 +1,49 @@
-using System.Reflection;
-using Microsoft.Extensions.Primitives;
-using Monogame.ImGuiNet;
-using NFMWorld.DriverInterface;
-using NFMWorld.SkiaDriver;
-using NFMWorld.UI.Hud;
-using Font = NFMWorld.Util.Font;
+using Microsoft.Xna.Framework;
 
-namespace NFMWorld;
+namespace NFMWorld.DriverInterface;
 
-public class DummyBackend : IBackend
+public sealed class DummyBackend : IBackend
 {
     public Vector2 Viewport => new();
     public float Scale { get; set; } = 1;
 
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
-        return new RadicalMusic(file, tempomul);
+        return new DummyMusic();
     }
 
     public IImage LoadImage(string file)
     {
-        throw new NotImplementedException();
+        return new DummyImage();
     }
     
     public IImage LoadCachedImage(string file)
     {
-        throw new NotImplementedException();
+        return new DummyImage();
     }
 
     public IImage LoadImage(ReadOnlySpan<byte> file)
     {
-        throw new NotImplementedException();
+        return new DummyImage();
     }
 
     public void StopAllSounds()
     {
-        SoundClip.StopAll();
     }
 
     public ISoundClip GetSound(string filePath)
     {
-        return new SoundClip(filePath);
+        return new DummySoundClip();
     }
 
     public IGraphics Graphics { get; } = new DummyGraphics();
 
-    public class DummyGraphics : IGraphics
+    public sealed class DummyGraphics : IGraphics
     {
-        public void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[] colorPos)
+        public void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos)
         {
-            
         }
+
         public void SetColor(Color c)
         {
         }
@@ -86,12 +79,12 @@ public class DummyBackend : IBackend
 
         public IFontMetrics GetFontMetrics()
         {
-            throw new NotImplementedException();
+            return new DummyFontMetrics();
         }
 
         public IFontMetrics GetFontMetrics(Font font)
         {
-            throw new NotImplementedException();
+            return new DummyFontMetrics();
         }
 
         public void DrawString(ReadOnlySpan<char> text, int x, int y)
@@ -128,6 +121,68 @@ public class DummyBackend : IBackend
 
     public void SetAllVolumes(float vol)
     {
-        SoundClip.SetAllVolumes(vol);
     }
+}
+
+file sealed class DummyMusic : IRadicalMusic
+{
+    public void SetPaused(bool p0)
+    {
+    }
+
+    public void Unload()
+    {
+    }
+
+    public void Play()
+    {
+    }
+
+    public void SetVolume(float vol)
+    {
+    }
+
+    public float GetVolume()
+    {
+        return 1f;
+    }
+
+    public void SetFreqMultiplier(double multiplier)
+    {
+    }
+}
+
+file sealed class DummyFontMetrics : IFontMetrics
+{
+    public Vector2 MeasureText(ReadOnlySpan<char> text)
+    {
+        return Vector2.Zero;
+    }
+
+    public float LineHeight => 0;
+}
+
+file sealed class DummySoundClip : ISoundClip
+{
+    public void Play()
+    {
+    }
+
+    public void Checkopen()
+    {
+    }
+
+    public void Loop()
+    {
+    }
+
+    public void Stop()
+    {
+    }
+}
+
+file sealed class DummyImage : IImage
+{
+    public int Height => 0;
+    public int Width => 0;
 }
