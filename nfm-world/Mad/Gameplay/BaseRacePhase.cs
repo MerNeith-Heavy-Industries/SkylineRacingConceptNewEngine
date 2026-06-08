@@ -5,6 +5,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Gameplay;
 
@@ -40,6 +41,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     public enum ViewMode
     {
         Follow,
+        FollowStatic,
         Around,
         Watch
     }
@@ -136,48 +138,56 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         if (spectating) return;
         
         var bindings = SettingsMenu.Bindings;
-        var control = CarsInRace[playerCarIndex].Control;
-        
-        // determine base key states
-        bool acceleratePressed = _pressedKeys.Contains(bindings.Accelerate);
-        bool brakePressed = _pressedKeys.Contains(bindings.Brake);
-        bool turnLeftPressed = _pressedKeys.Contains(bindings.TurnLeft);
-        bool turnRightPressed = _pressedKeys.Contains(bindings.TurnRight);
-        bool aerialBouncePressed = _pressedKeys.Contains(bindings.AerialBounce);
-        bool aerialStrafePressed = _pressedKeys.Contains(bindings.AerialStrafe);
-        bool handbrakePressed = _pressedKeys.Contains(bindings.Handbrake);
-        
-        // apply Up/Down controls
-        control.Up = acceleratePressed || aerialBouncePressed;
-        control.Down = brakePressed || aerialBouncePressed;
-        
-        // apply Left/Right controls with AerialStrafe logic
-        bool baseLeft = turnLeftPressed;
-        bool baseRight = turnRightPressed;
-        
-        if (aerialStrafePressed)
+
+        if (gamemodeInstance != null)
         {
-            // AerialStrafe enables smooth turning by activating both directions
-            if (control.Up && control.Down)
+            var clientPlayerIndex = gamemodeInstance.players.FindIndex(p => p.IsClientPlayer);
+            if (clientPlayerIndex != -1)
             {
-                baseLeft = true;
-                baseRight = true;
-            }
-            else if (baseLeft)
-            {
-                // left is pressed - also enable right for smooth left turn
-                baseRight = true;
-            }
-            else if (baseRight)
-            {
-                // right is pressed - also enable left for smooth right turn
-                baseLeft = true;
+                var control = CarsInRace[clientPlayerIndex].Control;
+
+                // determine base key states
+                bool acceleratePressed = _pressedKeys.Contains(bindings.Accelerate);
+                bool brakePressed = _pressedKeys.Contains(bindings.Brake);
+                bool turnLeftPressed = _pressedKeys.Contains(bindings.TurnLeft);
+                bool turnRightPressed = _pressedKeys.Contains(bindings.TurnRight);
+                bool aerialBouncePressed = _pressedKeys.Contains(bindings.AerialBounce);
+                bool aerialStrafePressed = _pressedKeys.Contains(bindings.AerialStrafe);
+                bool handbrakePressed = _pressedKeys.Contains(bindings.Handbrake);
+
+                // apply Up/Down controls
+                control.Up = acceleratePressed || aerialBouncePressed;
+                control.Down = brakePressed || aerialBouncePressed;
+
+                // apply Left/Right controls with AerialStrafe logic
+                bool baseLeft = turnLeftPressed;
+                bool baseRight = turnRightPressed;
+
+                if (aerialStrafePressed)
+                {
+                    // AerialStrafe enables smooth turning by activating both directions
+                    if (control.Up && control.Down)
+                    {
+                        baseLeft = true;
+                        baseRight = true;
+                    }
+                    else if (baseLeft)
+                    {
+                        // left is pressed - also enable right for smooth left turn
+                        baseRight = true;
+                    }
+                    else if (baseRight)
+                    {
+                        // right is pressed - also enable left for smooth right turn
+                        baseLeft = true;
+                    }
+                }
+
+                control.Left = baseLeft;
+                control.Right = baseRight;
+                control.Handb = handbrakePressed;
             }
         }
-        
-        control.Left = baseLeft;
-        control.Right = baseRight;
-        control.Handb = handbrakePressed;
     }
 
     public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
@@ -250,6 +260,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         {
             case ViewMode.Follow:
                 PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback, (float)CarsInRace[playerCarIndex].Mad.Speed, (float)CarsInRace[playerCarIndex].Stats.Swits[2]);
+                break;
+            case ViewMode.FollowStatic:
+                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.StaticCameraXz, CarsInRace[playerCarIndex].Control.Lookback, (float)CarsInRace[playerCarIndex].Mad.Speed, (float)CarsInRace[playerCarIndex].Stats.Swits[2]);
                 break;
             case ViewMode.Around:
                 PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
