@@ -14,7 +14,7 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IGamemo
     {
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, 500, 0, player.IsClientPlayer);
+            carsInRace[idx] = new BackendCar(player, idx, 500, 0);
         }
         carsInRace[players.Count] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
 

@@ -1,4 +1,6 @@
-﻿namespace NFMWorldLibrary.Backend.Gamemodes;
+﻿using NFMWorldLibrary.Gamemodes;
+
+namespace NFMWorldLibrary.Backend.Gamemodes;
 
 public class BaseGamemodeParameters
 {

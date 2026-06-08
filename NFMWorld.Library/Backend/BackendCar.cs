@@ -1,5 +1,7 @@
 ﻿using NFMWorldLibrary.Backend.AI;
+using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorldLibrary.Backend;
@@ -30,6 +32,8 @@ public class BackendCar : BackendGameObject, IInGameCar
     public event DamageFunc? DamagedZ;
     public event SparkFunc? Sparked;
     public event DustFunc? Dusted;
+    
+    public PlayerParameters Player { get; }
 
     public BackendCar(
         IInGameCar other,
@@ -43,6 +47,11 @@ public class BackendCar : BackendGameObject, IInGameCar
         isClientPlayer
     )
     {
+    }
+
+    public BackendCar(PlayerParameters player, int im, fix64 x, fix64 z) : this(BackendGameSparker.GetCar(player.CarName).Rad!, im, x, z, player.IsClientPlayer)
+    {
+        Player = player;
     }
 
     public BackendCar(Rad3d rad, int im, fix64 x, fix64 z, bool isClientPlayer)
@@ -60,6 +69,15 @@ public class BackendCar : BackendGameObject, IInGameCar
         
         Position = new f64Vector3(x, World.Ground - GroundAt, z);
         Rotation = f64Euler.Identity;
+        
+        Player = new PlayerParameters
+        {
+            CarName = rad.FileName,
+            IsClientPlayer = false,
+            Color = new Color3(255, 255, 255),
+            IsBot = false,
+            PlayerName = "hogan rewish"
+        };
     }
 
     public void Drive(IStage stage)

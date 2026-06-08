@@ -57,7 +57,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
     protected virtual BackendCar LoadPlayerCar(int x, int z)
     {
-        return new BackendCar(BackendGameSparker.GetCar(players[PlayerCarIndex].CarName).Rad!, PlayerCarIndex, x, z, true);
+        return new BackendCar(players[PlayerCarIndex], PlayerCarIndex, x, z);
     }
 
     public override void GameTick()

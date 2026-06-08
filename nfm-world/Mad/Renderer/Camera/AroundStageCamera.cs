@@ -70,9 +70,12 @@ public class AroundStageCamera
             _gofocus = 0.35f + (float)URandom.Double() * 1.3f;
         }
 
-        _targetX -= (_targetX - (float)stage.nodes[_point].Position.X) / 10f * Physics.PHYSICS_MULTIPLIER;
-        _targetY -= (_targetY - (float)stage.nodes[_point].Position.Y) / 10f * Physics.PHYSICS_MULTIPLIER;
-        _targetZ -= (_targetZ - (float)stage.nodes[_point].Position.Z) / 10f * Physics.PHYSICS_MULTIPLIER;
+        if (_point < stage.nodes.Count)
+        {
+            _targetX -= (_targetX - (float)stage.nodes[_point].Position.X) / 10f * Physics.PHYSICS_MULTIPLIER;
+            _targetY -= (_targetY - (float)stage.nodes[_point].Position.Y) / 10f * Physics.PHYSICS_MULTIPLIER;
+            _targetZ -= (_targetZ - (float)stage.nodes[_point].Position.Z) / 10f * Physics.PHYSICS_MULTIPLIER;
+        }
 
         if (_pointCount >= 45 * Physics.PHYSICS_MULTIPLIER)
         {
@@ -97,7 +100,7 @@ public class AroundStageCamera
 
     private void FallIntoPlace(IStage stage)
     {
-        if (_hit == 45000f)
+        if (_hit == 45000f && stage.nodes.Count > 0)
         {
             _startX = ((float)stage.nodes[0].Position.X - _targetX) / 116f;
             _startZ = ((float)stage.nodes[0].Position.Z - _targetZ) / 116f;
