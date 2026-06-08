@@ -111,7 +111,7 @@ public partial struct DemoEntry
         f64Vector3 pos = new(CarPosition.X, CarPosition.Y, CarPosition.Z);
         car.Position = pos;
 
-        f64Euler rotation = new(f64AngleSingle.FromDegrees(CarRotation.Xz), f64AngleSingle.FromDegrees(CarRotation.Pxy), f64AngleSingle.FromDegrees(CarRotation.Pzy));
+        f64Euler rotation = new(f64AngleSingle.FromDegrees(CarRotation.Xz), f64AngleSingle.FromDegrees(CarRotation.Pzy), f64AngleSingle.FromDegrees(CarRotation.Pxy));
         car.Rotation = rotation;
 
         car.Mad.Pxy = CarRotation.Pxy;
