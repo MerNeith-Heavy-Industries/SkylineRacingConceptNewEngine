@@ -4,7 +4,9 @@ using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Rad;
+using NFMWorldLibrary.Util;
 
 // Match NFMWorld.Library's global using aliases
 using fix64 = FixedMathSharp.Fixed64;
@@ -42,6 +44,15 @@ class SimCar : IInGameCar
     public int placement { get; set; }
     public bool Wasted => false;
     public BaseAi? Bot { get; set; }
+
+    public PlayerParameters Player { get; } = new PlayerParameters()
+    {
+        IsClientPlayer = true,
+        CarName = "nfmm/2000tornados",
+        Color = new Color3(255, 255, 255),
+        IsBot = false,
+        PlayerName = "TesTPlayer"
+    };
 
     public event DamageFunc? DamagedX;
     public event RoofDamageFunc? DamagedY;

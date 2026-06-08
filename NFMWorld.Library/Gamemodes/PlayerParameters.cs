@@ -1,6 +1,4 @@
-﻿using NFMWorldLibrary.Util;
-
-namespace NFMWorldLibrary.Backend.Gamemodes;
+﻿namespace NFMWorldLibrary.Gamemodes;
 
 public class PlayerParameters
 {

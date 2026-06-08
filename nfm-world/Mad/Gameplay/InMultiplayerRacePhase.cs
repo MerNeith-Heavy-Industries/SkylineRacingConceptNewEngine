@@ -4,6 +4,7 @@ using NFMWorld.Gameplay.Gamemodes;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
@@ -26,18 +27,6 @@ public class InMultiplayerRacePhase(
     public override void Enter()
     {
         raceState = RaceState.WaitingToStart;
-
-        var player = session.Players
-            .Select(c => (KeyValuePair<byte, S2C_RaceStarted.PlayerInfo>?) c)
-            .FirstOrDefault(c => c!.Value.Value.Id == playerClientId);
-        
-        if (player is { Key: var index })
-            playerCarIndex = index;
-        else
-        {
-            playerCarIndex = 0;
-            spectating = true;
-        }
 
         base.Enter();
 
@@ -74,7 +63,7 @@ public class InMultiplayerRacePhase(
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"race state: {raceState}, player car index: {playerCarIndex}, spectating: {spectating}");
+        FrameTrace.AddMessage($"race state: {raceState}");
         
         foreach (var packet in transport.GetNewPackets())
         {
@@ -106,7 +95,7 @@ public class InMultiplayerRacePhase(
         {
             transport.SendPacketToServer(new C2S_PlayerState()
             {
-                State = PlayerState.CreateFrom(_ticks++, CarsInRace[playerCarIndex])
+                State = PlayerState.CreateFrom(_ticks++, CarsInRace.First(c => c.Player.IsClientPlayer))
             });
         }
     }

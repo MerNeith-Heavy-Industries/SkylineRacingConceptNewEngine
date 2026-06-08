@@ -8,6 +8,7 @@ using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Files;
 using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using Steamworks;
 using WorldXaml.UI.Yoga;
@@ -204,7 +205,7 @@ public static class DevConsoleCommands
     {
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.GetClientCar(inRacePhase.playerCarIndex).VisuallyWasted = true;
+            inRacePhase.GetClientCar(0).VisuallyWasted = true;
         }
     }
 
@@ -278,7 +279,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
+            var car = inRacePhase.GetClientCar(0);
             MeshDamage.DamageX(car.Stats, car, 0, amount);
             MeshDamage.DamageX(car.Stats, car, 1, amount);
             MeshDamage.DamageX(car.Stats, car, 2, amount);
@@ -295,10 +296,10 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
+            var car = inRacePhase.GetClientCar(0);
             var nbsq = 0;
-            var squash = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Squash;
-            var mtouch = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Mtouch;
+            var squash = inRacePhase.CarsInRace[0].Mad.Squash;
+            var mtouch = inRacePhase.CarsInRace[0].Mad.Mtouch;
             MeshDamage.DamageY(car.Stats, car, 0, amount, mtouch, ref nbsq, ref squash);
             MeshDamage.DamageY(car.Stats, car, 1, amount, mtouch, ref nbsq, ref squash);
             MeshDamage.DamageY(car.Stats, car, 2, amount, mtouch, ref nbsq, ref squash);
@@ -315,7 +316,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
+            var car = inRacePhase.GetClientCar(0);
             MeshDamage.DamageZ(car.Stats, car, 0, amount);
             MeshDamage.DamageZ(car.Stats, car, 1, amount);
             MeshDamage.DamageZ(car.Stats, car, 2, amount);
@@ -394,7 +395,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Speed = (fix64)speed;
+            inRacePhase.CarsInRace[0].Mad.Speed = (fix64)speed;
         }
         Logging.Info($"Set player car speed to {speed}");
     }
@@ -403,8 +404,8 @@ public static class DevConsoleCommands
     {
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var originalCar = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(originalCar.Rad, inRacePhase.playerCarIndex, 0, 0, true);
+            var originalCar = inRacePhase.CarsInRace[0];
+            inRacePhase.CarsInRace[0] = new BackendCar(originalCar.Rad, 0, 0, 0, true);
         }
 
         Logging.Info("Position reset");
@@ -490,7 +491,7 @@ public static class DevConsoleCommands
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
             inRacePhase.playerCarName = car.FileName;
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(car, inRacePhase.playerCarIndex, 0, 0, true);
+            inRacePhase.CarsInRace[0] = new BackendCar(car, 0, 0, 0, true);
             inRacePhase.ForceReloadGamemode();
         }
         

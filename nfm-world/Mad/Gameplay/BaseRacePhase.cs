@@ -31,8 +31,6 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     protected FollowCamera PlayerFollowCamera = new();
     protected AroundCamera PlayerAroundCamera = new();
     protected AroundStageCamera StageAroundCamera = new();
-
-    public bool spectating = false;
     
     // Track which keys are currently pressed to properly handle meta-bindings
     private HashSet<Keys> _pressedKeys = new();
@@ -90,62 +88,72 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         UpdateControlState();
 
         // Handle non-movement keys
-        if (key == bindings.Enter)
+        if (gamemodeInstance != null)
         {
-            CarsInRace[playerCarIndex].Control.Enter = true;
-        }
-        if (key == bindings.LookBack)
-        {
-            CarsInRace[playerCarIndex].Control.Lookback = -1;
-        }
-        if (key == bindings.LookLeft)
-        {
-            CarsInRace[playerCarIndex].Control.Lookback = 3;
-        }
-        if (key == bindings.LookRight)
-        {
-            CarsInRace[playerCarIndex].Control.Lookback = 2;
-        }
-        if (key == bindings.ToggleMusic)
-        {
-            CarsInRace[playerCarIndex].Control.Mutem = !CarsInRace[playerCarIndex].Control.Mutem;
+            var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
+
+            if (control != null)
+            {
+                if (key == bindings.Enter)
+                {
+                    control.Enter = true;
+                }
+
+                if (key == bindings.LookBack)
+                {
+                    control.Lookback = -1;
+                }
+
+                if (key == bindings.LookLeft)
+                {
+                    control.Lookback = 3;
+                }
+
+                if (key == bindings.LookRight)
+                {
+                    control.Lookback = 2;
+                }
+
+                if (key == bindings.ToggleMusic)
+                {
+                    control.Mutem = !control.Mutem;
+                }
+
+                if (key == bindings.ToggleSFX)
+                {
+                    control.Mutes = !control.Mutes;
+                }
+
+                if (key == bindings.ToggleArrace)
+                {
+                    control.Arrace = !control.Arrace;
+                }
+
+                if (key == bindings.ToggleRadar)
+                {
+                    control.Radar = !control.Radar;
+                }
+
+                if (key == bindings.CycleView)
+                {
+                    currentViewMode = (ViewMode)(((int)currentViewMode + 1) % Enum.GetValues<ViewMode>().Length);
+                }
+            }
         }
 
-        if (key == bindings.ToggleSFX)
-        {
-            CarsInRace[playerCarIndex].Control.Mutes = !CarsInRace[playerCarIndex].Control.Mutes;
-        }
-
-        if (key == bindings.ToggleArrace)
-        {
-            CarsInRace[playerCarIndex].Control.Arrace = !CarsInRace[playerCarIndex].Control.Arrace;
-        }
-
-        if (key == bindings.ToggleRadar)
-        {
-            CarsInRace[playerCarIndex].Control.Radar = !CarsInRace[playerCarIndex].Control.Radar;
-        }
-        if (key == bindings.CycleView)
-        {
-            currentViewMode = (ViewMode)(((int)currentViewMode + 1) % Enum.GetValues<ViewMode>().Length);
-        }
-        
         gamemodeInstance?.KeyPressed(key);
     }
     
     private void UpdateControlState()
     {
-        if (spectating) return;
-        
         var bindings = SettingsMenu.Bindings;
 
         if (gamemodeInstance != null)
         {
-            var clientPlayerIndex = gamemodeInstance.players.FindIndex(p => p.IsClientPlayer);
-            if (clientPlayerIndex != -1)
-            {
-                var control = CarsInRace[clientPlayerIndex].Control;
+            var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
 
+            if (control != null)
+            {
                 // determine base key states
                 bool acceleratePressed = _pressedKeys.Contains(bindings.Accelerate);
                 bool brakePressed = _pressedKeys.Contains(bindings.Brake);
@@ -159,32 +167,13 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                 control.Up = acceleratePressed || aerialBouncePressed;
                 control.Down = brakePressed || aerialBouncePressed;
 
-                // apply Left/Right controls with AerialStrafe logic
-                bool baseLeft = turnLeftPressed;
-                bool baseRight = turnRightPressed;
-
                 if (aerialStrafePressed)
                 {
-                    // AerialStrafe enables smooth turning by activating both directions
-                    if (control.Up && control.Down)
-                    {
-                        baseLeft = true;
-                        baseRight = true;
-                    }
-                    else if (baseLeft)
-                    {
-                        // left is pressed - also enable right for smooth left turn
-                        baseRight = true;
-                    }
-                    else if (baseRight)
-                    {
-                        // right is pressed - also enable left for smooth right turn
-                        baseLeft = true;
-                    }
+                    
                 }
 
-                control.Left = baseLeft;
-                control.Right = baseRight;
+                control.Left = turnLeftPressed || aerialStrafePressed;
+                control.Right = turnRightPressed || aerialStrafePressed;
                 control.Handb = handbrakePressed;
             }
         }
@@ -203,16 +192,25 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         UpdateControlState();
 
         // handle special cases
-        if (key == Keys.Escape)
+        if (gamemodeInstance != null)
         {
-            // this seems to be currently unused
-            CarsInRace[playerCarIndex].Control.Exit = false;
+            var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
+
+            if (control != null)
+            {
+                if (key == Keys.Escape)
+                {
+                    // this seems to be currently unused
+                    control.Exit = false;
+                }
+
+                if (key == bindings.LookBack || key == bindings.LookLeft || key == bindings.LookRight)
+                {
+                    control.Lookback = 0;
+                }
+            }
         }
-        if (key == bindings.LookBack || key == bindings.LookLeft || key == bindings.LookRight)
-        {
-            CarsInRace[playerCarIndex].Control.Lookback = 0;
-        }
-        
+
         gamemodeInstance?.KeyReleased(key);
     }
 
@@ -254,21 +252,42 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
     public override void GameTick()
     {
-        gamemodeInstance!.GameTick();
+        gamemodeInstance?.GameTick();
 
-        switch (currentViewMode)
+        if (gamemodeInstance != null)
         {
-            case ViewMode.Follow:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback, (float)CarsInRace[playerCarIndex].Mad.Speed, (float)CarsInRace[playerCarIndex].Stats.Swits[2]);
-                break;
-            case ViewMode.FollowStatic:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.StaticCameraXz, CarsInRace[playerCarIndex].Control.Lookback, (float)CarsInRace[playerCarIndex].Mad.Speed, (float)CarsInRace[playerCarIndex].Stats.Swits[2]);
-                break;
-            case ViewMode.Around:
-                PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
-                break;
+            var car = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer);
+            if (car != null)
+            {
+                switch (currentViewMode)
+                {
+                    case ViewMode.Follow:
+                        PlayerFollowCamera.Follow(
+                            camera, 
+                            car,
+                            (float)car.Mad.Cxz,
+                            car.Control.Lookback,
+                            (float)car.Mad.Speed,
+                            car.Stats.Swits[2]
+                        );
+                        break;
+                    case ViewMode.FollowStatic:
+                        PlayerFollowCamera.Follow(
+                            camera,
+                            car,
+                            (float)car.Mad.StaticCameraXz,
+                            car.Control.Lookback,
+                            (float)car.Mad.Speed,
+                            car.Stats.Swits[2]
+                        );
+                        break;
+                    case ViewMode.Around:
+                        PlayerAroundCamera.Around(camera, car);
+                        break;
+                }
+            }
         }
-        
+
         base.GameTick();
     }
 

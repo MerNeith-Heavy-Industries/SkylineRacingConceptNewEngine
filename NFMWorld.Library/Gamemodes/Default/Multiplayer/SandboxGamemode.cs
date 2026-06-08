@@ -14,7 +14,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     {
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, 0, 0, player.IsClientPlayer);
+            carsInRace[idx] = new BackendCar(player, idx, 0, 0);
         }
         carsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
 

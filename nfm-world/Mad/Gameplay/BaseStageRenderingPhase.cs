@@ -39,7 +39,6 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     public Scene current_scene = null!;
 
     public UnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
-    public int playerCarIndex = 0;
     private ClientCarCollection clientCarCollection;
     public ClientStageRenderer clientStageRenderer;
 

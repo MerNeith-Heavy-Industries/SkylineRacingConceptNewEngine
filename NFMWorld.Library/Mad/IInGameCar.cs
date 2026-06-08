@@ -1,6 +1,8 @@
 ﻿using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.AI;
+using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Gamemodes;
 
 namespace NFMWorldLibrary;
 
@@ -15,6 +17,7 @@ public interface IInGameCar : ICar
     int placement { get; set; } // cp.pos
     bool Wasted { get; }
     BaseAi? Bot { get; set; }
+    PlayerParameters Player { get; }
 
     public event DamageFunc? DamagedX;
     public event RoofDamageFunc? DamagedY;
