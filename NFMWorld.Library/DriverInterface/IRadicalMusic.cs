@@ -1,5 +1,8 @@
+using NFMWorldLibrary.Backend.Gamemodes;
+
 namespace NFMWorld.DriverInterface;
 
+[ClientOnly]
 public interface IRadicalMusic
 {
     static float CurrentVolume = 0.8f;

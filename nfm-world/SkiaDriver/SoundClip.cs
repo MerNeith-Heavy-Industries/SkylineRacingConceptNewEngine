@@ -31,10 +31,6 @@ internal class SoundClip : ISoundClip
 #endif
     }
 
-    public void Checkopen()
-    {
-    }
-
     public void Loop()
     {
 #if USE_BASS

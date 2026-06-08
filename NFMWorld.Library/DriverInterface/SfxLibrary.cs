@@ -1,4 +1,5 @@
 using NFMWorld.DriverInterface;
+using NFMWorldLibrary.Backend.Gamemodes;
 
 namespace NFMWorld.Sfx;
 
@@ -23,6 +24,7 @@ public static class SfxLibrary
     public static ISoundClip? tires;
     public static ISoundClip? powerup;
 
+    [ClientOnly]
     public static void LoadSounds()
     {
         crash[0] = IBackend.Backend.GetSound("data/sound/crash1.wav");

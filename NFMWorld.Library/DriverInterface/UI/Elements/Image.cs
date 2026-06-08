@@ -1,9 +1,11 @@
+using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
 
 public class Image : Node
 {
+    [ClientOnly]
     public IImage? ImageData
     {
         get;
@@ -38,6 +40,7 @@ public class Image : Node
         }
     } = 1f;
 
+    [ClientOnly]
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
         if(ImageData != null)

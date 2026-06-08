@@ -1,4 +1,5 @@
-﻿using NFMWorldLibrary.Util;
+﻿using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -11,5 +12,6 @@ public interface IGamemodeData
     BackendStage CurrentStage { get; }
     RaceState raceState { get; }
 
+    [ClientOnly]
     IClientCallbacks ClientCallbacks { get; }
 }

@@ -168,10 +168,6 @@ file sealed class DummySoundClip : ISoundClip
     {
     }
 
-    public void Checkopen()
-    {
-    }
-
     public void Loop()
     {
     }

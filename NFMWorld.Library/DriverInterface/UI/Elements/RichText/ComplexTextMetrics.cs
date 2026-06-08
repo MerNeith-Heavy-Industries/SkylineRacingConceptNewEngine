@@ -1,9 +1,11 @@
 ﻿using System.Text;
 using Maxine.Extensions;
 using Microsoft.Xna.Framework;
+using NFMWorldLibrary.Backend.Gamemodes;
 
 namespace NFMWorld.DriverInterface.UI;
 
+[ClientOnly]
 public static class ComplexTextMetrics
 {
     public static IEnumerable<FlattenedRichText> FlattenText<T>(IEnumerable<T> elements)

@@ -1,7 +1,9 @@
 using Microsoft.Xna.Framework;
+using NFMWorldLibrary.Backend.Gamemodes;
 
 namespace NFMWorld.DriverInterface;
 
+[ClientOnly]
 public static class G
 {
     private static IGraphics Graphics => IBackend.Backend.Graphics;
