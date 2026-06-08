@@ -1,6 +1,6 @@
-﻿using NFMWorld.Util;
+﻿using Microsoft.Xna.Framework;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 public interface IRichTextElement
 {

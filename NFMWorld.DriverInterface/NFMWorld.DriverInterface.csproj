@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FNA.Math\FNA.Math.csproj" />
+      <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Yoga\WorldXaml.UI.Yoga.csproj" />
+      <ProjectReference Include="..\WorldXaml\WorldXaml.Generator\WorldXaml.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="UI\" />
+    </ItemGroup>
+
+</Project>

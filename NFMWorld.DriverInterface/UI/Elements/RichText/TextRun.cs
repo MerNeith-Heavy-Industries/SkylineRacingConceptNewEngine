@@ -1,15 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Avalonia;
 using Avalonia.Controls.Documents;
 using Avalonia.Metadata;
-using NFMWorld.DriverInterface;
-using NFMWorld.Util;
+using Microsoft.Xna.Framework;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 
-namespace NFMWorld.UI;
-
+namespace NFMWorld.DriverInterface.UI;
 
 public enum BreakType
 {
@@ -53,7 +50,7 @@ public partial class TextRun : Node, IInlineHost
 
     [Property(OnChangedMethod = nameof(OnFontChanged))]
     public partial Font Font { get; set; }
-    
+
     [Property(DefaultValue = BreakType.Word, OnChangedMethod = nameof(OnBreakTypeChanged))]
     public partial BreakType BreakType { get; set; }
 

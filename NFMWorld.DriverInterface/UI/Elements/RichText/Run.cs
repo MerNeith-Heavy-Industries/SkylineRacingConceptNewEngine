@@ -2,7 +2,7 @@
 using Avalonia.Metadata;
 using WorldXaml.UI.Base;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 /// <summary>
 /// A terminal element in text flow hierarchy - contains a uniformatted run of unicode characters

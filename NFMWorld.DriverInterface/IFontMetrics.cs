@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+
 namespace NFMWorld.DriverInterface;
 
 public interface IFontMetrics

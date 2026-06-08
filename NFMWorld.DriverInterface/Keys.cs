@@ -1,4 +1,4 @@
-namespace NFMWorld.Util;
+namespace NFMWorld.DriverInterface;
 
 public enum Keys
 {

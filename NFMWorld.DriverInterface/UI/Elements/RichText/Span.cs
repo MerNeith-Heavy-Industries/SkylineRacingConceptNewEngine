@@ -3,7 +3,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.LogicalTree;
 using Avalonia.Metadata;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 /// <summary>
 /// Span element used for grouping other Inline elements.

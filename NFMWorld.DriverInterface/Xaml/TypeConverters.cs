@@ -1,10 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
-using Font = NFMWorld.Util.Font;
-using FontFamily = NFMWorld.Util.FontFamily;
-using FontStyle = NFMWorld.Util.FontStyle;
 
-namespace WorldXaml.UI.Yoga.Xaml;
+namespace NFMWorld.DriverInterface.Xaml;
 
 /// <summary>
 /// Type converter for Font - parses "FontFamily,Flags,Size" format.

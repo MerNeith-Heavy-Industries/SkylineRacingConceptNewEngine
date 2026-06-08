@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using WorldXaml.UI.Yoga.Xaml;
+using NFMWorld.DriverInterface.Xaml;
 
-namespace NFMWorld.Util;
+namespace NFMWorld.DriverInterface;
 
 [TypeConverter(typeof(FontTypeConverter))]
 public readonly record struct Font(FontFamily FontFamily, FontStyle Style, float Size);

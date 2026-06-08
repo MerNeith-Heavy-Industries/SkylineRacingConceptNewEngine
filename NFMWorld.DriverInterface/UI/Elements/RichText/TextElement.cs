@@ -1,7 +1,7 @@
-﻿using NFMWorld.Util;
+﻿using Microsoft.Xna.Framework;
 using WorldXaml.UI.Base;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 /// <summary>
 /// TextElement is an  base class for content in text based controls.

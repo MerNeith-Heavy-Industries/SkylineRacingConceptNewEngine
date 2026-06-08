@@ -1,4 +1,4 @@
-﻿namespace NFMWorld.UI;
+﻿namespace NFMWorld.DriverInterface.UI;
 
 public abstract class Inline : TextElement, IInline
 {

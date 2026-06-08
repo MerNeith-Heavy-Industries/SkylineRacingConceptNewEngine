@@ -1,7 +1,6 @@
-using NFMWorld.DriverInterface;
 using WorldXaml.UI.Yoga;
 
-namespace NFMWorld.UI;
+namespace NFMWorld.DriverInterface.UI;
 
 public class Image : Node
 {
