@@ -69,18 +69,12 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
 
         _currentState = InnerRaceState.Countdown;
 
-        if (ClientServer.IsRunningOnClient)
-        {
-            ClientReset();
-        }
+        ClientServer.RunIfOnClient(ClientReset);
     }
 
     public override void GameTick()
     {
-        if (ClientServer.IsRunningOnClient)
-        {
-            ClientGameTick();
-        }
+        ClientServer.RunIfOnClient(ClientGameTick);
 
         if (gamemodeData.raceState != RaceState.InProgress)
         {
@@ -157,10 +151,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             }
         }
 
-        if (ClientServer.IsRunningOnClient)
-        {
-            InRaceClient();
-        }
+        ClientServer.RunIfOnClient(InRaceClient);
     }
 
     private void Finished()
@@ -210,10 +201,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             }
         }
 
-        if (ClientServer.IsRunningOnClient)
-        {
-            ClientCountdownTick();
-        }
+        ClientServer.RunIfOnClient(ClientCountdownTick);
     }
     
     #region Client
@@ -230,11 +218,13 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
 
     private int _playerCarIndex;
 
+    [ClientOnly]
     protected void ClientGameTick()
     {
         FrameTrace.AddMessage($"contox: {carsInRace[_playerCarIndex].Position.X:0.00}, contoz: {carsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[_playerCarIndex].Position.Y:0.00}");
     }
 
+    [ClientOnly]
     protected void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
@@ -249,6 +239,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
     }
 
+    [ClientOnly]
     protected void InRaceClient()
     {
         _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
@@ -299,6 +290,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         }
     }
 
+    [ClientOnly]
     protected void ClientCountdownTick()
     {
         if (_countdownTime != _lastCountdownTime)
