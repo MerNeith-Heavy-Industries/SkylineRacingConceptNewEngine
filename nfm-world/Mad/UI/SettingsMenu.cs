@@ -82,6 +82,7 @@ public class SettingsMenu(WorldGame game)
     private float _fov = 90.0f;
     private int _followY = 0;
     private int _followZ = 0;
+    private bool _smoothFov;
 
     // Keyboard settings
     private string _settingMessage = "";
@@ -119,6 +120,7 @@ public class SettingsMenu(WorldGame game)
         _fov = CameraSettings.Fov;
         _followY = FollowCamera.FollowYOffset;
         _followZ = FollowCamera.FollowZOffset;
+        _smoothFov = CameraSettings.SmoothFov;
     }
 
     public void Close()
@@ -376,6 +378,9 @@ public class SettingsMenu(WorldGame game)
         ImGui.SliderFloat("##FOV", ref _fov, 70.0f, 120.0f, "%.1f°");
         
         ImGui.Spacing();
+        ImGui.Checkbox("Smooth FOV Changes", ref _smoothFov);
+        
+        ImGui.Spacing();
         ImGui.Text("Follow Y Offset");
         ImGui.SliderInt("##FollowY", ref _followY, -160, 500);
         
@@ -390,6 +395,7 @@ public class SettingsMenu(WorldGame game)
             result => {
                 if (result == MessageWindow.MessageResult.Yes) {
                     _fov = 90.0f;
+                    _smoothFov = true;
                     _followY = 0;
                     _followZ = 0;
                 }
@@ -477,6 +483,7 @@ public class SettingsMenu(WorldGame game)
 
         // Apply camera settings
         CameraSettings.Fov = _fov;
+        CameraSettings.SmoothFov = _smoothFov;
         FollowCamera.FollowYOffset = _followY;
         FollowCamera.FollowZOffset = _followZ;
 
@@ -629,6 +636,7 @@ public class SettingsMenu(WorldGame game)
                 cfgWriter.WriteLine($"camera_fov {_fov.ToString("F1", CultureInfo.InvariantCulture)}");
                 cfgWriter.WriteLine($"camera_follow_y {_followY}");
                 cfgWriter.WriteLine($"camera_follow_z {_followZ}");
+                cfgWriter.WriteLine($"camera_smooth_fov {(_smoothFov ? 1 : 0)}");
                 cfgWriter.WriteLine();
                 
                 // Key bindings
@@ -827,6 +835,9 @@ public class SettingsMenu(WorldGame game)
                             break;
                         case "camera_follow_z":
                             _followZ = int.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "camera_smooth_fov":
+                            _smoothFov = int.Parse(value) != 0;
                             break;
                         
                         // Key bindings

@@ -13,7 +13,7 @@ public class FollowCamera
 
     private static int _oldlookback = 0;
 
-    public void Follow(PerspectiveCamera camera, ITransform obj, float cxz, int lookback)
+    public void Follow(PerspectiveCamera camera, ITransform obj, float cxz, int lookback, float speed, float topSpeed)
     {
         // x: yaw = xz
         // y: pitch = zy
@@ -88,7 +88,13 @@ public class FollowCamera
         _angle.Yaw = AngleSingle.FromDegrees(-cxz);
 
         var followDistance = 800 + FollowZOffset;
-        
+
+        if (CameraSettings.SmoothFov)
+        {
+            var targetFov = float.Lerp(CameraSettings.Fov, CameraSettings.Fov * 1.2f, Math.Abs(speed) / topSpeed);
+            camera.Fov = float.Lerp(camera.Fov, targetFov, 0.075f);
+        }
+
         if (interpolateAngle)
         {
             camera.Position = camera.Position with

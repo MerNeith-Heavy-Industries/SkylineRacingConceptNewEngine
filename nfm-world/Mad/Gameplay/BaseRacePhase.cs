@@ -249,7 +249,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         switch (currentViewMode)
         {
             case ViewMode.Follow:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
+                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback, (float)CarsInRace[playerCarIndex].Mad.Speed, (float)CarsInRace[playerCarIndex].Stats.Swits[2]);
                 break;
             case ViewMode.Around:
                 PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
