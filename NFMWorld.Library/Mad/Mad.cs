@@ -1438,6 +1438,17 @@ public class Mad
         }
 
         // Surface orientation from plane fitting.
+        
+        var nWheelsOnSurface = 0;
+        if (isWheelGrounded[0]) nWheelsOnSurface++;
+        if (isWheelGrounded[1]) nWheelsOnSurface++;
+        if (isWheelGrounded[2]) nWheelsOnSurface++;
+        if (isWheelGrounded[3]) nWheelsOnSurface++;
+
+        // Only invoke plane fit when at least one wheel is grounded, or when bumping (Scy is uneven)
+        // Commented out because this seems to be unnecessary, the plane-fit is well behaved in the air.
+        // Uncomment it if the plane-fit starts misbehaving in the air.
+        // if (Scy[0] != Scy[1] || Scy[0] != Scy[2] || Scy[0] != Scy[3] || nWheelsOnSurface > 0)
         {
             var wheelpos = new InlineArray4<f64Vector3>();
 
@@ -1487,7 +1498,10 @@ public class Mad
             // Guard: when |cos(Pxy)| ≈ 0 (car within a few degrees of ±90°
             // roll) the decomposition amplifies noise — sinZ/cosZ both divide
             // by cosP ≈ 0.  Skip the entire fit and let stabilizers hold.
-            if (absCosP > (fix64)0.05f)
+            // Unless some wheels are grounded — then the wheel positions are
+            // reliable and we must let the fit pull the car out of the
+            // degenerate angle (e.g. landing pitched straight down).
+            if (absCosP > (fix64)0.05f || nWheelsOnSurface > 0)
             {
                 // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
                 //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
@@ -1522,7 +1536,9 @@ public class Mad
                 // Guard: when |cosZ| ≈ 0 (Pzy near ±90°), the plane-fit can't
                 // reliably determine Pzy — tiny noise in wheel positions flips
                 // atan2 between +90° and -90°.  Only update Pxy.
-                if (fix64.Abs(cosP_cosZ) > (fix64)0.05f)
+                // Unless some wheels are grounded — then wheel positions are
+                // reliable and we must correct even near-degenerate Pzy.
+                if (fix64.Abs(cosP_cosZ) > (fix64)0.05f || nWheelsOnSurface > 0)
                     Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
                 Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
 
