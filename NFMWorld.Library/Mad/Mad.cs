@@ -44,7 +44,7 @@ public class Mad
     /// <summary>
     /// Is colliding with the client player car
     /// </summary>
-    public bool _colidim;
+    public bool _collidingWithClientPlayer;
     public readonly int[,] _crank = new int[4, 4];
     public readonly int[,] _lcrank = new int[4, 4];
     public fix64 Cxz;
@@ -274,24 +274,24 @@ public class Mad
                             othermad.Scx[otherwheel] += f131;
                             if (IsClientPlayer)
                             {
-                                othermad._colidim = true;
+                                othermad._collidingWithClientPlayer = true;
                             }
                             totalOtherDamage += othermad.Regx(otherwheel, f131 * Stat.Moment * damageMult, otherconto, random);
-                            if (othermad._colidim)
+                            if (othermad._collidingWithClientPlayer)
                             {
-                                othermad._colidim = false;
+                                othermad._collidingWithClientPlayer = false;
                             }
                             Scx[wheel] -= f130;
                             totalOwnDamage += Regx(wheel, -f130 * Stat.Moment * damageMult, conto, random);
                             Scy[wheel] -= Stat.Revlift;
                             if (IsClientPlayer)
                             {
-                                othermad._colidim = true;
+                                othermad._collidingWithClientPlayer = true;
                             }
                             totalOtherDamage += othermad.Regy(otherwheel, Stat.Revlift * 7, otherconto, random);
-                            if (othermad._colidim)
+                            if (othermad._collidingWithClientPlayer)
                             {
-                                othermad._colidim = false;
+                                othermad._collidingWithClientPlayer = false;
                             }
                             if (UMath.RandomBoolean())
                             {
@@ -330,24 +330,24 @@ public class Mad
                             othermad.Scz[otherwheel] += f133;
                             if (IsClientPlayer)
                             {
-                                othermad._colidim = true;
+                                othermad._collidingWithClientPlayer = true;
                             }
                             totalOtherDamage += othermad.Regz(otherwheel, f133 * Stat.Moment * damageMult, otherconto, random);
-                            if (othermad._colidim)
+                            if (othermad._collidingWithClientPlayer)
                             {
-                                othermad._colidim = false;
+                                othermad._collidingWithClientPlayer = false;
                             }
                             Scz[wheel] -= f132;
                             totalOwnDamage += Regz(wheel, -f132 * Stat.Moment * damageMult, conto, random);
                             Scy[wheel] -= Stat.Revlift;
                             if (IsClientPlayer)
                             {
-                                othermad._colidim = true;
+                                othermad._collidingWithClientPlayer = true;
                             }
                             totalOtherDamage += othermad.Regy(otherwheel, Stat.Revlift * 7, otherconto, random);
-                            if (othermad._colidim)
+                            if (othermad._collidingWithClientPlayer)
                             {
-                                othermad._colidim = false;
+                                othermad._collidingWithClientPlayer = false;
                             }
                             if (UMath.RandomBoolean())
                             {
@@ -1269,7 +1269,7 @@ public class Mad
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 f42 * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
-                            if ( /*Im == XTGraphics.Im &&*/ !BadLanding)
+                            if (IsClientPlayer && !BadLanding)
                             {
                                 SfxPlaySkid(this, (surfaceType, (float)fix64.Sqrt(Scx[j] * Scx[j] + Scz[j] * Scz[j])));
                                 //XTPart2.Skidf(Im, i32,
@@ -2389,7 +2389,11 @@ public class Mad
                                     {
                                         conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0,
                                             (int)wheelGround);
-                                        SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+
+                                        if (IsClientPlayer)
+                                        {
+                                            SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                        }
                                     }
 
                                     var reboundVelocityDelta = worldImpact * (-GetReboundMul(wasMtouch));
@@ -2437,7 +2441,10 @@ public class Mad
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
-                                SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                if (IsClientPlayer)
+                                {
+                                    SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                }
                             }
 
                             bounceRebound(k, conto, random);
@@ -2463,8 +2470,10 @@ public class Mad
                             if (_crank[0, k] > 1)
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 0, (int)wheelGround);
-                                //if (Im == /*this.xt.im*/ 0)
-                                SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                if (IsClientPlayer)
+                                {
+                                    SfxPlayScrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                }
                             }
 
                             // z rebound CHK5
@@ -2516,11 +2525,13 @@ public class Mad
                                 Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && (collidable.Skid == 0 || collidable.Skid == 1))
+                                if (BadLanding && collidable.Skid is 0 or 1)
                                 {
                                     conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
-                                    //if (Im == /*this.xt.im*/ 0)
-                                    SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                    if (IsClientPlayer)
+                                    {
+                                        SfxPlayGscrape(this, ((int)Scx[k], (int)Scy[k], (int)Scz[k]));
+                                    }
                                 }
 
                                 if (!wasMtouch && surfaceType != 0)
@@ -2587,7 +2598,7 @@ public class Mad
                 f += 100;
             }
             Shakedam = (int)((fix64.Abs(f) + Shakedam) * fix64.Half);
-            if (/*Im == XTGraphics.Im*/true || _colidim)
+            if (IsClientPlayer || _collidingWithClientPlayer)
             {
                 SfxPlayCrash(this, ((int)f, 0));
                 //XTGraphics.Acrash(Im, f, 0);
@@ -2668,7 +2679,7 @@ public class Mad
                 Shakedam = (int)((fix64.Abs(f) + Shakedam) * fix64.Half);
             }
             
-            if (/*Im == XTGraphics.Im ||*/true || _colidim)
+            if (IsClientPlayer || _collidingWithClientPlayer)
             {
                 SfxPlayCrash(this, ((int)f, i99 * i98));
                 //XTGraphics.Acrash(Im, f, i99 * i98);
@@ -2753,7 +2764,7 @@ public class Mad
             }
             Shakedam = (int)((fix64.Abs(f) + Shakedam) * fix64.Half);
             
-            if (/*Im == XTGraphics.Im ||*/true || _colidim)
+            if (IsClientPlayer || _collidingWithClientPlayer)
             {
                 SfxPlayCrash(this, ((int)f, 0));
                 //XTGraphics.Acrash(Im, f, 0);

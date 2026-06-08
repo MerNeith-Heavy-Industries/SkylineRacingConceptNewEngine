@@ -2,13 +2,11 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues) : IGamemode
+public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData) : IGamemode
 {
-    public int playerCarIndex => gamemodeParameters.PlayerCarIndex;
     public IReadOnlyList<PlayerParameters> players => gamemodeParameters.Players;
-    public PlayerParameters player => gamemodeParameters.Players[playerCarIndex];
-    public UnlimitedArray<IInGameCar> carsInRace => raceValues.CarsInRace;
-    public BackendStage currentStage => raceValues.CurrentStage;
+    public UnlimitedArray<IInGameCar> carsInRace => gamemodeData.CarsInRace;
+    public BackendStage currentStage => gamemodeData.CurrentStage;
     public int NumPlayers => players.Count;
 
     /// <summary>

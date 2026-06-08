@@ -1,9 +1,10 @@
 using Maxine.Extensions;
+using NFMWorld.DriverInterface;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
-    : BaseGamemode(gamemodeParameters, raceValues)
+public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+    : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
@@ -13,7 +14,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVal
     {
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, 0, 0, idx == playerCarIndex);
+            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, 0, 0, player.IsClientPlayer);
         }
         carsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
 
@@ -34,7 +35,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVal
     {
         FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
 
-        if (raceValues.raceState == RaceState.InProgress)
+        if (gamemodeData.raceState == RaceState.InProgress)
         {
             // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
             // We round this up to 3 ticks per 63TPS tick.
@@ -54,8 +55,30 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVal
 
             foreach (var car in carsInRace)
             {
-                car.Drive(raceValues.CurrentStage);
+                car.Drive(gamemodeData.CurrentStage);
             }
         }
     }
+
+    #region Client
+    
+    public void KeyPressed(Keys key)
+    {
+        // Handle key presses specific to Time Trial mode
+        if (key == Keys.R)
+        {
+            Reset();
+        }
+    }
+
+    public void KeyReleased(Keys key)
+    {
+        // Handle key releases specific to Time Trial mode
+    }
+
+    public void Render()
+    {
+    }
+
+    #endregion
 }

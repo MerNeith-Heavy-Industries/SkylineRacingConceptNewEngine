@@ -1,7 +1,10 @@
+using Maxine.Extensions;
+using NFMWorld.DriverInterface;
+
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
-    : BaseGamemode(gamemodeParameters, raceValues)
+public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+    : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
@@ -9,8 +12,11 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVa
 
     public override void Enter()
     {
-        carsInRace[playerCarIndex] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, playerCarIndex, 500, 0, true);
-        carsInRace[1] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
+        foreach (var (idx, player) in players.WithIndex())
+        {
+            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, 500, 0, player.IsClientPlayer);
+        }
+        carsInRace[players.Count] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
 
         Reset();
     }
@@ -51,7 +57,29 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IRaceVa
 
         foreach (var car in carsInRace)
         {
-            car.Drive(raceValues.CurrentStage);
+            car.Drive(gamemodeData.CurrentStage);
         }
     }
+
+    #region Client
+
+    public void KeyPressed(Keys key)
+    {
+        // Handle key presses specific to Time Trial mode
+        if (key == Keys.R)
+        {
+            Reset();
+        }
+    }
+
+    public void KeyReleased(Keys key)
+    {
+        // Handle key releases specific to Time Trial mode
+    }
+
+    public void Render()
+    {
+    }
+
+    #endregion
 }

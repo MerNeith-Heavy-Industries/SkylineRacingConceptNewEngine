@@ -48,7 +48,6 @@ public static class DevConsoleCommands
             GameSparker.SetPhase(GameSparker.InRace!);
             GameSparker.InRace!.OverrideGamemode(new TimeTrialPreviewGamemode(new BaseGamemodeParameters
             {
-                PlayerCarIndex = 0,
                 Players =
                 [
                     new PlayerParameters
@@ -56,7 +55,8 @@ public static class DevConsoleCommands
                         CarName = args[0],
                         Color = new Color3(255, 0, 0),
                         PlayerName = "Player",
-                        IsBot = false
+                        IsBot = false,
+                        IsClientPlayer = true
                     }
                 ],
             }, GameSparker.InRace, SavedTimeTrial.Load(args[0], args[1])!));
@@ -195,8 +195,8 @@ public static class DevConsoleCommands
 
     private static void DemoPlayback(DevConsole console, string[] args)
     {
-        TimeTrialClientGamemode.PlaybackOnReset = !TimeTrialClientGamemode.PlaybackOnReset;
-        Logging.Info("Playback set to " + TimeTrialClientGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
+        TimeTrialGamemode.PlaybackOnReset = !TimeTrialGamemode.PlaybackOnReset;
+        Logging.Info("Playback set to " + TimeTrialGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
         Logging.Info("Restart the time trial for changes to take effect.");
     }
 
@@ -466,7 +466,7 @@ public static class DevConsoleCommands
         {
             inRacePhase.LoadStage(stageName);
             Logging.Info($"Switched to stage '{stageName}'");
-            inRacePhase.ReloadGamemode();
+            inRacePhase.ForceReloadGamemode();
         }
     }
 
@@ -491,7 +491,7 @@ public static class DevConsoleCommands
         {
             inRacePhase.playerCarName = car.FileName;
             inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(car, inRacePhase.playerCarIndex, 0, 0, true);
-            inRacePhase.ReloadGamemode();
+            inRacePhase.ForceReloadGamemode();
         }
         
         IBackend.Backend.StopAllSounds();

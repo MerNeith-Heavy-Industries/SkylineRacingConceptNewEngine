@@ -1,12 +1,13 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Sfx;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
 
-public class ClientCar : MeshedGameObject, ICar, IDisposable
+public class ClientCar : MeshedGameObject, ICar, IDisposable, IClientCarCallbacks
 {
     private ICar _backendCar;
 
