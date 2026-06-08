@@ -1448,7 +1448,8 @@ public class Mad
         // Only invoke plane fit when at least one wheel is grounded, or when bumping (Scy is uneven)
         // Commented out because this seems to be unnecessary, the plane-fit is well behaved in the air.
         // Uncomment it if the plane-fit starts misbehaving in the air.
-        // if (Scy[0] != Scy[1] || Scy[0] != Scy[2] || Scy[0] != Scy[3] || nWheelsOnSurface > 0)
+        // Update: Uncommented because Audi reported it still happening.
+        if (Scy[0] != Scy[1] || Scy[0] != Scy[2] || Scy[0] != Scy[3] || nWheelsOnSurface > 0)
         {
             var wheelpos = new InlineArray4<f64Vector3>();
 
