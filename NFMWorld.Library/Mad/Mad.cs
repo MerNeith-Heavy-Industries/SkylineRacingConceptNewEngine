@@ -1484,9 +1484,11 @@ public class Mad
             // |cos(Pxy)| = sqrt(cosP_cosZ² + cosP_sinZ²)  because cos²Z+sin²Z=1
             var absCosP = fix64.Sqrt(cosP_cosZ * cosP_cosZ + cosP_sinZ * cosP_sinZ);
 
-            // Guard: when |cosP| ≈ 0 (car at ±90° roll) the plane-fit is degenerate
-            // for both axes. Skip the update and let the loop/stabilizer handle it.
-            if (absCosP > (fix64)0.001f)
+            // Guard: when |cosP| ≈ 0 (car at ±90° roll) or |cosP_cosZ| ≈ 0
+            // (plane normal nearly horizontal, e.g. fast rollspins in the air),
+            // the plane-fit is degenerate for both axes. A sign flip in cosP_cosZ
+            // would toggle the cosP branch selection → large jump. Skip entirely.
+            if (absCosP > (fix64)0.001f && fix64.Abs(cosP_cosZ) > (fix64)0.001f)
             {
                 // cosP_cosZ = cos(Pxy)·cos(Pzy) = -terrainNormal.Y
                 //   cosP_cosZ > 0 → upright hemisphere → cosP > 0
@@ -1517,13 +1519,7 @@ public class Mad
                 // would introduce when cosP < 0.
                 var sinZ = cosP_sinZ / cosP;
                 var cosZ = cosP_cosZ / cosP;
-
-                // Guard: when |cosP_cosZ| ≈ 0 (Pzy near ±90°), the plane-fit
-                // can't reliably determine Pzy — tiny numerical noise in the
-                // wheel positions flips the sign of cosP_sinZ, causing atan2
-                // to oscillate between +90° and -90°.  Only update Pxy.
-                if (fix64.Abs(cosP_cosZ) > (fix64)0.001f)
-                    Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
+                Pzy = fix64.Atan2(sinZ, cosZ) * fix64.RadToDeg;
                 Pxy = fix64.Atan2(sinP, cosP) * fix64.RadToDeg;
 
                 // Unwrap so Pxy/Pzy stay within 180° of conto.Xy/conto.Zy.
