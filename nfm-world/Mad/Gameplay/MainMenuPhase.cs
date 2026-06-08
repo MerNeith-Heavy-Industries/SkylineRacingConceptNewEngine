@@ -375,7 +375,7 @@ public class MainMenuPhase : BasePhase
 
     private void OnFreePlayClicked()
     {
-        GameSparker.InRace.LoadStage("nfm2/15_dwm");
+        GameSparker.InRace.LoadStage("user/dwm_test");
         GameSparker.StartGame();
     }
 
