@@ -168,6 +168,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _lapTimerSplits.TimeText.Text = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
     }
 
+    [ClientOnly]
     protected void ClientReset()
     {
         _raceTimer.Reset();
@@ -217,6 +218,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         FrameTrace.AddMessage($"contox: {carsInRace[PlayerCarIndex].Position.X:0.00}, contoz: {carsInRace[PlayerCarIndex].Position.Z:0.00}, contoy: {carsInRace[PlayerCarIndex].Position.Y:0.00}");
     }
 
+    [ClientOnly]
     protected void ClientTimeTrialInRacePre()
     {
         SetLapText(carsInRace[PlayerCarIndex].currentLap);
@@ -240,6 +242,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _lastLap = carsInRace[PlayerCarIndex].currentLap;
     }
 
+    [ClientOnly]
     protected void ClientTimeTrialInRacePost()
     {
         if (carsInRace[PlayerCarIndex].currentCheckpoint != _lastCurrentCheckpoint)
@@ -280,6 +283,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _tick++;
     }
 
+    [ClientOnly]
     protected void ClientTimeTrialFinished()
     {
         if (!_writtenData)
@@ -292,6 +296,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         }
     }
 
+    [ClientOnly]
     protected void ClientCountdownTick(bool digitChanged)
     {
         if (digitChanged)
@@ -319,6 +324,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         // Handle key releases specific to Time Trial mode
     }
 
+    [ClientOnly]
     private void RenderInfo()
     {
         if ((carsInRace[PlayerCarIndex].currentCheckpoint != 0 || carsInRace[PlayerCarIndex].currentLap != 0) && _bestTimeTrial != null)
