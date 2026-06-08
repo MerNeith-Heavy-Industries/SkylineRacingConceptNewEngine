@@ -1,10 +1,6 @@
-﻿namespace NFMWorldLibrary.Backend.Gamemodes;
+﻿using NFMWorldLibrary.Util;
 
-public class BaseGamemodeParameters
-{
-    public required int PlayerCarIndex { get; init; }
-    public required IReadOnlyList<PlayerParameters> Players { get; init; }
-}
+namespace NFMWorldLibrary.Backend.Gamemodes;
 
 public class PlayerParameters
 {
@@ -12,5 +8,6 @@ public class PlayerParameters
     public required string CarName { get; init; } = "nfmm/radicalone";
     public required Color3 Color { get; init; } = new Color3(255, 0, 0);
     public required bool IsBot { get; init; } = false;
+    public required bool IsClientPlayer { get; init; } = false;
     // team, isbot, etc
 }

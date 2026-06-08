@@ -4,12 +4,14 @@ using NFMWorld.UI;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
+using NFMWorldLibrary.Backend.Gamemodes;
 
 namespace NFMWorld.Gameplay;
 
-public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice), IRaceValues
+public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice), IGamemodeData, IClientCallbacks
 {
-    BackendStage IRaceValues.CurrentStage => CurrentStage;
+    protected IGamemode? gamemodeInstance { get; set; }
+    BackendStage IGamemodeData.CurrentStage => CurrentStage;
 
     public RaceState raceState
     {
@@ -20,7 +22,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             RaceStateChanged?.Invoke(this, value);
         }
     } = RaceState.InProgress;
-    
+
+    IClientCallbacks IGamemodeData.ClientCallbacks => this;
+
     public event EventHandler<RaceState>? RaceStateChanged;
 
     protected FollowCamera PlayerFollowCamera = new();
@@ -40,11 +44,33 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         Watch
     }
     protected ViewMode currentViewMode = ViewMode.Follow;
-    
+
+    public override void Enter()
+    {
+        base.Enter();
+        RecreateScene();
+        ForceReloadGamemode();
+    }
+
+    internal void ForceReloadGamemode()
+    {
+        gamemodeInstance = ReloadGamemode();
+        gamemodeInstance.Enter();
+    }
+
+    internal void OverrideGamemode(IGamemode gamemode)
+    {
+        gamemodeInstance = gamemode;
+        gamemodeInstance.Enter();
+    }
+
+    protected abstract IGamemode ReloadGamemode();
+
     public override void Exit()
     {
         base.Exit();
         GameSparker.CurrentMusic?.Unload();
+        gamemodeInstance?.Exit();
     }
 
     public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
@@ -101,6 +127,8 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         {
             currentViewMode = (ViewMode)(((int)currentViewMode + 1) % Enum.GetValues<ViewMode>().Length);
         }
+        
+        gamemodeInstance?.KeyPressed(key);
     }
     
     private void UpdateControlState()
@@ -174,6 +202,8 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         {
             CarsInRace[playerCarIndex].Control.Lookback = 0;
         }
+        
+        gamemodeInstance?.KeyReleased(key);
     }
 
     public override void WindowSizeChanged(int width, int height)
@@ -196,6 +226,8 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             G.DrawString($"Power: {CarsInRace[0]?.Mad?.Power:0.00}", 100, 140);
             G.DrawString($"Ticks executed last frame: {WorldGame._lastTickCount}", 100, 160);
         }
+        
+        gamemodeInstance?.Render();
     }
 
     private static void RenderMessages()
@@ -210,4 +242,36 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         G.DrawString(FrameTrace.GetMessageString(), (int)x, (int)y);
     }
 
+    public override void GameTick()
+    {
+        gamemodeInstance!.GameTick();
+
+        switch (currentViewMode)
+        {
+            case ViewMode.Follow:
+                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
+                break;
+            case ViewMode.Around:
+                PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
+                break;
+        }
+        
+        base.GameTick();
+    }
+
+    void IClientCallbacks.ResetCheckpointGlow()
+    {
+        clientStageRenderer.ResetCheckpointGlow();
+    }
+
+    void IClientCallbacks.UpdateCheckpointGlow(ushort currentCheckpoint, bool isFinish)
+    {
+        clientStageRenderer.UpdateCheckpointGlow(currentCheckpoint, isFinish);
+    }
+
+    IClientCarCallbacks IClientCallbacks.GetClientCarCallbacks(int index)
+    {
+        return GetClientCar(index);
+    }
+    
 }

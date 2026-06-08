@@ -1,10 +1,11 @@
-﻿using System.Reflection;
+﻿﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Maxine.Extensions;
 using Maxine.VFS;
 using Microsoft.Extensions.Logging;
+using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Files;
@@ -47,6 +48,8 @@ public static class BackendGameSparker
         if (_loaded)
             return;
         _loaded = true;
+
+        IBackend.Backend = new ServerBackend();
         
         SentrySdk.Init(options =>
         {
@@ -535,8 +538,8 @@ public static class BackendGameSparker
             var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
 
             var simulator = timeTrial.StageData is {} stageData
-                ? BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName), stageData)
-                : BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName));
+                ? BackendGamemodeData.Create(Encoding.UTF8.GetString(args->StageName), stageData)
+                : BackendGamemodeData.Create(Encoding.UTF8.GetString(args->StageName));
 
             var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
             {

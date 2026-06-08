@@ -2,8 +2,8 @@
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues, SavedTimeTrial timeTrial)
-    : TimeTrialGamemode(gamemodeParameters, raceValues)
+public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, SavedTimeTrial timeTrial)
+    : TimeTrialGamemode(gamemodeParameters, gamemodeData)
 {
     private int _tick = 0;
     public override void Reset()
@@ -14,12 +14,12 @@ public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParamete
 
     protected override BackendCar LoadPlayerCar(int x, int z)
     {
-        return new BackendCar(timeTrial.CarData ?? BackendGameSparker.GetCar(player.CarName).Rad!, 0, x, z, true);
+        return new BackendCar(timeTrial.CarData ?? BackendGameSparker.GetCar(players[0].CarName).Rad!, 0, x, z, true);
     }
 
     protected override void TimeTrialInRace()
     {
-        carsInRace[playerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
+        carsInRace[PlayerCarIndex].Control.Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
         base.TimeTrialInRace();
         _tick++;
     }

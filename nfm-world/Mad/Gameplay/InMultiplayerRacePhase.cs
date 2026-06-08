@@ -20,14 +20,11 @@ public class InMultiplayerRacePhase(
 )
     : BaseRacePhase(graphicsDevice)
 {
-    protected IClientGamemode? gamemodeInstance { get; set; }
     private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
     private UnlimitedArray<uint> _lastTick = [];
     
     public override void Enter()
     {
-        base.Enter();
-
         raceState = RaceState.WaitingToStart;
 
         var player = session.Players
@@ -42,39 +39,37 @@ public class InMultiplayerRacePhase(
             spectating = true;
         }
 
+        base.Enter();
+
         LoadStage(session.StageName);
 
+        transport.SendPacketToServer(new C2S_RaceLoaded());
+    }
+
+    protected override IGamemode ReloadGamemode()
+    {
         var parameters = new BaseGamemodeParameters()
         {
-            PlayerCarIndex = playerCarIndex,
             Players = session.Players
                 .Select(c => new PlayerParameters
                 {
                     CarName = c.Value.Vehicle,
                     Color = c.Value.Color,
                     PlayerName = c.Value.Name,
-                    IsBot = false
+                    IsBot = false,
+                    IsClientPlayer = c.Value.Id == playerClientId
                 })
                 .ToArray()
         };
 
-        gamemodeInstance ??= session.Gamemode switch
+        return session.Gamemode switch
         {
-            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
-            GameModes.Football => new FootballClientGamemode(parameters, this),
-            GameModes.Racing => new RaceClientGamemode(parameters, this),
-            GameModes.TimeTrial => new TimeTrialClientGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.Football => new FootballGamemode(parameters, this),
+            GameModes.Racing => new RaceGamemode(parameters, this),
+            GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
         };
-        gamemodeInstance.Enter();
-        
-        transport.SendPacketToServer(new C2S_RaceLoaded());
-    }
-
-    public override void Exit()
-    {
-        base.Exit();
-        gamemodeInstance?.Exit();
     }
 
     public override void GameTick()
@@ -102,18 +97,6 @@ public class InMultiplayerRacePhase(
             }
         }
 
-        gamemodeInstance!.GameTick();
-
-        switch (currentViewMode)
-        {
-            case ViewMode.Follow:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
-                break;
-            case ViewMode.Around:
-                // Medium.Around(CarsInRace[playerCarIndex].Conto, true);
-                break;
-        }
-        
         base.GameTick();
         
         // camera.Position = new Vector3(0, 10000, 0);
@@ -128,22 +111,9 @@ public class InMultiplayerRacePhase(
         }
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
-    {
-        base.KeyPressed(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyPressed(key);
-    }
-
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
-    {
-        base.KeyReleased(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyPressed(key);
-    }
-
     public override void Render(float alpha)
     {
         base.Render(alpha);
-        gamemodeInstance?.Render();
         if (raceState == RaceState.WaitingToStart)
         {
             G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Plain, 26));

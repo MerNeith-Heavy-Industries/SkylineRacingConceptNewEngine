@@ -11,8 +11,6 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
 {
     public string playerCarName = "nfmm/radicalone";
 
-    protected IClientGamemode? gamemodeInstance { get; set; }
-
     public GameModes gamemode
     {
         get;
@@ -25,23 +23,9 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
         ReloadGamemode();
     }
 
-    public override void Enter()
+    protected override IGamemode ReloadGamemode()
     {
-        base.Enter();
-
-        RecreateScene();
-        ReloadGamemode();
-    }
-
-    public override void Exit()
-    {
-        base.Exit();
-        gamemodeInstance?.Exit();
-    }
-
-    public void ReloadGamemode()
-    {
-        gamemodeInstance = CreateGameMode(new BaseGamemodeParameters
+        return CreateGameMode(new BaseGamemodeParameters
         {
             Players =
             [
@@ -50,70 +34,29 @@ public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphics
                     CarName = playerCarName,
                     Color = new Color3(255, 0, 0),
                     PlayerName = "Player",
-                    IsBot = false
+                    IsBot = false,
+                    IsClientPlayer = true
                 },
                 new PlayerParameters()
                 {
                     CarName = "nfmm/audir8",
                     Color = new Color3(255, 0, 0),
                     PlayerName = "Player2",
-                    IsBot = true
+                    IsBot = true,
+                    IsClientPlayer = false
                 }
-            ],
-            PlayerCarIndex = playerCarIndex
+            ]
         });
-        gamemodeInstance.Enter();
     }
 
-    internal void OverrideGamemode(IClientGamemode gamemode)
-    {
-        gamemodeInstance = gamemode;
-        gamemodeInstance.Enter();
-    }
-
-    public override void GameTick()
-    {
-        gamemodeInstance!.GameTick();
-
-        switch (currentViewMode)
-        {
-            case ViewMode.Follow:
-                PlayerFollowCamera.Follow(camera, CarsInRace[playerCarIndex], (float)CarsInRace[playerCarIndex].Mad.Cxz, CarsInRace[playerCarIndex].Control.Lookback);
-                break;
-            case ViewMode.Around:
-                PlayerAroundCamera.Around(camera, CarsInRace[playerCarIndex]);
-                break;
-        }
-        
-        base.GameTick();
-    }
-
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
-    {
-        base.KeyPressed(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyPressed(key);
-    }
-
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
-    {
-        base.KeyReleased(key, imguiWantsKeyboard);
-        gamemodeInstance?.KeyReleased(key);
-    }
-
-    public override void Render(float alpha)
-    {
-        base.Render(alpha);
-        gamemodeInstance?.Render();
-    }
-    
-    protected IClientGamemode CreateGameMode(BaseGamemodeParameters parameters)
+    protected IGamemode CreateGameMode(BaseGamemodeParameters parameters)
     {
         return gamemode switch
         {
-            GameModes.Sandbox => new SandboxClientGamemode(parameters, this),
-            GameModes.TimeTrial => new TimeTrialClientGamemode(parameters, this),
-            GameModes.Football => new FootballClientGamemode(parameters, this),
-            GameModes.Racing => new RaceClientGamemode(parameters, this),
+            GameModes.Sandbox => new SandboxGamemode(parameters, this),
+            GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
+            GameModes.Football => new FootballGamemode(parameters, this),
+            GameModes.Racing => new RaceGamemode(parameters, this),
             _ => throw new ArgumentOutOfRangeException(nameof(gamemode), gamemode, null)
         };
     }

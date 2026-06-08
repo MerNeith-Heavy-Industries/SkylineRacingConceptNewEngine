@@ -1,12 +1,17 @@
 using System.Diagnostics;
 using Maxine.Extensions;
+using Microsoft.Xna.Framework;
+using NFMWorld.DriverInterface;
+using NFMWorld.Sfx;
+using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues raceValues)
-    : BaseGamemode(gamemodeParameters, raceValues)
+public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+    : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;
 
@@ -53,23 +58,31 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad, idx, -500 + (400 * idx), 0, idx == playerCarIndex);
+            carsInRace[idx] = new BackendCar(BackendGameSparker.GetCar(player.CarName).Rad!, idx, -500 + (400 * idx), 0, player.IsClientPlayer);
             carsInRace[idx].currentCheckpoint = 0;
             carsInRace[idx].currentLap = 0;
             if (player.IsBot)
             {
-                carsInRace[idx].Bot = new ElStupido(this, raceValues);
+                carsInRace[idx].Bot = new ElStupido(this, gamemodeData);
             }
         }
 
         _currentState = InnerRaceState.Countdown;
+
+        if (ClientServer.IsRunningOnClient)
+        {
+            ClientReset();
+        }
     }
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[playerCarIndex].Position.X:0.00}, contoz: {carsInRace[playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[playerCarIndex].Position.Y:0.00}");
+        if (ClientServer.IsRunningOnClient)
+        {
+            ClientGameTick();
+        }
 
-        if (raceValues.raceState != RaceState.InProgress)
+        if (gamemodeData.raceState != RaceState.InProgress)
         {
             return;
         }
@@ -143,6 +156,11 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
                 raceTimer.Stop();
             }
         }
+
+        if (ClientServer.IsRunningOnClient)
+        {
+            InRaceClient();
+        }
     }
 
     private void Finished()
@@ -150,7 +168,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
         foreach (var inGameCar in carsInRace)
         {
             inGameCar.Mad.Halted = true;
-            inGameCar.Drive(raceValues.CurrentStage);
+            inGameCar.Drive(gamemodeData.CurrentStage);
         }
 
         _finishTicks++;
@@ -191,5 +209,108 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IRaceValues
                 raceTimer.Start();
             }
         }
+
+        if (ClientServer.IsRunningOnClient)
+        {
+            ClientCountdownTick();
+        }
     }
+    
+    #region Client
+    
+    private PowerDamageBars _pdBars = new PowerDamageBars();
+
+    private int _lastClientCheckpoint = 0;
+    
+    private int _lastCountdownTime = 0;
+
+    private LapTimerSplitsView _lapTimerSplits = new LapTimerSplitsView();
+
+    private CentralTextView _centralTextNode = new CentralTextView();
+
+    private int _playerCarIndex;
+
+    protected void ClientGameTick()
+    {
+        FrameTrace.AddMessage($"contox: {carsInRace[_playerCarIndex].Position.X:0.00}, contoz: {carsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[_playerCarIndex].Position.Y:0.00}");
+    }
+
+    protected void ClientReset()
+    {
+        _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
+        carsInRace[_playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
+        
+        gamemodeData.ClientCallbacks.ResetCheckpointGlow();
+        
+        _pdBars.Reset();
+        IBackend.Backend.StopAllSounds();
+
+        _lapTimerSplits.DataContext.CurrentLap = 1;
+        _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
+    }
+
+    protected void InRaceClient()
+    {
+        _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
+
+        _pdBars.SetDamageBarFill(carsInRace[_playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
+        _pdBars.UpdateDamageBarColor();
+        _pdBars.SetPowerBarFill((float)carsInRace[_playerCarIndex].Mad.Power);
+        _pdBars.UpdatePowerBarColor();
+
+        if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
+        {
+            _lastClientCheckpoint = carsInRace[_playerCarIndex].currentCheckpoint;
+            SfxLibrary.checkpoint?.Play();
+        }
+
+        gamemodeData.ClientCallbacks.UpdateCheckpointGlow(
+            carsInRace[_playerCarIndex].currentCheckpoint,
+            carsInRace[_playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[_playerCarIndex].currentLap == currentStage.nlaps - 1
+        );
+    }
+
+    public void Render()
+    {
+        _pdBars.LayoutAndRender(G.Viewport);
+        _lapTimerSplits.LayoutAndRender(G.Viewport);
+        _centralTextNode.LayoutAndRender(G.Viewport);
+
+        if (_currentState == InnerRaceState.Countdown)
+        {
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
+            _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+        }
+        else if (_currentState == InnerRaceState.Finished)
+        {
+            _centralTextNode.DataContext.CenterTextOpacity = 1;
+            string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
+            _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
+            _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
+            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+        }
+        else
+        {
+            _centralTextNode.DataContext.CenterTextOpacity = 0;
+        }
+    }
+
+    protected void ClientCountdownTick()
+    {
+        if (_countdownTime != _lastCountdownTime)
+        {
+            _lastCountdownTime = _countdownTime;
+            SfxLibrary.countdown[_countdownTime].Play();
+            if (_countdownTime <= 0)
+            {
+                _centralTextNode.DataContext.CenterTextOpacity = 0;
+            }
+        }
+    }
+    
+    #endregion
 }

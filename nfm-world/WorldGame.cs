@@ -15,6 +15,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.UI;
 using NFMWorld.UI.Hud;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Base.Xaml;
@@ -617,6 +618,8 @@ public class WorldGame : Game
 
     public static void Main(string[] args)
     {
+        ClientServer.IsRunningOnClient = true;
+        
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {

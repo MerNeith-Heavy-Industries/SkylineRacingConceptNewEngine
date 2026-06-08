@@ -2,9 +2,14 @@
 
 namespace NFMWorldLibrary.Backend;
 
-public interface IRaceValues
+/// <summary>
+/// Data for the gamemode.
+/// </summary>
+public interface IGamemodeData
 {
     UnlimitedArray<IInGameCar> CarsInRace { get; }
     BackendStage CurrentStage { get; }
     RaceState raceState { get; }
+
+    IClientCallbacks ClientCallbacks { get; }
 }
