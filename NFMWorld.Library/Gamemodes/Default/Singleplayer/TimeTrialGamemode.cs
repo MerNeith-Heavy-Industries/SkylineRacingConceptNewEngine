@@ -226,7 +226,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         SetTimeText();
 
         Hud.DataContext.DamageFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Power / 98f;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Power / 100f;
 
         if (_bestTimeTrial != null)
         {
