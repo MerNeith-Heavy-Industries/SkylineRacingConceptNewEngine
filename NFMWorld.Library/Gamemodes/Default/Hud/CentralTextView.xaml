@@ -6,6 +6,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     mc:Ignorable="d" d:DataContext="{d:DesignInstance w:HudViewModel}"
     x:Class="NFMWorld.UI.Hud.CentralTextView"
+    Position="Absolute"
+    Top="0"
+    Left="0"
+    Right="0"
+    Bottom="0"
     DataType="w:HudViewModel"
     AlignItems="Center"
     FlexDirection="Column">

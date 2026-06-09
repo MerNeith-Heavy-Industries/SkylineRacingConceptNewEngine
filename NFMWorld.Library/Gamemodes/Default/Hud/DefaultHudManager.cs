@@ -28,6 +28,7 @@ public class DefaultHudManager : IHud
         _rootPanel.Children.Add(_overlay);
         
         _overlay.ContentChildren.Add(new PowerDamageBars());
+        _overlay.ContentChildren.Add(new CentralTextView());
     }
     
     public void LayoutAndRender(System.Numerics.Vector2 availableSize, System.Numerics.Vector2? origin = null)
