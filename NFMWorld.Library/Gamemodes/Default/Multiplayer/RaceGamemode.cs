@@ -205,17 +205,17 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     }
     
     #region Client
-    
-    private PowerDamageBars _pdBars = new PowerDamageBars();
 
+    [ClientOnly]
     private int _lastClientCheckpoint = 0;
     
+    [ClientOnly]
     private int _lastCountdownTime = 0;
 
+    [ClientOnly]
     private LapTimerSplitsView _lapTimerSplits = new LapTimerSplitsView();
 
-    private CentralTextView _centralTextNode = new CentralTextView();
-
+    [ClientOnly]
     private int _playerCarIndex;
 
     [ClientOnly]
@@ -228,11 +228,11 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     protected void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
-        carsInRace[_playerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
+        carsInRace[_playerCarIndex].Mad.PowerUp += Hud.DataContext.EventPowerUp;
         
         gamemodeData.ClientCallbacks.ResetCheckpointGlow();
-        
-        _pdBars.Reset();
+
+        Hud.DataContext = new HudViewModel();
         IBackend.Backend.StopAllSounds();
 
         _lapTimerSplits.DataContext.CurrentLap = 1;
@@ -244,10 +244,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
 
-        _pdBars.SetDamageBarFill(carsInRace[_playerCarIndex].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
-        _pdBars.UpdateDamageBarColor();
-        _pdBars.SetPowerBarFill((float)carsInRace[_playerCarIndex].Mad.Power);
-        _pdBars.UpdatePowerBarColor();
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[_playerCarIndex].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].Mad.Power / 98f;
 
         if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
         {
@@ -261,32 +259,32 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         );
     }
 
-    public void Render()
+    public override void Render()
     {
-        _pdBars.LayoutAndRender(G.Viewport);
+        base.Render();
+        
         _lapTimerSplits.LayoutAndRender(G.Viewport);
-        _centralTextNode.LayoutAndRender(G.Viewport);
 
         if (_currentState == InnerRaceState.Countdown)
         {
-            _centralTextNode.DataContext.CenterTextOpacity = 1;
-            _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
-            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
-            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            Hud.DataContext.CenterTextOpacity = 1;
+            Hud.DataContext.CenterText = $"Starting in {_countdownTime}";
+            Hud.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            Hud.DataContext.CenterTextColor = new Color(255, 255, 255);
+            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
         }
         else if (_currentState == InnerRaceState.Finished)
         {
-            _centralTextNode.DataContext.CenterTextOpacity = 1;
+            Hud.DataContext.CenterTextOpacity = 1;
             string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
-            _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
-            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+            Hud.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
+            Hud.DataContext.CenterTextColor = new Color(128, 255, 128);
+            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            Hud.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
         }
         else
         {
-            _centralTextNode.DataContext.CenterTextOpacity = 0;
+            Hud.DataContext.CenterTextOpacity = 0;
         }
     }
 
@@ -299,7 +297,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centralTextNode.DataContext.CenterTextOpacity = 0;
+                Hud.DataContext.CenterTextOpacity = 0;
             }
         }
     }

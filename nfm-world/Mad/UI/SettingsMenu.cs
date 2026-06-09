@@ -8,6 +8,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
 using SDL3;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.UI;
 
@@ -24,24 +25,24 @@ public class SettingsMenu(WorldGame game)
     // Keyboard bindings
     public class KeyBindings
     {
-        public Keys Accelerate { get; set; } = Keys.Up;
-        public Keys Brake { get; set; } = Keys.Down;
-        public Keys TurnLeft { get; set; } = Keys.Left;
-        public Keys TurnRight { get; set; } = Keys.Right;
-        public Keys Handbrake { get; set; } = Keys.Space;
-        public Keys Enter { get; set; } = Keys.Enter;
-        public Keys AerialBounce { get; set; } = Keys.Q;
-        public Keys AerialStrafe { get; set; } = Keys.E;
-        public Keys LookLeft { get; set; } = Keys.Z;
-        public Keys LookBack { get; set; } = Keys.X;
-        public Keys LookRight { get; set; } = Keys.C;
-        public Keys ToggleMusic { get; set; } = Keys.M;
-        public Keys ToggleSFX { get; set; } = Keys.N;
-        public Keys ToggleArrace { get; set; } = Keys.A;
-        public Keys ToggleRadar { get; set; } = Keys.S;
-        public Keys ToggleCarCam { get; set; } = Keys.W;
-        public Keys ToggleDevConsole { get; set; } = Keys.Oemtilde;
-        public Keys CycleView { get; set; } = Keys.V;
+        public Key Accelerate { get; set; } = Key.Up;
+        public Key Brake { get; set; } = Key.Down;
+        public Key TurnLeft { get; set; } = Key.Left;
+        public Key TurnRight { get; set; } = Key.Right;
+        public Key Handbrake { get; set; } = Key.Space;
+        public Key Enter { get; set; } = Key.Enter;
+        public Key AerialBounce { get; set; } = Key.Q;
+        public Key AerialStrafe { get; set; } = Key.E;
+        public Key LookLeft { get; set; } = Key.Z;
+        public Key LookBack { get; set; } = Key.X;
+        public Key LookRight { get; set; } = Key.C;
+        public Key ToggleMusic { get; set; } = Key.M;
+        public Key ToggleSFX { get; set; } = Key.N;
+        public Key ToggleArrace { get; set; } = Key.A;
+        public Key ToggleRadar { get; set; } = Key.S;
+        public Key ToggleCarCam { get; set; } = Key.W;
+        public Key ToggleDevConsole { get; set; } = Key.Oemtilde;
+        public Key CycleView { get; set; } = Key.V;
     }
 
     public static KeyBindings Bindings = new KeyBindings();
@@ -210,13 +211,13 @@ public class SettingsMenu(WorldGame game)
         ImGui.SliderFloat("##EffectsVolume", ref _effectsVolume, 0.0f, 1.0f, "%.2f");
     }
 
-    public void HandleKeyCapture(Keys key)
+    public void HandleKeyCapture(Key key)
     {
         if (_capturingAction == null || !_isOpen)
             return;
 
         // Cancel capture on ESC
-        if (key == Keys.Escape)
+        if (key == Key.Escape)
         {
             _capturingAction = null;
             _selectedBindingIndex = -1;
@@ -227,10 +228,10 @@ public class SettingsMenu(WorldGame game)
         var allProperties = typeof(KeyBindings).GetProperties();
         foreach (var prop in allProperties)
         {
-            if (prop.Name != _capturingAction && prop.GetValue(Bindings) is Keys existingKey && existingKey == key)
+            if (prop.Name != _capturingAction && prop.GetValue(Bindings) is Key existingKey && existingKey == key)
             {
                 // Clear the conflicting binding by setting it to None
-                prop.SetValue(Bindings, Keys.None);
+                prop.SetValue(Bindings, Key.None);
                 Logging.Debug($"Cleared {prop.Name} (was {key})");
             }
         }
@@ -317,7 +318,7 @@ public class SettingsMenu(WorldGame game)
         ImGui.Spacing();
 
         // Draw key binding table
-        var bindings = new (string Action, string PropertyName, Keys Key)[] 
+        var bindings = new (string Action, string PropertyName, Key Key)[] 
         {
             ("Accelerate", "Accelerate", Bindings.Accelerate),
             ("Brake / Reverse", "Brake", Bindings.Brake),
@@ -491,34 +492,34 @@ public class SettingsMenu(WorldGame game)
 
         var graphicsChanged = false;
         requireRestart = false;
-        if (game._graphics.SynchronizeWithVerticalRetrace != _vsync)
+        if (game.Graphics.SynchronizeWithVerticalRetrace != _vsync)
         {
-            game._graphics.SynchronizeWithVerticalRetrace = _vsync;
+            game.Graphics.SynchronizeWithVerticalRetrace = _vsync;
             graphicsChanged = true;
         }
 
         if (_antialias > 0)
         {
-            if (!game._graphics.PreferMultiSampling)
+            if (!game.Graphics.PreferMultiSampling)
             {
-                game._graphics.PreferMultiSampling = true;
+                game.Graphics.PreferMultiSampling = true;
                 graphicsChanged = true;
             }
             
             var msaaCount = (int) MathF.Round(MathF.Pow(2, _antialias - 1));
 
-            if (game._graphics.GraphicsDevice.PresentationParameters.MultiSampleCount != msaaCount)
+            if (game.Graphics.GraphicsDevice.PresentationParameters.MultiSampleCount != msaaCount)
             {
-                game._graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = msaaCount;
+                game.Graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = msaaCount;
                 graphicsChanged = true;
             }
         }
         
         if (_selectedDisplayMode == 0) // fullscreen
         {
-            if (!game._graphics.IsFullScreen)
+            if (!game.Graphics.IsFullScreen)
             {
-                game._graphics.IsFullScreen = true;
+                game.Graphics.IsFullScreen = true;
                 graphicsChanged = true;
             }
 
@@ -530,9 +531,9 @@ public class SettingsMenu(WorldGame game)
         }
         else if (_selectedDisplayMode == 1) // windowed
         {
-            if (game._graphics.IsFullScreen)
+            if (game.Graphics.IsFullScreen)
             {
-                game._graphics.IsFullScreen = false;
+                game.Graphics.IsFullScreen = false;
                 graphicsChanged = true;
             }
 
@@ -543,9 +544,9 @@ public class SettingsMenu(WorldGame game)
         }
         else // borderless
         {
-            if (game._graphics.IsFullScreen)
+            if (game.Graphics.IsFullScreen)
             {
-                game._graphics.IsFullScreen = false;
+                game.Graphics.IsFullScreen = false;
                 graphicsChanged = true;
             }
 
@@ -558,10 +559,10 @@ public class SettingsMenu(WorldGame game)
         
         var widthHeight = Resolutions[_selectedResolution].Split('x', StringSplitOptions.TrimEntries);
         var (width, height) = (int.Parse(widthHeight[0]), int.Parse(widthHeight[1]));
-        if (game._graphics.PreferredBackBufferWidth != width || game._graphics.PreferredBackBufferHeight != height)
+        if (game.Graphics.PreferredBackBufferWidth != width || game.Graphics.PreferredBackBufferHeight != height)
         {
-            game._graphics.PreferredBackBufferWidth = width;
-            game._graphics.PreferredBackBufferHeight = height;
+            game.Graphics.PreferredBackBufferWidth = width;
+            game.Graphics.PreferredBackBufferHeight = height;
             graphicsChanged = true;
         }
 
@@ -579,7 +580,7 @@ public class SettingsMenu(WorldGame game)
 
         if (graphicsChanged)
         {
-            game._graphics.ApplyChanges();
+            game.Graphics.ApplyChanges();
         }
 
         if (_fpsLimit != 0)
@@ -842,52 +843,52 @@ public class SettingsMenu(WorldGame game)
                         
                         // Key bindings
                         case "key_accelerate":
-                            Bindings.Accelerate = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.Accelerate = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_ab":
-                            Bindings.AerialBounce = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.AerialBounce = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_smoothturn":
-                            Bindings.AerialStrafe = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.AerialStrafe = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_brake":
-                            Bindings.Brake = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.Brake = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_turnleft":
-                            Bindings.TurnLeft = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.TurnLeft = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_turnright":
-                            Bindings.TurnRight = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.TurnRight = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_handbrake":
-                            Bindings.Handbrake = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.Handbrake = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_lookback":
-                            Bindings.LookBack = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.LookBack = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_lookleft":
-                            Bindings.LookLeft = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.LookLeft = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_lookright":
-                            Bindings.LookRight = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.LookRight = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_togglemusic":
-                            Bindings.ToggleMusic = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.ToggleMusic = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_togglesfx":
-                            Bindings.ToggleSFX = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.ToggleSFX = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_togglearrace":
-                            Bindings.ToggleArrace = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.ToggleArrace = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_console":
-                            Bindings.ToggleDevConsole = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.ToggleDevConsole = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_toggleradar":
-                            Bindings.ToggleRadar = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.ToggleRadar = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         case "key_cycleview":
-                            Bindings.CycleView = (Keys)int.Parse(value, CultureInfo.InvariantCulture);
+                            Bindings.CycleView = (Key)int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                     }
                 }

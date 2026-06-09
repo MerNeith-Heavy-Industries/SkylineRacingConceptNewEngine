@@ -10,6 +10,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga.Events;
 using Path = System.IO.Path;
 
 namespace NFMWorld;
@@ -84,9 +85,9 @@ public class GameSparker
 
     /////////////////////////////////
 
-    public static Dictionary<Keys, bool> DebugKeyStates = new();
+    public static Dictionary<Key, bool> DebugKeyStates = new();
 
-    public static void KeyPressed(Keys key)
+    public static void KeyPressed(Key key)
     {
         DebugKeyStates[key] = true;
 
@@ -98,7 +99,7 @@ public class GameSparker
         }
     }
 
-    public static void KeyReleased(Keys key)
+    public static void KeyReleased(Key key)
     {
         DebugKeyStates[key] = false;
         
@@ -208,31 +209,35 @@ public class GameSparker
 
     public static void StartModelViewer()
     {
-        SetPhase(ModelEditor);
+        if (ModelEditor != null)
+        {
+            SetPhase(ModelEditor);
+        }
     }
     
     public static void ExitEditor()
     {
-        SetPhase(MainMenu);
+        if (MainMenu != null)
+        {
+            SetPhase(MainMenu);
+        }
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        SetPhase(StageEditor);
+        if (StageEditor != null)
+        {
+            SetPhase(StageEditor);
+        }
     }
     
     public static void ReturnToMainMenu()
     {
-        SetPhase(MainMenu);
-    }
-
-    public static void StartGame()
-    {
-        // temp
-        SetPhase(InRace);
-
-        Logging.Info("Game started!");
+        if (MainMenu != null)
+        {
+            SetPhase(MainMenu);
+        }
     }
 
     public static void GameTick()

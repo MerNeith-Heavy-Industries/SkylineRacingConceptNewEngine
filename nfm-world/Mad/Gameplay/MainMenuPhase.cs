@@ -6,6 +6,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Rad;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -186,9 +187,10 @@ public class MainMenuPhase : BasePhase
         });
     }
 
-    public override void MouseMoved(int x, int y, bool imguiWantsMouse)
+    public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
-        base.MouseMoved(x, y, imguiWantsMouse);
+        base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
 
         _mouseX = x;
         _mouseY = y;
@@ -220,9 +222,11 @@ public class MainMenuPhase : BasePhase
         }
     }
 
-    public override void MousePressed(int x, int y, bool imguiWantsMouse)
+    public override void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button1, MouseButtons buttons,
+        bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
-        base.MousePressed(x, y, imguiWantsMouse);
+        base.MousePressed(x, y, imguiWantsMouse, button1, buttons, ctrlKey, shiftKey, altKey);
 
         // Don't process clicks if ImGui is capturing the mouse
         if (imguiWantsMouse)
@@ -375,8 +379,13 @@ public class MainMenuPhase : BasePhase
 
     private void OnFreePlayClicked()
     {
-        GameSparker.InRace.LoadStage("nfm2/15_dwm");
-        GameSparker.StartGame();
+        if (GameSparker.InRace != null)
+        {
+	        GameSparker.InRace.LoadStage("nfm2/15_dwm");
+	        GameSparker.StartGame();
+
+            Logging.Info("Game started!");
+        }
     }
 
     private void OnWorkshopClicked()
@@ -553,9 +562,9 @@ public class MainMenuPhase : BasePhase
         });
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
 
         if (imguiWantsKeyboard) return;
 

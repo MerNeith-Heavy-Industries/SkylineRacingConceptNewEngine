@@ -1,20 +1,36 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorld.Util;
+using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
 public abstract class BasePhase
 {
+    public FocusManager FocusManager { get; } = new();
+
+    /// <summary>
+    /// Whether the mouse was pressed this game tick. Reset at the end of a game tick.
+    /// </summary>
     protected bool MouseDownThisFrame { get; private set; }
 
+    /// <summary>
+    /// Invoked at the beginning of a game tick.
+    /// </summary>
     public virtual void BeginGameTick()
     {
     }
 
+    /// <summary>
+    /// Invoked at the middle of a game tick.
+    /// </summary>
     public virtual void GameTick()
     {
     }
 
+    /// <summary>
+    /// Invoked at the end of a game tick.
+    /// </summary>
     public virtual void EndGameTick()
     {
         MouseDownThisFrame = false;
@@ -42,37 +58,104 @@ public abstract class BasePhase
     {
     }
 
+    /// <summary>
+    /// Invoked when <see cref="GameSparker.SetPhase"/> is called with the phase.
+    /// </summary>
     public virtual void Enter()
     {
     }
 
+    /// <summary>
+    /// Invoked when <see cref="GameSparker.SetPhase"/> was called with the phase before, and is now being called with
+    /// a new phase.
+    /// </summary>
     public virtual void Exit()
     {
     }
 
-    public virtual void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    /// <summary>
+    /// Invoked when a key is pressed.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <param name="imguiWantsKeyboard">If Imgui wants the keyboard.</param>
+    /// <param name="keys">The state of all keys.</param>
+    public virtual void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
     }
 
-    public virtual void KeyReleased(Keys key, bool imguiWantsKeyboard)
-    {
-    }
-    
-    public virtual void MouseMoved(int x, int y, bool imguiWantsMouse)
+    /// <summary>
+    /// Invoked when a key is released.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <param name="imguiWantsKeyboard">If Imgui wants the keyboard.</param>
+    /// <param name="keys">The state of all keys.</param>
+    public virtual void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
     }
 
-    public virtual void MousePressed(int x, int y, bool imguiWantsMouse)
+    /// <summary>
+    /// Invoked when the mouse is moved.
+    /// </summary>
+    /// <param name="x">The X mouse position.</param>
+    /// <param name="y">The Y mouse position.</param>
+    /// <param name="imguiWantsMouse">If Imgui wants the mouse.</param>
+    /// <param name="buttons">The state of all buttons.</param>
+    /// <param name="ctrlKey">Whether the Control key is being held.</param>
+    /// <param name="shiftKey">Whether the Shift key is being held.</param>
+    /// <param name="altKey">Whether the Alt key is being held.</param>
+    public virtual void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
+    }
+
+    /// <summary>
+    /// Invoked when a mouse button is pressed.
+    /// </summary>
+    /// <param name="x">The X mouse position.</param>
+    /// <param name="y">The Y mouse position.</param>
+    /// <param name="imguiWantsMouse">If Imgui wants the mouse.</param>
+    /// <param name="button">The button that was pressed.</param>
+    /// <param name="buttons">The state of all buttons.</param>
+    /// <param name="ctrlKey">Whether the Control key is being held.</param>
+    /// <param name="shiftKey">Whether the Shift key is being held.</param>
+    /// <param name="altKey">Whether the Alt key is being held.</param>
+    public virtual void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
+    {
+        // Reset focus. Implementors can take over focus.
+        FocusManager.FocusedElement = null;
+
         if (!imguiWantsMouse)
             MouseDownThisFrame = true;
     }
 
-    public virtual void MouseReleased(int x, int y, bool imguiWantsMouse)
+    /// <summary>
+    /// Invoked when a mouse button is released.
+    /// </summary>
+    /// <param name="x">The X mouse position.</param>
+    /// <param name="y">The Y mouse position.</param>
+    /// <param name="imguiWantsMouse">If Imgui wants the mouse.</param>
+    /// <param name="button">The button that was released.</param>
+    /// <param name="buttons">The state of all buttons.</param>
+    /// <param name="ctrlKey">Whether the Control key is being held.</param>
+    /// <param name="shiftKey">Whether the Shift key is being held.</param>
+    /// <param name="altKey">Whether the Alt key is being held.</param>
+    public virtual void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
     }
 
-    public virtual void MouseScrolled(int delta, bool imguiWantsMouse)
+    /// <summary>
+    /// Invoked when a mouse button is released.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="delta">The delta Y change.</param>
+    /// <param name="imguiWantsMouse">If Imgui wants the mouse.</param>
+    /// <param name="buttons">The state of all buttons.</param>
+    /// <param name="ctrlKey">Whether the Control key is being held.</param>
+    /// <param name="shiftKey">Whether the Shift key is being held.</param>
+    /// <param name="altKey">Whether the Alt key is being held.</param>
+    public virtual void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
     }
 

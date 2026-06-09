@@ -12,6 +12,7 @@ using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.UI;
 
@@ -450,7 +451,7 @@ public class StageEditorPhase : BasePhase
         // Clear stale shadow maps left over from any previous gameplay session.
         // Scene.RenderInternal always passes Program.shadowRenderTargets to the shader,
         // so old shadow data would bleed into the editor if not wiped here.
-        foreach (var rt in WorldGame.shadowRenderTargets)
+        foreach (var rt in WorldGame.ShadowRenderTargets)
         {
             _graphicsDevice.SetRenderTarget(rt);
             _graphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
@@ -1105,7 +1106,7 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
         if (imguiWantsKeyboard) return;
         if (!_isOpen) return;
@@ -1114,24 +1115,24 @@ public class StageEditorPhase : BasePhase
         if (_pendingPlacementPartIndex >= 0)
         {
             // Q/E rotate the pending piece by 45°. Q is also the camera-down key so we handle rotation first and skip the camera binding.
-            if (key == Keys.E)
+            if (key == Key.E)
             {
                 _pendingPlacementYaw = (_pendingPlacementYaw + 45f) % 360f;
                 return;
             }
-            if (key == Keys.Q)
+            if (key == Key.Q)
             {
                 _pendingPlacementYaw = ((_pendingPlacementYaw - 45f) % 360f + 360f) % 360f;
                 return;
             }
-            if (key == Keys.R)
+            if (key == Key.R)
             {
                 // Reset rotation
                 _pendingPlacementYaw = 0f;
                 return;
             }
 
-            if (key == Keys.G)
+            if (key == Key.G)
             {
                 _gridSnapEnabled = !_gridSnapEnabled;
                 return;
@@ -1141,36 +1142,36 @@ public class StageEditorPhase : BasePhase
         // Camera movement
         switch (key)
         {
-            case Keys.W:
+            case Key.W:
                 _moveForward = true;
                 break;
-            case Keys.S:
+            case Key.S:
                 _moveBackward = true;
                 break;
-            case Keys.A:
+            case Key.A:
                 _moveLeft = true;
                 break;
-            case Keys.D:
+            case Key.D:
                 _moveRight = true;
                 break;
-            case Keys.Space:
+            case Key.Space:
                 _moveUp = true;
                 break;
-            case Keys.Q:
+            case Key.Q:
                 _moveDown = true;
                 break;
-            case Keys.LShiftKey:
-            case Keys.RShiftKey:
+            case Key.LShiftKey:
+            case Key.RShiftKey:
                 _isShiftPressed = true;
                 break;
-            case Keys.LControlKey:
-            case Keys.RControlKey:
+            case Key.LControlKey:
+            case Key.RControlKey:
                 _isCtrlPressed = true;
                 break;
         }
         
         // Handle keyboard shortcuts here
-        if (key == Keys.Delete)
+        if (key == Key.Delete)
         {
             // Build the set of IDs to delete (multi-selection or single)
             int[] idsToDelete = [..ActiveTab.SelectedPieceIds];
@@ -1195,12 +1196,12 @@ public class StageEditorPhase : BasePhase
             }
         }
         
-        if (key == Keys.S && _isCtrlPressed)
+        if (key == Key.S && _isCtrlPressed)
         {
             if (ActiveTab?.Stage != null) SaveStage();
         }
         
-        if (key == Keys.C && _isCtrlPressed && ActiveTab != null)
+        if (key == Key.C && _isCtrlPressed && ActiveTab != null)
         {
             // Copy all selected pieces (or primary if no multi-selection)
             var ids = ActiveTab.SelectedPieceIds;
@@ -1223,7 +1224,7 @@ public class StageEditorPhase : BasePhase
             }
         }
         
-        if (key == Keys.V && _isCtrlPressed && ActiveTab?.Stage != null && _clipboard.Count > 0)
+        if (key == Key.V && _isCtrlPressed && ActiveTab?.Stage != null && _clipboard.Count > 0)
         {
             PushUndoSnapshot();
             ActiveTab.SelectedPieceIds.Clear();
@@ -1274,17 +1275,17 @@ public class StageEditorPhase : BasePhase
             RebuildClientRenderer();
         }
         
-        if (key == Keys.Z && _isCtrlPressed)
+        if (key == Key.Z && _isCtrlPressed)
         {
             PerformUndo();
         }
         
-        if ((key == Keys.Y && _isCtrlPressed) || (key == Keys.Z && _isCtrlPressed && _isShiftPressed))
+        if ((key == Key.Y && _isCtrlPressed) || (key == Key.Z && _isCtrlPressed && _isShiftPressed))
         {
             PerformRedo();
         }
         
-        if (key == Keys.Escape)
+        if (key == Key.Escape)
         {
             // Cancel placement mode, swap mode, and rect selection
             _pendingPlacementPartIndex = -1;
@@ -1294,7 +1295,7 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
+    public override void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
         if (imguiWantsKeyboard) return;
         if (!_isOpen) return;
@@ -1302,30 +1303,30 @@ public class StageEditorPhase : BasePhase
         // Camera movement
         switch (key)
         {
-            case Keys.W:
+            case Key.W:
                 _moveForward = false;
                 break;
-            case Keys.S:
+            case Key.S:
                 _moveBackward = false;
                 break;
-            case Keys.A:
+            case Key.A:
                 _moveLeft = false;
                 break;
-            case Keys.D:
+            case Key.D:
                 _moveRight = false;
                 break;
-            case Keys.Space:
+            case Key.Space:
                 _moveUp = false;
                 break;
-            case Keys.Q:
+            case Key.Q:
                 _moveDown = false;
                 break;
-            case Keys.LShiftKey:
-            case Keys.RShiftKey:
+            case Key.LShiftKey:
+            case Key.RShiftKey:
                 _isShiftPressed = false;
                 break;
-            case Keys.LControlKey:
-            case Keys.RControlKey:
+            case Key.LControlKey:
+            case Key.RControlKey:
                 _isCtrlPressed = false;
                 break;
         }
@@ -2096,7 +2097,8 @@ public class StageEditorPhase : BasePhase
         return false;
     }
 
-    public override void MouseMoved(int x, int y, bool imguiWantsMouse)
+    public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
@@ -2362,8 +2364,12 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void MousePressed(int x, int y, bool imguiWantsMouse)
+    public override void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons,
+        bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
+        base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
+        
         if (imguiWantsMouse) return;
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
@@ -2448,8 +2454,11 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void MouseScrolled(int delta, bool imguiWantsMouse)
+    public override void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons,
+        bool ctrlKey, bool shiftKey, bool altKey)
     {
+        base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
+
         if (imguiWantsMouse) return;
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
@@ -2486,8 +2495,11 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    public override void MouseReleased(int x, int y, bool imguiWantsMouse)
+    public override void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons,
+        bool ctrlKey, bool shiftKey, bool altKey)
     {
+        base.MouseReleased(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
+        
         // Check if it's right mouse button
         var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
         

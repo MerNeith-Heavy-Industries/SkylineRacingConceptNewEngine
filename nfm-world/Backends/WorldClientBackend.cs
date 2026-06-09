@@ -2,10 +2,12 @@
 using System.Text;
 using FontStashSharp;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using NFMWorld.DriverInterface;
 using NFMWorld.SkiaDriver;
 using NFMWorld.Util;
 using NvgSharp;
+using WorldXaml.UI.Yoga.Events;
 using TextHorizontalAlignment = NFMWorld.DriverInterface.TextHorizontalAlignment;
 
 namespace NFMWorld;
@@ -17,7 +19,7 @@ public class NanoVGRenderer
     public NanoVGRenderer(GraphicsDevice graphicsDevice)
     {
         _context = new NvgContext(graphicsDevice);
-        IBackend.Backend = new NanoVGBackend(_context);
+        IBackend.Backend = new WorldClientBackend(_context);
     }
 
     public void Render()
@@ -26,7 +28,7 @@ public class NanoVGRenderer
     }
 }
 
-internal class NanoVGBackend(NvgContext context) : IBackend
+internal class WorldClientBackend(NvgContext context) : IBackend
 {
     public float Scale { get; set; } = 1;
     
@@ -340,6 +342,11 @@ internal class NanoVGBackend(NvgContext context) : IBackend
     public void SetAllVolumes(float vol)
     {
         SoundClip.SetAllVolumes(vol);
+    }
+
+    public Key GetKeyFromScancode(Key key)
+    {
+        return Key.FromScanCode(key);
     }
 
     public Vector2 Viewport => new(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);

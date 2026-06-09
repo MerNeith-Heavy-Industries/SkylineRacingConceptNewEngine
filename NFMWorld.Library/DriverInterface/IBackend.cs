@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.DriverInterface;
 
@@ -62,4 +63,7 @@ public interface IBackend : IXamlGraphicsBackend
     
     [ClientOnly]
     void SetAllVolumes(float vol);
+
+    [ClientOnly]
+    Key GetKeyFromScancode(Key key);
 }

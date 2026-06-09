@@ -4,9 +4,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:w="https://github.com/needforrewrite/nfm-world"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    mc:Ignorable="d" d:DataContext="{d:DesignInstance w:CentralTextViewModel}"
+    mc:Ignorable="d" d:DataContext="{d:DesignInstance w:HudViewModel}"
     x:Class="NFMWorld.UI.Hud.CentralTextView"
-    DataType="w:CentralTextViewModel"
+    DataType="w:HudViewModel"
     AlignItems="Center"
     FlexDirection="Column">
 

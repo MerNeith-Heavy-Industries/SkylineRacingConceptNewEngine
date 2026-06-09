@@ -6,6 +6,8 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -33,7 +35,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     protected AroundStageCamera StageAroundCamera = new();
     
     // Track which keys are currently pressed to properly handle meta-bindings
-    private HashSet<Keys> _pressedKeys = new();
+    private HashSet<Key> _pressedKeys = new();
     
     // View modes
     public enum ViewMode
@@ -73,9 +75,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         gamemodeInstance?.Exit();
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
 
         if (imguiWantsKeyboard) return;
         
@@ -141,7 +143,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             }
         }
 
-        gamemodeInstance?.KeyPressed(key);
+        gamemodeInstance?.KeyPressed(key, in keys);
     }
     
     private void UpdateControlState()
@@ -179,9 +181,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         }
     }
 
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
+    public override void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyReleased(key, imguiWantsKeyboard);
+        base.KeyReleased(key, imguiWantsKeyboard, keys);
 
         var bindings = SettingsMenu.Bindings;
         
@@ -198,7 +200,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
             if (control != null)
             {
-                if (key == Keys.Escape)
+                if (key == Key.Escape)
                 {
                     // this seems to be currently unused
                     control.Exit = false;
@@ -211,7 +213,38 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             }
         }
 
-        gamemodeInstance?.KeyReleased(key);
+        gamemodeInstance?.KeyReleased(key, keys);
+    }
+
+    public override void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
+    {
+        base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
+        
+        gamemodeInstance?.MousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+    }
+
+    public override void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
+    {
+        base.MouseReleased(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
+        
+        gamemodeInstance?.MouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+    }
+
+    public override void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons,
+        bool ctrlKey, bool shiftKey, bool altKey)
+    {
+        base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
+        
+        gamemodeInstance?.MouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
+    }
+
+    public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
+    {
+        base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
+        
+        gamemodeInstance?.MouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void WindowSizeChanged(int width, int height)
@@ -226,13 +259,14 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     {
         base.Render(alpha);
 
-        if(DebugDisplay) {
+        if (DebugDisplay)
+        {
             RenderMessages();
             G.SetColor(new Color(0, 0, 0));
-            G.DrawString($"Render: {WorldGame._lastFrameTime}ms", 100, 100);
-            G.DrawString($"Tick: {WorldGame._lastTickTime}μs", 100, 120);
+            G.DrawString($"Render: {WorldGame.LastFrameTime}ms", 100, 100);
+            G.DrawString($"Tick: {WorldGame.LastTickTime}μs", 100, 120);
             G.DrawString($"Power: {CarsInRace[0]?.Mad?.Power:0.00}", 100, 140);
-            G.DrawString($"Ticks executed last frame: {WorldGame._lastTickCount}", 100, 160);
+            G.DrawString($"Ticks executed last frame: {WorldGame.LastTickCount}", 100, 160);
         }
         
         gamemodeInstance?.Render();

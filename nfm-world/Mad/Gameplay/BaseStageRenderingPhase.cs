@@ -4,6 +4,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -108,16 +109,16 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         return clientCarCollection.GetCar(CarsInRace[index]);
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
 
         if (imguiWantsKeyboard) return;
     }
 
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
+    public override void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyReleased(key, imguiWantsKeyboard);
+        base.KeyReleased(key, imguiWantsKeyboard, keys);
     }
 
     public override void WindowSizeChanged(int width, int height)
@@ -160,9 +161,9 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         {
             // DISPLAY SHADOW MAP
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
-            if (WorldGame.shadowRenderTargets[0] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[0], new Microsoft.Xna.Framework.Rectangle(0, 0, 128, 128), Microsoft.Xna.Framework.Color.White);
-            if (WorldGame.shadowRenderTargets[1] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[1], new Microsoft.Xna.Framework.Rectangle(0, 128, 128, 128), Microsoft.Xna.Framework.Color.White);
-            if (WorldGame.shadowRenderTargets[2] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[2], new Microsoft.Xna.Framework.Rectangle(0, 256, 128, 128), Microsoft.Xna.Framework.Color.White);
+            if (WorldGame.ShadowRenderTargets[0] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[0], new Microsoft.Xna.Framework.Rectangle(0, 0, 128, 128), Microsoft.Xna.Framework.Color.White);
+            if (WorldGame.ShadowRenderTargets[1] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[1], new Microsoft.Xna.Framework.Rectangle(0, 128, 128, 128), Microsoft.Xna.Framework.Color.White);
+            if (WorldGame.ShadowRenderTargets[2] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[2], new Microsoft.Xna.Framework.Rectangle(0, 256, 128, 128), Microsoft.Xna.Framework.Color.White);
             _spriteBatch.End();
         }
 
