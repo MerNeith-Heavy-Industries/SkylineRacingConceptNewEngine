@@ -54,7 +54,7 @@ public class AroundStageCamera
 
     private void FollowStage(PerspectiveCamera camera, IStage stage)
     {
-        camera.Fov = 400f * _focus;
+        camera.Fov = 90f * _focus;
         if(Math.Abs(_focus - _gofocus) > 0.005)
         {
             if(_focus > _gofocus)
