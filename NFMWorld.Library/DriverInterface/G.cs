@@ -24,6 +24,9 @@ public static class G
 
     public static void FillRect(int x1, int y1, int width, int height) => Graphics.FillRect(x1, y1, width, height);
 
+    public static void FillRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
+        float radBottomRight, float radBottomLeft) => Graphics.FillRoundedRect(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
+
     public static void DrawLine(int x1, int y1, int x2, int y2) => Graphics.DrawLine(x1, y1, x2, y2);
 
     public static void SetAlpha(float f) => Graphics.Alpha = f;
@@ -58,14 +61,15 @@ public static class G
 
     public static void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1) => Graphics.DrawStringStroke(text, x, y, effectAmount);
 
-    public static void FillOval(int p0, int p1, int p2, int p3) => Graphics.FillOval(p0, p1, p2, p3);
+    public static void FillOval(int x, int y, int width, int height) => Graphics.FillOval(x, y, width, height);
 
-    public static void FillRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei) => Graphics.FillRoundRect(x, y, wid, hei, arcWid, arcHei);
-
-    public static void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei) => Graphics.DrawRoundRect(x, y, wid, hei, arcWid, arcHei);
-
+    public static void DrawOval(int x, int y, int width, int height) => Graphics.DrawOval(x, y, width, height);
+    
     public static void DrawRect(int x1, int y1, int width, int height) => Graphics.DrawRect(x1, y1, width, height);
-
+    
+    public static void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
+        float radBottomRight, float radBottomLeft) => Graphics.DrawRoundedRect(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
+    
     public static void DrawImage(IImage? bggo, int p1, int i429, int p3, int i, object o)
     {
         if (bggo == null)

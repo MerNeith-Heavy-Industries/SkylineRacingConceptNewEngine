@@ -139,18 +139,44 @@ internal class NanoVGBackend(NvgContext context) : IBackend
 
         public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
-            throw new NotImplementedException(); // TODO
+            if (n < 1) return;
+            _context.BeginPath();
+            _context.MoveTo(x[0], y[0]);
+            for (int i = 1; i < n; i++)
+            {
+                _context.LineTo(x[i], y[i]);
+            }
+            _context.ClosePath();
+            _context.FillPaint(_paint);
+            _context.Fill();
         }
 
         public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
         {
-            throw new NotImplementedException(); // TODO
+            if (n < 1) return;
+            _context.BeginPath();
+            _context.MoveTo(x[0], y[0]);
+            for (int i = 1; i < n; i++)
+            {
+                _context.LineTo(x[i], y[i]);
+            }
+            _context.ClosePath();
+            _context.StrokePaint(_paint);
+            _context.Stroke();
         }
 
         public void FillRect(int x1, int y1, int width, int height)
         {
             _context.BeginPath();
             _context.Rect(x1, y1, width, height);
+            _context.FillPaint(_paint);
+            _context.Fill();
+        }
+
+        public void FillRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft)
+        {
+            _context.BeginPath();
+            _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
             _context.FillPaint(_paint);
             _context.Fill();
         }
@@ -266,25 +292,35 @@ internal class NanoVGBackend(NvgContext context) : IBackend
             }
         }
 
-        public void FillOval(int p0, int p1, int p2, int p3)
+        public void FillOval(int x, int y, int width, int height)
         {
-            throw new NotImplementedException();
+            _context.BeginPath();
+            _context.Ellipse(x + width / 2f, y + height / 2f, width / 2f, height / 2f);
+            _context.FillPaint(_paint);
+            _context.Fill();
         }
 
-        public void FillRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei)
+        public void DrawOval(int x1, int y1, int x2, int y2)
         {
-            throw new NotImplementedException();
-        }
-
-        public void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei)
-        {
-            throw new NotImplementedException();
+            _context.BeginPath();
+            _context.Ellipse(x1 + (x2 - x1) / 2f, y1 + (y2 - y1) / 2f, (x2 - x1) / 2f, (y2 - y1) / 2f);
+            _context.StrokePaint(_paint);
+            _context.Stroke();
         }
 
         public void DrawRect(int x1, int y1, int width, int height)
         {
             _context.BeginPath();
             _context.Rect(x1, y1, width, height);
+            _context.StrokePaint(_paint);
+            _context.Stroke();
+        }
+
+        public void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
+            float radBottomRight, float radBottomLeft)
+        {
+            _context.BeginPath();
+            _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
             _context.StrokePaint(_paint);
             _context.Stroke();
         }
