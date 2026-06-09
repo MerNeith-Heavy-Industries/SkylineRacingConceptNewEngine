@@ -102,6 +102,10 @@ public sealed class DummyBackend : IBackend
         {
         }
 
+        public void DrawOval(int x, int y, int width, int height)
+        {
+        }
+
         public void FillRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei)
         {
         }

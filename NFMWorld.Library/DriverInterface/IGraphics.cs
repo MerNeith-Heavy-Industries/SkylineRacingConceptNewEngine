@@ -15,6 +15,11 @@ public interface IGraphics : IXamlGraphics
     void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n);
     void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n);
     void FillRect(int x1, int y1, int width, int height);
+    void FillRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
+        float radBottomRight, float radBottomLeft)
+    {
+        FillRect(x1, y1, width, height);
+    }
     void DrawLine(int x1, int y1, int x2, int y2);
     new float Alpha { set; }
     void DrawImage(IImage image, int x, int y);
@@ -27,9 +32,13 @@ public interface IGraphics : IXamlGraphics
     void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
     {
     }
-    void FillOval(int p0, int p1, int p2, int p3);
-    void FillRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei);
-    void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei);
+    void FillOval(int x, int y, int width, int height);
+    void DrawOval(int x, int y, int width, int height);
+    void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
+        float radBottomRight, float radBottomLeft)
+    {
+        DrawRect(x1, y1, width, height);
+    }
     void DrawRect(int x1, int y1, int width, int height);
     void DrawImage(IImage image, int x, int y, int width, int height);
 
