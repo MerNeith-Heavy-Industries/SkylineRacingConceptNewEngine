@@ -245,7 +245,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
 
         Hud.DataContext.DamageFillAmount = (float)carsInRace[_playerCarIndex].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].Mad.Power / 98f;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].Mad.Power / 100f;
 
         if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
         {

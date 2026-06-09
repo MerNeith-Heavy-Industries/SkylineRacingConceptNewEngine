@@ -36,9 +36,9 @@ public partial class HudViewModel : ObservableObject
 
     public HudViewModel()
     {
-        PowerColor = GetPowerColor(1f);
+        PowerColor = GetPowerColor(98f/100f);
         DamageColor = GetDamageColor(0f);
-        PowerFillAmount = 1f;
+        PowerFillAmount = 98f/100f;
         DamageFillAmount = 0f;
         _damageFlickerTicks = 0;
         _damageFlicker = false;
@@ -50,18 +50,14 @@ public partial class HudViewModel : ObservableObject
         UpdatePowerBarColor();
     }
 
-    #region Power & Damage Bars
-
-    partial void OnDamageFillAmountChanged(float value)
+    public void GameTick()
     {
         UpdateDamageBarColor();
-    }
-
-    partial void OnPowerFillAmountChanged(float value)
-    {
         UpdatePowerBarColor();
     }
-    
+
+    #region Power & Damage Bars
+
     private void UpdateDamageBarColor()
     {
         DamageColor = GetDamageColor(DamageFillAmount);

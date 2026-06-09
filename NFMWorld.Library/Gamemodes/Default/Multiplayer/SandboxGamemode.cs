@@ -77,7 +77,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     protected void ClientGameTick()
     {
         Hud.DataContext.DamageFillAmount = (float)carsInRace[0].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].Mad.Power / 98f;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].Mad.Power / 100f;
     }
 
     public override void KeyPressed(Key key, in Keys keys)
