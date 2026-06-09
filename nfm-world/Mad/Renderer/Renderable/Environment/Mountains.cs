@@ -18,16 +18,12 @@ public class Mountains : Transform, IImmediateRenderable
     {
         _graphicsDevice = graphicsDevice;
         
-        var triangulation = Array.ConvertAll(polys,
-            poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
-
         var data = new List<VertexPositionColor>();
         var indices = new List<uint>();
         
         for (var i = 0; i < polys.Length; i++)
         {
             var poly = polys[i];
-            var result = triangulation[i];
 
             var baseIndex = (uint)data.Count;
             foreach (var point in poly.Points)
@@ -36,11 +32,11 @@ public class Mountains : Transform, IImmediateRenderable
                 data.Add(new VertexPositionColor(point, color));
             }
 
-            for (var index = 0; index < result.Triangles.Length; index += 3)
+            for (var index = 0; index < poly.Triangles.Length; index += 3)
             {
-                var i0 = result.Triangles[index];
-                var i1 = result.Triangles[index + 1];
-                var i2 = result.Triangles[index + 2];
+                var i0 = poly.Triangles[index];
+                var i1 = poly.Triangles[index + 1];
+                var i2 = poly.Triangles[index + 2];
 
                 indices.AddRange(i0 + baseIndex, i1 + baseIndex, i2 + baseIndex);
             }

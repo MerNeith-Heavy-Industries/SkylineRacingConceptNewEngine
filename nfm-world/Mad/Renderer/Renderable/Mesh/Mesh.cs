@@ -15,8 +15,6 @@ public class Mesh : IDisposable
     protected Submesh?[] Submeshes;
     protected LineMesh?[]? LineMeshes;
     
-    public readonly PolygonTriangulator.TriangulationResult[] Triangulation;
-
     public int GroundAt;
     
     public string FileName;
@@ -32,12 +30,11 @@ public class Mesh : IDisposable
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         // make a copy of points for damageable meshes
-        Polys = Array.ConvertAll(rad.Polys, poly => poly with { Points = [..poly.Points] });
+        Polys = Array.ConvertAll(rad.Polys, static poly => poly.SafeClone());
         GroundAt = rad.Wheels.FirstOrDefault().Ground;
 
         GraphicsDevice = graphicsDevice;
 
-        Triangulation = Array.ConvertAll(Polys, poly => MeshHelpers.TriangulateIfNeeded(poly.Points, poly.Triangles));
         BuildMesh(graphicsDevice);
 
         FileName = rad.FileName;
@@ -48,11 +45,9 @@ public class Mesh : IDisposable
     public Mesh(Mesh baseMesh)
     {
         // make a copy of points for damageable meshes
-        Polys = Array.ConvertAll(baseMesh.Polys, poly => poly with { Points = [..poly.Points] });
+        Polys = Array.ConvertAll(baseMesh.Polys, static poly => poly.SafeClone());
         GraphicsDevice = baseMesh.GraphicsDevice;
         GroundAt = baseMesh.GroundAt;
-
-        Triangulation = baseMesh.Triangulation;
 
         BuildMesh(GraphicsDevice);
 
@@ -106,7 +101,6 @@ public class Mesh : IDisposable
         for (var i = 0; i < Polys.Length; i++)
         {
             var poly = Polys[i];
-            var result = Triangulation[i];
 
             var (data, indices) = submeshes[(int)poly.PolyType];
             
@@ -115,14 +109,14 @@ public class Mesh : IDisposable
             foreach (var point in poly.Points)
             {
                 var color = poly.Color;
-                data.Add(new VertexPositionNormalColorCentroid(point, result.PlaneNormal, result.Centroid, color, decalOffset));
+                data.Add(new VertexPositionNormalColorCentroid(point, poly.Normal, poly.Centroid, color, decalOffset));
             }
 
-            for (var index = 0; index < result.Triangles.Length; index += 3)
+            for (var index = 0; index < poly.Triangles.Length; index += 3)
             {
-                var i0 = result.Triangles[index];
-                var i1 = result.Triangles[index + 1];
-                var i2 = result.Triangles[index + 2];
+                var i0 = poly.Triangles[index];
+                var i1 = poly.Triangles[index + 1];
+                var i2 = poly.Triangles[index + 2];
 
                 indices.AddRange(i0 + baseIndex, i1 + baseIndex, i2 + baseIndex);
             }
@@ -133,7 +127,7 @@ public class Mesh : IDisposable
                 {
                     var p0 = poly.Points[j];
                     var p1 = poly.Points[(j + 1) % poly.Points.Length];
-                    lines[(int)poly.LineType].TryAdd((p0, p1), (poly, result.Centroid, result.PlaneNormal));
+                    lines[(int)poly.LineType].TryAdd((p0, p1), (poly, poly.Centroid, poly.Normal));
                 }
             }
         }

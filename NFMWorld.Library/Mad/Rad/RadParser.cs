@@ -1,4 +1,5 @@
-﻿﻿using System.Globalization;
+﻿﻿using System.Collections.Immutable;
+ using System.Globalization;
  using System.Runtime.InteropServices;
  using FixedMathSharp;
  using NFMWorldLibrary.FixedMath;
@@ -477,7 +478,7 @@ public class RadParser
 
             else if (line.StartsWith("</p>") || line.StartsWith("[/p]"))
             {
-                poly = poly with { Points = _points.ToArray(), Triangles = _tris.Count > 0 ? _tris.ToArray() : null };
+                poly = poly.WithPoints(_points.ToArray(), _tris.Count > 0 ? _tris.ToImmutableArray() : null);
                 _points.Clear();
                 _tris.Clear();
                 if (_stonecold || _noOutline)

@@ -1,24 +1,112 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Immutable;
+using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using HoleyDiver;
 using MemoryPack;
+using Poly2Tri;
 
 namespace NFMWorldLibrary.Rad;
 
 [MemoryPackable(GenerateType.CircularReference)]
-public readonly partial record struct Rad3dPoly(
-    [property: JsonPropertyName("c"), MemoryPackOrder(0)] Color3 Color,
-    [property: JsonPropertyName("colnum"), MemoryPackOrder(1)] int? ColNum,
-    [property: JsonPropertyName("polyType"), MemoryPackOrder(2)] PolyType PolyType,
-    [property: JsonPropertyName("lineType"), MemoryPackOrder(3)] LineType? LineType,
-    [property: JsonPropertyName("decalOffset"), MemoryPackOrder(4)] float DecalOffset,
-    [property: JsonPropertyName("p"), MemoryPackOrder(5)] Vector3[] Points,
-    [property: JsonPropertyName("tri"), MemoryPackOrder(6)] uint[]? Triangles = null
-)
+public readonly partial record struct Rad3dPoly
 {
-    private readonly int _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points, Triangles);
+    public const int CurrentTriangulationVersion = 1;
+    
+    [JsonPropertyName("c"), MemoryPackOrder(0)]
+    public Color3 Color { get; init; }
+
+    [JsonPropertyName("colnum"), MemoryPackOrder(1)]
+    public int? ColNum { get; init; }
+
+    [JsonPropertyName("polyType"), MemoryPackOrder(2)]
+    public PolyType PolyType { get; init; }
+
+    [JsonPropertyName("lineType"), MemoryPackOrder(3)]
+    public LineType? LineType { get; init; }
+
+    [JsonPropertyName("decalOffset"), MemoryPackOrder(4)]
+    public float DecalOffset { get; init; }
+
+    [JsonPropertyName("p"), MemoryPackOrder(5)]
+    public Vector3[] Points { get; init; }
+
+    [JsonPropertyName("tri"), MemoryPackOrder(6)]
+    public ImmutableArray<uint> Triangles { get; init; }
+
+    [JsonPropertyName("cent"), MemoryPackOrder(7)]
+    public Vector3 Centroid { get; init; }
+
+    [JsonPropertyName("norm"), MemoryPackOrder(8)]
+    public Vector3 Normal { get; init; }
+
+    [JsonPropertyName("triVersion"), MemoryPackOrder(9)]
+    public int TriangulationVersion { get; init; }
+
+    private readonly int _hashCode;
 
     [MemoryPackConstructor]
     public Rad3dPoly() : this(default, null, default, null, 0, [])
     {
+    }
+
+    public Rad3dPoly(
+        Color3 Color,
+        int? ColNum,
+        PolyType PolyType,
+        LineType? LineType,
+        float DecalOffset,
+        Vector3[] Points,
+        ImmutableArray<uint>? Triangles = null,
+        Vector3? Centroid = null,
+        Vector3? Normal = null)
+    {
+        this.Color = Color;
+        this.ColNum = ColNum;
+        this.PolyType = PolyType;
+        this.LineType = LineType;
+        this.DecalOffset = DecalOffset;
+        this.Points = Points;
+        this.Triangles = Triangles ?? Triangulate(Points);
+        this.Centroid = Centroid ?? PolygonTriangulator.ComputeCentroid(Points);
+        this.Normal = Normal ?? GetNormal(Points, this.Centroid);
+        TriangulationVersion = Triangles != null ? int.MaxValue : CurrentTriangulationVersion; // Manual triangulation = max value
+        _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points, this.Triangles.AsSpan());
+    }
+
+    private static Vector3 GetNormal(Vector3[] verts, Vector3 centroid)
+    {
+        if (verts.Length < 3)
+        {
+            return new Vector3(0, 0, 1);
+        }
+
+        if (verts.Length == 3)
+        {
+            // Compute triangle normal
+            var normal = Vector3.Normalize(Vector3.Cross(
+                verts[1] - verts[0],
+                verts[2] - verts[0]
+            ));
+
+            return normal;
+        }
+        
+        return PolygonTriangulator.ComputeBestFitPlaneNormal(verts, centroid);
+    }
+
+    private static ImmutableArray<uint> Triangulate(Vector3[] verts)
+    {
+        if (verts.Length <= 2)
+        {
+            return [];
+        }
+        
+        if (verts.Length <= 3)
+        {
+            return [0, 1, 2];
+        }
+
+        return ImmutableCollectionsMarshal.AsImmutableArray(PolygonTriangulator.Triangulate(verts).Triangles);
     }
 
     public bool Equals(Rad3dPoly other)
@@ -55,5 +143,21 @@ public readonly partial record struct Rad3dPoly(
     public override int GetHashCode()
     {
         return _hashCode;
+    }
+
+    public Rad3dPoly WithPoints(Vector3[] verts, ImmutableArray<uint>? tris)
+    {
+        return this with
+        {
+            Points = verts,
+            Triangles = tris ?? Triangulate(verts),
+            Centroid = PolygonTriangulator.ComputeCentroid(verts),
+            Normal = GetNormal(verts, PolygonTriangulator.ComputeCentroid(verts))
+        };
+    }
+
+    public Rad3dPoly SafeClone()
+    {
+        return this with { Points = [..Points] };
     }
 }
