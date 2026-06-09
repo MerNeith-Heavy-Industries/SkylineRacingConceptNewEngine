@@ -1781,8 +1781,7 @@ public class StageEditorPhase : BasePhase
         // Find bounding sphere to set up camera
         float maxR = rad.MaxRadius > 0 ? rad.MaxRadius : 300;
         
-        var rt = new RenderTarget2D(_graphicsDevice, PreviewSize, PreviewSize,
-            false, SurfaceFormat.Color, DepthFormat.Depth24);
+        var rt = new RenderTarget2D(_graphicsDevice, PreviewSize, PreviewSize, false, SurfaceFormat.Color, DepthFormat.Depth24);
         
         var prevRTs = _graphicsDevice.GetRenderTargets();
         _graphicsDevice.SetRenderTarget(rt);
@@ -1956,13 +1955,12 @@ public class StageEditorPhase : BasePhase
                         rotated.Z + (float)piece.Position.Z
                     );
                 }
-                
-                // Test all triangles in the polygon (fan triangulation)
-                for (int i = 2; i < poly.Points.Length; i++)
+
+                for (var i = 0; i < poly.Triangles.Length; i += 3)
                 {
-                    var v0 = worldVerts[0];
-                    var v1 = worldVerts[i - 1];
-                    var v2 = worldVerts[i];
+                    var v0 = worldVerts[poly.Triangles[i]];
+                     var v1 = worldVerts[poly.Triangles[i + 1]];
+                     var v2 = worldVerts[poly.Triangles[i + 2]];
                     
                     // Try both winding orders
                     if (RayIntersectsTriangle(rayOrigin, rayDirection, v0, v1, v2, out float dist))
@@ -2813,8 +2811,9 @@ public class StageEditorPhase : BasePhase
                 RenderGizmo(ComputeSelectionCentroid());
         }
         
-        // Process one pending preview thumbnail per frame
-        ProcessOnePreviewThumbnail();
+        // Process pending preview thumbnails
+        while (_previewQueue.Count > 0) 
+            ProcessOnePreviewThumbnail();
         
         // Render placement ghost if in placement mode and mouse is over viewport
         if (_pendingPlacementPartIndex >= 0 && _hasValidPlacementPos)

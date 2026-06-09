@@ -807,14 +807,13 @@ public class ModelEditorPhase : BasePhase
         for (int i = 0; i < tab.Object.Mesh.Polys.Length; i++)
         {
             var poly = tab.Object.Mesh.Polys[i];
-            var triangulation = tab.Object.Mesh.Triangulation[i];
             
             // Test each triangle in this polygon
-            for (int t = 0; t < triangulation.Triangles.Length; t += 3)
+            for (int t = 0; t < poly.Triangles.Length; t += 3)
             {
-                var i0 = triangulation.Triangles[t];
-                var i1 = triangulation.Triangles[t + 1];
-                var i2 = triangulation.Triangles[t + 2];
+                var i0 = poly.Triangles[t];
+                var i1 = poly.Triangles[t + 1];
+                var i2 = poly.Triangles[t + 2];
                 
                 // Transform vertices by the model's world matrix
                 var v0 = Vector3.Transform(poly.Points[i0], modelWorld);
