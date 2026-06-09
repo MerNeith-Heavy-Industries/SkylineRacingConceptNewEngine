@@ -1,5 +1,6 @@
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
+using NFMWorld.UI.Hud;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -29,10 +30,13 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     public override void Reset()
     {
         base.Reset();
+        ClientServer.RunIfOnClient(ClientReset);
     }
 
     public override void GameTick()
     {
+        ClientServer.RunIfOnClient(ClientGameTick);
+        
         FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
 
         if (gamemodeData.raceState == RaceState.InProgress)
@@ -62,6 +66,23 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
 
     #region Client
     
+    private PowerDamageBars _pdBars = new PowerDamageBars();
+
+    [ClientOnly]
+    protected void ClientReset()
+    {
+        carsInRace[0].Mad.PowerUp += _pdBars.EventPowerUp;
+    }
+
+    [ClientOnly]
+    protected void ClientGameTick()
+    {
+        _pdBars.SetDamageBarFill(carsInRace[0].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
+        _pdBars.UpdateDamageBarColor();
+        _pdBars.SetPowerBarFill((float)carsInRace[0].Mad.Power);
+        _pdBars.UpdatePowerBarColor();
+    }
+
     public void KeyPressed(Keys key)
     {
         // Handle key presses specific to Time Trial mode
@@ -78,6 +99,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
 
     public void Render()
     {
+        _pdBars.LayoutAndRender(G.Viewport);
     }
 
     #endregion
