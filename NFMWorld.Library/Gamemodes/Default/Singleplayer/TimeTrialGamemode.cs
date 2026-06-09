@@ -6,6 +6,7 @@ using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Files;
 using NFMWorldLibrary.Helpers;
 using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -178,7 +179,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _bestTimeTrial = null;
         _tick = 0;
 
-        carsInRace[PlayerCarIndex].Mad.PowerUp += _pdBars.EventPowerUp;
+        carsInRace[PlayerCarIndex].Mad.PowerUp += Hud.DataContext.EventPowerUp;
 
         // ghost
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(players[PlayerCarIndex].CarName, currentStage.Path);
@@ -198,7 +199,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
         SetTimeText();
 
-        _pdBars.Reset();
+        Hud.DataContext = new HudViewModel();
         IBackend.Backend.StopAllSounds();
 
         SetLapText(0);
@@ -224,10 +225,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         SetLapText(carsInRace[PlayerCarIndex].currentLap);
         SetTimeText();
 
-        _pdBars.SetDamageBarFill(carsInRace[PlayerCarIndex].Mad.Hitmag, carsInRace[PlayerCarIndex].Stats.Maxmag);
-        _pdBars.UpdateDamageBarColor();
-        _pdBars.SetPowerBarFill((float)carsInRace[PlayerCarIndex].Mad.Power);
-        _pdBars.UpdatePowerBarColor();
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Power / 98f;
 
         if (_bestTimeTrial != null)
         {
@@ -304,23 +303,27 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                _centralTextNode.DataContext.CenterTextOpacity = 0;
+                Hud.DataContext.CenterTextOpacity = 0;
                 _raceTimer.Start();
             }
         }
     }
 
-    public virtual void KeyPressed(Keys key)
+    public override void KeyPressed(Key key, in Keys keys)
     {
+        base.KeyPressed(key, keys);
+        
         // Handle key presses specific to Time Trial mode
-        if (key == Keys.R)
+        if (key == Key.R)
         {
             Reset();
         }
     }
 
-    public virtual void KeyReleased(Keys key)
+    public override void KeyReleased(Key key, in Keys keys)
     {
+        base.KeyReleased(key, keys);
+        
         // Handle key releases specific to Time Trial mode
     }
 
@@ -371,8 +374,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         }
     }
 
-    public virtual void Render()
+    public override void Render()
     {
+        base.Render();
+        
         _pdBars.LayoutAndRender(G.Viewport);
         _lapTimerSplits.LayoutAndRender(G.Viewport);
         _centralTextNode.LayoutAndRender(G.Viewport);
@@ -385,27 +390,27 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         {
             RenderInfo();
 
-            _centralTextNode.DataContext.CenterTextOpacity = 1;
-            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            _centralTextNode.DataContext.CenterTextColor = new Color(255, 255, 255);
-            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            _centralTextNode.DataContext.CenterText = $"Starting in {_countdownTime}";
+            Hud.DataContext.CenterTextOpacity = 1;
+            Hud.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
+            Hud.DataContext.CenterTextColor = new Color(255, 255, 255);
+            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            Hud.DataContext.CenterText = $"Starting in {_countdownTime}";
         }
         else if (_currentState == TimeTrialState.Finished)
         {
             RenderInfo();
 
             string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            _centralTextNode.DataContext.CenterTextOpacity = 1;
-            _centralTextNode.DataContext.CenterTextColor = new Color(128, 255, 128);
-            _centralTextNode.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            _centralTextNode.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
-            _centralTextNode.DataContext.CenterText = $"Finished! Time: {finalTime}";
+            Hud.DataContext.CenterTextOpacity = 1;
+            Hud.DataContext.CenterTextColor = new Color(128, 255, 128);
+            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            Hud.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+            Hud.DataContext.CenterText = $"Finished! Time: {finalTime}";
 
             bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
 
             if (newBest)
-                _centralTextNode.DataContext.CenterText += "\nNew best time!";
+                Hud.DataContext.CenterText += "\nNew best time!";
 
             if (_bestTimeTrial != null || newBest)
             {
@@ -418,10 +423,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
                     t.Seconds,
                     t.Milliseconds);
 
-                _centralTextNode.DataContext.CenterText += $"\nBest time: {time}";
+                Hud.DataContext.CenterText += $"\nBest time: {time}";
             }
 
-            _centralTextNode.DataContext.CenterText += "\nPress R to restart";
+            Hud.DataContext.CenterText += "\nPress R to restart";
         }
     }
 

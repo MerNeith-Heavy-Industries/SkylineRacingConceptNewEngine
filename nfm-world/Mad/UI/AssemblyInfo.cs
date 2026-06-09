@@ -6,4 +6,5 @@ using Avalonia.Metadata;
 [assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Elements")]
 [assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Yoga.Xaml")]
 [assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Hud")]
+[assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Menu")]
 [assembly: XmlnsDefinition("https://github.com/needforrewrite/nfm-world", "NFMWorld.UI.Test")]

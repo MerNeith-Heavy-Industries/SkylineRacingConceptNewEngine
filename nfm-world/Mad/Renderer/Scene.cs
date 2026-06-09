@@ -53,7 +53,7 @@ public class Scene
             for (var cascade = 0; cascade < totalCascades; cascade++)
             {
                 // Set our render target to our floating point render target
-                _graphicsDevice.SetRenderTarget(WorldGame.shadowRenderTargets[cascade]);
+                _graphicsDevice.SetRenderTarget(WorldGame.ShadowRenderTargets[cascade]);
 
                 // Clear the render target to white or all 1's
                 // We set the clear to white since that represents the 
@@ -234,7 +234,7 @@ public class Scene
     
     private void RenderInternal(bool isCreateShadowMap = false, int numCascade = -1, int totalCascades = 3)
     {
-        var lighting = new Lighting(_lightCameras, WorldGame.shadowRenderTargets, isCreateShadowMap, numCascade, totalCascades);
+        var lighting = new Lighting(_lightCameras, WorldGame.ShadowRenderTargets, isCreateShadowMap, numCascade, totalCascades);
 
         _renderDataCache.Clear();
         foreach (var obj in Objects)

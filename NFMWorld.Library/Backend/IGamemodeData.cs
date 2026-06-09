@@ -1,5 +1,6 @@
 ﻿using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -14,4 +15,7 @@ public interface IGamemodeData
 
     [ClientOnly]
     IClientCallbacks ClientCallbacks { get; }
+    
+    [ClientOnly]
+    FocusManager FocusManager { get; }
 }

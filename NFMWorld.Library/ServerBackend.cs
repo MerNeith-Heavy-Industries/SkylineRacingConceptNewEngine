@@ -1,5 +1,6 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Backend.Gamemodes;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary;
 
@@ -23,4 +24,6 @@ public class ServerBackend : IBackend
     public IGraphics Graphics => ClientServer.AccidentallyCalledClientMethodOnServer<IGraphics>();
     
     public void SetAllVolumes(float vol) => ClientServer.AccidentallyCalledClientMethodOnServer();
+    
+    public Key GetKeyFromScancode(Key key) => ClientServer.AccidentallyCalledClientMethodOnServer<Key>();
 }

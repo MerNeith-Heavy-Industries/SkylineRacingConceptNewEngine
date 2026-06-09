@@ -1,6 +1,7 @@
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
 using NFMWorld.UI.Hud;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -65,41 +66,39 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     }
 
     #region Client
-    
-    private PowerDamageBars _pdBars = new PowerDamageBars();
 
     [ClientOnly]
     protected void ClientReset()
     {
-        carsInRace[0].Mad.PowerUp += _pdBars.EventPowerUp;
+        carsInRace[0].Mad.PowerUp += Hud.DataContext.EventPowerUp;
     }
 
     [ClientOnly]
     protected void ClientGameTick()
     {
-        _pdBars.SetDamageBarFill(carsInRace[0].Mad.Hitmag, carsInRace[0].Stats.Maxmag);
-        _pdBars.UpdateDamageBarColor();
-        _pdBars.SetPowerBarFill((float)carsInRace[0].Mad.Power);
-        _pdBars.UpdatePowerBarColor();
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[0].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].Mad.Power / 98f;
     }
 
-    public void KeyPressed(Keys key)
+    public override void KeyPressed(Key key, in Keys keys)
     {
+        base.KeyPressed(key, keys);
+        
         // Handle key presses specific to Time Trial mode
-        if (key == Keys.R)
+        if (key == Key.R)
         {
             Reset();
         }
     }
 
-    public void KeyReleased(Keys key)
+    public override void KeyReleased(Key key, in Keys keys)
     {
-        // Handle key releases specific to Time Trial mode
+        base.KeyReleased(key, keys);
     }
 
-    public void Render()
+    public override void Render()
     {
-        _pdBars.LayoutAndRender(G.Viewport);
+        base.Render();
     }
 
     #endregion

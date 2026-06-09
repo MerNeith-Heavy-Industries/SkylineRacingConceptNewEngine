@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.DriverInterface;
 
@@ -125,6 +126,11 @@ public sealed class DummyBackend : IBackend
 
     public void SetAllVolumes(float vol)
     {
+    }
+
+    public Key GetKeyFromScancode(Key key)
+    {
+        return key;
     }
 }
 

@@ -1,0 +1,129 @@
+<View
+    xmlns="https://github.com/uwx/worldxaml"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:w="https://github.com/needforrewrite/nfm-world"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d" d:DataContext="{d:DesignInstance w:MainMenuViewModel}"
+    x:Class="NFMWorld.UI.Menu.MainMenuView"
+    DataType="w:MainMenuViewModel"
+    Name="MainMenu"
+    FlexDirection="Column"
+    AlignItems="FlexStart"
+    JustifyContent="FlexStart"
+    Gap="10"
+    Padding="20"
+    Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
+
+    <!-- Full-screen dark purple background -->
+    <w:SolidBox
+        Name="BackgroundBox"
+        BackgroundColor="{Binding BackgroundColor}"
+        BorderColor="0,0,0,0"
+        Position="Absolute"
+        Top="0" Left="0" Right="0" Bottom="0" />
+
+    <!-- Top row: title + login button -->
+    <FlexPanel
+        Name="TopRow"
+        FlexDirection="Row"
+        JustifyContent="SpaceBetween"
+        AlignItems="FlexEnd"
+        MarginBottom="30">
+
+        <!-- Title -->
+        <w:TextRun
+            Name="TitleText"
+            Font="bold 48px Adventure"
+            Color="{Binding TitleColor}"
+            StrokeColor="black"
+            Text="{Binding Title}" />
+
+        <!-- Login / Logout button -->
+        <FlexPanel
+            Name="LoginButton"
+            FlexDirection="Row"
+            AlignItems="Center"
+            MinWidth="120"
+            MinHeight="35"
+            Padding="12,8">
+
+            <w:SolidBox
+                Name="LoginButtonBg"
+                BackgroundColor="0,0,0,0"
+                BorderColor="{Binding LoginButtonColor}"
+                Position="Absolute"
+                Top="0" Left="0" Right="0" Bottom="0" />
+
+            <w:TextRun
+                Name="LoginButtonText"
+                Font="bold 24px Adventure"
+                Color="{Binding LoginButtonColor}"
+                StrokeColor="black"
+                Text="{Binding LoginButtonText}" />
+        </FlexPanel>
+    </FlexPanel>
+
+    <!-- Menu items via ItemsRepeater -->
+    <w:ItemsRepeater
+        Name="MenuItems"
+        ItemsSource="{Binding Items}"
+        FlexDirection="Column"
+        AlignItems="FlexStart"
+        Gap="6">
+        <w:ItemsRepeater.ItemTemplate>
+            <ControlTemplate TargetType="w:MainMenuItemViewModel" d:DataContext="{d:DesignInstance w:MainMenuItemViewModel}">
+                <FlexPanel
+                    Name="ItemRow"
+                    FlexDirection="Row"
+                    AlignItems="Center"
+                    MinWidth="230"
+                    MinHeight="35"
+                    Padding="12,8"
+                    Gap="0">
+
+                    <!-- Hover background fill -->
+                    <w:SolidBox
+                        Name="HoverFill"
+                        BackgroundColor="{Binding BackgroundFillColor}"
+                        BorderColor="{Binding BorderStrokeColor}"
+                        Position="Absolute"
+                        Top="0" Left="0" Right="0" Bottom="0" />
+
+                    <!-- Button text -->
+                    <w:TextRun
+                        Name="ButtonText"
+                        Font="bold 24px Adventure"
+                        Color="255,140,0,255"
+                        StrokeColor="black"
+                        Text="{Binding Text}" />
+                </FlexPanel>
+            </ControlTemplate>
+        </w:ItemsRepeater.ItemTemplate>
+    </w:ItemsRepeater>
+
+    <!-- Spacer to push description to bottom -->
+    <Node Flex="1" />
+
+    <!-- Description / tooltip -->
+    <w:TextRun
+        Name="DescriptionText"
+        Font="14px Adventure"
+        Color="255,140,0,255"
+        Text="{Binding Description}" />
+
+    <!-- Account status row -->
+    <FlexPanel
+        Name="AccountRow"
+        FlexDirection="Row"
+        JustifyContent="SpaceBetween"
+        AlignItems="Center"
+        MarginTop="10">
+
+        <w:TextRun
+            Name="AccountStatusText"
+            Font="14px Adventure"
+            Color="180,180,180,255"
+            Text="{Binding AccountStatus}" />
+    </FlexPanel>
+</View>

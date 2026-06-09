@@ -5,6 +5,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -218,11 +219,11 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         return false;
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
 
-        if (key == Keys.Down && _inAutocomplete)
+        if (key == Key.Down && _inAutocomplete)
         {
             _autocompleteIndex++;
             if (_autocompleteIndex >= _autocompleteMatches.Length)
@@ -230,7 +231,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
                 _autocompleteIndex = 0;
             }
         }
-        else if (key == Keys.Up && _inAutocomplete)
+        else if (key == Key.Up && _inAutocomplete)
         {
             _autocompleteIndex--;
             if (_autocompleteIndex < 0)
@@ -241,18 +242,18 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
 
         if (imguiWantsKeyboard) return;
 
-        if (key == Keys.Left)
+        if (key == Key.Left)
         {
             CycleStageInCollection(-1);
         }
-        else if (key == Keys.Right)
+        else if (key == Key.Right)
         {
             CycleStageInCollection(1);
         }
-        else if (key == Keys.Enter)
+        else if (key == Key.Enter)
         {
             StageSelected?.Invoke(this, CurrentStage);
-        } else if (key == Keys.S)
+        } else if (key == Key.S)
         {
             _openSearchPopup = true;
         }

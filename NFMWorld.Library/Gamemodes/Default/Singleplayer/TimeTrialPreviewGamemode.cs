@@ -4,6 +4,7 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Files;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay.Gamemodes;
 
@@ -63,26 +64,26 @@ public class TimeTrialPreviewGamemode(
         }
     }
 
-    public override void KeyPressed(Keys key)
+    public override void KeyPressed(Key key, in Keys keys)
     {
-        base.KeyPressed(key);
+        base.KeyPressed(key, keys);
 
-        if (key is Keys.ShiftKey or Keys.LShiftKey or Keys.RShiftKey)
+        if (key is Key.ShiftKey or Key.LShiftKey or Key.RShiftKey)
         {
             _shift = true;
         }
 
-        if (key is Keys.ControlKey or Keys.LControlKey or Keys.RControlKey)
+        if (key is Key.ControlKey or Key.LControlKey or Key.RControlKey)
         {
             _ctrl = true;
         }
 
-        if (key == Keys.Space)
+        if (key == Key.Space)
         {
             _paused = !_paused;
         }
 
-        if (key == Keys.W)
+        if (key == Key.W)
         {
             if (_ctrl)
             {
@@ -98,7 +99,7 @@ public class TimeTrialPreviewGamemode(
             }
         }
 
-        if (key == Keys.S)
+        if (key == Key.S)
         {
             if (_ctrl)
             {
@@ -114,28 +115,28 @@ public class TimeTrialPreviewGamemode(
             }
         }
 
-        if (key == Keys.A)
+        if (key == Key.A)
         {
             _slow = true;
             _slowTicks = 0;
         }
 
-        if (key == Keys.M)
+        if (key == Key.M)
         {
             _simulating = !_simulating;
         }
     }
 
-    public override void KeyReleased(Keys key)
+    public override void KeyReleased(Key key, in Keys keys)
     {
-        base.KeyReleased(key);
+        base.KeyReleased(key, keys);
 
-        if (key is Keys.ShiftKey or Keys.LShiftKey or Keys.RShiftKey)
+        if (key is Key.ShiftKey or Key.LShiftKey or Key.RShiftKey)
         {
             _shift = false;
         }
 
-        if (key is Keys.ControlKey or Keys.LControlKey or Keys.RControlKey)
+        if (key is Key.ControlKey or Key.LControlKey or Key.RControlKey)
         {
             _ctrl = false;
         }

@@ -1,5 +1,6 @@
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -63,22 +64,26 @@ public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IGamemo
 
     #region Client
 
-    public void KeyPressed(Keys key)
+    public override void KeyPressed(Key key, in Keys keys)
     {
+        base.KeyPressed(key, keys);
+        
         // Handle key presses specific to Time Trial mode
-        if (key == Keys.R)
+        if (key == Key.R)
         {
             Reset();
         }
     }
 
-    public void KeyReleased(Keys key)
+    public override void KeyReleased(Key key, in Keys keys)
     {
+        base.KeyReleased(key, keys);
         // Handle key releases specific to Time Trial mode
     }
 
-    public void Render()
+    public override void Render()
     {
+        base.Render();
     }
 
     #endregion

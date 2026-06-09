@@ -1,14 +1,19 @@
 using Microsoft.Xna.Framework;
+using WorldXaml.UI.Base;
 
 namespace NFMWorld.DriverInterface.UI;
 
-public class MeasureBar : Image
+public partial class MeasureBar : Image
 {
-    public Color Color { get; set; } = new Color(255, 255, 255);
+    [Property(DefaultValueMember = nameof(DefaultColor))]
+    public partial Color Color { get; set; }
+    private static partial Color DefaultColor => new Color(255, 255, 255);
+    
     /// <summary>
     /// 1f = full, 0f = empty
     /// </summary>
-    public float FillAmount { get; set; } = 0f;
+    [Property]
+    public partial float FillAmount { get; set; }
 
     protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {

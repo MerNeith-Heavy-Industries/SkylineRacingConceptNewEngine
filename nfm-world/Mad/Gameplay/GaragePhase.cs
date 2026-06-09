@@ -7,6 +7,8 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -30,7 +32,8 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
     private BackendCar? _backendCar;
     private ClientCar? _car;
-    
+
+    private FocusManager _focusManager = new();
     private GarageUiView _garageUiView = new();
 
     private int _statsBarBaseX = 120;
@@ -139,7 +142,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void GameTick()
     {
         base.GameTick();
-        _garageUiView.Update();
+        _garageUiView.Update(_focusManager);
     }
 
     public override void Render(float alpha)
@@ -282,9 +285,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     {
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        if (key == Keys.Down && _inAutocomplete)
+        if (key == Key.Down && _inAutocomplete)
         {
             _autocompleteIndex++;
             if (_autocompleteIndex >= _autocompleteMatches.Length)
@@ -292,7 +295,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
                 _autocompleteIndex = 0;
             }
         }
-        else if (key == Keys.Up && _inAutocomplete)
+        else if (key == Key.Up && _inAutocomplete)
         {
             _autocompleteIndex--;
             if (_autocompleteIndex < 0)
@@ -303,23 +306,23 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
         if (imguiWantsKeyboard || _inAutocomplete) return;
 
-        if (key == Keys.Right)
+        if (key == Key.Right)
         {
             CycleCarRight();
         }
-        else if (key == Keys.Left)
+        else if (key == Key.Left)
         {
             CycleCarLeft();
         }
-        else if (key == Keys.Enter)
+        else if (key == Key.Enter)
         {
             SelectedCar();
         }
-        else if (key == Keys.Escape)
+        else if (key == Key.Escape)
         {
             SelectionCancelled();
         }
-        else if (key == Keys.S)
+        else if (key == Key.S)
         {
             _openSearchPopup = true;
         }

@@ -8,6 +8,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.UI;
 
@@ -453,9 +454,9 @@ public class ModelEditorPhase : BasePhase
         tab.CameraPosition = (Vector3)tab.ModelPosition + new Vector3(x, y, -z);
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
         if (imguiWantsKeyboard) return;
         if (!_isOpen) return;
         
@@ -465,56 +466,56 @@ public class ModelEditorPhase : BasePhase
         
         switch (key)
         {
-            case Keys.W:
+            case Key.W:
                 if (isShiftPressed)
                     _panUp = true;
                 else
                     _zoomIn = true;  // Zoom in like scroll up
                 break;
-            case Keys.S:
+            case Key.S:
                 if (isShiftPressed)
                     _panDown = true;
                 else
                     _zoomOut = true;  // Zoom out like scroll down
                 break;
-            case Keys.A:
+            case Key.A:
                 if (isShiftPressed)
                     _panLeft = true;
                 else
                     _orbitLeft = true;
                 break;
-            case Keys.D:
+            case Key.D:
                 if (isShiftPressed)
                     _panRight = true;
                 else
                     _orbitRight = true;
                 break;
-            case Keys.Up:
+            case Key.Up:
                 _orbitUp = true;
                 break;
-            case Keys.Down:
+            case Key.Down:
                 _orbitDown = true;
                 break;
-            case Keys.Left:
+            case Key.Left:
                 _orbitLeft = true;
                 break;
-            case Keys.Right:
+            case Key.Right:
                 _orbitRight = true;
                 break;
-            case Keys.Oemplus:
-            case Keys.Add:
+            case Key.Oemplus:
+            case Key.Add:
                 _zoomInAlt = true;
                 break;
-            case Keys.OemMinus:
-            case Keys.Subtract:
+            case Key.OemMinus:
+            case Key.Subtract:
                 _zoomOutAlt = true;
                 break;
         }
     }
 
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
+    public override void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyReleased(key, imguiWantsKeyboard);
+        base.KeyReleased(key, imguiWantsKeyboard, keys);
         
         if (imguiWantsKeyboard) return;
         
@@ -522,48 +523,49 @@ public class ModelEditorPhase : BasePhase
         
         switch (key)
         {
-            case Keys.W:
+            case Key.W:
                 _zoomIn = false;
                 _panUp = false;
                 break;
-            case Keys.S:
+            case Key.S:
                 _zoomOut = false;
                 _panDown = false;
                 break;
-            case Keys.A:
+            case Key.A:
                 _orbitLeft = false;
                 _panLeft = false;
                 break;
-            case Keys.D:
+            case Key.D:
                 _orbitRight = false;
                 _panRight = false;
                 break;
-            case Keys.Up:
+            case Key.Up:
                 _orbitUp = false;
                 break;
-            case Keys.Down:
+            case Key.Down:
                 _orbitDown = false;
                 break;
-            case Keys.Left:
+            case Key.Left:
                 _orbitLeft = false;
                 break;
-            case Keys.Right:
+            case Key.Right:
                 _orbitRight = false;
                 break;
-            case Keys.Oemplus:
-            case Keys.Add:
+            case Key.Oemplus:
+            case Key.Add:
                 _zoomInAlt = false;
                 break;
-            case Keys.OemMinus:
-            case Keys.Subtract:
+            case Key.OemMinus:
+            case Key.Subtract:
                 _zoomOutAlt = false;
                 break;
         }
     }
 
-    public override void MouseMoved(int x, int y, bool imguiWantsMouse)
+    public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
-        base.MouseMoved(x, y, imguiWantsMouse);
+        base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
 
         if (imguiWantsMouse) return;
         if (!GameSparker._game.IsActive) return;
@@ -619,9 +621,12 @@ public class ModelEditorPhase : BasePhase
         _mouseY = y;
     }
 
-    public override void MousePressed(int x, int y, bool imguiWantsMouse)
+    public override void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons,
+        bool ctrlKey,
+        bool shiftKey, bool altKey)
     {
-        base.MousePressed(x, y, imguiWantsMouse);
+        base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
+
         if (imguiWantsMouse) return;
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
@@ -652,9 +657,11 @@ public class ModelEditorPhase : BasePhase
         }
     }
     
-    public override void MouseScrolled(int delta, bool imguiWantsMouse)
+    public override void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons,
+        bool ctrlKey, bool shiftKey, bool altKey)
     {
-        base.MouseScrolled(delta, imguiWantsMouse);
+        base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
+
         if (imguiWantsMouse) return;
         if (!GameSparker._game.IsActive) return;
         if (!_isOpen) return;
@@ -673,9 +680,10 @@ public class ModelEditorPhase : BasePhase
         }
     }
 
-    public override void MouseReleased(int x, int y, bool imguiWantsMouse)
+    public override void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons,
+        bool ctrlKey, bool shiftKey, bool altKey)
     {
-        base.MouseReleased(x, y, imguiWantsMouse);
+        base.MouseReleased(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
         
         var tab = ActiveTab;
         if (tab != null)
@@ -728,12 +736,7 @@ public class ModelEditorPhase : BasePhase
             }
         }
     }
-    
-    private void ProcessMouseClick()
-    {
-        // This method is no longer needed as click detection moved to MouseReleased
-    }
-    
+
     private int PerformRayPicking(int screenX, int screenY, ModelEditorTab tab)
     {
         if (tab.Object == null) return -1;
