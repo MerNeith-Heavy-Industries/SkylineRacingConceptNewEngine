@@ -45,6 +45,7 @@ public class RadParser
 
     public static Rad3d ParseRad(string radFile, string fileName = "hogan rewish")
     {
+        var transaction = SentrySdk.StartTransaction("load_rad", fileName);
         var parser = new RadParser(fileName);
         var lines = radFile.AsSpan().Split("\n");
         int lineNumber = 0;
@@ -63,7 +64,7 @@ public class RadParser
             }
         }
 
-        return RepositionCar(new Rad3d(
+        var result = RepositionCar(new Rad3d(
             Colors: parser._colors.Keys.ToArray(),
             Stats: parser._stats,
             Wheels: parser._wheels.ToArray(),
@@ -77,6 +78,8 @@ public class RadParser
             CollisionHull: parser._hullVerts.Count > 0 ? new SrcRad3dCollisionHull(CollectionsMarshal.AsSpan(parser._hullVerts)) : null,
             FileName: fileName
         ));
+        transaction.Finish();
+        return result;
     }
 
     private static Rad3d RepositionCar(Rad3d rad3d)
