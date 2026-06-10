@@ -92,72 +92,117 @@ public static class BackendGameSparker
             VFS.MountFileSystem(new RelativeFileSystem(modsFolder));
 
         cars.Add(Collection.NFMM, []);
-        FileUtil.LoadFiles("./data/models/nfmm/cars", CarRads, (ais, id, fileName) =>
-        {
-            cars[Collection.NFMM][id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
-        });
-
-        FileUtil.LoadFiles("./data/models/nfmm/stage", StageRads, (ais, id, fileName) =>
-        {
-            stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
-        });
+        FileUtil.LoadFiles(
+            "./data/models/nfmm/cars",
+            CarRads,
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName),
+            (id, result) => cars[Collection.NFMM][id] = result  
+        );
+        
+        FileUtil.LoadFiles(
+            "./data/models/nfmm/stage",
+            StageRads,
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName),
+            (id, result) => stage_parts[id] = result  
+        );
 
         cars.Add(Collection.World, []);
-        FileUtil.LoadFiles("./data/models/world/cars", (ais, fileName) =>
-        {
-            cars[Collection.World].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/world/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName),
+            result => cars[Collection.World].Add(result)
+        );
 
         cars.Add(Collection.Elo, []);
-        FileUtil.LoadFiles("./data/models/elo/cars", (ais, fileName) =>
-        {
-            cars[Collection.Elo].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "elo/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/elo/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "elo/" + fileName),
+            result => cars[Collection.Elo].Add(result)
+        );
 
         cars.Add(Collection.Football, []);
-        FileUtil.LoadFiles("./data/models/football/cars", (ais, fileName) =>
-        {
-            cars[Collection.Football].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/football/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName),
+            result => cars[Collection.Football].Add(result)
+        );
 
-        FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) =>
-        {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
-        });
+        cars.Add(Collection.Skyline, []);
+        FileUtil.LoadFiles(
+            "./data/models/src/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "src/" + fileName),
+            result => cars[Collection.Skyline].Add(result)
+        );
 
-        FileUtil.LoadFiles("./data/models/football/stage", (ais, fileName) =>
-        {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/world/stage",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName),
+            result => vendor_stage_parts.Add(result)
+        );
+        
+        FileUtil.LoadFiles(
+            "./data/models/football/stage",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName),
+            result => vendor_stage_parts.Add(result)
+        );
+        
+        FileUtil.LoadFiles(
+            "./data/models/src/stage",
+            srcStageParts,
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "src/" + fileName),
+            (id, result) => src_stage_parts[id] = result
+        );
 
         cars.Add(Collection.User, []);
-        FileUtil.LoadFiles("./data/models/user/cars", (ais, fileName) =>
-        {
-            try
+        FileUtil.LoadFiles(
+            "./data/models/user/cars",
+            (ais, fileName) =>
             {
-                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
-            }
-        });
-
-        FileUtil.LoadFiles("./data/models/user/stage", (ais, fileName) =>
-        {
-            try
-            {
-                user_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                SentrySdk.CaptureEvent(new SentryEvent(ex)
+                try
                 {
-                    Message = $"Error loading user stage part '{fileName}'"
-                });
-                Logging.Info($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName);
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureEvent(new SentryEvent(ex)
+                    {
+                        Message = $"Error loading user car part '{fileName}'"
+                    });
+                    Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return null;
+                }
+            },
+            result =>
+            {
+                if (result != null)
+                    cars[Collection.User].Add(result);
             }
-        });
+        );
+
+        FileUtil.LoadFiles(
+            "./data/models/user/cars",
+            (ais, fileName) =>
+            {
+                try
+                {
+                    return RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName);
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureEvent(new SentryEvent(ex)
+                    {
+                        Message = $"Error loading user stage part '{fileName}'"
+                    });
+                    Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return null;
+                }
+            },
+            result =>
+            {
+                if (result != null)
+                    user_stage_parts.Add(result);
+            }
+        );
 
         error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad")), "error.rad");
         
