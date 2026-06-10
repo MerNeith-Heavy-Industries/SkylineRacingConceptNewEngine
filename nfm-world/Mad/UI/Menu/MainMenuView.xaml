@@ -15,14 +15,6 @@
     Padding="20"
     Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=250, KeyFrameOffset=0}">
 
-    <!-- Full-screen dark purple background -->
-    <w:SolidBox
-        Name="BackgroundBox"
-        BackgroundColor="{Binding BackgroundColor}"
-        BorderColor="0,0,0,0"
-        Position="Absolute"
-        Top="0" Left="0" Right="0" Bottom="0" />
-
     <!-- Top row: title + login button -->
     <FlexPanel
         Name="TopRow"
@@ -81,6 +73,7 @@
                     MinHeight="35"
                     Padding="12,8"
                     IsHovered="{Binding IsHovered, Mode=OneWayToSource}"
+                    IsFocusable="True"
                     MousePressed="{Binding ClickedCommand}"
                     Gap="0">
 
