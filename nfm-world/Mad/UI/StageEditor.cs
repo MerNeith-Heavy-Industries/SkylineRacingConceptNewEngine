@@ -1796,48 +1796,22 @@ public class StageEditorPhase : BasePhase
         float camDist = maxR * 3f;
         var eye = new Vector3(camDist * 0.7f, camDist * 0.6f, camDist * 0.7f);
         var target = Vector3.Zero;
-        var view = Matrix.CreateLookAt(eye, target, Vector3.Up);
-        var proj = Matrix.CreatePerspectiveFieldOfView(40f * (MathF.PI / 180f), 1f, 1f, camDist * 5f);
-        
-        var effect = new BasicEffect(_graphicsDevice)
+
+        var oldSnap = World.Snap;
+        World.Snap = new Color3(100, 100, 100);
+        var mesh = new ImmediateMesh(_graphicsDevice, rad);
+
+        var camera = new PerspectiveCamera()
         {
-            View = view,
-            Projection = proj,
-            VertexColorEnabled = true
+            Fov = 40f,
+            Position = eye,
+            LookAt = target
         };
-        
-        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        _graphicsDevice.BlendState = BlendState.Opaque;
-        
-        // Build vertex buffer from Rad3d polygons
-        var verts = new List<VertexPositionColor>();
-        foreach (var poly in rad.Polys)
-        {
-            if (poly.Points.Length < 3) continue;
-            // Fan triangulation
-            for (int i = 2; i < poly.Points.Length; i++)
-            {
-                var p0 = new Vector3(poly.Points[0].X, poly.Points[0].Y, poly.Points[0].Z);
-                var p1 = new Vector3(poly.Points[i - 1].X, poly.Points[i - 1].Y, poly.Points[i - 1].Z);
-                var p2 = new Vector3(poly.Points[i].X, poly.Points[i].Y, poly.Points[i].Z);
-                var xnaColor = new Color((int)poly.Color.R, (int)poly.Color.G, (int)poly.Color.B, 255);
-                verts.Add(new(p0, xnaColor));
-                verts.Add(new(p1, xnaColor));
-                verts.Add(new(p2, xnaColor));
-            }
-        }
-        
-        if (verts.Count > 0)
-        {
-            var arr = verts.ToArray();
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                _graphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, arr, 0, arr.Length / 3);
-            }
-        }
+        camera.OnBeforeRender(1f);
+        mesh.Render(camera, null);
         
         _graphicsDevice.SetRenderTargets(prevRTs);
+        World.Snap = oldSnap;
         
         var texRef = WorldGame.ImguiRenderer.BindTexture(rt);
         _partPreviews[name] = (rt, texRef);
