@@ -48,12 +48,11 @@ public partial class ItemsRepeater : FlexPanel
         if (ItemsSource is null || ItemTemplate is null)
             return;
 
-        // ControlTemplate.Build needs an IServiceProvider — pass null for simple cases
-        // (the XamlX-compiled factory closure doesn't actually use it for basic templates)
-        var sp = AvaloniaXamlLoader.CreateDefaultServiceProvider(this);
+        // Pass null service provider: the generated Build_1 closure handles it,
+        // and we don't want the template to cast our ItemsRepeater as the owning View.
         foreach (var item in ItemsSource)
         {
-            var built = ItemTemplate.Build(sp);
+            var built = ItemTemplate.Build(null);
             if (built is not BindableObject bindable)
                 continue;
 
