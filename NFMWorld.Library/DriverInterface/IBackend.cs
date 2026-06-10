@@ -9,7 +9,6 @@ public interface IBackend : IXamlGraphicsBackend
 {
     public new static IBackend Backend
     {
-        [ClientOnly]
         get
         {
             return field ?? ThrowNotInitialized();
