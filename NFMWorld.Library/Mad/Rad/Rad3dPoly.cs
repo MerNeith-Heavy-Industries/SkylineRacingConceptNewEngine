@@ -106,7 +106,10 @@ public readonly partial record struct Rad3dPoly
             return [0, 1, 2];
         }
 
-        return ImmutableCollectionsMarshal.AsImmutableArray(PolygonTriangulator.Triangulate(verts).Triangles);
+        var transaction = SentrySdk.StartTransaction("TriangulatePoly", "rad3dpoly.triangulation");
+        var arr = ImmutableCollectionsMarshal.AsImmutableArray(PolygonTriangulator.Triangulate(verts).Triangles);
+        transaction.Finish();
+        return arr;
     }
 
     public bool Equals(Rad3dPoly other)

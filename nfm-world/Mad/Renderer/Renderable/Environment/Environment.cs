@@ -18,6 +18,8 @@ public class Environment
         GraphicsDevice graphicsDevice
     )
     {
+        var transaction = SentrySdk.StartTransaction("MakePolys", "stageGeneration");
+        
         var cpol = World.GroundPolysColor.Snap(World.Snap);
         var cgrnd = World.GroundColor.Snap(World.Snap);
         
@@ -194,6 +196,8 @@ public class Environment
 
         #endregion
 
+        transaction.Finish();
+        
         return new GroundPolys(graphicsDevice, verts.ToArray());
     }
 
@@ -201,6 +205,8 @@ public class Environment
         int maxl, int maxr, int maxb, int maxt, // newclouds
         GraphicsDevice graphicsDevice)
     {
+        var transaction = SentrySdk.StartTransaction("MakeClouds", "stageGeneration");
+        
         var cldd = World.Clouds;
         var clds = World.CloudColor.Snap(World.Snap);
 
@@ -538,6 +544,8 @@ public class Environment
 
         #endregion
 
+        transaction.Finish();
+
         return new GroundPolys(graphicsDevice, polys.ToArray());
     }
     
@@ -546,6 +554,8 @@ public class Environment
         GraphicsDevice graphicsDevice
     )
     {
+        var transaction = SentrySdk.StartTransaction("MakeMountains", "stageGeneration");
+        
         #region newmountains
 
         var random = new URandom(World.MountainSeed);
@@ -704,6 +714,8 @@ public class Environment
         }
 
         #endregion
+        
+        transaction.Finish();
 
         return new Mountains(graphicsDevice, polys.ToArray());
     }
