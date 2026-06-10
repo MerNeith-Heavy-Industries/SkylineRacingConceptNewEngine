@@ -1,5 +1,6 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorld.Util;
+using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
 
@@ -7,6 +8,8 @@ namespace NFMWorld.Gameplay;
 
 public abstract class BasePhase
 {
+    protected List<UIManager> Uis = [];
+    
     public FocusManager FocusManager { get; } = new();
 
     /// <summary>
@@ -42,6 +45,10 @@ public abstract class BasePhase
     /// </summary>
     public virtual void Render(float alpha)
     {
+        foreach (var ui in Uis)
+        {
+            ui.LayoutAndRender(G.Viewport);
+        }
     }
 
     /// <summary>
@@ -81,6 +88,13 @@ public abstract class BasePhase
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
+        if (!imguiWantsKeyboard)
+        {
+            foreach (var ui in Uis)
+            {
+                ui.HandleKeyPressed(key, keys);
+            }
+        }
     }
 
     /// <summary>
@@ -91,6 +105,10 @@ public abstract class BasePhase
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
+        foreach (var ui in Uis)
+        {
+            ui.HandleKeyReleased(key, keys);
+        }
     }
 
     /// <summary>
@@ -106,6 +124,10 @@ public abstract class BasePhase
     public virtual void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
     {
+        foreach (var ui in Uis)
+        {
+            ui.HandleMouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
+        }
     }
 
     /// <summary>
@@ -125,7 +147,13 @@ public abstract class BasePhase
         FocusManager.FocusedElement = null;
 
         if (!imguiWantsMouse)
+        {
             MouseDownThisFrame = true;
+            foreach (var ui in Uis)
+            {
+                ui.HandleMousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+            }
+        }
     }
 
     /// <summary>
@@ -141,6 +169,10 @@ public abstract class BasePhase
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
+        foreach (var ui in Uis)
+        {
+            ui.HandleMouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+        }
     }
 
     /// <summary>
@@ -157,6 +189,13 @@ public abstract class BasePhase
     public virtual void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
     {
+        if (!imguiWantsMouse)
+        {
+            foreach (var ui in Uis)
+            {
+                ui.HandleMouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
+            }
+        }
     }
 
     public virtual void WindowSizeChanged(int width, int height)

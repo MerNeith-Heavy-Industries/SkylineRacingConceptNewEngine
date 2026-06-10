@@ -27,12 +27,6 @@ public partial class MainMenuViewModel : ObservableObject
     public partial Color TitleColor { get; set; } = new(255, 140, 0, 255);
 
     [ObservableProperty]
-    public partial Color ButtonTextColor { get; set; } = new(255, 140, 0, 255);
-
-    [ObservableProperty]
-    public partial Color ButtonHoverBgColor { get; set; } = new(255, 140, 0, 255);
-
-    [ObservableProperty]
     public partial Color BackgroundColor { get; set; } = new(15, 0, 35, 255);
 
     public ObservableCollection<MainMenuItemViewModel> Items { get; } = new();
@@ -50,43 +44,11 @@ public partial class MainMenuViewModel : ObservableObject
         Items.Clear();
         Title = "NEED FOR MADNESS?";
         AddItem("PLAY", "Play public, private matches online or play singleplayer.", BuildPlayMenu);
-        AddItem("GARAGE", "Customize and inspect your vehicles in the garage.", null);
+        AddItem("GARAGE", "Customize and inspect your vehicles in the garage.", Garage);
         AddItem("WORKSHOP", "Build your own models and stages.", BuildWorkshopMenu);
-        AddItem("SETTINGS", "Adjust game settings.", OnSettingsClicked);
-        AddItem("CREDITS", "View game credits.", OnClickUnavailable);
-        AddItem("QUIT", "Exit the game.", OnQuitClicked);
-    }
-
-    private void OnModelEditorClicked()
-    {
-        GameSparker.StartModelViewer();
-    }
-
-    private void OnStageEditorClicked()
-    {
-        GameSparker.StartStageEditor();
-    }
-
-    private void OnSettingsClicked()
-    {
-        GameSparker.SettingsMenu.Open();
-    }
-
-    private void OnClickUnavailable()
-    {
-        GameSparker.MessageWindow.ShowMessage("Info", "This feature is currently unavailable.");
-    }
-
-    private void OnQuitClicked()
-    {
-        GameSparker.MessageWindow.ShowYesNo("Quit", "Are you sure you want to quit?",
-            result =>
-            {
-                if (result == MessageWindow.MessageResult.Yes)
-                {
-                    System.Environment.Exit(0);
-                }
-            });
+        AddItem("SETTINGS", "Adjust game settings.", Settings);
+        AddItem("CREDITS", "View game credits.", Credits);
+        AddItem("QUIT", "Exit the game.", Quit);
     }
 
     private void BuildPlayMenu()
@@ -152,29 +114,19 @@ public partial class MainMenuViewModel : ObservableObject
 
     private void AddItem(string text, string description, Action? onClick)
     {
-        Items.Add(new MainMenuItemViewModel
+        var vm = new MainMenuItemViewModel
         {
             Text = text,
-            Description = description,
-            OnClick = onClick
-        });
+            Description = description
+        };
+        vm.OnClick += onClick;
+        Items.Add(vm);
     }
     
-    private void OnLoginClicked()
-    {
-        // Show the account manager floating menu (handled by the phase via ImGui)
-        Login?.Invoke();
-    }
-
-    private void OnLogoutClicked()
-    {
-        if (GameSparker.AccountManager.LoggedIn)
-        {
-            GameSparker.AccountManager.LogOut();
-            RefreshLoginState();
-        }
-    }
-
+    public event Action? Garage;
+    public event Action? Settings;
+    public event Action? Credits;
+    public event Action? Quit;
     public event Action? Login;
     public event Action? Logout;
     public event Action? PlayNFM1;

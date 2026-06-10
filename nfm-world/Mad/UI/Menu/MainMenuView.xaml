@@ -80,6 +80,8 @@
                     MinWidth="230"
                     MinHeight="35"
                     Padding="12,8"
+                    IsHovered="{Binding IsHovered, Mode=OneWayToSource}"
+                    MousePressed="{Binding ClickedCommand}"
                     Gap="0">
 
                     <!-- Hover background fill -->
@@ -87,16 +89,19 @@
                         Name="HoverFill"
                         BackgroundColor="{Binding BackgroundFillColor}"
                         BorderColor="{Binding BorderStrokeColor}"
-                        Position="Absolute"
-                        Top="0" Left="0" Right="0" Bottom="0" />
+                        BorderTop="{Binding BorderSize}"
+                        BorderLeft="{Binding BorderSize}"
+                        BorderRight="{Binding BorderSize}"
+                        BorderBottom="{Binding BorderSize}">
 
-                    <!-- Button text -->
-                    <w:TextRun
-                        Name="ButtonText"
-                        Font="bold 24px Adventure"
-                        Color="255,140,0,255"
-                        StrokeColor="black"
-                        Text="{Binding Text}" />
+                        <!-- Button text -->
+                        <w:TextRun
+                            Name="ButtonText"
+                            Font="bold 24px Adventure"
+                            Color="{Binding ButtonTextColor}"
+                            StrokeColor="black"
+                            Text="{Binding Text}" />
+                    </w:SolidBox>
                 </FlexPanel>
             </ControlTemplate>
         </w:ItemsRepeater.ItemTemplate>
