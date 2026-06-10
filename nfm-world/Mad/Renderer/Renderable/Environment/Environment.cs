@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
@@ -136,6 +137,15 @@ public class Environment
 
         #region writePolys1
 
+        // fan triangulation
+        var tris = new uint[18];
+        for (uint j = 1; j < 7; j++)
+        {
+            tris[(j - 1) * 3] = 0;
+            tris[((j - 1) * 3) + 1] = j;
+            tris[((j - 1) * 3) + 2] = j + 1;
+        }
+
         for (int i = 0; i < nrw * ncl; i++)
         {
             points.Clear();
@@ -152,8 +162,8 @@ public class Environment
                 int py = 250;
                 points.Add(new Vector3(px, py, pz));
             }
-
-            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray());
+            
+            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray(), ImmutableCollectionsMarshal.AsImmutableArray(tris));
             verts.Add(poly);
         }
 
@@ -178,7 +188,7 @@ public class Environment
                 points.Add(new Vector3(px, py, pz));
             }
 
-            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray());
+            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray(), ImmutableCollectionsMarshal.AsImmutableArray(tris));
             verts.Add(poly);
         }
 
