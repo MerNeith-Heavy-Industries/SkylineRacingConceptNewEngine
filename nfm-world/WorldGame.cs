@@ -134,18 +134,24 @@ public class WorldGame : Game
                 var tick = new MicroStopwatch();
                 tick.Start();
 
+                var transaction = SentrySdk.StartTransaction("GameTick", "gameloop.tick");
                 GameSparker.CurrentPhase.BeginGameTick();
                 GameSparker.GameTick();
                 GameSparker.CurrentPhase.GameTick();
                 GameSparker.CurrentPhase.EndGameTick();
-            
+                transaction.Finish();
+
                 LastTickTime += tick.ElapsedMicroseconds;
             }
 
             LastTickCount = timesToTick;
         }
-        
-        GameThreadContext.Current.ExecutePendingTasks();
+
+        {
+            var transaction = SentrySdk.StartTransaction("GameThreadContnext", "gameloop.gamethread");
+            GameThreadContext.Current.ExecutePendingTasks();
+            transaction.Finish();
+        }
     }
 
     protected override void Initialize()
@@ -429,6 +435,8 @@ public class WorldGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
+        var transaction = SentrySdk.StartTransaction("GameDraw", "gameloop.draw");
+        
         var alpha = LowLatency ? 1f : (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
         
         GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -486,6 +494,8 @@ public class WorldGame : Game
         
         base.Draw(gameTime);
         LastFrameTime = t.ElapsedMilliseconds;
+        
+        transaction.Finish();
     }
 
     public static void Main(string[] args)
