@@ -21,13 +21,15 @@ public class MainMenuPhase : BasePhase
     private AccountManagerFloatingMenu? accountManagerMenu;
     
     private MainMenuView _mainMenuView = new();
-    private UIManager _uiManager = new()
-    {
-        FocusManager = new FocusManager()
-    };
+    private UIManager _uiManager;
 
     public MainMenuPhase(GraphicsDevice graphicsDevice)
     {
+        _uiManager = new UIManager
+        {
+            FocusManager = FocusManager
+        };
+
         _graphicsDevice = graphicsDevice;
 
         _uiManager.RootPanel.Children.Add(_mainMenuView);
