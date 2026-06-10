@@ -2272,7 +2272,7 @@ public class Mad
             
             if (!isWheelTouchingPiece[k])
             {
-                Logging.Info("start wheel");
+                FrameTrace.AddMessage("start wheel");
                 foreach (var collidable in stage.RetrievePointCollidables(wheelx[k], wheelz[k]))
                 {
                     if (collidable.TryGetValue(out ShapeMesh boxMesh))
@@ -2314,7 +2314,7 @@ public class Mad
                                     var surfaceY = fix64.Abs(normalizedNormal.Y) > (fix64)1e-6
                                         ? p0.Y - (normalizedNormal.X * (localPosition.X - p0.X) + normalizedNormal.Z * (localPosition.Z - p0.Z)) / normalizedNormal.Y
                                         : 999;
-                                    Logging.Info($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} localWheel=({(float)localPosition.X:F0},{(float)localPosition.Y:F0},{(float)localPosition.Z:F0})");
+                                    FrameTrace.AddMessage($"TRI[{i/3}] p0=({(float)p0.X:F0},{(float)p0.Y:F0},{(float)p0.Z:F0}) inTri={inTri} surfY={(float)surfaceY:F0} localWheel=({(float)localPosition.X:F0},{(float)localPosition.Y:F0},{(float)localPosition.Z:F0})");
                                 }
                             }
                             
@@ -2323,7 +2323,7 @@ public class Mad
                             {
                                 if (TriangleMesh.ResolveGround(p0, p1, p2, localPosition, triangleData) is { } groundHit)
                                 {
-                                    Logging.Info(triangleData.IsGround
+                                    FrameTrace.AddMessage(triangleData.IsGround
                                         ? $"ground triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2}, groundness {(float)groundness:F2})"
                                         : $"wall triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2})");
 
@@ -2346,7 +2346,7 @@ public class Mad
                                         var rampAngleDeg = fix64.Acos(fix64.Clamp(triangleData.Groundness, -1, 1)) * fix64.RadToDeg;
                                         var liftDivider = 1 + (50 - fix64.Abs(rampAngleDeg)) / (fix64)30;
                                         if (liftDivider < 4) liftDivider = 4;
-                                        Logging.Info($"ramp lift: {zTmp} liftDivider: {liftDivider:F2} total: {zTmp / liftDivider:F2}");
+                                        FrameTrace.AddMessage($"ramp lift: {zTmp} liftDivider: {liftDivider:F2} total: {zTmp / liftDivider:F2}");
                                         Scy[k] -= zTmp / liftDivider;
                                     }
 
@@ -2376,7 +2376,7 @@ public class Mad
                                 // Wall triangle: horizontal push-back (in local space, then rotate back)
                                 if (TriangleMesh.ResolveWall(p0, p1, p2, localPosition, localVelocity, triangleData) is { } wallHit)
                                 {
-                                    Logging.Info(triangleData.IsGround
+                                    FrameTrace.AddMessage(triangleData.IsGround
                                         ? $"ground triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2}, groundness {(float)groundness:F2})"
                                         : $"wall triangle (normal {(float)normalizedNormal.X:F2}, {(float)normalizedNormal.Y:F2}, {(float)normalizedNormal.Z:F2})");
 
@@ -2506,7 +2506,7 @@ public class Mad
                             if (liftDivider < 1)
                                 liftDivider = 1;
                             if (collision.zTmp > 0 && collision.zTmp < 200) {
-                                Logging.Info($"ramp lift: {collision.zTmp} liftDivider: {liftDivider:F2} total: {collision.zTmp / liftDivider}");
+                                FrameTrace.AddMessage($"ramp lift: {collision.zTmp} liftDivider: {liftDivider:F2} total: {collision.zTmp / liftDivider}");
                                 Scy[k] -= collision.zTmp / liftDivider;
                             }
 
