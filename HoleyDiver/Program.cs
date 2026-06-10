@@ -21,6 +21,11 @@ public class PolygonTriangulator
         Vector3 centroid = ComputeCentroid(vertices);
         Vector3 normal = ComputeBestFitPlaneNormal(vertices, centroid);
 
+        if (TryTriangulateSimple(vertices, centroid, normal, out var result))
+        {
+            return result;
+        }
+
         var projected2D = ProjectTo2D(vertices, centroid, normal);
 
         const float epsilon = 1e-5f;
@@ -345,6 +350,84 @@ public class PolygonTriangulator
             Centroid = centroid,
             RegionCount = 1
         };
+    }
+
+    private static bool TryTriangulateSimple(IReadOnlyList<Vector3> vertices, Vector3 centroid, Vector3 normal, out TriangulationResult result)
+    {
+        if (IsConvex(vertices) && !DoesNotContainDuplicatePoints(vertices))
+        {
+            // simple polygon: fan triangulation
+            
+            var tris = new List<uint>(vertices.Count - 2);
+            for (uint i = 1; i < vertices.Count - 1; i++)
+                tris.AddRange((uint)0, i, i + 1);
+            result = new TriangulationResult
+            {
+                Triangles = tris.ToArray(),
+                PlaneNormal = normal,
+                Centroid = centroid,
+                RegionCount = 1
+            };
+            return true;
+        }
+
+        result = default;
+        return false;
+    }
+
+    private static bool DoesNotContainDuplicatePoints(IReadOnlyList<Vector3> vertices)
+    {
+        const float epsilon = 1e-5f;
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            for (int j = i + 1; j < vertices.Count; j++)
+            {
+                if (Vector3.Distance(vertices[i], vertices[j]) < epsilon)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static bool IsPlanar(IReadOnlyList<Vector3> pts, float eps = 1e-6f)
+    {
+        if (pts.Count < 3) return true;
+        Vector3 n = Vector3.Cross(pts[1] - pts[0], pts[2] - pts[0]);
+        n.Normalize();
+
+        for (int i = 3; i < pts.Count; i++)
+            if (MathF.Abs(Vector3.Dot(pts[i] - pts[0], n)) > eps) return false;
+        return true;
+    }
+
+    private static bool IsConvex(IReadOnlyList<Vector3> pts)
+    {
+        if (!IsPlanar(pts)) return false;
+        Vector3 n = Vector3.Cross(pts[1] - pts[0], pts[2] - pts[0]);
+        n.Normalize();
+
+        // orthonormal basis for projection
+        Vector3 u = (pts[1] - pts[0]);
+        u.Normalize();
+        Vector3 v = Vector3.Cross(n, u);
+        v.Normalize();
+
+        var proj = pts.Select(p => new Vector2(Vector3.Dot(p, u), Vector3.Dot(p, v))).ToList();
+
+        int sign = 0;
+        int count = proj.Count;
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 a = proj[i], b = proj[(i + 1) % count], c = proj[(i + 2) % count];
+            float z = (b.X - a.X) * (c.Y - b.Y) - (b.Y - a.Y) * (c.X - b.X);
+            if (MathF.Abs(z) < 1e-10f) continue;
+            int s = z > 0 ? 1 : -1;
+            if (sign == 0) sign = s;
+            else if (s != sign) return false;
+        }
+        return true;
     }
 
     private static List<Vector2> ProjectTo2D(IReadOnlyList<Vector3> vertices, Vector3 centroid, Vector3 normal)
