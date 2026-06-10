@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace NFMWorldLibrary.Util;
 
 public class FileUtil
@@ -45,6 +47,68 @@ public class FileUtil
         {
             var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
             action(VFS.ReadAllBytes(file), fileNameWithoutExtension);
+        }
+    }
+    
+    public static void LoadFiles<T>(string folder, string[] fileNames, Func<byte[], string, T> action, Action<int, T> save)
+    {
+        if (!VFS.Exists(folder))
+        {
+            Logging.Info($"Folder not found: {folder}");
+            return;
+        }
+
+        var extraFiles = new List<T>();
+        
+        foreach (var (index, result) in VFS.GetFiles(folder)
+                     .AsParallel()
+                     .Select(file =>
+                     {
+                         var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
+                         var a = fileNames.IndexOf(fileNameWithoutExtension);
+                         if (a != -1)
+                         {
+                             return (Index: a, Result: action(VFS.ReadAllBytes(file), fileNameWithoutExtension));
+                         }
+                         else
+                         {
+                             Logging.Debug($"Extra file found: {file}");
+                             return (Index: -1, Result: action(VFS.ReadAllBytes(file), fileNameWithoutExtension));
+                         }
+                     })
+                     .ToArray())
+        {
+            if (index > -1)
+                save(index, result);
+            else
+                extraFiles.Add(result);
+        }
+
+        var idx = fileNames.Length;
+        foreach (var result in extraFiles)
+        {
+            save(idx++, result);
+        }
+    }
+    
+    public static void LoadFiles<T>(string folder, Func<byte[], string, T> action, Action<T> save)
+    {
+        if (!VFS.Exists(folder))
+        {
+            Logging.Info($"Folder not found: {folder}");
+            return;
+        }
+        
+        foreach (var result in VFS.GetFiles(folder)
+                     .AsParallel()
+                     .Select(file =>
+                     {
+                         var fileNameWithoutExtension = VFS.Path.GetFileNameWithoutExtension(file);
+                         return action(VFS.ReadAllBytes(file), fileNameWithoutExtension);
+                     })
+                     .ToArray())
+        {
+            save(result);
         }
     }
 }
