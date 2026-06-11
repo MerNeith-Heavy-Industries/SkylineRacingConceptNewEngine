@@ -80,7 +80,7 @@
                     <!-- Hover background fill -->
                     <w:SolidBox
                         Name="HoverFill"
-                        BackgroundColor="{Binding BackgroundFillColor}"
+                        ContentColor="{Binding BackgroundFillColor}"
                         BorderColor="{Binding BorderStrokeColor}"
                         BorderTop="{Binding BorderSize}"
                         BorderLeft="{Binding BorderSize}"
