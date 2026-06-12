@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NFMWorld.DriverInterface;
+using WorldXaml.UI.Yoga;
+using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.UI.Menu;
 
@@ -41,7 +43,7 @@ public partial class MainMenuItemViewModel : ObservableObject
     public event Action? OnClick;
 
     [RelayCommand]
-    public void Clicked()
+    public void Clicked(NodeEventArgs<MouseEvent>? e)
     {
         OnClick?.Invoke();
     }
