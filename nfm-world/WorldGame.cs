@@ -5,6 +5,7 @@ using Hexa.NET.ImGui;
 using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Opus;
+using Maxine.Extensions;
 using Maxine.Extensions.Collections.SpanLinq;
 using Maxine.Extensions.Mathematics;
 using Microsoft.Extensions.Logging;
@@ -166,7 +167,7 @@ public class WorldGame : Game
 #if DEBUG
 #pragma warning disable IL3050
 #pragma warning disable IL2026
-        XamlHotReload.Initialize();
+        XamlHotReload.Initialize(ProjectUtils.TryGetSolutionDirectory());
 #pragma warning restore IL2026
 #pragma warning restore IL3050
 #endif

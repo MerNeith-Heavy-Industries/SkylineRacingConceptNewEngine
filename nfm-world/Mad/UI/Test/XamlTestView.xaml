@@ -44,10 +44,10 @@
 
         <!-- Section 3: SolidBox color swatches (static)                        -->
         <FlexPanel FlexDirection="Row" Gap="8" AlignItems="Center">
-            <w:SolidBox ContentColor="#f00" Width="24" Height="24" />
-            <w:SolidBox ContentColor="#0f0" Width="24" Height="24" />
-            <w:SolidBox ContentColor="#00f" Width="24" Height="24" />
-            <w:SolidBox ContentColor="#ff0" Width="24" Height="24" />
+            <w:SolidBox BackgroundColor="#f00" Width="24" Height="24" />
+            <w:SolidBox BackgroundColor="#0f0" Width="24" Height="24" />
+            <w:SolidBox BackgroundColor="#00f" Width="24" Height="24" />
+            <w:SolidBox BackgroundColor="#ff0" Width="24" Height="24" />
             <w:TextRun Font="18px Adventure" Color="180,180,180,255" MarginLeft="8">
                 Color swatches
             </w:TextRun>
@@ -55,7 +55,7 @@
 
         <!-- Section 4: Visibility binding                                      -->
         <FlexPanel FlexDirection="Row" Gap="8" AlignItems="Center">
-            <w:SolidBox ContentColor="#0ff" Width="16" Height="16"
+            <w:SolidBox BackgroundColor="#0ff" Width="16" Height="16"
                 Visibility="{Binding BadgeVisibility}" />
             <w:TextRun Font="18px Adventure" Color="255,255,255,255">
                 Badge (visibility-bound)
@@ -67,18 +67,18 @@
             HStack (Horizontal):
         </w:TextRun>
         <w:HStack Orientation="Horizontal" GapColumn="8">
-            <w:SolidBox ContentColor="#f80" Width="40" Height="40" />
-            <w:SolidBox ContentColor="#08f" Width="40" Height="40" />
-            <w:SolidBox ContentColor="#8f0" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#f80" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#08f" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#8f0" Width="40" Height="40" />
         </w:HStack>
 
         <w:TextRun Font="bold 18px Adventure" Color="{Binding AccentColor}">
             HStack (Vertical):
         </w:TextRun>
         <w:HStack Orientation="Vertical" GapRow="8">
-            <w:SolidBox ContentColor="#f80" Width="40" Height="40" />
-            <w:SolidBox ContentColor="#08f" Width="40" Height="40" />
-            <w:SolidBox ContentColor="#8f0" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#f80" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#08f" Width="40" Height="40" />
+            <w:SolidBox BackgroundColor="#8f0" Width="40" Height="40" />
         </w:HStack>
 
         <!-- Section 6: Nested layout — Row of Columns                          -->
@@ -88,15 +88,15 @@
         <FlexPanel FlexDirection="Row" Gap="{Binding CounterModulo}">
             <FlexPanel FlexDirection="Column" Gap="4">
                 <w:TextRun Font="bold 14px Adventure" Color="255,200,100,255">Column A</w:TextRun>
-                <w:SolidBox ContentColor="#a44" Width="60" Height="20" />
-                <w:SolidBox ContentColor="#a66" Width="60" Height="20" />
-                <w:SolidBox ContentColor="#a88" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#a44" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#a66" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#a88" Width="60" Height="20" />
             </FlexPanel>
             <FlexPanel FlexDirection="Column" Gap="4">
                 <w:TextRun Font="bold 14px Adventure" Color="100,200,255,255">Column B</w:TextRun>
-                <w:SolidBox ContentColor="#44a" Width="60" Height="20" />
-                <w:SolidBox ContentColor="#66a" Width="60" Height="20" />
-                <w:SolidBox ContentColor="#88a" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#44a" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#66a" Width="60" Height="20" />
+                <w:SolidBox BackgroundColor="#88a" Width="60" Height="20" />
             </FlexPanel>
         </FlexPanel>
 
@@ -104,7 +104,7 @@
         <FlexPanel
             FlexDirection="Row" Gap="8" AlignItems="Center"
             Opacity="{Animation Mounted, Easing=Linear, KeyFrameFrom=0, KeyFrameTo=1, KeyFrameDuration=500, KeyFrameOffset=0}">
-            <w:SolidBox ContentColor="#fff" Width="12" Height="12" />
+            <w:SolidBox BackgroundColor="#fff" Width="12" Height="12" />
             <w:TextRun Font="18px Adventure" Color="255,255,255,255">
                 Fade-in on mount
             </w:TextRun>

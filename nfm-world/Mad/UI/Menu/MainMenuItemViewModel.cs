@@ -9,10 +9,10 @@ namespace NFMWorld.UI.Menu;
 public partial class MainMenuItemViewModel : ObservableObject
 {
     [ObservableProperty]
-    public partial Color ButtonTextColor { get; set; } = new(255, 140, 0, 255);
+    public partial Color ButtonTextColor { get; set; } = new(255, 140, 0);
 
     [ObservableProperty]
-    public partial Color ButtonHoverBgColor { get; set; } = new(255, 140, 0, 255);
+    public partial Color ButtonHoverBgColor { get; set; } = new(20, 15, 35);
 
     [ObservableProperty]
     public partial string Text { get; set; } = "";

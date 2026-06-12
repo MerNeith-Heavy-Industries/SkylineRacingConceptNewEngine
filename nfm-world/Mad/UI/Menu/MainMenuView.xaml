@@ -9,7 +9,9 @@
     DataType="w:MainMenuViewModel"
     Name="MainMenu"
     FlexDirection="Column"
-    AlignItems="FlexStart"
+    AlignItems="Stretch"
+    Width="100%"
+    Height="100%"
     JustifyContent="FlexStart"
     Gap="10"
     Padding="20"
@@ -21,6 +23,7 @@
         FlexDirection="Row"
         JustifyContent="SpaceBetween"
         AlignItems="FlexEnd"
+        MinHeight="200"
         MarginBottom="30">
 
         <!-- Title -->
@@ -35,24 +38,21 @@
         <FlexPanel
             Name="LoginButton"
             FlexDirection="Row"
-            AlignItems="Center"
-            MinWidth="120"
+            JustifyContent="FlexEnd"
+            AlignItems="FlexEnd"
+            Flex="1"
+            MinWidth="250"
             MinHeight="35"
             Padding="12,8">
-
-            <w:SolidBox
-                Name="LoginButtonBg"
-                BackgroundColor="0,0,0,0"
-                BorderColor="{Binding LoginButtonColor}"
-                Position="Absolute"
-                Top="0" Left="0" Right="0" Bottom="0" />
 
             <w:TextRun
                 Name="LoginButtonText"
                 Font="bold 24px Adventure"
                 Color="{Binding LoginButtonColor}"
                 StrokeColor="black"
-                Text="{Binding LoginButtonText}" />
+                Text="{Binding LoginButtonText}"
+                MousePressed="{Binding DoLoginCommand}"
+                />
         </FlexPanel>
     </FlexPanel>
 
@@ -62,7 +62,7 @@
         ItemsSource="{Binding Items}"
         FlexDirection="Column"
         AlignItems="FlexStart"
-        Gap="6">
+        Gap="15">
         <w:ItemsRepeater.ItemTemplate>
             <ControlTemplate TargetType="w:MainMenuItemViewModel" d:DataContext="{d:DesignInstance w:MainMenuItemViewModel}">
                 <FlexPanel
@@ -80,12 +80,17 @@
                     <!-- Hover background fill -->
                     <w:SolidBox
                         Name="HoverFill"
-                        ContentColor="{Binding BackgroundFillColor}"
+                        BackgroundColor="{Binding BackgroundFillColor}"
                         BorderColor="{Binding BorderStrokeColor}"
                         BorderTop="{Binding BorderSize}"
                         BorderLeft="{Binding BorderSize}"
                         BorderRight="{Binding BorderSize}"
-                        BorderBottom="{Binding BorderSize}">
+                        BorderBottom="{Binding BorderSize}"
+                        BorderTopLeftRadius="5"
+                        BorderTopRightRadius="5"
+                        BorderBottomRightRadius="5"
+                        BorderBottomLeftRadius="5"
+                        Padding="15">
 
                         <!-- Button text -->
                         <w:TextRun
