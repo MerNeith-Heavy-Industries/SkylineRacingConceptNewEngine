@@ -60,7 +60,7 @@ public class MainMenuPhase : BasePhase
         if (GameSparker.InRace != null)
         {
 	        GameSparker.InRace.LoadStage("nfm2/15_dwm");
-	        GameSparker.StartGame();
+            GameSparker.SetPhase(GameSparker.InRace);
 
             Logging.Info("Game started!");
         }
