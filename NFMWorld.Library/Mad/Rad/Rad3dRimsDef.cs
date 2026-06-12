@@ -3,7 +3,7 @@ using MemoryPack;
 
 namespace NFMWorldLibrary.Rad;
 
-[MemoryPackable]
+[MemoryPackable(GenerateType.VersionTolerant)]
 public readonly partial record struct Rad3dRimsDef(
     [property: JsonPropertyName("color"), MemoryPackOrder(0)] Color3 Color,
     [property: JsonPropertyName("size"), MemoryPackOrder(1)] float Size,
