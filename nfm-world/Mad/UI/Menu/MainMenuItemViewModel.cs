@@ -43,7 +43,7 @@ public partial class MainMenuItemViewModel : ObservableObject
     public event Action? OnClick;
 
     [RelayCommand]
-    public void Clicked(NodeEventArgs<MouseEvent>? e)
+    public void Clicked(NodeEventArgs<MouseEvent> e)
     {
         OnClick?.Invoke();
     }
