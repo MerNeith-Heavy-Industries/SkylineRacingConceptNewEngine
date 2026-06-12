@@ -31,3 +31,6 @@
 [submodule "FixedMathSharp"]
 	path = FixedMathSharp
 	url = https://github.com/uwx/FixedMathSharp
+[submodule "MemoryPack"]
+	path = MemoryPack
+	url = https://github.com/uwx/MemoryPack

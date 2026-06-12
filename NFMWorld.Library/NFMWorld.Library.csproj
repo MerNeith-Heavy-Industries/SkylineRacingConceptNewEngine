@@ -39,7 +39,6 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Lua.NET" Version="6.0.1" />
         <PackageReference Include="LuzFaltex.Core.Collections" Version="0.1.0" />
-        <PackageReference Include="MemoryPack" Version="1.21.4" />
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.2.26081.104" />
@@ -48,6 +47,8 @@
         <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
+        <ProjectReference Include="..\MemoryPack\src\MemoryPack\MemoryPack.csproj" />
+        <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Base\WorldXaml.UI.Base.csproj" />

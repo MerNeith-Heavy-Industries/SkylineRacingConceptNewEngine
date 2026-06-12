@@ -47,6 +47,11 @@
     </Project>
     <Project Path="Maxine.RustBindGen/Maxine.RustBindGen.csproj" />
   </Folder>
+  <Folder Name="/MemoryPack/">
+    <Project Path="MemoryPack/src/MemoryPack.Core/MemoryPack.Core.csproj" />
+    <Project Path="MemoryPack/src/MemoryPack.Generator/MemoryPack.Generator.csproj" />
+    <Project Path="MemoryPack/src/MemoryPack/MemoryPack.csproj" />
+  </Folder>
   <Folder Name="/NvgSharp/">
     <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj" />
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
