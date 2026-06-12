@@ -71,19 +71,18 @@ class SimCar : IInGameCar
 
     public SimCar()
     {
-        // Ground = (int)(Position.Y + 13 * Height / 10) = (int)(70 + 13) = 83
-        const int groundAt = 83;
+        const int groundAt = 28;
         GroundAt = groundAt;
 
-        // Car starts at World.Ground - GroundAt = 250 - 83 = 167
+        // Car starts at World.Ground - GroundAt
         Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - groundAt), fix64.Zero);
 
         // 4 wheels in local space: front-left, front-right, rear-left, rear-right
         Wheels = [
-            new Rad3dWheelDef(new f64Vector3((fix64)(-25), (fix64)70, (fix64)(-45)), 1, (fix64)10, (fix64)10, null),
-            new Rad3dWheelDef(new f64Vector3((fix64)(+25), (fix64)70, (fix64)(-45)), 1, (fix64)10, (fix64)10, null),
-            new Rad3dWheelDef(new f64Vector3((fix64)(-25), (fix64)70, (fix64)(+45)), 1, (fix64)10, (fix64)10, null),
-            new Rad3dWheelDef(new f64Vector3((fix64)(+25), (fix64)70, (fix64)(+45)), 1, (fix64)10, (fix64)10, null),
+            new Rad3dWheelDef(new f64Vector3(-67.20000000391155, 3.2000000001862645, 124.80000000726432), 11, (fix64)27.20000000158325, (fix64)19.200000001117587, null),
+            new Rad3dWheelDef(new f64Vector3(67.20000000391155, 3.2000000001862645, 124.80000000726432), 11, (fix64)(-27.20000000158325), (fix64)19.200000001117587, null),
+            new Rad3dWheelDef(new f64Vector3(-67.20000000391155, 3.2000000001862645, -124.80000000726432), 0, (fix64)27.20000000158325, (fix64)19.200000001117587, null),
+            new Rad3dWheelDef(new f64Vector3(67.20000000391155, 3.2000000001862645, -124.80000000726432), 0, (fix64)(-27.20000000158325), (fix64)19.200000001117587, null),
         ];
 
         Mad = new Mad(CarStats.Default, 0, false);
@@ -119,11 +118,11 @@ public class SteeringSimulation
 
         var stats = CarStats.Default; // Tornado Shark stats
         var car = new SimCar();
-        car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 10000, fix64.Zero);
-        car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(90) };
+        car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 250, fix64.Zero);
+        car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(0) };
         var mad = new Mad(stats, 0, false);
         mad.Reseto(mad.Im, new ContO(car));
-        mad.Pxy = 180;
+        mad.Pxy = 0;
         mad.Pzy = 90;
 
         // Prevent NullReferenceException in SfxPlaySkid invocation inside Mad.Drive
@@ -134,12 +133,12 @@ public class SteeringSimulation
 
         var stage = new EmptyStage();
 
-        for (int tick = 0; tick < 50; tick++)
+        var control = new Control {};
+
+        for (int tick = 0; tick < 100; tick++)
         {
             FrameTrace.ClearMessages();
             
-            var control = new Control {};
-
             mad.Drive(control, new ContO(car), stage);
 
             Console.WriteLine(FrameTrace.GetMessageString());
