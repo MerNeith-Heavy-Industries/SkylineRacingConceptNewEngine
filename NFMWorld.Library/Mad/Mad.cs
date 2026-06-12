@@ -1456,7 +1456,9 @@ public class Mad
         // Commented out because this seems to be unnecessary, the plane-fit is well behaved in the air.
         // Uncomment it if the plane-fit starts misbehaving in the air.
         // Update: Uncommented because Audi reported it still happening.
-        if (Scy[0] != Scy[1] || Scy[0] != Scy[2] || Scy[0] != Scy[3] || nWheelsOnSurface > 0)
+        // Update 2: Remove nWheelsOnSurface > 0 condition. This makes bouncing more predictable (more
+        // like original NFM), at the cost of worse behavior on surfaces. 
+        if (Scy[0] != Scy[1] || Scy[0] != Scy[2] || Scy[0] != Scy[3])
         {
             var wheelpos = new InlineArray4<f64Vector3>();
 
