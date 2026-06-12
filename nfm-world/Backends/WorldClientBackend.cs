@@ -127,6 +127,13 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             
             var gradientPaint = _context.LinearGradient(x, y, x + width, y + height, icol, ocol);
             _paint = gradientPaint;
+            _context.FillPaint(_paint);
+            _context.StrokePaint(_paint);
+        }
+
+        public void SetStrokeWidth(float width = 1f)
+        {
+            _context.StrokeWidth(width);
         }
 
         public void SetColor(Color c)
@@ -137,6 +144,8 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             c = c with { A = (byte)(_color1.A / 255f * _alpha * 255f) };
             
             _paint = new Paint(c);
+            _context.FillPaint(_paint);
+            _context.StrokePaint(_paint);
         }
 
         public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
@@ -149,7 +158,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
                 _context.LineTo(x[i], y[i]);
             }
             _context.ClosePath();
-            _context.FillPaint(_paint);
             _context.Fill();
         }
 
@@ -163,7 +171,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
                 _context.LineTo(x[i], y[i]);
             }
             _context.ClosePath();
-            _context.StrokePaint(_paint);
             _context.Stroke();
         }
 
@@ -171,7 +178,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.Rect(x1, y1, width, height);
-            _context.FillPaint(_paint);
             _context.Fill();
         }
 
@@ -179,7 +185,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
-            _context.FillPaint(_paint);
             _context.Fill();
         }
 
@@ -188,7 +193,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             _context.BeginPath();
             _context.MoveTo(x1, y1);
             _context.LineTo(x2, y2);
-            _context.StrokePaint(_paint);
             _context.Stroke();
         }
 
@@ -202,6 +206,8 @@ internal class WorldClientBackend(NvgContext context) : IBackend
                 var ocol = _color2 with { A = (byte)(_color2.A / 255f * _alpha * 255f) };
                 _paint.InnerColor = icol;
                 _paint.OuterColor = ocol;
+                _context.FillPaint(_paint);
+                _context.StrokePaint(_paint);
             }
         }
 
@@ -214,6 +220,7 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             _context.FillPaint(imgPaint);
             _context.Rect(x, y, img.Width, img.Height);
             _context.Fill();
+            _context.FillPaint(_paint);
         }
 
         public void SetFont(Font font)
@@ -233,14 +240,11 @@ internal class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawString(ReadOnlySpan<char> text, int x, int y)
         {
-            _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, effect, effectAmount);
         }
 
         public void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top)
         {
-            _context.FillPaint(_paint);
-
             float xFloat = x;
             float yFloat = y;
             AlignText(text, areaWidth, areaHeight, hAlign, vAlign, ref xFloat, ref yFloat);
@@ -250,14 +254,11 @@ internal class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
         {
-            _context.FillPaint(_paint);
             _context.Text(_font, text, x, y - _font.FontSize, layerDepth, characterSpacing, lineSpacing, textStyle, FontSystemEffect.Stroked, effectAmount);
         }
 
         public void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         {
-            _context.FillPaint(_paint);
-
             float xFloat = x;
             float yFloat = y;
             AlignText(text, areaWidth, areaHeight, hAlign, vAlign, ref xFloat, ref yFloat);
@@ -298,7 +299,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.Ellipse(x + width / 2f, y + height / 2f, width / 2f, height / 2f);
-            _context.FillPaint(_paint);
             _context.Fill();
         }
 
@@ -306,7 +306,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.Ellipse(x1 + (x2 - x1) / 2f, y1 + (y2 - y1) / 2f, (x2 - x1) / 2f, (y2 - y1) / 2f);
-            _context.StrokePaint(_paint);
             _context.Stroke();
         }
 
@@ -314,7 +313,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.Rect(x1, y1, width, height);
-            _context.StrokePaint(_paint);
             _context.Stroke();
         }
 
@@ -323,7 +321,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.BeginPath();
             _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
-            _context.StrokePaint(_paint);
             _context.Stroke();
         }
 
@@ -336,6 +333,7 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             _context.FillPaint(imgPaint);
             _context.Rect(x, y, width, height);
             _context.Fill();
+            _context.FillPaint(_paint);
         }
     }
 
