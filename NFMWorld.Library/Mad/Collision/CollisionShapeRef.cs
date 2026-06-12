@@ -129,7 +129,7 @@ public readonly struct CollisionShapeRef : IQuadObject
 {
     public readonly int Index;
 
-    public readonly int Skid;
+    public readonly int SurfaceType;
     public readonly int Damage;
     public readonly bool NotWall;
     public readonly Color3 DustColor;
@@ -192,7 +192,7 @@ public readonly struct CollisionShapeRef : IQuadObject
         Index = index;
         var gameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
 
-        Skid = box.Skid;
+        SurfaceType = box.SurfaceType;
         Damage = box.Damage;
         NotWall = box.NotWall;
         DustColor = box.Color;

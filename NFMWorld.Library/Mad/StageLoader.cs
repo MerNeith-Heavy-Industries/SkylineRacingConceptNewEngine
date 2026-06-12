@@ -598,7 +598,7 @@ public partial class StageLoader
                         Radius: new f64Vector3(600, 7100, n * 4800 / 2),
                         Xy: 90,
                         Zy: 0,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -631,7 +631,7 @@ public partial class StageLoader
                         Radius: new f64Vector3(600, 7100, n * 4800 / 2),
                         Xy: -90,
                         Zy: 0,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -664,7 +664,7 @@ public partial class StageLoader
                         Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
                         Xy: 0,
                         Zy: 90,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -697,7 +697,7 @@ public partial class StageLoader
                         Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
                         Xy: 180,
                         Zy: -90,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
