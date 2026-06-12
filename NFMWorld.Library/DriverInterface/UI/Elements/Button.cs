@@ -27,13 +27,9 @@ public partial class Button : FlexPanel
     public partial Color BackgroundColor { get; set; }
     private static partial Color DefaultBackgroundColor => Color.Transparent;
     
-    [Property(DefaultValueMember = nameof(DefaultContentColor), OnChangedMethod = nameof(OnContentColorChanged))]
-    public partial Color ContentColor { get; set; }
-    private static partial Color DefaultContentColor => Color.Transparent;
-    
-    [Property(DefaultValueMember = nameof(DefaultContentHoverColor), OnChangedMethod = nameof(OnContentHoverColorChanged))]
-    public partial Color ContentHoverColor { get; set; }
-    private static partial Color DefaultContentHoverColor => new Color(20, 15, 35);
+    [Property(DefaultValueMember = nameof(DefaultBackgroundHoverColor), OnChangedMethod = nameof(OnContentHoverColorChanged))]
+    public partial Color BackgroundHoverColor { get; set; }
+    private static partial Color DefaultBackgroundHoverColor => new Color(20, 15, 35);
 
     [Property(DefaultValue = 5, OnChangedMethod = nameof(OnBorderTopLeftRadiusChanged))]
     public partial int BorderTopLeftRadius { get; set; }
@@ -46,7 +42,6 @@ public partial class Button : FlexPanel
 
     private partial void OnBorderColorChanged(Color color) => UpdateState();
     private partial void OnBackgroundColorChanged(Color color) => UpdateState();
-    private partial void OnContentColorChanged(Color color) => UpdateState();
     private partial void OnContentHoverColorChanged(Color color) => UpdateState();
     private partial void OnBorderTopLeftRadiusChanged(int radius)  => UpdateState();
     private partial void OnBorderTopRightRadiusChanged(int radius) => UpdateState();
@@ -56,8 +51,7 @@ public partial class Button : FlexPanel
     private void UpdateState()
     {
         _buttonBox.BorderColor = BorderColor;
-        _buttonBox.BackgroundColor = BackgroundColor;
-        _buttonBox.ContentColor = _isHovered ? ContentHoverColor : ContentColor;
+        _buttonBox.BackgroundColor = _isHovered ? BackgroundHoverColor : BackgroundColor;
         _buttonBox.Border = _isHovered ? 3 : 1;
         _buttonBox.BorderTopLeftRadius = BorderTopLeftRadius;
         _buttonBox.BorderTopRightRadius = BorderTopRightRadius;

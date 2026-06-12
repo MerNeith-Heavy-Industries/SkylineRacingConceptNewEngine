@@ -47,5 +47,8 @@ public interface IGraphics : IXamlGraphics
         // empty
     }
 
-
+    void SetStrokeWidth(float width = 1f)
+    {
+        // empty
+    }
 }

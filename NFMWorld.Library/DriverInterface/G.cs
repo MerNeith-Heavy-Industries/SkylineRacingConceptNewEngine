@@ -91,6 +91,8 @@ public static class G
     }
 
     public static void SetAntialiasing(bool useAntialias) => Graphics.SetAntialiasing(useAntialias);
+    
+    public static void SetStrokeWidth(float width = 1f) => Graphics.SetStrokeWidth(width);
 
     public static Vector2 Viewport => IBackend.Backend.Viewport;
 }

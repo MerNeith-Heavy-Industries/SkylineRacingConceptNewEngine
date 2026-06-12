@@ -16,9 +16,6 @@ public partial class SolidBox : FlexPanel
     [Property(DefaultValueMember = nameof(DefaultBackgroundColor))]
     public partial Color BackgroundColor { get; set; }
     private static partial Color DefaultBackgroundColor => new Color(150, 255, 150, 255);
-    [Property(DefaultValueMember = nameof(DefaultContentColor))]
-    public partial Color ContentColor { get; set; }
-    private static partial Color DefaultContentColor => new Color(0, 0, 0, 255);
 
     [Property]
     public partial int BorderTopLeftRadius { get; set; }
@@ -32,29 +29,27 @@ public partial class SolidBox : FlexPanel
     [ClientOnly]
     protected override void RenderBackground(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
+        var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;
+        
         G.SetColor(BackgroundColor);
-        G.FillRect((int) position.X, (int) position.Y, (int) size.X, (int) size.Y);
+        var radTopLeft = Math.Max(0, BorderTopLeftRadius - ((BorderTop ?? 0) + (BorderLeft ?? 0) / 2f));
+        var radTopRight = Math.Max(0, BorderTopRightRadius - ((BorderTop ?? 0) + (BorderRight ?? 0) / 2f));
+        var radBottomRight = Math.Max(0, BorderBottomRightRadius - ((BorderBottom ?? 0) + (BorderRight ?? 0) / 2f));
+        var radBottomLeft = Math.Max(0, BorderBottomLeftRadius - ((BorderBottom ?? 0) + (BorderLeft ?? 0) / 2f));
+        G.FillRoundedRect((int) position.X, (int) position.Y, (int) (size.X + avgBorder), (int) (size.Y + avgBorder), radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
     }
     
     [ClientOnly]
     protected override void RenderBorder(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
     {
         G.SetColor(BorderColor);
+        var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;
+        G.SetStrokeWidth(avgBorder);
         var radTopLeft = BorderTopLeftRadius;
         var radTopRight = BorderTopRightRadius;
         var radBottomRight = BorderBottomRightRadius;
         var radBottomLeft = BorderBottomLeftRadius;
-        G.FillRoundedRect((int) position.X, (int) position.Y, (int) size.X, (int) size.Y, radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
-    }
-
-    [ClientOnly]
-    protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
-    {
-        G.SetColor(ContentColor);
-        var radTopLeft = Math.Max(0, BorderTopLeftRadius - ((BorderTop ?? 0) + (BorderLeft ?? 0) / 2f));
-        var radTopRight = Math.Max(0, BorderTopRightRadius - ((BorderTop ?? 0) + (BorderRight ?? 0) / 2f));
-        var radBottomRight = Math.Max(0, BorderBottomRightRadius - ((BorderBottom ?? 0) + (BorderRight ?? 0) / 2f));
-        var radBottomLeft = Math.Max(0, BorderBottomLeftRadius - ((BorderBottom ?? 0) + (BorderLeft ?? 0) / 2f));
-        G.FillRoundedRect((int) position.X, (int) position.Y, (int) size.X, (int) size.Y, radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
+        G.DrawRoundedRect((int) (position.X + avgBorder / 2), (int) (position.Y + avgBorder / 2), (int) size.X, (int) size.Y, radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
+        G.SetStrokeWidth();
     }
 }
