@@ -416,5 +416,6 @@ jobs:
           files: |
             artifacts/*.zip
             artifacts/*.tar.gz
+          token: ${{ secrets.SRC_TOKEN }}
         env:
             GITHUB_TOKEN: ${{ secrets.SRC_TOKEN }}
