@@ -125,7 +125,7 @@ public class Dust
                         if (fix64.Abs(sx - x) < boxRoad.Radius.X &&
                             fix64.Abs(sz - z) < boxRoad.Radius.Z)
                         {
-                            _sbln[dust] = tracker.Skid switch
+                            _sbln[dust] = tracker.SurfaceType switch
                             {
                                 0 => 0.2F,
                                 1 => 0.4F,

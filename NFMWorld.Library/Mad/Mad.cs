@@ -1143,7 +1143,7 @@ public class Mad
                 var theBox = new CollisionBox(rad, trackersPosition, contoXz, contoPosition);
                 if (theBox.ResolveCollision(position) is not null)
                 {
-                    surfaceType = collidable.Skid;
+                    surfaceType = collidable.SurfaceType;
                 }
             }
         }
@@ -2478,7 +2478,7 @@ public class Mad
                             wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
                             
                             // sparks and scrape
-                            if (BadLanding && collidable.Skid is 0 or 1)
+                            if (BadLanding && collidable.SurfaceType is 0 or 1)
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
@@ -2504,9 +2504,9 @@ public class Mad
                             }
                             
                             // sparks and scrapes
-                            if (collidable.Skid != 2)
+                            if (collidable.SurfaceType != 2)
                                 _crank[0, k]++;
-                            if (collidable.Skid == 5 && random.NextFixed6401() > fix64.Half)
+                            if (collidable.SurfaceType == 5 && random.NextFixed6401() > fix64.Half)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2557,7 +2557,7 @@ public class Mad
 
                             if (collision.zTmp > -30)
                             {
-                                if (collidable.Skid == 2)
+                                if (collidable.SurfaceType == 2)
                                     nWheelsDirtRamp++;
                                 else
                                     nWheelsRoadRamp++;
@@ -2566,7 +2566,7 @@ public class Mad
                                 Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && collidable.Skid is 0 or 1)
+                                if (BadLanding && collidable.SurfaceType is 0 or 1)
                                 {
                                     conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                     if (IsClientPlayer)
