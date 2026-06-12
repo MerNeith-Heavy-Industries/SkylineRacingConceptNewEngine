@@ -1,6 +1,7 @@
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
 using NFMWorld.UI.Hud;
+using NFMWorldLibrary.FixedMath;
 using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
@@ -16,7 +17,12 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     {
         foreach (var (idx, player) in players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(player, idx, 0, 0);
+            var car = carsInRace[idx] = new BackendCar(player, idx, 0, 0);
+            car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 250, fix64.Zero);
+            car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(0) };
+            car.Mad.Pxy = 0;
+            car.Mad.Pzy = 90;
+
         }
         carsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
 
