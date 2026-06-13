@@ -1,9 +1,11 @@
-﻿﻿using System.Reflection;
+﻿﻿using System.Diagnostics;
+ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Maxine.Extensions;
 using Maxine.VFS;
+using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
@@ -43,7 +45,7 @@ public static class BackendGameSparker
 
     private static bool _loaded;
 
-    public static void Load()
+    public static void Load(bool isHeadless = true)
     {
         if (_loaded)
             return;
@@ -77,8 +79,23 @@ public static class BackendGameSparker
             
             // Try get NFMWorld assembly version first
             options.Release = Logging.Release;
+            
+#if !DEBUG
+            if (!isHeadless && !Debugger.IsAttached)
+            {
+                options.DisableAppDomainUnhandledExceptionCapture();
+                options.DisableUnobservedTaskExceptionCapture();
+            }
+#endif
         });
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
+
+#if !DEBUG
+            if (!isHeadless && !Debugger.IsAttached)
+            {
+                CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
+            }
+    #endif
         
         var realFs = new RelativeFileSystem(AppDomain.CurrentDomain.BaseDirectory);
         var realFs2 = new RelativeFileSystem(Directory.GetCurrentDirectory());
