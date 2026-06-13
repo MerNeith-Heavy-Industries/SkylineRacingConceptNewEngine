@@ -134,6 +134,8 @@ public class StageEditorTab
     public KeyedCollection<int, EditorStageWall> StageWalls { get; set; } = KeyedCollection.From<int, EditorStageWall>(p => p.Id);
     public List<MeshedGameObject> WallMeshes { get; set; } = []; // Visual representation of walls
     public List<string> UnknownParameters { get; set; } = []; // Unknown/unhandled stage parameters to preserve
+    // Known directives the editor does not currently expose; keep raw lines for round-trip safety.
+    public List<string> PreservedDirectives { get; set; } = [];
     // Editor-only groups for hierarchy organisation (saved as metadata comments in stage file)
     public KeyedCollection<int,HierarchyGroup> HierarchyGroups { get; set; } = KeyedCollection.From<int, HierarchyGroup>(g => g.Id);
     private int _nextGroupId = 0;
@@ -320,6 +322,13 @@ public class StageEditorPhase : BasePhase
     private bool _showCloseTabWarningDialog = false;
     private int _tabToClose = -1;
     
+    // Export top-down image
+    private bool _showExportDialog = false;
+    private int _exportWidth = 1024;
+    private int _exportHeight = 1024;
+    private int _exportPadding = 500;
+    private string _exportResultMessage = "";
+    
     // Hierarchy panel search
     private string _hierarchySearch = "";
     
@@ -353,16 +362,31 @@ public class StageEditorPhase : BasePhase
     private const float GIZMO_ARROW_LENGTH = 600f;
     private const float GIZMO_ARROW_THICKNESS = 12f;
     private const float GIZMO_ROT_RADIUS = 400f;
+    private const float GIZMO_TARGET_AXIS_PIXELS = 120f;
+    private const float GIZMO_MAX_SCALE = 8f;
+    private const float WALL_SEGMENT_SPACING = 4800f;
+    private const float WALL_SEGMENT_HALF_LENGTH = WALL_SEGMENT_SPACING * 0.5f;
+    private const float WALL_SEGMENT_HALF_WIDTH = 450f;
+    private const float WALL_SEGMENT_HALF_HEIGHT = 700f;
+    private readonly record struct GizmoMetrics(float ArrowLength, float ArrowThickness, float RotRadius);
+
+    // Selection highlight rendering cache/state (outline-only for performance)
+    private readonly Dictionary<Rad3d, Vector3[]> _selectionOutlineLocalEdges = new(ReferenceEqualityComparer.Instance);
+    private VertexPositionColor[] _selectionOutlineVertices = [];
+    private BasicEffect? _selectionHighlightEffect;
     
     // Undo / Redo
     private readonly record struct PieceSnapshot(PiecePlacement Piece, StageObject Obj, int Id);
-    private readonly Stack<List<PieceSnapshot>> _undoStack = new();
-    private readonly Stack<List<PieceSnapshot>> _redoStack = new();
+    private readonly record struct WallSnapshot(int Id, WallDirection Direction, int Count, int Position, int Offset);
+    private readonly record struct EditorSnapshot(List<PieceSnapshot> Pieces, List<WallSnapshot> Walls);
+    private readonly Stack<EditorSnapshot> _undoStack = new();
+    private readonly Stack<EditorSnapshot> _redoStack = new();
     private bool _isCtrlPressed = false;
     
     // Inspector drag state tracking for undo/redo
     private bool _inspectorPosDragging = false;
     private bool _inspectorRotDragging = false;
+    private bool _inspectorWallDragging = false;
     
     // Hierarchy drag-reorder state
     private int _hierDragSourceId = -1;
@@ -376,6 +400,25 @@ public class StageEditorPhase : BasePhase
     private int _groupContextMenuGroupId = -1;
     private string _renameGroupBuffer = "";
     private bool _showRenameGroupDialog = false;
+
+    private static readonly string[] _preservedDirectivePrefixes =
+    [
+        "soundtrack(",
+        "soundtrackremaster(",
+        "soundtrackfreqmul(",
+        "soundtracktempomul(",
+        "density(",
+        "distfog(",
+        "lightson(",
+        "mountaincoverage(",
+        "lightdir(",
+        "modeloffset(",
+        "swapRotY(",
+        "reverseChkY(",
+        "nlaps(",
+        "stagemaker(",
+        "publish("
+    ];
     
     // Copy/paste clipboard: stores (name, relativePos, rotation, type, tags, rad)
     private readonly record struct ClipboardPiece(
@@ -547,6 +590,9 @@ public class StageEditorPhase : BasePhase
         
         _tabs.Clear();
         _activeTabIndex = -1;
+        _selectionOutlineLocalEdges.Clear();
+        _selectionHighlightEffect?.Dispose();
+        _selectionHighlightEffect = null;
         Logging.Debug("Stage Editor closed");
     }
     
@@ -691,6 +737,12 @@ public class StageEditorPhase : BasePhase
             {
                 writer.WriteLine(param);
             }
+
+            // Write known-but-unsupported directives exactly as loaded.
+            foreach (var directive in ActiveTab.PreservedDirectives)
+            {
+                writer.WriteLine(directive);
+            }
             
             writer.WriteLine();
             
@@ -801,6 +853,269 @@ public class StageEditorPhase : BasePhase
         }
     }
     
+    private void ExportTopDownImage()
+    {
+        if (ActiveTab?.Stage == null || ActiveTab.StageRenderer == null || ActiveTab.Scene == null)
+        {
+            _exportResultMessage = "No stage loaded.";
+            return;
+        }
+
+        // Calculate bounding box from all pieces
+        float minX = float.MaxValue, maxX = float.MinValue;
+        float minZ = float.MaxValue, maxZ = float.MinValue;
+
+        foreach (var piece in ActiveTab.ScenePieces)
+        {
+            float x = (float)piece.Position.X;
+            float z = (float)piece.Position.Z;
+            float r = piece.Rad.MaxRadius > 0 ? (float)piece.Rad.MaxRadius : 500f;
+            minX = Math.Min(minX, x - r);
+            maxX = Math.Max(maxX, x + r);
+            minZ = Math.Min(minZ, z - r);
+            maxZ = Math.Max(maxZ, z + r);
+        }
+
+        if (minX > maxX) { minX = -1000; maxX = 1000; minZ = -1000; maxZ = 1000; }
+
+        minX -= _exportPadding; maxX += _exportPadding;
+        minZ -= _exportPadding; maxZ += _exportPadding;
+
+        float stageWidth = maxX - minX;
+        float stageDepth = maxZ - minZ;
+        float centerX = (minX + maxX) * 0.5f;
+        float centerZ = (minZ + maxZ) * 0.5f;
+
+        // Create export render target
+        var rt = new RenderTarget2D(_graphicsDevice, _exportWidth, _exportHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        var prevRTs = _graphicsDevice.GetRenderTargets();
+        var prevViewport = _graphicsDevice.Viewport;
+
+        try
+        {
+            _graphicsDevice.SetRenderTarget(rt);
+            _graphicsDevice.Viewport = new Microsoft.Xna.Framework.Graphics.Viewport(0, 0, _exportWidth, _exportHeight);
+            _graphicsDevice.Clear(Color.Transparent);
+
+            // Build a dedicated ortho camera sized to cover the whole stage
+            var exportCam = new OrthoCamera
+            {
+                Width = _exportWidth,
+                Height = _exportHeight
+            };
+            // OrthoScale = world units per pixel — choose the larger axis so nothing is clipped
+            exportCam.OrthoScale = Math.Max(stageWidth / _exportWidth, stageDepth / _exportHeight);
+            exportCam.PositionWithoutInterpolation = new Vector3(centerX, -50000f, centerZ);
+            exportCam.LookAtWithoutInterpolation  = new Vector3(centerX, 0f, centerZ);
+            exportCam.UpWithoutInterpolation      = Vector3.UnitZ;
+            exportCam.OnBeforeRender(1f);
+
+            // Swap the scene's active camera
+            var prevCamera = activeCamera;
+            activeCamera = exportCam;
+            ActiveTab.Scene.ActiveCamera = exportCam;
+
+            // Suppress environment and fog for a clean top-down render
+            var prevFadeFrom  = World.FadeFrom;
+            var prevGround    = ActiveTab.StageRenderer.ground;
+            var prevSky       = ActiveTab.StageRenderer.sky;
+            var prevPolys     = ActiveTab.StageRenderer.polys;
+            var prevClouds    = ActiveTab.StageRenderer.clouds;
+            var prevMountains = ActiveTab.StageRenderer.mountains;
+
+            World.FadeFrom = 9999999;
+            ActiveTab.StageRenderer.ground    = null!;
+            ActiveTab.StageRenderer.sky       = null!;
+            ActiveTab.StageRenderer.polys     = null;
+            ActiveTab.StageRenderer.clouds    = null;
+            ActiveTab.StageRenderer.mountains = null;
+            // Use pure magenta as a chroma-key background — it can't appear in stage geometry
+            var prevSkyWorld = World.Sky;
+            World.Sky = new Color3(255, 0, 255);
+
+            try
+            {
+                ActiveTab.Scene.Render(1f, false);
+            }
+            finally
+            {
+                ActiveTab.StageRenderer.ground    = prevGround;
+                ActiveTab.StageRenderer.sky       = prevSky;
+                ActiveTab.StageRenderer.polys     = prevPolys;
+                ActiveTab.StageRenderer.clouds    = prevClouds;
+                ActiveTab.StageRenderer.mountains = prevMountains;
+                World.FadeFrom  = prevFadeFrom;
+                World.Sky       = prevSkyWorld;
+                activeCamera    = prevCamera;
+                ActiveTab.Scene.ActiveCamera = prevCamera;
+            }
+        }
+        finally
+        {
+            _graphicsDevice.SetRenderTargets(prevRTs);
+            _graphicsDevice.Viewport = prevViewport;
+        }
+
+        // Remove background by sampling the dominant border color and flood-filling
+        // connected pixels. This is robust even if Scene.Render clears to its own color.
+        var pixels = new Color[_exportWidth * _exportHeight];
+        rt.GetData(pixels);
+
+        int QuantizeColor(Color c)
+        {
+            int r = c.R >> 3;
+            int g = c.G >> 3;
+            int b = c.B >> 3;
+            return (r << 10) | (g << 5) | b;
+        }
+
+        bool IsNearMatte(Color c, Color matte, int tolerance)
+        {
+            return Math.Abs(c.R - matte.R) <= tolerance &&
+                   Math.Abs(c.G - matte.G) <= tolerance &&
+                   Math.Abs(c.B - matte.B) <= tolerance;
+        }
+
+        var borderCounts = new Dictionary<int, int>();
+        var borderSamples = new Dictionary<int, (int SumR, int SumG, int SumB, int Count)>();
+
+        void AddBorderSample(Color c)
+        {
+            int key = QuantizeColor(c);
+            if (!borderCounts.TryGetValue(key, out var currentCount))
+                currentCount = 0;
+            borderCounts[key] = currentCount + 1;
+
+            if (!borderSamples.TryGetValue(key, out var sample))
+                sample = (0, 0, 0, 0);
+            borderSamples[key] = (sample.SumR + c.R, sample.SumG + c.G, sample.SumB + c.B, sample.Count + 1);
+        }
+
+        int width = _exportWidth;
+        int height = _exportHeight;
+
+        for (int x = 0; x < width; x++)
+        {
+            AddBorderSample(pixels[x]);
+            AddBorderSample(pixels[(height - 1) * width + x]);
+        }
+
+        for (int y = 0; y < height; y++)
+        {
+            AddBorderSample(pixels[y * width]);
+            AddBorderSample(pixels[y * width + (width - 1)]);
+        }
+
+        int matteKey = 0;
+        int matteCount = -1;
+        foreach (var kvp in borderCounts)
+        {
+            if (kvp.Value > matteCount)
+            {
+                matteKey = kvp.Key;
+                matteCount = kvp.Value;
+            }
+        }
+
+        var matteSample = borderSamples[matteKey];
+        var matteColor = new Color(
+            (byte)(matteSample.SumR / Math.Max(1, matteSample.Count)),
+            (byte)(matteSample.SumG / Math.Max(1, matteSample.Count)),
+            (byte)(matteSample.SumB / Math.Max(1, matteSample.Count)),
+            255);
+
+        const int matteTolerance = 40;
+        var visited = new bool[pixels.Length];
+        var queue = new Queue<int>();
+
+        void EnqueueIfBackground(int index)
+        {
+            if (visited[index])
+                return;
+
+            var c = pixels[index];
+            if (!IsNearMatte(c, matteColor, matteTolerance))
+                return;
+
+            visited[index] = true;
+            queue.Enqueue(index);
+        }
+
+        for (int x = 0; x < width; x++)
+        {
+            EnqueueIfBackground(x);
+            EnqueueIfBackground((height - 1) * width + x);
+        }
+
+        for (int y = 0; y < height; y++)
+        {
+            EnqueueIfBackground(y * width);
+            EnqueueIfBackground(y * width + (width - 1));
+        }
+
+        int transparentCount = 0;
+        while (queue.Count > 0)
+        {
+            int idx = queue.Dequeue();
+            pixels[idx] = Color.Transparent;
+            transparentCount++;
+
+            int px = idx % width;
+            int py = idx / width;
+
+            if (px > 0)
+                EnqueueIfBackground(idx - 1);
+            if (px < width - 1)
+                EnqueueIfBackground(idx + 1);
+            if (py > 0)
+                EnqueueIfBackground(idx - width);
+            if (py < height - 1)
+                EnqueueIfBackground(idx + width);
+        }
+
+        // Second pass: remove enclosed matte-colored islands that are not connected
+        // to the border flood fill (e.g. pockets fully surrounded by track meshes).
+        int enclosedTransparentCount = 0;
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i].A > 0 && IsNearMatte(pixels[i], matteColor, matteTolerance))
+            {
+                pixels[i] = Color.Transparent;
+                enclosedTransparentCount++;
+            }
+        }
+
+        Logging.Info($"Top-down export matte key: R={matteColor.R},G={matteColor.G},B={matteColor.B}, edgeRemoved={transparentCount}, enclosedRemoved={enclosedTransparentCount}");
+
+        // Write back to a plain Texture2D so SaveAsPng carries our modified alpha.
+        var exportTex = new Texture2D(_graphicsDevice, _exportWidth, _exportHeight, false, SurfaceFormat.Color);
+        exportTex.SetData(pixels);
+
+        // Save PNG next to the stage file
+        var exportDir  = "data/stages/user";
+        Directory.CreateDirectory(exportDir);
+        var filePath = $"{exportDir}/{ActiveTab.StageFileName}_topdown.png";
+
+        try
+        {
+            using var fs = new FileStream(filePath, FileMode.Create);
+            exportTex.SaveAsPng(fs, _exportWidth, _exportHeight);
+            _exportResultMessage = $"Saved: {filePath}";
+            Logging.Info($"Exported top-down image: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
+            _exportResultMessage = $"Error: {ex.Message}";
+            Logging.Error($"Export failed: {ex.Message}");
+        }
+        finally
+        {
+            rt.Dispose();
+            exportTex.Dispose();
+        }
+    }
+
     private void RefreshAvailableStages()
     {
         _availableStages.Clear();
@@ -873,6 +1188,7 @@ public class StageEditorPhase : BasePhase
 
             tab.UngroupedOrderIndex = stageLoader.UngroupedOrderIndex;
             tab.UnknownParameters.AddRange(stageLoader.unknownParameters);
+            LoadPreservedDirectives(tab, stageFileName);
 
             foreach (var wallDef in stageLoader.wallDefs)
             {
@@ -992,6 +1308,52 @@ public class StageEditorPhase : BasePhase
             Logging.Error($"Error loading stage: {ex.Message}");
         }
     }
+
+    private static bool ShouldPreserveDirective(string line)
+    {
+        foreach (var prefix in _preservedDirectivePrefixes)
+        {
+            if (line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void LoadPreservedDirectives(StageEditorTab tab, string stageFileName)
+    {
+        tab.PreservedDirectives.Clear();
+
+        var filePath = $"data/stages/user/{stageFileName}.txt";
+        if (!File.Exists(filePath))
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var rawLine in File.ReadLines(filePath))
+            {
+                var line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line))
+                {
+                    continue;
+                }
+
+                if (ShouldPreserveDirective(line))
+                {
+                    tab.PreservedDirectives.Add(line);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            SentrySdk.CaptureException(ex);
+            Logging.Warning($"Failed to load preserved directives from '{filePath}': {ex.Message}");
+        }
+    }
     
     private void RecreateScene()
     {
@@ -1087,6 +1449,8 @@ public class StageEditorPhase : BasePhase
             );
 
             activeCamera = perspectiveCamera;
+            activeCamera.Near = 50f;
+            activeCamera.Far = 1_000_000f;
             if (ActiveTab.Scene != null) ActiveTab.Scene.ActiveCamera = activeCamera;
             activeCamera.PositionWithoutInterpolation = ActiveTab.CameraPosition;
             activeCamera.LookAtWithoutInterpolation = ActiveTab.CameraPosition + lookDirection;
@@ -1096,6 +1460,9 @@ public class StageEditorPhase : BasePhase
         {
             // Top down view - look from above at pan position (negative Y is up in this coordinate system)
             activeCamera = ActiveTab.TopDownOrtho ? orthoCamera : perspectiveCamera;
+            // Keep top-down rendering visible at very large zoom levels.
+            activeCamera.Near = MathF.Max(1f, ActiveTab.TopDownHeight * 0.001f);
+            activeCamera.Far = MathF.Max(1_000_000f, ActiveTab.TopDownHeight * 8f + 1_000_000f);
             if (ActiveTab.Scene != null) ActiveTab.Scene.ActiveCamera = activeCamera;
             activeCamera.PositionWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, -ActiveTab.TopDownHeight, ActiveTab.TopDownPanPosition.Z);
             activeCamera.LookAtWithoutInterpolation = new Vector3(ActiveTab.TopDownPanPosition.X, 0, ActiveTab.TopDownPanPosition.Z);
@@ -1407,106 +1774,233 @@ public class StageEditorPhase : BasePhase
         // Rebuild scene so new wall meshes are included in instanced rendering
         RecreateScene();
     }
-    
-    private void RenderSelectionHighlight(StagePieceInstance piece)
+
+    private bool HasPlaceableStageGeometry()
     {
-        if (piece.Obj == null) return;
-        
-        var mesh = piece.Obj;
-        
-        // Save old depth state and disable depth testing so highlight renders on top
+        return ActiveTab != null && ActiveTab.ScenePieces.Any(p => !p.PiecePlacement.IsWall);
+    }
+
+    private void AutoGenerateStageBordersFromGeometry()
+    {
+        if (ActiveTab == null) return;
+
+        var pieces = ActiveTab.ScenePieces.Where(p => !p.PiecePlacement.IsWall).ToList();
+        if (pieces.Count == 0)
+            return;
+
+        float minX = float.PositiveInfinity;
+        float maxX = float.NegativeInfinity;
+        float minZ = float.PositiveInfinity;
+        float maxZ = float.NegativeInfinity;
+
+        foreach (var piece in pieces)
+        {
+            float px = (float)piece.Position.X;
+            float pz = (float)piece.Position.Z;
+            float radius = Math.Max(0f, piece.Rad.MaxRadius);
+            minX = MathF.Min(minX, px - radius);
+            maxX = MathF.Max(maxX, px + radius);
+            minZ = MathF.Min(minZ, pz - radius);
+            maxZ = MathF.Max(maxZ, pz + radius);
+        }
+
+        if (!float.IsFinite(minX) || !float.IsFinite(maxX) || !float.IsFinite(minZ) || !float.IsFinite(maxZ))
+            return;
+
+        const int wallSpacing = 4800;
+        const float borderPadding = wallSpacing * 0.5f;
+
+        float spanStartZ = minZ - borderPadding;
+        float spanEndZ = maxZ + borderPadding;
+        int offsetZ = (int)(MathF.Floor(spanStartZ / wallSpacing) * wallSpacing);
+        int endZ = (int)(MathF.Ceiling(spanEndZ / wallSpacing) * wallSpacing);
+        int countZ = Math.Max(1, ((endZ - offsetZ) / wallSpacing) + 1);
+
+        float spanStartX = minX - borderPadding;
+        float spanEndX = maxX + borderPadding;
+        int offsetX = (int)(MathF.Floor(spanStartX / wallSpacing) * wallSpacing);
+        int endX = (int)(MathF.Ceiling(spanEndX / wallSpacing) * wallSpacing);
+        int countX = Math.Max(1, ((endX - offsetX) / wallSpacing) + 1);
+
+        int rightPos = (int)MathF.Round(maxX + borderPadding);
+        int leftPos = (int)MathF.Round(minX - borderPadding);
+        // Stage loader expects maxt > maxb (Ncz = maxt - maxb).
+        int topPos = (int)MathF.Round(maxZ + borderPadding);
+        int bottomPos = (int)MathF.Round(minZ - borderPadding);
+
+        int nextWallId = 0;
+        foreach (var piece in ActiveTab.ScenePieces)
+            nextWallId = Math.Max(nextWallId, piece.Id + 1);
+        foreach (var wall in ActiveTab.StageWalls)
+            nextWallId = Math.Max(nextWallId, wall.Id + 1);
+
+        var rebuiltWalls = KeyedCollection.From<int, EditorStageWall>(w => w.Id);
+
+        var right = new EditorStageWall(WallDirection.Right, countZ, rightPos, offsetZ, nextWallId++);
+        var left = new EditorStageWall(WallDirection.Left, countZ, leftPos, offsetZ, nextWallId++);
+        var top = new EditorStageWall(WallDirection.Top, countX, topPos, offsetX, nextWallId++);
+        var bottom = new EditorStageWall(WallDirection.Bottom, countX, bottomPos, offsetX, nextWallId++);
+
+        rebuiltWalls.Add(right);
+        rebuiltWalls.Add(left);
+        rebuiltWalls.Add(top);
+        rebuiltWalls.Add(bottom);
+        ActiveTab.StageWalls = rebuiltWalls;
+
+        ActiveTab.SelectedWallId = right.Id;
+        ActiveTab.ActivePieceId = -1;
+        ActiveTab.SelectedPieceIds.Clear();
+        ActiveTab.HasUnsavedChanges = true;
+
+        RebuildAllWalls();
+    }
+
+    private void RenderAutoGenerateBordersButton(string idSuffix = "")
+    {
+        bool canAutoGenerate = HasPlaceableStageGeometry();
+        if (!canAutoGenerate)
+            ImGui.BeginDisabled();
+
+        if (ImGui.Button($"Auto-Generate Borders##autoborder{idSuffix}", new Vector2(-1, 0)))
+        {
+            PushUndoSnapshot();
+            AutoGenerateStageBordersFromGeometry();
+        }
+
+        if (!canAutoGenerate)
+        {
+            ImGui.EndDisabled();
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip("Add at least one non-wall stage piece before generating borders.");
+        }
+    }
+    
+    private Vector3[] GetOrCreateOutlineEdges(Rad3d rad)
+    {
+        if (_selectionOutlineLocalEdges.TryGetValue(rad, out var cached))
+            return cached;
+
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float minZ = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+        float maxZ = float.MinValue;
+
+        foreach (var poly in rad.Polys)
+        {
+            foreach (var p in poly.Points)
+            {
+                minX = Math.Min(minX, p.X);
+                minY = Math.Min(minY, p.Y);
+                minZ = Math.Min(minZ, p.Z);
+                maxX = Math.Max(maxX, p.X);
+                maxY = Math.Max(maxY, p.Y);
+                maxZ = Math.Max(maxZ, p.Z);
+            }
+        }
+
+        // Fallback for malformed assets with no poly points.
+        if (minX > maxX)
+        {
+            float r = rad.MaxRadius > 0 ? rad.MaxRadius : 500f;
+            minX = -r;
+            minY = -r;
+            minZ = -r;
+            maxX = r;
+            maxY = r;
+            maxZ = r;
+        }
+
+        var c0 = new Vector3(minX, minY, minZ);
+        var c1 = new Vector3(maxX, minY, minZ);
+        var c2 = new Vector3(maxX, maxY, minZ);
+        var c3 = new Vector3(minX, maxY, minZ);
+        var c4 = new Vector3(minX, minY, maxZ);
+        var c5 = new Vector3(maxX, minY, maxZ);
+        var c6 = new Vector3(maxX, maxY, maxZ);
+        var c7 = new Vector3(minX, maxY, maxZ);
+
+        // 12 line segments represented as 24 vertices.
+        var lines = new[]
+        {
+            c0, c1, c1, c2, c2, c3, c3, c0,
+            c4, c5, c5, c6, c6, c7, c7, c4,
+            c0, c4, c1, c5, c2, c6, c3, c7
+        };
+
+        _selectionOutlineLocalEdges[rad] = lines;
+        return lines;
+    }
+
+    private void RenderSelectionHighlights(StageEditorTab tab)
+    {
+        if (tab.SelectedPieceIds.Count == 0)
+            return;
+
+        _selectionHighlightEffect ??= new BasicEffect(_graphicsDevice) { VertexColorEnabled = true };
+        _selectionHighlightEffect.View = activeCamera.ViewMatrix;
+        _selectionHighlightEffect.Projection = activeCamera.ProjectionMatrix;
+
+        int neededVertices = 0;
+        foreach (var id in tab.SelectedPieceIds)
+        {
+            if (tab.ScenePieces.GetValueOrDefault(id)?.Obj != null)
+                neededVertices += 24;
+        }
+
+        if (neededVertices == 0)
+            return;
+
+        if (_selectionOutlineVertices.Length < neededVertices)
+            _selectionOutlineVertices = new VertexPositionColor[neededVertices];
+
+        var color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+        int cursor = 0;
+
+        foreach (var id in tab.SelectedPieceIds)
+        {
+            var piece = tab.ScenePieces.GetValueOrDefault(id);
+            if (piece?.Obj == null)
+                continue;
+
+            var yaw = -piece.Rotation.Yaw.Radians;
+            var pitch = piece.Rotation.Pitch.Radians;
+            var roll = piece.Rotation.Roll.Radians;
+            var rotationMatrix =
+                Matrix.CreateRotationY((float)yaw) *
+                Matrix.CreateRotationX((float)pitch) *
+                Matrix.CreateRotationZ((float)roll);
+
+            var position = new Vector3(
+                (float)piece.Position.X,
+                (float)piece.Position.Y,
+                (float)piece.Position.Z);
+
+            var localOutline = GetOrCreateOutlineEdges(piece.Rad);
+            for (int i = 0; i < localOutline.Length; i++)
+            {
+                var world = Vector3.Transform(localOutline[i], rotationMatrix) + position;
+                _selectionOutlineVertices[cursor++] = new VertexPositionColor(world, color);
+            }
+        }
+
+        if (cursor == 0)
+            return;
+
         var oldDepthStencilState = _graphicsDevice.DepthStencilState;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        
-        // Draw wireframe box using BasicEffect
-        var effect = new BasicEffect(_graphicsDevice);
-        effect.View = activeCamera.ViewMatrix;
-        effect.Projection = activeCamera.ProjectionMatrix;
-        effect.VertexColorEnabled = true;
-        
-        var color = new Color(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
-        
-        // Get rotation from piece only - match game engine's rotation order
-        // Negate yaw to match game engine's coordinate system
-        var yaw = -piece.Rotation.Yaw.Radians;
-        var pitch = piece.Rotation.Pitch.Radians;
-        var roll = piece.Rotation.Roll.Radians;
-        
-        var rotationMatrix = 
-            Matrix.CreateRotationY((float)yaw) *
-            Matrix.CreateRotationX((float)pitch) *
-            Matrix.CreateRotationZ((float)roll);
-        
-        var totalPosition = new f64Vector3(
-            piece.Position.X,
-            piece.Position.Y,
-            piece.Position.Z
-        );
-        
-        // Collect all polygon edges for wireframe rendering
-        var edgeVertices = new List<VertexPositionColor>();
-        
-        foreach (var poly in mesh.Rad.Polys)
+
+        foreach (var pass in _selectionHighlightEffect.CurrentTechnique.Passes)
         {
-            if (poly.Points.Length < 2) continue;
-            
-            // Transform all points
-            var transformedPoints = new Vector3[poly.Points.Length];
-            for (int i = 0; i < poly.Points.Length; i++)
-            {
-                var localVert = new Vector3(
-                    poly.Points[i].X,
-                    poly.Points[i].Y,
-                    poly.Points[i].Z
-                );
-                transformedPoints[i] = Vector3.Transform(localVert, rotationMatrix) + (Vector3)totalPosition;
-            }
-            
-            // Add edges
-            for (int i = 0; i < poly.Points.Length; i++)
-            {
-                var nextIdx = (i + 1) % poly.Points.Length;
-                edgeVertices.Add(new(transformedPoints[i], color));
-                edgeVertices.Add(new(transformedPoints[nextIdx], color));
-            }
+            pass.Apply();
+            _graphicsDevice.DrawUserPrimitives(
+                PrimitiveType.LineList,
+                _selectionOutlineVertices,
+                0,
+                cursor / 2);
         }
-        
-        // Draw all edges
-        if (edgeVertices.Count > 0)
-        {
-            // Draw the lines multiple times with slight offsets to make them thicker
-            var offsets = new[] 
-            { 
-                new Vector3(0, 0, 0),
-                new Vector3(0.5f, 0, 0),
-                new Vector3(-0.5f, 0, 0),
-                new Vector3(0, 0.5f, 0),
-                new Vector3(0, -0.5f, 0)
-            };
-            
-            foreach (var offset in offsets)
-            {
-                var offsetVertices = edgeVertices.Select(v => 
-                    new VertexPositionColor(
-                        v.Position + offset, 
-                        v.Color
-                    )
-                ).ToArray();
-                
-                foreach (var pass in effect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-                    _graphicsDevice.DrawUserPrimitives(
-                        PrimitiveType.LineList,
-                        offsetVertices,
-                        0,
-                        offsetVertices.Length / 2
-                    );
-                }
-            }
-        }
-        
-        // Restore depth state
+
         _graphicsDevice.DepthStencilState = oldDepthStencilState;
     }
     
@@ -1618,13 +2112,47 @@ public class StageEditorPhase : BasePhase
             (float)pieces.Average(p => (double)p.Position.Z));
     }
 
+    private GizmoMetrics ComputeGizmoMetrics(Vector3 piecePos)
+    {
+        float scale = 1f;
+
+        if (TryGetProjectedAxisLength(piecePos, GIZMO_ARROW_LENGTH, out var axisPx) && axisPx > 1f)
+        {
+            // Keep the gizmo readable at long distances by targeting a minimum on-screen axis length.
+            scale = Math.Clamp(GIZMO_TARGET_AXIS_PIXELS / axisPx, 1f, GIZMO_MAX_SCALE);
+        }
+
+        return new GizmoMetrics(
+            GIZMO_ARROW_LENGTH * scale,
+            GIZMO_ARROW_THICKNESS * scale,
+            GIZMO_ROT_RADIUS * scale);
+    }
+
+    private bool TryGetProjectedAxisLength(Vector3 piecePos, float axisLength, out float projectedAxisLength)
+    {
+        projectedAxisLength = 0f;
+
+        if (!WorldToScreen(piecePos, out var ss0))
+            return false;
+
+        if (WorldToScreen(piecePos + new Vector3(axisLength, 0, 0), out var ssX))
+            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssX));
+        if (WorldToScreen(piecePos + new Vector3(0, -axisLength, 0), out var ssY))
+            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssY));
+        if (WorldToScreen(piecePos + new Vector3(0, 0, axisLength), out var ssZ))
+            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssZ));
+
+        return projectedAxisLength > 0f;
+    }
+
     private void RenderGizmo(Vector3 gizmoPos)
     {
         var piecePos = gizmoPos;
-        var xEnd = piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0);
+        var gizmoMetrics = ComputeGizmoMetrics(piecePos);
+        var xEnd = piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0);
         // Y arrow points up in world space (negative Y in FNA because Y is flipped)
-        var yEnd = piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0);
-        var zEnd = piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH);
+        var yEnd = piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0);
+        var zEnd = piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength);
         
         var oldDepth = _graphicsDevice.DepthStencilState;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
@@ -1649,12 +2177,12 @@ public class StageEditorPhase : BasePhase
             : new Color(0.1f, 0.9f, 0.1f, 1f);
         
         // Arrowhead side fins and tip offsets for each axis
-        var xSide     = new Vector3(0, GIZMO_ARROW_THICKNESS * 2, 0);
-        var ySide     = new Vector3(GIZMO_ARROW_THICKNESS * 2, 0, 0);
-        var zSide     = new Vector3(GIZMO_ARROW_THICKNESS * 2, 0, 0);
-        var xTipOffset = new Vector3(GIZMO_ARROW_LENGTH * 0.15f, 0, 0);
-        var yTipOffset = new Vector3(0, -GIZMO_ARROW_LENGTH * 0.15f, 0); // negative = upward
-        var zTipOffset = new Vector3(0, 0, GIZMO_ARROW_LENGTH * 0.15f);
+        var xSide     = new Vector3(0, gizmoMetrics.ArrowThickness * 2, 0);
+        var ySide     = new Vector3(gizmoMetrics.ArrowThickness * 2, 0, 0);
+        var zSide     = new Vector3(gizmoMetrics.ArrowThickness * 2, 0, 0);
+        var xTipOffset = new Vector3(gizmoMetrics.ArrowLength * 0.15f, 0, 0);
+        var yTipOffset = new Vector3(0, -gizmoMetrics.ArrowLength * 0.15f, 0); // negative = upward
+        var zTipOffset = new Vector3(0, 0, gizmoMetrics.ArrowLength * 0.15f);
         
         var verts = new List<VertexPositionColor>();
         
@@ -1682,8 +2210,8 @@ public class StageEditorPhase : BasePhase
         {
             float a0 = i / (float)ringSegs * (2f * MathF.PI);
             float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
-            verts.Add(new(piecePos + new Vector3(MathF.Cos(a0) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a0) * GIZMO_ROT_RADIUS), colRot));
-            verts.Add(new(piecePos + new Vector3(MathF.Cos(a1) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a1) * GIZMO_ROT_RADIUS), colRot));
+            verts.Add(new(piecePos + new Vector3(MathF.Cos(a0) * gizmoMetrics.RotRadius, 0, MathF.Sin(a0) * gizmoMetrics.RotRadius), colRot));
+            verts.Add(new(piecePos + new Vector3(MathF.Cos(a1) * gizmoMetrics.RotRadius, 0, MathF.Sin(a1) * gizmoMetrics.RotRadius), colRot));
         }
         
         var arr = verts.ToArray();
@@ -1719,10 +2247,10 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.DepthStencilState = oldDepth;
         
         // Update hover state based on screen-space distances
-        UpdateGizmoHover(piecePos);
+        UpdateGizmoHover(piecePos, gizmoMetrics);
     }
     
-    private void UpdateGizmoHover(Vector3 piecePos)
+    private void UpdateGizmoHover(Vector3 piecePos, GizmoMetrics gizmoMetrics)
     {
         if (_gizmoDragging != GizmoAxis.None) return;
         
@@ -1732,21 +2260,21 @@ public class StageEditorPhase : BasePhase
         
         // Check X arrow
         if (WorldToScreen(piecePos, out var ss0) &&
-            WorldToScreen(piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0), out var ss1))
+            WorldToScreen(piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0), out var ss1))
         {
             float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
             if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.X; }
         }
         // Check Y arrow (up)
         if (WorldToScreen(piecePos, out ss0) &&
-            WorldToScreen(piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0), out ss1))
+            WorldToScreen(piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0), out ss1))
         {
             float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
             if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Y; }
         }
         // Check Z arrow
         if (WorldToScreen(piecePos, out ss0) &&
-            WorldToScreen(piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH), out ss1))
+            WorldToScreen(piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength), out ss1))
         {
             float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
             if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Z; }
@@ -1757,8 +2285,8 @@ public class StageEditorPhase : BasePhase
         {
             float a0 = i / (float)ringSegs * (2f * MathF.PI);
             float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
-            var p0 = piecePos + new Vector3(MathF.Cos(a0) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a0) * GIZMO_ROT_RADIUS);
-            var p1 = piecePos + new Vector3(MathF.Cos(a1) * GIZMO_ROT_RADIUS, 0, MathF.Sin(a1) * GIZMO_ROT_RADIUS);
+            var p0 = piecePos + new Vector3(MathF.Cos(a0) * gizmoMetrics.RotRadius, 0, MathF.Sin(a0) * gizmoMetrics.RotRadius);
+            var p1 = piecePos + new Vector3(MathF.Cos(a1) * gizmoMetrics.RotRadius, 0, MathF.Sin(a1) * gizmoMetrics.RotRadius);
             if (WorldToScreen(p0, out ss0) && WorldToScreen(p1, out ss1))
             {
                 float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
@@ -1963,6 +2491,154 @@ public class StageEditorPhase : BasePhase
         
         return closestPieceId;
     }
+
+    private int PerformWallRayPicking(int screenX, int screenY)
+    {
+        if (ActiveTab == null || ActiveTab.StageWalls.Count == 0)
+            return -1;
+
+        var (rayOrigin, rayDirection) = GetPickRay(screenX, screenY);
+        float closestDistance = float.MaxValue;
+        int closestWallId = -1;
+
+        foreach (var wall in ActiveTab.StageWalls)
+        {
+            int n = wall.Count;
+            int o = wall.Position;
+            int p = wall.Offset;
+
+            for (int q = 0; q < n; q++)
+            {
+                var center = wall.Direction switch
+                {
+                    WallDirection.Right => new Vector3(o, World.Ground, q * WALL_SEGMENT_SPACING + p),
+                    WallDirection.Left => new Vector3(o, World.Ground, q * WALL_SEGMENT_SPACING + p),
+                    WallDirection.Top => new Vector3(q * WALL_SEGMENT_SPACING + p, World.Ground, o),
+                    WallDirection.Bottom => new Vector3(q * WALL_SEGMENT_SPACING + p, World.Ground, o),
+                    _ => Vector3.Zero
+                };
+
+                // Top/bottom walls run along X; left/right walls run along Z.
+                var halfExtents = wall.Direction is WallDirection.Top or WallDirection.Bottom
+                    ? new Vector3(WALL_SEGMENT_HALF_LENGTH, WALL_SEGMENT_HALF_HEIGHT, WALL_SEGMENT_HALF_WIDTH)
+                    : new Vector3(WALL_SEGMENT_HALF_WIDTH, WALL_SEGMENT_HALF_HEIGHT, WALL_SEGMENT_HALF_LENGTH);
+
+                var boxMin = center - halfExtents;
+                var boxMax = center + halfExtents;
+
+                if (RayIntersectsBox(rayOrigin, rayDirection, boxMin, boxMax, out float dist) && dist < closestDistance)
+                {
+                    closestDistance = dist;
+                    closestWallId = wall.Id;
+                }
+            }
+        }
+
+        return closestWallId;
+    }
+
+    private static void AddWireBoxLines(List<VertexPositionColor> verts, Vector3 min, Vector3 max, Color color)
+    {
+        var p000 = new Vector3(min.X, min.Y, min.Z);
+        var p001 = new Vector3(min.X, min.Y, max.Z);
+        var p010 = new Vector3(min.X, max.Y, min.Z);
+        var p011 = new Vector3(min.X, max.Y, max.Z);
+        var p100 = new Vector3(max.X, min.Y, min.Z);
+        var p101 = new Vector3(max.X, min.Y, max.Z);
+        var p110 = new Vector3(max.X, max.Y, min.Z);
+        var p111 = new Vector3(max.X, max.Y, max.Z);
+
+        // Bottom rectangle
+        verts.Add(new VertexPositionColor(p000, color)); verts.Add(new VertexPositionColor(p001, color));
+        verts.Add(new VertexPositionColor(p001, color)); verts.Add(new VertexPositionColor(p101, color));
+        verts.Add(new VertexPositionColor(p101, color)); verts.Add(new VertexPositionColor(p100, color));
+        verts.Add(new VertexPositionColor(p100, color)); verts.Add(new VertexPositionColor(p000, color));
+
+        // Top rectangle
+        verts.Add(new VertexPositionColor(p010, color)); verts.Add(new VertexPositionColor(p011, color));
+        verts.Add(new VertexPositionColor(p011, color)); verts.Add(new VertexPositionColor(p111, color));
+        verts.Add(new VertexPositionColor(p111, color)); verts.Add(new VertexPositionColor(p110, color));
+        verts.Add(new VertexPositionColor(p110, color)); verts.Add(new VertexPositionColor(p010, color));
+
+        // Vertical edges
+        verts.Add(new VertexPositionColor(p000, color)); verts.Add(new VertexPositionColor(p010, color));
+        verts.Add(new VertexPositionColor(p001, color)); verts.Add(new VertexPositionColor(p011, color));
+        verts.Add(new VertexPositionColor(p100, color)); verts.Add(new VertexPositionColor(p110, color));
+        verts.Add(new VertexPositionColor(p101, color)); verts.Add(new VertexPositionColor(p111, color));
+    }
+
+    private void RenderSelectedWallHighlight(StageEditorTab tab)
+    {
+        if (tab.SelectedWallId < 0)
+            return;
+
+        var wall = tab.StageWalls.GetValueOrDefault(tab.SelectedWallId);
+        if (wall == null)
+            return;
+
+        var verts = new List<VertexPositionColor>();
+        var color = new Color(0.35f, 0.9f, 1f, 1f);
+
+        int n = wall.Count;
+        int o = wall.Position;
+        int p = wall.Offset;
+        for (int q = 0; q < n; q++)
+        {
+            var center = wall.Direction switch
+            {
+                WallDirection.Right => new Vector3(o, World.Ground, q * WALL_SEGMENT_SPACING + p),
+                WallDirection.Left => new Vector3(o, World.Ground, q * WALL_SEGMENT_SPACING + p),
+                WallDirection.Top => new Vector3(q * WALL_SEGMENT_SPACING + p, World.Ground, o),
+                WallDirection.Bottom => new Vector3(q * WALL_SEGMENT_SPACING + p, World.Ground, o),
+                _ => Vector3.Zero
+            };
+
+            var halfExtents = wall.Direction is WallDirection.Top or WallDirection.Bottom
+                ? new Vector3(WALL_SEGMENT_HALF_LENGTH, WALL_SEGMENT_HALF_HEIGHT, WALL_SEGMENT_HALF_WIDTH)
+                : new Vector3(WALL_SEGMENT_HALF_WIDTH, WALL_SEGMENT_HALF_HEIGHT, WALL_SEGMENT_HALF_LENGTH);
+
+            AddWireBoxLines(verts, center - halfExtents, center + halfExtents, color);
+        }
+
+        if (verts.Count == 0)
+            return;
+
+        var arr = verts.ToArray();
+        var oldDepth = _graphicsDevice.DepthStencilState;
+        _graphicsDevice.DepthStencilState = DepthStencilState.None;
+
+        var effect = new BasicEffect(_graphicsDevice)
+        {
+            View = activeCamera.ViewMatrix,
+            Projection = activeCamera.ProjectionMatrix,
+            VertexColorEnabled = true
+        };
+
+        var camRight = new Vector3(activeCamera.ViewMatrix.M11, activeCamera.ViewMatrix.M21, activeCamera.ViewMatrix.M31);
+        var camUp = new Vector3(activeCamera.ViewMatrix.M12, activeCamera.ViewMatrix.M22, activeCamera.ViewMatrix.M32);
+        float s = 6f;
+        var thickOffsets = new[]
+        {
+            Vector3.Zero,
+            camRight * s, camRight * -s,
+            camUp * s, camUp * -s,
+        };
+
+        foreach (var offset in thickOffsets)
+        {
+            var offsetArr = offset == Vector3.Zero
+                ? arr
+                : arr.Select(v => new VertexPositionColor(v.Position + offset, v.Color)).ToArray();
+
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                _graphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, offsetArr, 0, offsetArr.Length / 2);
+            }
+        }
+
+        _graphicsDevice.DepthStencilState = oldDepth;
+    }
     
     private bool RayIntersectsTriangle(
         Vector3 rayOrigin,
@@ -2092,7 +2768,8 @@ public class StageEditorPhase : BasePhase
                 {
                     // Project the gizmo arrow from the centroid to get pixels-per-world-unit ratio
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(GIZMO_ARROW_LENGTH, 0, 0), out var ss1))
+                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -2100,7 +2777,7 @@ public class StageEditorPhase : BasePhase
                         {
                             var axisDir = screenArrow / screenLen;
                             float pixelDelta = Vector2.Dot(new Vector2(dx, dy), axisDir);
-                            float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            float worldDelta = pixelDelta * (gizmoMetrics.ArrowLength / screenLen);
                             // Apply delta to every selected piece using its own start position
                             foreach (var (sid, spos) in _gizmoDragStartPositions)
                             {
@@ -2119,7 +2796,8 @@ public class StageEditorPhase : BasePhase
                 {
                     // Y axis: project the upward arrow (world -Y direction) to screen
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, -GIZMO_ARROW_LENGTH, 0), out var ss1))
+                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -2128,7 +2806,7 @@ public class StageEditorPhase : BasePhase
                             var axisDir = screenArrow / screenLen;
                             float pixelDelta = Vector2.Dot(new Vector2(dx, dy), axisDir);
                             // Moving up on screen decreases world Y (camera is flipped), so negate
-                            float worldDelta = -pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            float worldDelta = -pixelDelta * (gizmoMetrics.ArrowLength / screenLen);
                             foreach (var (sid, spos) in _gizmoDragStartPositions)
                             {
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
@@ -2145,7 +2823,8 @@ public class StageEditorPhase : BasePhase
                 else if (_gizmoDragging == GizmoAxis.Z)
                 {
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, 0, GIZMO_ARROW_LENGTH), out var ss1))
+                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
+                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength), out var ss1))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -2153,7 +2832,7 @@ public class StageEditorPhase : BasePhase
                         {
                             var axisDir = screenArrow / screenLen;
                             float pixelDelta = Vector2.Dot(new Vector2(dx, dy), axisDir);
-                            float worldDelta = pixelDelta * (GIZMO_ARROW_LENGTH / screenLen);
+                            float worldDelta = pixelDelta * (gizmoMetrics.ArrowLength / screenLen);
                             foreach (var (sid, spos) in _gizmoDragStartPositions)
                             {
                                 var sp = ActiveTab.ScenePieces.GetValueOrDefault(sid);
@@ -2459,8 +3138,10 @@ public class StageEditorPhase : BasePhase
         {
             if (ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown)
             {
-                // Adjust top-down height
-                ActiveTab.TopDownHeight = Math.Clamp(ActiveTab.TopDownHeight - delta * 15f, 500f, 50000f);
+                // Exponential zoom gives a consistent feel across near/far ranges.
+                float wheelSteps = delta / 120f;
+                float zoomFactor = MathF.Pow(1.15f, -wheelSteps);
+                ActiveTab.TopDownHeight = MathF.Max(500f, ActiveTab.TopDownHeight * zoomFactor);
                 UpdateCameraPosition();
             }
             else
@@ -2595,7 +3276,14 @@ public class StageEditorPhase : BasePhase
                     }
                     else
                     {
-                        if (!_isCtrlPressed)
+                        var pickedWallId = PerformWallRayPicking(x, y);
+                        if (pickedWallId >= 0)
+                        {
+                            ActiveTab.SelectedWallId = pickedWallId;
+                            ActiveTab.ActivePieceId = -1;
+                            ActiveTab.SelectedPieceIds.Clear();
+                        }
+                        else if (!_isCtrlPressed)
                         {
                             ActiveTab.SelectedPieceIds.Clear();
                             ActiveTab.ActivePieceId = -1;
@@ -2664,6 +3352,7 @@ public class StageEditorPhase : BasePhase
         else if (ActiveTab.ViewMode == StageEditorTab.ViewModeEnum.TopDown)
         {
             // Pan controls for top-down view (move the look-at point on XZ plane)
+            // Keep pan speed consistent across zoom levels.
             var panSpeed = CAMERA_MOVE_SPEED * (_isShiftPressed ? 3f : 1f);
             
             if (_moveForward)
@@ -2739,6 +3428,10 @@ public class StageEditorPhase : BasePhase
                 var oldClouds = ActiveTab?.StageRenderer.clouds;
                 var oldMountains = ActiveTab?.StageRenderer.mountains;
                 var oldFadeFrom = World.FadeFrom;
+                float requestedFade = ActiveTab.TopDownHeight * 24f;
+                int topDownFadeFrom = requestedFade >= int.MaxValue
+                    ? int.MaxValue
+                    : Math.Max(10_000, (int)MathF.Ceiling(requestedFade));
                 
                 // Temporarily remove environment elements and suppress fog
                 ActiveTab?.StageRenderer.ground = null!;
@@ -2746,7 +3439,7 @@ public class StageEditorPhase : BasePhase
                 ActiveTab?.StageRenderer.polys = null;
                 ActiveTab?.StageRenderer.clouds = null;
                 ActiveTab?.StageRenderer.mountains = null;
-                World.FadeFrom = 9999999;
+                World.FadeFrom = Math.Max(oldFadeFrom, topDownFadeFrom);
                 
                 // Render with lighting preserved
                 ActiveTab?.Scene.Render(alpha, false);
@@ -2775,13 +3468,8 @@ public class StageEditorPhase : BasePhase
         _graphicsDevice.RasterizerState = oldRasterizerState;
         
         // Render selection highlight for all selected pieces, gizmo on primary
-        var highlightIds = ActiveTab.SelectedPieceIds;
-        foreach (var hid in highlightIds)
-        {
-            var hp = ActiveTab.ScenePieces.GetValueOrDefault(hid);
-            if (hp?.Obj != null)
-                RenderSelectionHighlight(hp);
-        }
+        RenderSelectionHighlights(ActiveTab);
+        RenderSelectedWallHighlight(ActiveTab);
         if (ActiveTab.ActivePieceId >= 0)
         {
             var selectedPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
@@ -2836,6 +3524,12 @@ public class StageEditorPhase : BasePhase
                 if (ImGui.MenuItem("Save Stage", "", false, ActiveTab?.Stage != null))
                 {
                     SaveStage();
+                }
+
+                if (ImGui.MenuItem("Export Top-Down Image...", "", false, ActiveTab?.Stage != null))
+                {
+                    _exportResultMessage = "";
+                    _showExportDialog = true;
                 }
                 
                 ImGui.Separator();
@@ -3351,6 +4045,63 @@ public class StageEditorPhase : BasePhase
             ImGui.EndPopup();
         }
         
+        // Export Top-Down Image Dialog
+        if (_showExportDialog)
+        {
+            ImGui.OpenPopup("Export Top-Down Image");
+        }
+
+        if (ImGui.BeginPopupModal("Export Top-Down Image", ref _showExportDialog, ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            ImGui.Text("Render the stage from directly above and save as a PNG.");
+            ImGui.Separator();
+
+            ImGui.Text("Image Width (px):");
+            ImGui.SetNextItemWidth(200);
+            ImGui.DragInt("##expW", ref _exportWidth, 32f, 256, 8192);
+            _exportWidth = (int)MathF.Round(_exportWidth / 32f) * 32;
+
+            ImGui.Text("Image Height (px):");
+            ImGui.SetNextItemWidth(200);
+            ImGui.DragInt("##expH", ref _exportHeight, 32f, 256, 8192);
+            _exportHeight = (int)MathF.Round(_exportHeight / 32f) * 32;
+
+            ImGui.Text("Padding (world units):");
+            ImGui.SetNextItemWidth(200);
+            ImGui.DragInt("##expPad", ref _exportPadding, 50f, 0, 10000);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Extra space around the stage bounding box.");
+
+            if (ActiveTab?.StageFileName != null)
+                ImGui.TextDisabled($"Output: data/stages/user/{ActiveTab.StageFileName}_topdown.png");
+
+            ImGui.Separator();
+
+            if (ImGui.Button("Export", new Vector2(120, 0)))
+            {
+                ExportTopDownImage();
+                // Keep dialog open to show result message
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Close", new Vector2(120, 0)))
+            {
+                _showExportDialog = false;
+                ImGui.CloseCurrentPopup();
+            }
+
+            if (!string.IsNullOrEmpty(_exportResultMessage))
+            {
+                ImGui.Spacing();
+                bool isError = _exportResultMessage.StartsWith("Error");
+                if (isError)
+                    ImGui.TextColored(new Vector4(1f, 0.3f, 0.3f, 1f), _exportResultMessage);
+                else
+                    ImGui.TextColored(new Vector4(0.3f, 1f, 0.3f, 1f), _exportResultMessage);
+            }
+
+            ImGui.EndPopup();
+        }
+
         // Exit Warning Dialog
         if (_showExitWarningDialog)
         {
@@ -3575,34 +4326,56 @@ public class StageEditorPhase : BasePhase
     
     // ── Undo / Redo ──────────────────────────────────────────────────────────
 
+    private static WallSnapshot CreateWallSnapshot(EditorStageWall wall)
+    {
+        return new WallSnapshot(wall.Id, wall.Direction, wall.Count, wall.Position, wall.Offset);
+    }
+
+    private EditorSnapshot CaptureEditorSnapshot()
+    {
+        if (ActiveTab == null)
+            return new EditorSnapshot([], []);
+
+        var pieces = ActiveTab.ScenePieces
+            .Select(p => new PieceSnapshot(p.PiecePlacement, p.Obj, p.Id))
+            .ToList();
+
+        var walls = ActiveTab.StageWalls
+            .Select(CreateWallSnapshot)
+            .ToList();
+
+        return new EditorSnapshot(pieces, walls);
+    }
+
     private void PushUndoSnapshot()
     {
         if (ActiveTab == null) return;
-        var snapshot = ActiveTab.ScenePieces
-            .Select(p => new PieceSnapshot(p.PiecePlacement, p.Obj, p.Id))
-            .ToList();
-        _undoStack.Push(snapshot);
+        _undoStack.Push(CaptureEditorSnapshot());
         _redoStack.Clear();
     }
 
-    private void ApplySnapshot(List<PieceSnapshot> snapshot)
+    private void ApplySnapshot(EditorSnapshot snapshot)
     {
         if (ActiveTab?.Stage == null) return;
 
         var currentObjs  = new HashSet<StageObject?>(ActiveTab.ScenePieces.Select(p => p.Obj));
-        var snapshotObjs = new HashSet<StageObject?>(snapshot.Select(p => p.Obj));
+        var snapshotObjs = new HashSet<StageObject?>(snapshot.Pieces.Select(p => p.Obj));
         bool needsRebuild = !currentObjs.SetEquals(snapshotObjs);
+
+        var currentWalls = ActiveTab.StageWalls.Select(CreateWallSnapshot).ToList();
+        bool wallsChanged = currentWalls.Count != snapshot.Walls.Count ||
+                            !currentWalls.SequenceEqual(snapshot.Walls);
 
         // Rebuild Stage.pieces to match snapshot order (for Save correctness)
         if (needsRebuild)
         {
             ActiveTab.Stage.pieces.Clear();
-            foreach (var s in snapshot)
+            foreach (var s in snapshot.Pieces)
                 ActiveTab.Stage.pieces.Add(s.Obj);
         }
 
         // Rebuild ScenePieces list
-        var newPieces = snapshot.Select(s =>
+        var newPieces = snapshot.Pieces.Select(s =>
         {
             var existing = ActiveTab.ScenePieces.FirstOrDefault(p => p.Obj == s.Obj);
             if (existing != null)
@@ -3621,32 +4394,37 @@ public class StageEditorPhase : BasePhase
 
         ActiveTab.ScenePieces.Clear();
         ActiveTab.ScenePieces.AddRange(newPieces);
+
+        if (wallsChanged)
+        {
+            var rebuiltWalls = KeyedCollection.From<int, EditorStageWall>(w => w.Id);
+            foreach (var wall in snapshot.Walls)
+                rebuiltWalls.Add(new EditorStageWall(wall.Direction, wall.Count, wall.Position, wall.Offset, wall.Id));
+            ActiveTab.StageWalls = rebuiltWalls;
+        }
         
         ActiveTab.ActivePieceId = -1;
+        ActiveTab.SelectedWallId = -1;
         ActiveTab.SelectedPieceIds.Clear();
         ActiveTab.HasUnsavedChanges = true;
 
         if (needsRebuild)
             RebuildClientRenderer();
+        else if (wallsChanged)
+            RebuildAllWalls();
     }
 
     private void PerformUndo()
     {
         if (_undoStack.Count == 0 || ActiveTab == null) return;
-        var currentSnapshot = ActiveTab.ScenePieces
-            .Select(p => new PieceSnapshot(p.PiecePlacement, p.Obj, p.Id))
-            .ToList();
-        _redoStack.Push(currentSnapshot);
+        _redoStack.Push(CaptureEditorSnapshot());
         ApplySnapshot(_undoStack.Pop());
     }
 
     private void PerformRedo()
     {
         if (_redoStack.Count == 0 || ActiveTab == null) return;
-        var currentSnapshot = ActiveTab.ScenePieces
-            .Select(p => new PieceSnapshot(p.PiecePlacement, p.Obj, p.Id))
-            .ToList();
-        _undoStack.Push(currentSnapshot);
+        _undoStack.Push(CaptureEditorSnapshot());
         ApplySnapshot(_redoStack.Pop());
     }
 
@@ -4172,22 +4950,51 @@ public class StageEditorPhase : BasePhase
                     ImGui.Spacing();
                     var count = wall.Count;
                     ImGui.SetNextItemWidth(-1);
-                    if (ImGui.DragInt("Wall Count##wc", ref count, 1f, 1, 100))
+                    bool countChanged = ImGui.DragInt("Wall Count##wc", ref count, 1f, 1, 100);
+                    if (ImGui.IsItemActivated() && !_inspectorWallDragging)
+                    {
+                        _inspectorWallDragging = true;
+                        PushUndoSnapshot();
+                    }
+                    if (countChanged)
                     {
                         if (wall.Count != count) { wall.Count = count; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
                     }
+                    if (ImGui.IsItemDeactivated())
+                        _inspectorWallDragging = false;
+
                     var pos = wall.Position;
                     ImGui.SetNextItemWidth(-1);
-                    if (ImGui.DragInt("Position##wp", ref pos, 10f))
+                    bool posChanged = ImGui.DragInt("Position##wp", ref pos, 10f);
+                    if (ImGui.IsItemActivated() && !_inspectorWallDragging)
+                    {
+                        _inspectorWallDragging = true;
+                        PushUndoSnapshot();
+                    }
+                    if (posChanged)
                     {
                         if (wall.Position != pos) { wall.Position = pos; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
                     }
+                    if (ImGui.IsItemDeactivated())
+                        _inspectorWallDragging = false;
+
                     var offset = wall.Offset;
                     ImGui.SetNextItemWidth(-1);
-                    if (ImGui.DragInt("Offset##wo", ref offset, 10f))
+                    bool offsetChanged = ImGui.DragInt("Offset##wo", ref offset, 10f);
+                    if (ImGui.IsItemActivated() && !_inspectorWallDragging)
+                    {
+                        _inspectorWallDragging = true;
+                        PushUndoSnapshot();
+                    }
+                    if (offsetChanged)
                     {
                         if (wall.Offset != offset) { wall.Offset = offset; ActiveTab.HasUnsavedChanges = true; RebuildAllWalls(); }
                     }
+                    if (ImGui.IsItemDeactivated())
+                        _inspectorWallDragging = false;
+
+                    ImGui.Spacing();
+                    RenderAutoGenerateBordersButton("_selectedwall");
                     ImGui.Spacing();
                 }
                 
@@ -4195,6 +5002,7 @@ public class StageEditorPhase : BasePhase
                 ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.6f, 0.15f, 0.15f, 1f));
                 if (ImGui.Button("Delete Border", new Vector2(-1, 0)))
                 {
+                    PushUndoSnapshot();
                     ActiveTab.StageWalls.Remove(wall);
                     ActiveTab.SelectedWallId = -1;
                     ActiveTab.HasUnsavedChanges = true;
@@ -4474,6 +5282,11 @@ public class StageEditorPhase : BasePhase
         
         // Nothing selected
         ImGui.Spacing();
+        if (ImGui.CollapsingHeader("Borders", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            RenderAutoGenerateBordersButton("_noselection");
+            ImGui.Spacing();
+        }
         ImGui.TextDisabled("No piece selected.");
         ImGui.TextDisabled("Click a piece in the viewport");
         ImGui.TextDisabled("or select from the Hierarchy.");
