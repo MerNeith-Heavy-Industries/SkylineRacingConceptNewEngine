@@ -40,3 +40,6 @@
 [submodule "MemoryPack"]
 	path = MemoryPack
 	url = https://github.com/uwx/MemoryPack
+[submodule "NanoSVGSharp"]
+	path = NanoSVGSharp
+	url = https://github.com/uwx/NanoSVGSharp
