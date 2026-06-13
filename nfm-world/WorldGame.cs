@@ -13,6 +13,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
+using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
 using NFMWorld.UI;
 using NFMWorld.UI.Hud;
@@ -506,7 +507,7 @@ public class WorldGame : Game
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
-            Process.GetCurrentProcess().Kill();
+            Process.GetCurrentProcess().Kill(false);
         };
         
         NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
@@ -539,7 +540,7 @@ public class WorldGame : Game
         }
 #endif
         
-        BackendGameSparker.Load();
+        BackendGameSparker.Load(isHeadless: false);
 
         var program = new WorldGame();
         program.Run();

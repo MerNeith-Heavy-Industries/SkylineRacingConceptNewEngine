@@ -51,6 +51,7 @@
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack\MemoryPack.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\NFMWorld.CrashReporter\NFMWorld.CrashReporter.csproj" />
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Base\WorldXaml.UI.Base.csproj" />
