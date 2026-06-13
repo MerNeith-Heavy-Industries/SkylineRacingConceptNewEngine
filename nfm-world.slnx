@@ -66,6 +66,7 @@
     <Project Path="WorldXaml/XamlX/src/XamlX.IL.Cecil/XamlX.IL.Cecil.csproj" />
     <Project Path="WorldXaml/XamlX/src/XamlX/XamlX.csproj" />
   </Folder>
+  <Project Path="NanoSVGSharp/NanoSvgSharp.csproj" />
   <Project Path="nfm-world/NFMWorld.csproj" />
   <Project Path="NFMW.GenerateSinCosTable/NFMW.GenerateSinCosTable.csproj" />
   <Project Path="NFMWorld.ClientOnlyAnalyzer/NFMWorld.ClientOnlyAnalyzer.csproj" />
