@@ -1,10 +1,10 @@
-﻿global using Vector3 = Microsoft.Xna.Framework.Vector3;
+﻿global using Vector3 = System.Numerics.Vector3;
 global using Int3 = Maxine.Extensions.Mathematics.Int3;
 global using Color3 = NFMWorldLibrary.Util.Color3;
-global using Quaternion = Microsoft.Xna.Framework.Quaternion;
-global using Matrix = Microsoft.Xna.Framework.Matrix;
+global using Quaternion = System.Numerics.Quaternion;
+global using Matrix = System.Numerics.Matrix4x4;
 global using AngleSingle = Maxine.Extensions.Mathematics.AngleSingle;
-global using Vector2 = Microsoft.Xna.Framework.Vector2;
+global using Vector2 = System.Numerics.Vector2;
 global using URandom = NFMWorldLibrary.Util.Random;
 global using LuaNET.LuaJIT;
 global using static LuaNET.LuaJIT.Lua;
