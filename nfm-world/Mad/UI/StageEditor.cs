@@ -2712,7 +2712,7 @@ public class StageEditorPhase : BasePhase
         // Only set scissor if we have valid viewport bounds
         if (_viewportMax.X > _viewportMin.X && _viewportMax.Y > _viewportMin.Y)
         {
-            var scissorRect = new Microsoft.Xna.Framework.Rectangle(
+            var scissorRect = new Rectangle(
                 (int)_viewportMin.X,
                 (int)_viewportMin.Y,
                 (int)(_viewportMax.X - _viewportMin.X),

@@ -3,7 +3,7 @@ using NFMWorld.Account.OAuth2;
 
 namespace NFMWorld.Api;
 
-using ApiRes = (System.Net.HttpStatusCode, ApiResponse?);
+using ApiRes = (HttpStatusCode, ApiResponse?);
 
 public static class UserApi
 {

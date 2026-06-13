@@ -99,7 +99,7 @@ public class GarageDynamicStatBar : Node
     }
 
     [ClientOnly]
-    protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         var x = (int)position.X;
         var y = (int)position.Y;

@@ -15,7 +15,7 @@ public partial class MeasureBar : Image
     [Property]
     public partial float FillAmount { get; set; }
 
-    protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
         G.SetColor(Color);

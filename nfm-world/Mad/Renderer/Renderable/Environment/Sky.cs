@@ -43,12 +43,12 @@ public class Sky : Transform, IImmediateRenderable
                 (new Vector3(-1e5f, -layersArr[i + 1].Position.Y, -layersArr[i + 1].Position.Z), layersArr[i + 1].Color),
                 (new Vector3(1e5f, -layersArr[i + 1].Position.Y, -layersArr[i + 1].Position.Z), layersArr[i + 1].Color),
             ];
-            data.Add(new VertexPositionColor(vertices[0].Position, new Microsoft.Xna.Framework.Color(vertices[0].Color)));
-            data.Add(new VertexPositionColor(vertices[1].Position, new Microsoft.Xna.Framework.Color(vertices[1].Color)));
-            data.Add(new VertexPositionColor(vertices[2].Position, new Microsoft.Xna.Framework.Color(vertices[2].Color)));
-            data.Add(new VertexPositionColor(vertices[1].Position, new Microsoft.Xna.Framework.Color(vertices[1].Color)));
-            data.Add(new VertexPositionColor(vertices[2].Position, new Microsoft.Xna.Framework.Color(vertices[2].Color)));
-            data.Add(new VertexPositionColor(vertices[3].Position, new Microsoft.Xna.Framework.Color(vertices[3].Color)));
+            data.Add(new VertexPositionColor(vertices[0].Position, new Color(vertices[0].Color)));
+            data.Add(new VertexPositionColor(vertices[1].Position, new Color(vertices[1].Color)));
+            data.Add(new VertexPositionColor(vertices[2].Position, new Color(vertices[2].Color)));
+            data.Add(new VertexPositionColor(vertices[1].Position, new Color(vertices[1].Color)));
+            data.Add(new VertexPositionColor(vertices[2].Position, new Color(vertices[2].Color)));
+            data.Add(new VertexPositionColor(vertices[3].Position, new Color(vertices[3].Color)));
         }
 
         var vertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColor), data.Count, BufferUsage.None)
@@ -85,7 +85,7 @@ public class Sky : Transform, IImmediateRenderable
         for (var i = 1; i < 20; ++i) {
             col = new Vector3(0.991f, 0.991f, 0.998f) * col;
         }
-        _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(col));
+        _graphicsDevice.Clear(new Color(col));
         
         // Extract camera rotation from view direction
         var viewDirection = Vector3.Normalize(camera.LookAt - camera.Position);

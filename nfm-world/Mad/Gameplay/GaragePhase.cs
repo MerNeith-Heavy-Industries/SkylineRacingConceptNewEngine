@@ -192,7 +192,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
         if (_openSearchPopup)
         {
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(0, 0));
+            ImGui.SetNextWindowSize(new Vector2(0, 0));
 
             bool open = _openSearchPopup;
 

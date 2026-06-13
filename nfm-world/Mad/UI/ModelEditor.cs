@@ -217,7 +217,7 @@ public class ModelEditorPhase : BasePhase
                         // Save
                         try
                         {
-                            System.IO.File.WriteAllText(tab.ModelPath!, tab.TextContent);
+                            File.WriteAllText(tab.ModelPath!, tab.TextContent);
                             tab.TextEditorDirty = false;
                             PerformCloseTab(index);
                         }
@@ -265,7 +265,7 @@ public class ModelEditorPhase : BasePhase
         
         var filePath = Path.Combine(userPath, _newModelName + ".rad");
         
-        if (System.IO.File.Exists(filePath))
+        if (File.Exists(filePath))
         {
             // File already exists
             return;
@@ -282,9 +282,9 @@ public class ModelEditorPhase : BasePhase
             if (_selectedReferenceModel < refModels.Length)
             {
                 var refFile = Path.Combine(builtInPath, refModels[_selectedReferenceModel] + ".rad");
-                if (System.IO.File.Exists(refFile))
+                if (File.Exists(refFile))
                 {
-                    radContent = System.IO.File.ReadAllText(refFile);
+                    radContent = File.ReadAllText(refFile);
                 }
                 else
                 {
@@ -301,7 +301,7 @@ public class ModelEditorPhase : BasePhase
             radContent = CreateEmptyRadFile();
         }
         
-        System.IO.File.WriteAllText(filePath, radContent);
+        File.WriteAllText(filePath, radContent);
         
         // Load the new model
         LoadModel(filePath, _openInNewTab);
@@ -336,7 +336,7 @@ public class ModelEditorPhase : BasePhase
         
         try
         {
-            var radContent = System.IO.File.ReadAllText(filePath);
+            var radContent = File.ReadAllText(filePath);
             
             ModelEditorTab tab;
             if (openInNewTab || _activeTabIndex < 0 || _tabs.Count == 0)
@@ -363,7 +363,7 @@ public class ModelEditorPhase : BasePhase
                             {
                                 try
                                 {
-                                    System.IO.File.WriteAllText(currentPath, tab.TextContent);
+                                    File.WriteAllText(currentPath, tab.TextContent);
                                     LoadModelIntoTab(tab, filePath, radContent);
                                 }
                                 catch (Exception ex)
@@ -1317,7 +1317,7 @@ public class ModelEditorPhase : BasePhase
     {
         base.Render(alpha);
 
-        _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(135, 206, 235));
+        _graphicsDevice.Clear(new Color(135, 206, 235));
     }
 
     public override void RenderImgui()
@@ -1361,7 +1361,7 @@ public class ModelEditorPhase : BasePhase
                                     foreach (var tab in unsavedTabs)
                                     {
                                         try {
-                                            System.IO.File.WriteAllText(tab.ModelPath!, tab.TextContent);
+                                            File.WriteAllText(tab.ModelPath!, tab.TextContent);
                                             tab.TextEditorDirty = false;
                                         } catch { }
                                     }
@@ -1388,8 +1388,8 @@ public class ModelEditorPhase : BasePhase
         float tabBarHeight = 0;
         if (_tabs.Count > 0)
         {
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, menuBarHeight));
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(displaySize.X, 0));
+            ImGui.SetNextWindowPos(new Vector2(0, menuBarHeight));
+            ImGui.SetNextWindowSize(new Vector2(displaySize.X, 0));
             ImGui.Begin("##TabBar", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize |
                         ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar);
             
@@ -1428,8 +1428,8 @@ public class ModelEditorPhase : BasePhase
         var tab = ActiveTab;
         if (tab != null)
         {
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, menuBarHeight + tabBarHeight));
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(displaySize.X, 0));
+            ImGui.SetNextWindowPos(new Vector2(0, menuBarHeight + tabBarHeight));
+            ImGui.SetNextWindowSize(new Vector2(displaySize.X, 0));
             ImGui.Begin("##Toolbar", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | 
                         ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar);
             
@@ -1451,7 +1451,7 @@ public class ModelEditorPhase : BasePhase
                     {
                         if (tab.ModelPath != null)
                         {
-                            System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
+                            File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
                             tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent, "editing"));
@@ -1474,7 +1474,7 @@ public class ModelEditorPhase : BasePhase
                     {
                         if (tab.ModelPath != null)
                         {
-                            System.IO.File.WriteAllText(tab.ModelPath, tab.TextContent);
+                            File.WriteAllText(tab.ModelPath, tab.TextContent);
                             tab.TextEditorDirty = false;
                             // Reload model
                             tab.Object = new EditorObject(_graphicsDevice, RadParser.ParseRad(tab.TextContent, "editing"));
@@ -1637,8 +1637,8 @@ public class ModelEditorPhase : BasePhase
         
         if (showTextEditorPanel && tab != null)
         {
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, menuBarHeight + tabBarHeight + toolbarHeight));
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(displaySize.X, topPanelHeight - toolbarHeight));
+            ImGui.SetNextWindowPos(new Vector2(0, menuBarHeight + tabBarHeight + toolbarHeight));
+            ImGui.SetNextWindowSize(new Vector2(displaySize.X, topPanelHeight - toolbarHeight));
             ImGui.Begin("##TextEditorPanel", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | 
                         ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar);
             
@@ -1646,7 +1646,7 @@ public class ModelEditorPhase : BasePhase
             var flags = ImGuiInputTextFlags.AllowTabInput;
             var content = tab.TextContent;
             var textChanged = ImGui.InputTextMultiline("##TextEditor", ref content, 200000, 
-                new System.Numerics.Vector2(-1, -1), flags);
+                new Vector2(-1, -1), flags);
                 
             if (textChanged)
             {
@@ -1659,8 +1659,8 @@ public class ModelEditorPhase : BasePhase
         
         // Bottom control panel (fixed position, full width)
         float bottomPanelHeight = 180;
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, displaySize.Y - bottomPanelHeight));
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(displaySize.X, bottomPanelHeight));
+        ImGui.SetNextWindowPos(new Vector2(0, displaySize.Y - bottomPanelHeight));
+        ImGui.SetNextWindowSize(new Vector2(displaySize.X, bottomPanelHeight));
         ImGui.Begin("##BottomControls", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | 
                     ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoCollapse);
         
@@ -1869,8 +1869,8 @@ public class ModelEditorPhase : BasePhase
         // New Model Dialog
         if (_showNewModelDialog)
         {
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(displaySize.X / 2 - 200, displaySize.Y / 2 - 150));
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(400, 300));
+            ImGui.SetNextWindowPos(new Vector2(displaySize.X / 2 - 200, displaySize.Y / 2 - 150));
+            ImGui.SetNextWindowSize(new Vector2(400, 300));
             ImGui.Begin("Create New Model", ref _showNewModelDialog, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse);
             
             ImGui.Text("Model Type:");
@@ -1932,7 +1932,7 @@ public class ModelEditorPhase : BasePhase
                 ImGui.BeginDisabled();
             }
             
-            if (ImGui.Button("Create", new System.Numerics.Vector2(190, 30)))
+            if (ImGui.Button("Create", new Vector2(190, 30)))
             {
                 CreateNewModel();
             }
@@ -1944,7 +1944,7 @@ public class ModelEditorPhase : BasePhase
             
             ImGui.SameLine();
             
-            if (ImGui.Button("Cancel", new System.Numerics.Vector2(190, 30)))
+            if (ImGui.Button("Cancel", new Vector2(190, 30)))
             {
                 _showNewModelDialog = false;
                 _newModelName = "";
@@ -1957,8 +1957,8 @@ public class ModelEditorPhase : BasePhase
         // Load Existing Dialog
         if (_showLoadDialog)
         {
-            ImGui.SetNextWindowPos(new System.Numerics.Vector2(displaySize.X / 2 - 250, displaySize.Y / 2 - 200));
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(500, 400));
+            ImGui.SetNextWindowPos(new Vector2(displaySize.X / 2 - 250, displaySize.Y / 2 - 200));
+            ImGui.SetNextWindowSize(new Vector2(500, 400));
             ImGui.Begin("Load Model", ref _showLoadDialog, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar);
             
             ImGui.Text("Select a model to load:");
@@ -1970,7 +1970,7 @@ public class ModelEditorPhase : BasePhase
             var availHeight = ImGui.GetContentRegionAvail().Y - 40; // Reserve space for button and spacing
             
             // Create a child window for the file list with fixed height
-            if (ImGui.BeginChild("FileList", new System.Numerics.Vector2(-1, availHeight), (ImGuiChildFlags)1))
+            if (ImGui.BeginChild("FileList", new Vector2(-1, availHeight), (ImGuiChildFlags)1))
             {
                 // Show cars folder
                 if (ImGui.CollapsingHeader("cars", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.NoAutoOpenOnLog))
@@ -2021,7 +2021,7 @@ public class ModelEditorPhase : BasePhase
             
             ImGui.Spacing();
             
-            if (ImGui.Button("Cancel", new System.Numerics.Vector2(-1, 30)))
+            if (ImGui.Button("Cancel", new Vector2(-1, 30)))
             {
                 _showLoadDialog = false;
             }
@@ -2058,8 +2058,8 @@ public class ModelEditorPhase : BasePhase
         var io = ImGui.GetIO();
         var displaySize = io.DisplaySize;
         
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(displaySize.X / 2 - 300, displaySize.Y / 2 - 250), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(600, 400), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowPos(new Vector2(displaySize.X / 2 - 300, displaySize.Y / 2 - 250), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new Vector2(600, 400), ImGuiCond.FirstUseEver);
         
         bool isOpen = tab.ShowPolygonEditor;
         string windowTitle = editingCollision ? "Edit Collision" : "Edit Polygon";
@@ -2086,7 +2086,7 @@ public class ModelEditorPhase : BasePhase
             var flags = ImGuiInputTextFlags.AllowTabInput;
             var content = tab.PolygonEditorContent;
             var textChanged = ImGui.InputTextMultiline("##PolygonCode", ref content, 50000,
-                new System.Numerics.Vector2(-1, textEditorHeight), flags);
+                new Vector2(-1, textEditorHeight), flags);
             
             if (textChanged)
             {
@@ -2154,14 +2154,14 @@ public class ModelEditorPhase : BasePhase
             
             
             
-            if (ImGui.Button("Apply", new System.Numerics.Vector2(buttonWidth, 30)))
+            if (ImGui.Button("Apply", new Vector2(buttonWidth, 30)))
             {
                 ApplyPolygonEditorChanges();
             }
             
             ImGui.SameLine();
             
-            if (ImGui.Button("Cancel", new System.Numerics.Vector2(buttonWidth, 30)))
+            if (ImGui.Button("Cancel", new Vector2(buttonWidth, 30)))
             {
                 if (tab.PolygonEditorDirty)
                 {
@@ -2199,7 +2199,7 @@ public class ModelEditorPhase : BasePhase
 
             if (tab.PolygonEditorDirty)
             {
-                ImGui.TextColored(new System.Numerics.Vector4(1, 1, 0, 1), "(Modified)");
+                ImGui.TextColored(new Vector4(1, 1, 0, 1), "(Modified)");
             }
         }
         

@@ -259,7 +259,7 @@ public class AccountManagerFloatingMenu
                 _buttonsDisabled = false;
                 if (_oauthResult.Success)
                 {
-                    ImGui.TextColored(new System.Numerics.Vector4(0, 1, 0, 1), "OAuth succeeded");
+                    ImGui.TextColored(new Vector4(0, 1, 0, 1), "OAuth succeeded");
                     ImGui.Text($"Code: {_oauthResult.Code}");
                     ImGui.Text($"RedirectUri: {_oauthResult.RedirectUri}");
                     // Avoid handling more than once
@@ -302,7 +302,7 @@ public class AccountManagerFloatingMenu
                 }
                 else
                 {
-                    ImGui.TextColored(new System.Numerics.Vector4(1, 0, 0, 1), "OAuth failed");
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "OAuth failed");
                     ImGui.Text($"Error: {_oauthResult.Error}");
                     _statusMessage = "OAuth failed or cancelled.";
                 }
@@ -338,7 +338,7 @@ public class AccountManagerFloatingMenu
         }
 
         // Auto size to fit content
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(0, 0));
+        ImGui.SetNextWindowSize(new Vector2(0, 0));
         if (ImGui.Begin("Login", ref _isOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize))
         {
             if (!_showCreateMenu)

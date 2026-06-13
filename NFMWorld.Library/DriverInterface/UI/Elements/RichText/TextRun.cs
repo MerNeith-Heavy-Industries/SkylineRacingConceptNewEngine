@@ -107,7 +107,7 @@ public partial class TextRun : Node, IInlineHost
     }
 
     [ClientOnly]
-    private void RelayoutText(System.Numerics.Vector2 size)
+    private void RelayoutText(Vector2 size)
     {
         IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened;
         if (!HasComplexContent)
@@ -145,7 +145,7 @@ public partial class TextRun : Node, IInlineHost
     }
 
     [ClientOnly]
-    protected override void RenderContent(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
+    protected override void RenderContent(Vector2 position, Vector2 size)
     {
         base.RenderContent(position, size);
         
