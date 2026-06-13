@@ -193,7 +193,6 @@
 
 
     <ItemGroup>
-      <Folder Include="Mad\Gameplay\Gamemodes\" />
       <Folder Include="Mad\Renderer\Renderable\" />
     </ItemGroup>
     
