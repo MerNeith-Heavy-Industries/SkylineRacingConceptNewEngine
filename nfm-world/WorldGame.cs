@@ -234,9 +234,9 @@ public class WorldGame : Game
         style.TabRounding = 4.0f;
         
         // Spacing and padding
-        style.WindowPadding = new System.Numerics.Vector2(12, 12);
-        style.FramePadding = new System.Numerics.Vector2(8, 4);
-        style.ItemSpacing = new System.Numerics.Vector2(8, 6);
+        style.WindowPadding = new Vector2(12, 12);
+        style.FramePadding = new Vector2(8, 4);
+        style.ItemSpacing = new Vector2(8, 6);
         
         // Border
         style.WindowBorderSize = 2.0f;
@@ -308,15 +308,15 @@ public class WorldGame : Game
         colors[(int)ImGuiCol.ResizeGripHovered] = Rgb(230, 128, 26, 0.6f); // Orange
         colors[(int)ImGuiCol.ResizeGripActive] = Rgb(255, 153, 51, 1.0f);  // Lighter orange
         style.FrameRounding = 3.0f;
-        style.WindowPadding = new System.Numerics.Vector2(10, 10);
-        style.FramePadding = new System.Numerics.Vector2(5, 3);
-        style.ItemSpacing = new System.Numerics.Vector2(8, 4);
+        style.WindowPadding = new Vector2(10, 10);
+        style.FramePadding = new Vector2(5, 3);
+        style.ItemSpacing = new Vector2(8, 4);
         
         #endregion
 
         return;
 
-        static System.Numerics.Vector4 Rgb(int r, int g, int b, float a = 1.0f) => new(r / 255f, g / 255f, b / 255f, a);
+        static Vector4 Rgb(int r, int g, int b, float a = 1.0f) => new(r / 255f, g / 255f, b / 255f, a);
     }
 
     public void RebuildCascades()

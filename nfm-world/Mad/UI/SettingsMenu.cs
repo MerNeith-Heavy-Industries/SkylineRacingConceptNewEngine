@@ -713,21 +713,21 @@ public class SettingsMenu(WorldGame game)
             {
                 case "D3D11" or "D3D12" or "Vulkan":
                     Logging.Info($"Overriding FNA3D renderer to {selectedRenderer}");
-                    SDL3.SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", selectedRenderer);
+                    SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", selectedRenderer);
                     break;
                 case "OpenGL 2.1":
                     Logging.Info($"Overriding FNA3D renderer to {selectedRenderer}");
-                    SDL3.SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
+                    SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
                     break;
                 case "OpenGL 4.6":
                     Logging.Info($"Overriding FNA3D renderer to {selectedRenderer} (Core Profile)");
-                    SDL3.SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
-                    SDL3.SDL.SDL_SetHint("FNA3D_OPENGL_FORCE_CORE_PROFILE", "1");
+                    SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
+                    SDL.SDL_SetHint("FNA3D_OPENGL_FORCE_CORE_PROFILE", "1");
                     break;
                 case "OpenGL ES 3.0":
                     Logging.Info($"Overriding FNA3D renderer to {selectedRenderer} (ES3)");
-                    SDL3.SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
-                    SDL3.SDL.SDL_SetHint("FNA3D_OPENGL_FORCE_ES3", "1");
+                    SDL.SDL_SetHint("FNA3D_FORCE_DRIVER", "OpenGL");
+                    SDL.SDL_SetHint("FNA3D_OPENGL_FORCE_ES3", "1");
                     break;
             }
         }
@@ -735,13 +735,13 @@ public class SettingsMenu(WorldGame game)
 
     private static string GetFna3DRenderer()
     {
-        var driver = SDL3.SDL.SDL_GetHint("FNA3D_FORCE_DRIVER");
+        var driver = SDL.SDL_GetHint("FNA3D_FORCE_DRIVER");
 
         return driver switch
         {
             "D3D11" or "D3D12" or "Vulkan" => driver,
-            "OpenGL" when SDL3.SDL.SDL_GetHint("FNA3D_OPENGL_FORCE_CORE_PROFILE") == "1" => "OpenGL 4.6",
-            "OpenGL" when SDL3.SDL.SDL_GetHint("FNA3D_OPENGL_FORCE_ES3") == "1" => "OpenGL ES 3.0",
+            "OpenGL" when SDL.SDL_GetHint("FNA3D_OPENGL_FORCE_CORE_PROFILE") == "1" => "OpenGL 4.6",
+            "OpenGL" when SDL.SDL_GetHint("FNA3D_OPENGL_FORCE_ES3") == "1" => "OpenGL ES 3.0",
             "OpenGL" => "OpenGL 2.1",
             _ => "Auto"
         };

@@ -28,7 +28,7 @@ public class DebugCameraWindow
     {
         if (!_isOpen) return;
 
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(300, 205), ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new Vector2(300, 205), ImGuiCond.Always);
             
         bool isOpen = _isOpen;
         if (ImGui.Begin("Debug Camera Settings", ref isOpen, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
@@ -66,7 +66,7 @@ public class DebugCameraWindow
             ImGui.Spacing();
                 
             // Reset button
-            if (ImGui.Button("Reset to Defaults", new System.Numerics.Vector2(-1, 0)))
+            if (ImGui.Button("Reset to Defaults", new Vector2(-1, 0)))
             {
                 _fov = 90.0f;
                 _followY = 0;

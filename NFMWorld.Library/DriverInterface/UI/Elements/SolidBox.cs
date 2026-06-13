@@ -27,7 +27,7 @@ public partial class SolidBox : FlexPanel
     public partial int BorderBottomRightRadius { get; set; }
 
     [ClientOnly]
-    protected override void RenderBackground(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
+    protected override void RenderBackground(Vector2 position, Vector2 size)
     {
         var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;
         
@@ -40,7 +40,7 @@ public partial class SolidBox : FlexPanel
     }
     
     [ClientOnly]
-    protected override void RenderBorder(System.Numerics.Vector2 position, System.Numerics.Vector2 size)
+    protected override void RenderBorder(Vector2 position, Vector2 size)
     {
         G.SetColor(BorderColor);
         var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;

@@ -123,8 +123,8 @@ public class MessageWindow
         // Center the window on screen
         var viewport = ImGui.GetMainViewport();
         var center = ImGui.GetCenter(viewport);
-        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new System.Numerics.Vector2(0.5f, 0.5f));
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(400, 0), ImGuiCond.Appearing);
+        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        ImGui.SetNextWindowSize(new Vector2(400, 0), ImGuiCond.Appearing);
 
         ImGuiWindowFlags flags = ImGuiWindowFlags.NoCollapse | 
                                  ImGuiWindowFlags.NoResize | 
@@ -165,7 +165,7 @@ public class MessageWindow
                 totalWidth = buttonWidth;
                 ImGui.SetCursorPosX((ImGui.GetWindowWidth() - totalWidth) * 0.5f);
                 
-                if (ImGui.Button("OK", new System.Numerics.Vector2(buttonWidth, 0)))
+                if (ImGui.Button("OK", new Vector2(buttonWidth, 0)))
                 {
                     _result = MessageResult.OK;
                     _isOpen = false;
@@ -177,7 +177,7 @@ public class MessageWindow
                 totalWidth = buttonWidth * 2 + spacing;
                 ImGui.SetCursorPosX((ImGui.GetWindowWidth() - totalWidth) * 0.5f);
                 
-                if (ImGui.Button("Yes", new System.Numerics.Vector2(buttonWidth, 0)))
+                if (ImGui.Button("Yes", new Vector2(buttonWidth, 0)))
                 {
                     _result = MessageResult.Yes;
                     _isOpen = false;
@@ -186,7 +186,7 @@ public class MessageWindow
                 
                 ImGui.SameLine(0, spacing);
                 
-                if (ImGui.Button("No", new System.Numerics.Vector2(buttonWidth, 0)))
+                if (ImGui.Button("No", new Vector2(buttonWidth, 0)))
                 {
                     _result = MessageResult.No;
                     _isOpen = false;
@@ -198,7 +198,7 @@ public class MessageWindow
                 totalWidth = buttonWidth * 2 + spacing;
                 ImGui.SetCursorPosX((ImGui.GetWindowWidth() - totalWidth) * 0.5f);
                 
-                if (ImGui.Button("OK", new System.Numerics.Vector2(buttonWidth, 0)))
+                if (ImGui.Button("OK", new Vector2(buttonWidth, 0)))
                 {
                     _result = MessageResult.OK;
                     _isOpen = false;
@@ -207,7 +207,7 @@ public class MessageWindow
                 
                 ImGui.SameLine(0, spacing);
                 
-                if (ImGui.Button("Cancel", new System.Numerics.Vector2(buttonWidth, 0)))
+                if (ImGui.Button("Cancel", new Vector2(buttonWidth, 0)))
                 {
                     _result = MessageResult.Cancel;
                     _isOpen = false;
@@ -228,7 +228,7 @@ public class MessageWindow
                             ImGui.SameLine(0, spacing);
                         }
 
-                        if (ImGui.Button(_customButtonLabels[i], new System.Numerics.Vector2(buttonWidth, 0)))
+                        if (ImGui.Button(_customButtonLabels[i], new Vector2(buttonWidth, 0)))
                         {
                             _result = i switch
                             {

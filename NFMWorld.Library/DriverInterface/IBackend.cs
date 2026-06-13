@@ -29,7 +29,7 @@ public interface IBackend : IXamlGraphicsBackend
 #pragma warning disable NFMW0001
     float IXamlGraphicsBackend.Scale => Scale;
     
-    System.Numerics.Vector2 IXamlGraphicsBackend.Viewport => Viewport;
+    Vector2 IXamlGraphicsBackend.Viewport => Viewport;
     
     IXamlGraphics IXamlGraphicsBackend.Graphics => Graphics;
 #pragma warning restore NFMW0001
