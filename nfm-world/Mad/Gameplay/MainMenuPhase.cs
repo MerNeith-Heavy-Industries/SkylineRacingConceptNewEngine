@@ -14,23 +14,19 @@ namespace NFMWorld.Gameplay;
 
 // TODO: implement the same menu as in nfm-lit
 
-public class MainMenuPhase : BasePhase
+public class MainMenuPhase : BaseStageRenderingPhase
 {
-    private GraphicsDevice _graphicsDevice;
-
     private AccountManagerFloatingMenu? accountManagerMenu;
     
     private MainMenuView _mainMenuView = new();
     private UIManager _uiManager;
 
-    public MainMenuPhase(GraphicsDevice graphicsDevice)
+    public MainMenuPhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
     {
         _uiManager = new UIManager
         {
             FocusManager = FocusManager
         };
-
-        _graphicsDevice = graphicsDevice;
 
         _uiManager.RootPanel.Children.Add(_mainMenuView);
         Uis.Add(_uiManager);
@@ -57,13 +53,12 @@ public class MainMenuPhase : BasePhase
 
     private void OnFreePlayClicked()
     {
-        if (GameSparker.InRace != null)
-        {
-	        GameSparker.InRace.LoadStage("nfm2/15_dwm");
-            GameSparker.SetPhase(GameSparker.InRace);
+        var inRace = new InRacePhase(GraphicsDevice, "nfmm/radicalone");
+        
+        inRace.LoadStage("nfm2/15_dwm");
+        GameSparker.SetPhase(inRace);
 
-            Logging.Info("Game started!");
-        }
+        Logging.Info("Game started!");
     }
 
     private void OnLoginClicked()
@@ -81,22 +76,18 @@ public class MainMenuPhase : BasePhase
 
     private void OnTTClicked()
     {
-        GameSparker.InRace?.gamemode = GameModes.TimeTrial;
-
-        StageSelectPhase ssp = new(_graphicsDevice);
+        StageSelectPhase ssp = new(GraphicsDevice);
         ssp.StageSelected += (sender, stage) =>
         {
-            GameSparker.InRace.CurrentStage = stage;
-            GameSparker.InRace.clientStageRenderer = new ClientStageRenderer(_graphicsDevice, stage);
-            GameSparker.InRace.RecreateScene();
-            GameSparker.InRace.LoadStageMusic(true);
-            GameSparker.SetPhase(this);
-
-            GaragePhase gp = new(_graphicsDevice);
+            PhaseSharedState.SetStage(stage);
+            
+            GaragePhase gp = new(GraphicsDevice);
             gp.CarSelected += (sender, car) =>
             {
-                GameSparker.InRace.playerCarName = car.FileName;
-                GameSparker.SetPhase(GameSparker.InRace);
+                var inRace = new InRacePhase(GraphicsDevice, car.FileName);
+                inRace.gamemode = GameModes.TimeTrial;
+                inRace.LoadStage(PhaseSharedState.CurrentStage, PhaseSharedState.ClientStageRenderer);
+                GameSparker.SetPhase(inRace);
             };
 
             gp.CarSelectionCancelled += (sender, _) =>
@@ -104,8 +95,8 @@ public class MainMenuPhase : BasePhase
                 GameSparker.SetPhase(GameSparker.MainMenu);
             };
 
-            gp.StageOverride = GameSparker.InRace.CurrentStage;
-            gp.ClientStageRendererOverride = GameSparker.InRace.clientStageRenderer;
+            gp.StageOverride = PhaseSharedState.CurrentStage;
+            gp.ClientStageRendererOverride = PhaseSharedState.ClientStageRenderer;
             GameSparker.SetPhase(gp);
         };
 
@@ -114,7 +105,7 @@ public class MainMenuPhase : BasePhase
 
     private void OnGarageClicked()
     {
-        GaragePhase gp = new GaragePhase(_graphicsDevice);
+        GaragePhase gp = new GaragePhase(GraphicsDevice);
         gp.Enter();
         gp.CarSelected += (sender, c) =>
         {
