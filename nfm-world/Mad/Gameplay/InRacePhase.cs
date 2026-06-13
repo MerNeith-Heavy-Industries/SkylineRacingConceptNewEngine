@@ -8,9 +8,9 @@ using NFMWorldLibrary.Multiplayer;
 
 namespace NFMWorld.Gameplay;
 
-public class InRacePhase(GraphicsDevice graphicsDevice) : BaseRacePhase(graphicsDevice)
+public class InRacePhase(GraphicsDevice graphicsDevice, string playerCarName) : BaseRacePhase(graphicsDevice)
 {
-    public string playerCarName = "nfmm/radicalone";
+    public string playerCarName = playerCarName;
 
     public GameModes gamemode
     {

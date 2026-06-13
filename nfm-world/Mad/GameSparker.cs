@@ -6,8 +6,8 @@ using NFMWorld.DriverInterface;
 using NFMWorld.Gameplay;
 using NFMWorld.Sfx;
 using NFMWorld.UI;
-using NFMWorld.Util;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Yoga.Events;
@@ -15,10 +15,10 @@ using Path = System.IO.Path;
 
 namespace NFMWorld;
 
-public class GameSparker
+public static class GameSparker
 {
-    public static WorldGame _game;
-    public static GraphicsDevice _graphicsDevice;
+    public static WorldGame Game = null!;
+    public static GraphicsDevice GraphicsDevice = null!;
     public static readonly string version = GetVersionString();
     public static AccountManager AccountManager = new AccountManager();
 
@@ -49,13 +49,14 @@ public class GameSparker
     {
         get;
         private set;
-    }
+    } = null!;
 
     public static void SetPhase(BasePhase phase)
     {
+        // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         CurrentPhase?.Exit();
         CurrentPhase = phase;
-        CurrentPhase?.Enter();
+        CurrentPhase.Enter();
     }
 
     public static IRadicalMusic? CurrentMusic;
@@ -64,18 +65,13 @@ public class GameSparker
     /// </summary>
     public static bool UseRemasteredMusic = false;
 
-    public static MainMenuPhase? MainMenu;
-    public static InRacePhase? InRace;
+    public static MainMenuPhase MainMenu = null!;
     public static MessageWindow MessageWindow = new();
-    public static ModelEditorPhase? ModelEditor;
-    public static StageEditorPhase? StageEditor;
-
-    private static DirectionalLight light;
-    
-    private static MicroStopwatch timer;
+    public static ModelEditorPhase ModelEditor = null!;
+    public static StageEditorPhase StageEditor = null!;
 
     public static Dictionary<Rad3d, Mesh> stage_part_meshes = new(Rad3d.VisualEqualityComparer.Instance);
-    public static Mesh error_mesh;
+    public static Mesh error_mesh = null!;
     
     public static bool devRenderTrackers = false;
     
@@ -158,15 +154,15 @@ public class GameSparker
     }
     public static void Load(WorldGame game)
     {
-        _game = game;
-        _graphicsDevice = game.GraphicsDevice;
+        Game = game;
+        GraphicsDevice = game.GraphicsDevice;
 
         foreach (var stageParts in (Span<UnlimitedArray<Rad3d>>)[BackendGameSparker.stage_parts, BackendGameSparker.vendor_stage_parts, BackendGameSparker.user_stage_parts])
         foreach (var stagePart in stageParts)
         {
             try
             {
-                var mesh = new Mesh(_graphicsDevice, stagePart);
+                var mesh = new Mesh(GraphicsDevice, stagePart);
                 stage_part_meshes[stagePart] = mesh;
             }
             catch (Exception ex)
@@ -176,24 +172,24 @@ public class GameSparker
             }
         }
         
-        error_mesh = new Mesh(_graphicsDevice, BackendGameSparker.error_mesh);
+        error_mesh = new Mesh(GraphicsDevice, BackendGameSparker.error_mesh);
 
         SfxLibrary.LoadSounds();
 
-        timer = new MicroStopwatch();
-        timer.Start();
-        
         // init menu
         SettingsMenu = new SettingsMenu(game);
-        MainMenu = new MainMenuPhase(_graphicsDevice);
+        MainMenu = new MainMenuPhase(GraphicsDevice);
 
-        InRace = new InRacePhase(_graphicsDevice);
+        var stage = new BackendStage("nfm2/16_4dv");
+        PhaseSharedState.SetStage(stage);
+        MainMenu.LoadStage(PhaseSharedState.CurrentStage, PhaseSharedState.ClientStageRenderer);
+
         SetPhase(MainMenu);
 
         // Initialize ModelEditor after cars are loaded
-        ModelEditor = new ModelEditorPhase(_graphicsDevice);
+        ModelEditor = new ModelEditorPhase(GraphicsDevice);
         
-        StageEditor = new StageEditorPhase(_graphicsDevice);
+        StageEditor = new StageEditorPhase(GraphicsDevice);
     }
     
     public static Mesh GetStagePartMesh(Rad3d stagePart)
@@ -204,40 +200,28 @@ public class GameSparker
             return mesh!;
         }
 
-        return mesh = new Mesh(_graphicsDevice, stagePart);
+        return mesh = new Mesh(GraphicsDevice, stagePart);
     }
 
     public static void StartModelViewer()
     {
-        if (ModelEditor != null)
-        {
-            SetPhase(ModelEditor);
-        }
+        SetPhase(ModelEditor);
     }
     
     public static void ExitEditor()
     {
-        if (MainMenu != null)
-        {
-            SetPhase(MainMenu);
-        }
+        SetPhase(MainMenu);
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        if (StageEditor != null)
-        {
-            SetPhase(StageEditor);
-        }
+        SetPhase(StageEditor);
     }
     
     public static void ReturnToMainMenu()
     {
-        if (MainMenu != null)
-        {
-            SetPhase(MainMenu);
-        }
+        SetPhase(MainMenu);
     }
 
     public static void GameTick()

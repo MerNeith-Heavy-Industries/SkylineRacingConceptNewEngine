@@ -45,9 +45,10 @@ public static class DevConsoleCommands
         
         console.RegisterCommand("replay_trial", (c, args) =>
         {
-            GameSparker.InRace!.LoadStage(args[1]);
-            GameSparker.SetPhase(GameSparker.InRace!);
-            GameSparker.InRace!.OverrideGamemode(new TimeTrialPreviewGamemode(new BaseGamemodeParameters
+            var inRace = new InRacePhase(GameSparker.GraphicsDevice, args[0]);
+            inRace.LoadStage(args[1]);
+            GameSparker.SetPhase(inRace);
+            inRace.OverrideGamemode(new TimeTrialPreviewGamemode(new BaseGamemodeParameters
             {
                 Players =
                 [
@@ -60,7 +61,7 @@ public static class DevConsoleCommands
                         IsClientPlayer = true
                     }
                 ],
-            }, GameSparker.InRace, SavedTimeTrial.Load(args[0], args[1])!));
+            }, inRace, SavedTimeTrial.Load(args[0], args[1])!));
         });
             
         // rendering
@@ -224,7 +225,7 @@ public static class DevConsoleCommands
             port = 7000;
         }
 
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport(args[0], port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new ENetMultiplayerClientTransport(args[0], port)));
     }
     private static void ConnectSteam(DevConsole console, string[] args)
     {
@@ -241,7 +242,7 @@ public static class DevConsoleCommands
             port = 0;
         }
 
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
     }
 
     private static void StartServerSteam(DevConsole console, string[] args)
@@ -254,7 +255,7 @@ public static class DevConsoleCommands
         }
             
         SteamMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port)));
     }
 
     private static void StartServer(DevConsole console, string[] args)
@@ -267,7 +268,7 @@ public static class DevConsoleCommands
         }
             
         ENetMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport("localhost", port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new ENetMultiplayerClientTransport("localhost", port)));
     }
 
     private static void BreakX(DevConsole console, string[] args)
