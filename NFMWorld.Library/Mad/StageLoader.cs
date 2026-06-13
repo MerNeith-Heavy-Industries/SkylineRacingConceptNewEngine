@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+﻿﻿using System.Runtime.CompilerServices;
 using Maxine.Extensions.Collections;
 using MemoryPack;
 using NFMWorldLibrary.FixedMath;
