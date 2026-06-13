@@ -177,8 +177,8 @@ public class ModelEditorPhase : BasePhase
         camera.Position = new Vector3(0, -800, -800);
         camera.LookAt = Vector3.Zero;
         
-        GameSparker._graphicsDevice.BlendState = BlendState.Opaque;
-        GameSparker._graphicsDevice.DepthStencilState = DepthStencilState.Default;
+        GameSparker.GraphicsDevice.BlendState = BlendState.Opaque;
+        GameSparker.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
         
         RefreshUserModels();
     }
@@ -568,7 +568,7 @@ public class ModelEditorPhase : BasePhase
         base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
 
         if (imguiWantsMouse) return;
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
     
         if (!_isOpen) return;
         
@@ -628,7 +628,7 @@ public class ModelEditorPhase : BasePhase
         base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
 
         if (imguiWantsMouse) return;
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
         if (!_isOpen) return;
         
         var tab = ActiveTab;
@@ -663,7 +663,7 @@ public class ModelEditorPhase : BasePhase
         base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
 
         if (imguiWantsMouse) return;
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
         if (!_isOpen) return;
         
         var tab = ActiveTab;
@@ -690,7 +690,7 @@ public class ModelEditorPhase : BasePhase
         {
             // Check if this was a click (not a drag)
             bool wasClick = tab.IsDragging && 
-                           GameSparker._game.IsActive &&
+                           GameSparker.Game.IsActive &&
                            Math.Abs(x - tab.DragStartX) < 5 && 
                            Math.Abs(y - tab.DragStartY) < 5;
             
@@ -741,7 +741,7 @@ public class ModelEditorPhase : BasePhase
     {
         if (tab.Object == null) return -1;
         
-        var viewport = GameSparker._graphicsDevice.Viewport;
+        var viewport = GameSparker.GraphicsDevice.Viewport;
         
         // Set up the model's transform exactly as RenderModel does
         var originalPosition = tab.Object.Position;
@@ -880,7 +880,7 @@ public class ModelEditorPhase : BasePhase
     {
         if (tab.Object == null || tab.Object.Boxes.Length == 0) return -1;
         
-        var viewport = GameSparker._graphicsDevice.Viewport;
+        var viewport = GameSparker.GraphicsDevice.Viewport;
         
         // Set up camera exactly as RenderModel does
         var tempCamera = new PerspectiveCamera
@@ -2461,7 +2461,7 @@ public class ModelEditorPhase : BasePhase
         
         // Create a temporary mesh for the overlay
         var overlayMesh = new EditorObject(
-            GameSparker._graphicsDevice,
+            GameSparker.GraphicsDevice,
             new Rad3d(overlayPolys, false, "overlay")
         );
 
@@ -2470,18 +2470,18 @@ public class ModelEditorPhase : BasePhase
         overlayMesh.Rotation = tab.Object.Rotation;
         
         // Save current blend state
-        var oldBlendState = GameSparker._graphicsDevice.BlendState;
-        var oldDepthStencilState = GameSparker._graphicsDevice.DepthStencilState;
+        var oldBlendState = GameSparker.GraphicsDevice.BlendState;
+        var oldDepthStencilState = GameSparker.GraphicsDevice.DepthStencilState;
         
         // Enable alpha blending and disable depth write (but keep depth test)
-        GameSparker._graphicsDevice.BlendState = BlendState.AlphaBlend;
+        GameSparker.GraphicsDevice.BlendState = BlendState.AlphaBlend;
         var depthRead = new DepthStencilState
         {
             DepthBufferEnable = true,
             DepthBufferWriteEnable = false,  // Don't write to depth, just read
             DepthBufferFunction = CompareFunction.LessEqual
         };
-        GameSparker._graphicsDevice.DepthStencilState = depthRead;
+        GameSparker.GraphicsDevice.DepthStencilState = depthRead;
         
         // Render the overlay
         overlayScene.Objects.Clear();
@@ -2489,8 +2489,8 @@ public class ModelEditorPhase : BasePhase
         overlayScene.Render(1, false, false);
         
         // Restore previous states
-        GameSparker._graphicsDevice.BlendState = oldBlendState;
-        GameSparker._graphicsDevice.DepthStencilState = oldDepthStencilState;
+        GameSparker.GraphicsDevice.BlendState = oldBlendState;
+        GameSparker.GraphicsDevice.DepthStencilState = oldDepthStencilState;
     }
     
     private void RenderCollisionSelectionOverlay(PerspectiveCamera camera, ModelEditorTab tab)

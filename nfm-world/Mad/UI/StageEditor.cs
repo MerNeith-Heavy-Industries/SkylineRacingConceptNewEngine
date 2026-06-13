@@ -513,11 +513,11 @@ public class StageEditorPhase : BasePhase
         
         // Initialize camera
         perspectiveCamera.Fov = 60f;
-        perspectiveCamera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
-        perspectiveCamera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+        perspectiveCamera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        perspectiveCamera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
         
-        orthoCamera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
-        orthoCamera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+        orthoCamera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        orthoCamera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
         
         UpdateCameraPosition();
         
@@ -2758,7 +2758,7 @@ public class StageEditorPhase : BasePhase
     public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
     {
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
         if (!_isOpen) return;
         
         // Handle gizmo dragging before anything else
@@ -3032,7 +3032,7 @@ public class StageEditorPhase : BasePhase
         base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
         
         if (imguiWantsMouse) return;
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
         if (!_isOpen) return;
         
         _mouseX = x;
@@ -3121,7 +3121,7 @@ public class StageEditorPhase : BasePhase
         base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
 
         if (imguiWantsMouse) return;
-        if (!GameSparker._game.IsActive) return;
+        if (!GameSparker.Game.IsActive) return;
         if (!_isOpen) return;
         
         // In placement mode
@@ -3506,8 +3506,8 @@ public class StageEditorPhase : BasePhase
     
     private void RenderImGuiUI()
     {
-        var screenWidth = GameSparker._game.GraphicsDevice.Viewport.Width;
-        var screenHeight = GameSparker._game.GraphicsDevice.Viewport.Height;
+        var screenWidth = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        var screenHeight = GameSparker.Game.GraphicsDevice.Viewport.Height;
         
         // Menu bar at the top
         if (ImGui.BeginMainMenuBar())

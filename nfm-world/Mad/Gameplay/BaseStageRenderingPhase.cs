@@ -47,8 +47,8 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     {
         base.Enter();
         
-        camera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
-        camera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+        camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
     }
 
     public override void Exit()
@@ -78,6 +78,19 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
             GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
             GameSparker.CurrentMusic.Play();
+        }
+    }
+    
+    public virtual void LoadStage(BackendStage stage, ClientStageRenderer renderer, bool loadMusic = true)
+    {
+        CurrentStage = stage;
+        clientStageRenderer = renderer;
+
+        RecreateScene();
+
+        if (loadMusic && (!string.IsNullOrEmpty(clientStageRenderer.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath))))
+        {
+            LoadStageMusic(true);
         }
     }
 
