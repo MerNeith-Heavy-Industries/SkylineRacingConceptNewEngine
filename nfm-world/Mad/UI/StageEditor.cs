@@ -361,6 +361,10 @@ public class StageEditorPhase : BasePhase
     private readonly Stack<List<PieceSnapshot>> _redoStack = new();
     private bool _isCtrlPressed = false;
     
+    // Inspector drag state tracking for undo/redo
+    private bool _inspectorPosDragging = false;
+    private bool _inspectorRotDragging = false;
+    
     // Hierarchy drag-reorder state
     private int _hierDragSourceId = -1;
     
@@ -4259,8 +4263,14 @@ public class StageEditorPhase : BasePhase
                     var displayPos = new Vector3((float)piece.Position.X, (float)piece.Position.Y - 250, (float)piece.Position.Z);
                     ImGui.Text("Position");
                     ImGui.SetNextItemWidth(-1);
-                    if (ImGui.IsItemActivated()) PushUndoSnapshot();
-                    if (ImGui.DragFloat3("##pos", ref displayPos, 10f))
+                    bool posDragging = ImGui.DragFloat3("##pos", ref displayPos, 10f);
+                    // Check activation state independent of value change
+                    if (ImGui.IsItemActivated() && !_inspectorPosDragging)
+                    {
+                        _inspectorPosDragging = true;
+                        PushUndoSnapshot();
+                    }
+                    if (posDragging)
                     {
                         var newPos = new f64Vector3((fix64)displayPos.X, (fix64)(displayPos.Y + 250), (fix64)displayPos.Z);
                         var deltaX = newPos.X - piece.Position.X;
@@ -4276,26 +4286,75 @@ public class StageEditorPhase : BasePhase
                         }
                         ActiveTab.HasUnsavedChanges = true;
                     }
+                    // Clear flag when drag ends
+                    if (ImGui.IsItemDeactivated())
+                        _inspectorPosDragging = false;
                     if (ImGui.IsItemHovered())
                         ImGui.SetTooltip("Y=0 is ground level (internal Y=250).");
                     
                     ImGui.Text("Rotation (Yaw)");
                     float rotY = (float)piece.Rotation.Yaw.Degrees;
                     ImGui.SetNextItemWidth(-1);
-                    if (ImGui.IsItemActivated()) PushUndoSnapshot();
-                    if (ImGui.DragFloat("##roty", ref rotY, 1f, -180f, 180f))
+                    bool rotDragging = ImGui.DragFloat("##roty", ref rotY, 1f, -180f, 180f);
+                    // Check activation state independent of value change
+                    if (ImGui.IsItemActivated() && !_inspectorRotDragging)
+                    {
+                        _inspectorRotDragging = true;
+                        PushUndoSnapshot();
+                    }
+                    if (rotDragging)
                     {
                         float rotDelta = rotY - (float)piece.Rotation.Yaw.Degrees;
-                        piece.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)rotY), piece.Rotation.Pitch, piece.Rotation.Roll);
-                        // Apply same rotation delta to all other selected pieces
-                        foreach (var selId in ActiveTab.SelectedPieceIds)
+                        
+                        // For grouped pieces, rotate positions around the centroid (same as gizmo)
+                        if (ActiveTab.SelectedPieceIds.Count > 1)
                         {
-                            if (selId == piece.Id) continue;
-                            var sp = ActiveTab.ScenePieces.GetValueOrDefault(selId);
-                            sp?.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)(((float)sp.Rotation.Yaw.Degrees + rotDelta) % 360f)), sp.Rotation.Pitch, sp.Rotation.Roll);
+                            // Calculate centroid of all selected pieces BEFORE any rotations
+                            float centroidX = 0f, centroidZ = 0f;
+                            foreach (var selId in ActiveTab.SelectedPieceIds)
+                            {
+                                var sp = ActiveTab.ScenePieces.GetValueOrDefault(selId);
+                                if (sp != null)
+                                {
+                                    centroidX += (float)sp.Position.X;
+                                    centroidZ += (float)sp.Position.Z;
+                                }
+                            }
+                            centroidX /= ActiveTab.SelectedPieceIds.Count;
+                            centroidZ /= ActiveTab.SelectedPieceIds.Count;
+                            
+                            // Rotate ALL pieces (including active) around centroid
+                            float radians = rotDelta * MathF.PI / 180f;
+                            float cosA = MathF.Cos(radians);
+                            float sinA = MathF.Sin(radians);
+                            
+                            foreach (var selId in ActiveTab.SelectedPieceIds)
+                            {
+                                var sp = ActiveTab.ScenePieces.GetValueOrDefault(selId);
+                                if (sp != null)
+                                {
+                                    float relX = (float)sp.Position.X - centroidX;
+                                    float relZ = (float)sp.Position.Z - centroidZ;
+                                    float newRelX = relX * cosA - relZ * sinA;
+                                    float newRelZ = relX * sinA + relZ * cosA;
+                                    sp.Position = new f64Vector3(
+                                        (fix64)(centroidX + newRelX),
+                                        sp.Position.Y,
+                                        (fix64)(centroidZ + newRelZ));
+                                    sp.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)(((float)sp.Rotation.Yaw.Degrees + rotDelta) % 360f)), sp.Rotation.Pitch, sp.Rotation.Roll);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Single piece: just update rotation without position change
+                            piece.Rotation = new f64Euler(f64AngleSingle.FromDegrees((fix64)rotY), piece.Rotation.Pitch, piece.Rotation.Roll);
                         }
                         ActiveTab.HasUnsavedChanges = true;
                     }
+                    // Clear flag when drag ends
+                    if (ImGui.IsItemDeactivated())
+                        _inspectorRotDragging = false;
                     ImGui.Spacing();
                 }
                 
