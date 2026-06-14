@@ -21,19 +21,14 @@ public class ClientStageRenderer : GameObject
     public GroundPolys? clouds;
     public Mountains? mountains;
 
-    private int? _fadeFrom = null;
-
-    public void ReapplyFadeFrom()
-    {
-        if(_fadeFrom != null)
-            World.FadeFrom = (int)_fadeFrom;
-    }
+    private readonly BackendStage backendStage;
 
     /**
      * Loads stage currently set by checkpoints.stage onto stageContos
      */
     public ClientStageRenderer(GraphicsDevice graphicsDevice, BackendStage backendStage)
     {
+        this.backendStage = backendStage;
         var children = new List<GameObject>();
         Children = children;
         World.ResetValues();
@@ -41,98 +36,25 @@ public class ClientStageRenderer : GameObject
         {
             var stageLoader = backendStage.stageLoader;
 
-            foreach (var instruction in stageLoader.EnvironmentInstructions)
-            {
-                switch (instruction)
-                {
-                    case CloudsInstruction clouds:
-                        World.HasClouds = true;
-                        break;
-                    case FogInstruction fog:
-                        World.Fog = fog.Color;
-                        break;
-                    case GroundInstruction ground:
-                        World.SetGround(ground.Color);
-                        break;
-                    case PolysInstruction polys:
-                        World.GroundPolysColor = polys.Color;
-                        World.HasPolys = true;
-                        break;
-                    case SkyInstruction sky:
-                        World.SetSky(sky.Color);
-                        break;
-                    case SnapInstruction snap:
-                        World.Snap = snap.Color;
-                        break;
-                    case TextureInstruction texture:
-                        World.SetTexture(texture.Texture);
-                        World.HasTexture = true;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(instruction), instruction, null);
-                }
-            }
-
-            World.DrawPolys = stageLoader.DrawPolys;
-            World.HasPolys = stageLoader.DrawPolys && World.HasPolys;
-
-            World.DrawClouds = stageLoader.DrawClouds;
-            World.HasClouds = stageLoader.DrawClouds && World.HasClouds;
-
-            if (stageLoader.CloudCoverage is { } cloudCoverage)
-            {
-                World.CloudCoverage = cloudCoverage;
-            }
-
-            if (stageLoader.FogDensity is { } fogDensity)
-            {
-                World.FogDensity = fogDensity;
-            }
-
-            if (stageLoader.FadeFrom is { } fadeFrom)
-            {
-                World.FadeFrom = fadeFrom;
-                _fadeFrom = World.FadeFrom;
-            }
-
-            if (stageLoader.LightsOn)
-            {
-                World.LightsOn = true;
-            }
-
-            World.DrawMountains = stageLoader.DrawMountains;
-            if (stageLoader.MountainSeed is { } mountainSeed)
-            {
-                World.MountainSeed = mountainSeed;
-            }
-
-            if (stageLoader.MountainCoverage is { } mountainCoverage)
-            {
-                World.MountainCoverage = mountainCoverage;
-            }
-
-            if (stageLoader.LightDirection is { } lightDirection)
-            {
-                World.LightDirection = lightDirection;
-            }
+            ApplyValues();
 
             // Medium.Newpolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount);
             // Medium.Newmountains(maxl, maxr, maxb, maxt);
             // Medium.Newclouds(maxl, maxr, maxb, maxt);
             // Medium.Newstars();
-            if (World.DrawPolys)
+            if (stageLoader.DrawPolys)
             {
                 polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
                     stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
             }
 
-            if (World.DrawClouds)
+            if (stageLoader.DrawClouds)
             {
                 clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
                     stageLoader.maxt, graphicsDevice);
             }
 
-            if (World.DrawMountains)
+            if (stageLoader.DrawMountains)
             {
                 mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
                     stageLoader.maxt, graphicsDevice);
@@ -182,6 +104,83 @@ public class ClientStageRenderer : GameObject
         }
         sky = new Sky(graphicsDevice);
         ground = new Ground(graphicsDevice);
+    }
+
+    public void ApplyValues()
+    {
+        foreach (var instruction in backendStage.stageLoader.EnvironmentInstructions)
+        {
+            switch (instruction)
+            {
+                case CloudsInstruction clouds:
+                    World.HasClouds = true;
+                    break;
+                case FogInstruction fog:
+                    World.Fog = fog.Color;
+                    break;
+                case GroundInstruction ground:
+                    World.SetGround(ground.Color);
+                    break;
+                case PolysInstruction polys:
+                    World.GroundPolysColor = polys.Color;
+                    World.HasPolys = true;
+                    break;
+                case SkyInstruction sky:
+                    World.SetSky(sky.Color);
+                    break;
+                case SnapInstruction snap:
+                    World.Snap = snap.Color;
+                    break;
+                case TextureInstruction texture:
+                    World.SetTexture(texture.Texture);
+                    World.HasTexture = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(instruction), instruction, null);
+            }
+        }
+
+        World.DrawPolys = backendStage.stageLoader.DrawPolys;
+        World.HasPolys = backendStage.stageLoader.DrawPolys && World.HasPolys;
+
+        World.DrawClouds = backendStage.stageLoader.DrawClouds;
+        World.HasClouds = backendStage.stageLoader.DrawClouds && World.HasClouds;
+
+        if (backendStage.stageLoader.CloudCoverage is { } cloudCoverage)
+        {
+            World.CloudCoverage = cloudCoverage;
+        }
+
+        if (backendStage.stageLoader.FogDensity is { } fogDensity)
+        {
+            World.FogDensity = fogDensity;
+        }
+
+        if (backendStage.stageLoader.FadeFrom is { } fadeFrom)
+        {
+            World.FadeFrom = fadeFrom;
+        }
+
+        if (backendStage.stageLoader.LightsOn)
+        {
+            World.LightsOn = true;
+        }
+
+        World.DrawMountains = backendStage.stageLoader.DrawMountains;
+        if (backendStage.stageLoader.MountainSeed is { } mountainSeed)
+        {
+            World.MountainSeed = mountainSeed;
+        }
+
+        if (backendStage.stageLoader.MountainCoverage is { } mountainCoverage)
+        {
+            World.MountainCoverage = mountainCoverage;
+        }
+
+        if (backendStage.stageLoader.LightDirection is { } lightDirection)
+        {
+            World.LightDirection = lightDirection;
+        }
     }
 
     public override void Render(Camera camera, Lighting? lighting)
