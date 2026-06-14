@@ -61,6 +61,7 @@ public class ClientStage : BackendStage
     [MemberNotNull(nameof(CurrentScene))]
     public void RecreateScene()
     {
+        Renderer.ApplyValues();
         CurrentScene = new StageScene(
             GraphicsDevice,
             Renderer,
