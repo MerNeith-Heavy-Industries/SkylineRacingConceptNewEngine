@@ -47,6 +47,8 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         
         Camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
         Camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
+
+        RecreateScene();
     }
 
     public override void Exit()
