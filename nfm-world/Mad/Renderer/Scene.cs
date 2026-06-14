@@ -10,7 +10,7 @@ public class Scene
 {
     private readonly GraphicsDevice _graphicsDevice;
     private Camera _camera;
-    private readonly Camera[] _lightCameras;
+    private readonly IReadOnlyList<Camera> _lightCameras;
     public readonly List<GameObject> Objects;
     private readonly RenderDataCache _renderDataCache;
 
@@ -20,7 +20,7 @@ public class Scene
         set => _camera = value;
     }
 
-    public Scene(GraphicsDevice graphicsDevice, IEnumerable<GameObject> objects, Camera camera, Camera[] lightCameras)
+    public Scene(GraphicsDevice graphicsDevice, IEnumerable<GameObject> objects, Camera camera, IReadOnlyList<Camera> lightCameras)
     {
         _graphicsDevice = graphicsDevice;
         _camera = camera;
@@ -46,7 +46,7 @@ public class Scene
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
 
         // CREATE SHADOW MAP
-        var totalCascades = Math.Min(_lightCameras.Length, WorldGame.NumCascades);
+        var totalCascades = Math.Min(_lightCameras.Count, WorldGame.NumCascades);
 
         if (useShadowMapping)
         {

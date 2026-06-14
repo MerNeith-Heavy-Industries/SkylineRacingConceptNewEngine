@@ -180,10 +180,9 @@ public static class GameSparker
         SettingsMenu = new SettingsMenu(game);
         MainMenu = new MainMenuPhase(GraphicsDevice);
 
-        var stage = new BackendStage("nfm2/16_4dv");
-        PhaseSharedState.SetStage(stage);
-        MainMenu.LoadStage(PhaseSharedState.CurrentStage, PhaseSharedState.ClientStageRenderer);
-
+        MainMenu.LoadStage("nfm2/16_4dv");
+        PhaseSharedState.CurrentStage = MainMenu.CurrentStage;
+        
         SetPhase(MainMenu);
 
         // Initialize ModelEditor after cars are loaded

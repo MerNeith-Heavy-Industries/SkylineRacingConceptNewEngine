@@ -47,8 +47,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private Rad3d[] _autocompleteMatches = [];
     private bool _openSearchPopup = false;
     private int _searchKbFocus = 0;
-    public BackendStage? StageOverride;
-    public ClientStageRenderer? ClientStageRendererOverride;
+    public ClientStage? StageOverride;
     private bool _loadedStageMusic = false;
 
     private PerspectiveCamera _camera = new();
@@ -74,7 +73,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         if (StageOverride != null)
         {
             CurrentStage = StageOverride;
-            clientStageRenderer = ClientStageRendererOverride ?? new ClientStageRenderer(GraphicsDevice, CurrentStage);
+            RecreateScene();
         }
         else
         {
@@ -96,11 +95,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         _car = new ClientCar(GraphicsDevice, _backendCar);
         CarsInRace[0] = _backendCar;
 
-        camera.LookAt = new Vector3(0, 250, 400);
-        camera.Position = new Vector3(-750, 50, 750);
+        Camera.LookAt = new Vector3(0, 250, 400);
+        Camera.Position = new Vector3(-750, 50, 750);
         FovOverride = 53;
-
-        RecreateScene();
 
         if (!_loadedStageMusic)
         {

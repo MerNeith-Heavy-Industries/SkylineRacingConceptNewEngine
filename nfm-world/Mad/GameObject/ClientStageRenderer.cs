@@ -23,14 +23,6 @@ public class ClientStageRenderer : GameObject
 
     private int? _fadeFrom = null;
 
-    // soundtrack(folder,fileName)
-    public string musicPath = "";
-    // soundtrackremaster(folder,fileName)
-    public string remasteredMusicPath = "";
-    // soundtrackfreqmul(mul)
-    public double musicFreqMul = 1.0d;
-    public double musicTempoMul = 0d;
-
     public void ReapplyFadeFrom()
     {
         if(_fadeFrom != null)
@@ -122,16 +114,6 @@ public class ClientStageRenderer : GameObject
             if (stageLoader.LightDirection is { } lightDirection)
             {
                 World.LightDirection = lightDirection;
-            }
-
-            musicPath = stageLoader.musicPath;
-            remasteredMusicPath = stageLoader.remasteredMusicPath;
-            musicFreqMul = stageLoader.musicFreqMul;
-            musicTempoMul = stageLoader.musicTempoMul;
-
-            if (string.IsNullOrEmpty(musicPath))
-            {
-                Logging.Error("No music is defined for this stage!");
             }
 
             // Medium.Newpolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount);
