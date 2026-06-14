@@ -251,8 +251,8 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     {
         base.WindowSizeChanged(width, height);
         
-        camera.Width = width;
-        camera.Height = height;
+        Camera.Width = width;
+        Camera.Height = height;
     }
 
     public override void Render(float alpha)
@@ -297,7 +297,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                 {
                     case ViewMode.Follow:
                         PlayerFollowCamera.Follow(
-                            camera, 
+                            Camera, 
                             car,
                             (float)car.Mad.Cxz,
                             car.Control.Lookback,
@@ -307,7 +307,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                         break;
                     case ViewMode.FollowStatic:
                         PlayerFollowCamera.Follow(
-                            camera,
+                            Camera,
                             car,
                             (float)car.Mad.StaticCameraXz,
                             car.Control.Lookback,
@@ -316,7 +316,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                         );
                         break;
                     case ViewMode.Around:
-                        PlayerAroundCamera.Around(camera, car);
+                        PlayerAroundCamera.Around(Camera, car);
                         break;
                 }
             }
@@ -327,12 +327,12 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
     void IClientCallbacks.ResetCheckpointGlow()
     {
-        clientStageRenderer.ResetCheckpointGlow();
+        CurrentStage.Renderer.ResetCheckpointGlow();
     }
 
     void IClientCallbacks.UpdateCheckpointGlow(ushort currentCheckpoint, bool isFinish)
     {
-        clientStageRenderer.UpdateCheckpointGlow(currentCheckpoint, isFinish);
+        CurrentStage.Renderer.UpdateCheckpointGlow(currentCheckpoint, isFinish);
     }
 
     IClientCarCallbacks IClientCallbacks.GetClientCarCallbacks(int index)

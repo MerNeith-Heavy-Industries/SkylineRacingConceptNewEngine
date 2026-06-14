@@ -17,8 +17,8 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public readonly GraphicsDevice GraphicsDevice = graphicsDevice;
 
-    public PerspectiveCamera camera = new();
-    public Camera[] lightCameras = [
+    public PerspectiveCamera Camera = new();
+    public Camera[] LightCameras = [
         new OrthoLightCamera
         {
             Width = 3000,
@@ -36,19 +36,17 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         }
     ];
 
-    public BackendStage CurrentStage = null!;
-    public Scene current_scene = null!;
+    public ClientStage CurrentStage = null!;
+    public Scene CurrentScene => CurrentStage.CurrentScene;
 
     public UnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
-    private ClientCarCollection clientCarCollection;
-    public ClientStageRenderer clientStageRenderer;
 
     public override void Enter()
     {
         base.Enter();
         
-        camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
-        camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
+        Camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        Camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
     }
 
     public override void Exit()
@@ -66,13 +64,13 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
                 GameSparker.CurrentMusic?.Unload();
             }
 
-            Logging.Debug("playing stage music: " + clientStageRenderer.musicPath);
+            Logging.Debug("playing stage music: " + CurrentStage.MusicPath);
 
-            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath);
+            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath);
             // Dont shift pitch or tempo if using remastered
-            string path = useRemastered ? clientStageRenderer.remasteredMusicPath : clientStageRenderer.musicPath;
-            double tempoMul = !useRemastered ? clientStageRenderer.musicTempoMul : 0d;
-            double freqMul = !useRemastered ? clientStageRenderer.musicFreqMul : 1d;
+            string path = useRemastered ? CurrentStage.RemasteredMusicPath : CurrentStage.MusicPath;
+            double tempoMul = !useRemastered ? CurrentStage.MusicTempoMul : 0d;
+            double freqMul = !useRemastered ? CurrentStage.MusicFreqMul : 1d;
 
             GameSparker.CurrentMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
             GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
@@ -81,14 +79,16 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         }
     }
     
-    public virtual void LoadStage(BackendStage stage, ClientStageRenderer renderer, bool loadMusic = true)
+    public virtual void SetStage(ClientStage stage, bool loadMusic = true)
     {
         CurrentStage = stage;
-        clientStageRenderer = renderer;
-
+        CurrentStage.BackendCars = CarsInRace;
+        CurrentStage.Camera = Camera;
+        CurrentStage.LightCameras = LightCameras;
+        
         RecreateScene();
 
-        if (loadMusic && (!string.IsNullOrEmpty(clientStageRenderer.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath))))
+        if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.MusicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath))))
         {
             LoadStageMusic(true);
         }
@@ -96,12 +96,11 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public virtual void LoadStage(string stageName, bool loadMusic = true)
     {
-        CurrentStage = new BackendStage(stageName);
-        clientStageRenderer = new ClientStageRenderer(GraphicsDevice, CurrentStage);
+        CurrentStage = new ClientStage(GraphicsDevice, stageName, CarsInRace, Camera, LightCameras);
 
         RecreateScene();
 
-        if (loadMusic && (!string.IsNullOrEmpty(clientStageRenderer.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath))))
+        if (loadMusic && (!string.IsNullOrEmpty(CurrentStage.MusicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath))))
         {
             LoadStageMusic(true);
         }
@@ -109,17 +108,12 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public virtual void RecreateScene()
     {
-        clientCarCollection = new ClientCarCollection(GraphicsDevice, CarsInRace);
-        current_scene = new Scene(
-            GraphicsDevice,
-            [clientStageRenderer, clientCarCollection],
-            camera,
-            lightCameras
-        );
+        CurrentStage.RecreateScene();
     }
+    
     public ClientCar GetClientCar(int index)
     {
-        return clientCarCollection.GetCar(CarsInRace[index]);
+        return CurrentStage.GetClientCar(CarsInRace[index]);
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
@@ -140,35 +134,35 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
         G.Scale = 1280f / width;
 
-        camera.Width = width;
-        camera.Height = height;
+        Camera.Width = width;
+        Camera.Height = height;
     }
 
     public override void BeginGameTick()
     {
         base.BeginGameTick();
-        current_scene.OnBeforeUpdate();
+        CurrentScene.OnBeforeUpdate();
     }
 
     public override void GameTick()
     {
         base.GameTick();
-        current_scene.GameTick(CurrentStage);
+        CurrentScene.GameTick(CurrentStage);
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
         
-        foreach (var lightCamera in lightCameras)
+        foreach (var lightCamera in LightCameras)
         {
-            lightCamera.Position = camera.Position + new Vector3(0, -5000, 0);
-            lightCamera.LookAt = camera.Position + new Vector3(1f, 0, 0); // 0,0,0 causes shadows to break
+            lightCamera.Position = Camera.Position + new Vector3(0, -5000, 0);
+            lightCamera.LookAt = Camera.Position + new Vector3(1f, 0, 0); // 0,0,0 causes shadows to break
         }
 
-        camera.Fov = FovOverride ?? camera.Fov;
+        Camera.Fov = FovOverride ?? Camera.Fov;
 
-        current_scene.Render(alpha, true);
+        CurrentScene.Render(alpha, true);
 
         if (DebugDisplay)
         {

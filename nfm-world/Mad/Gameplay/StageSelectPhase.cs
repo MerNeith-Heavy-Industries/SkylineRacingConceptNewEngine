@@ -11,7 +11,7 @@ namespace NFMWorld.Gameplay;
 
 public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
-    public event EventHandler<BackendStage>? StageSelected;
+    public event EventHandler<ClientStage>? StageSelected;
 
     private UnlimitedArray<string> _stageCollections = [];
     private string _selectedCollection = "";
@@ -93,7 +93,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
     {
         base.GameTick();
 
-        _aroundStageCamera.AroundStage(camera, CurrentStage);
+        _aroundStageCamera.AroundStage(Camera, CurrentStage);
     }
 
     public override void Render(float alpha)
