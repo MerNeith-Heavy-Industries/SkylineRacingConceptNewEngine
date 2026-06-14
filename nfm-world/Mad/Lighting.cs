@@ -6,7 +6,7 @@ namespace NFMWorld;
 
 public class Lighting
 {
-    public Camera[] LightCameras;
+    public IReadOnlyList<Camera> LightCameras;
     public RenderTarget2D?[] ShadowMaps;
     
     [MemberNotNullWhen(true, nameof(CascadeLightCamera))]
@@ -16,7 +16,7 @@ public class Lighting
     public int TotalCascades;
 
     public Lighting(
-        Camera[] lightCameras,
+        IReadOnlyList<Camera> lightCameras,
         RenderTarget2D?[] shadowMaps,
         bool isCreateShadowMap = false,
         int numCascade = -1,
@@ -42,17 +42,17 @@ public class Lighting
 
     public void SetShadowMapParameters(Effect effect)
     {
-        if (LightCameras.Length > 0)
+        if (LightCameras.Count > 0)
         {
             effect.Parameters["LightViewProj0"]?.SetValue(LightCameras[0].ViewProjectionMatrix);
         }
 
-        if (LightCameras.Length > 1)
+        if (LightCameras.Count > 1)
         {
             effect.Parameters["LightViewProj1"]?.SetValue(LightCameras[1].ViewProjectionMatrix);
         }
 
-        if (LightCameras.Length > 2)
+        if (LightCameras.Count > 2)
         {
             effect.Parameters["LightViewProj2"]?.SetValue(LightCameras[2].ViewProjectionMatrix);
         }
