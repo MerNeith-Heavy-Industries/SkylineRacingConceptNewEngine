@@ -9,7 +9,7 @@ namespace NFMWorldLibrary.Backend;
 /// </summary>
 public interface IGamemodeData
 {
-    UnlimitedArray<IInGameCar> CarsInRace { get; }
+    ObservableUnlimitedArray<IInGameCar> CarsInRace { get; }
     BackendStage CurrentStage { get; }
     RaceState raceState { get; }
 
