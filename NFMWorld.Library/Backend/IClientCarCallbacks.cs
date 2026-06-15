@@ -1,21 +1,15 @@
-﻿using NFMWorldLibrary.FixedMath;
-
-namespace NFMWorldLibrary.Backend;
+﻿namespace NFMWorldLibrary.Backend;
 
 /// <summary>
-/// Functions that the gamemode is allowed to call on a client car.
+/// Visual-only properties that a gamemode can set on a client car.
+/// Physics properties (Stats, GroundAt, WheelAngle, etc.) are accessed directly
+/// via <see cref="IInGameCar"/> — this interface is purely for rendering knobs.
 /// </summary>
 public interface IClientCarCallbacks
 {
-    public CarStats Stats { get; }
-    public int GroundAt { get; }
-    public int MaxRadius { get; }
-    public f64Euler WheelAngle { get; set; }
-    public f64Euler TurningWheelAngle { get; set; }
-    public bool CastsShadow { get; set; }
-    public bool? GetsShadowed { get; set; }
-    public float? AlphaOverride { get; set; }
-    public bool? Glow { get; set; }
-    public bool? Finish { get; set; }
-
+    bool CastsShadow { get; set; }
+    bool? GetsShadowed { get; set; }
+    float? AlphaOverride { get; set; }
+    bool? Glow { get; set; }
+    bool? Finish { get; set; }
 }

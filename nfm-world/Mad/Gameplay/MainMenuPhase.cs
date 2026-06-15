@@ -77,16 +77,16 @@ public class MainMenuPhase : BaseStageRenderingPhase
     private void OnTTClicked()
     {
         StageSelectPhase ssp = new(GraphicsDevice);
-        ssp.StageSelected += (sender, stage) =>
+        ssp.StageSelected += (sender, stageName) =>
         {
-            PhaseSharedState.CurrentStage = stage;
+            PhaseSharedState.SelectedStageName = stageName;
             
-            GaragePhase gp = new(GraphicsDevice);
+            GaragePhase gp = new(GraphicsDevice, stageName);
             gp.CarSelected += (sender, car) =>
             {
                 var inRace = new InRacePhase(GraphicsDevice, car.FileName);
                 inRace.gamemode = GameModes.TimeTrial;
-                inRace.SetStage(PhaseSharedState.CurrentStage);
+                inRace.LoadStage(stageName);
                 GameSparker.SetPhase(inRace);
             };
 
@@ -95,7 +95,6 @@ public class MainMenuPhase : BaseStageRenderingPhase
                 GameSparker.SetPhase(GameSparker.MainMenu);
             };
 
-            gp.StageOverride = PhaseSharedState.CurrentStage;;
             GameSparker.SetPhase(gp);
         };
 

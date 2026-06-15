@@ -180,8 +180,8 @@ public static class GameSparker
         SettingsMenu = new SettingsMenu(game);
         MainMenu = new MainMenuPhase(GraphicsDevice);
 
-        MainMenu.LoadStage("nfm2/16_4dv");
-        PhaseSharedState.CurrentStage = MainMenu.CurrentStage;
+        PhaseSharedState.SelectedStageName = "nfm2/16_4dv";
+        MainMenu.LoadStage(PhaseSharedState.SelectedStageName);
         
         SetPhase(MainMenu);
 

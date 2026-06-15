@@ -1,78 +1,146 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 
 namespace NFMWorld;
 
-public class ClientStage : BackendStage
+/// <summary>
+/// Client-side representation of a stage. Composes a <see cref="BackendStage"/> for collision/AI data
+/// and adds rendering (stage geometry, cars, scene management). Owns camera and light setup.
+/// Fully self-contained — constructed once per phase; no manual RecreateScene needed.
+/// </summary>
+public class ClientStage
 {
-    private IReadOnlyCollection<IInGameCar> _backendCars;
-    public IReadOnlyCollection<IInGameCar> BackendCars
-    {
-        get => _backendCars;
-        set
-        {
-            _backendCars = value;
-            RecreateScene();
-        }
-    }
-    public readonly ClientStageRenderer Renderer;
-    public StageScene CurrentScene;
-    public readonly GraphicsDevice GraphicsDevice;
-    public Camera Camera;
-    public IReadOnlyList<Camera> LightCameras;
+    private readonly GraphicsDevice _graphicsDevice;
+    private readonly Dictionary<IInGameCar, CarVisual> _carVisuals = new();
+    private IReadOnlyCollection<IInGameCar> _cars;
+    private Scene _scene;
 
-    // soundtrack(folder,fileName)
-    public string MusicPath = "";
-    // soundtrackremaster(folder,fileName)
-    public string RemasteredMusicPath = "";
-    // soundtrackfreqmul(mul)
-    public double MusicFreqMul = 1.0d;
-    public double MusicTempoMul = 0d;
+    public BackendStage Backend { get; }
+    public ClientStageRenderer Renderer { get; }
+    public Camera Camera { get; set; }
+    public IReadOnlyList<Camera> LightCameras { get; set; }
+
+    // ── Music metadata from stage loader ──
+    public string MusicPath { get; }
+    public string RemasteredMusicPath { get; }
+    public double MusicFreqMul { get; }
+    public double MusicTempoMul { get; }
 
     public ClientStage(
         GraphicsDevice graphicsDevice,
         string stageName,
-        IReadOnlyCollection<IInGameCar> backendCars,
+        IReadOnlyCollection<IInGameCar> cars,
         Camera camera,
-        IReadOnlyList<Camera> lightCameras
-    ) : base(stageName)
+        IReadOnlyList<Camera> lightCameras)
     {
-        _backendCars = backendCars;
-        GraphicsDevice = graphicsDevice;
-        Renderer = new ClientStageRenderer(graphicsDevice, this);
+        _graphicsDevice = graphicsDevice;
+        _cars = cars;
         Camera = camera;
         LightCameras = lightCameras;
-        
-        RecreateScene();
-        
-        MusicPath = stageLoader.musicPath;
-        RemasteredMusicPath = stageLoader.remasteredMusicPath;
-        MusicFreqMul = stageLoader.musicFreqMul;
-        MusicTempoMul = stageLoader.musicTempoMul;
+
+        Backend = new BackendStage(stageName);
+        Renderer = new ClientStageRenderer(graphicsDevice, Backend);
+        Renderer.ApplyValues();
+
+        // Build initial car visuals
+        foreach (var car in cars)
+            _carVisuals[car] = new CarVisual(graphicsDevice, car);
+
+        // Build scene object list: renderer + all car visuals
+        var objects = new List<GameObject> { Renderer };
+        objects.AddRange(_carVisuals.Values);
+        _scene = new Scene(graphicsDevice, objects, camera, lightCameras);
+
+        // ── Music metadata ──
+        MusicPath = Backend.stageLoader.musicPath;
+        RemasteredMusicPath = Backend.stageLoader.remasteredMusicPath;
+        MusicFreqMul = Backend.stageLoader.musicFreqMul;
+        MusicTempoMul = Backend.stageLoader.musicTempoMul;
 
         if (string.IsNullOrEmpty(MusicPath))
-        {
             Logging.Error("No music is defined for this stage!");
+    }
+
+    /// <summary>
+    /// Update the set of backend cars this stage tracks.
+    /// Cleans up visuals for removed cars and creates visuals for new ones.
+    /// </summary>
+    public void SetCars(IReadOnlyCollection<IInGameCar> cars)
+    {
+        _cars = cars;
+
+        // Remove visuals for cars no longer in the set
+        var removed = _carVisuals.Keys.Except(cars).ToArray();
+        foreach (var key in removed)
+        {
+            if (_carVisuals.Remove(key, out var visual))
+                visual.Dispose();
         }
+
+        // Ensure all current cars have visuals
+        foreach (var car in cars)
+        {
+            if (!_carVisuals.ContainsKey(car))
+                _carVisuals[car] = new CarVisual(_graphicsDevice, car);
+        }
+
+        RebuildScene();
     }
 
-    [MemberNotNull(nameof(CurrentScene))]
-    public void RecreateScene()
+    /// <summary>
+    /// Gets or creates the <see cref="CarVisual"/> for a backend car.
+    /// </summary>
+    public CarVisual GetCarVisual(IInGameCar car)
     {
-        Renderer.ApplyValues();
-        CurrentScene = new StageScene(
-            GraphicsDevice,
-            Renderer,
-            BackendCars,
-            Camera,
-            LightCameras
-        );
+        if (!_carVisuals.TryGetValue(car, out var visual))
+        {
+            visual = _carVisuals[car] = new CarVisual(_graphicsDevice, car);
+            RebuildScene();
+        }
+        return visual;
     }
 
-    public ClientCar GetClientCar(IInGameCar car)
+    /// <summary>
+    /// Gets the <see cref="CarVisual"/> for a backend car by index.
+    /// </summary>
+    public CarVisual GetCarVisual(int index)
     {
-        return CurrentScene.ClientCars.GetCar(car);
+        return GetCarVisual(_cars.ElementAt(index));
+    }
+
+    /// <summary>
+    /// The backend cars currently tracked by this stage.
+    /// </summary>
+    public IReadOnlyCollection<IInGameCar> Cars => _cars;
+
+    // ── Scene lifecycle ──
+
+    private void RebuildScene()
+    {
+        var objects = new List<GameObject> { Renderer };
+        objects.AddRange(_carVisuals.Values);
+        _scene = new Scene(_graphicsDevice, objects, Camera, LightCameras);
+    }
+
+    public void OnBeforeUpdate()
+    {
+        Camera.OnBeforeRender(0);
+        foreach (var lightCamera in LightCameras)
+            lightCamera.OnBeforeRender(0);
+        foreach (var obj in _scene.Objects)
+            obj.OnBeforeRender(0);
+    }
+
+    public void GameTick()
+    {
+        foreach (var obj in _scene.Objects)
+            obj.GameTick(Backend);
+    }
+
+    public void Render(float alpha, bool useShadowMapping = true, bool clearRenderBuffer = true)
+    {
+        _scene.ActiveCamera = Camera;
+        _scene.Render(alpha, useShadowMapping, clearRenderBuffer);
     }
 }

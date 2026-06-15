@@ -6,7 +6,7 @@ namespace NFMWorld;
 public class Flames
 {
     private int _embos;
-    private readonly ClientCar _car;
+    private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
     private int[] _pa, _pb;
 
@@ -14,7 +14,7 @@ public class Flames
 
     private int _tick;
 
-    public Flames(ClientCar car, GraphicsDevice graphicsDevice)
+    public Flames(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;
