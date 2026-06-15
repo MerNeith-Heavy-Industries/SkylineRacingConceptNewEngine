@@ -31,7 +31,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private Collection _currentCollection = Collection.NFMM;
     private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
     private BackendCar? _backendCar;
-    private ClientCar? _car;
+    private CarVisual? _car;
 
     private FocusManager _focusManager = new();
     private GarageUiView _garageUiView = new();
@@ -47,10 +47,18 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private Rad3d[] _autocompleteMatches = [];
     private bool _openSearchPopup = false;
     private int _searchKbFocus = 0;
-    public ClientStage? StageOverride;
+    private readonly string? _stageName;
     private bool _loadedStageMusic = false;
 
     private PerspectiveCamera _camera = new();
+
+    /// <summary>
+    /// Creates a GaragePhase that loads the specified stage as background.
+    /// </summary>
+    public GaragePhase(GraphicsDevice graphicsDevice, string? stageName) : this(graphicsDevice)
+    {
+        _stageName = stageName;
+    }
 
     public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar) : this(graphicsDevice)
     {
@@ -70,10 +78,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void SetupCurrentCar()
     {
-        if (StageOverride != null)
+        if (_stageName != null)
         {
-            CurrentStage = StageOverride;
-            RecreateScene();
+            LoadStage(_stageName, loadMusic: false);
         }
         else
         {
@@ -92,7 +99,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         }
 
         _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
-        _car = new ClientCar(GraphicsDevice, _backendCar);
+        _car = new CarVisual(GraphicsDevice, _backendCar);
         CarsInRace[0] = _backendCar;
 
         Camera.LookAt = new Vector3(0, 250, 400);
@@ -106,31 +113,31 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         }
 
         // create and position stat bars
-        float switsLevel = (_car.Stats.Swits[2] - 220) / 90f;
+        float switsLevel = (_backendCar.Stats.Swits[2] - 220) / 90f;
         switsLevel = Math.Max(0.05f, switsLevel);
         _garageUiView.Bar0.TargetValue = switsLevel;
 
-        float accel = (float)(_car.Stats.Acelf.X * _car.Stats.Acelf.Y * _car.Stats.Acelf.Z * _car.Stats.Grip / 7700);
+        float accel = (float)(_backendCar.Stats.Acelf.X * _backendCar.Stats.Acelf.Y * _backendCar.Stats.Acelf.Z * _backendCar.Stats.Grip / 7700);
         _garageUiView.Bar1.TargetValue = accel;
 
-        _garageUiView.Bar2.TargetValue = (float)_car.Stats.Dishandle;
+        _garageUiView.Bar2.TargetValue = (float)_backendCar.Stats.Dishandle;
 
-        float powerloss = _car.Stats.Powerloss / 5500000f;
+        float powerloss = _backendCar.Stats.Powerloss / 5500000f;
         _garageUiView.Bar3.TargetValue = powerloss;
 
-        float strength = ((float)_car.Stats.Moment + 0.5f) / 2.6f;
+        float strength = ((float)_backendCar.Stats.Moment + 0.5f) / 2.6f;
         _garageUiView.Bar4.TargetValue = strength;
 
-        float health = (float)_car.Stats.Outdam / 1.05f + _car.Stats.Maxmag / 100000f;
+        float health = (float)_backendCar.Stats.Outdam / 1.05f + _backendCar.Stats.Maxmag / 100000f;
         _garageUiView.Bar5.TargetValue = health;
 
-        float airs = (_car.Stats.Airc * 2 * ((float)_car.Stats.Airs * 0.5f) * (float)_car.Stats.Bounce + 28f) / 100f;
+        float airs = (_backendCar.Stats.Airc * 2 * ((float)_backendCar.Stats.Airs * 0.5f) * (float)_backendCar.Stats.Bounce + 28f) / 100f;
         _garageUiView.Bar6.TargetValue = airs;
 
-        float hglide = ((Math.Abs(_car.Stats.Flipy) + Math.Abs(_car.GroundAt)) / 2f / 70f) + (float)_car.Stats.Airs / 230f;
+        float hglide = ((Math.Abs(_backendCar.Stats.Flipy) + Math.Abs(_backendCar.GroundAt)) / 2f / 70f) + (float)_backendCar.Stats.Airs / 230f;
         _garageUiView.Bar7.TargetValue = hglide;
 
-        float ab = _car.Stats.Airc / 75f;
+        float ab = _backendCar.Stats.Airc / 75f;
         _garageUiView.Bar8.TargetValue = ab;
     }
 
@@ -328,7 +335,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private void SelectedCar()
     {
         if (CarSelected == null) throw new ArgumentNullException("Attempted to invoke CarSelected, but it was null.");
-        CarSelected.Invoke(this, _car!.Rad);
+        CarSelected.Invoke(this, _backendCar!.Rad);
     }
 
     private void SelectionCancelled()

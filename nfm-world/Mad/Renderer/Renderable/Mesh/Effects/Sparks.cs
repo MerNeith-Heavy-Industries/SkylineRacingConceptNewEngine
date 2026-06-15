@@ -6,7 +6,7 @@ namespace NFMWorld;
 
 public class Sparks : IDisposable
 {
-    private readonly ClientCar _car;
+    private readonly CarVisual _visual;
     private readonly GraphicsDevice _graphicsDevice;
 
     internal int Sprk;
@@ -34,12 +34,12 @@ public class Sparks : IDisposable
     private readonly DynamicIndexBuffer _indexBuffer;
     private readonly VertexBuffer _instanceBuffer;
 
-    public Sparks(ClientCar car, GraphicsDevice graphicsDevice)
+    public Sparks(IInGameCar car, CarVisual visual, GraphicsDevice graphicsDevice)
     {
-        _car = car;
+        _visual = visual;
         _graphicsDevice = graphicsDevice;
 
-        _sprkat = _car.Wheels.FirstOrDefault().Sparkat;
+        _sprkat = car.Wheels[0].Sparkat;
 
         _vertexBuffer = new DynamicVertexBuffer(graphicsDevice, LineMesh.LineMeshVertexAttribute.VertexDeclaration,
             100 * LineMeshHelpers.VerticesPerLine, BufferUsage.WriteOnly)
@@ -70,9 +70,9 @@ public class Sparks : IDisposable
     {
         if (type != 1)
         {
-            Srx = (wheelx - _sprkat * UMath.SinUnsafe((float)_car.Rotation.Xz.Degrees));
-            Sry = (wheely - wheelGround - _sprkat * UMath.CosUnsafe((float)_car.Rotation.Zy.Degrees) * UMath.CosUnsafe((float)_car.Rotation.Xy.Degrees));
-            Srz = (wheelz + _sprkat * UMath.CosUnsafe((float)_car.Rotation.Xz.Degrees));
+            Srx = (wheelx - _sprkat * UMath.SinUnsafe((float)_visual.Rotation.Xz.Degrees));
+            Sry = (wheely - wheelGround - _sprkat * UMath.CosUnsafe((float)_visual.Rotation.Zy.Degrees) * UMath.CosUnsafe((float)_visual.Rotation.Xy.Degrees));
+            Srz = (wheelz + _sprkat * UMath.CosUnsafe((float)_visual.Rotation.Xz.Degrees));
             Sprk = 1;
         }
         else
@@ -80,9 +80,9 @@ public class Sparks : IDisposable
             Sprk++;
             if (Sprk == 4)
             {
-                Srx = ((float)_car.Position.X + scx);
+                Srx = ((float)_visual.Position.X + scx);
                 Sry = wheely - wheelGround;
-                Srz = ((float)_car.Position.Z + scz);
+                Srz = ((float)_visual.Position.Z + scz);
                 Sprk = 5;
             }
             else

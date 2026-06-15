@@ -11,7 +11,7 @@ namespace NFMWorld.Gameplay;
 
 public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
-    public event EventHandler<ClientStage>? StageSelected;
+    public event EventHandler<string>? StageSelected;
 
     private UnlimitedArray<string> _stageCollections = [];
     private string _selectedCollection = "";
@@ -93,7 +93,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
     {
         base.GameTick();
 
-        _aroundStageCamera.AroundStage(Camera, CurrentStage);
+        _aroundStageCamera.AroundStage(Camera, CurrentStage.Backend);
     }
 
     public override void Render(float alpha)
@@ -170,9 +170,9 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
 
         G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 48));
         G.SetColor(new Color(0, 0, 0));
-        G.DrawStringStrokeAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringStrokeAligned(CurrentStage.Backend.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
-        G.DrawStringAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringAligned(CurrentStage.Backend.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
     }
 
     private bool HandleSearch()
@@ -252,7 +252,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         }
         else if (key == Key.Enter)
         {
-            StageSelected?.Invoke(this, CurrentStage);
+            StageSelected?.Invoke(this, $"{_selectedCollection}/{_stagesInCollection[_selectedStageIndex]}");
         } else if (key == Key.S)
         {
             _openSearchPopup = true;
