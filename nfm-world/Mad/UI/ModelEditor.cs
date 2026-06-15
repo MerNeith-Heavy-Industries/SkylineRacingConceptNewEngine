@@ -2384,7 +2384,7 @@ public class ModelEditorPhase : BasePhase
         if (tab.ShowReferenceOverlay && tab.ReferenceCarIndex >= 0 && tab.ReferenceCarIndex < BackendGameSparker.cars[Collection.NFMM].Count)
         {
             // TODO optimize by caching reference car object instead of recreating each frame
-            var referenceCar = new ClientCar(_graphicsDevice, new ClientOnlyBackendCar(BackendGameSparker.cars[Collection.NFMM][tab.ReferenceCarIndex]));
+            var referenceCar = new StaticMeshObject(_graphicsDevice, BackendGameSparker.cars[Collection.NFMM][tab.ReferenceCarIndex]);
 
             // Store original state
             var originalRefPosition = referenceCar.Position;

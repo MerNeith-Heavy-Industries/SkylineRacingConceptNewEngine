@@ -14,7 +14,7 @@ namespace NFMWorld.Gameplay;
 public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice), IGamemodeData, IClientCallbacks
 {
     protected IGamemode? gamemodeInstance { get; set; }
-    BackendStage IGamemodeData.CurrentStage => CurrentStage;
+    BackendStage IGamemodeData.CurrentStage => CurrentStage.Backend;
 
     public RaceState raceState
     {
@@ -50,7 +50,6 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     public override void Enter()
     {
         base.Enter();
-        RecreateScene();
         ForceReloadGamemode();
     }
 
@@ -337,7 +336,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
     IClientCarCallbacks IClientCallbacks.GetClientCarCallbacks(int index)
     {
-        return GetClientCar(index);
+        return GetCarVisual(index).Visuals;
     }
     
 }

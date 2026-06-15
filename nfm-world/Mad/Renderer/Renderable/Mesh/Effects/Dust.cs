@@ -7,7 +7,7 @@ namespace NFMWorld;
 
 public class Dust
 {
-    private readonly ClientCar _car;
+    private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
 
     private int _ust;
@@ -27,7 +27,7 @@ public class Dust
     private int[] _indices = new int[20 * 8 * 3];
     private int _indexCount;
 
-    public Dust(ClientCar car, GraphicsDevice graphicsDevice)
+    public Dust(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;

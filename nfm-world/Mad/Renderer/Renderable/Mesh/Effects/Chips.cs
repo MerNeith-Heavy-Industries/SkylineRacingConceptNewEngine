@@ -17,14 +17,14 @@ public class Chips
         public Color3 Color;
     }
     
-    private readonly ClientCar _car;
+    private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
     
     private Chip[] _chips;
     private readonly VertexPositionColor[] _triangles;
     private int _triangleCount;
 
-    public Chips(ClientCar car, GraphicsDevice graphicsDevice)
+    public Chips(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;

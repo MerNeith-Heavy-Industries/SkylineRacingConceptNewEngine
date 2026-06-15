@@ -5,13 +5,13 @@ using NFMWorldLibrary.Rad;
 // This duplicates some code from CollisionObject, no workaround
 namespace NFMWorld;
 
-public class EditorObject : ClientCar
+public class EditorObject : StaticMeshObject
 {
     public Rad3dBoxDef[] Boxes { get; }
 
     private readonly CollisionDebugMesh? _collisionDebugMesh;
 
-    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, new ClientOnlyBackendCar(rad))
+    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
         Boxes = rad.Boxes;
         if (rad.Boxes.Length > 0)
