@@ -94,6 +94,10 @@ public class FollowCamera
             var targetFov = float.Lerp(CameraSettings.Fov, CameraSettings.Fov * 1.2f, Math.Abs(speed) / topSpeed);
             camera.Fov = float.Lerp(camera.Fov, targetFov, 0.075f);
         }
+        else
+        {
+            camera.Fov = CameraSettings.Fov;
+        }
 
         if (interpolateAngle)
         {
