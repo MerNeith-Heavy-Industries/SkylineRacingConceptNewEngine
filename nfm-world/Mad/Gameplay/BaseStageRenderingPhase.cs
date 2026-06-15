@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.Util;
@@ -25,7 +26,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     ];
 
     public ClientStage CurrentStage = null!;
-    public UnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
+    public ObservableUnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
 
     public override void Enter()
     {

@@ -31,7 +31,6 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private Collection _currentCollection = Collection.NFMM;
     private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
     private BackendCar? _backendCar;
-    private CarVisual? _car;
 
     private FocusManager _focusManager = new();
     private GarageUiView _garageUiView = new();
@@ -99,7 +98,6 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         }
 
         _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
-        _car = new CarVisual(GraphicsDevice, _backendCar);
         CarsInRace[0] = _backendCar;
 
         Camera.LookAt = new Vector3(0, 250, 400);

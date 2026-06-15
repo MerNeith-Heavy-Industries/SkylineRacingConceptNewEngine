@@ -1,19 +1,21 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System.Collections.Specialized;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld;
 
 /// <summary>
 /// Client-side representation of a stage. Composes a <see cref="BackendStage"/> for collision/AI data
 /// and adds rendering (stage geometry, cars, scene management). Owns camera and light setup.
-/// Fully self-contained — constructed once per phase; no manual RecreateScene needed.
+/// Fully self-contained — constructed once per phase; car visuals are synced lazily each tick.
 /// </summary>
 public class ClientStage
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly Dictionary<IInGameCar, CarVisual> _carVisuals = new();
-    private IReadOnlyCollection<IInGameCar> _cars;
+    private ObservableUnlimitedArray<IInGameCar> _cars;
     private Scene _scene;
 
     public BackendStage Backend { get; }
@@ -30,7 +32,7 @@ public class ClientStage
     public ClientStage(
         GraphicsDevice graphicsDevice,
         string stageName,
-        IReadOnlyCollection<IInGameCar> cars,
+        ObservableUnlimitedArray<IInGameCar> cars,
         Camera camera,
         IReadOnlyList<Camera> lightCameras)
     {
@@ -43,14 +45,8 @@ public class ClientStage
         Renderer = new ClientStageRenderer(graphicsDevice, Backend);
         Renderer.ApplyValues();
 
-        // Build initial car visuals
-        foreach (var car in cars)
-            _carVisuals[car] = new CarVisual(graphicsDevice, car);
-
-        // Build scene object list: renderer + all car visuals
-        var objects = new List<GameObject> { Renderer };
-        objects.AddRange(_carVisuals.Values);
-        _scene = new Scene(graphicsDevice, objects, camera, lightCameras);
+        // Scene starts with just the stage renderer — car visuals are added lazily in GameTick()
+        _scene = new Scene(graphicsDevice, [Renderer], camera, lightCameras);
 
         // ── Music metadata ──
         MusicPath = Backend.stageLoader.musicPath;
@@ -60,43 +56,30 @@ public class ClientStage
 
         if (string.IsNullOrEmpty(MusicPath))
             Logging.Error("No music is defined for this stage!");
+        
+        _cars.CollectionChanged += CarsOnCollectionChanged;
     }
 
     /// <summary>
-    /// Update the set of backend cars this stage tracks.
-    /// Cleans up visuals for removed cars and creates visuals for new ones.
+    /// Replace the set of backend cars this stage tracks.
     /// </summary>
-    public void SetCars(IReadOnlyCollection<IInGameCar> cars)
+    public void SetCars(ObservableUnlimitedArray<IInGameCar> cars)
     {
+        _cars.CollectionChanged -= CarsOnCollectionChanged;
         _cars = cars;
-
-        // Remove visuals for cars no longer in the set
-        var removed = _carVisuals.Keys.Except(cars).ToArray();
-        foreach (var key in removed)
-        {
-            if (_carVisuals.Remove(key, out var visual))
-                visual.Dispose();
-        }
-
-        // Ensure all current cars have visuals
-        foreach (var car in cars)
-        {
-            if (!_carVisuals.ContainsKey(car))
-                _carVisuals[car] = new CarVisual(_graphicsDevice, car);
-        }
-
-        RebuildScene();
+        _cars.CollectionChanged += CarsOnCollectionChanged;
     }
 
     /// <summary>
     /// Gets or creates the <see cref="CarVisual"/> for a backend car.
+    /// The visual is added to the scene immediately.
     /// </summary>
     public CarVisual GetCarVisual(IInGameCar car)
     {
         if (!_carVisuals.TryGetValue(car, out var visual))
         {
             visual = _carVisuals[car] = new CarVisual(_graphicsDevice, car);
-            RebuildScene();
+            _scene.Objects.Add(visual);
         }
         return visual;
     }
@@ -116,13 +99,6 @@ public class ClientStage
 
     // ── Scene lifecycle ──
 
-    private void RebuildScene()
-    {
-        var objects = new List<GameObject> { Renderer };
-        objects.AddRange(_carVisuals.Values);
-        _scene = new Scene(_graphicsDevice, objects, Camera, LightCameras);
-    }
-
     public void OnBeforeUpdate()
     {
         Camera.OnBeforeRender(0);
@@ -132,6 +108,88 @@ public class ClientStage
             obj.OnBeforeRender(0);
     }
 
+    /// <summary>
+    /// Eagerly syncs car visuals against <see cref="_cars"/> (which is a live reference
+    /// to the phase's <c>CarsInRace</c>).
+    /// </summary>
+    private void CarsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                foreach (IInGameCar car in e.NewItems!)
+                {
+                    if (!_carVisuals.ContainsKey(car))
+                    {
+                        var visual = _carVisuals[car] = new CarVisual(_graphicsDevice, car);
+                        _scene.Objects.Add(visual);
+                    }
+                }
+                break;
+            case NotifyCollectionChangedAction.Remove:
+                foreach (IInGameCar car in e.OldItems!)
+                {
+                    if (_carVisuals.Remove(car, out var visual))
+                    {
+                        _scene.Objects.Remove(visual);
+                        visual.Dispose();
+                    }
+                }
+                break;
+            case NotifyCollectionChangedAction.Replace:
+                foreach (IInGameCar car in e.OldItems!)
+                {
+                    if (_carVisuals.Remove(car, out var visual))
+                    {
+                        _scene.Objects.Remove(visual);
+                        visual.Dispose();
+                    }
+                }
+                
+                foreach (IInGameCar car in e.NewItems!)
+                {
+                    if (!_carVisuals.ContainsKey(car))
+                    {
+                        var visual = _carVisuals[car] = new CarVisual(_graphicsDevice, car);
+                        _scene.Objects.Add(visual);
+                    }
+                }
+                break;
+            case NotifyCollectionChangedAction.Move:
+                // No need to do anything — the visuals are tracked by reference, not index, so moving items around
+                // doesn't affect them.
+                break;
+            case NotifyCollectionChangedAction.Reset:
+                // ── Remove visuals for cars that left the collection ──
+                var removed = _carVisuals.Keys.Except(_cars).ToArray();
+                foreach (var key in removed)
+                {
+                    if (_carVisuals.Remove(key, out var visual))
+                    {
+                        _scene.Objects.Remove(visual);
+                        visual.Dispose();
+                    }
+                }
+                
+                // ── Create visuals for cars that joined the collection ──
+                foreach (var car in _cars)
+                {
+                    if (!_carVisuals.ContainsKey(car))
+                    {
+                        var visual = _carVisuals[car] = new CarVisual(_graphicsDevice, car);
+                        _scene.Objects.Add(visual);
+                    }
+                }
+
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    /// <summary>
+    /// Ticks all scene objects.
+    /// </summary>
     public void GameTick()
     {
         foreach (var obj in _scene.Objects)
