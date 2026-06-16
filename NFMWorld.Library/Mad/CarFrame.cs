@@ -4,11 +4,11 @@ using Maxine.Extensions;
 using MemoryPack;
 using NFMWorldLibrary.FixedMath;
 
-namespace NFMWorldLibrary.Files.Demo;
+namespace NFMWorldLibrary;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 [MemoryPackable]
-public partial struct DemoEntry
+public partial struct CarFrame
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     [MemoryPackable]
@@ -47,9 +47,9 @@ public partial struct DemoEntry
     public (fix64 Mxz, fix64 Txz) XzReadings;
     public BitFlags TheBitFlags;
 
-    public static DemoEntry Create(IInGameCar car)
+    public static CarFrame Create(IInGameCar car)
     {
-        DemoEntry entry = new DemoEntry();
+        CarFrame entry = new CarFrame();
 
         entry.TheBitFlags.Up = car.Control.Up;
         entry.TheBitFlags.Down = car.Control.Down;
@@ -60,42 +60,42 @@ public partial struct DemoEntry
         entry.CarPosition.Y = car.Position.Y;
         entry.CarPosition.Z = car.Position.Z;
         entry.CarRotation.Xz = car.Rotation.Xz.Degrees;
-        entry.CarRotation.Pxy = car.Mad.Pxy;
-        entry.CarRotation.Pzy = car.Mad.Pzy;
+        entry.CarRotation.Pxy = car.CarPhysics.Pxy;
+        entry.CarRotation.Pzy = car.CarPhysics.Pzy;
         for (var i = 0; i < 4; i++)
         {
-            entry.WheelVelocities.Scx[i] = car.Mad.Scx[i];
-            entry.WheelVelocities.Scy[i] = car.Mad.Scy[i];
-            entry.WheelVelocities.Scz[i] = car.Mad.Scz[i];
+            entry.WheelVelocities.Scx[i] = car.CarPhysics.Scx[i];
+            entry.WheelVelocities.Scy[i] = car.CarPhysics.Scy[i];
+            entry.WheelVelocities.Scz[i] = car.CarPhysics.Scz[i];
         }
-        entry.Power = car.Mad.Power;
-        entry.Damage = car.Mad.Hitmag;
-        entry.AngularVelocities.Ucomp = car.Mad.Ucomp;
-        entry.AngularVelocities.Dcomp = car.Mad.Dcomp;
-        entry.AngularVelocities.Lcomp = car.Mad.Lcomp;
-        entry.AngularVelocities.Rcomp = car.Mad.Rcomp;
+        entry.Power = car.CarPhysics.Power;
+        entry.Damage = car.CarPhysics.Hitmag;
+        entry.AngularVelocities.Ucomp = car.CarPhysics.Ucomp;
+        entry.AngularVelocities.Dcomp = car.CarPhysics.Dcomp;
+        entry.AngularVelocities.Lcomp = car.CarPhysics.Lcomp;
+        entry.AngularVelocities.Rcomp = car.CarPhysics.Rcomp;
         entry.RacePosition.CheckpointInlap = car.currentCheckpoint;
         entry.RacePosition.Lap = car.currentLap;
-        entry.StuntState.StuntType = car.Mad.Loop;
-        entry.StuntState.Travxz = car.Mad.Travxz;
-        entry.StuntState.Travxy = car.Mad.Travxy;
-        entry.StuntState.Travzy = car.Mad.Travzy;
-        entry.TheBitFlags.Surfer = car.Mad.Surfer;
-        entry.Powerup = car.Mad.Powerup;
-        entry.TheBitFlags.BadLanding = car.Mad.BadLanding;
-        entry.TheBitFlags.Wasted = car.Mad.Wasted;
-        entry.Speed = car.Mad.Speed;
-        entry.TheBitFlags.Mtouch = car.Mad.Mtouch;
-        entry.TheBitFlags.Wtouch = car.Mad.Wtouch;
-        entry.TheBitFlags.Gtouch = car.Mad.Gtouch;
-        entry.TheBitFlags.Pu = car.Mad.Pu;
-        entry.TheBitFlags.Pd = car.Mad.Pd;
-        entry.TheBitFlags.Pl = car.Mad.Pl;
-        entry.TheBitFlags.Pr = car.Mad.Pr;
-        entry.TheBitFlags.Pushed = car.Mad.Pushed;
-        entry.TheBitFlags.Newcar = car.Mad.Newcar;
-        entry.XzReadings.Mxz = car.Mad.Mxz;
-        entry.XzReadings.Txz = car.Mad.Txz;
+        entry.StuntState.StuntType = car.CarPhysics.Loop;
+        entry.StuntState.Travxz = car.CarPhysics.Travxz;
+        entry.StuntState.Travxy = car.CarPhysics.Travxy;
+        entry.StuntState.Travzy = car.CarPhysics.Travzy;
+        entry.TheBitFlags.Surfer = car.CarPhysics.Surfer;
+        entry.Powerup = car.CarPhysics.Powerup;
+        entry.TheBitFlags.BadLanding = car.CarPhysics.BadLanding;
+        entry.TheBitFlags.Wasted = car.CarPhysics.Wasted;
+        entry.Speed = car.CarPhysics.Speed;
+        entry.TheBitFlags.Mtouch = car.CarPhysics.Mtouch;
+        entry.TheBitFlags.Wtouch = car.CarPhysics.Wtouch;
+        entry.TheBitFlags.Gtouch = car.CarPhysics.Gtouch;
+        entry.TheBitFlags.Pu = car.CarPhysics.Pu;
+        entry.TheBitFlags.Pd = car.CarPhysics.Pd;
+        entry.TheBitFlags.Pl = car.CarPhysics.Pl;
+        entry.TheBitFlags.Pr = car.CarPhysics.Pr;
+        entry.TheBitFlags.Pushed = car.CarPhysics.Pushed;
+        entry.TheBitFlags.Newcar = car.CarPhysics.Newcar;
+        entry.XzReadings.Mxz = car.CarPhysics.Mxz;
+        entry.XzReadings.Txz = car.CarPhysics.Txz;
 
         return entry;
     }
@@ -114,46 +114,46 @@ public partial struct DemoEntry
         f64Euler rotation = new(f64AngleSingle.FromDegrees(CarRotation.Xz), f64AngleSingle.FromDegrees(CarRotation.Pzy), f64AngleSingle.FromDegrees(CarRotation.Pxy));
         car.Rotation = rotation;
 
-        car.Mad.Pxy = CarRotation.Pxy;
-        car.Mad.Pzy = CarRotation.Pzy;
+        car.CarPhysics.Pxy = CarRotation.Pxy;
+        car.CarPhysics.Pzy = CarRotation.Pzy;
 
         for (int i = 0; i < 4; i++)
         {
-            car.Mad.Scx[i] = WheelVelocities.Scx[i];
-            car.Mad.Scy[i] = WheelVelocities.Scy[i];
-            car.Mad.Scz[i] = WheelVelocities.Scz[i];
+            car.CarPhysics.Scx[i] = WheelVelocities.Scx[i];
+            car.CarPhysics.Scy[i] = WheelVelocities.Scy[i];
+            car.CarPhysics.Scz[i] = WheelVelocities.Scz[i];
         }
 
-        car.Mad.Power = Power;
-        car.Mad.Hitmag = Damage;
-        car.Mad.Ucomp = AngularVelocities.Ucomp;
-        car.Mad.Dcomp = AngularVelocities.Dcomp;
-        car.Mad.Lcomp = AngularVelocities.Lcomp;
-        car.Mad.Rcomp = AngularVelocities.Rcomp;
+        car.CarPhysics.Power = Power;
+        car.CarPhysics.Hitmag = Damage;
+        car.CarPhysics.Ucomp = AngularVelocities.Ucomp;
+        car.CarPhysics.Dcomp = AngularVelocities.Dcomp;
+        car.CarPhysics.Lcomp = AngularVelocities.Lcomp;
+        car.CarPhysics.Rcomp = AngularVelocities.Rcomp;
 
-        car.Mad.Loop = StuntState.StuntType;
-        car.Mad.Travxz = StuntState.Travxz;
-        car.Mad.Travxy = StuntState.Travxy;
-        car.Mad.Travzy = StuntState.Travzy;
-        car.Mad.Surfer = TheBitFlags.Surfer;
+        car.CarPhysics.Loop = StuntState.StuntType;
+        car.CarPhysics.Travxz = StuntState.Travxz;
+        car.CarPhysics.Travxy = StuntState.Travxy;
+        car.CarPhysics.Travzy = StuntState.Travzy;
+        car.CarPhysics.Surfer = TheBitFlags.Surfer;
 
-        car.Mad.Powerup = Powerup;
-        car.Mad.BadLanding = TheBitFlags.BadLanding;
-        car.Mad.Wasted = TheBitFlags.Wasted;
-        car.Mad.Speed = Speed;
-        car.Mad.Pushed = TheBitFlags.Pushed;
-        car.Mad.Newcar = TheBitFlags.Newcar;
+        car.CarPhysics.Powerup = Powerup;
+        car.CarPhysics.BadLanding = TheBitFlags.BadLanding;
+        car.CarPhysics.Wasted = TheBitFlags.Wasted;
+        car.CarPhysics.Speed = Speed;
+        car.CarPhysics.Pushed = TheBitFlags.Pushed;
+        car.CarPhysics.Newcar = TheBitFlags.Newcar;
 
-        car.Mad.Mtouch = TheBitFlags.Mtouch;
-        car.Mad.Wtouch = TheBitFlags.Wtouch;
-        car.Mad.Gtouch = TheBitFlags.Gtouch;
+        car.CarPhysics.Mtouch = TheBitFlags.Mtouch;
+        car.CarPhysics.Wtouch = TheBitFlags.Wtouch;
+        car.CarPhysics.Gtouch = TheBitFlags.Gtouch;
 
-        car.Mad.Pu = TheBitFlags.Pu;
-        car.Mad.Pd = TheBitFlags.Pd;
-        car.Mad.Pl = TheBitFlags.Pl;
-        car.Mad.Pr = TheBitFlags.Pr;
+        car.CarPhysics.Pu = TheBitFlags.Pu;
+        car.CarPhysics.Pd = TheBitFlags.Pd;
+        car.CarPhysics.Pl = TheBitFlags.Pl;
+        car.CarPhysics.Pr = TheBitFlags.Pr;
 
-        car.Mad.Mxz = XzReadings.Mxz;
-        car.Mad.Txz = XzReadings.Txz;
+        car.CarPhysics.Mxz = XzReadings.Mxz;
+        car.CarPhysics.Txz = XzReadings.Txz;
     }
 }

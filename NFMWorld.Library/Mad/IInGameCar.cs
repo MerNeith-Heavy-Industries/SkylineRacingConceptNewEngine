@@ -8,7 +8,7 @@ namespace NFMWorldLibrary;
 
 public interface IInGameCar : ICar
 {
-    Mad Mad { get; }
+    CarPhysics CarPhysics { get; }
     Control Control { get; }
     ushort currentCheckpoint { get; set; }
     byte currentLap { get; set; } // mad.nlaps

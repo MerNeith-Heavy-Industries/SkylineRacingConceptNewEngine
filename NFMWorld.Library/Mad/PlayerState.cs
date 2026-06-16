@@ -7,7 +7,7 @@ namespace NFMWorldLibrary;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PlayerState
 {
-    public required DemoEntry DemoEntry;
+    public required CarFrame CarFrame;
     public required uint Ticks;
 
     private ulong _currentTimeInMs;
@@ -21,14 +21,14 @@ public struct PlayerState
     
     public static void ApplyTo(PlayerState state, IInGameCar c)
     {
-        state.DemoEntry.ApplyToCar(c);
+        state.CarFrame.ApplyToCar(c);
     }
     
     public static PlayerState CreateFrom(uint ticks, IInGameCar car)
     {
         return new PlayerState
         {
-            DemoEntry = DemoEntry.Create(car),
+            CarFrame = CarFrame.Create(car),
             CurrentTime = DateTimeOffset.UtcNow,
             Ticks = ticks
         };

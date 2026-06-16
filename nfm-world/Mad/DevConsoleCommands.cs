@@ -303,8 +303,8 @@ public static class DevConsoleCommands
             var visual = inRacePhase.GetCarVisual(0);
             var stats = car.Stats;
             var nbsq = 0;
-            var squash = inRacePhase.CarsInRace[0].Mad.Squash;
-            var mtouch = inRacePhase.CarsInRace[0].Mad.Mtouch;
+            var squash = inRacePhase.CarsInRace[0].CarPhysics.Squash;
+            var mtouch = inRacePhase.CarsInRace[0].CarPhysics.Mtouch;
             MeshDamage.DamageY(stats, car, visual, 0, amount, mtouch, ref nbsq, ref squash);
             MeshDamage.DamageY(stats, car, visual, 1, amount, mtouch, ref nbsq, ref squash);
             MeshDamage.DamageY(stats, car, visual, 2, amount, mtouch, ref nbsq, ref squash);
@@ -402,7 +402,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.CarsInRace[0].Mad.Speed = (fix64)speed;
+            inRacePhase.CarsInRace[0].CarPhysics.Speed = (fix64)speed;
         }
         Logging.Info($"Set player car speed to {speed}");
     }
