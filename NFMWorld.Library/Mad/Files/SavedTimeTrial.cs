@@ -108,7 +108,9 @@ public partial class SavedTimeTrial
 
     public static SavedTimeTrial Load(ReadOnlyMemory<byte> data)
     {
-        return MemoryPackSerializer.Deserialize<SavedTimeTrial>(data.Span, MemoryPackHelpers.Options)!;
+        using var decompressor = new BrotliDecompressor();
+        var decompData = decompressor.Decompress(data.Span);
+        return MemoryPackSerializer.Deserialize<SavedTimeTrial>(decompData, MemoryPackHelpers.Options)!;
     }
 
     public void Save()
