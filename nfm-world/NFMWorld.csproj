@@ -73,6 +73,7 @@
         <ProjectReference Include="..\WorldXaml\WorldXaml.Core\WorldXaml.Core.csproj" />
         <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj"/>
         <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj"/>
+        <ProjectReference Include="..\WorldXaml\WorldXaml.ObservableCollections\WorldXaml.ObservableCollections.csproj" />
         <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Yoga\WorldXaml.UI.Yoga.csproj" />
         <ProjectReference Include="..\WorldXaml\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj"/>
         <!-- Reference WorldXaml.Generator for XAML source generation -->
