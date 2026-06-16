@@ -21,7 +21,7 @@
 [submodule "FontStashSharp.Base"]
 	path = FontStashSharp.Base
 	url = https://github.com/uwx/FontStashSharp.Base
-	branch = master
+	branch = main
 [submodule "WorldXaml"]
 	path = WorldXaml
 	url = https://github.com/uwx/WorldXaml
