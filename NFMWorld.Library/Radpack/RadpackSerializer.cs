@@ -22,6 +22,36 @@ public static class RadpackSerializer
         MemoryPackSerializer.Serialize(compressor, asset, MemoryPackHelpers.Options);
         compressor.CopyTo(writer);
     }
+    
+    public static RadpackAsset Deserialize(ReadOnlySpan<byte> data)
+    {
+        if (data.Length < 4)
+        {
+            throw new InvalidDataException("Not a Radpack asset");
+        }
+        
+        if (data[0] != 'R' || data[1] != 'A' || data[2] != 'D')
+        {
+            throw new InvalidDataException("Not a Radpack asset");
+        }
+
+        var type = data[3];
+        if (type > (byte)RadpackType.Max)
+        {
+            throw new InvalidDataException("Not a Radpack asset");
+        }
+        
+        using var decompressor = new BrotliDecompressor();
+        var decompData = decompressor.Decompress(data[4..]);
+        var result = MemoryPackSerializer.Deserialize<RadpackAsset>(decompData);
+        if (result == null)
+        {
+            throw new InvalidDataException("Not a Radpack asset");
+        }
+        result.Metadata.Type = (RadpackType)type;
+        return result;
+        
+    }
 
     public static RadpackAsset Deserialize(ReadOnlySequence<byte> data)
     {
@@ -71,7 +101,7 @@ public partial class RadpackMetadata
     [MemoryPackOrder(1)] public string? Description { get; init; }
     [MemoryPackOrder(2)] public required DateTimeOffset CreationDate { get; init; }
     
-    [MemoryPackIgnore] public required RadpackType Type { get; set; }
+    [MemoryPackIgnore] public RadpackType Type { get; set; }
 }
 
 [MemoryPackable(GenerateType.VersionTolerant)]
