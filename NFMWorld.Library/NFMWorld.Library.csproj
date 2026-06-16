@@ -73,7 +73,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Backend\Gamemodes\" />
       <Folder Include="data\" />
       <Folder Include="Gamemodes\Default\" />
     </ItemGroup>
