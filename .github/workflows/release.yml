@@ -125,6 +125,7 @@ jobs:
       - name: Publish NFMWorld.Library native DLL (${{ matrix.rid }})
         shell: bash
         run: |
+          set -e
           RID="${{ matrix.rid }}"
           PUBLISH_RID="$RID"
           EXTRA_ARGS=""
@@ -135,6 +136,7 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
+            -p:AssemblyName=NFMWorldLibrary \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -268,6 +270,7 @@ jobs:
 
       - name: Publish NFMWorld.Library native library (${{ matrix.rid }})
         run: |
+          set -e
           RID="${{ matrix.rid }}"
           PUBLISH_RID="$RID"
           EXTRA_ARGS=""
@@ -278,6 +281,7 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
+            -p:AssemblyName=NFMWorldLibrary \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -384,6 +388,7 @@ jobs:
             dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
               -c Release \
               -r "$RID" \
+              -p:AssemblyName=NFMWorldLibrary \
               -o "./publish/$RID/native"
           done
 
@@ -402,13 +407,13 @@ jobs:
             ./publish/osx-arm64/NFMWorld
           
           # Create universal dylib for NFMWorld.Library
-          lipo -create -output ./publish/osx-universal/native/libNFMWorld.Library.dylib \
-            ./publish/osx-x64/native/libNFMWorld.Library.dylib \
-            ./publish/osx-arm64/native/libNFMWorld.Library.dylib
+          lipo -create -output ./publish/osx-universal/native/libNFMWorldLibrary.dylib \
+            ./publish/osx-x64/native/libNFMWorldLibrary.dylib \
+            ./publish/osx-arm64/native/libNFMWorldLibrary.dylib
           
           # Verify the universal binaries were created correctly
           lipo -info ./publish/osx-universal/NFMWorld
-          lipo -info ./publish/osx-universal/native/libNFMWorld.Library.dylib
+          lipo -info ./publish/osx-universal/native/libNFMWorldLibrary.dylib
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
