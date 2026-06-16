@@ -13,7 +13,7 @@
       </PackageReference>
     </ItemGroup>
 
-    <Target Name="NSwag" AfterTargets="Build">
+    <Target Name="NSwag" BeforeTargets="Build">
         <PropertyGroup>
             <NSwagConfiguration>nswag.json</NSwagConfiguration>
             <GeneratedOutput>Client.g.cs</GeneratedOutput>
