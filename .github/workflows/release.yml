@@ -357,6 +357,16 @@ jobs:
           lipo -create -output ./publish/osx-universal/NFMWorld \
             ./publish/osx-x64/NFMWorld \
             ./publish/osx-arm64/NFMWorld
+
+          # Some publish outputs don't contain a native libNFMWorld.Library.dylib for both RIDs.
+          # Merge it only when both inputs are present so this step doesn't fail the whole job.
+          if [[ -f ./publish/osx-x64/native/libNFMWorld.Library.dylib && -f ./publish/osx-arm64/native/libNFMWorld.Library.dylib ]]; then
+            mkdir -p ./publish/osx-universal/native
+            lipo -create -output ./publish/osx-universal/native/libNFMWorld.Library.dylib \
+              ./publish/osx-x64/native/libNFMWorld.Library.dylib \
+              ./publish/osx-arm64/native/libNFMWorld.Library.dylib
+            lipo -info ./publish/osx-universal/native/libNFMWorld.Library.dylib
+          fi
           
           # Verify the universal binary was created correctly
           lipo -info ./publish/osx-universal/NFMWorld
