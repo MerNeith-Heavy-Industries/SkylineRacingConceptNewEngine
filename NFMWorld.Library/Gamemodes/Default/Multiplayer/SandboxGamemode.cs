@@ -70,14 +70,14 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     [ClientOnly]
     protected void ClientReset()
     {
-        carsInRace[0].Mad.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[0].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
     }
 
     [ClientOnly]
     protected void ClientGameTick()
     {
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[0].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].Mad.Power / 100f;
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[0].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].CarPhysics.Power / 100f;
     }
 
     public override void KeyPressed(Key key, in Keys keys)
