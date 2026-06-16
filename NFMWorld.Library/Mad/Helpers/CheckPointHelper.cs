@@ -75,7 +75,7 @@ public class CheckPointHelper
 
         var nextCheckpoint = currentStage.checkpoints[car.currentCheckpoint];
         f64Vector3 carPos = car.Position;
-        var mad = car.Mad;
+        var mad = car.CarPhysics;
         f64Vector3 velocity = new f64Vector3(
             mad.Scx[0] + mad.Scx[1] + mad.Scx[2] + mad.Scx[3],
             mad.Scy[0] + mad.Scy[1] + mad.Scy[2] + mad.Scy[3],

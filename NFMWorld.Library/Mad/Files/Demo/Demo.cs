@@ -5,14 +5,14 @@ namespace NFMWorldLibrary.Files.Demo;
 [MemoryPackable(GenerateType.VersionTolerant)]
 public partial class Demo
 {
-    [MemoryPackOrder(0)] public List<DemoEntry> Ticks = [];
+    [MemoryPackOrder(0)] public List<NFMWorldLibrary.CarFrame> Ticks = [];
 
-    public void AddEntry(DemoEntry entry)
+    public void AddEntry(NFMWorldLibrary.CarFrame entry)
     {
         Ticks.Add(entry);
     }
 
-    public DemoEntry GetEntry(int tick)
+    public NFMWorldLibrary.CarFrame GetEntry(int tick)
     {
         return Ticks[tick];
     }

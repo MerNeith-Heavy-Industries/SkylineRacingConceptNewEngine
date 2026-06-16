@@ -60,7 +60,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
         // Get current race state information
         var u = car.Control;
         var position = car.placement;
-        var mad = car.Mad;
+        var mad = car.CarPhysics;
 
         // Initialize random number generator with deterministic seed based on car position
         var conto = new ContO(car);
@@ -97,7 +97,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
     /// Detects when the car is stuck against a wall and applies avoidance steering.
     /// Checks if the car has low speed despite throttle input, indicating a collision.
     /// </summary>
-    private void DetectAndAvoidObstacles(IInGameCar car, Mad mad, IStage stage)
+    private void DetectAndAvoidObstacles(IInGameCar car, CarPhysics carPhysics, IStage stage)
     {
         // Decrease avoidance timer
         if (_avoidanceTimer > 0)
@@ -111,7 +111,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
 
         // Check if car is stuck (low speed despite wanting to go forward)
         var isThrottling = car.Control.Up;
-        var isStuck = isThrottling && mad.Speed < 20; // Speed threshold for "stuck"
+        var isStuck = isThrottling && carPhysics.Speed < 20; // Speed threshold for "stuck"
 
         if (isStuck)
         {
@@ -120,7 +120,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
             // If stuck for multiple frames, initiate avoidance
             if (_stuckCounter > 10) // Stuck for ~0.16 seconds at 60fps
             {
-                FrameTrace.AddMessage($"Car stuck! Speed: {mad.Speed}, initiating avoidance");
+                FrameTrace.AddMessage($"Car stuck! Speed: {carPhysics.Speed}, initiating avoidance");
                 
                 // Check which direction to turn by sampling points to the left and right
                 var currentHeading = car.Rotation.Yaw.Degrees;
@@ -186,7 +186,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
         return fix64.Sqrt(minDistSq);
     }
 
-    private void FindDrivingTarget(IInGameCar car, fix64 rubberbandingFactor, Mad mad, ref DeterministicRandom random)
+    private void FindDrivingTarget(IInGameCar car, fix64 rubberbandingFactor, CarPhysics carPhysics, ref DeterministicRandom random)
     {
         // If distance to target node <5000 units, target next node, except if the current node is a checkpoint
         var targetNodeIndex = _targetNode;
@@ -228,7 +228,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
             var distanceToNodeSq = pyo(car.Position.X, node.Position.X, car.Position.Z, node.Position.Z);
             
             // If we're close to this node (within speed-based threshold), advance target to it
-            if (distanceToNodeSq < (200 * mad.Speed * mad.Speed))
+            if (distanceToNodeSq < (200 * carPhysics.Speed * carPhysics.Speed))
             {
                 _targetNode = nodeIndex;
                 targetNodeIndex = nodeIndex;
@@ -256,7 +256,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
                 }
 
                 var distanceToTargetSq = pyo(car.Position.X, targetNode.Position.X, car.Position.Z, targetNode.Position.Z);
-                if (distanceToTargetSq < (100 * car.Mad.Speed * car.Mad.Speed))
+                if (distanceToTargetSq < (100 * car.CarPhysics.Speed * car.CarPhysics.Speed))
                 {
                     targetNodeIndex++;
                     if (targetNodeIndex >= racePhase.CurrentStage.nodes.Count)
@@ -282,7 +282,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
                 if (racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Auto or AiNodeKind.Road or AiNodeKind.Ramp or AiNodeKind.Halfpipe)
                 {
                     // Do not skip ramps when low on power
-                    if (mad.Power < 80 && racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Ramp or AiNodeKind.Halfpipe)
+                    if (carPhysics.Power < 80 && racePhase.CurrentStage.nodes[targetNodeIndex].Kind is AiNodeKind.Ramp or AiNodeKind.Halfpipe)
                     {
                         break;
                     }
@@ -309,7 +309,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
             }
 
             // If high on damage, find a random FixRoadStart node and enter it as a sequence
-            var wantFix = mad.Hitmag > mad.Stat.Maxmag * (fix64)0.8f && random.NextFixed6401() < rubberbandingFactor;
+            var wantFix = carPhysics.Hitmag > carPhysics.Stat.Maxmag * (fix64)0.8f && random.NextFixed6401() < rubberbandingFactor;
             if (wantFix)
             {
                 var fixRoadStartNodes = racePhase.CurrentStage.nodes
@@ -403,7 +403,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
         Target(car, racePhase.CurrentStage.nodes[targetNodeIndex].Position);
     }
 
-    private void Steer(IInGameCar car, Mad mad, Control u)
+    private void Steer(IInGameCar car, CarPhysics carPhysics, Control u)
     {
         // Reset input controls
         u.Up = false;
@@ -443,7 +443,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
         }
 
         // Throttle and brake control logic
-        if (mad.Speed > mad.Stat.Swits[0])
+        if (carPhysics.Speed > carPhysics.Stat.Swits[0])
         {
             if (fix64.Abs(angleDiff) < 50)
             {

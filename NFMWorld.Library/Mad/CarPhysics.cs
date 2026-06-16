@@ -26,7 +26,7 @@ namespace NFMWorldLibrary;
 //     public InlineArray4<fix64> wheelz;
 // }
 
-public class Mad
+public class CarPhysics
 {
     private static readonly fix64 _tickRate = Physics.PHYSICS_MULTIPLIER_F64;
     private static readonly fix64 _oneOverTickRate = 1 / _tickRate;
@@ -152,24 +152,14 @@ public class Mad
     //     collisionSubstepSwitch = !collisionSubstepSwitch;
     // }
 
-    public Mad(CarStats stat, int im, bool isClientPlayer)
+    public CarPhysics(CarStats stat, int im, bool isClientPlayer)
     {
         Stat = stat;
         Im = im;
         IsClientPlayer = isClientPlayer;
     }
 
-    public void SetStat(CarStats stat)
-    {
-        Stat = stat;
-    }
-
-    public bool pointInBox(fix64 px, fix64 py, fix64 pz, fix64 bx, fix64 by, fix64 bz, fix64 szx, fix64 szy, fix64 szz)
-    {
-        return px > bx - szx && px < bx + szx && pz > bz - szz && pz < bz + szz && py > by - szy && py < by + (szy == fix64.Zero ? 100 : szy);
-    }
-
-    public void Colide(ContO conto, Mad othermad, ContO otherconto)
+    public void Collide(ContO conto, CarPhysics othermad, ContO otherconto)
     {
         var random = new DeterministicRandom((ulong)(conto.X.rawValue ^ otherconto.X.rawValue ^ conto.Z.rawValue ^ otherconto.Z.rawValue ^ conto.Y.rawValue ^ otherconto.Y.rawValue));
         
@@ -389,33 +379,33 @@ public class Mad
         // }
     }
 
-    private static int GetWheelGround(Mad mad, ContO conto, fix64 bottomy)
+    private static int GetWheelGround(CarPhysics carPhysics, ContO conto, fix64 bottomy)
     {
         int wheelGround;
         if (World.IsHyperglidingEnabled)
         {
             wheelGround = (int)((bottomy * _oneOverTickRate) * (fix64.One - _tickRate));
-            if (!mad.BadLanding)
+            if (!carPhysics.BadLanding)
             {
                 wheelGround = -wheelGround;
             }
         }
         else
         {
-            wheelGround = mad.BadLanding ? mad.Stat.Flipy + mad.Squash : -conto.Grat;
+            wheelGround = carPhysics.BadLanding ? carPhysics.Stat.Flipy + carPhysics.Squash : -conto.Grat;
         }
 
         return wheelGround;
     }
 
-    private static fix64 GetBottomY(Mad mad, ContO conto)
+    private static fix64 GetBottomY(CarPhysics carPhysics, ContO conto)
     {
         fix64 bottomy;
         if (World.IsHyperglidingEnabled)
         {
-            if (mad.BadLanding)
+            if (carPhysics.BadLanding)
             {
-                bottomy = (mad.Stat.Flipy + mad.Squash) * _tickRate;
+                bottomy = (carPhysics.Stat.Flipy + carPhysics.Squash) * _tickRate;
             }
             else
             {

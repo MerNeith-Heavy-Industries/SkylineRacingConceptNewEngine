@@ -129,7 +129,7 @@ public partial class SavedTimeTrial
 
     public void RecordTick(IInGameCar car)
     {
-        DemoEntry entry = DemoEntry.Create(car);
+        CarFrame entry = CarFrame.Create(car);
         DemoData.AddEntry(entry);
     }
     public (bool Up, bool Down, bool Left, bool Right, bool Handb)? GetTick(int tick)

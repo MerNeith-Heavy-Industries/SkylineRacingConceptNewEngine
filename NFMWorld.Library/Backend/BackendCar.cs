@@ -14,7 +14,7 @@ public class BackendCar : BackendGameObject, IInGameCar
     public f64Euler TurningWheelAngle { get; set; }
     public IReadOnlyList<Rad3dWheelDef> Wheels { get; }
 
-    public Mad Mad { get; }
+    public CarPhysics CarPhysics { get; }
     public Control Control { get; }
     public ushort currentCheckpoint { get; set; }
     public byte currentLap { get; set; } // mad.nlaps
@@ -23,7 +23,7 @@ public class BackendCar : BackendGameObject, IInGameCar
     public int placement { get; set; } // cp.pos
     public Rad3d Rad { get; }
     public CarStats Stats { get; }
-    public bool Wasted => Mad.Wasted;
+    public bool Wasted => CarPhysics.Wasted;
 
     public BaseAi? Bot { get; set; }
 
@@ -63,8 +63,8 @@ public class BackendCar : BackendGameObject, IInGameCar
         MaxRadius = rad.MaxRadius;
         Wheels = rad.Wheels;
         
-        Mad = new Mad(Stats, im, isClientPlayer);
-        Mad.Reseto(Mad.Im, this);
+        CarPhysics = new CarPhysics(Stats, im, isClientPlayer);
+        CarPhysics.Reseto(CarPhysics.Im, this);
         Control = new Control();
         
         Position = new f64Vector3(x, World.Ground - GroundAt, z);
@@ -83,20 +83,20 @@ public class BackendCar : BackendGameObject, IInGameCar
     public void Drive(IStage stage)
     {
         var transaction = SentrySdk.StartTransaction("BackendCar.Drive", "drive-car");
-        Mad.Drive(Control, this, stage);
+        CarPhysics.Drive(Control, this, stage);
         transaction.Finish();
     }
     
     public void Collide(IInGameCar otherCar)
     {
         var transaction = SentrySdk.StartTransaction("BackendCar.Collide", "car-collide");
-        Mad.Colide(this, otherCar.Mad, new ContO(otherCar));
+        CarPhysics.Collide(this, otherCar.CarPhysics, new ContO(otherCar));
         transaction.Finish();
     }
 
     public void ResetPosition()
     {
-        Mad.Reseto(Mad.Im, this);
+        CarPhysics.Reseto(CarPhysics.Im, this);
         Position = new f64Vector3(fix64.Zero, World.Ground - GroundAt, fix64.Zero);
         Rotation = f64Euler.Identity;
     }

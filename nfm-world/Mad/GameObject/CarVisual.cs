@@ -63,10 +63,10 @@ public class CarVisual : MeshedGameObject, IDisposable
         car.DamagedZ += OnDamagedZ;
         car.Sparked += OnSparked;
         car.Dusted += OnDusted;
-        car.Mad.Distruct += OnDistruct;
+        car.CarPhysics.Distruct += OnDistruct;
 
-        Sfx = new MadSfx(car.Mad);
-        GameTicked += () => Sfx.Tick(car.Control, car.Mad, car.Stats);
+        Sfx = new MadSfx(car.CarPhysics);
+        GameTicked += () => Sfx.Tick(car.Control, car.CarPhysics, car.Stats);
     }
 
     #region Event handlers
