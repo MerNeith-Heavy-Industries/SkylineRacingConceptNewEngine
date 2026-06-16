@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NSwag.MSBuild" Version="14.7.1">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <Target Name="NSwag" AfterTargets="Build">
+        <PropertyGroup>
+            <NSwagConfiguration>nswag.json</NSwagConfiguration>
+            <GeneratedOutput>Client.g.cs</GeneratedOutput>
+        </PropertyGroup>
+        <Exec Command="$(NSwagExe_Net80) run $(NSwagConfiguration) /variables:GeneratedOutput=$(GeneratedOutput)" />
+    </Target>
+</Project>
