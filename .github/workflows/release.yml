@@ -136,7 +136,6 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
-            -p:AssemblyName=NFMWorldLibrary \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -281,7 +280,6 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
-            -p:AssemblyName=NFMWorldLibrary \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -388,7 +386,6 @@ jobs:
             dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
               -c Release \
               -r "$RID" \
-              -p:AssemblyName=NFMWorldLibrary \
               -o "./publish/$RID/native"
           done
 
