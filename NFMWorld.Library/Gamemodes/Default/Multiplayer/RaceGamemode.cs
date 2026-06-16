@@ -158,7 +158,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         foreach (var inGameCar in carsInRace)
         {
-            inGameCar.Mad.Halted = true;
+            inGameCar.CarPhysics.Halted = true;
             inGameCar.Drive(gamemodeData.CurrentStage);
         }
 
@@ -228,7 +228,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     protected void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
-        carsInRace[_playerCarIndex].Mad.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[_playerCarIndex].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
         
         gamemodeData.ClientCallbacks.ResetCheckpointGlow();
 
@@ -244,8 +244,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
 
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[_playerCarIndex].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].Mad.Power / 100f;
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f;
 
         if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
         {

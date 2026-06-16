@@ -35,7 +35,7 @@ class SimCar : IInGameCar
     public IReadOnlyList<Rad3dWheelDef> Wheels { get; }
 
     // IInGameCar
-    public Mad Mad { get; }
+    public CarPhysics CarPhysics { get; }
     public Control Control { get; } = new Control();
     public ushort currentCheckpoint { get; set; }
     public byte currentLap { get; set; }
@@ -85,7 +85,7 @@ class SimCar : IInGameCar
             new Rad3dWheelDef(new f64Vector3(67.20000000391155, 3.2000000001862645, -124.80000000726432), 0, (fix64)(-27.20000000158325), (fix64)19.200000001117587, null),
         ];
 
-        Mad = new Mad(CarStats.Default, 0, false);
+        CarPhysics = new CarPhysics(CarStats.Default, 0, false);
     }
 }
 
@@ -120,7 +120,7 @@ public class SteeringSimulation
         var car = new SimCar();
         car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 250, fix64.Zero);
         car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(0) };
-        var mad = new Mad(stats, 0, false);
+        var mad = new CarPhysics(stats, 0, false);
         mad.Reseto(mad.Im, new ContO(car));
         mad.Pxy = 0;
         mad.Pzy = 90;

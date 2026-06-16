@@ -20,8 +20,8 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
             var car = carsInRace[idx] = new BackendCar(player, idx, 0, 0);
             car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 250, fix64.Zero);
             car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(0) };
-            car.Mad.Pxy = 0;
-            car.Mad.Pzy = 90;
+            car.CarPhysics.Pxy = 0;
+            car.CarPhysics.Pzy = 90;
 
         }
         carsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
@@ -76,14 +76,14 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     [ClientOnly]
     protected void ClientReset()
     {
-        carsInRace[0].Mad.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[0].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
     }
 
     [ClientOnly]
     protected void ClientGameTick()
     {
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[0].Mad.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].Mad.Power / 100f;
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[0].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[0].CarPhysics.Power / 100f;
     }
 
     public override void KeyPressed(Key key, in Keys keys)

@@ -109,7 +109,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     
     protected virtual void TimeTrialFinished()
     {
-        carsInRace[PlayerCarIndex].Mad.Halted = true;
+        carsInRace[PlayerCarIndex].CarPhysics.Halted = true;
         carsInRace[PlayerCarIndex].Drive(gamemodeData.CurrentStage);
 
         ClientServer.RunIfOnClient(ClientTimeTrialFinished);
@@ -179,7 +179,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _bestTimeTrial = null;
         _tick = 0;
 
-        carsInRace[PlayerCarIndex].Mad.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[PlayerCarIndex].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
 
         // ghost
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(players[PlayerCarIndex].CarName, currentStage.Path);
@@ -225,8 +225,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         SetLapText(carsInRace[PlayerCarIndex].currentLap);
         SetTimeText();
 
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].Mad.Power / 100f;
+        Hud.DataContext.DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag;
+        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f;
 
         if (_bestTimeTrial != null)
         {

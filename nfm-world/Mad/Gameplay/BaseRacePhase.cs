@@ -264,7 +264,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
             G.SetColor(new Color(0, 0, 0));
             G.DrawString($"Render: {WorldGame.LastFrameTime}ms", 100, 100);
             G.DrawString($"Tick: {WorldGame.LastTickTime}μs", 100, 120);
-            G.DrawString($"Power: {CarsInRace[0]?.Mad?.Power:0.00}", 100, 140);
+            G.DrawString($"Power: {CarsInRace[0]?.CarPhysics?.Power:0.00}", 100, 140);
             G.DrawString($"Ticks executed last frame: {WorldGame.LastTickCount}", 100, 160);
         }
         
@@ -298,9 +298,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                         PlayerFollowCamera.Follow(
                             Camera, 
                             car,
-                            (float)car.Mad.Cxz,
+                            (float)car.CarPhysics.Cxz,
                             car.Control.Lookback,
-                            (float)car.Mad.Speed,
+                            (float)car.CarPhysics.Speed,
                             car.Stats.Swits[2]
                         );
                         break;
@@ -308,9 +308,9 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
                         PlayerFollowCamera.Follow(
                             Camera,
                             car,
-                            (float)car.Mad.StaticCameraXz,
+                            (float)car.CarPhysics.StaticCameraXz,
                             car.Control.Lookback,
-                            (float)car.Mad.Speed,
+                            (float)car.CarPhysics.Speed,
                             car.Stats.Swits[2]
                         );
                         break;
