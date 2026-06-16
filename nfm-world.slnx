@@ -60,6 +60,7 @@
     <Project Path="WorldXaml/XamlX/src/XamlX.Runtime/XamlX.Runtime.csproj" />
     <Project Path="WorldXaml/WorldXaml.Core/WorldXaml.Core.csproj" />
     <Project Path="WorldXaml/WorldXaml.Generator/WorldXaml.Generator.csproj" />
+    <Project Path="WorldXaml/WorldXaml.ObservableCollections/WorldXaml.ObservableCollections.csproj" />
     <Project Path="WorldXaml/WorldXaml.UI.Base/WorldXaml.UI.Base.csproj" />
     <Project Path="WorldXaml/WorldXaml.UI.Yoga/WorldXaml.UI.Yoga.csproj" />
     <Project Path="WorldXaml/XamlX.IL.CSharp/XamlX.IL.CSharp.csproj" />
