@@ -9,6 +9,8 @@
         <OptimizationPreference>Speed</OptimizationPreference>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+        <PublishAot>true</PublishAot>
+        <NativeLib>Shared</NativeLib>
     </PropertyGroup>
 
     <Import Project="../WorldXaml/WorldXaml.Generator/WorldXaml.Generator.props" />

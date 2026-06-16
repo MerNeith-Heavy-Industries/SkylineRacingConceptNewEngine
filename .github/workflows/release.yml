@@ -122,6 +122,22 @@ jobs:
             -p:IncludeAllContentForSelfExtract=false `
             -p:ErrorOnDuplicatePublishOutputFiles=false
 
+      - name: Publish NFMWorld.Library native DLL (${{ matrix.rid }})
+        shell: bash
+        run: |
+          RID="${{ matrix.rid }}"
+          PUBLISH_RID="$RID"
+          EXTRA_ARGS=""
+          if [[ "$RID" == *-v3 ]]; then
+            PUBLISH_RID="${RID%-v3}"
+            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
+          fi
+          dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
+            -c Release \
+            -r "$PUBLISH_RID" \
+            $EXTRA_ARGS \
+            -o "./publish/${{ matrix.rid }}/native"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -250,6 +266,21 @@ jobs:
             -p:IncludeAllContentForSelfExtract=false \
             -p:ErrorOnDuplicatePublishOutputFiles=false
 
+      - name: Publish NFMWorld.Library native library (${{ matrix.rid }})
+        run: |
+          RID="${{ matrix.rid }}"
+          PUBLISH_RID="$RID"
+          EXTRA_ARGS=""
+          if [[ "$RID" == *-v3 ]]; then
+            PUBLISH_RID="${RID%-v3}"
+            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
+          fi
+          dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
+            -c Release \
+            -r "$PUBLISH_RID" \
+            $EXTRA_ARGS \
+            -o "./publish/${{ matrix.rid }}/native"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -349,6 +380,11 @@ jobs:
               -p:IncludeNativeLibrariesForSelfExtract=false \
               -p:IncludeAllContentForSelfExtract=false \
               -p:ErrorOnDuplicatePublishOutputFiles=false
+
+            dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
+              -c Release \
+              -r "$RID" \
+              -o "./publish/$RID/native"
           done
 
       - name: Create universal binary
@@ -365,8 +401,14 @@ jobs:
             ./publish/osx-x64/NFMWorld \
             ./publish/osx-arm64/NFMWorld
           
-          # Verify the universal binary was created correctly
+          # Create universal dylib for NFMWorld.Library
+          lipo -create -output ./publish/osx-universal/native/libNFMWorld.Library.dylib \
+            ./publish/osx-x64/native/libNFMWorld.Library.dylib \
+            ./publish/osx-arm64/native/libNFMWorld.Library.dylib
+          
+          # Verify the universal binaries were created correctly
           lipo -info ./publish/osx-universal/NFMWorld
+          lipo -info ./publish/osx-universal/native/libNFMWorld.Library.dylib
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
