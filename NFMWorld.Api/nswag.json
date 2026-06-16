@@ -104,7 +104,7 @@
       "useRequestAndResponseSerializationSettings": false,
       "serializeTypeInformation": false,
       "queryNullValue": "",
-      "className": "{controller}Client",
+      "className": "Nfmw{controller}Client",
       "operationGenerationMode": "MultipleClientsFromOperationId",
       "includedOperationIds": [],
       "excludedOperationIds": [],
