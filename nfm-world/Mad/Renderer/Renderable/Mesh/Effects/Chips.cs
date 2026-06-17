@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Chips
+public class Chips : IDisposable
 {
     private struct Chip
     {
@@ -24,6 +24,8 @@ public class Chips
     private readonly VertexPositionColor[] _triangles;
     private int _triangleCount;
 
+    private DynamicVertexBuffer _triangleBuffer;
+
     public Chips(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
@@ -31,6 +33,11 @@ public class Chips
         _chips = new Chip[_car.Mesh.Polys.Length];
         
         _triangles = new VertexPositionColor[3 * _car.Mesh.Polys.Length];
+        _triangleBuffer = new DynamicVertexBuffer(_graphicsDevice, VertexPositionColor.VertexDeclaration, _triangles.Length, BufferUsage.WriteOnly)
+        {
+            Name = "Chips Vertex Buffer"
+        };
+        _triangleBuffer.SetDataEXT(_triangles, SetDataOptions.Discard);
     }
 
     public void GameTick()
@@ -129,6 +136,8 @@ public class Chips
                 }
             }
         }
+        
+        _triangleBuffer.SetDataEXT(_triangles);
     }
 
     public void Render(Camera camera)
@@ -140,16 +149,15 @@ public class Chips
         Effects.Chip.Projection = camera.ProjectionMatrix;
         
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+        _graphicsDevice.SetVertexBuffer(_triangleBuffer);
         foreach (var pass in Effects.Chip.CurrentTechnique.Passes)
         {
             pass.Apply();
 
-            _graphicsDevice.DrawUserPrimitives(
+            _graphicsDevice.DrawPrimitives(
                 PrimitiveType.TriangleList,
-                _triangles,
                 0,
-                _triangleCount,
-                VertexPositionColor.VertexDeclaration
+                _triangleCount
             );
         }
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -168,5 +176,26 @@ public class Chips
             _chips[i].State = 1;
             _chips[i].Ctmag = 2f;
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _triangleBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~Chips()
+    {
+        Dispose(false);
     }
 }

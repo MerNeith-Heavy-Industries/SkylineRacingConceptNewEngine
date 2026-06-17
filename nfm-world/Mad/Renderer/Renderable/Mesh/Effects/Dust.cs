@@ -5,7 +5,7 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorld;
 
-public class Dust
+public class Dust : IDisposable
 {
     private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
@@ -24,13 +24,20 @@ public class Dust
     private float[,] _smag = new float[20, 8];
     private VertexPositionColor[] _verts = new VertexPositionColor[20 * 8];
     private int _vertexCount;
-    private int[] _indices = new int[20 * 8 * 3];
+    private ushort[] _indices = new ushort[20 * 8 * 3];
     private int _indexCount;
+    private readonly DynamicVertexBuffer _vertexBuffer;
+    private readonly DynamicIndexBuffer _indexBuffer;
 
     public Dust(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;
+        
+        _vertexBuffer = new DynamicVertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, 20 * 8, BufferUsage.WriteOnly);
+        _indexBuffer = new DynamicIndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, 20 * 8 * 3, BufferUsage.WriteOnly);
+        _vertexBuffer.SetDataEXT(_verts);
+        _indexBuffer.SetDataEXT(_indices);
     }
     
     public void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround)
@@ -261,25 +268,25 @@ public class Dust
         ), xnaColor));
             
         // make indices of polygon
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 1;
-        _indices[_indexCount++] = baseIndex + 2;
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 2;
-        _indices[_indexCount++] = baseIndex + 3;
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 3;
-        _indices[_indexCount++] = baseIndex + 4;
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 4;
-        _indices[_indexCount++] = baseIndex + 5;
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 5;
-        _indices[_indexCount++] = baseIndex + 6;
-        _indices[_indexCount++] = baseIndex + 0;
-        _indices[_indexCount++] = baseIndex + 6;
-        _indices[_indexCount++] = baseIndex + 7;
-            
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 1);
+        _indices[_indexCount++] = (ushort)(baseIndex + 2);
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 2);
+        _indices[_indexCount++] = (ushort)(baseIndex + 3);
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 3);
+        _indices[_indexCount++] = (ushort)(baseIndex + 4);
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 4);
+        _indices[_indexCount++] = (ushort)(baseIndex + 5);
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 5);
+        _indices[_indexCount++] = (ushort)(baseIndex + 6);
+        _indices[_indexCount++] = (ushort)(baseIndex + 0);
+        _indices[_indexCount++] = (ushort)(baseIndex + 6);
+        _indices[_indexCount++] = (ushort)(baseIndex + 7);
+
         Sx[dust] += Scx[dust] / (Stg[dust] + 1);
         Sz[dust] += Scz[dust] / (Stg[dust] + 1);
         for (var vert = 0; vert < 7; vert++)
@@ -312,23 +319,40 @@ public class Dust
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
         _graphicsDevice.BlendState = BlendState.NonPremultiplied;
+        _graphicsDevice.SetVertexBuffer(_vertexBuffer);
+        _graphicsDevice.Indices = _indexBuffer;
         foreach (var pass in Effects.Dust.CurrentTechnique.Passes)
         {
             pass.Apply();
-
-            _graphicsDevice.DrawUserIndexedPrimitives(
+            
+            _graphicsDevice.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList,
-                _verts,
+                0,
                 0,
                 _vertexCount,
-                _indices,
                 0,
-                _indexCount / 3,
-                VertexPositionColor.VertexDeclaration
+                _indexCount / 3
             );
         }
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
+    }
+
+    public void Dispose()
+    {
+        ReleaseUnmanagedResources();
+        GC.SuppressFinalize(this);
+    }
+
+    ~Dust()
+    {
+        ReleaseUnmanagedResources();
     }
 }
