@@ -98,6 +98,12 @@ public class Dust : IDisposable
                 TickDust(stage, dust);
             }
         }
+
+        if (_vertexCount > 0 && _indexCount > 0)
+        {
+            _vertexBuffer.SetDataEXT(_verts.AsSpan(0, _vertexCount), SetDataOptions.Discard);
+            _indexBuffer.SetDataEXT(_indices.AsSpan(0, _indexCount), SetDataOptions.Discard);
+        }
     }
 
     private void TickDust(IStage? stage, int dust)
