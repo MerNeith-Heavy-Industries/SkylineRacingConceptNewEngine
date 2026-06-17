@@ -192,6 +192,10 @@ public class CarVisual : MeshedGameObject, IDisposable
 
     private void ReleaseUnmanagedResources()
     {
+        Chips.Dispose();
+        Dust.Dispose();
+        Flames.Dispose();
+        Sparks.Dispose();
     }
 
     private void Dispose(bool disposing)
@@ -199,7 +203,6 @@ public class CarVisual : MeshedGameObject, IDisposable
         ReleaseUnmanagedResources();
         if (disposing)
         {
-            Sparks.Dispose();
         }
     }
 
