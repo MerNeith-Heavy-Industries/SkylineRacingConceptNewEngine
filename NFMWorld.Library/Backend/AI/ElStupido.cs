@@ -318,7 +318,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
                     .ToArray();
                 if (fixRoadStartNodes.Length > 0)
                 {
-                    var selectedIndex = random.Next(0, fixRoadStartNodes.Length - 1);
+                    var selectedIndex = fixRoadStartNodes.Length == 1 ? 0 : random.Next(0, fixRoadStartNodes.Length);
                     targetFixRoadStartNode = fixRoadStartNodes[selectedIndex].index;
                     targetNodeIndex = targetFixRoadStartNode.Value;
 
