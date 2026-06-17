@@ -66,7 +66,6 @@ public class CarVisual : MeshedGameObject, IDisposable
         car.CarPhysics.Distruct += OnDistruct;
 
         Sfx = new MadSfx(car.CarPhysics);
-        GameTicked += () => Sfx.Tick(car.Control, car.CarPhysics, car.Stats);
     }
 
     #region Event handlers
@@ -128,7 +127,7 @@ public class CarVisual : MeshedGameObject, IDisposable
         Dust.GameTick(stage);
         Chips.GameTick();
         Sparks.GameTick();
-        GameTicked?.Invoke();
+        Sfx?.Tick(_car.Control, _car.CarPhysics, _car.Stats);
     }
 
     public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
