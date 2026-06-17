@@ -137,7 +137,10 @@ public class Chips : IDisposable
             }
         }
         
-        _triangleBuffer.SetDataEXT(_triangles);
+        if (_triangleCount > 0)
+        {
+            _triangleBuffer.SetDataEXT(_triangles.AsSpan(0, _triangleCount * 3), SetDataOptions.Discard);
+        }
     }
 
     public void Render(Camera camera)

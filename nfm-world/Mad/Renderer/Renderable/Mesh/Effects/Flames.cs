@@ -285,7 +285,7 @@ public class Flames : IDisposable
                         _triangles[triBase + 8] = new VertexPositionColor(inner2, innerColor);
                     }
                     
-                    _vertexBuffer.SetDataEXT(_triangles);
+                    _vertexBuffer.SetDataEXT(_triangles.AsSpan(), SetDataOptions.Discard);
                 }
             }
         }

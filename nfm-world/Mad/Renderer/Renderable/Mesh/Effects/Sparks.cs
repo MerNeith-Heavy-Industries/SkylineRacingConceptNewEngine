@@ -210,6 +210,14 @@ public class Sparks : IDisposable
                 
                 // draw line
                 LineMeshHelpers.CreateLineMesh(start, end, _vertexCount, default, default, color, 0f, verts, inds);
+
+                // Bounds guard: prevent writing past pre-allocated arrays
+                if (_vertexCount + LineMeshHelpers.VerticesPerLine > _lineVertices.Length ||
+                    _triangleCount * 3 + LineMeshHelpers.IndicesPerLine > _lineIndices.Length)
+                {
+                    break;
+                }
+
                 for (var v = 0; v < LineMeshHelpers.VerticesPerLine; v++)
                 {
                     _lineVertices[_vertexCount + v] = verts[v];
