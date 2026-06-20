@@ -354,7 +354,7 @@ public class PolygonTriangulator
 
     private static bool TryTriangulateSimple(IReadOnlyList<Vector3> vertices, Vector3 centroid, Vector3 normal, out TriangulationResult result)
     {
-        if (IsConvex(vertices) && !DoesNotContainDuplicatePoints(vertices))
+        if (IsConvex(vertices) && DoesNotContainDuplicatePoints(vertices))
         {
             // simple polygon: fan triangulation
             
@@ -1335,44 +1335,27 @@ public class Program
     {
         var vertices = new List<Vector3>
         {
-            new Vector3(42.5f,23.800001f,207.40001f),
-            new Vector3(42.5f,-8.5f,207.40001f),
-            new Vector3(27.2f,-20.400002f,207.40001f),
-            new Vector3(13.6f,-23.800001f,207.40001f),
-            new Vector3(-13.6f,-23.800001f,207.40001f),
-            new Vector3(-27.2f,-20.400002f,207.40001f),
-            new Vector3(-42.5f,-8.5f,207.40001f),
-            new Vector3(-42.5f,23.800001f,207.40001f),
-            new Vector3(-35.7f,23.800001f,207.40001f),
-            new Vector3(35.7f,23.800001f,207.40001f),
-            new Vector3(35.7f,11.900001f,207.40001f),
-            new Vector3(-35.7f,11.900001f,207.40001f),
-            new Vector3(-35.7f,-5.1000004f,207.40001f),
-            new Vector3(-23.800001f,-15.3f,207.40001f),
-            new Vector3(-13.6f,-17f,207.40001f),
-            new Vector3(13.6f,-17f,207.40001f),
-            new Vector3(23.800001f,-15.3f,207.40001f),
-            new Vector3(35.7f,-5.1000004f,207.40001f),
-            new Vector3(35.7f,23.800001f,207.40001f),
-            // new Vector3(-40,-54,-103),
-            // new Vector3(-40,-27,-103),
-            // new Vector3(40,-27,-103),
-            // new Vector3(40,-54,-103),
-            // new Vector3(38,-43,-103),
-            // new Vector3(33,-42,-104),
-            // new Vector3(33,-34,-104),
-            // new Vector3(38,-33,-103),
-            // new Vector3(38,-43,-103),
-            // new Vector3(40,-54,-103),
-            // new Vector3(19,-43,-103),
-            // new Vector3(0,-45,-103),
-            // new Vector3(-19,-43,-103),
-            // new Vector3(-40,-54,-103),
-            // new Vector3(-38,-43,-103),
-            // new Vector3(-33,-42,-104),
-            // new Vector3(-33,-34,-104),
-            // new Vector3(-38,-33,-103),
-            // new Vector3(-38,-43,-103),
+            // Door with window cutout
+            new Vector3(-56,-17,192),
+            new Vector3(-56,-9,192),
+            new Vector3(-56,40,192),
+            new Vector3(-57,40,177),
+            new Vector3(-59,40,161),
+            new Vector3(-60,40,145),
+            new Vector3(-62,40,129),
+            new Vector3(-63,40,118),
+            new Vector3(-63,-73,118),
+            new Vector3(-56,-73,185),
+            new Vector3(-56,-37,192),
+            new Vector3(-56,-37,185),
+            new Vector3(-57,-65,180),
+            new Vector3(-62,-65,128),
+            new Vector3(-62,-32,128),
+            new Vector3(-59,-32,157),
+            new Vector3(-58,-22,163),
+            new Vector3(-56,-22,185),
+            new Vector3(-56,-37,185),
+            new Vector3(-56,-37,192),
         };
 
         var result = PolygonTriangulator.Triangulate(vertices);
