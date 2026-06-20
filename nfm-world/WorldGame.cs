@@ -111,6 +111,11 @@ public class WorldGame : Game
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             G.Scale = Window.ClientBounds.Height / 720f;
         };
+
+        TextInputEXT.TextInput += character =>
+        {
+            GameSparker.CurrentPhase.KeyTyped(character, ImGui.GetIO().WantCaptureKeyboard);
+        };
     }
 
     protected override void Update(GameTime gameTime)

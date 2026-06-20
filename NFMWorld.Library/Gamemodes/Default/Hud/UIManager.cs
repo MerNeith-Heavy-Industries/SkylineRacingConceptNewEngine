@@ -25,6 +25,11 @@ public class UIManager
         RootPanel.DispatchKeyReleased(FocusManager, new KeyboardEvent(key, IBackend.Backend.GetKeyFromScancode(key), keys));
     }
 
+    public void HandleKeyTyped(char character)
+    {
+        RootPanel.DispatchKeyTyped(FocusManager, new KeyboardTypedEvent(character));
+    }
+
     public void HandleMouseMoved(int x, int y, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         FocusManager.DispatchMouseMove(RootPanel,

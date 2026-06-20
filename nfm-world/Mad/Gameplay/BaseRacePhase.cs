@@ -144,7 +144,16 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 
         gamemodeInstance?.KeyPressed(key, in keys);
     }
-    
+
+    public override void KeyTyped(char character, bool imguiWantsKeyboard)
+    {
+        base.KeyTyped(character, imguiWantsKeyboard);
+
+        if (imguiWantsKeyboard) return;
+        
+        gamemodeInstance?.KeyTyped(character);
+    }
+
     private void UpdateControlState()
     {
         var bindings = SettingsMenu.Bindings;

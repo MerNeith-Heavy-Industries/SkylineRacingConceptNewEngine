@@ -2,8 +2,10 @@ using System.Net;
 
 namespace NFMWorld.Account;
 
-public class CreateLocalAccountResult(string message, HttpStatusCode code) : RequestResult(message, code)
+public class CreateLocalAccountResult(string? username, string message, HttpStatusCode code) : RequestResult(message, code)
 {
+    public string? Username { get; } = username;
+
     public override string? ErrorString()
     {
         var current = base.ErrorString();
