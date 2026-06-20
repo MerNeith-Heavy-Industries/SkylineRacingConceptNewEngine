@@ -53,6 +53,11 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
         Hud.HandleKeyReleased(key, keys);
     }
 
+    public virtual void KeyTyped(char character)
+    {
+        Hud.HandleKeyTyped(character);
+    }
+
     public virtual void MousePressed(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         Hud.HandleMousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);

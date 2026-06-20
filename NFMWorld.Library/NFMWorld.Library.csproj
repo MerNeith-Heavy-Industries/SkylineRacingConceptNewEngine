@@ -75,6 +75,8 @@
     <ItemGroup>
       <Folder Include="data\" />
       <Folder Include="Gamemodes\Default\" />
+      <Folder Include="Hud\" />
+      <Folder Include="NFMWorld\" />
     </ItemGroup>
 
     <ItemGroup>

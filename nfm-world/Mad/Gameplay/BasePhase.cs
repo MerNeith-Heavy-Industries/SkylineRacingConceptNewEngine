@@ -97,6 +97,17 @@ public abstract class BasePhase
         }
     }
 
+    public virtual void KeyTyped(char character, bool imguiWantsKeyboard)
+    {
+        if (!imguiWantsKeyboard)
+        {
+            foreach (var ui in Uis)
+            {
+                ui.HandleKeyTyped(character);
+            }
+        }
+    }
+
     /// <summary>
     /// Invoked when a key is released.
     /// </summary>

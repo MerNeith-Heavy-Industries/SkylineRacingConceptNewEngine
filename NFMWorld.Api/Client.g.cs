@@ -154,16 +154,16 @@ namespace NFMWorld.Api
         /// <param name="authorization">Bearer token for user authentication</param>
         /// <returns>Asset created successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CreateAssetResponse> Create_assetAsync(string authorization, System.Collections.Generic.IEnumerable<int>? file, CreateAssetBody? metadata)
+        public virtual System.Threading.Tasks.Task<CreateAssetResponse> CreateAssetAsync(string authorization, System.Collections.Generic.IEnumerable<int>? file, CreateAssetRequest? metadata)
         {
-            return Create_assetAsync(authorization, file, metadata, System.Threading.CancellationToken.None);
+            return CreateAssetAsync(authorization, file, metadata, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="authorization">Bearer token for user authentication</param>
         /// <returns>Asset created successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CreateAssetResponse> Create_assetAsync(string authorization, System.Collections.Generic.IEnumerable<int>? file, CreateAssetBody? metadata, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<CreateAssetResponse> CreateAssetAsync(string authorization, System.Collections.Generic.IEnumerable<int>? file, CreateAssetRequest? metadata, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -318,27 +318,22 @@ namespace NFMWorld.Api
             }
         }
 
-        /// <param name="code">OAuth2 authorization code from Discord</param>
-        /// <param name="state">OAuth2 state parameter for CSRF protection</param>
-        /// <returns>OAuth2 callback handled; login or registration initiated</returns>
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Assets retrieved successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<string> Discord_login_callbackAsync(string code, string state)
+        public virtual System.Threading.Tasks.Task<SearchAssetsResponse> SearchAssetsAsync(string authorization, SearchAssetsRequest body)
         {
-            return Discord_login_callbackAsync(code, state, System.Threading.CancellationToken.None);
+            return SearchAssetsAsync(authorization, body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="code">OAuth2 authorization code from Discord</param>
-        /// <param name="state">OAuth2 state parameter for CSRF protection</param>
-        /// <returns>OAuth2 callback handled; login or registration initiated</returns>
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Assets retrieved successfully</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<string> Discord_login_callbackAsync(string code, string state, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<SearchAssetsResponse> SearchAssetsAsync(string authorization, SearchAssetsRequest body, System.Threading.CancellationToken cancellationToken)
         {
-            if (code == null)
-                throw new System.ArgumentNullException("code");
-
-            if (state == null)
-                throw new System.ArgumentNullException("state");
+            if (body == null)
+                throw new System.ArgumentNullException("body");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -346,17 +341,21 @@ namespace NFMWorld.Api
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("text/plain"));
+
+                    if (authorization == null)
+                        throw new System.ArgumentNullException("authorization");
+                    request_.Headers.TryAddWithoutValidation("Authorization", ConvertToString(authorization, System.Globalization.CultureInfo.InvariantCulture));
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "auth/discord/callback"
-                    urlBuilder_.Append("auth/discord/callback");
-                    urlBuilder_.Append('?');
-                    urlBuilder_.Append(System.Uri.EscapeDataString("code")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(code, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    urlBuilder_.Append(System.Uri.EscapeDataString("state")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(state, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    urlBuilder_.Length--;
+                    // Operation Path: "assets/search"
+                    urlBuilder_.Append("assets/search");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -383,9 +382,12 @@ namespace NFMWorld.Api
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            var result_ = (string)System.Convert.ChangeType(responseData_, typeof(string));
-                            return result_;
+                            var objectResponse_ = await ReadObjectResponseAsync<SearchAssetsResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
                         }
                         else
                         if (status_ == 400)
@@ -395,7 +397,297 @@ namespace NFMWorld.Api
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<ErrorResponse>("Invalid state or code", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<ErrorResponse>("Invalid request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Internal server error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Liked status of asset changed</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<LikeAssetResponse> SetAssetLikedAsync(string authorization, LikeAssetRequest body)
+        {
+            return SetAssetLikedAsync(authorization, body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Liked status of asset changed</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<LikeAssetResponse> SetAssetLikedAsync(string authorization, LikeAssetRequest body, System.Threading.CancellationToken cancellationToken)
+        {
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+
+                    if (authorization == null)
+                        throw new System.ArgumentNullException("authorization");
+                    request_.Headers.TryAddWithoutValidation("Authorization", ConvertToString(authorization, System.Globalization.CultureInfo.InvariantCulture));
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "assets/set_like"
+                    urlBuilder_.Append("assets/set_like");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<LikeAssetResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Invalid request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("No asset found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Internal server error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Asset retrieved successfully</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<int>> GetAssetAsync(string authorization, string asset_type, string asset_author, string asset_name)
+        {
+            return GetAssetAsync(authorization, asset_type, asset_author, asset_name, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="authorization">Bearer token for user authentication</param>
+        /// <returns>Asset retrieved successfully</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<int>> GetAssetAsync(string authorization, string asset_type, string asset_author, string asset_name, System.Threading.CancellationToken cancellationToken)
+        {
+            if (asset_type == null)
+                throw new System.ArgumentNullException("asset_type");
+
+            if (asset_author == null)
+                throw new System.ArgumentNullException("asset_author");
+
+            if (asset_name == null)
+                throw new System.ArgumentNullException("asset_name");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+
+                    if (authorization == null)
+                        throw new System.ArgumentNullException("authorization");
+                    request_.Headers.TryAddWithoutValidation("Authorization", ConvertToString(authorization, System.Globalization.CultureInfo.InvariantCulture));
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "assets/{asset_type}/{asset_author}/{asset_name}.radpack"
+                    urlBuilder_.Append("assets/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(asset_type, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append('/');
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(asset_author, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append('/');
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(asset_name, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append(".radpack");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<int>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Invalid request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorResponse>("No asset found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 500)
@@ -429,15 +721,15 @@ namespace NFMWorld.Api
 
         /// <returns>Discord account created and session started</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<DiscordCreateAccountResponse> Discord_create_accountAsync(CreateAccountBody body)
+        public virtual System.Threading.Tasks.Task<DiscordCreateAccountResponse> CreateDiscordAccountAsync(CreateAccountBody body)
         {
-            return Discord_create_accountAsync(body, System.Threading.CancellationToken.None);
+            return CreateDiscordAccountAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Discord account created and session started</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<DiscordCreateAccountResponse> Discord_create_accountAsync(CreateAccountBody body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<DiscordCreateAccountResponse> CreateDiscordAccountAsync(CreateAccountBody body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -534,15 +826,15 @@ namespace NFMWorld.Api
 
         /// <returns>Discord OAuth2 authorization URL and poll ID</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<DiscordInitResponse> Discord_oauth_startAsync()
+        public virtual System.Threading.Tasks.Task<DiscordInitResponse> InitDiscordOauthAsync()
         {
-            return Discord_oauth_startAsync(System.Threading.CancellationToken.None);
+            return InitDiscordOauthAsync(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Discord OAuth2 authorization URL and poll ID</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<DiscordInitResponse> Discord_oauth_startAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<DiscordInitResponse> InitDiscordOauthAsync(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -622,15 +914,15 @@ namespace NFMWorld.Api
 
         /// <returns>Account created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CreateLocalAccountResponse> Create_local_accountAsync(CreateLocalAccountRequest body)
+        public virtual System.Threading.Tasks.Task<CreateLocalAccountResponse> CreateLocalAccountAsync(CreateLocalAccountRequest body)
         {
-            return Create_local_accountAsync(body, System.Threading.CancellationToken.None);
+            return CreateLocalAccountAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Account created</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CreateLocalAccountResponse> Create_local_accountAsync(CreateLocalAccountRequest body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<CreateLocalAccountResponse> CreateLocalAccountAsync(CreateLocalAccountRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -727,15 +1019,15 @@ namespace NFMWorld.Api
 
         /// <returns>Login successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<LoginLocalAccountResponse> Login_local_accountAsync(LoginLocalAccountRequest body)
+        public virtual System.Threading.Tasks.Task<LoginLocalAccountResponse> LoginLocalAccountAsync(LoginLocalAccountRequest body)
         {
-            return Login_local_accountAsync(body, System.Threading.CancellationToken.None);
+            return LoginLocalAccountAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Login successful</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<LoginLocalAccountResponse> Login_local_accountAsync(LoginLocalAccountRequest body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<LoginLocalAccountResponse> LoginLocalAccountAsync(LoginLocalAccountRequest body, System.Threading.CancellationToken cancellationToken)
         {
             if (body == null)
                 throw new System.ArgumentNullException("body");
@@ -833,16 +1125,16 @@ namespace NFMWorld.Api
         /// <param name="poll_id">OAuth2 poll session ID returned by /auth/discord/start</param>
         /// <returns>Poll result (pending or final)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PollResponse> Poll_oauthAsync(string poll_id)
+        public virtual System.Threading.Tasks.Task<PollResponse> PollOauthAsync(string poll_id)
         {
-            return Poll_oauthAsync(poll_id, System.Threading.CancellationToken.None);
+            return PollOauthAsync(poll_id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="poll_id">OAuth2 poll session ID returned by /auth/discord/start</param>
         /// <returns>Poll result (pending or final)</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PollResponse> Poll_oauthAsync(string poll_id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PollResponse> PollOauthAsync(string poll_id, System.Threading.CancellationToken cancellationToken)
         {
             if (poll_id == null)
                 throw new System.ArgumentNullException("poll_id");
@@ -1067,25 +1359,25 @@ namespace NFMWorld.Api
     public enum AssetType
     {
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Track")]
+        [System.Runtime.Serialization.EnumMember(Value = @"track")]
         Track = 0,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Car")]
+        [System.Runtime.Serialization.EnumMember(Value = @"car")]
         Car = 1,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"TrackPiece")]
-        TrackPiece = 2,
+        [System.Runtime.Serialization.EnumMember(Value = @"track_piece")]
+        Track_piece = 2,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Texture")]
+        [System.Runtime.Serialization.EnumMember(Value = @"texture")]
         Texture = 3,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Sound")]
+        [System.Runtime.Serialization.EnumMember(Value = @"sound")]
         Sound = 4,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Campaign")]
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign")]
         Campaign = 5,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Wheel")]
+        [System.Runtime.Serialization.EnumMember(Value = @"wheel")]
         Wheel = 6,
 
     }
@@ -1094,47 +1386,13 @@ namespace NFMWorld.Api
     public partial class CreateAccountBody
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("temp_token")]
+        [System.Text.Json.Serialization.JsonPropertyName("tempToken")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Temp_token { get; set; } = default!;
+        public string TempToken { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Username { get; set; } = default!;
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CreateAssetBody
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("asset_name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Asset_name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("asset_type")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AssetType>))]
-        public AssetType Asset_type { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("display_name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Display_name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("tags")]
-        public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -1157,7 +1415,41 @@ namespace NFMWorld.Api
 
         [System.Text.Json.Serialization.JsonPropertyName("metadata")]
         [System.ComponentModel.DataAnnotations.Required]
-        public CreateAssetBody Metadata { get; set; } = new CreateAssetBody();
+        public CreateAssetRequest Metadata { get; set; } = new CreateAssetRequest();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateAssetRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string AssetName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AssetType>))]
+        public AssetType AssetType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("displayName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string DisplayName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -1174,12 +1466,12 @@ namespace NFMWorld.Api
     public partial class CreateAssetResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("asset_id")]
-        public long Asset_id { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("assetId")]
+        public long AssetId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("canonical_name")]
+        [System.Text.Json.Serialization.JsonPropertyName("canonicalName")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Canonical_name { get; set; } = default!;
+        public string CanonicalName { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -1238,9 +1530,9 @@ namespace NFMWorld.Api
     public partial class DiscordCreateAccountResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("session_token")]
+        [System.Text.Json.Serialization.JsonPropertyName("sessionToken")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Session_token { get; set; } = default!;
+        public string SessionToken { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -1261,9 +1553,9 @@ namespace NFMWorld.Api
     public partial class DiscordInitResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("poll_id")]
+        [System.Text.Json.Serialization.JsonPropertyName("pollId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Poll_id { get; set; } = default!;
+        public string PollId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("url")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -1319,6 +1611,55 @@ namespace NFMWorld.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class LikeAssetRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetAuthor")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string AssetAuthor { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string AssetName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AssetType>))]
+        public AssetType AssetType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("like")]
+        public bool Like { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class LikeAssetResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("likes")]
+        public long Likes { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class LoginLocalAccountRequest
     {
 
@@ -1345,9 +1686,9 @@ namespace NFMWorld.Api
     public partial class LoginLocalAccountResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("session_token")]
+        [System.Text.Json.Serialization.JsonPropertyName("sessionToken")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Session_token { get; set; } = default!;
+        public string SessionToken { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("username")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -1383,6 +1724,139 @@ namespace NFMWorld.Api
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SearchAssetsAsset
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string AssetName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AssetType>))]
+        public AssetType AssetType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("authorName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string AuthorName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("downloads")]
+        public long Downloads { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<string> Tags { get; set; } = new System.Collections.ObjectModel.Collection<string>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalLikes")]
+        public long TotalLikes { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SearchAssetsRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("assetType")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<AssetType>))]
+        public AssetType AssetType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("displayName")]
+        public string? DisplayName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("ownerName")]
+        public string? OwnerName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("page")]
+        public int? Page { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("pageSize")]
+        [System.ComponentModel.DataAnnotations.Range(10, 25)]
+        public int? PageSize { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sort")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<SortBy>))]
+        public SortBy? Sort { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public System.Collections.Generic.ICollection<string>? Tags { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SearchAssetsResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("entriesOnPage")]
+        public int EntriesOnPage { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("offset")]
+        public int Offset { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("page")]
+        public int Page { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("results")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<SearchAssetsAsset> Results { get; set; } = new System.Collections.ObjectModel.Collection<SearchAssetsAsset>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalPages")]
+        public int TotalPages { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalResults")]
+        public int TotalResults { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum SortBy
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"mostLiked")]
+        MostLiked = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"mostDownloaded")]
+        MostDownloaded = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"displayNameSimilarity")]
+        DisplayNameSimilarity = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"recentlyCreated")]
+        RecentlyCreated = 3,
 
     }
 

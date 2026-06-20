@@ -41,6 +41,13 @@ public interface IGamemode
     public void KeyReleased(Key key, in Keys keys);
 
     /// <summary>
+    /// Invoked when a key character is typed.
+    /// </summary>
+    /// <param name="character">The character that was typed.</param>
+    [ClientOnly]
+    public void KeyTyped(char character);
+
+    /// <summary>
     /// Invoked when the mouse is moved.
     /// </summary>
     /// <param name="x">The X mouse position.</param>

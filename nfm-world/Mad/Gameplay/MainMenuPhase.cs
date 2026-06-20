@@ -16,8 +16,6 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
-    private AccountManagerFloatingMenu? accountManagerMenu;
-    
     private MainMenuView _mainMenuView = new();
     private UIManager _uiManager;
 
@@ -63,7 +61,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnLoginClicked()
     {
-        accountManagerMenu ??= new AccountManagerFloatingMenu();
+        accountManagerMenu ??= new AccountManagerModal();
     }
 
     private void OnLogoutClicked()
@@ -172,17 +170,16 @@ public class MainMenuPhase : BaseStageRenderingPhase
         if (accountManagerMenu is not null)
         {
             var res = accountManagerMenu.Process();
-            if (res == AccountManagerFloatingMenu.AccountManagerFloatingMenuState.LoggedIn)
+            if (res == AccountManagerModal.AccountManagerFloatingMenuState.LoggedIn)
             {
                 accountManagerMenu.Close();
                 accountManagerMenu = null;
             }
-            else if (res == AccountManagerFloatingMenu.AccountManagerFloatingMenuState.Canceled)
+            else if (res == AccountManagerModal.AccountManagerFloatingMenuState.Canceled)
             {
                 accountManagerMenu.Close();
                 accountManagerMenu = null;
             }
-            ;
         }
     }
 }

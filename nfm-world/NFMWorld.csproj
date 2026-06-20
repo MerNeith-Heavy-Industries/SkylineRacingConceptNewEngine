@@ -21,6 +21,9 @@
         <Compile Update="Mad\UI\Test\HStack.cs">
           <DependentUpon>HStack.xaml</DependentUpon>
         </Compile>
+        <Compile Update="Mad\UI\LoginModal.cs">
+          <DependentUpon>LoginModal.xaml</DependentUpon>
+        </Compile>
   </ItemGroup>
   <PropertyGroup>
       <WorldXamlGeneratorBehavior>WithXamlXCompilation</WorldXamlGeneratorBehavior>
@@ -66,6 +69,7 @@
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
         <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj"/>
         <ProjectReference Include="..\NanoSVGSharp\NanoSvgSharp.csproj" />
+        <ProjectReference Include="..\NFMWorld.Api\NFMWorld.Api.csproj" />
         <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj"/>
         <ProjectReference Include="..\NFMWorld.Multiplayer.Base\NFMWorld.Multiplayer.Base.csproj" />
         <ProjectReference Include="..\NFMWorld.NativeLibs\NFMWorld.NativeLibs.csproj" />
@@ -93,6 +97,7 @@
 
     <!-- XAML files to compile -->
     <ItemGroup>
+        <AvaloniaXaml Include="Mad\UI\LoginModal.xaml" />
         <AvaloniaXaml Include="Mad\UI\Menu\GarageUiView.xaml" />
         <AvaloniaXaml Include="Mad\UI\Menu\MainMenuView.xaml" />
         <AvaloniaXaml Include="Mad\UI\Test\HStack.xaml" />

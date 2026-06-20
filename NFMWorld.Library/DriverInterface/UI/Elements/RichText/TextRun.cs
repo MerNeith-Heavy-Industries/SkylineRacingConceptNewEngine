@@ -27,7 +27,7 @@ public enum OverflowBehavior
 public partial class TextRun : Node, IInlineHost
 {
     private bool _invalidated = true;
-    private ComplexTextMetrics.RichTextContainer? _laidOutComplexText;
+    protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     /// <summary>
     /// Sets the fill color of the text. The default value is white.
@@ -107,7 +107,7 @@ public partial class TextRun : Node, IInlineHost
     }
 
     [ClientOnly]
-    private void RelayoutText(Vector2 size)
+    protected void RelayoutText(Vector2 size)
     {
         IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened;
         if (!HasComplexContent)
@@ -118,7 +118,7 @@ public partial class TextRun : Node, IInlineHost
             }
             else
             {
-                _laidOutComplexText = new ComplexTextMetrics.RichTextContainer([], Vector2.Zero);
+                LaidOutComplexText = new ComplexTextMetrics.RichTextContainer([], Vector2.Zero);
                 return;
             }
         }
@@ -139,7 +139,7 @@ public partial class TextRun : Node, IInlineHost
             Height = measurements.Size.Y;
         }
 
-        _laidOutComplexText = measurements;
+        LaidOutComplexText = measurements;
 
         _invalidated = false;
     }
@@ -160,17 +160,17 @@ public partial class TextRun : Node, IInlineHost
             RelayoutText(size);
         }
 
-        Debug.Assert(_laidOutComplexText != null, "Complex text layout should have been calculated in RelayoutText method.");
+        Debug.Assert(LaidOutComplexText != null, "Complex text layout should have been calculated in RelayoutText method.");
 
-        if (_laidOutComplexText.Value.Elements.Count == 0)
+        if (LaidOutComplexText.Value.Elements.Count == 0)
         {
             return;
         }
 
         var basePosition = position;
-        ComplexTextMetrics.AlignBounds(_laidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
+        ComplexTextMetrics.AlignBounds(LaidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
 
-        foreach (var element in _laidOutComplexText.Value.Elements)
+        foreach (var element in LaidOutComplexText.Value.Elements)
         {
             G.SetFont(element.Font with { Size = Font.Size * G.Scale });
             if (element.Background is { } background)
