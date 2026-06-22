@@ -4,10 +4,6 @@ namespace WorldXaml.UI.Yoga;
 
 partial class Node
 {
-    /// <summary>
-    /// Property field for <see cref="Visibility"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Visibility Visibility
     {
         get => GetValue(VisibilityProperty);
@@ -17,8 +13,8 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="Opacity"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<float> OpacityProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, float>(
+    public static global::WorldXaml.UI.Property<float> OpacityProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, float>(
             nameof(Opacity),
             defaultValue: 1,
             onChanged: null);
@@ -29,19 +25,11 @@ partial class Node
         set => SetValue(OpacityProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Direction"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.YgDirection Direction
     {
         get => GetValue(DirectionProperty);
         set => SetValue(DirectionProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="FlexDirection"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgFlexDirection FlexDirection
     {
@@ -49,19 +37,11 @@ partial class Node
         set => SetValue(FlexDirectionProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="JustifyContent"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.YgJustify JustifyContent
     {
         get => GetValue(JustifyContentProperty);
         set => SetValue(JustifyContentProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="AlignItems"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgAlign AlignItems
     {
@@ -69,19 +49,11 @@ partial class Node
         set => SetValue(AlignItemsProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="AlignSelf"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.YgAlign AlignSelf
     {
         get => GetValue(AlignSelfProperty);
         set => SetValue(AlignSelfProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="AlignContent"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgAlign AlignContent
     {
@@ -89,19 +61,11 @@ partial class Node
         set => SetValue(AlignContentProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Position"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.YgPositionType Position
     {
         get => GetValue(PositionProperty);
         set => SetValue(PositionProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="FlexWrap"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgWrap FlexWrap
     {
@@ -109,19 +73,11 @@ partial class Node
         set => SetValue(FlexWrapProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Overflow"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.YgOverflow Overflow
     {
         get => GetValue(OverflowProperty);
         set => SetValue(OverflowProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Display"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgDisplay Display
     {
@@ -129,19 +85,11 @@ partial class Node
         set => SetValue(DisplayProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Flex"/>.
-    /// </summary>
-
     public partial float? Flex
     {
         get => GetValue(FlexProperty);
         set => SetValue(FlexProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="FlexGrow"/>.
-    /// </summary>
 
     public partial float? FlexGrow
     {
@@ -149,19 +97,11 @@ partial class Node
         set => SetValue(FlexGrowProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="FlexShrink"/>.
-    /// </summary>
-
     public partial float? FlexShrink
     {
         get => GetValue(FlexShrinkProperty);
         set => SetValue(FlexShrinkProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="FlexBasis"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementFlexBasis FlexBasis
     {
@@ -169,19 +109,11 @@ partial class Node
         set => SetValue(FlexBasisProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Left"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition Left
     {
         get => GetValue(LeftProperty);
         set => SetValue(LeftProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Top"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition Top
     {
@@ -189,19 +121,11 @@ partial class Node
         set => SetValue(TopProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Right"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition Right
     {
         get => GetValue(RightProperty);
         set => SetValue(RightProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Bottom"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition Bottom
     {
@@ -209,19 +133,11 @@ partial class Node
         set => SetValue(BottomProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="MarginTop"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition MarginTop
     {
         get => GetValue(MarginTopProperty);
         set => SetValue(MarginTopProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="MarginBottom"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition MarginBottom
     {
@@ -229,19 +145,11 @@ partial class Node
         set => SetValue(MarginBottomProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="MarginLeft"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition MarginLeft
     {
         get => GetValue(MarginLeftProperty);
         set => SetValue(MarginLeftProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="MarginRight"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementMarginPosition MarginRight
     {
@@ -249,19 +157,11 @@ partial class Node
         set => SetValue(MarginRightProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="PaddingTop"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementPadding PaddingTop
     {
         get => GetValue(PaddingTopProperty);
         set => SetValue(PaddingTopProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="PaddingBottom"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementPadding PaddingBottom
     {
@@ -269,19 +169,11 @@ partial class Node
         set => SetValue(PaddingBottomProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="PaddingLeft"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementPadding PaddingLeft
     {
         get => GetValue(PaddingLeftProperty);
         set => SetValue(PaddingLeftProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="PaddingRight"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementPadding PaddingRight
     {
@@ -289,19 +181,11 @@ partial class Node
         set => SetValue(PaddingRightProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="BorderTop"/>.
-    /// </summary>
-
     public partial float? BorderTop
     {
         get => GetValue(BorderTopProperty);
         set => SetValue(BorderTopProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="BorderBottom"/>.
-    /// </summary>
 
     public partial float? BorderBottom
     {
@@ -309,19 +193,11 @@ partial class Node
         set => SetValue(BorderBottomProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="BorderLeft"/>.
-    /// </summary>
-
     public partial float? BorderLeft
     {
         get => GetValue(BorderLeftProperty);
         set => SetValue(BorderLeftProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="BorderRight"/>.
-    /// </summary>
 
     public partial float? BorderRight
     {
@@ -329,19 +205,11 @@ partial class Node
         set => SetValue(BorderRightProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Gap"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementGap Gap
     {
         get => GetValue(GapProperty);
         set => SetValue(GapProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="GapColumn"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementGap GapColumn
     {
@@ -349,19 +217,11 @@ partial class Node
         set => SetValue(GapColumnProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="GapRow"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementGap GapRow
     {
         get => GetValue(GapRowProperty);
         set => SetValue(GapRowProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="BoxSizing"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.YgBoxSizing BoxSizing
     {
@@ -369,19 +229,11 @@ partial class Node
         set => SetValue(BoxSizingProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="Width"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight Width
     {
         get => GetValue(WidthProperty);
         set => SetValue(WidthProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Height"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight Height
     {
@@ -389,19 +241,11 @@ partial class Node
         set => SetValue(HeightProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="MinWidth"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight MinWidth
     {
         get => GetValue(MinWidthProperty);
         set => SetValue(MinWidthProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="MinHeight"/>.
-    /// </summary>
 
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight MinHeight
     {
@@ -409,29 +253,17 @@ partial class Node
         set => SetValue(MinHeightProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="MaxWidth"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight MaxWidth
     {
         get => GetValue(MaxWidthProperty);
         set => SetValue(MaxWidthProperty, value);
     }
 
-    /// <summary>
-    /// Property field for <see cref="MaxHeight"/>.
-    /// </summary>
-
     public partial global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight MaxHeight
     {
         get => GetValue(MaxHeightProperty);
         set => SetValue(MaxHeightProperty, value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="AspectRatio"/>.
-    /// </summary>
 
     public partial float? AspectRatio
     {
@@ -442,8 +274,8 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="IsHovered"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<bool> IsHoveredProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, bool>(
+    public static global::WorldXaml.UI.Property<bool> IsHoveredProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, bool>(
             nameof(IsHovered),
             defaultValue: default(bool),
             onChanged: null);
@@ -457,13 +289,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MousePressed"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MousePressedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>> MousePressedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>>(
             nameof(MousePressed),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MousePressed
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>> MousePressed
     {
         get => GetValue(MousePressedProperty);
         set => SetValue(MousePressedProperty, value);
@@ -472,13 +304,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseReleased"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseReleasedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>> MouseReleasedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>>(
             nameof(MouseReleased),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseReleased
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseEvent>> MouseReleased
     {
         get => GetValue(MouseReleasedProperty);
         set => SetValue(MouseReleasedProperty, value);
@@ -487,13 +319,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseDragged"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseDraggedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseDragEvent>>> MouseDraggedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseDragEvent>>>(
             nameof(MouseDragged),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseDragEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseDragged
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseDragEvent>> MouseDragged
     {
         get => GetValue(MouseDraggedProperty);
         set => SetValue(MouseDraggedProperty, value);
@@ -502,13 +334,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseScrolled"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseScrolledProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseWheelEvent>>> MouseScrolledProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseWheelEvent>>>(
             nameof(MouseScrolled),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseWheelEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseScrolled
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseWheelEvent>> MouseScrolled
     {
         get => GetValue(MouseScrolledProperty);
         set => SetValue(MouseScrolledProperty, value);
@@ -517,13 +349,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseMoved"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseMovedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>> MouseMovedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>>(
             nameof(MouseMoved),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseMoved
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>> MouseMoved
     {
         get => GetValue(MouseMovedProperty);
         set => SetValue(MouseMovedProperty, value);
@@ -532,13 +364,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseEntered"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseEnteredProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>> MouseEnteredProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>>(
             nameof(MouseEntered),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseEntered
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>> MouseEntered
     {
         get => GetValue(MouseEnteredProperty);
         set => SetValue(MouseEnteredProperty, value);
@@ -547,13 +379,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="MouseLeft"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> MouseLeftProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>> MouseLeftProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>>(
             nameof(MouseLeft),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand MouseLeft
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.MouseMoveEvent>> MouseLeft
     {
         get => GetValue(MouseLeftProperty);
         set => SetValue(MouseLeftProperty, value);
@@ -562,13 +394,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="KeyTyped"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> KeyTypedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardTypingEvent>>> KeyTypedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardTypingEvent>>>(
             nameof(KeyTyped),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardTypingEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand KeyTyped
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardTypingEvent>> KeyTyped
     {
         get => GetValue(KeyTypedProperty);
         set => SetValue(KeyTypedProperty, value);
@@ -577,13 +409,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="KeyPressed"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> KeyPressedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>> KeyPressedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>>(
             nameof(KeyPressed),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand KeyPressed
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>> KeyPressed
     {
         get => GetValue(KeyPressedProperty);
         set => SetValue(KeyPressedProperty, value);
@@ -592,13 +424,13 @@ partial class Node
     /// <summary>
     /// Property field for <see cref="KeyReleased"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<global::System.Windows.Input.ICommand> KeyReleasedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Node, global::System.Windows.Input.ICommand>(
+    public static global::WorldXaml.UI.Property<global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>> KeyReleasedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Node, global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>>(
             nameof(KeyReleased),
-            defaultValue: default(global::System.Windows.Input.ICommand),
+            defaultValue: default(global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>>),
             onChanged: null);
 
-    public partial global::System.Windows.Input.ICommand KeyReleased
+    public partial global::System.Action<global::WorldXaml.UI.Yoga.NodeEventArgs<global::WorldXaml.UI.Yoga.Events.KeyboardEvent>> KeyReleased
     {
         get => GetValue(KeyReleasedProperty);
         set => SetValue(KeyReleasedProperty, value);

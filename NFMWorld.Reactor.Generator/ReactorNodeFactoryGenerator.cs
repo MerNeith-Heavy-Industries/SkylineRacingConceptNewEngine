@@ -12,7 +12,7 @@ namespace NFMWorld.Reactor.Generator;
 public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 {
     private const string PropertyAttributeFqn = "global::WorldXaml.UI.Base.PropertyAttribute";
-    private const string ContentAttributeFqn = "global::WorldXaml.UI.Base.ContentAttribute";
+    private const string ContentAttributeFqn = "global::WorldXaml.UI.Metadata.ContentAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
