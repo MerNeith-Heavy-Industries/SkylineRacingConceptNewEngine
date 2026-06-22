@@ -16,8 +16,13 @@ public class FlexPanel : Node
     [Content]
     public NodeChildCollection Children { get; }
 
-    public override IReadOnlyList<ILogical> LogicalChildren => Children;
     public override IReadOnlyList<Visual> VisualChildren => Children;
+
+    // ── Visual children API ────────────────────────────────────────────
+    public override bool CanHaveChildren => true;
+    public override void AddChild(Visual child) => Children.Add((Node)child);
+    public override void InsertAt(int index, Visual child) => Children.Insert(index, (Node)child);
+    public override void RemoveAt(int index) => Children.RemoveAt(index);
 
     public FlexPanel()
     {

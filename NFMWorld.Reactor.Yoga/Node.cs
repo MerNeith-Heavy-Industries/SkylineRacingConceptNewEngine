@@ -10,6 +10,7 @@ using System.Windows.Input;
 using WorldXaml.UI;
 using CommunityToolkit.Mvvm.Input;
 using WorldXaml.UI.Base;
+using WorldXaml.UI.LogicalTree;
 using WorldXaml.UI.Yoga.Events;
 using Yoga;
 
@@ -20,12 +21,49 @@ namespace WorldXaml.UI.Yoga;
 /// Represents a single node in the Yoga layout system.
 /// </summary>
 [DebuggerDisplay("{DebugToString()}")]
-public partial class Node : PlainNode, IAnimationCallback
+public partial class Node : Visual, IAnimationCallback, IDisposable
 {
+    internal static readonly YGConfigPtr Config;
+    internal YGNodePtr NodeInternal;
+    internal static readonly List<Node> __INTERNAL_YogaRootsThisFrame = [];
+
+    internal readonly string __INTERNAL_CtorCallerFilePath = "";
+    internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
+    internal readonly string __INTERNAL_CtorCallerMemberName = "";
+
+    static Node()
+    {
+        Config = YGConfigPtr.GetDefault();
+        Config.UseWebDefaults = true;
+    }
+
+    public Node()
+    {
+        NodeInternal = new YGNodePtr(Config);
+    }
+
+    // ── Visual abstracts ────────────────────────────────────────────────
+    public override IReadOnlyList<Visual> VisualChildren => [];
+    public override IReadOnlyList<ILogical> LogicalChildren => [];
+    internal override YGNodePtr Contents => NodeInternal;
+
+    // ── Children API (no-op for leaf nodes) ──────────────────────────────
+    public override bool CanHaveChildren => false;
+    public override void AddChild(Visual child) { }
+    public override void InsertAt(int index, Visual child) { }
+    public override void RemoveAt(int index) { }
+
+    // ── IDisposable ─────────────────────────────────────────────────────
+    ~Node() { Dispose(false); }
+    public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
+    protected virtual void Dispose(bool disposing)
+    {
+        NodeInternal.Dispose();
+    }
     public event Action? AnimationFrameBegan;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public override string DebugToString()
+    public virtual string DebugToString()
     {
         return $"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
