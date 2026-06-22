@@ -5,7 +5,4 @@ namespace NFMWorld.Reactor;
 /// or when a hook is called conditionally. Hooks must be called in the same
 /// order on every render.
 /// </summary>
-public class HookOrderException : InvalidOperationException
-{
-    public HookOrderException(string message) : base(message) { }
-}
+public class HookOrderException(string message) : InvalidOperationException(message);
