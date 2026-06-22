@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
       <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
       <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
