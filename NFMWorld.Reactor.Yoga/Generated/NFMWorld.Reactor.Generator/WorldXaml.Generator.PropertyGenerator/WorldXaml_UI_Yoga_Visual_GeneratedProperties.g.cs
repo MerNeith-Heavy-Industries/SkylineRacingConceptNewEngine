@@ -7,8 +7,8 @@ partial class Visual
     /// <summary>
     /// Property field for <see cref="IsFocusable"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<bool> IsFocusableProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Visual, bool>(
+    public static global::WorldXaml.UI.Property<bool> IsFocusableProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Visual, bool>(
             nameof(IsFocusable),
             defaultValue: default(bool),
             onChanged: null);
@@ -22,8 +22,8 @@ partial class Visual
     /// <summary>
     /// Property field for <see cref="IsFocused"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<bool> IsFocusedProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Visual, bool>(
+    public static global::WorldXaml.UI.Property<bool> IsFocusedProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Visual, bool>(
             nameof(IsFocused),
             defaultValue: default(bool),
             onChanged: null);
@@ -37,8 +37,8 @@ partial class Visual
     /// <summary>
     /// Property field for <see cref="TabOrder"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<int> TabOrderProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Visual, int>(
+    public static global::WorldXaml.UI.Property<int> TabOrderProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Visual, int>(
             nameof(TabOrder),
             defaultValue: default(int),
             onChanged: null);
@@ -52,8 +52,8 @@ partial class Visual
     /// <summary>
     /// Property field for <see cref="Key"/>.
     /// </summary>
-    public static global::WorldXaml.UI.StyledProperty<object> KeyProperty { get; } =
-        global::WorldXaml.UI.WorldXamlProperty.Register<global::WorldXaml.UI.Yoga.Visual, object>(
+    public static global::WorldXaml.UI.Property<object> KeyProperty { get; } =
+        global::WorldXaml.UI.Property.Register<global::WorldXaml.UI.Yoga.Visual, object>(
             nameof(Key),
             defaultValue: default(object),
             onChanged: null);

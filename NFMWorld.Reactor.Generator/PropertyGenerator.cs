@@ -102,10 +102,10 @@ public class PropertyGenerator : IIncrementalGenerator
                             sb.AppendLine($"/// Property field for <see cref=\"{propName}\"/>.");
                             sb.AppendLine($"/// </summary>");
 
-                            sb.AppendLine($"public static global::WorldXaml.UI.StyledProperty<{propType}> {propName}Property {{ get; }} =");
+                            sb.AppendLine($"public static global::WorldXaml.UI.Property<{propType}> {propName}Property {{ get; }} =");
                             using (sb.Indent())
                             {
-                                sb.AppendLine($"global::WorldXaml.UI.WorldXamlProperty.Register<{fullType}, {propType}>(");
+                                sb.AppendLine($"global::WorldXaml.UI.Property.Register<{fullType}, {propType}>(");
                                 using (sb.Indent())
                                 {
                                     sb.AppendLine($"nameof({propName}),");
