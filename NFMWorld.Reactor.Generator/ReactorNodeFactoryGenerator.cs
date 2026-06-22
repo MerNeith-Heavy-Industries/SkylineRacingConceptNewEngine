@@ -137,6 +137,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         // Check for [Content] on any property member on type and parents; if found, look for Add(T)
         // on the *property's type* (e.g. NodeChildCollection.Add(Visual))
         string? childType = null;
+        bool childIsDeclared = true;
         {
             var current = symbol;
             while (current is not null)
@@ -149,12 +150,20 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     if (!hasContent) continue;
 
                     // Look for Add(T) on the property's type (e.g. NodeChildCollection)
-                    childType = contentProp.Type is INamedTypeSymbol propType ? FindAddMethodChildType(propType) : null;
+                    if (contentProp.Type is INamedTypeSymbol propType)
+                    {
+                        childType = FindAddMethodChildType(propType);
+                        goto done;
+                    }
+
                     break;
                 }
 
                 current = current.BaseType;
+                childIsDeclared = false;
             }
+            
+            done: ;
         }
 
         return new TypeInfo(
@@ -165,7 +174,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             IsAbstract: symbol.IsAbstract,
             Properties: properties,
             DeclaredPropertyNames: declaredNames,
-            ChildType: childType
+            ChildType: childType,
+            ChildIsDeclared: childIsDeclared
         );
     }
 
@@ -297,10 +307,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         using (sb.Indent())
         {
             if (!type.IsAbstract)
-                sb.AppendLine($"internal {nodeName}() : base(typeof({type.ShortName})) {{ }}");
-            // Protected ctor for subclass chaining
-            if (isInherited)
-                sb.AppendLine($"protected {nodeName}(Type nodeType) : base(nodeType) {{ }}");
+                sb.AppendLine($"internal {nodeName}() {{ }}");
+            sb.AppendLine();
+            
+            sb.AppendLine($"public override Type NodeType => typeof({type.FullName});");
             sb.AppendLine();
 
             // Generate With* for all hierarchy properties (deduplicated by name)
@@ -310,11 +320,11 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 var typeFqn = StripNullable(prop.TypeFqn);
                 if (prop.IsValueType)
                     if (typeFqn != prop.TypeFqn)
-                        sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetPropValNullable<{nodeName}, {typeFqn}>({type.ShortName}.{prop.Name}Property, value);");
+                        sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetPropValNullable<{nodeName}, {typeFqn}>({type.FullName}.{prop.Name}Property, value);");
                     else
-                        sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetPropVal<{nodeName}, {prop.TypeFqn}>({type.ShortName}.{prop.Name}Property, value);");
+                        sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetPropVal<{nodeName}, {prop.TypeFqn}>({type.FullName}.{prop.Name}Property, value);");
                 else
-                    sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetProp<{nodeName}, {prop.TypeFqn}>({type.ShortName}.{prop.Name}Property, value);");
+                    sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetProp<{nodeName}, {prop.TypeFqn}>({type.FullName}.{prop.Name}Property, value);");
             }
 
             // Build set of With* names from properties to avoid shadow conflicts
@@ -328,7 +338,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             if (!propMethodNames.Contains("WithKey"))
                 sb.AppendLine($"public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
 
-            if (type.ChildType is not null)
+            if (type.ChildType is not null && type.ChildIsDeclared)
             {
                 var childNodeType = type.ChildType + "Node";
                 if (type.ChildType == VisualFqn)
@@ -339,6 +349,12 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 sb.AppendLine($"public {nodeName} WithChildren(params ReadOnlySpan<{childNodeType}> children) {{ Children ??= []; Children.AddRange(children); return this; }}");
                 sb.AppendLine();
                 sb.AppendLine($"public {nodeName} WithChild({childNodeType} child) {{ Children ??= []; Children.Add(child); return this; }}");
+            }
+
+            if (!type.IsAbstract)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"public override Visual CreateNative() => new {type.FullName}();");
             }
         }
 
@@ -435,7 +451,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         bool IsAbstract,
         List<PropInfo> Properties,
         HashSet<string> DeclaredPropertyNames,
-        string? ChildType);
+        string? ChildType,
+        bool ChildIsDeclared);
 
     private readonly record struct PropInfo(
         string Name,
