@@ -224,7 +224,7 @@ public abstract partial class Visual : PropertyObject, IStyleNode, INamed
 
     /// <summary>Remove the child at the given index.</summary>
     public abstract void RemoveAt(int index);
-    
+
     [Property]
     public partial bool IsFocusable { get; set; }
 
