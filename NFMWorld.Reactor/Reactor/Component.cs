@@ -17,6 +17,7 @@ public abstract class Component
     private Visual? _root;
     private FlexPanel? _container;
     private bool _mounted;
+    private bool _treeHosted; // true when this component lives inside a ComponentNode tree
 
     #region Hooks infrastructure
 
@@ -351,6 +352,7 @@ public abstract class Component
     internal Visual? RenderViaReconciler(Reconciler reconciler, Visual? existing)
     {
         Reconciler = reconciler;
+        _treeHosted = true;
         BeginRender();
         VNode vnode = Render();
         EndRender();
@@ -364,30 +366,38 @@ public abstract class Component
     }
 
     /// <summary>
-    /// Re-render and reconcile changes into the already-mounted container.
+    /// Re-render and reconcile changes. When tree-hosted (inside a ComponentNode),
+    /// re-renders in-place; otherwise reconciles into the mounted container.
     /// </summary>
     public void Update()
     {
-        if (!_mounted || _root is null || _container is null) return;
+        if (!_mounted || _root is null) return;
+        if (!_treeHosted && _container is null) return;
+
         BeginRender();
         VNode vnode = Render();
         EndRender();
-        _root = Reconciler.Reconcile(vnode, _container, _root);
+
+        if (_treeHosted)
+            _root = Reconciler.ReconcileNode(vnode, _root);
+        else
+            _root = Reconciler.Reconcile(vnode, _container!, _root);
     }
 
     /// <summary>
-    /// Remove from the native tree.
+    /// Remove from the native tree. Runs effect cleanups and <see cref="OnUnmounted"/>.
     /// </summary>
     public void Unmount()
     {
         RunUnmountCleanups();
-        if (_container is not null && _root is not null)
+        if (!_treeHosted && _container is not null && _root is not null)
         {
             _container.Children.Remove(_root);
         }
         _root = null;
         _container = null;
         _mounted = false;
+        _treeHosted = false;
         _hookIndex = 0;
         _prevHookCount = 0;
         _hooks?.Clear();

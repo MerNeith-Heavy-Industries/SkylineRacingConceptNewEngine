@@ -4,6 +4,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:w="https://github.com/needforrewrite/nfm-world"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:framework="clr-namespace:Microsoft.Xna.Framework;assembly=FNA.Math"
+    xmlns:controls="clr-namespace:Avalonia.Controls;assembly=WorldXaml.UI.Base"
     mc:Ignorable="d" d:DataContext="{d:DesignInstance w:XamlTestViewModel}"
     x:Class="NFMWorld.UI.Test.XamlTestView"
     DataType="w:XamlTestViewModel"
@@ -168,5 +170,22 @@ It should wrap as intended.</w:TextRun>
         </w:TextRun>
 
     </FlexPanel>
+    
+    <!-- App-level resources -->
+    <View.Styles>
+        <framework:Color x:Key="AccentColor">255,140,0,255</framework:Color>
+        <Style Selector="w|TextRun.h1">
+            <Setter Property="Font" Value="bold 32px Adventure" />
+            <Setter Property="Color" Value="{StaticResource AccentColor}" />
+        </Style>
+    </View.Styles>
 
+    <!-- StaticResource resolves at load time -->
+    <w:SolidBox BackgroundColor="{StaticResource AccentColor}" />
+
+    <!-- Classes applied, Style matches TextRun.h1 -->
+    <w:TextRun Classes="h1" Text="Hello World" />
+
+    <!-- DynamicResource tracks changes -->
+    <w:SolidBox BackgroundColor="{DynamicResource AccentColor}" />
 </View>

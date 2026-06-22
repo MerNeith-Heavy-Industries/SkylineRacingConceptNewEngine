@@ -25,10 +25,6 @@
           <DependentUpon>LoginModal.xaml</DependentUpon>
         </Compile>
   </ItemGroup>
-  <PropertyGroup>
-      <WorldXamlGeneratorBehavior>WithXamlXCompilation</WorldXamlGeneratorBehavior>
-      <WorldXamlGeneratorIsHotReloadingEnabled>true</WorldXamlGeneratorIsHotReloadingEnabled>
-  </PropertyGroup>
 <!--
     <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
         <PublishAot>true</PublishAot>
@@ -39,8 +35,8 @@
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
     <ItemGroup>
-        <None Remove="Icon.ico"/>
-        <None Remove="Icon.bmp"/>
+        <None Remove="Icon.ico" />
+        <None Remove="Icon.bmp" />
         <None Update="steam_appid.txt">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -55,47 +51,39 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9"/>
-        <PackageReference Include="ManagedBass" Version="4.0.1"/>
-        <PackageReference Include="ManagedBass.Fx" Version="4.0.1"/>
-        <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest"/>
+        <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
+        <PackageReference Include="ManagedBass" Version="4.0.1" />
+        <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
+        <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
         <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
-        <PackageReference Include="ManagedBass.Opus" Version="4.0.1"/>
-        <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0"/>
-        <PackageReference Include="Yoga-CS" Version="1.0.0"/>
+        <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
+        <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+        <PackageReference Include="Yoga-CS" Version="1.0.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj"/>
-        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj"/>
+        <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
+        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
-        <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj"/>
+        <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj" />
         <ProjectReference Include="..\NanoSVGSharp\NanoSvgSharp.csproj" />
         <ProjectReference Include="..\NFMWorld.Api\NFMWorld.Api.csproj" />
-        <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj"/>
+        <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
         <ProjectReference Include="..\NFMWorld.Multiplayer.Base\NFMWorld.Multiplayer.Base.csproj" />
         <ProjectReference Include="..\NFMWorld.NativeLibs\NFMWorld.NativeLibs.csproj" />
         <ProjectReference Include="..\NFMWorld.Server.Lobby\NFMWorld.Server.Lobby.csproj" />
-        <ProjectReference Include="..\WorldXaml\WorldXaml.Core\WorldXaml.Core.csproj" />
-        <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj"/>
-        <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj"/>
-        <ProjectReference Include="..\WorldXaml\WorldXaml.ObservableCollections\WorldXaml.ObservableCollections.csproj" />
-        <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Yoga\WorldXaml.UI.Yoga.csproj" />
-        <ProjectReference Include="..\WorldXaml\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj"/>
-        <!-- Reference WorldXaml.Generator for XAML source generation -->
-        <ProjectReference Include="..\WorldXaml\WorldXaml.Generator\WorldXaml.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
+        <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
+        <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
+        <ProjectReference Include="..\NFMWorld.XamlX\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
+        <!-- Reference NFMWorld.ShaderSourceGen for XAML source generation -->
         <ProjectReference Include="..\NFMWorld.ShaderSourceGen\NFMWorld.ShaderSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen\Maxine.Extensions.UnionGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj"/>
+        <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj" />
+        <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
-
-    <Import Project="../WorldXaml/WorldXaml.Generator/WorldXaml.Generator.props" />
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
-
-    <ItemGroup>
-        <ProjectReference Include="..\WorldXaml\XamlX\src\XamlX\XamlX.csproj"/>
-    </ItemGroup>
 
     <!-- XAML files to compile -->
     <ItemGroup>
@@ -208,8 +196,8 @@
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
         <ItemGroup>
-            <ShaderFiles Include="$(OutputPath)/data/shaders/*.fxb"/>
+            <ShaderFiles Include="$(OutputPath)/data/shaders/*.fxb" />
         </ItemGroup>
-        <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders"/>
+        <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
     </Target>
 </Project>

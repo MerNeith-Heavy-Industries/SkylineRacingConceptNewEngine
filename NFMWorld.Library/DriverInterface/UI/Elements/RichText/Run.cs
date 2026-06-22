@@ -1,6 +1,7 @@
 ﻿using Avalonia.Data;
 using Avalonia.Metadata;
 using WorldXaml.UI.Base;
+using WorldXaml.UI.Metadata;
 
 namespace NFMWorld.DriverInterface.UI;
 
@@ -34,7 +35,7 @@ public partial class Run : Inline, IRichTextLeaf
     /// The content spanned by this TextElement.
     /// </summary>
     [Content]
-    [Property(DefaultMode = BindingMode.TwoWay, OnChangedMethod = nameof(OnTextChanged))]
+    [Property(OnChangedMethod = nameof(OnTextChanged))]
     public partial string Text { get; set; }
     
     private partial void OnTextChanged(string newText)

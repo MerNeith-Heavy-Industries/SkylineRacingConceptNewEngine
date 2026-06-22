@@ -72,7 +72,7 @@ public class WorldGame : Game
         GameThreadContext.Install();
 
         var xamlLogger = Logging.LoggerFactory.CreateLogger("WorldXaml");
-        XamlConfig.LogMessage = (level, message) =>
+        ReactorConfig.LogMessage = (level, message) =>
         {
 #pragma warning disable CA2254
             if (level == WorldXaml.UI.Base.LogLevel.Info)
@@ -709,7 +709,7 @@ public class WorldGame : Game
 
 internal static class NfmwInterpolators
 {
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Color InterpolateColor(Color from, Color to, float alpha)
     {
         var fromR = from.R;
@@ -727,7 +727,7 @@ internal static class NfmwInterpolators
         return new Color(r, g, b, a);
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Color? InterpolateColorOrNull(Color? from, Color? to, float alpha)
     {
         if (from is { } fromValue && to is { } toValue)
@@ -739,7 +739,7 @@ internal static class NfmwInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Color3 InterpolateColor(Color3 from, Color3 to, float alpha)
     {
         var fromR = from.R;
@@ -754,7 +754,7 @@ internal static class NfmwInterpolators
         return new Color3(r, g, b);
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Color3? InterpolateColorOrNull(Color3? from, Color3? to, float alpha)
     {
         if (from is { } fromValue && to is { } toValue)
@@ -766,25 +766,25 @@ internal static class NfmwInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector2 InterpolateVector2(Vector2 from, Vector2 to, float alpha)
     {
         return new Vector2(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha);
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector3 InterpolateVector3(Vector3 from, Vector3 to, float alpha)
     {
         return new Vector3(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha);
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector4 InterpolateVector4(Vector4 from, Vector4 to, float alpha)
     {
         return new Vector4(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha, from.W + (to.W - from.W) * alpha);
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector2? InterpolateVector2OrNull(Vector2? from, Vector2? to, float alpha)
     {
         if (from is { } fromValue && to is { } toValue)
@@ -796,7 +796,7 @@ internal static class NfmwInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector3? InterpolateVector3OrNull(Vector3? from, Vector3? to, float alpha)
     {
         if (from is { } fromValue && to is { } toValue)
@@ -808,7 +808,7 @@ internal static class NfmwInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Vector4? InterpolateVector4OrNull(Vector4? from, Vector4? to, float alpha)
     {
         if (from is { } fromValue && to is { } toValue)

@@ -27,7 +27,7 @@ public class UIManager
 
     public void HandleKeyTyped(char character)
     {
-        RootPanel.DispatchKeyTyped(FocusManager, new KeyboardTypedEvent(character));
+        RootPanel.DispatchKeyTyped(FocusManager, new KeyboardTypingEvent(character));
     }
 
     public void HandleMouseMoved(int x, int y, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)

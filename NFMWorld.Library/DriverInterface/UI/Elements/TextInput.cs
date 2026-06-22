@@ -238,7 +238,7 @@ public partial class TextInput : TextRun
 
     // ── Keyboard input ─────────────────────────────────────────────
 
-    protected override void OnKeyTyped(FocusManager focusManager, KeyboardTypedEvent @event)
+    protected override void OnKeyTyped(FocusManager focusManager, KeyboardTypingEvent @event)
     {
         base.OnKeyTyped(focusManager, @event);
 
