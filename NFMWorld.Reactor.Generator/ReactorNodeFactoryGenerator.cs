@@ -226,30 +226,29 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         // Determine shared namespace from the first type's namespace
         var factoryNamespace = nonNull.Count > 0 ? nonNull[0].Namespace : "NFMWorld.Reactor";
 
-        sbNodes.AppendLine();
-        sbNodes.AppendLine($"namespace {factoryNamespace}");
-        sbNodes.AppendLine("{");
-        using (sbNodes.Indent())
+        // Only emit the Nodes factory class if there are non-abstract types
+        if (nonNull.Any(t => !t.IsAbstract))
         {
-            sbNodes.AppendLine("/// <summary>Unified factory methods for all Yoga-backed VNodes in this project.</summary>");
-            sbNodes.AppendLine("public static class Nodes");
+            sbNodes.AppendLine();
+            sbNodes.AppendLine($"namespace {factoryNamespace}");
             sbNodes.AppendLine("{");
             using (sbNodes.Indent())
             {
-                // Build map: native type FQN → generated VNode wrapper class name
-                var typeToNodeClass = new Dictionary<string, string>();
-                foreach (var type in nonNull)
-                    typeToNodeClass[type.FullName] = type.ShortName + "Node";
-
-                foreach (var type in nonNull)
+                sbNodes.AppendLine("/// <summary>Unified factory methods for all Yoga-backed VNodes in this project.</summary>");
+                sbNodes.AppendLine("public static class Nodes");
+                sbNodes.AppendLine("{");
+                using (sbNodes.Indent())
                 {
-                    if (!type.IsAbstract)
-                        GenerateFactoryMethod(sbNodes, type);
+                    foreach (var type in nonNull)
+                    {
+                        if (!type.IsAbstract)
+                            GenerateFactoryMethod(sbNodes, type);
+                    }
                 }
+                sbNodes.AppendLine("}");
             }
             sbNodes.AppendLine("}");
         }
-        sbNodes.AppendLine("}");
 
         // Generate typed VNode subclasses in their origin namespaces
         var sbTypes = new IndentedStringBuilder();
