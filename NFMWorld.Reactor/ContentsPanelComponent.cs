@@ -1,5 +1,6 @@
+using NFMWorld.Reactor;
+using static WorldXaml.UI.Yoga.Nodes;
 using Yoga;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Reactor;
 
@@ -18,5 +19,5 @@ public class ContentsPanelComponent : Component
     }
 
     protected override VNode Render()
-        => FlexPanelNodeFactories.FlexPanel(display: YgDisplay.Contents, children: _children);
+        => FlexPanel(display: YgDisplay.Contents, children: _children);
 }

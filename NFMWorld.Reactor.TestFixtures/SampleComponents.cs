@@ -1,4 +1,5 @@
 using WorldXaml.UI.Yoga;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.Reactor.TestFixtures;
 
@@ -12,7 +13,7 @@ public class EmptyComponent : Component
     protected override VNode Render()
     {
         RenderCount++;
-        return FlexPanelNodeFactories.FlexPanel();
+        return FlexPanel();
     }
 }
 
@@ -29,7 +30,7 @@ public class TitleComponent : Component
     }
 
     protected override VNode Render()
-        => FlexPanelNodeFactories.FlexPanel().WithName(Title);
+        => FlexPanel().WithName(Title);
 }
 
 /// <summary>
@@ -47,7 +48,7 @@ public class CounterComponent : Component
     }
 
     protected override VNode Render()
-        => FlexPanelNodeFactories.FlexPanel().WithName($"{Label}:{InitialValue}");
+        => FlexPanel().WithName($"{Label}:{InitialValue}");
 }
 
 /// <summary>
@@ -63,7 +64,7 @@ public class OptionalTitleComponent : Component
     }
 
     protected override VNode Render()
-        => FlexPanelNodeFactories.FlexPanel().WithName(Subtitle ?? "(none)");
+        => FlexPanel().WithName(Subtitle ?? "(none)");
 }
 
 /// <summary>
@@ -81,7 +82,7 @@ public class ToggleComponent : Component
     }
 
     protected override VNode Render()
-        => FlexPanelNodeFactories.FlexPanel().WithName($"toggle:{Enabled}:{Opacity}");
+        => FlexPanel().WithName($"toggle:{Enabled}:{Opacity}");
 }
 
 /// <summary>

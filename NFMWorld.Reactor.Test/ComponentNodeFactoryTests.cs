@@ -1,4 +1,6 @@
 using NFMWorld.Reactor.TestFixtures;
+using static NFMWorld.Reactor.TestFixtures.Nodes;
+using static WorldXaml.UI.Yoga.Nodes;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Reactor.Test;
@@ -12,7 +14,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void TitleComponent_Factory_CreatesNodeWithName()
     {
-        var node = TitleComponentComponentFactories.TitleComponent(title: "Hello");
+        var node = TitleComponent(title: "Hello");
 
         Assert.IsNotNull(node);
         Assert.AreEqual(typeof(TitleComponent), node.ComponentType);
@@ -25,7 +27,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void EmptyComponent_Factory_CreatesNode()
     {
-        var node = EmptyComponentComponentFactories.EmptyComponent();
+        var node = EmptyComponent();
 
         Assert.IsNotNull(node);
         Assert.AreEqual(typeof(EmptyComponent), node.ComponentType);
@@ -37,7 +39,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void CounterComponent_DefaultValue_UsedWhenNotProvided()
     {
-        var node = CounterComponentComponentFactories.CounterComponent(label: "Score");
+        var node = CounterComponent(label: "Score");
 
         var comp = (CounterComponent)node.CreateComponent();
         Assert.AreEqual("Score", comp.Label);
@@ -50,7 +52,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void CounterComponent_ExplicitValue_OverridesDefault()
     {
-        var node = CounterComponentComponentFactories.CounterComponent(label: "Score", initialValue: 42);
+        var node = CounterComponent(label: "Score", initialValue: 42);
 
         var comp = (CounterComponent)node.CreateComponent();
         Assert.AreEqual("Score", comp.Label);
@@ -63,7 +65,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void OptionalTitleComponent_NullDefault_Works()
     {
-        var node = OptionalTitleComponentComponentFactories.OptionalTitleComponent();
+        var node = OptionalTitleComponent();
 
         var comp = (OptionalTitleComponent)node.CreateComponent();
         Assert.IsNull(comp.Subtitle);
@@ -75,7 +77,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void ToggleComponent_Defaults_AreCorrect()
     {
-        var node = ToggleComponentComponentFactories.ToggleComponent();
+        var node = ToggleComponent();
 
         var comp = (ToggleComponent)node.CreateComponent();
         Assert.AreEqual(true, comp.Enabled);
@@ -88,7 +90,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void CounterComponent_WithMethods_OverrideFactoryArgs()
     {
-        var node = CounterComponentComponentFactories.CounterComponent(label: "Old")
+        var node = CounterComponent(label: "Old")
             .WithLabel("New")
             .WithInitialValue(99);
 
@@ -103,7 +105,7 @@ public class ComponentNodeFactoryTests
     [TestMethod]
     public void ComponentNode_RenderCount_Increments()
     {
-        var node = EmptyComponentComponentFactories.EmptyComponent();
+        var node = EmptyComponent();
         var comp = (EmptyComponent)node.CreateComponent();
 
         // Mount the component into a container (calls Render internally)

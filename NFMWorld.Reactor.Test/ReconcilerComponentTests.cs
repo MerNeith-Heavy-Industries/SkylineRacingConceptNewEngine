@@ -1,4 +1,6 @@
 using NFMWorld.Reactor.TestFixtures;
+using static NFMWorld.Reactor.TestFixtures.Nodes;
+using static WorldXaml.UI.Yoga.Nodes;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Reactor.Test;
@@ -15,14 +17,14 @@ public class ReconcilerComponentTests
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        var vnode = ViewNodeFactories.View(children:
-            EmptyComponentComponentFactories.EmptyComponent()
+        var vnode = View(name: "vnode", children:
+            EmptyComponent()
         );
 
         var root = reconciler.Reconcile(vnode, container, null);
 
         Assert.IsNotNull(root);
-        Assert.AreEqual(1, container.Children.Count);
+        Assert.HasCount(1, container.Children);
     }
 
     /// <summary>
@@ -35,7 +37,7 @@ public class ReconcilerComponentTests
         var reconciler = new Reconciler();
         
         // Step 1: verify the factory-produced VNode has Name
-        var compNode = TitleComponentComponentFactories.TitleComponent(title: "CompName");
+        var compNode = TitleComponent(title: "CompName");
         var comp = (TitleComponent)compNode.CreateComponent();
         var rendered = (VNode)comp.GetType().GetMethod("Render", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             !.Invoke(comp, null)!;
@@ -46,7 +48,7 @@ public class ReconcilerComponentTests
         Assert.AreEqual("CompName", directResult.Name, "Direct reconcile should preserve name");
         
         // Step 3: reconcile through View wrapper
-        var vnode = ViewNodeFactories.View(children: compNode);
+        var vnode = View(name: "vnode", children: compNode);
         var root = reconciler.Reconcile(vnode, container, null);
         Assert.IsNotNull(root);
         var flexChild = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
@@ -62,7 +64,7 @@ public class ReconcilerComponentTests
     {
         var container = new FlexPanel();
         var reconciler = new Reconciler();
-        var compNode = TitleComponentComponentFactories.TitleComponent(title: "DirectComp");
+        var compNode = TitleComponent(title: "DirectComp");
         var root = reconciler.Reconcile(compNode, container, null);
 
         Assert.IsNotNull(root);
@@ -77,7 +79,7 @@ public class ReconcilerComponentTests
     {
         var container = new FlexPanel();
         var reconciler = new Reconciler();
-        var flexNode = FlexPanelNodeFactories.FlexPanel(name: "DirectName");
+        var flexNode = FlexPanel(name: "DirectName");
         var root = reconciler.Reconcile(flexNode, container, null);
         Assert.AreEqual("DirectName", root.Name);
     }
@@ -92,8 +94,8 @@ public class ReconcilerComponentTests
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        var vnode = ViewNodeFactories.View(children:
-            EmptyComponentComponentFactories.EmptyComponent()
+        var vnode = View(name: "vnode", children:
+            EmptyComponent()
         );
 
         reconciler.Reconcile(vnode, container, null);
@@ -112,13 +114,13 @@ public class ReconcilerComponentTests
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        var vnode = ViewNodeFactories.View(children:
-            TitleComponentComponentFactories.TitleComponent(title: "MyTitle")
+        var vnode = View(name: "vnode", children:
+            TitleComponent(title: "MyTitle")
         );
 
         reconciler.Reconcile(vnode, container, null);
 
-        var child = container.Children[0] as FlexPanel;
+        var child = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(child);
         Assert.AreEqual("MyTitle", child.Name);
     }
@@ -129,25 +131,25 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_UpdateComponent_ReflectsNewTitle()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel() { Name = "container" };
         var reconciler = new Reconciler();
 
         // First render
-        var vnode1 = ViewNodeFactories.View(children:
-            TitleComponentComponentFactories.TitleComponent(title: "First")
+        var vnode1 = View(name: "vnode1", children:
+            TitleComponent(title: "First")
         );
         var root = reconciler.Reconcile(vnode1, container, null);
 
         // Second render with different title
-        var vnode2 = ViewNodeFactories.View(children:
-            TitleComponentComponentFactories.TitleComponent(title: "Second")
+        var vnode2 = View(name: "vnode2", children:
+            TitleComponent(title: "Second")
         );
         reconciler.Reconcile(vnode2, container, root);
 
-        var child = container.Children[0] as FlexPanel;
+        var child = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(child);
         Assert.AreEqual("Second", child.Name);
-        Assert.AreEqual(1, container.Children.Count);
+        Assert.HasCount(1, container.Children);
     }
 
     /// <summary>
@@ -156,16 +158,16 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_WrapperComponent_PassesChildThrough()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
 
-        var inner = FlexPanelNodeFactories.FlexPanel(name: "inner");
-        var wrapperNode = WrapperComponentComponentFactories.WrapperComponent(child: inner);
+        var inner = FlexPanel(name: "inner");
+        var wrapperNode = WrapperComponent(child: inner);
 
-        var vnode = ViewNodeFactories.View(children: wrapperNode);
+        var vnode = View(children: wrapperNode, name: "view");
         reconciler.Reconcile(vnode, container, null);
 
-        var wrapperOutput = container.Children[0] as FlexPanel;
+        var wrapperOutput = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(wrapperOutput);
         Assert.AreEqual("inner", wrapperOutput.Name);
     }
