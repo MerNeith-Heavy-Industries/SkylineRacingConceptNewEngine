@@ -8,11 +8,13 @@ namespace WorldXaml.UI.Yoga
     public static class ContentsPanelNodeFactories
     {
         /// <summary>Create a <see cref="ContentsPanel"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.ContentsPanelNode ContentsPanel(NFMWorld.Reactor.Optional<string> name = default)
+        public static global::WorldXaml.UI.Yoga.ContentsPanelNode ContentsPanel(NFMWorld.Reactor.Optional<string> name = default, 
+            params ReadOnlySpan<NFMWorld.Reactor.VNode> children)
         {
             var n = new WorldXaml.UI.Yoga.ContentsPanelNode();
 
             if (name.HasValue) n.WithName(name.Value);
+            if (children.Length > 0) n.WithChildren(children);
 
             return n;
         }
@@ -26,7 +28,7 @@ namespace WorldXaml.UI.Yoga
     public static class FlexPanelNodeFactories
     {
         /// <summary>Create a <see cref="FlexPanel"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.FlexPanelNode FlexPanel(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
+        public static global::WorldXaml.UI.Yoga.FlexPanelNode FlexPanel(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginSize = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderSize = default, 
@@ -97,7 +99,8 @@ namespace WorldXaml.UI.Yoga
             NFMWorld.Reactor.Optional<global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight> maxWidth = default, 
             NFMWorld.Reactor.Optional<global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight> maxHeight = default, 
             NFMWorld.Reactor.Optional<float?> aspectRatio = default, 
-            NFMWorld.Reactor.Optional<string> name = default)
+            NFMWorld.Reactor.Optional<string> name = default, 
+            params ReadOnlySpan<NFMWorld.Reactor.VNode> children)
         {
             var n = new WorldXaml.UI.Yoga.FlexPanelNode();
 
@@ -173,6 +176,7 @@ namespace WorldXaml.UI.Yoga
             if (maxHeight.HasValue) n.WithMaxHeight(maxHeight.Value);
             if (aspectRatio.HasValue) n.WithAspectRatio(aspectRatio.Value);
             if (name.HasValue) n.WithName(name.Value);
+            if (children.Length > 0) n.WithChildren(children);
 
             return n;
         }
@@ -186,7 +190,7 @@ namespace WorldXaml.UI.Yoga
     public static class NodeNodeFactories
     {
         /// <summary>Create a <see cref="Node"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.NodeNode Node(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
+        public static global::WorldXaml.UI.Yoga.NodeNode Node(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginSize = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderSize = default, 
@@ -346,11 +350,13 @@ namespace WorldXaml.UI.Yoga
     public static class OverlayPanelNodeFactories
     {
         /// <summary>Create a <see cref="OverlayPanel"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.OverlayPanelNode OverlayPanel(NFMWorld.Reactor.Optional<string> name = default)
+        public static global::WorldXaml.UI.Yoga.OverlayPanelNode OverlayPanel(NFMWorld.Reactor.Optional<string> name = default, 
+            params ReadOnlySpan<global::WorldXaml.UI.Yoga.NodeNode> children)
         {
             var n = new WorldXaml.UI.Yoga.OverlayPanelNode();
 
             if (name.HasValue) n.WithName(name.Value);
+            if (children.Length > 0) n.WithChildren(children);
 
             return n;
         }
@@ -364,7 +370,7 @@ namespace WorldXaml.UI.Yoga
     public static class PlainNodeNodeFactories
     {
         /// <summary>Create a <see cref="PlainNode"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.PlainNodeNode PlainNode(NFMWorld.Reactor.Optional<string> name = default)
+        public static global::WorldXaml.UI.Yoga.PlainNodeNode PlainNode(NFMWorld.Reactor.Optional<string> name = default)
         {
             var n = new WorldXaml.UI.Yoga.PlainNodeNode();
 
@@ -382,7 +388,7 @@ namespace WorldXaml.UI.Yoga
     public static class ViewNodeFactories
     {
         /// <summary>Create a <see cref="View"/> VNode.</summary>
-        public static WorldXaml.UI.Yoga.ViewNode View(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
+        public static global::WorldXaml.UI.Yoga.ViewNode View(NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutMarginSize = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderPosition = default, 
             NFMWorld.Reactor.Optional<global::System.Numerics.Vector2> layoutBorderSize = default, 

@@ -46,6 +46,5 @@ public class VNode
     // ── Shared fluent builders ──────────────────────────────────────────
 
     public VNode WithClasses(string? c) { Classes = c; return this; }
-    public VNode WithName(string? n) { Name = n; return this; }
     public VNode WithKey(object? k) { Key = k; return this; }
 }

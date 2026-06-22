@@ -10,6 +10,10 @@ namespace WorldXaml.UI.Yoga
         internal ContentsPanelNode() : base(typeof(ContentsPanel)) { }
 
         public ContentsPanelNode WithName(string value) => SetProp<ContentsPanelNode, string>(ContentsPanel.NameProperty, value);
+
+        public ContentsPanelNode WithChildren(params ReadOnlySpan<NFMWorld.Reactor.VNode> children) { Children ??= []; Children.AddRange(children); return this; }
+
+        public ContentsPanelNode WithChild(NFMWorld.Reactor.VNode child) { Children ??= []; Children.Add(child); return this; }
     }
 }
 
@@ -93,6 +97,10 @@ namespace WorldXaml.UI.Yoga
         public FlexPanelNode WithMaxHeight(global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight value) => SetPropVal<FlexPanelNode, global::WorldXaml.UI.Yoga.Node.MeasurementWidthHeight>(FlexPanel.MaxHeightProperty, value);
         public FlexPanelNode WithAspectRatio(float? value) => SetPropValNullable<FlexPanelNode, float>(FlexPanel.AspectRatioProperty, value);
         public FlexPanelNode WithName(string value) => SetProp<FlexPanelNode, string>(FlexPanel.NameProperty, value);
+
+        public FlexPanelNode WithChildren(params ReadOnlySpan<NFMWorld.Reactor.VNode> children) { Children ??= []; Children.AddRange(children); return this; }
+
+        public FlexPanelNode WithChild(NFMWorld.Reactor.VNode child) { Children ??= []; Children.Add(child); return this; }
     }
 }
 
@@ -188,6 +196,10 @@ namespace WorldXaml.UI.Yoga
         internal OverlayPanelNode() : base(typeof(OverlayPanel)) { }
 
         public OverlayPanelNode WithName(string value) => SetProp<OverlayPanelNode, string>(OverlayPanel.NameProperty, value);
+
+        public OverlayPanelNode WithChildren(params ReadOnlySpan<global::WorldXaml.UI.Yoga.NodeNode> children) { Children ??= []; Children.AddRange(children); return this; }
+
+        public OverlayPanelNode WithChild(global::WorldXaml.UI.Yoga.NodeNode child) { Children ??= []; Children.Add(child); return this; }
     }
 }
 
