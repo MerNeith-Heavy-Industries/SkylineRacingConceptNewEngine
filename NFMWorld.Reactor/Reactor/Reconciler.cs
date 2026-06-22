@@ -16,6 +16,8 @@ public class Reconciler
     private readonly ThreadLocalArrayPool<Visual?> _visualArrayPool = new(65536, 50);
     private readonly HashSet<Component> _activeComponents = [];
     private readonly HashSet<Component> _visitedComponents = [];
+    private readonly Dictionary<Visual, HashSet<int>> _prevPropIds = [];
+    private readonly Dictionary<Visual, HashSet<int>> _currPropIds = [];
 
     /// <summary>
     /// Apply the VNode tree to the given native root container.
@@ -39,6 +41,8 @@ public class Reconciler
 
         // Unmount any components that were active last pass but not visited this pass
         UnmountStaleComponents();
+
+        SwapPropTracking();
 
         return result;
     }
@@ -83,6 +87,9 @@ public class Reconciler
                     propObject.SetBoxedValue(prop, value);
             }
         }
+
+        // ── Reset properties that were set in the previous render but not this one ──
+        ResetStaleProperties(existing, vvnode);
 
         // ── Apply VisualVNode direct properties ──────────────────
         if (vvnode.Classes is not null)
@@ -192,5 +199,60 @@ public class Reconciler
 
         // Let the component render via the reconciler (sets up internal state)
         return cnode.Instance.RenderViaReconciler(this, existing);
+    }
+
+    /// <summary>
+    /// Resets any properties that were set on this native node in the previous
+    /// reconciliation pass but are absent from the current VNode's Properties.
+    /// </summary>
+    private void ResetStaleProperties(Visual native, VisualVNode vvnode)
+    {
+        var currIds = GetOrCreateCurrIds(native);
+        currIds.Clear();
+        if (vvnode.Properties is not null)
+        {
+            foreach (var id in vvnode.Properties.Keys)
+                currIds.Add(id);
+        }
+
+        if (_prevPropIds.TryGetValue(native, out var prevIds))
+        {
+            foreach (var staleId in prevIds)
+            {
+                if (currIds.Contains(staleId)) continue;
+                var prop = PropertyRegistry.Instance.FindById(staleId);
+                if (prop is not null && native is PropertyObject propObject)
+                    propObject.SetBoxedValue(prop, prop.DefaultValue);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Swaps current→previous property tracking at the end of a reconciliation pass.
+    /// </summary>
+    internal void SwapPropTracking()
+    {
+        foreach (var (node, currIds) in _currPropIds)
+        {
+            if (!_prevPropIds.TryGetValue(node, out var prevIds))
+            {
+                prevIds = [];
+                _prevPropIds[node] = prevIds;
+            }
+            prevIds.Clear();
+            foreach (var id in currIds)
+                prevIds.Add(id);
+        }
+        _currPropIds.Clear();
+    }
+
+    private HashSet<int> GetOrCreateCurrIds(Visual node)
+    {
+        if (!_currPropIds.TryGetValue(node, out var ids))
+        {
+            ids = [];
+            _currPropIds[node] = ids;
+        }
+        return ids;
     }
 }
