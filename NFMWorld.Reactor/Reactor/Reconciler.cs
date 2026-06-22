@@ -44,16 +44,13 @@ public class Reconciler
             existing = CreateNative(vnode);
         }
 
-        if (existing is not Node nativeNode)
-            return existing;
-
         // ── Apply properties (Name, Classes, and all [Property]-backed values) ──
         if (vnode.Properties is not null)
         {
             foreach (var (propId, value) in vnode.Properties)
             {
                 var prop = PropertyRegistry.Instance.FindById(propId);
-                if (prop is not null && nativeNode is PropertyObject bindable)
+                if (prop is not null && existing is PropertyObject bindable)
                     bindable.SetBoxedValue(prop, value);
             }
         }
@@ -61,19 +58,19 @@ public class Reconciler
         // ── Apply VisualVNode direct properties ──────────────────
         if (vnode is VisualVNode bvnode)
         {
-            if (bvnode.Classes is not null && nativeNode is Visual bo)
+            if (bvnode.Classes is not null)
             {
-                bo.Classes.Clear();
-                bo.Classes.AddRange(bvnode.Classes);
+                existing.Classes.Clear();
+                existing.Classes.AddRange(bvnode.Classes);
             }
             if (bvnode.Name is not null)
-                nativeNode.SetValue(Visual.NameProperty, bvnode.Name);
+                existing.SetValue(Visual.NameProperty, bvnode.Name);
         }
 
         // ── Reconcile children ───────────────────────────────────────────
-        if (vnode is VisualVNode { Children: not null } bvnodeChildren && nativeNode.CanHaveChildren)
+        if (vnode is VisualVNode { Children: not null } bvnodeChildren && existing.CanHaveChildren)
         {
-            ReconcileChildren(bvnodeChildren.Children, nativeNode);
+            ReconcileChildren(bvnodeChildren.Children, existing);
         }
 
         return existing;
