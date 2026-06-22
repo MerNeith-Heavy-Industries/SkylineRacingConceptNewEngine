@@ -15,7 +15,7 @@ public class Reconciler
     /// Apply the VNode tree to the given native root container.
     /// Returns the native root element (created if needed).
     /// </summary>
-    public Visual Reconcile(VNode vnode, FlexPanel container, Visual? existingRoot)
+    public Visual Reconcile(VNode vnode, Visual container, Visual? existingRoot)
     {
         var result = ReconcileNode(vnode, existingRoot);
         if (result is null)
