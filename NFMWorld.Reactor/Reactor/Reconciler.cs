@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Maxine.Extensions.Collections;
 using WorldXaml.UI;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
@@ -11,6 +12,8 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class Reconciler
 {
+    private readonly ThreadLocalObjectPool<Dictionary<object, int>> _dictPool = new(static () => new Dictionary<object, int>(), 50);
+    private readonly ThreadLocalArrayPool<Visual?> _visualArrayPool = new(65536, 50);
     private readonly HashSet<Component> _activeComponents = [];
     private readonly HashSet<Component> _visitedComponents = [];
 
@@ -104,7 +107,7 @@ public class Reconciler
         var existingChildren = container.VisualChildren;
 
         // ── Keyed reconciliation ─────────────────────────────────────────
-        var oldKeyMap = new Dictionary<object, int>();
+        var oldKeyMap = _dictPool.Get();
         for (int i = 0; i < existingChildren.Count; i++)
         {
             var key = GetNodeKey(existingChildren[i]);
@@ -113,7 +116,8 @@ public class Reconciler
         }
 
         // Determine what goes where
-        var newIndexToExisting = new Visual?[newChildren.Count];
+        var pooledArray = _visualArrayPool.Rent(newChildren.Count);
+        var newIndexToExisting = pooledArray.AsSpan(0, newChildren.Count);
         for (int i = 0; i < newChildren.Count; i++)
         {
             if (newChildren[i].Key is { } key && oldKeyMap.TryGetValue(key, out var oldIdx))
@@ -132,6 +136,7 @@ public class Reconciler
         // Remove stale keyed children
         foreach (var (_, oldIdx) in oldKeyMap.OrderByDescending(kv => kv.Value))
             container.RemoveAt(oldIdx);
+        _dictPool.Return(oldKeyMap);
 
         // Apply final ordering
         for (int i = 0; i < newChildren.Count; i++)
@@ -153,6 +158,7 @@ public class Reconciler
                 container.InsertAt(i, child);
             }
         }
+        _visualArrayPool.Return(pooledArray);
 
         // Trim excess
         while (existingChildren.Count > newChildren.Count)
