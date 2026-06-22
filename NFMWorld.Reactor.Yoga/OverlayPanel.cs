@@ -23,7 +23,6 @@ public class OverlayPanel : Visual
         {
             Flex = 1,
             Position = YgPositionType.Relative, // establishes containing block for absolute children
-            LogicalParent = this
         };
         
         ContentChildren.CollectionChanged += ContentChildrenChanged;
@@ -106,16 +105,17 @@ public class OverlayPanel : Visual
     public override Vector2 FocusOrigin => Vector2.Zero;
     public override Vector2 FocusSize => Vector2.Zero;
 
+    public override bool CanHaveChildren => true;
+    public override void AddChild(Visual child) => ContentChildren.Add((Node)child);
+    public override void InsertAt(int index, Visual child) => ContentChildren.Insert(index, (Node)child);
+    public override void RemoveAt(int index) => ContentChildren.RemoveAt(index);
+
     /// <summary>
-    /// Children supplied by the user of this control (the content written inside the XAML tag).
-    /// These are NOT rendered directly — they are injected into the template's
-    /// <see cref="ContentPresenter"/> when the template is applied.
-    /// This is a plain collection (not NodeChildCollection) because these children should not
-    /// become Yoga children of the TemplatedControl itself — they become Yoga children of the
-    /// ContentPresenter when the template is applied.
+    /// Children supplied by the user of this control. These are injected into the internal
+    /// <see cref="FlexPanel"/> with absolute positioning.
     /// </summary>
     [Content]
     public NonSynchronizedObservableList<Node> ContentChildren { get; } = new();
 
-    public override IReadOnlyList<ILogical> LogicalChildren => ContentChildren;
+    public override IReadOnlyList<ILogical> LogicalChildren => [];
 }

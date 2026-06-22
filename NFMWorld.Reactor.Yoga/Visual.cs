@@ -40,6 +40,21 @@ public abstract partial class Visual : BindableObject
     /// receive hit testing, game tick updates, and draw calls.
     /// </summary>
     public abstract IReadOnlyList<Visual> VisualChildren { get; }
+
+    /// <summary>
+    /// Whether this visual can accept child nodes. <see cref="Node"/> returns false;
+    /// <see cref="FlexPanel"/> returns true.
+    /// </summary>
+    public abstract bool CanHaveChildren { get; }
+
+    /// <summary>Add a child to the end of the children list.</summary>
+    public abstract void AddChild(Visual child);
+
+    /// <summary>Insert a child at the given index.</summary>
+    public abstract void InsertAt(int index, Visual child);
+
+    /// <summary>Remove the child at the given index.</summary>
+    public abstract void RemoveAt(int index);
     
     [Property]
     public partial bool IsFocusable { get; set; }

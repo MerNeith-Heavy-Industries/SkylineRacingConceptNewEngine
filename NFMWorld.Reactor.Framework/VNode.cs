@@ -3,17 +3,15 @@ using WorldXaml.UI;
 namespace NFMWorld.Reactor;
 
 /// <summary>
-/// Base class for virtual DOM nodes. Subclasses are generated per Yoga node type
-/// with strongly-typed With* methods for each [Property].
+/// Base virtual DOM node. Holds a native <see cref="System.Type"/> and optional key.
+/// For Yoga-backed nodes, use <see cref="BindableObjectVNode"/> which adds Name/Classes/Children.
+/// Components extend this directly — they have no native backing, so Name/Classes don't apply.
 /// </summary>
 public class VNode
 {
     public Type NodeType { get; protected init; }
     public Dictionary<int, object?>? Properties { get; set; }
-    public EquatableList<VNode>? Children { get; set; }
-    public string? Classes { get; set; }
     public object? Key { get; set; }
-    public string? Name { get; set; }
 
     protected VNode(Type nodeType) { NodeType = nodeType; }
 
@@ -43,8 +41,7 @@ public class VNode
         return (TNode)this;
     }
 
-    // ── Shared fluent builders ──────────────────────────────────────────
+    // ── Shared fluent builder ───────────────────────────────────────────
 
-    public VNode WithClasses(string? c) { Classes = c; return this; }
     public VNode WithKey(object? k) { Key = k; return this; }
 }

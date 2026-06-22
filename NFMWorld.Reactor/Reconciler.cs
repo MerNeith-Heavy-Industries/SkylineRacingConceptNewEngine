@@ -11,8 +11,6 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class Reconciler
 {
-    private readonly Dictionary<int, Visual> _keyedInstances = [];
-
     /// <summary>
     /// Apply the VNode tree to the given native root container.
     /// Returns the native root element (created if needed).
@@ -24,18 +22,22 @@ public class Reconciler
             return existingRoot!; // Shouldn't happen for root
 
         // Ensure the root is a child of the container
-        if (container.Children.Count == 0 || container.Children[0] != result)
+        if (container.VisualChildren.Count == 0 || container.VisualChildren[0] != result)
         {
-            if (container.Children.Count > 0 && existingRoot is not null)
-                container.Children.Remove(existingRoot);
-            container.Children.Insert(0, result);
+            if (container.VisualChildren.Count > 0 && existingRoot is not null)
+                container.RemoveAt(0);
+            container.InsertAt(0, result);
         }
 
         return result;
     }
 
-    private Visual? ReconcileNode(VNode vnode, Visual? existing)
+    internal Visual? ReconcileNode(VNode vnode, Visual? existing)
     {
+        // ── Component nodes render to their output ───────────────────────
+        if (vnode is ComponentNode cnode)
+            return ReconcileComponentNode(cnode, existing);
+
         // ── Create or reuse native node ──────────────────────────────────
         if (existing is null || existing.GetType() != vnode.NodeType)
         {
@@ -45,7 +47,7 @@ public class Reconciler
         if (existing is not Node nativeNode)
             return existing;
 
-        // ── Apply properties ─────────────────────────────────────────────
+        // ── Apply properties (Name, Classes, and all [Property]-backed values) ──
         if (vnode.Properties is not null)
         {
             foreach (var (propId, value) in vnode.Properties)
@@ -56,29 +58,30 @@ public class Reconciler
             }
         }
 
-        // ── Apply classes ────────────────────────────────────────────────
-        if (vnode.Classes is not null && nativeNode is BindableObject bo)
+        // ── Apply BindableObjectVNode direct properties ──────────────────
+        if (vnode is BindableObjectVNode bvnode)
         {
-            bo.Classes.Clear();
-            bo.Classes.AddRange(vnode.Classes);
+            if (bvnode.Classes is not null && nativeNode is BindableObject bo)
+            {
+                bo.Classes.Clear();
+                bo.Classes.AddRange(bvnode.Classes);
+            }
+            if (bvnode.Name is not null)
+                nativeNode.SetValue(BindableObject.NameProperty, bvnode.Name);
         }
 
-        // ── Apply name ───────────────────────────────────────────────────
-        if (vnode.Name is not null)
-            nativeNode.SetValue(BindableObject.NameProperty, vnode.Name);
-
         // ── Reconcile children ───────────────────────────────────────────
-        if (nativeNode is FlexPanel flex && vnode.Children is not null)
+        if (vnode is BindableObjectVNode { Children: not null } bvnodeChildren && nativeNode.CanHaveChildren)
         {
-            ReconcileChildren(vnode.Children, flex);
+            ReconcileChildren(bvnodeChildren.Children, nativeNode);
         }
 
         return existing;
     }
 
-    private void ReconcileChildren(EquatableList<VNode> newChildren, FlexPanel container)
+    private void ReconcileChildren(EquatableList<VNode> newChildren, Visual container)
     {
-        var existingChildren = container.Children;
+        var existingChildren = container.VisualChildren;
 
         // ── Keyed reconciliation ─────────────────────────────────────────
         var oldKeyMap = new Dictionary<object, int>();
@@ -93,7 +96,7 @@ public class Reconciler
         var newIndexToExisting = new Visual?[newChildren.Count];
         for (int i = 0; i < newChildren.Count; i++)
         {
-            if (newChildren[i].Key is object key && oldKeyMap.TryGetValue(key, out var oldIdx))
+            if (newChildren[i].Key is { } key && oldKeyMap.TryGetValue(key, out var oldIdx))
             {
                 var reuse = existingChildren[oldIdx];
                 ReconcileNode(newChildren[i], reuse);
@@ -108,7 +111,7 @@ public class Reconciler
 
         // Remove stale keyed children
         foreach (var (_, oldIdx) in oldKeyMap.OrderByDescending(kv => kv.Value))
-            container.Children.RemoveAt(oldIdx);
+            container.RemoveAt(oldIdx);
 
         // Apply final ordering
         for (int i = 0; i < newChildren.Count; i++)
@@ -116,29 +119,52 @@ public class Reconciler
             var child = newIndexToExisting[i];
             if (child is null) continue;
 
-            var currentIdx = container.Children.IndexOf(child);
+            var currentIdx = IndexOfVisual(existingChildren, child);
             if (currentIdx < 0)
             {
-                if (i < container.Children.Count)
-                    container.Children.Insert(i, child);
+                if (i < existingChildren.Count)
+                    container.InsertAt(i, child);
                 else
-                    container.Children.Add(child);
+                    container.AddChild(child);
             }
             else if (currentIdx != i)
             {
-                container.Children.RemoveAt(currentIdx);
-                container.Children.Insert(i, child);
+                container.RemoveAt(currentIdx);
+                container.InsertAt(i, child);
             }
         }
 
         // Trim excess
-        while (container.Children.Count > newChildren.Count)
-            container.Children.RemoveAt(container.Children.Count - 1);
+        while (existingChildren.Count > newChildren.Count)
+            container.RemoveAt(existingChildren.Count - 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static object? GetNodeKey(Visual visual)
         => visual is Node node ? node.Key : null;
+
+    private static int IndexOfVisual(IReadOnlyList<Visual> list, Visual item)
+    {
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] == item) return i;
+        return -1;
+    }
+
+    /// <summary>
+    /// Reconcile a <see cref="ComponentNode"/> by rendering its component and
+    /// reconciling the rendered output against the existing native tree.
+    /// </summary>
+    private Visual? ReconcileComponentNode(ComponentNode cnode, Visual? existing)
+    {
+        // Create component instance on first encounter via generated factory
+        if (cnode.Instance is null)
+        {
+            cnode.Instance = cnode.CreateComponent();
+        }
+
+        // Let the component render via the reconciler (sets up internal state)
+        return cnode.Instance.RenderViaReconciler(this, existing);
+    }
 
     /// <summary>
     /// Instantiate a native Yoga node from a VNode descriptor.

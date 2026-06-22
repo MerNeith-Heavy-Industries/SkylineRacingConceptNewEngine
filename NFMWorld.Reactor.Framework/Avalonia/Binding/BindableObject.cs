@@ -37,7 +37,7 @@ public abstract class BindableObject : PropertyObject, ILogical, IStyleNode, INa
     
     #endregion
     
-    public static Property<string?> NameProperty { get; } = new("Name", typeof(BindableObject), defaultValue: null);
+    public static Property<string?> NameProperty { get; } = Property.Register<BindableObject, string?>("Name");
 
     public string? Name
     {

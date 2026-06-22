@@ -60,6 +60,24 @@ public abstract class Component
     }
 
     /// <summary>
+    /// Render and reconcile as part of a parent <see cref="Reconciler"/> pass
+    /// (used when the component is hosted in a <see cref="ComponentNode"/>).
+    /// Does not manage container placement — the caller's reconciler handles that.
+    /// </summary>
+    internal Visual? RenderViaReconciler(Reconciler reconciler, Visual? existing)
+    {
+        Reconciler = reconciler;
+        VNode vnode = Render();
+        _root = reconciler.ReconcileNode(vnode, existing);
+        if (!_mounted)
+        {
+            _mounted = true;
+            OnMounted();
+        }
+        return _root;
+    }
+
+    /// <summary>
     /// Re-render and reconcile changes into the already-mounted container.
     /// </summary>
     public void Update()

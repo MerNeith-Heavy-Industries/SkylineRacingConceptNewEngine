@@ -45,8 +45,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     var baseType = compilation.GetTypeByMetadataName(baseTypeFqn);
                     if (baseType is null) return;
 
-                    foreach (var asm in compilation.SourceModule.ReferencedAssemblySymbols)
-                        CollectSubtypes(asm.GlobalNamespace, baseType, types);
+                    // Only search the current project's own types — VNode wrappers from
+                    // referenced assemblies are consumed via ProjectReference, not regenerated.
                     CollectSubtypes(compilation.Assembly.GlobalNamespace, baseType, types);
                 }
             })
@@ -64,7 +64,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         {
             if (member is INamedTypeSymbol type)
             {
-                if (!type.IsAbstract && ExtendsType(type, baseType))
+                if (ExtendsType(type, baseType))
                 {
                     var info = CollectTypeInfo(type);
                     if (info is not null) results.Add(info);
@@ -91,7 +91,9 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
     private static TypeInfo? CollectTypeInfo(INamedTypeSymbol symbol)
     {
         var properties = new List<PropInfo>();
+        var declaredNames = new HashSet<string>();
         var seen = new HashSet<string>();
+        var isFirstType = true;
 
         // Walk the entire type hierarchy looking for instance properties
         // that have a corresponding static *Property field (convention-based detection)
@@ -112,16 +114,21 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
                     if (!hasBacking) continue;
 
+                    // Track which type level this property was first declared at
+                    if (isFirstType) declaredNames.Add(prop.Name);
+
                     properties.Add(new PropInfo(
                         Name: prop.Name,
                         TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                         IsValueType: prop.Type.IsValueType,
                         HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
-                        DefaultValue: defaultVal
+                        DefaultValue: defaultVal,
+                        IsDeclared: isFirstType
                     ));
                 }
 
                 current = current.BaseType;
+                isFirstType = false;
             }
         }
 
@@ -134,7 +141,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             var current = symbol;
             while (current is not null)
             {
-                foreach (var member in symbol.GetMembers())
+                foreach (var member in current.GetMembers())
                 {
                     if (member is not IPropertySymbol contentProp) continue;
                     var hasContent = member.GetAttributes().Any(a =>
@@ -154,7 +161,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             FullName: symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             ShortName: symbol.Name,
             Namespace: symbol.ContainingNamespace.ToDisplayString(),
+            BaseTypeFqn: symbol.BaseType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            IsAbstract: symbol.IsAbstract,
             Properties: properties,
+            DeclaredPropertyNames: declaredNames,
             ChildType: childType
         );
     }
@@ -220,6 +230,11 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
         var emittedNamespaces = new HashSet<string>();
 
+        // Build map: native type FQN → generated VNode wrapper class name
+        var typeToNodeClass = new Dictionary<string, string>();
+        foreach (var type in nonNull)
+            typeToNodeClass[type.FullName] = type.ShortName + "Node";
+
         foreach (var type in nonNull)
         {
             sbTypes.AppendLine();
@@ -232,10 +247,11 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             sbNodes.AppendLine("{");
             sbNodes.IncrementIndent();
 
-            // Generate factory method in Nodes class
-            GenerateFactory(sbNodes, type);
+            // Generate factory method in Nodes class (skip for abstract types)
+            if (!type.IsAbstract)
+                GenerateFactory(sbNodes, type);
 
-            GenerateNodeClass(sbTypes, type);
+            GenerateNodeClass(sbTypes, type, typeToNodeClass, nonNull);
 
             sbNodes.DecrementIndent();
             sbNodes.AppendLine("}");
@@ -248,21 +264,37 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         spc.AddSource("Nodes.Types.g.cs", sbTypes.ToString());
     }
 
-    private static void GenerateNodeClass(IndentedStringBuilder sb, TypeInfo type)
+    private static void GenerateNodeClass(IndentedStringBuilder sb, TypeInfo type, Dictionary<string, string> typeToNodeClass, List<TypeInfo> allTypes)
     {
         var nodeName = type.ShortName + "Node";
+
+        // Determine the VNode base class: if the native base type has a generated Node class, extend it
+        var baseClass = type.BaseTypeFqn is not null && typeToNodeClass.TryGetValue(type.BaseTypeFqn, out var baseNode)
+            ? baseNode
+            : "NFMWorld.Reactor.BindableObjectVNode";
+
+        // Only seal leaf types; use abstract for abstract native types
+        var isInherited = allTypes.Any(t2 => t2.BaseTypeFqn == type.FullName);
+        var classMod = type.IsAbstract ? "abstract " : isInherited ? "" : "sealed ";
+
         sb.AppendLine();
         sb.AppendLine($"/// <summary>Typed VNode for <see cref=\"{type.ShortName}\"/>.</summary>");
-        sb.AppendLine($"public sealed class {nodeName} : NFMWorld.Reactor.VNode");
+        sb.AppendLine($"public {classMod}class {nodeName} : {baseClass}");
         sb.AppendLine("{");
 
         using (sb.Indent())
         {
-            sb.AppendLine($"internal {nodeName}() : base(typeof({type.ShortName})) {{ }}");
+            if (!type.IsAbstract)
+                sb.AppendLine($"internal {nodeName}() : base(typeof({type.ShortName})) {{ }}");
+            // Protected ctor for subclass chaining
+            if (isInherited)
+                sb.AppendLine($"protected {nodeName}(Type nodeType) : base(nodeType) {{ }}");
             sb.AppendLine();
 
+            // Generate With* for all hierarchy properties (deduplicated by name)
             foreach (var prop in type.Properties)
             {
+                if (!prop.IsDeclared) continue;
                 var typeFqn = StripNullable(prop.TypeFqn);
                 if (prop.IsValueType)
                     if (typeFqn != prop.TypeFqn)
@@ -272,6 +304,17 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 else
                     sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) => SetProp<{nodeName}, {prop.TypeFqn}>({type.ShortName}.{prop.Name}Property, value);");
             }
+
+            // Build set of With* names from properties to avoid shadow conflicts
+            var propMethodNames = new HashSet<string>();
+            foreach (var prop in type.Properties)
+                propMethodNames.Add("With" + prop.Name);
+
+            // Shadow common VNode members with correct return type (skip if a property already provides it)
+            if (!propMethodNames.Contains("WithClasses"))
+                sb.AppendLine($"    public new {nodeName} WithClasses(string? classes) {{ base.WithClasses(classes); return this; }}");
+            if (!propMethodNames.Contains("WithKey"))
+                sb.AppendLine($"    public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
 
             if (type.ChildType is not null)
             {
@@ -388,7 +431,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         string FullName,
         string ShortName,
         string Namespace,
+        string? BaseTypeFqn,
+        bool IsAbstract,
         List<PropInfo> Properties,
+        HashSet<string> DeclaredPropertyNames,
         string? ChildType);
 
     private readonly record struct PropInfo(
@@ -396,5 +442,6 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         string TypeFqn,
         bool IsValueType,
         bool HasDefaultValue,
-        string? DefaultValue);
+        string? DefaultValue,
+        bool IsDeclared);
 }
