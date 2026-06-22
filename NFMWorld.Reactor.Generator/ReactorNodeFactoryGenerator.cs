@@ -142,8 +142,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     if (!hasContent) continue;
 
                     // Look for Add(T) on the property's type (e.g. NodeChildCollection)
-                    var propType = contentProp.Type as INamedTypeSymbol;
-                    childType = propType is not null ? FindAddMethodChildType(propType) : null;
+                    childType = contentProp.Type is INamedTypeSymbol propType ? FindAddMethodChildType(propType) : null;
                     break;
                 }
 

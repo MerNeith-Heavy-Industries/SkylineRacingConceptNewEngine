@@ -84,8 +84,7 @@ public class PropertyGenerator : IIncrementalGenerator
                         sb.IncrementIndent();
                     }
 
-                    var propList = new List<PropInfo>(group);
-                    foreach (var prop in propList)
+                    foreach (var prop in group)
                     {
                         var propType = prop.IsNullableReference ? $"{prop.PropertyType}?" : prop.PropertyType;
                         var propName = prop.PropertyName;
