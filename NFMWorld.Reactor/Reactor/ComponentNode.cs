@@ -30,14 +30,6 @@ public abstract class ComponentNode : VNode
     /// </summary>
     public virtual Component CreateComponent()
         => (Component)Activator.CreateInstance(ComponentType)!;
-
-    /// <summary>Helper for generated With* methods: sets a constructor-arg field.</summary>
-    protected static TNode SetComponentArg<TNode, T>(ref Optional<T> field, T value)
-        where TNode : ComponentNode
-    {
-        field = value;
-        return (TNode)(object)null!; // never used — callers do return this after
-    }
 }
 
 /// <summary>
