@@ -5,9 +5,7 @@ namespace NFMWorld.Reactor;
 /// Mutating <see cref="Current"/> does NOT trigger a re-render.
 /// Obtain via <see cref="Component.UseRef{T}"/>.
 /// </summary>
-public class Ref<T>
+public class Ref<T>(T initial)
 {
-    public T Current { get; set; }
-
-    public Ref(T initial) => Current = initial;
+    public T Current { get; set; } = initial;
 }
