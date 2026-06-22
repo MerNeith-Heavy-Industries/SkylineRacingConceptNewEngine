@@ -1,11 +1,180 @@
 using System.Numerics;
 using WorldXaml.UI.Base;
+using WorldXaml.UI.Controls;
 using WorldXaml.UI.Yoga.Events;
 
 namespace WorldXaml.UI.Yoga;
 
-public abstract partial class Visual : BindableObject
+public abstract partial class Visual : PropertyObject, IStyleNode, INamed
 {
+    #region Resources
+    
+    /// <summary>
+    /// Local resource dictionary for this element.
+    /// Resource lookup walks the logical tree through IResourceNode parents.
+    /// </summary>
+    public StyleSheet? Styles { get; set; }
+
+    /// <summary>
+    /// Finds a resource by key, walking up the logical tree.
+    /// Returns null if not found.
+    /// </summary>
+    public object? FindResource(object key)
+    {
+        IStyleNode? node = this;
+        while (node is not null)
+        {
+            if (node.Styles is not null && node.Styles.TryGetValue(key, out var value))
+                return value;
+
+            node = node is Visual logical && logical.VisualParent is IStyleNode parent
+                ? parent
+                : null;
+        }
+        return null;
+    }
+    
+    #endregion
+    
+    public static Property<string?> NameProperty { get; } = Property.Register<Visual, string?>("Name");
+
+    public string? Name
+    {
+        get => GetValue(NameProperty);
+        set => SetValue(NameProperty, value);
+    }
+
+    /// <summary>
+    /// CSS-like class names applied to this element.
+    /// Styles can match on these via Selector="Type.classname".
+    /// </summary>
+    public Classes Classes => field ??= new Classes(this);
+
+    #region Parent/child tree
+
+    private IVisualRoot? _root;
+
+    /// <summary>
+    /// Raised when the control is attached to a rooted logical tree.
+    /// </summary>
+    public event EventHandler<VisualTreeAttachmentEventArgs>? AttachedToVisualTree;
+    
+    /// <summary>
+    /// Raised when the control is detached from a rooted logical tree.
+    /// </summary>
+    public event EventHandler<VisualTreeAttachmentEventArgs>? DetachedFromVisualTree;
+
+    /// <summary>
+    /// Gets a value indicating whether the element is attached to a rooted logical tree.
+    /// </summary>
+    public bool IsAttachedToVisualTree => _root != null;
+
+    public Visual? VisualParent { get; set; }
+
+    /// <summary>
+    /// Triggered when the object is mounted onto the logical tree.
+    /// </summary>
+    public AnimationTrigger Mounted { get; } = new();
+    
+    /// <summary>
+    /// Triggered when the object is unmounted from the logical tree.
+    /// </summary>
+    public AnimationTrigger Unmounted { get; } = new();
+    
+    public Visual()
+    {
+        _root = this as IVisualRoot;
+        if (_root != null)
+        {
+            Mounted.Trigger();
+        }
+    }
+
+    private void OnDetachedFromVisualTreeCore(VisualTreeAttachmentEventArgs args)
+    {
+        if (_root != null)
+        {
+            Mounted.Reset();
+            DetachedFromVisualTree?.Invoke(this, args);
+            Unmounted.Trigger();
+
+            var logicalChildren = VisualChildren;
+            var logicalChildrenCount = logicalChildren.Count;
+
+            for (var i = 0; i < logicalChildrenCount; i++)
+            {
+                if (logicalChildren[i] is { } child && child._root != args.Root) // child may already have been attached within an event handler
+                {
+                    child.OnDetachedFromVisualTreeCore(args);
+                }
+            }
+        }
+        
+        _root = null;
+    }
+
+    private void OnAttachedToVisualTreeCore(VisualTreeAttachmentEventArgs args)
+    {
+        if (_root == null)
+        {
+            Unmounted.Reset();
+            AttachedToVisualTree?.Invoke(this, args);
+            Mounted.Trigger();
+
+            var logicalChildren = VisualChildren;
+            var logicalChildrenCount = logicalChildren.Count;
+
+            for (var i = 0; i < logicalChildrenCount; i++)
+            {
+                if (logicalChildren[i] is { } child && child._root != args.Root) // child may already have been attached within an event handler
+                {
+                    child.OnAttachedToVisualTreeCore(args);
+                }
+            }
+
+            _root = args.Root;
+        }
+    }
+
+    private void OnParentChanged()
+    {
+        // Update logical tree attachment and raise events as needed.
+        
+        var newRoot = FindVisualRoot(this);
+
+        if (_root != newRoot)
+        {
+            if (_root != null)
+            {
+                var e = new VisualTreeAttachmentEventArgs(_root, this, VisualParent);
+                OnDetachedFromVisualTreeCore(e);
+            }
+
+            if (newRoot is not null)
+            {
+                var e = new VisualTreeAttachmentEventArgs(newRoot, this, VisualParent);
+                OnAttachedToVisualTreeCore(e);
+            }
+        }
+    }
+
+    private static IVisualRoot? FindVisualRoot(Visual? e)
+    {
+        while (e != null)
+        {
+            if (e is IVisualRoot root)
+            {
+                return root;
+            }
+
+            e = e.VisualParent;
+        }
+
+        return null;
+    }
+    
+    #endregion
+    
     /// <summary>
     /// <para>
     /// Gets the Yoga node associated with this visual element representing its contents.

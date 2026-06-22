@@ -3,34 +3,34 @@ using Microsoft.Extensions.Logging;
 
 namespace WorldXaml.UI.Yoga;
 
-internal static class XamlG
+internal static class ReactorG
 {
     public static float Scale
     {
-        get => IXamlGraphicsBackend.Backend.Scale;
+        get => IReactorGraphicsBackend.Backend.Scale;
     }
 
     public static float Alpha
     {
-        set => IXamlGraphicsBackend.Backend.Graphics.Alpha = value;
+        set => IReactorGraphicsBackend.Backend.Graphics.Alpha = value;
     }
 }
 
-public interface IXamlGraphicsBackend
+public interface IReactorGraphicsBackend
 {
     /// <summary>
-    /// Assign this in your project to provide the graphics implementation for NFMWorld.Reactor.Yoga. This must be set
+    /// Assign this in your project to provide the graphics implementation for NFMWorld.Reactor. This must be set
     /// before any UI elements are created or used.
     /// </summary>
-    public static IXamlGraphicsBackend Backend
+    public static IReactorGraphicsBackend Backend
     {
         internal get
         {
             return field ?? ThrowNotInitialized();
 
-            IXamlGraphicsBackend ThrowNotInitialized()
+            IReactorGraphicsBackend ThrowNotInitialized()
             {
-                throw new InvalidOperationException($"{nameof(IXamlGraphicsBackend)}.{nameof(Backend)} needs to be set before it can be used.");
+                throw new InvalidOperationException($"{nameof(IReactorGraphicsBackend)}.{nameof(Backend)} needs to be set before it can be used.");
             }
         }
         set;
@@ -51,10 +51,10 @@ public interface IXamlGraphicsBackend
     /// <summary>
     /// Set this to an implementation of IXamlGraphics.
     /// </summary>
-    IXamlGraphics Graphics { get; }
+    IReactorGraphics Graphics { get; }
 }
 
-public interface IXamlGraphics
+public interface IReactorGraphics
 {
     /// <summary>
     /// We'll set this property based on the `Opacity` property of a given element, right before rendering it.

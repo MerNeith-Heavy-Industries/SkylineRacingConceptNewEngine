@@ -30,7 +30,7 @@ public class Setter
     /// <summary>
     /// Apply this setter to the given target element.
     /// </summary>
-    public void Apply(BindableObject target)
+    public void Apply(PropertyObject target)
     {
         if (Property is null) return;
         target.SetBoxedValue(Property, Value);

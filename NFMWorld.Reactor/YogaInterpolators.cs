@@ -5,7 +5,7 @@ namespace WorldXaml.UI.Yoga;
 
 internal static class YogaInterpolators
 {
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementFlexBasis InterpolateMeasurementFlexBasis(Node.MeasurementFlexBasis from, Node.MeasurementFlexBasis to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
@@ -22,7 +22,7 @@ internal static class YogaInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementMarginPosition InterpolateMeasurementMarginPosition(Node.MeasurementMarginPosition from, Node.MeasurementMarginPosition to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
@@ -39,7 +39,7 @@ internal static class YogaInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementMultiMargin InterpolateMeasurementMultiMargin(Node.MeasurementMultiMargin fromAll, Node.MeasurementMultiMargin toAll, float alpha)
     {
         InlineArray4<Node.MeasurementMarginPosition> sides = new();
@@ -71,7 +71,7 @@ internal static class YogaInterpolators
         };
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementPadding InterpolateMeasurementPadding(Node.MeasurementPadding from, Node.MeasurementPadding to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
@@ -88,7 +88,7 @@ internal static class YogaInterpolators
         return to;
     }
     
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementMultiPadding InterpolateMeasurementMultiPadding(Node.MeasurementMultiPadding fromAll, Node.MeasurementMultiPadding toAll, float alpha)
     {
         InlineArray4<Node.MeasurementPadding> sides = new();
@@ -120,7 +120,7 @@ internal static class YogaInterpolators
         };
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementMultiBorder InterpolateMeasurementMultiBorder(Node.MeasurementMultiBorder fromAll, Node.MeasurementMultiBorder toAll, float alpha)
     {
         InlineArray4<float?> sides = new();
@@ -141,7 +141,7 @@ internal static class YogaInterpolators
         };
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementGap InterpolateMeasurementGap(Node.MeasurementGap from, Node.MeasurementGap to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
@@ -158,7 +158,7 @@ internal static class YogaInterpolators
         return to;
     }
 
-    [XamlInterpolator]
+    [ReactorInterpolator]
     public static Node.MeasurementWidthHeight InterpolateMeasurementWidthHeight(Node.MeasurementWidthHeight from, Node.MeasurementWidthHeight to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)

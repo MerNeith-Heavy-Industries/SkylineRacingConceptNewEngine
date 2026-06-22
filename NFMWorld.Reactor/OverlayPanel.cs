@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Numerics;
-using WorldXaml.UI.LogicalTree;
 using WorldXaml.UI.Metadata;
 using ObservableCollections;
 using WorldXaml.ObservableCollections;
@@ -116,6 +115,4 @@ public class OverlayPanel : Visual
     /// </summary>
     [Content]
     public NonSynchronizedObservableList<Node> ContentChildren { get; } = new();
-
-    public override IReadOnlyList<ILogical> LogicalChildren => [];
 }

@@ -16,8 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\NFMWorld.Reactor\NFMWorld.Reactor.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\NFMWorld.Reactor\NFMWorld.Reactor.csproj" />
     </ItemGroup>
 
 </Project>

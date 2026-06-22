@@ -2,15 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
-using System.Reactive;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using WorldXaml.UI;
 using CommunityToolkit.Mvvm.Input;
 using WorldXaml.UI.Base;
-using WorldXaml.UI.LogicalTree;
 using WorldXaml.UI.Yoga.Events;
 using Yoga;
 
@@ -44,7 +40,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     // ── Visual abstracts ────────────────────────────────────────────────
     public override IReadOnlyList<Visual> VisualChildren => [];
-    public override IReadOnlyList<ILogical> LogicalChildren => [];
     internal override YGNodePtr Contents => NodeInternal;
 
     // ── Children API (no-op for leaf nodes) ──────────────────────────────
@@ -1057,7 +1052,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementFlexBasis>(
             name:         nameof(FlexBasis),
             defaultValue: MeasurementFlexBasis.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.FlexBasis = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.FlexBasis = value.Scale(ReactorG.Scale));
     
     /// <summary>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
@@ -1213,7 +1208,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(Left),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Left = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Left = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
@@ -1228,7 +1223,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(Top),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Top = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Top = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: top - Specifies the top position of a positioned element
@@ -1243,7 +1238,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(Right),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Right = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Right = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: right - Specifies the right position of a positioned element
@@ -1258,7 +1253,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(Bottom),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Bottom = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Bottom = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: bottom - Specifies the bottom position of a positioned element
@@ -1415,7 +1410,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(MarginTop),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginTop = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MarginTop = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: margin-top - Sets the top margin space outside the element
@@ -1430,7 +1425,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(MarginBottom),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginBottom = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MarginBottom = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: margin-bottom - Sets the bottom margin space outside the element
@@ -1445,7 +1440,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(MarginLeft),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginLeft = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MarginLeft = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: margin-left - Sets the left margin space outside the element
@@ -1460,7 +1455,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementMarginPosition>(
             name:         nameof(MarginRight),
             defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginRight = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MarginRight = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: margin-right - Sets the right margin space outside the element
@@ -1739,7 +1734,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementPadding>(
             name:         nameof(PaddingTop),
             defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingTop = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.PaddingTop = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: padding-top - Sets the top padding space inside the element
@@ -1754,7 +1749,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementPadding>(
             name:         nameof(PaddingBottom),
             defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingBottom = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.PaddingBottom = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: padding-bottom - Sets the bottom padding space inside the element
@@ -1769,7 +1764,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementPadding>(
             name:         nameof(PaddingLeft),
             defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingLeft = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.PaddingLeft = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: padding-left - Sets the left padding space inside the element
@@ -1784,7 +1779,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementPadding>(
             name:         nameof(PaddingRight),
             defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingRight = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.PaddingRight = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: padding-right - Sets the right padding space inside the element
@@ -1927,7 +1922,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     public static readonly Property<float?> BorderTopProperty =
         Property.Register<Node, float?>(
             name:         nameof(BorderTop),
-            onChanged:    (node, value) => node.NodeInternal.BorderTop = (value * XamlG.Scale) ?? YG.YGUndefined);
+            onChanged:    (node, value) => node.NodeInternal.BorderTop = (value * ReactorG.Scale) ?? YG.YGUndefined);
 
     /// <summary>
     /// CSS: border-top-width - Sets the width of the top border
@@ -1941,7 +1936,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     public static readonly Property<float?> BorderBottomProperty =
         Property.Register<Node, float?>(
             name:         nameof(BorderBottom),
-            onChanged:    (node, value) => node.NodeInternal.BorderBottom = (value * XamlG.Scale) ?? YG.YGUndefined);
+            onChanged:    (node, value) => node.NodeInternal.BorderBottom = (value * ReactorG.Scale) ?? YG.YGUndefined);
 
     /// <summary>
     /// CSS: border-bottom-width - Sets the width of the bottom border
@@ -1955,7 +1950,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     public static readonly Property<float?> BorderLeftProperty =
         Property.Register<Node, float?>(
             name:         nameof(BorderLeft),
-            onChanged:    (node, value) => node.NodeInternal.BorderLeft = (value * XamlG.Scale) ?? YG.YGUndefined);
+            onChanged:    (node, value) => node.NodeInternal.BorderLeft = (value * ReactorG.Scale) ?? YG.YGUndefined);
 
     /// <summary>
     /// CSS: border-left-width - Sets the width of the left border
@@ -1969,7 +1964,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     public static readonly Property<float?> BorderRightProperty =
         Property.Register<Node, float?>(
             name:         nameof(BorderRight),
-            onChanged:    (node, value) => node.NodeInternal.BorderRight = (value * XamlG.Scale) ?? YG.YGUndefined);
+            onChanged:    (node, value) => node.NodeInternal.BorderRight = (value * ReactorG.Scale) ?? YG.YGUndefined);
 
     /// <summary>
     /// CSS: border-right-width - Sets the width of the right border
@@ -2373,7 +2368,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(Width),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Width = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Width = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: width - Sets the width of the element
@@ -2388,7 +2383,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(Height),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Height = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.Height = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: height - Sets the height of the element
@@ -2403,7 +2398,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(MinWidth),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MinWidth = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MinWidth = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: min-width - Sets the minimum width of the element
@@ -2418,7 +2413,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(MinHeight),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MinHeight = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MinHeight = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: min-height - Sets the minimum height of the element
@@ -2433,7 +2428,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(MaxWidth),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MaxWidth = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MaxWidth = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: max-width - Sets the maximum width of the element
@@ -2448,7 +2443,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         Property.Register<Node, MeasurementWidthHeight>(
             name:         nameof(MaxHeight),
             defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MaxHeight = value.Scale(XamlG.Scale));
+            onChanged:    (node, value) => node.NodeInternal.MaxHeight = value.Scale(ReactorG.Scale));
 
     /// <summary>
     /// CSS: max-height - Sets the maximum height of the element
@@ -2521,7 +2516,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <returns>true if scale changed</returns>
     internal bool Rescale()
     {
-        if (Math.Abs(_lastScale - XamlG.Scale) > 0.001f)
+        if (Math.Abs(_lastScale - ReactorG.Scale) > 0.001f)
         {
             // Update all size related properties to trigger re-calculation with new scale
 #pragma warning disable CA2245
@@ -2552,7 +2547,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             Bottom = Bottom;
 #pragma warning restore CA2245
 
-            _lastScale = XamlG.Scale;
+            _lastScale = ReactorG.Scale;
 
             return true;
         }
@@ -2595,7 +2590,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         if (Display != YgDisplay.None && Visibility == Visibility.Visible && Opacity > 0f)
         {
             var ownOpacity = context.InheritedOpacity * Opacity;
-            XamlG.Alpha = ownOpacity;
+            ReactorG.Alpha = ownOpacity;
             RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
             RenderBorder(LayoutBorderPosition, LayoutBorderSize);
             RenderContent(LayoutContentPosition, LayoutContentSize);
@@ -2603,7 +2598,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             {
                 child.Render(new RenderContext(_root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
             }
-            XamlG.Alpha = 1f;
+            ReactorG.Alpha = 1f;
         }
     }
 

@@ -32,7 +32,7 @@ public class Style
             {
                 TargetType = Type.GetType(split[0]) ?? AppDomain.CurrentDomain.GetAssemblies()
                     .SelectMany(a => a.ExportedTypes)
-                    .FirstOrDefault(t => t.Name == split[0] && t.IsAssignableTo(typeof(BindableObject)));
+                    .FirstOrDefault(t => t.Name == split[0] && t.IsAssignableTo(typeof(Visual)));
             }
             else
             {
@@ -69,7 +69,7 @@ public class Style
     /// <summary>
     /// Returns true when the given element matches this style's selector.
     /// </summary>
-    public bool Matches(BindableObject element)
+    public bool Matches(Visual element)
     {
         // Type check
         if (TargetType is not null)
@@ -95,14 +95,14 @@ public class Style
     /// <summary>
     /// Apply this style's setters to the target element.
     /// </summary>
-    public void Apply(BindableObject target)
+    public void Apply(Visual target)
     {
         foreach (var setter in Setters)
             setter.Apply(target);
     }
 }
 
-public class Style<T> : Style where T : BindableObject
+public class Style<T> : Style where T : Visual
 {
     public override string? Selector
     {
