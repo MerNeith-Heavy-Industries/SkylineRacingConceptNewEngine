@@ -56,17 +56,7 @@
     <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj" />
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
   </Folder>
-  <Folder Name="/XamlX/">
-    <Project Path="WorldXaml/XamlX/src/XamlX.Runtime/XamlX.Runtime.csproj" />
-    <Project Path="WorldXaml/WorldXaml.Core/WorldXaml.Core.csproj" />
-    <Project Path="WorldXaml/WorldXaml.Generator/WorldXaml.Generator.csproj" />
-    <Project Path="WorldXaml/WorldXaml.ObservableCollections/WorldXaml.ObservableCollections.csproj" />
-    <Project Path="WorldXaml/WorldXaml.UI.Base/WorldXaml.UI.Base.csproj" />
-    <Project Path="WorldXaml/WorldXaml.UI.Yoga/WorldXaml.UI.Yoga.csproj" />
-    <Project Path="WorldXaml/XamlX.IL.CSharp/XamlX.IL.CSharp.csproj" />
-    <Project Path="WorldXaml/XamlX/src/XamlX.IL.Cecil/XamlX.IL.Cecil.csproj" />
-    <Project Path="WorldXaml/XamlX/src/XamlX/XamlX.csproj" />
-  </Folder>
+  <Folder Name="/WorldXaml/" />
   <Project Path="NanoSVGSharp/NanoSvgSharp.csproj" />
   <Project Path="nfm-world/NFMWorld.csproj" />
   <Project Path="NFMW.GenerateSinCosTable/NFMW.GenerateSinCosTable.csproj" />
@@ -79,6 +69,11 @@
   <Project Path="NFMWorld.Multiplayer.Orchestrator/NFMWorld.Multiplayer.Orchestrator.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
+  <Project Path="NFMWorld.Reactor.Framework/NFMWorld.Reactor.Framework.csproj" />
+  <Project Path="NFMWorld.Reactor.Generator/NFMWorld.Reactor.Generator.csproj" />
+  <Project Path="NFMWorld.Reactor.ObservableCollections/NFMWorld.Reactor.ObservableCollections.csproj" />
+  <Project Path="NFMWorld.Reactor.Yoga/NFMWorld.Reactor.Yoga.csproj" />
+  <Project Path="NFMWorld.Reactor/NFMWorld.Reactor.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />
   <Project Path="NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.csproj" />
