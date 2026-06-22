@@ -13,6 +13,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 {
     private const string PropertyAttributeFqn = "global::WorldXaml.UI.Base.PropertyAttribute";
     private const string ContentAttributeFqn = "global::WorldXaml.UI.Metadata.ContentAttribute";
+    private const string VisualFqn = "global::WorldXaml.UI.Yoga.Visual";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -94,46 +95,60 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
         // Walk the entire type hierarchy looking for instance properties
         // that have a corresponding static *Property field (convention-based detection)
-        var current = symbol;
-        while (current is not null)
         {
-            foreach (var member in current.GetMembers())
+            var current = symbol;
+            while (current is not null)
             {
-                if (member is not IPropertySymbol prop) continue;
-                if (prop.IsStatic) continue;
-                if (!seen.Add(prop.Name)) continue;
+                foreach (var member in current.GetMembers())
+                {
+                    if (member is not IPropertySymbol prop) continue;
+                    if (prop.IsStatic) continue;
+                    if (!seen.Add(prop.Name)) continue;
 
-                // Check for matching static *Property field (e.g. "FlexDirection" → "FlexDirectionProperty")
-                var backingName = prop.Name + "Property";
-                var hasBacking = current.GetMembers(backingName).Any(m => m.IsStatic)
-                    || (current.BaseType?.GetMembers(backingName).Any(m => m.IsStatic) ?? false);
+                    // Check for matching static *Property field (e.g. "FlexDirection" → "FlexDirectionProperty")
+                    var backingName = prop.Name + "Property";
+                    var hasBacking = current.GetMembers(backingName).Any(m => m.IsStatic)
+                                     || (current.BaseType?.GetMembers(backingName).Any(m => m.IsStatic) ?? false);
 
-                if (!hasBacking) continue;
+                    if (!hasBacking) continue;
 
-                properties.Add(new PropInfo(
-                    Name: prop.Name,
-                    TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    IsValueType: prop.Type.IsValueType,
-                    HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
-                    DefaultValue: defaultVal
-                ));
+                    properties.Add(new PropInfo(
+                        Name: prop.Name,
+                        TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                        IsValueType: prop.Type.IsValueType,
+                        HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
+                        DefaultValue: defaultVal
+                    ));
+                }
+
+                current = current.BaseType;
             }
-            current = current.BaseType;
         }
 
         if (properties.Count == 0) return null;
 
-        // Check for [Content] on any member; if found, look for Add(T) to determine child type
+        // Check for [Content] on any property member on type and parents; if found, look for Add(T)
+        // on the *property's type* (e.g. NodeChildCollection.Add(Visual))
         string? childType = null;
-        foreach (var member in symbol.GetMembers())
         {
-            var hasContent = member.GetAttributes().Any(a =>
-                a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == ContentAttributeFqn);
-            if (!hasContent) continue;
+            var current = symbol;
+            while (current is not null)
+            {
+                foreach (var member in symbol.GetMembers())
+                {
+                    if (member is not IPropertySymbol contentProp) continue;
+                    var hasContent = member.GetAttributes().Any(a =>
+                        a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == ContentAttributeFqn);
+                    if (!hasContent) continue;
 
-            // Look for Add(T) method on this type or any base type
-            childType = FindAddMethodChildType(symbol);
-            break;
+                    // Look for Add(T) on the property's type (e.g. NodeChildCollection)
+                    var propType = contentProp.Type as INamedTypeSymbol;
+                    childType = propType is not null ? FindAddMethodChildType(propType) : null;
+                    break;
+                }
+
+                current = current.BaseType;
+            }
         }
 
         return new TypeInfo(
@@ -261,10 +276,15 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
             if (type.ChildType is not null)
             {
+                var childNodeType = type.ChildType + "Node";
+                if (type.ChildType == VisualFqn)
+                {
+                    childNodeType = "NFMWorld.Reactor.VNode";
+                }
                 sb.AppendLine();
-                sb.AppendLine($"public {nodeName} WithChildren(params ReadOnlySpan<{type.ChildType}> children) {{ Children ??= []; Children.AddRange(c); return this; }}");
+                sb.AppendLine($"public {nodeName} WithChildren(params ReadOnlySpan<{childNodeType}> children) {{ Children ??= []; Children.AddRange(children); return this; }}");
                 sb.AppendLine();
-                sb.AppendLine($"public {nodeName} WithChild({type.ChildType} child) {{ Children ??= []; Children.Add(child); return this; }}");
+                sb.AppendLine($"public {nodeName} WithChild({childNodeType} child) {{ Children ??= []; Children.Add(child); return this; }}");
             }
         }
 
@@ -281,7 +301,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         using (sb.Indent())
         {
             sb.AppendLine($"/// <summary>Create a <see cref=\"{type.ShortName}\"/> VNode.</summary>");
-            sb.Append($"public static {type.Namespace}.{type.ShortName}Node {type.ShortName}(");
+            sb.Append($"public static global::{type.Namespace}.{type.ShortName}Node {type.ShortName}(");
 
             var paramDecls = new List<string>();
             foreach (var prop in type.Properties)
@@ -292,7 +312,14 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             }
 
             if (type.ChildType is not null)
-                paramDecls.Add($"params ReadOnlySpan<{type.ChildType}> children");
+            {
+                var childNodeType = type.ChildType + "Node";
+                if (type.ChildType == VisualFqn)
+                {
+                    childNodeType = "NFMWorld.Reactor.VNode";
+                }
+                paramDecls.Add($"params ReadOnlySpan<{childNodeType}> children");
+            }
 
             using (sb.Indent())
             {
