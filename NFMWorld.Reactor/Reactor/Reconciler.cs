@@ -82,21 +82,21 @@ public class Reconciler
         }
 
         // ── Apply VisualVNode direct properties ──────────────────
-        if (vnode is VisualVNode bvnode)
+        if (vnode is VisualVNode vvnode)
         {
-            if (bvnode.Classes is not null)
+            if (vvnode.Classes is not null)
             {
                 existing.Classes.Clear();
-                existing.Classes.AddRange(bvnode.Classes);
+                existing.Classes.AddRange(vvnode.Classes);
             }
-            if (bvnode.Name is not null)
-                existing.SetValue(Visual.NameProperty, bvnode.Name);
+            if (vvnode.Name is not null)
+                existing.SetValue(Visual.NameProperty, vvnode.Name);
         }
 
         // ── Reconcile children ───────────────────────────────────────────
-        if (vnode is VisualVNode { Children: not null } bvnodeChildren && existing.CanHaveChildren)
+        if (vnode is VisualVNode { Children: not null } vvnode2 && existing.CanHaveChildren)
         {
-            ReconcileChildren(bvnodeChildren.Children, existing);
+            ReconcileChildren(vvnode2.Children, existing);
         }
 
         return existing;
