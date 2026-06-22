@@ -73,14 +73,14 @@ public class Reconciler
             existing = vvnode.CreateNative();
         }
 
-        // ── Apply properties (Name, Classes, and all [Property]-backed values) ──
+        // ── Apply properties (Name, and all [Property]-backed values) ──
         if (vvnode.Properties is not null)
         {
             foreach (var (propId, value) in vvnode.Properties)
             {
                 var prop = PropertyRegistry.Instance.FindById(propId);
-                if (prop is not null && existing is PropertyObject bindable)
-                    bindable.SetBoxedValue(prop, value);
+                if (prop is not null && existing is PropertyObject propObject)
+                    propObject.SetBoxedValue(prop, value);
             }
         }
 
