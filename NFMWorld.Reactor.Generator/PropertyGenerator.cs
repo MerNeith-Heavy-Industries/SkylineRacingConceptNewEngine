@@ -48,6 +48,8 @@ public class PropertyGenerator : IIncrementalGenerator
                         Hierarchy: hierarchy,
                         PropertyName: propSymbol.Name,
                         PropertyType: propSymbol.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                        IsNullableReference: propSymbol.NullableAnnotation == NullableAnnotation.Annotated
+                            && !propSymbol.Type.IsValueType,
                         DefaultValue: defaultValue,
                         DefaultValueMember: defaultValueMember,
                         OnChangedMethod: onChangedMethod,
@@ -85,11 +87,11 @@ public class PropertyGenerator : IIncrementalGenerator
                     var propList = new List<PropInfo>(group);
                     foreach (var prop in propList)
                     {
-                        var propType = prop.PropertyType;
+                        var propType = prop.IsNullableReference ? $"{prop.PropertyType}?" : prop.PropertyType;
                         var propName = prop.PropertyName;
 
                         // Determine default value expression
-                        var defaultExpr = prop.DefaultValueMember ?? prop.DefaultValue ?? $"default({prop.PropertyType})";
+                        var defaultExpr = prop.DefaultValueMember ?? prop.DefaultValue ?? $"default({prop.PropertyType}{(prop.IsNullableReference ? "?" : "")})";
 
                         // Build onChanged delegate
                         var onChanged = prop.OnChangedMethod is { } om
@@ -166,6 +168,7 @@ public class PropertyGenerator : IIncrementalGenerator
         List<(string Type, bool IsRecord, bool IsStruct, ImmutableArray<string> TypeArguments)> Hierarchy,
         string PropertyName,
         string PropertyType,
+        bool IsNullableReference,
         string? DefaultValue,
         string? DefaultValueMember,
         string? OnChangedMethod,
