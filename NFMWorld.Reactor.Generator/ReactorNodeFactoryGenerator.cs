@@ -267,7 +267,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
         var typeToNodeClass2 = new Dictionary<string, string>();
         foreach (var type in nonNull)
-            typeToNodeClass2[type.FullName] = type.ShortName + "Node";
+            typeToNodeClass2[type.FullName] = type.FullName + "Node";
 
         foreach (var type in nonNull)
         {
@@ -288,26 +288,26 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
     private static void GenerateNodeClass(IndentedStringBuilder sb, TypeInfo type, Dictionary<string, string> typeToNodeClass, List<TypeInfo> allTypes)
     {
-        var nodeName = type.ShortName + "Node";
+        var nodeName = type.FullName + "Node";
 
         // Determine the VNode base class: if the native base type has a generated Node class, extend it
         var baseClass = type.BaseTypeFqn is not null && typeToNodeClass.TryGetValue(type.BaseTypeFqn, out var baseNode)
             ? baseNode
-            : "NFMWorld.Reactor.VisualVNode";
+            : "global::NFMWorld.Reactor.VisualVNode";
 
         // Only seal leaf types; use abstract for abstract native types
         var isInherited = allTypes.Any(t2 => t2.BaseTypeFqn == type.FullName);
         var classMod = type.IsAbstract ? "abstract " : isInherited ? "" : "sealed ";
 
         sb.AppendLine();
-        sb.AppendLine($"/// <summary>Typed VNode for <see cref=\"{type.ShortName}\"/>.</summary>");
-        sb.AppendLine($"public {classMod}class {nodeName} : {baseClass}");
+        sb.AppendLine($"/// <summary>Typed VNode for <see cref=\"{type.FullName}\"/>.</summary>");
+        sb.AppendLine($"public {classMod}class {type.ShortName}Node : {baseClass}");
         sb.AppendLine("{");
 
         using (sb.Indent())
         {
             if (!type.IsAbstract)
-                sb.AppendLine($"internal {nodeName}() {{ }}");
+                sb.AppendLine($"internal {type.ShortName}Node() {{ }}");
             sb.AppendLine();
             
             sb.AppendLine($"public override Type NodeType => typeof({type.FullName});");
@@ -343,7 +343,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 var childNodeType = type.ChildType + "Node";
                 if (type.ChildType == VisualFqn)
                 {
-                    childNodeType = "NFMWorld.Reactor.VNode";
+                    childNodeType = "global::NFMWorld.Reactor.VNode";
                 }
                 sb.AppendLine();
                 sb.AppendLine($"public {nodeName} WithChildren(params ReadOnlySpan<{childNodeType}> children) {{ Children ??= []; Children.AddRange(children); return this; }}");
@@ -354,7 +354,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             if (!type.IsAbstract)
             {
                 sb.AppendLine();
-                sb.AppendLine($"public override Visual CreateNative() => new {type.FullName}();");
+                sb.AppendLine($"public override global::WorldXaml.UI.Yoga.Visual CreateNative() => new {type.FullName}();");
             }
         }
 
@@ -363,10 +363,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
     private static void GenerateFactoryMethod(IndentedStringBuilder sb, TypeInfo type)
     {
-        var returnType = $"global::{type.Namespace}.{type.ShortName}Node";
+        var returnType = $"{type.FullName}Node";
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>Create a <see cref=\"{type.ShortName}\"/> VNode.</summary>");
+        sb.AppendLine($"    /// <summary>Create a <see cref=\"{type.FullName}\"/> VNode.</summary>");
         sb.Append($"    public static {returnType} {type.ShortName}(");
 
         var paramDecls = new List<string>();

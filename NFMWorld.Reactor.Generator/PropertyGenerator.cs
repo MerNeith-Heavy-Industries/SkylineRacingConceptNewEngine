@@ -51,8 +51,8 @@ public class PropertyGenerator : IIncrementalGenerator
                         IsNullableReference: propSymbol.NullableAnnotation == NullableAnnotation.Annotated
                             && !propSymbol.Type.IsValueType,
                         DefaultValue: defaultValue,
-                        DefaultValueMember: defaultValueMember,
-                        OnChangedMethod: onChangedMethod,
+                        DefaultValueMember: defaultValueMember?.Replace("\"", ""),
+                        OnChangedMethod: onChangedMethod?.Replace("\"", ""),
                         HasBackingField: hasBackingField);
                 })
                 .WithTrackingName("PropertyDeclarations");
