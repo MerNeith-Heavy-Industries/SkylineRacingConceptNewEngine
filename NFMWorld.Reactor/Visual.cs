@@ -48,7 +48,7 @@ public abstract partial class Visual : PropertyObject, IStyleNode, INamed
     /// CSS-like class names applied to this element.
     /// Styles can match on these via Selector="Type.classname".
     /// </summary>
-    public Classes Classes => field ??= new Classes(this);
+    public Classes Classes => field ??= new Classes();
 
     #region Parent/child tree
 
