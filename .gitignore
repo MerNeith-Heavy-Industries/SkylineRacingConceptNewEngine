@@ -31,5 +31,4 @@ replay_pid*
 
 /publish
 
-nfm-world/Generated
-NFMWorld.Library/Generated
+Generated

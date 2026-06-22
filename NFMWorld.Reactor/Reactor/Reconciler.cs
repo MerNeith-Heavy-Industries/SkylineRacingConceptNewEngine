@@ -11,12 +11,17 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class Reconciler
 {
+    private readonly HashSet<Component> _activeComponents = [];
+    private readonly HashSet<Component> _visitedComponents = [];
+
     /// <summary>
     /// Apply the VNode tree to the given native root container.
     /// Returns the native root element (created if needed).
     /// </summary>
     public Visual Reconcile(VNode vnode, Visual container, Visual? existingRoot)
     {
+        _visitedComponents.Clear();
+
         var result = ReconcileNode(vnode, existingRoot);
         if (result is null)
             return existingRoot!; // Shouldn't happen for root
@@ -29,7 +34,25 @@ public class Reconciler
             container.InsertAt(0, result);
         }
 
+        // Unmount any components that were active last pass but not visited this pass
+        UnmountStaleComponents();
+
         return result;
+    }
+
+    private void UnmountStaleComponents()
+    {
+        foreach (var comp in _activeComponents)
+        {
+            if (!_visitedComponents.Contains(comp))
+            {
+                comp.Unmount();
+            }
+        }
+        _activeComponents.Clear();
+        // Swap: visited become active for next pass
+        foreach (var comp in _visitedComponents)
+            _activeComponents.Add(comp);
     }
 
     internal Visual? ReconcileNode(VNode vnode, Visual? existing)
@@ -158,6 +181,8 @@ public class Reconciler
         {
             cnode.Instance = cnode.CreateComponent();
         }
+
+        _visitedComponents.Add(cnode.Instance);
 
         // Let the component render via the reconciler (sets up internal state)
         return cnode.Instance.RenderViaReconciler(this, existing);

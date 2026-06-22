@@ -13,12 +13,6 @@
         <NativeLib>Shared</NativeLib>
     </PropertyGroup>
 
-    <Import Project="../WorldXaml/WorldXaml.Generator/WorldXaml.Generator.props" />
-    <PropertyGroup>
-        <WorldXamlGeneratorBehavior>WithXamlXCompilation</WorldXamlGeneratorBehavior>
-        <WorldXamlGeneratorIsHotReloadingEnabled>true</WorldXamlGeneratorIsHotReloadingEnabled>
-    </PropertyGroup>
-
     <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
         <Compile Remove="Generated/**" />
@@ -54,9 +48,9 @@
         <ProjectReference Include="..\NFMWorld.CrashReporter\NFMWorld.CrashReporter.csproj" />
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\WorldXaml\WorldXaml.ObservableCollections\WorldXaml.ObservableCollections.csproj" />
-        <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Base\WorldXaml.UI.Base.csproj" />
-        <ProjectReference Include="..\WorldXaml\WorldXaml.UI.Yoga\WorldXaml.UI.Yoga.csproj" />
+        <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
+        <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\NFMWorld.Reactor\NFMWorld.Reactor.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -68,8 +62,7 @@
       <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.Mathematics\Maxine.Extensions.Mathematics.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen\Maxine.Extensions.UnionGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-      <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj"/>
-      <ProjectReference Include="..\WorldXaml\WorldXaml.Generator\WorldXaml.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+      <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj" />
     </ItemGroup>
 
     <ItemGroup>

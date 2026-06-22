@@ -69,10 +69,10 @@
   <Project Path="NFMWorld.Multiplayer.Orchestrator/NFMWorld.Multiplayer.Orchestrator.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
-  <Project Path="NFMWorld.Reactor.Framework/NFMWorld.Reactor.Framework.csproj" />
   <Project Path="NFMWorld.Reactor.Generator/NFMWorld.Reactor.Generator.csproj" />
   <Project Path="NFMWorld.Reactor.ObservableCollections/NFMWorld.Reactor.ObservableCollections.csproj" />
-  <Project Path="NFMWorld.Reactor.Yoga/NFMWorld.Reactor.Yoga.csproj" />
+  <Project Path="NFMWorld.Reactor.Test/NFMWorld.Reactor.Test.csproj" />
+  <Project Path="NFMWorld.Reactor.TestFixtures/NFMWorld.Reactor.TestFixtures.csproj" />
   <Project Path="NFMWorld.Reactor/NFMWorld.Reactor.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />

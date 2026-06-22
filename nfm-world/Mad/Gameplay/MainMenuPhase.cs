@@ -61,7 +61,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnLoginClicked()
     {
-        accountManagerMenu ??= new AccountManagerModal();
+        // accountManagerMenu ??= new AccountManagerModal();
     }
 
     private void OnLogoutClicked()
@@ -167,19 +167,19 @@ public class MainMenuPhase : BaseStageRenderingPhase
     {
         base.RenderImgui();
 
-        if (accountManagerMenu is not null)
-        {
-            var res = accountManagerMenu.Process();
-            if (res == AccountManagerModal.AccountManagerFloatingMenuState.LoggedIn)
-            {
-                accountManagerMenu.Close();
-                accountManagerMenu = null;
-            }
-            else if (res == AccountManagerModal.AccountManagerFloatingMenuState.Canceled)
-            {
-                accountManagerMenu.Close();
-                accountManagerMenu = null;
-            }
-        }
+        // if (accountManagerMenu is not null)
+        // {
+        //     var res = accountManagerMenu.Process();
+        //     if (res == AccountManagerModal.AccountManagerFloatingMenuState.LoggedIn)
+        //     {
+        //         accountManagerMenu.Close();
+        //         accountManagerMenu = null;
+        //     }
+        //     else if (res == AccountManagerModal.AccountManagerFloatingMenuState.Canceled)
+        //     {
+        //         accountManagerMenu.Close();
+        //         accountManagerMenu = null;
+        //     }
+        // }
     }
 }
