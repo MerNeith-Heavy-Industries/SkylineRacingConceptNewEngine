@@ -33,7 +33,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_ComponentRendersNamedNode_NameApplied()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
         
         // Step 1: verify the factory-produced VNode has Name
@@ -62,7 +62,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_ComponentNodeDirect_NameApplied()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
         var compNode = TitleComponent(title: "DirectComp");
         var root = reconciler.Reconcile(compNode, container, null);
@@ -77,7 +77,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_DirectName_Applied()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
         var flexNode = FlexPanel(name: "DirectName");
         var root = reconciler.Reconcile(flexNode, container, null);
@@ -91,7 +91,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_EmptyComponent_RendersFlexPanel()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
 
         var vnode = View(name: "vnode", children:
@@ -111,7 +111,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_TitleComponent_SetsName()
     {
-        var container = new FlexPanel();
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
 
         var vnode = View(name: "vnode", children:
@@ -131,7 +131,7 @@ public class ReconcilerComponentTests
     [TestMethod]
     public void Reconcile_UpdateComponent_ReflectsNewTitle()
     {
-        var container = new FlexPanel() { Name = "container" };
+        var container = new FlexPanel { Name = "container" };
         var reconciler = new Reconciler();
 
         // First render
