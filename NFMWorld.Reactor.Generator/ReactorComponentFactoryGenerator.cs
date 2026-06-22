@@ -207,9 +207,12 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 {
                     sb.AppendLine($"private global::NFMWorld.Reactor.Optional<{p.TypeFqn}> _{CamelCase(p.Name)};");
                 }
+                
+                sb.AppendLine();
+                sb.AppendLine($"public override Type ComponentType => typeof({type.ShortName});");
 
                 sb.AppendLine();
-                sb.AppendLine($"internal {nodeName}() : base(typeof({type.ShortName})) {{ }}");
+                sb.AppendLine($"internal {nodeName}() {{ }}");
 
                 // ── With* methods ─────────────────────────────────────────
                 foreach (var p in type.Parameters)

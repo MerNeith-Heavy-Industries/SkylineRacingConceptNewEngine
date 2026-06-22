@@ -6,10 +6,10 @@ namespace NFMWorld.Reactor;
 /// replaces this node in the native Yoga tree. The component itself has
 /// no native representation — only its rendered output does.
 /// </summary>
-public class ComponentNode : VNode
+public abstract class ComponentNode : VNode
 {
     /// <summary>The component <see cref="Type"/> to instantiate. Must extend <see cref="Component"/>.</summary>
-    public Type ComponentType { get; }
+    public abstract Type ComponentType { get; }
 
     /// <summary>
     /// The mounted component instance. Set by <see cref="Reconciler"/> on first reconciliation.
@@ -20,11 +20,8 @@ public class ComponentNode : VNode
     /// Creates a component VNode. The component is instantiated via
     /// <see cref="CreateComponent"/> when the reconciler first encounters this node.
     /// </summary>
-    /// <param name="componentType">A type extending <see cref="Component"/>.</param>
-    protected ComponentNode(Type componentType)
-        : base(typeof(ComponentNode)) // marker — never instantiated as a native Yoga node
+    protected ComponentNode()
     {
-        ComponentType = componentType;
     }
 
     /// <summary>
@@ -62,11 +59,11 @@ public static class ComponentNodeFactory
 /// Fallback <see cref="ComponentNode"/> for components without a generated wrapper.
 /// Uses <see cref="Activator.CreateInstance"/> with optional positional args.
 /// </summary>
-internal sealed class UntypedComponentNode : ComponentNode
+internal sealed class UntypedComponentNode(Type componentType) : ComponentNode
 {
     public object?[]? Args { get; set; }
 
-    public UntypedComponentNode(Type componentType) : base(componentType) { }
+    public override Type ComponentType => componentType;
 
     public override Component CreateComponent()
         => (Component)Activator.CreateInstance(ComponentType, Args ?? [])!;

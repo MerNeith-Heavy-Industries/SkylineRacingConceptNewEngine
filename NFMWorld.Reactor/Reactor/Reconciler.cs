@@ -64,16 +64,19 @@ public class Reconciler
         if (vnode is ComponentNode cnode)
             return ReconcileComponentNode(cnode, existing);
 
+        if (vnode is not VisualVNode vvnode)
+            throw new InvalidOperationException("Invalid VNode type: must be VisualVNode or ComponentNode");
+
         // ── Create or reuse native node ──────────────────────────────────
-        if (existing is null || existing.GetType() != vnode.NodeType)
+        if (existing is null || existing.GetType() != vvnode.NodeType)
         {
-            existing = CreateNative(vnode);
+            existing = vvnode.CreateNative();
         }
 
         // ── Apply properties (Name, Classes, and all [Property]-backed values) ──
-        if (vnode.Properties is not null)
+        if (vvnode.Properties is not null)
         {
-            foreach (var (propId, value) in vnode.Properties)
+            foreach (var (propId, value) in vvnode.Properties)
             {
                 var prop = PropertyRegistry.Instance.FindById(propId);
                 if (prop is not null && existing is PropertyObject bindable)
@@ -82,21 +85,18 @@ public class Reconciler
         }
 
         // ── Apply VisualVNode direct properties ──────────────────
-        if (vnode is VisualVNode vvnode)
+        if (vvnode.Classes is not null)
         {
-            if (vvnode.Classes is not null)
-            {
-                existing.Classes.Clear();
-                existing.Classes.AddRange(vvnode.Classes);
-            }
-            if (vvnode.Name is not null)
-                existing.SetValue(Visual.NameProperty, vvnode.Name);
+            existing.Classes.Clear();
+            existing.Classes.AddRange(vvnode.Classes);
         }
+        if (vvnode.Name is not null)
+            existing.SetValue(Visual.NameProperty, vvnode.Name);
 
         // ── Reconcile children ───────────────────────────────────────────
-        if (vnode is VisualVNode { Children: not null } vvnode2 && existing.CanHaveChildren)
+        if (vvnode.Children is not null && existing.CanHaveChildren)
         {
-            ReconcileChildren(vvnode2.Children, existing);
+            ReconcileChildren(vvnode.Children, existing);
         }
 
         return existing;
@@ -192,15 +192,5 @@ public class Reconciler
 
         // Let the component render via the reconciler (sets up internal state)
         return cnode.Instance.RenderViaReconciler(this, existing);
-    }
-
-    /// <summary>
-    /// Instantiate a native Yoga node from a VNode descriptor.
-    /// </summary>
-    private static Visual CreateNative(VNode vnode)
-    {
-        var instance = Activator.CreateInstance(vnode.NodeType)
-            ?? throw new InvalidOperationException($"Cannot create instance of {vnode.NodeType}");
-        return (Visual)instance;
     }
 }
