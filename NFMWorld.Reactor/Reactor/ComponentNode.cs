@@ -26,10 +26,8 @@ public abstract class ComponentNode : VNode
 
     /// <summary>
     /// Overridden by generated subclasses to create the component with typed constructor args.
-    /// The default implementation uses <see cref="Activator.CreateInstance"/> with no arguments.
     /// </summary>
-    public virtual Component CreateComponent()
-        => (Component)Activator.CreateInstance(ComponentType)!;
+    public abstract Component CreateComponent();
 }
 
 /// <summary>
@@ -49,7 +47,7 @@ public static class ComponentNodeFactory
 
 /// <summary>
 /// Fallback <see cref="ComponentNode"/> for components without a generated wrapper.
-/// Uses <see cref="Activator.CreateInstance"/> with optional positional args.
+/// Uses <see cref="Activator.CreateInstance(Type, object[])"/> with optional positional args.
 /// </summary>
 internal sealed class UntypedComponentNode(Type componentType) : ComponentNode
 {
