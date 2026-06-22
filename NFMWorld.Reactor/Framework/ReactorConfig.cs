@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 namespace WorldXaml.UI.Base;
 
-public static class XamlConfig
+public static class ReactorConfig
 {
     /// <summary>
     /// Set to define a custom log handler for WorldXaml.UI.

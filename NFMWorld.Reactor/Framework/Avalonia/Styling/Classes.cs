@@ -9,10 +9,10 @@ namespace WorldXaml.UI.Controls;
 /// Styles can target elements by class name.
 /// Usage: &lt;Button Classes="primary large" /&gt;
 /// </summary>
-public class Classes(BindableObject owner) : IList<string>, INotifyCollectionChanged
+public class Classes(Visual owner) : IList<string>, INotifyCollectionChanged
 {
     private readonly List<string> _classes = [];
-    private readonly BindableObject _owner = owner;
+    private readonly Visual _owner = owner;
 
     public event NotifyCollectionChangedEventHandler? CollectionChanged;
 

@@ -22,4 +22,4 @@ namespace WorldXaml.UI.Base;
 /// </para>
 /// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public class XamlInterpolatorAttribute : Attribute;
+public class ReactorInterpolatorAttribute : Attribute;

@@ -80,7 +80,7 @@ public class ComponentNodeFactoryTests
         var node = ToggleComponent();
 
         var comp = (ToggleComponent)node.CreateComponent();
-        Assert.AreEqual(true, comp.Enabled);
+        Assert.IsTrue(comp.Enabled);
         Assert.AreEqual(1.0f, comp.Opacity);
     }
 

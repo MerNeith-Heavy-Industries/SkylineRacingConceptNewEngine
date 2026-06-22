@@ -53,25 +53,25 @@ public class Reconciler
             foreach (var (propId, value) in vnode.Properties)
             {
                 var prop = PropertyRegistry.Instance.FindById(propId);
-                if (prop is not null && nativeNode is BindableObject bindable)
+                if (prop is not null && nativeNode is PropertyObject bindable)
                     bindable.SetBoxedValue(prop, value);
             }
         }
 
-        // ── Apply BindableObjectVNode direct properties ──────────────────
-        if (vnode is BindableObjectVNode bvnode)
+        // ── Apply VisualVNode direct properties ──────────────────
+        if (vnode is VisualVNode bvnode)
         {
-            if (bvnode.Classes is not null && nativeNode is BindableObject bo)
+            if (bvnode.Classes is not null && nativeNode is Visual bo)
             {
                 bo.Classes.Clear();
                 bo.Classes.AddRange(bvnode.Classes);
             }
             if (bvnode.Name is not null)
-                nativeNode.SetValue(BindableObject.NameProperty, bvnode.Name);
+                nativeNode.SetValue(Visual.NameProperty, bvnode.Name);
         }
 
         // ── Reconcile children ───────────────────────────────────────────
-        if (vnode is BindableObjectVNode { Children: not null } bvnodeChildren && nativeNode.CanHaveChildren)
+        if (vnode is VisualVNode { Children: not null } bvnodeChildren && nativeNode.CanHaveChildren)
         {
             ReconcileChildren(bvnodeChildren.Children, nativeNode);
         }

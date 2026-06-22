@@ -1,6 +1,4 @@
-using NFMWorld.Reactor;
 using static WorldXaml.UI.Yoga.Nodes;
-using Yoga;
 
 namespace NFMWorld.Reactor;
 
@@ -9,15 +7,8 @@ namespace NFMWorld.Reactor;
 /// Equivalent to a pass-through container with <c>YGDisplayContents</c>.
 /// Replaces the native <c>WorldXaml.UI.Yoga.ContentsPanel</c> (removed).
 /// </summary>
-public class ContentsPanelComponent : Component
+public class ContentsPanelComponent(params VNode[] children) : Component
 {
-    private readonly VNode[] _children;
-
-    public ContentsPanelComponent(params VNode[] children)
-    {
-        _children = children;
-    }
-
     protected override VNode Render()
-        => FlexPanel(display: YgDisplay.Contents, children: _children);
+        => FlexPanel(display: YgDisplay.Contents, children: children);
 }

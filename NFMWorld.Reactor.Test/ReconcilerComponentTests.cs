@@ -41,7 +41,7 @@ public class ReconcilerComponentTests
         var comp = (TitleComponent)compNode.CreateComponent();
         var rendered = (VNode)comp.GetType().GetMethod("Render", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             !.Invoke(comp, null)!;
-        Assert.AreEqual("CompName", ((BindableObjectVNode)rendered).Name, "VNode name should be set after Render");
+        Assert.AreEqual("CompName", ((VisualVNode)rendered).Name, "VNode name should be set after Render");
         
         // Step 2: reconcile directly (should work)
         var directResult = reconciler.Reconcile(rendered, new FlexPanel(), null);

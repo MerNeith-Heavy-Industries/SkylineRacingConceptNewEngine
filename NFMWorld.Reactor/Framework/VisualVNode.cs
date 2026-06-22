@@ -5,17 +5,15 @@ namespace NFMWorld.Reactor;
 /// properties that map to a real <see cref="WorldXaml.UI.Yoga.Visual"/>.
 /// Components use plain <see cref="VNode"/> instead.
 /// </summary>
-public abstract class BindableObjectVNode : VNode
+public abstract class VisualVNode(Type nodeType) : VNode(nodeType)
 {
     public EquatableList<VNode>? Children { get; set; }
     public string? Classes { get; set; }
     public string? Name { get; set; }
 
-    protected BindableObjectVNode(Type nodeType) : base(nodeType) { }
-
     // ── Shared fluent builders ──────────────────────────────────────────
 
-    public BindableObjectVNode WithClasses(string? c) { Classes = c; return this; }
-    public BindableObjectVNode WithKey(object? k) { Key = k; return this; }
-    public BindableObjectVNode WithName(string? n) { Name = n; return this; }
+    public VisualVNode WithClasses(string? c) { Classes = c; return this; }
+    public VisualVNode WithKey(object? k) { Key = k; return this; }
+    public VisualVNode WithName(string? n) { Name = n; return this; }
 }

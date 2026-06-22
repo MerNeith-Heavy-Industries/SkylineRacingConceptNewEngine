@@ -284,7 +284,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         // Determine the VNode base class: if the native base type has a generated Node class, extend it
         var baseClass = type.BaseTypeFqn is not null && typeToNodeClass.TryGetValue(type.BaseTypeFqn, out var baseNode)
             ? baseNode
-            : "NFMWorld.Reactor.BindableObjectVNode";
+            : "NFMWorld.Reactor.VisualVNode";
 
         // Only seal leaf types; use abstract for abstract native types
         var isInherited = allTypes.Any(t2 => t2.BaseTypeFqn == type.FullName);
@@ -325,9 +325,9 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
             // Shadow common VNode members with correct return type (skip if a property already provides it)
             if (!propMethodNames.Contains("WithClasses"))
-                sb.AppendLine($"    public new {nodeName} WithClasses(string? classes) {{ base.WithClasses(classes); return this; }}");
+                sb.AppendLine($"public new {nodeName} WithClasses(string? classes) {{ base.WithClasses(classes); return this; }}");
             if (!propMethodNames.Contains("WithKey"))
-                sb.AppendLine($"    public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
+                sb.AppendLine($"public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
 
             if (type.ChildType is not null)
             {
