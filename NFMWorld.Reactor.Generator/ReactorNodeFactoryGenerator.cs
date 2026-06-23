@@ -380,7 +380,9 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 foreach (var prop in type.Properties)
                 {
                     var camelName = CamelCase(prop.Name);
-                    var paramType = $"NFMWorld.Reactor.Optional<{prop.TypeFqn}>";
+                    // If the type is already nullable (e.g. "float?"), use it as-is.
+                    // Otherwise append "?" to make it optional.
+                    var paramType = IsAlreadyNullable(prop.TypeFqn) ? prop.TypeFqn : $"{prop.TypeFqn}?";
                     paramDecls.Add($"{paramType} {camelName} = default");
                 }
 
@@ -417,7 +419,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     foreach (var prop in type.Properties)
                     {
                         var camelName = CamelCase(prop.Name);
-                        sb.AppendLine($"if ({camelName}.HasValue) n.With{prop.Name}({camelName}.Value);");
+                        if (prop.IsValueType)
+                            sb.AppendLine($"if ({camelName}.HasValue) n.With{prop.Name}({camelName}.Value);");
+                        else
+                            sb.AppendLine($"if ({camelName} is not null) n.With{prop.Name}({camelName});");
                     }
 
                     if (type.ChildType is not null)
@@ -442,6 +447,14 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         if (fqn.EndsWith("?"))
             return fqn[..^1];
         return fqn;
+    }
+
+    /// <summary>Returns true if the type is already nullable (ends with ? or is Nullable&lt;T&gt;).</summary>
+    private static bool IsAlreadyNullable(string fqn)
+    {
+        if (fqn.EndsWith("?")) return true;
+        if (fqn.StartsWith("System.Nullable<") && fqn.EndsWith(">")) return true;
+        return false;
     }
 
     /// <summary>Simplifies a globally-qualified type name relative to a namespace.</summary>
