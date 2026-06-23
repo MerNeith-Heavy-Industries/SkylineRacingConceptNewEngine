@@ -218,7 +218,30 @@ public abstract class Component
         }, collection);
         return collection;
     }
-    
+
+    /// <summary>
+    /// Reads a context value provided by an ancestor component's
+    /// <see cref="ProvideContext{T}"/> call. Returns <see cref="Context{T}.DefaultValue"/>
+    /// if no ancestor provides this context.
+    /// The value refreshes automatically when any ancestor re-renders — no
+    /// subscriptions needed.
+    /// </summary>
+    protected T UseContext<T>(Context<T> context)
+    {
+        _ = ValidateHook<ContextHook>() ?? AddHook(new ContextHook());
+        _hookIndex++;
+        return Reconciler.GetContext(context);
+    }
+
+    /// <summary>
+    /// Provides a context value to all descendant components in the current subtree.
+    /// Call during <see cref="Render"/> before returning the child VNode tree.
+    /// </summary>
+    protected void ProvideContext<T>(Context<T> context, T value)
+    {
+        Reconciler.SetContext(context, value);
+    }
+
     #endregion
 
     #region Hook lifecycle
@@ -421,6 +444,8 @@ public abstract class Component
     {
         public object?[]? Dependencies = dependencies;
     }
+
+    private sealed class ContextHook : Hook;
 
     private sealed class MemoBox<T> : Hook
     {

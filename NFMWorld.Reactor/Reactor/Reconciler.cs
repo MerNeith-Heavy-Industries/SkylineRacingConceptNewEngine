@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Maxine.Extensions;
 using Maxine.Extensions.Collections;
 using WorldXaml.UI;
 using WorldXaml.UI.Base;
@@ -18,6 +20,40 @@ public class Reconciler
     private readonly HashSet<Component> _visitedComponents = [];
     private readonly Dictionary<Visual, HashSet<int>> _prevPropIds = [];
     private readonly Dictionary<Visual, HashSet<int>> _currPropIds = [];
+    private readonly Stack<ContextFrame> _contextStack = new();
+
+    private void PushContextFrame() => _contextStack.Push(new ContextFrame());
+    private void PopContextFrame() => _contextStack.Pop();
+
+    internal void SetContext<T>(Context<T> context, T value)
+    {
+        if (_contextStack.Count == 0) return;
+        _contextStack.PeekRef()[context] = value;
+    }
+
+    internal T GetContext<T>(Context<T> context)
+    {
+        foreach (var frame in _contextStack)
+        {
+            if (frame.TryGetValue(context, out var val) && val is T tval)
+                return tval;
+        }
+        return context.DefaultValue;
+    }
+
+    private struct ContextFrame
+    {
+        private Dictionary<object, object?>? _entries;
+        public object? this[Context key]
+        {
+            set { _entries ??= new Dictionary<object, object?>(); _entries[key] = value; }
+        }
+        public readonly bool TryGetValue(Context key, out object? value)
+        {
+            if (_entries is null) { value = null; return false; }
+            return _entries.TryGetValue(key, out value);
+        }
+    }
 
     /// <summary>
     /// Apply the VNode tree to the given native root container.
@@ -189,16 +225,20 @@ public class Reconciler
     /// </summary>
     private Visual? ReconcileComponentNode(ComponentNode cnode, Visual? existing)
     {
-        // Create component instance on first encounter via generated factory
         if (cnode.Instance is null)
-        {
             cnode.Instance = cnode.CreateComponent();
-        }
 
         _visitedComponents.Add(cnode.Instance);
 
-        // Let the component render via the reconciler (sets up internal state)
-        return cnode.Instance.RenderViaReconciler(this, existing);
+        PushContextFrame();
+        try
+        {
+            return cnode.Instance.RenderViaReconciler(this, existing);
+        }
+        finally
+        {
+            PopContextFrame();
+        }
     }
 
     /// <summary>
