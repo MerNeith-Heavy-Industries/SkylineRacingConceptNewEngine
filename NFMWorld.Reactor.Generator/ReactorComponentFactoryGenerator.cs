@@ -299,8 +299,8 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         var factorySig = type.GenericShortName;
 
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>Create a <see cref=\"{type.GenericShortName}\"/> component VNode.</summary>");
-        sb.Append($"    public static {returnType} {factorySig}(");
+        sb.AppendLine($"/// <summary>Create a <see cref=\"{type.GenericShortName}\"/> component VNode.</summary>");
+        sb.Append($"public static {returnType} {factorySig}(");
 
         var paramDecls = new List<string>();
         foreach (var p in type.Parameters)
@@ -321,7 +321,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         }
 
         sb.AppendLine(")");
-        sb.AppendLine("    {");
+        sb.AppendLine("{");
         using (sb.Indent())
         {
             sb.AppendLine($"var n = new {returnType}();");
@@ -335,7 +335,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             sb.AppendLine();
             sb.AppendLine("return n;");
         }
-        sb.AppendLine("    }");
+        sb.AppendLine("}");
     }
 
     private readonly record struct ComponentTypeInfo(

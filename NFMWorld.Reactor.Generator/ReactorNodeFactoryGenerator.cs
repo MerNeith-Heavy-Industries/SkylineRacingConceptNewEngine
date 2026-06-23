@@ -20,45 +20,48 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         context.RegisterPostInitializationOutput(spc =>
             spc.AddSource("_ReactorPing.g.cs", "// ReactorNodeFactoryGenerator loaded\n"));
 
-        // Find all non-abstract types that extend Visual from the compilation
+        // Find all non-abstract types that extend Visual from ALL assemblies.
+        // We need the complete hierarchy to resolve VNode base classes correctly,
+        // but we only EMIT factories and VNode classes for types in this project.
         var nodeTypes = context.CompilationProvider
             .SelectMany((compilation, _) =>
             {
-                var types = new List<TypeInfo?>();
+                var allTypes = new List<(TypeInfo? Info, IAssemblySymbol Assembly)>();
 
-                SearchSubtypes("WorldXaml.UI.Yoga.Visual");
-
-                // Dedup by full type name
-                var seen = new HashSet<string>();
-                var deduped = new List<TypeInfo?>();
-                foreach (var t1 in types)
-                {
-                    if (t1 is { } t && seen.Add(t.FullName))
-                        deduped.Add(t);
-                }
-
-                return System.Collections.Immutable.ImmutableArray.CreateRange(deduped);
-
-                // Find known base types and search for their non-abstract subtypes
-                void SearchSubtypes(string baseTypeFqn)
+                void SearchAll(string baseTypeFqn)
                 {
                     var baseType = compilation.GetTypeByMetadataName(baseTypeFqn);
                     if (baseType is null) return;
 
-                    // Only search the current project's own types — VNode wrappers from
-                    // referenced assemblies are consumed via ProjectReference, not regenerated.
-                    CollectSubtypes(compilation.Assembly.GlobalNamespace, baseType, types);
+                    foreach (var asm in compilation.SourceModule.ReferencedAssemblySymbols)
+                        CollectSubtypes(asm.GlobalNamespace, baseType, asm, allTypes);
+                    CollectSubtypes(compilation.Assembly.GlobalNamespace, baseType, compilation.Assembly, allTypes);
                 }
+
+                SearchAll("WorldXaml.UI.Yoga.Visual");
+
+                var projectAssembly = compilation.Assembly;
+                var seen = new HashSet<string>();
+                var deduped = new List<TypeInfo?>();
+                foreach (var (info, asm) in allTypes)
+                {
+                    if (info is { } t && seen.Add(t.FullName))
+                    {
+                        var isExternal = !SymbolEqualityComparer.Default.Equals(asm, projectAssembly);
+                        deduped.Add(t with { IsExternal = isExternal });
+                    }
+                }
+
+                return System.Collections.Immutable.ImmutableArray.CreateRange(deduped);
             })
             .WithTrackingName("ReactorNodeTypes");
 
-        // Collect all types and generate the Nodes class
         context.RegisterSourceOutput(
             nodeTypes.Collect(),
             GenerateNodesClass);
     }
 
-    private static void CollectSubtypes(INamespaceSymbol ns, INamedTypeSymbol baseType, List<TypeInfo?> results)
+    private static void CollectSubtypes(INamespaceSymbol ns, INamedTypeSymbol baseType, IAssemblySymbol asm, List<(TypeInfo? Info, IAssemblySymbol Assembly)> results)
     {
         foreach (var member in ns.GetMembers())
         {
@@ -67,11 +70,11 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 if (ExtendsType(type, baseType))
                 {
                     var info = CollectTypeInfo(type);
-                    if (info is not null) results.Add(info);
+                    if (info is not null) results.Add((info, asm));
                 }
             }
             if (member is INamespaceSymbol child)
-                CollectSubtypes(child, baseType, results);
+                CollectSubtypes(child, baseType, asm, results);
         }
     }
 
@@ -225,59 +228,46 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
     private void GenerateNodesClass(SourceProductionContext spc, System.Collections.Immutable.ImmutableArray<TypeInfo?> types)
     {
+        var allTypes = new List<TypeInfo>();
+        for (int i = 0; i < types.Length; i++)
+            if (types[i] is { } t) allTypes.Add(t);
+
+        // Only emit factories + VNode subclasses for types in THIS project.
+        // External types are still used for the hierarchy map (base class resolution).
+        var localTypes = allTypes.Where(t => !t.IsExternal).ToList();
+
+        // Build full hierarchy map: ALL types (local + external) so local types
+        // correctly extend VNode base classes from referenced assemblies.
+        var typeToNodeClass = new Dictionary<string, string>();
+        foreach (var type in allTypes)
+            typeToNodeClass[type.FullName] = type.FullName + "Node";
+
+        // ── Unified Nodes factory class ──────────────────────────────────
         var sbNodes = new IndentedStringBuilder();
         sbNodes.AppendLine("// <auto-generated />");
         sbNodes.AppendLine("#nullable enable");
 
-        var nonNull = new List<TypeInfo>();
-        for (int i = 0; i < types.Length; i++)
-            if (types[i] is { } t) nonNull.Add(t);
-
-        // Determine shared namespace from the first type's namespace
-        var factoryNamespace = nonNull.Count > 0 ? nonNull[0].Namespace : "NFMWorld.Reactor";
-
-        // Only emit the Nodes factory class if there are non-abstract types
-        if (nonNull.Any(t => !t.IsAbstract))
+        if (localTypes.Any(t => !t.IsAbstract))
         {
-            sbNodes.AppendLine();
-            sbNodes.AppendLine($"namespace {factoryNamespace}");
-            sbNodes.AppendLine("{");
-            using (sbNodes.Indent())
+            foreach (var type in localTypes)
             {
-                sbNodes.AppendLine("/// <summary>Unified factory methods for all Yoga-backed VNodes in this project.</summary>");
-                sbNodes.AppendLine("public static partial class Nodes");
-                sbNodes.AppendLine("{");
-                using (sbNodes.Indent())
-                {
-                    foreach (var type in nonNull)
-                    {
-                        if (!type.IsAbstract)
-                            GenerateFactoryMethod(sbNodes, type);
-                    }
-                }
-                sbNodes.AppendLine("}");
+                if (!type.IsAbstract)
+                    GenerateFactoryMethod(sbNodes, type);
             }
-            sbNodes.AppendLine("}");
         }
 
-        // Generate typed VNode subclasses in their origin namespaces
+        // ── Typed VNode subclasses (local only) ──────────────────────────
         var sbTypes = new IndentedStringBuilder();
         sbTypes.AppendLine("// <auto-generated />");
         sbTypes.AppendLine("#nullable enable");
 
-        var typeToNodeClass2 = new Dictionary<string, string>();
-        foreach (var type in nonNull)
-            typeToNodeClass2[type.FullName] = type.FullName + "Node";
-
-        foreach (var type in nonNull)
+        foreach (var type in localTypes)
         {
             sbTypes.AppendLine();
             sbTypes.AppendLine($"namespace {type.Namespace}");
             sbTypes.AppendLine("{");
             sbTypes.IncrementIndent();
-
-            GenerateNodeClass(sbTypes, type, typeToNodeClass2, nonNull);
-
+            GenerateNodeClass(sbTypes, type, typeToNodeClass, localTypes);
             sbTypes.DecrementIndent();
             sbTypes.AppendLine("}");
         }
@@ -307,7 +297,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         using (sb.Indent())
         {
             if (!type.IsAbstract)
-                sb.AppendLine($"internal {type.ShortName}Node() {{ }}");
+                sb.AppendLine($"public {type.ShortName}Node() {{ }}");
             sb.AppendLine();
             
             sb.AppendLine($"public override Type NodeType => typeof({type.FullName});");
@@ -363,64 +353,79 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
     private static void GenerateFactoryMethod(IndentedStringBuilder sb, TypeInfo type)
     {
-        var returnType = $"{type.FullName}Node";
-
+        var factoryNs = type.Namespace;
         sb.AppendLine();
-        sb.AppendLine($"    /// <summary>Create a <see cref=\"{type.FullName}\"/> VNode.</summary>");
-        sb.Append($"    public static {returnType} {type.ShortName}(");
-
-        var paramDecls = new List<string>();
-        foreach (var prop in type.Properties)
-        {
-            var camelName = CamelCase(prop.Name);
-            var paramType = $"NFMWorld.Reactor.Optional<{prop.TypeFqn}>";
-            paramDecls.Add($"{paramType} {camelName} = default");
-        }
-
-        if (type.ChildType is not null)
-        {
-            var childNodeType = type.ChildType + "Node";
-            if (type.ChildType == VisualFqn)
-                childNodeType = "NFMWorld.Reactor.VNode";
-            else if (!childNodeType.StartsWith("global::"))
-                childNodeType = $"global::{childNodeType}";
-            paramDecls.Add($"params ReadOnlySpan<{childNodeType}> children");
-        }
-
+        sb.AppendLine($"namespace {factoryNs}");
+        sb.AppendLine("{");
         using (sb.Indent())
         {
-            var first = true;
-            foreach (var param in paramDecls)
+            sb.AppendLine("/// <summary>Unified factory methods for all Yoga-backed VNodes in this project.</summary>");
+            sb.AppendLine("public static partial class Nodes");
+            sb.AppendLine("{");
+            using (sb.Indent())
             {
-                if (first) { first = false; }
-                else { sb.AppendLine(","); }
-                sb.Append(param);
+                var returnType = $"{type.FullName}Node";
+
+                sb.AppendLine();
+                sb.AppendLine($"/// <summary>Create a <see cref=\"{type.FullName}\"/> VNode.</summary>");
+                sb.Append($"public static {returnType} {type.ShortName}(");
+
+                var paramDecls = new List<string>();
+                foreach (var prop in type.Properties)
+                {
+                    var camelName = CamelCase(prop.Name);
+                    var paramType = $"NFMWorld.Reactor.Optional<{prop.TypeFqn}>";
+                    paramDecls.Add($"{paramType} {camelName} = default");
+                }
+
+                if (type.ChildType is not null)
+                {
+                    var childNodeType = type.ChildType + "Node";
+                    if (type.ChildType == VisualFqn)
+                        childNodeType = "NFMWorld.Reactor.VNode";
+                    else if (!childNodeType.StartsWith("global::"))
+                        childNodeType = $"global::{childNodeType}";
+                    paramDecls.Add($"params ReadOnlySpan<{childNodeType}> children");
+                }
+
+                using (sb.Indent())
+                {
+                    var first = true;
+                    foreach (var param in paramDecls)
+                    {
+                        if (first) { first = false; }
+                        else { sb.AppendLine(","); }
+                        sb.Append(param);
+                    }
+                }
+
+                sb.AppendLine(")");
+                sb.AppendLine("{");
+
+                using (sb.Indent())
+                using (sb.Indent())
+                {
+                    sb.AppendLine($"var n = new {returnType}();");
+                    sb.AppendLine();
+
+                    foreach (var prop in type.Properties)
+                    {
+                        var camelName = CamelCase(prop.Name);
+                        sb.AppendLine($"if ({camelName}.HasValue) n.With{prop.Name}({camelName}.Value);");
+                    }
+
+                    if (type.ChildType is not null)
+                        sb.AppendLine("if (children.Length > 0) n.WithChildren(children);");
+
+                    sb.AppendLine();
+                    sb.AppendLine("return n;");
+                }
+
+                sb.AppendLine("}");
             }
+            sb.AppendLine("}");
         }
-
-        sb.AppendLine(")");
-        sb.AppendLine("    {");
-
-        using (sb.Indent())
-        using (sb.Indent())
-        {
-            sb.AppendLine($"var n = new {returnType}();");
-            sb.AppendLine();
-
-            foreach (var prop in type.Properties)
-            {
-                var camelName = CamelCase(prop.Name);
-                sb.AppendLine($"if ({camelName}.HasValue) n.With{prop.Name}({camelName}.Value);");
-            }
-
-            if (type.ChildType is not null)
-                sb.AppendLine("if (children.Length > 0) n.WithChildren(children);");
-
-            sb.AppendLine();
-            sb.AppendLine("return n;");
-        }
-
-        sb.AppendLine("    }");
+        sb.AppendLine("}");
     }
 
     /// <summary>Strips Nullable&lt;T&gt; wrappers, returning T. E.g. "System.Nullable&lt;float&gt;" → "float".</summary>
@@ -452,7 +457,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
         List<PropInfo> Properties,
         HashSet<string> DeclaredPropertyNames,
         string? ChildType,
-        bool ChildIsDeclared);
+        bool ChildIsDeclared,
+        bool IsExternal = false);
 
     private readonly record struct PropInfo(
         string Name,
