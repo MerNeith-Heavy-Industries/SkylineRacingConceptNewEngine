@@ -1,44 +1,42 @@
 using NFMWorldLibrary.Backend.Gamemodes;
+using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
 
-public class Image : Node
+public partial class Image : Node
 {
+    [Property(OnChangedMethod = nameof(OnImageDataChanged))]
     [ClientOnly]
-    public IImage? ImageData
+    public partial IImage? ImageData { get; set; }
+
+    [ClientOnly]
+    private partial void OnImageDataChanged(IImage? value)
     {
-        get;
-        set
+        if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
         {
-            field = value;
-            if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
-            {
-                Width = Scale * field?.Width ?? 0;
-            }
-            if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
-            {
-                Height = Scale * field?.Height ?? 0;
-            }
+            Width = Scale * value?.Width ?? 0;
+        }
+        if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+        {
+            Height = Scale * value?.Height ?? 0;
         }
     }
+    
+    [Property(OnChangedMethod = nameof(OnScaleChanged), DefaultValue = 1f)]
+    public partial float Scale { get; set; }
 
-    public float Scale
+    private partial void OnScaleChanged(float value)
     {
-        get;
-        set
+        if (Width.PointValue is {} widthValue)
         {
-            field = value;
-            if (Width.PointValue is {} widthValue)
-            {
-                Width = (int)(field * widthValue);
-            }
-            if (Height.PointValue is {} heightValue)
-            {
-                Height = (int)(field * heightValue);
-            }
+            Width = (int)(value * widthValue);
         }
-    } = 1f;
+        if (Height.PointValue is {} heightValue)
+        {
+            Height = (int)(value * heightValue);
+        }
+    }
 
     [ClientOnly]
     protected override void RenderContent(Vector2 position, Vector2 size)
