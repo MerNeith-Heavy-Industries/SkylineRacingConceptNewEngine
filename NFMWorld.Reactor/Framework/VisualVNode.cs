@@ -1,8 +1,11 @@
+using WorldXaml.UI;
+using WorldXaml.UI.Yoga;
+
 namespace NFMWorld.Reactor;
 
 /// <summary>
 /// VNode base for native Yoga-backed nodes. Adds Name, Classes, and Children —
-/// properties that map to a real <see cref="WorldXaml.UI.Yoga.Visual"/>.
+/// properties that map to a real <see cref="Visual"/>.
 /// Components use plain <see cref="VNode"/> instead.
 /// </summary>
 public abstract class VisualVNode : VNode
@@ -41,10 +44,14 @@ public abstract class VisualVNode : VNode
         return (TNode)this;
     }
     
-    // ── Shared fluent builders ──────────────────────────────────────────
+    // ── Shared fluent builders (Visual-level properties) ─────────────────
 
     public VisualVNode WithClasses(string? c) { Classes = c; return this; }
     public VisualVNode WithName(string? n) { Name = n; return this; }
+    public VisualVNode WithKey(object? value) => SetProp<VisualVNode, object?>(Visual.KeyProperty, value);
+    public VisualVNode WithTabOrder(int value) => SetPropVal<VisualVNode, int>(Visual.TabOrderProperty, value);
+    public VisualVNode WithIsFocusable(bool value) => SetPropVal<VisualVNode, bool>(Visual.IsFocusableProperty, value);
+    public VisualVNode WithIsFocused(bool value) => SetPropVal<VisualVNode, bool>(Visual.IsFocusedProperty, value);
     
     public abstract Visual CreateNative();
 }
