@@ -88,6 +88,14 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         if (symbol.IsAbstract) return null;
         if (symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == ComponentFqn) return null;
 
+        // Collect generic type parameters (e.g., ["T"] for ItemsRepeater<T>)
+        var typeParams = new List<string>();
+        if (symbol.IsGenericType)
+        {
+            foreach (var tp in symbol.TypeParameters)
+                typeParams.Add(tp.Name);
+        }
+
         // Find the constructor with the most parameters
         IMethodSymbol? bestCtor = null;
         foreach (var member in symbol.GetMembers())
@@ -118,6 +126,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             FullName: symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             ShortName: symbol.Name,
             Namespace: symbol.ContainingNamespace.ToDisplayString(),
+            TypeParams: typeParams,
             Parameters: parameters
         );
     }
@@ -189,6 +198,8 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
     private static void GenerateComponentNodeClass(IndentedStringBuilder sb, ComponentTypeInfo type)
     {
         var nodeName = type.ShortName + "Node";
+        var genericNodeName = type.IsGeneric ? $"{nodeName}{type.TypeParamsStr}" : nodeName;
+        var genericTypeName = type.GenericShortName;
 
         sb.AppendLine();
         sb.AppendLine($"namespace {type.Namespace}");
@@ -196,8 +207,8 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         using (sb.Indent())
         {
             sb.AppendLine();
-            sb.AppendLine($"/// <summary>Typed VNode for component <see cref=\"{type.ShortName}\"/>.</summary>");
-            sb.AppendLine($"public sealed class {nodeName} : global::NFMWorld.Reactor.ComponentNode");
+            sb.AppendLine($"/// <summary>Typed VNode for component <see cref=\"{genericTypeName}\"/>.</summary>");
+            sb.AppendLine($"public sealed class {genericNodeName} : global::NFMWorld.Reactor.ComponentNode");
             sb.AppendLine("{");
 
             using (sb.Indent())
@@ -209,7 +220,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 }
                 
                 sb.AppendLine();
-                sb.AppendLine($"public override Type ComponentType => typeof({type.ShortName});");
+                sb.AppendLine($"public override Type ComponentType => typeof({genericTypeName});");
 
                 sb.AppendLine();
                 sb.AppendLine($"internal {nodeName}() {{ }}");
@@ -220,7 +231,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                     var pascal = PascalCase(p.Name);
                     sb.AppendLine();
                     sb.AppendLine($"/// <summary>Sets the <c>{pascal}</c> constructor argument.</summary>");
-                    sb.AppendLine($"public {nodeName} With{pascal}({p.TypeFqn} value)");
+                    sb.AppendLine($"public {genericNodeName} With{pascal}({p.TypeFqn} value)");
                     sb.AppendLine("{");
                     using (sb.Indent())
                     {
@@ -238,7 +249,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
 
                 // ── Shadow: only WithKey (components have no native node for Name/Children/Classes) ──
                 if (!paramWithNames.Contains("WithKey"))
-                    sb.AppendLine($"public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
+                    sb.AppendLine($"public new {genericNodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
 
                 // ── CreateComponent override ──────────────────────────────
                 sb.AppendLine();
@@ -248,7 +259,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
 
                 using (sb.Indent())
                 {
-                    sb.AppendLine($"return new {type.ShortName}(");
+                    sb.AppendLine($"return new {genericTypeName}(");
 
                     using (sb.Indent())
                     {
@@ -283,11 +294,13 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
     private static void GenerateComponentFactoryMethod(IndentedStringBuilder sb, ComponentTypeInfo type)
     {
         var nodeName = type.ShortName + "Node";
-        var returnType = $"global::{type.Namespace}.{nodeName}";
+        var genericNodeName = type.IsGeneric ? $"{nodeName}{type.TypeParamsStr}" : nodeName;
+        var returnType = $"global::{type.Namespace}.{genericNodeName}";
+        var factorySig = type.GenericShortName;
 
         sb.AppendLine();
-        sb.AppendLine($"/// <summary>Create a <see cref=\"{type.ShortName}\"/> component VNode.</summary>");
-        sb.Append($"public static {returnType} {type.ShortName}(");
+        sb.AppendLine($"    /// <summary>Create a <see cref=\"{type.GenericShortName}\"/> component VNode.</summary>");
+        sb.Append($"    public static {returnType} {factorySig}(");
 
         var paramDecls = new List<string>();
         foreach (var p in type.Parameters)
@@ -308,7 +321,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         }
 
         sb.AppendLine(")");
-        sb.AppendLine("{");
+        sb.AppendLine("    {");
         using (sb.Indent())
         {
             sb.AppendLine($"var n = new {returnType}();");
@@ -322,14 +335,20 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             sb.AppendLine();
             sb.AppendLine("return n;");
         }
-        sb.AppendLine("}");
+        sb.AppendLine("    }");
     }
 
     private readonly record struct ComponentTypeInfo(
         string FullName,
         string ShortName,
         string Namespace,
-        List<ComponentParamInfo> Parameters);
+        List<string> TypeParams,
+        List<ComponentParamInfo> Parameters)
+    {
+        public readonly bool IsGeneric => TypeParams.Count > 0;
+        public readonly string TypeParamsStr => IsGeneric ? $"<{string.Join(", ", TypeParams)}>" : "";
+        public readonly string GenericShortName => ShortName + TypeParamsStr;
+    }
 
     private readonly record struct ComponentParamInfo(
         string Name,
