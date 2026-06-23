@@ -2,6 +2,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
 using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.DriverInterface.UI.Nodes;
 
 namespace NFMWorld.UI.Hud;
 
