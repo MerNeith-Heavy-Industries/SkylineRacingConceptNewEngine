@@ -5,7 +5,7 @@ using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.DriverInterface;
 
-public interface IBackend : IXamlGraphicsBackend
+public interface IBackend : IReactorGraphicsBackend
 {
     public new static IBackend Backend
     {
@@ -22,16 +22,16 @@ public interface IBackend : IXamlGraphicsBackend
         set
         {
             field = value;
-            IXamlGraphicsBackend.Backend = value;
+            IReactorGraphicsBackend.Backend = value;
         }
     }
 
 #pragma warning disable NFMW0001
-    float IXamlGraphicsBackend.Scale => Scale;
+    float IReactorGraphicsBackend.Scale => Scale;
     
-    Vector2 IXamlGraphicsBackend.Viewport => Viewport;
+    Vector2 IReactorGraphicsBackend.Viewport => Viewport;
     
-    IXamlGraphics IXamlGraphicsBackend.Graphics => Graphics;
+    IReactorGraphics IReactorGraphicsBackend.Graphics => Graphics;
 #pragma warning restore NFMW0001
 
     [ClientOnly]

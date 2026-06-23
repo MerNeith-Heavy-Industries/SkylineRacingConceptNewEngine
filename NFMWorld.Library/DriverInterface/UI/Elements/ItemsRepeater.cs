@@ -1,72 +1,21 @@
-﻿using System.Collections;
-using System.Collections.Specialized;
-using System.Reactive.Linq;
-using Avalonia.Markup.Xaml;
-using Avalonia.Markup.Xaml.Templates;
-using WorldXaml.UI.Base;
+﻿using System.Collections.ObjectModel;
+using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.DriverInterface.UI;
 
-public partial class ItemsRepeater : FlexPanel
+/// <summary>
+/// A component that renders each item in a collection using a provided render function.
+/// Automatically re-renders when the collection changes.
+/// </summary>
+public class ItemsRepeater<T>(T[] items, Func<T, VNode> renderItem) : Component
 {
-    private IDisposable? _collectionSubscription;
-
-    public ItemsRepeater()
+    protected override VNode Render()
     {
-        FlexDirection = YgFlexDirection.Column;
-    }
-
-    [Property(OnChangedMethod = nameof(OnItemsSourceChanged))]
-    public partial IEnumerable? ItemsSource { get; set; }
-
-    [Property(OnChangedMethod = nameof(OnItemTemplateChanged))]
-    public partial ControlTemplate? ItemTemplate { get; set; }
-
-    private partial void OnItemsSourceChanged(IEnumerable? newSource)
-    {
-        Rebuild();
-        if (newSource is INotifyCollectionChanged ncc)
-            _collectionSubscription = Observable.Create<NotifyCollectionChangedEventArgs>(obs =>
-                {
-                    ncc.CollectionChanged += Handler;
-                    return () => ncc.CollectionChanged -= Handler;
-                    void Handler(object? sender, NotifyCollectionChangedEventArgs e) => obs.OnNext(e);
-                })
-                .Subscribe(_ => Rebuild());
-    }
-
-    private partial void OnItemTemplateChanged(ControlTemplate? newTemplate)
-    {
-        Rebuild();
-    }
-
-    private void Rebuild()
-    {
-        Children.Clear();
-
-        if (ItemsSource is null || ItemTemplate is null)
-            return;
-
-        // Pass null service provider: the generated Build_1 closure handles it,
-        // and we don't want the template to cast our ItemsRepeater as the owning View.
-        foreach (var item in ItemsSource)
-        {
-            var built = ItemTemplate.Build(null);
-            if (built is not BindableObject bindable)
-                continue;
-
-            // DataContext auto-inherits, but we override it per-item
-            bindable.DataContext = item;
-
-            if (built is Visual visual)
-                Children.Add(visual);
-        }
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-        _collectionSubscription?.Dispose();
+        return FlexPanel(
+            flexDirection: YgFlexDirection.Column,
+            children: items.Select(renderItem).ToArray()
+        );
     }
 }

@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Avalonia.Controls.Documents;
-using Avalonia.Metadata;
 using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
+using WorldXaml.UI.Metadata;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
@@ -24,7 +23,7 @@ public enum OverflowBehavior
     ContinueHorizontally
 }
 
-public partial class TextRun : Node, IInlineHost
+public partial class TextRun : Node
 {
     private bool _invalidated = true;
     protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
@@ -43,11 +42,11 @@ public partial class TextRun : Node, IInlineHost
     [Property]
     public partial Color? StrokeColor { get; set; }
     
-    [Content]
-    public InlineCollection Inlines { get; }
+    [Property]
+    public partial List<TextElement>? Elements { get; set; }
 
-    [MemberNotNullWhen(true, nameof(Inlines))]
-    public bool HasComplexContent => Inlines is { Count: > 0 };
+    [MemberNotNullWhen(true, nameof(Elements))]
+    public bool HasComplexContent => Elements is { Count: > 0 };
 
     [Property(OnChangedMethod = nameof(OnFontChanged))]
     public partial Font Font { get; set; }
@@ -93,14 +92,14 @@ public partial class TextRun : Node, IInlineHost
     
     public TextRun()
     {
-        Inlines = new InlineCollection(this);
+        Elements = [];
     }
     
     private partial void OnTextChanged(string? newText)
     {
         if (HasComplexContent && !_clearTextInternal)
         {
-            Inlines.Clear();
+            Elements.Clear();
         }
 
         Invalidate();
@@ -124,7 +123,7 @@ public partial class TextRun : Node, IInlineHost
         }
         else
         {
-            flattened = ComplexTextMetrics.FlattenText(Inlines.OfType<IRichTextElement>());
+            flattened = ComplexTextMetrics.FlattenText(Elements.OfType<IRichTextElement>());
         }
         
         if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)

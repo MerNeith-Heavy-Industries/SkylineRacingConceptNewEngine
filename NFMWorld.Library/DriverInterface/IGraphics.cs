@@ -3,9 +3,9 @@ using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface;
 
-public interface IGraphics : IXamlGraphics
+public interface IGraphics : IReactorGraphics
 {
-    float IXamlGraphics.Alpha
+    float IReactorGraphics.Alpha
     {
         set => Alpha = value;
     }
