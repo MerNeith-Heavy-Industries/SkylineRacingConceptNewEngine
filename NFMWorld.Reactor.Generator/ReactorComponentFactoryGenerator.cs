@@ -146,6 +146,14 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
     private static string PascalCase(string name)
         => name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : name;
 
+    /// <summary>Returns true if the type is already nullable (ends with ? or is Nullable&lt;T&gt;).</summary>
+    private static bool IsAlreadyNullable(string fqn)
+    {
+        if (fqn.EndsWith("?")) return true;
+        if (fqn.StartsWith("System.Nullable<") && fqn.EndsWith(">")) return true;
+        return false;
+    }
+
     private void GenerateComponentClasses(SourceProductionContext spc, System.Collections.Immutable.ImmutableArray<ComponentTypeInfo?> types)
     {
         var sbTypes = new IndentedStringBuilder();
@@ -216,7 +224,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 // ── Fields for each constructor parameter ────────────────
                 foreach (var p in type.Parameters)
                 {
-                    sb.AppendLine($"private global::NFMWorld.Reactor.Optional<{p.TypeFqn}> _{CamelCase(p.Name)};");
+                    sb.AppendLine($"private {p.TypeFqn}? _{CamelCase(p.Name)};");
                 }
                 
                 sb.AppendLine();
@@ -269,7 +277,10 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                             var camel = CamelCase(p.Name);
                             var comma = i < type.Parameters.Count - 1 ? "," : "";
                             var defaultVal = GetDefaultValueExpr(p);
-                            sb.AppendLine($"_{camel}.HasValue ? _{camel}.Value : {defaultVal}{comma}");
+                            if (p.IsValueType)
+                                sb.AppendLine($"_{camel}.HasValue ? _{camel}.Value : {defaultVal}{comma}");
+                            else
+                                sb.AppendLine($"_{camel} ?? {defaultVal}{comma}");
                         }
                     }
 
@@ -305,7 +316,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         var paramDecls = new List<string>();
         foreach (var p in type.Parameters)
         {
-            var paramType = $"global::NFMWorld.Reactor.Optional<{p.TypeFqn}>";
+            var paramType = IsAlreadyNullable(p.TypeFqn) ? p.TypeFqn : $"{p.TypeFqn}?";
             paramDecls.Add($"{paramType} {CamelCase(p.Name)} = default");
         }
 
@@ -330,7 +341,10 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             {
                 var camel = CamelCase(p.Name);
                 var pascal = PascalCase(p.Name);
-                sb.AppendLine($"if ({camel}.HasValue) n.With{pascal}({camel}.Value);");
+                if (p.IsValueType)
+                    sb.AppendLine($"if ({camel}.HasValue) n.With{pascal}({camel}.Value);");
+                else
+                    sb.AppendLine($"if ({camel} is not null) n.With{pascal}({camel});");
             }
             sb.AppendLine();
             sb.AppendLine("return n;");
