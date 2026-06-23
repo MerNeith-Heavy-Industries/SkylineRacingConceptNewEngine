@@ -1390,18 +1390,32 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
+    /// Property field for <see cref="Margin"/>.
+    /// </summary>
+    public static readonly DirectProperty<Node, MeasurementMultiMargin> MarginProperty =
+        Property.RegisterDirect<Node, MeasurementMultiMargin>(
+            name:         nameof(Margin),
+            defaultValue: MeasurementMultiMargin.Undefined,
+            getter:       node => new MeasurementMultiMargin
+            {
+                Top = node.MarginTop,
+                Bottom = node.MarginBottom,
+                Left = node.MarginLeft,
+                Right = node.MarginRight
+            },
+            setter:       (node, value) =>
+            {
+                node.NodeInternal.MarginTop = value.Top;
+                node.NodeInternal.MarginBottom = value.Bottom;
+                node.NodeInternal.MarginLeft = value.Left;
+                node.NodeInternal.MarginRight = value.Right;
+            });
+
+    /// <summary>
     /// CSS: margin - Shorthand for setting all margin values (top, right, bottom, left)
     /// </summary>
-    public MeasurementMultiMargin Margin
-    {
-        set
-        {
-            MarginLeft = value.Left;
-            MarginRight = value.Right;
-            MarginTop = value.Top;
-            MarginBottom = value.Bottom;
-        }
-    }
+    [Property]
+    public partial MeasurementMultiMargin Margin { get; set; }
 
     /// <summary>
     /// Property field for <see cref="MarginTop"/>.
@@ -1714,19 +1728,33 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
+    /// Property field for <see cref="Padding"/>.
+    /// </summary>
+    public static readonly DirectProperty<Node, MeasurementMultiPadding> PaddingProperty =
+        Property.RegisterDirect<Node, MeasurementMultiPadding>(
+            name:         nameof(Padding),
+            defaultValue: MeasurementMultiPadding.Undefined,
+            getter:       node => new MeasurementMultiPadding
+            {
+                Top = node.PaddingTop,
+                Bottom = node.PaddingBottom,
+                Left = node.PaddingLeft,
+                Right = node.PaddingRight
+            },
+            setter:       (node, value) =>
+            {
+                node.NodeInternal.PaddingTop = value.Top;
+                node.NodeInternal.PaddingBottom = value.Bottom;
+                node.NodeInternal.PaddingLeft = value.Left;
+                node.NodeInternal.PaddingRight = value.Right;
+            });
+
+    /// <summary>
     /// CSS: padding - Shorthand for setting all padding values (top, right, bottom, left)
     /// </summary>
-    public MeasurementMultiPadding Padding
-    {
-        set
-        {
-            PaddingLeft = value.Left;
-            PaddingRight = value.Right;
-            PaddingTop = value.Top;
-            PaddingBottom = value.Bottom;
-        }
-    }
-
+    [Property]
+    public partial MeasurementMultiPadding Padding { get; set; }
+    
     /// <summary>
     /// Property field for <see cref="PaddingTop"/>.
     /// </summary>
