@@ -245,7 +245,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             using (sbNodes.Indent())
             {
                 sbNodes.AppendLine("/// <summary>Unified factory methods for all Yoga-backed VNodes in this project.</summary>");
-                sbNodes.AppendLine("public static class Nodes");
+                sbNodes.AppendLine("public static partial class Nodes");
                 sbNodes.AppendLine("{");
                 using (sbNodes.Indent())
                 {
