@@ -1387,6 +1387,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+        public static implicit operator MeasurementMultiMargin(float value) => All(value);
     }
 
     /// <summary>
@@ -1725,6 +1726,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+        public static implicit operator MeasurementMultiPadding(float value) => All(value);
     }
 
     /// <summary>
@@ -1886,7 +1888,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
                         };
                     }
 
-                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiBorder. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
                 }
                 return base.ConvertFrom(context, culture, value);
             }
