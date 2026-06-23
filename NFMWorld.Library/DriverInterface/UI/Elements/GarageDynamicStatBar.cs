@@ -1,101 +1,88 @@
 ﻿using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
+using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
 
-public class GarageDynamicStatBar : Node
+public partial class GarageDynamicStatBar : Node
 {
-    private const float maxSpeed = 1000f;
-    private const float speedUp = 0.1f;
-    private const int fullBar = 100;
+    private const float MaxSpeed = 1000f;
+    private const float SpeedUp = 0.1f;
+    private const int FullBar = 100;
 
-    public int BarMaxWidth
+    [Property(OnChangedMethod = nameof(OnBarMaxWidthChanged), DefaultValue = 100)]
+    public partial int BarMaxWidth { get; set; }
+
+    private partial void OnBarMaxWidthChanged(int value)
     {
-        get;
-        set
-        {
-            field = value;
-            Width = value;
-        }
+        Width = value;
     }
 
-    public int BarHeight
+    [Property(OnChangedMethod = nameof(OnBarMaxHeightChanged), DefaultValue = 10)]
+    public partial int BarHeight { get; set; }
+
+    private partial void OnBarMaxHeightChanged(int value)
     {
-        get;
-        set
-        {
-            field = value;
-            Height = value + 28;
-        }
+        Height = value + 28;
     }
 
-    private float currentValue = 0f;
+    private float _currentValue = 0f;
 
-    public float TargetValue
-    {
-        private get;
-        set => field = value * 100f;
-    }
+    [Property]
+    public partial float TargetValue { get; set; }
 
-    private float speed = speedUp;
+    private float _speed = SpeedUp;
     
-    public string StatName { get; set; }
+    [Property(DefaultValue = "Unknown Stat")]
+    public partial string StatName { get; set; }
 
-    private Color[] barColors =
+    private Color[] _barColors =
     [
-        new Color(255, 0, 0),
-        new Color(128, 128, 128),
-        new Color(255, 128, 0),
-        new Color(128, 128, 128),
-        new Color(255, 255, 0),
-        new Color(128, 128, 128),
-        new Color(128, 255, 0),
-        new Color(128, 128, 128),
-        new Color(0, 255, 0),
-        new Color(128, 128, 128),
-        new Color(0, 255, 128),
-        new Color(128, 128, 128),
-        new Color(0, 255, 255),
-        new Color(128, 128, 128),
-        new Color(0, 128, 255),
-        new Color(128, 128, 128),
-        new Color(0, 0, 255),
-        new Color(128, 128, 128),
-        new Color(128, 0, 255),
-        new Color(128, 128, 128),
-        new Color(255, 0, 255),
-        new Color(128, 128, 128),
-        new Color(255, 0, 128),
-        new Color(128, 128, 128),
+        new(255, 0, 0),
+        new(128, 128, 128),
+        new(255, 128, 0),
+        new(128, 128, 128),
+        new(255, 255, 0),
+        new(128, 128, 128),
+        new(128, 255, 0),
+        new(128, 128, 128),
+        new(0, 255, 0),
+        new(128, 128, 128),
+        new(0, 255, 128),
+        new(128, 128, 128),
+        new(0, 255, 255),
+        new(128, 128, 128),
+        new(0, 128, 255),
+        new(128, 128, 128),
+        new(0, 0, 255),
+        new(128, 128, 128),
+        new(128, 0, 255),
+        new(128, 128, 128),
+        new(255, 0, 255),
+        new(128, 128, 128),
+        new(255, 0, 128),
+        new(128, 128, 128),
     ];
 
     public GarageDynamicStatBar()
     {
-        BarMaxWidth = 100;
-        BarHeight = 10;
-        StatName = "Unknown Stat";
+        OnBarMaxWidthChanged(BarMaxWidth);
+        OnBarMaxHeightChanged(BarHeight);
     }
 
     protected override void GameTick()
     {
-        currentValue += speed;
-        currentValue = Math.Min(TargetValue, currentValue);
+        _currentValue += _speed;
+        _currentValue = Math.Min(TargetValue * 100f, _currentValue);
 
-        speed += speedUp;
-        speed = Math.Min(speed, maxSpeed);
+        _speed += SpeedUp;
+        _speed = Math.Min(_speed, MaxSpeed);
     }
 
-    private int GetColor(int lim, int i)
+    private static int GetColor(int lim, int i)
     {
-        if (i < 0)
-        {
-            return i % lim + lim;
-        }
-        else
-        {
-            return i % lim;
-        }
+        return i < 0 ? i % lim + lim : i % lim;
     }
 
     [ClientOnly]
@@ -105,11 +92,11 @@ public class GarageDynamicStatBar : Node
         var y = (int)position.Y;
         
         int multiples = 0;
-        float remaining = currentValue;
+        float remaining = _currentValue;
 
-        while (remaining > fullBar)
+        while (remaining > FullBar)
         {
-            remaining -= fullBar;
+            remaining -= FullBar;
             multiples++;
         }
 
@@ -119,24 +106,24 @@ public class GarageDynamicStatBar : Node
         G.SetColor(new Color(255, 255, 255));
         G.DrawString(StatName, x, y - 5);
 
-        Color baseBarColorStart = multiples > 0 ? barColors[GetColor(barColors.Length, multiples - 1)] : new Color(0, 0, 0, 0);
-        Color baseBarColorEnd = multiples > 0 ? barColors[GetColor(barColors.Length, multiples)] : new Color(0, 0, 0, 0);
+        Color baseBarColorStart = multiples > 0 ? _barColors[GetColor(_barColors.Length, multiples - 1)] : new Color(0, 0, 0, 0);
+        Color baseBarColorEnd = multiples > 0 ? _barColors[GetColor(_barColors.Length, multiples)] : new Color(0, 0, 0, 0);
 
-        Color barColorStart = barColors[GetColor(barColors.Length, multiples)];
-        Color barColorEnd = barColors[GetColor(barColors.Length, multiples + 1)];
+        Color barColorStart = _barColors[GetColor(_barColors.Length, multiples)];
+        Color barColorEnd = _barColors[GetColor(_barColors.Length, multiples + 1)];
 
         G.SetLinearGradient(x, y, BarMaxWidth, BarHeight, [baseBarColorStart, baseBarColorEnd], null);
         G.FillRect(x, y, BarMaxWidth, BarHeight);
 
-        int barRatio = (int)(remaining / fullBar * 100);
-        barRatio *= BarMaxWidth / fullBar;
+        int barRatio = (int)(remaining / FullBar * 100);
+        barRatio *= BarMaxWidth / FullBar;
 
         G.SetLinearGradient(x, y, BarMaxWidth, BarHeight, [barColorStart, barColorEnd], null);
         G.FillRect(x, y, barRatio, BarHeight);
 
         G.SetColor(new Color(255, 255, 255));
         G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 12));
-        G.DrawString(((int)currentValue).ToString(), x + 5, y + BarHeight);
+        G.DrawString(((int)_currentValue).ToString(), x + 5, y + BarHeight);
         
         DrawDividers(x, y);
     }
