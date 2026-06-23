@@ -213,9 +213,6 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     private int _lastCountdownTime = 0;
 
     [ClientOnly]
-    private LapTimerSplitsView _lapTimerSplits = new LapTimerSplitsView();
-
-    [ClientOnly]
     private int _playerCarIndex;
 
     [ClientOnly]
@@ -228,24 +225,23 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     protected void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
-        carsInRace[_playerCarIndex].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[_playerCarIndex].CarPhysics.PowerUp += Hud.EventPowerUp;
         
         gamemodeData.ClientCallbacks.ResetCheckpointGlow();
 
-        Hud.DataContext = new HudViewModel();
+        Hud.State = new HudState(CurrentLap: 1, TotalLaps: currentStage.nlaps);
         IBackend.Backend.StopAllSounds();
-
-        _lapTimerSplits.DataContext.CurrentLap = 1;
-        _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
     }
 
     [ClientOnly]
     protected void InRaceClient()
     {
-        _lapTimerSplits.DataContext.CurrentLap = carsInRace[_playerCarIndex].currentLap + 1;
-
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f;
+        Hud.State = Hud.State with
+        {
+            CurrentLap = carsInRace[_playerCarIndex].currentLap + 1,
+            DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag,
+            PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f
+        };
 
         if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
         {
@@ -263,28 +259,34 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         base.Render();
         
-        _lapTimerSplits.LayoutAndRender(G.Viewport);
-
         if (_currentState == InnerRaceState.Countdown)
         {
-            Hud.DataContext.CenterTextOpacity = 1;
-            Hud.DataContext.CenterText = $"Starting in {_countdownTime}";
-            Hud.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            Hud.DataContext.CenterTextColor = new Color(255, 255, 255);
-            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
+            Hud.State = Hud.State with
+            {
+                CenterTextOpacity = 1,
+                CenterText = $"Starting in {_countdownTime}",
+                CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24),
+                CenterTextColor = new Color(255, 255, 255),
+                CenterTextStrokeColor = new Color(0, 0, 0)
+            };
         }
         else if (_currentState == InnerRaceState.Finished)
         {
-            Hud.DataContext.CenterTextOpacity = 1;
-            string finalTime = $"{raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            Hud.DataContext.CenterText = $"Finished! Time: {finalTime}\nPress R to restart";
-            Hud.DataContext.CenterTextColor = new Color(128, 255, 128);
-            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            Hud.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
+            Hud.State = Hud.State with
+            {
+                CenterTextOpacity = 1,
+                CenterText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}\nPress R to restart",
+                CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24),
+                CenterTextColor = new Color(128, 255, 128),
+                CenterTextStrokeColor = new Color(0, 0, 0)
+            };
         }
         else
         {
-            Hud.DataContext.CenterTextOpacity = 0;
+            Hud.State = Hud.State with
+            {
+                CenterTextOpacity = 0
+            };
         }
     }
 
@@ -297,7 +299,10 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                Hud.DataContext.CenterTextOpacity = 0;
+                Hud.State = Hud.State with
+                {
+                    CenterTextOpacity = 0
+                };
             }
         }
     }

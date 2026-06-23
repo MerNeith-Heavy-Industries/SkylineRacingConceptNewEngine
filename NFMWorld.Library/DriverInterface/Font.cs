@@ -5,7 +5,7 @@ namespace NFMWorld.DriverInterface;
 
 public readonly record struct Font(FontFamily FontFamily, FontStyle Style, float Size)
 {
-    public static object Parse(string str)
+    public static Font Parse(string str)
     {
         var parts = str.Split(',');
         if (parts.Length == 3)

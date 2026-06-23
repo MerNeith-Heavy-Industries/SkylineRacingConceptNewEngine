@@ -1,5 +1,6 @@
 using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
+using NFMWorldLibrary;
 
 namespace NFMWorld.UI.Hud;
 

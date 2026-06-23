@@ -35,7 +35,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
 
     public virtual void GameTick()
     {
-        ClientServer.RunIfOnClient(() => Hud.DataContext.GameTick());
+        ClientServer.RunIfOnClient(Hud.GameTick);
     }
 
     public virtual void Reset()
