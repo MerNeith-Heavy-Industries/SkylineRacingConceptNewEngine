@@ -1,17 +1,28 @@
+using NFMWorld.DriverInterface;
+using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Hud;
 
 /// <summary>
-/// Code-behind for LapTimerSplitsView.xaml.
+/// Displays current lap / total laps text. Reads state from <see cref="HUDContexts.Hud"/>.
 /// </summary>
-public partial class LapTimerSplitsView : View
+public class LapTimerSplitsView : Component
 {
-    public new LapTimerSplitsViewModel DataContext => (LapTimerSplitsViewModel)base.DataContext!;
-
-    public LapTimerSplitsView()
+    protected override VNode Render()
     {
-        base.DataContext = new LapTimerSplitsViewModel();
-        InitializeComponent();
+        var hud = UseContext(HUDContexts.Hud);
+        return FlexPanel(
+            flexDirection: YgFlexDirection.Row,
+            children:
+                TextRun(
+                    font: Font.Parse("bold 24px Adventure"),
+                    color: Color.White,
+                    strokeColor: Color.Black,
+                    flex: 1,
+                    text: $"Lap: {hud.CurrentLap}/{hud.TotalLaps}"
+                )
+        );
     }
 }

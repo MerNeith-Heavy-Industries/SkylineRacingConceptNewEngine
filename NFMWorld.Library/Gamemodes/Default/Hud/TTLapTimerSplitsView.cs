@@ -1,14 +1,38 @@
-using WorldXaml.UI.Yoga;
+using NFMWorld.Reactor;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Hud;
 
-public partial class TTLapTimerSplitsView : View
+/// <summary>
+/// Time Trial lap timer splits view. Reads state from <see cref="HUDContexts.Hud"/>.
+/// </summary>
+public class TTLapTimerSplitsView : Component
 {
-    public new TTLapTimerSplitsViewModel DataContext => (TTLapTimerSplitsViewModel)base.DataContext!;
-
-    public TTLapTimerSplitsView()
+    protected override VNode Render()
     {
-        base.DataContext = new TTLapTimerSplitsViewModel();
-        InitializeComponent();
+        var hud = UseContext(HUDContexts.Hud);
+        return FlexPanel(
+            flexDirection: YgFlexDirection.Column,
+            alignItems: YgAlign.FlexStart,
+            justifyContent: YgJustify.Center,
+            gap: 10f,
+            padding: 10f,
+            children: [
+                FlexPanel(flexDirection: YgFlexDirection.Row, children:
+                    TextRun(font: Font.Parse("bold 24px Adventure"), color: Color.White, strokeColor: Color.Black, flex: 1,
+                        text: $"Lap: {hud.CurrentLap}/{hud.TotalLaps}")
+                ),
+                FlexPanel(flexDirection: YgFlexDirection.Row, children: [
+                    TextRun(font: Font.Parse("bold 24px Adventure"), color: Color.White, strokeColor: Color.Black, flex: 1, text: "Time:"),
+                    TextRun(font: Font.Parse("bold 24px DroidSans"), color: Color.White, strokeColor: Color.Black, flex: 1, text: hud.TimeText)
+                ]),
+                FlexPanel(children:
+                    TextRun(font: Font.Parse("bold 24px DroidSans"), color: Color.White, strokeColor: Color.Black, flex: 1, text: hud.LapTimeText)
+                ),
+                FlexPanel(children:
+                    TextRun(font: Font.Parse("bold 24px DroidSans"), color: Color.White, strokeColor: Color.Black, flex: 1, text: hud.CheckpointSplitsText)
+                )
+            ]
+        );
     }
 }

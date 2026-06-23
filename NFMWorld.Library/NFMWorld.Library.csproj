@@ -16,18 +16,6 @@
     <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
         <Compile Remove="Generated/**" />
-        <Compile Update="Gamemodes\Default\Hud\CentralTextView.cs">
-          <DependentUpon>CentralTextView.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="Gamemodes\Default\Hud\LapTimerSplitsView.cs">
-          <DependentUpon>LapTimerSplitsView.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="Gamemodes\Default\Hud\PowerDamageBars.cs">
-          <DependentUpon>PowerDamageBars.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="Gamemodes\Default\Hud\TTLapTimerSplitsView.cs">
-          <DependentUpon>TTLapTimerSplitsView.xaml</DependentUpon>
-        </Compile>
     </ItemGroup>
 
     <ItemGroup>
@@ -72,12 +60,5 @@
       <Folder Include="Gamemodes\Default\" />
       <Folder Include="Hud\" />
       <Folder Include="NFMWorld\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <AvaloniaXaml Include="Gamemodes\Default\Hud\CentralTextView.xaml" />
-      <AvaloniaXaml Include="Gamemodes\Default\Hud\LapTimerSplitsView.xaml" />
-      <AvaloniaXaml Include="Gamemodes\Default\Hud\PowerDamageBars.xaml" />
-      <AvaloniaXaml Include="Gamemodes\Default\Hud\TTLapTimerSplitsView.xaml" />
     </ItemGroup>
 </Project>
