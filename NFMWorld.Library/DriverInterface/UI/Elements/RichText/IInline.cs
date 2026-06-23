@@ -1,5 +1,3 @@
-﻿using Avalonia.LogicalTree;
+﻿namespace NFMWorld.DriverInterface.UI;
 
-namespace NFMWorld.DriverInterface.UI;
-
-public interface IInline : ILogical;
+public interface IInline;

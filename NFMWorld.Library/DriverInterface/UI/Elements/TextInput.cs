@@ -5,6 +5,7 @@ using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
+using KeyCode = WorldXaml.UI.Yoga.Events.Key;
 
 namespace NFMWorld.DriverInterface.UI;
 
@@ -287,19 +288,19 @@ public partial class TextInput : TextRun
 
         switch (key)
         {
-            case Key.Left:
+            case KeyCode.Left:
                 HandleArrow(-1, shift, ctrl);
                 break;
-            case Key.Right:
+            case KeyCode.Right:
                 HandleArrow(+1, shift, ctrl);
                 break;
-            case Key.Home:
+            case KeyCode.Home:
                 HandleHome(shift);
                 break;
-            case Key.End:
+            case KeyCode.End:
                 HandleEnd(shift);
                 break;
-            case Key.Delete:
+            case KeyCode.Delete:
                 HandleDelete();
                 break;
         }

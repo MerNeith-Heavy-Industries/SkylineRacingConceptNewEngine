@@ -1,6 +1,4 @@
-﻿using Avalonia.Data;
-using Avalonia.Metadata;
-using WorldXaml.UI.Base;
+﻿using WorldXaml.UI.Base;
 using WorldXaml.UI.Metadata;
 
 namespace NFMWorld.DriverInterface.UI;
@@ -8,10 +6,8 @@ namespace NFMWorld.DriverInterface.UI;
 /// <summary>
 /// A terminal element in text flow hierarchy - contains a uniformatted run of unicode characters
 /// </summary>
-public partial class Run : Inline, IRichTextLeaf
+public partial class Run : TextElement, IRichTextLeaf
 {
-    public override IReadOnlyList<IInline> LogicalChildren => [];
-
     /// <summary>
     /// Initializes an instance of Run class.
     /// </summary>
@@ -34,12 +30,5 @@ public partial class Run : Inline, IRichTextLeaf
     /// <summary>
     /// The content spanned by this TextElement.
     /// </summary>
-    [Content]
-    [Property(OnChangedMethod = nameof(OnTextChanged))]
-    public partial string Text { get; set; }
-    
-    private partial void OnTextChanged(string newText)
-    {
-        Host?.Invalidate();
-    }
+    public string Text { get; set; }
 }

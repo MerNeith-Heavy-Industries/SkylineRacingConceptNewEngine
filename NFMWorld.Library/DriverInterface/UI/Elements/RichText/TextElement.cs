@@ -1,5 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
-using WorldXaml.UI.Base;
+using WorldXaml.UI;
 
 namespace NFMWorld.DriverInterface.UI;
 
@@ -7,38 +7,32 @@ namespace NFMWorld.DriverInterface.UI;
 /// TextElement is an  base class for content in text based controls.
 /// TextElements span other content, applying property values or providing structural information.
 /// </summary>
-public abstract partial class TextElement : BindableObject, IRichTextElement
+public abstract class TextElement : IRichTextElement, IInline
 {
     /// <summary>
     /// Gets or sets a brush used to paint the control's background.
     /// </summary>
-    [Property]
-    public partial Color? Background { get; set; }
+    public Color? Background { get; set; }
 
     /// <summary>
     /// Gets or sets the font family.
     /// </summary>
-    [Property]
-    public partial FontFamily? FontFamily { get; set; }
+    public FontFamily? FontFamily { get; set; }
 
     /// <summary>
     /// Gets or sets the font size.
     /// </summary>
-    [Property]
-    public partial float? FontSize { get; set; }
+    public float? FontSize { get; set; }
 
     /// <summary>
     /// Gets or sets the font style.
     /// </summary>
-    [Property]
-    public partial FontStyle? FontStyle { get; set; }
+    public FontStyle? FontStyle { get; set; }
     
     /// <summary>
     /// Gets or sets a brush used to paint the text.
     /// </summary>
-    [Property]
-    public partial Color? Foreground { get; set; }
+    public Color? Foreground { get; set; }
     
-    [Property]
-    public partial Color? Stroke { get; set; }
+    public Color? Stroke { get; set; }
 }
