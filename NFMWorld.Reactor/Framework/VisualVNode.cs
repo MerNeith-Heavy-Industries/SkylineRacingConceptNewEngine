@@ -16,9 +16,9 @@ public abstract class VisualVNode : VNode
     public string? Classes { get; set; }
     public string? Name { get; set; }
     
-    protected int TabOrder { get; set; }
-    protected bool IsFocusable { get; set; }
-    protected bool IsFocused { get; set; }
+    public int TabOrder { get; set; }
+    public bool IsFocusable { get; set; }
+    public bool IsFocused { get; set; }
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
 
