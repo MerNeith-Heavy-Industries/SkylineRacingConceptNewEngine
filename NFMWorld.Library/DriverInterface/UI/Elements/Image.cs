@@ -6,37 +6,41 @@ namespace NFMWorld.DriverInterface.UI;
 
 public partial class Image : Node
 {
-    [Property(OnChangedMethod = nameof(OnImageDataChanged))]
     [ClientOnly]
-    public partial IImage? ImageData { get; set; }
-
-    [ClientOnly]
-    private partial void OnImageDataChanged(IImage? value)
+    [Property]
+    public IImage? ImageData
     {
-        if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+        get;
+        set
         {
-            Width = Scale * value?.Width ?? 0;
-        }
-        if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
-        {
-            Height = Scale * value?.Height ?? 0;
+            field = value;
+            if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            {
+                Width = Scale * value?.Width ?? 0;
+            }
+            if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            {
+                Height = Scale * value?.Height ?? 0;
+            }
         }
     }
-    
-    [Property(OnChangedMethod = nameof(OnScaleChanged), DefaultValue = 1f)]
-    public partial float Scale { get; set; }
 
-    private partial void OnScaleChanged(float value)
+    public float Scale
     {
-        if (Width.PointValue is {} widthValue)
+        get;
+        set
         {
-            Width = (int)(value * widthValue);
+            field = value;
+            if (Width.PointValue is {} widthValue)
+            {
+                Width = (int)(value * widthValue);
+            }
+            if (Height.PointValue is {} heightValue)
+            {
+                Height = (int)(value * heightValue);
+            }
         }
-        if (Height.PointValue is {} heightValue)
-        {
-            Height = (int)(value * heightValue);
-        }
-    }
+    } = 1f;
 
     [ClientOnly]
     protected override void RenderContent(Vector2 position, Vector2 size)

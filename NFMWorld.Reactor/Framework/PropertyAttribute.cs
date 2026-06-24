@@ -4,9 +4,4 @@ namespace WorldXaml.UI.Base;
 /// Marks a property of a <see cref="PropertyObject"/> as a bindable property that can be used in XAML bindings.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public class PropertyAttribute : Attribute
-{
-    public object? DefaultValue { get; set; }
-    public string? DefaultValueMember { get; set; }
-    public string? OnChangedMethod { get; set; }
-}
+public class PropertyAttribute : Attribute;

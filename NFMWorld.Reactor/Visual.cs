@@ -5,7 +5,7 @@ using WorldXaml.UI.Yoga.Events;
 
 namespace WorldXaml.UI.Yoga;
 
-public abstract partial class Visual : PropertyObject, IStyleNode, INamed
+public abstract partial class Visual : IStyleNode, INamed
 {
     #region Resources
     
@@ -36,13 +36,8 @@ public abstract partial class Visual : PropertyObject, IStyleNode, INamed
     
     #endregion
     
-    public static Property<string?> NameProperty { get; } = Property.Register<Visual, string?>("Name");
-
-    public string? Name
-    {
-        get => GetValue(NameProperty);
-        set => SetValue(NameProperty, value);
-    }
+    [Property]
+    public string? Name { get; set; }
 
     /// <summary>
     /// CSS-like class names applied to this element.
@@ -226,24 +221,24 @@ public abstract partial class Visual : PropertyObject, IStyleNode, INamed
     public abstract void RemoveAt(int index);
 
     [Property]
-    public partial bool IsFocusable { get; set; }
+    public bool IsFocusable { get; set; }
 
     public abstract Vector2 FocusOrigin { get; }
     
     public abstract Vector2 FocusSize { get; }
     
     [Property]
-    public partial bool IsFocused { get; set; }
+    public bool IsFocused { get; set; }
     
     [Property]
-    public partial int TabOrder { get; set; }
+    public int TabOrder { get; set; }
 
     /// <summary>
     /// Opaque key for list reconciliation in the Reactor reconciler.
     /// Keys survive across renders to preserve element identity.
     /// </summary>
     [Property]
-    public partial object? Key { get; set; }
+    public object? Key { get; set; }
 
     // Reusable snapshot buffer so dispatch methods don't allocate a new list
     // every time VisualChildren is iterated. Allocated once per Visual, cleared

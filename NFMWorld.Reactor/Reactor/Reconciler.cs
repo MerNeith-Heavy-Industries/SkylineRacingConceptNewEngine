@@ -1,10 +1,6 @@
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Maxine.Extensions;
 using Maxine.Extensions.Collections;
-using WorldXaml.UI;
-using WorldXaml.UI.Base;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Reactor;
 
@@ -141,7 +137,7 @@ public class Reconciler
             existing.Classes.AddRange(vvnode.Classes);
         }
         if (vvnode.Name is not null)
-            existing.SetValue(Visual.NameProperty, vvnode.Name);
+            existing.Name = vvnode.Name;
 
         // ── Reconcile children ───────────────────────────────────────────
         if (vvnode.Children is not null && existing.CanHaveChildren)

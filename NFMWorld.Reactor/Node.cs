@@ -20,7 +20,7 @@ namespace WorldXaml.UI.Yoga;
 public partial class Node : Visual, IAnimationCallback, IDisposable
 {
     internal static readonly YGConfigPtr Config;
-    internal YGNodePtr NodeInternal;
+    internal YGNodePtr NodeInternal = new(Config);
     internal static readonly List<Node> __INTERNAL_YogaRootsThisFrame = [];
 
     internal readonly string __INTERNAL_CtorCallerFilePath = "";
@@ -31,11 +31,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         Config = YGConfigPtr.GetDefault();
         Config.UseWebDefaults = true;
-    }
-
-    public Node()
-    {
-        NodeInternal = new YGNodePtr(Config);
     }
 
     // ── Visual abstracts ────────────────────────────────────────────────
@@ -81,238 +76,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     // https://www.w3schools.com/css/css_boxmodel.asp
     private protected Vector2 _root;
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginPosition"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutMarginPositionProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutMarginPosition),
-            getter: node => node.LayoutMarginPosition);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginSize"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutMarginSizeProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutMarginSize),
-            getter: node => node.LayoutMarginSize);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderPosition"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutBorderPositionProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutBorderPosition),
-            getter: node => node.LayoutBorderPosition);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderSize"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutBorderSizeProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutBorderSize),
-            getter: node => node.LayoutBorderSize);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingPosition"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutPaddingPositionProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutPaddingPosition),
-            getter: node => node.LayoutPaddingPosition);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingSize"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutPaddingSizeProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutPaddingSize),
-            getter: node => node.LayoutPaddingSize);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutContentPosition"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutContentPositionProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutContentPosition),
-            getter: node => node.LayoutContentPosition);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutContentSize"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutContentSizeProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutContentSize),
-            getter: node => node.LayoutContentSize);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMargin"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutMarginProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutMargin),
-            getter: node => node.LayoutMargin);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPadding"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutPaddingProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutPadding),
-            getter: node => node.LayoutPadding);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorder"/>.
-    /// </summary>
-    public static DirectProperty<Node, Vector2> LayoutBorderProperty { get; } =
-        Property.RegisterDirect<Node, Vector2>(
-            name:   nameof(LayoutBorder),
-            getter: node => node.LayoutBorder);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutWidth"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutWidthProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutWidth),
-            getter: node => node.LayoutWidth);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutHeight"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutHeightProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutHeight),
-            getter: node => node.LayoutHeight);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutX"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutXProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutX),
-            getter: node => node.LayoutX);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutY"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutYProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutY),
-            getter: node => node.LayoutY);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutDirection"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgDirection> LayoutDirectionProperty { get; } =
-        Property.RegisterDirect<Node, YgDirection>(
-            name:   nameof(LayoutDirection),
-            getter: node => node.LayoutDirection);
-    
-    /// <summary>
-    /// Property field for <see cref="HadOverflow"/>.
-    /// </summary>
-    public static DirectProperty<Node, bool> HadOverflowProperty { get; } =
-        Property.RegisterDirect<Node, bool>(
-            name:   nameof(HadOverflow),
-            getter: node => node.HadOverflow);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginTop"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutMarginTopProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutMarginTop),
-            getter: node => node.LayoutMarginTop);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginBottom"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutMarginBottomProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutMarginBottom),
-            getter: node => node.LayoutMarginBottom);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginLeft"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutMarginLeftProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutMarginLeft),
-            getter: node => node.LayoutMarginLeft);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutMarginRight"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutMarginRightProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutMarginRight),
-            getter: node => node.LayoutMarginRight);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingTop"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutPaddingTopProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutPaddingTop),
-            getter: node => node.LayoutPaddingTop);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingBottom"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutPaddingBottomProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutPaddingBottom),
-            getter: node => node.LayoutPaddingBottom);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingLeft"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutPaddingLeftProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutPaddingLeft),
-            getter: node => node.LayoutPaddingLeft);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutPaddingRight"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutPaddingRightProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutPaddingRight),
-            getter: node => node.LayoutPaddingRight);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderTop"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutBorderTopProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutBorderTop),
-            getter: node => node.LayoutBorderTop);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderBottom"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutBorderBottomProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutBorderBottom),
-            getter: node => node.LayoutBorderBottom);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderLeft"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutBorderLeftProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutBorderLeft),
-            getter: node => node.LayoutBorderLeft);
-    
-    /// <summary>
-    /// Property field for <see cref="LayoutBorderRight"/>.
-    /// </summary>
-    public static DirectProperty<Node, float> LayoutBorderRightProperty { get; } =
-        Property.RegisterDirect<Node, float>(
-            name:   nameof(LayoutBorderRight),
-            getter: node => node.LayoutBorderRight);
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the margin box.
@@ -528,220 +291,129 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     #endregion
 
     #region Style
-
-    /// <summary>
-    /// Property field for <see cref="Visibility"/>.
-    /// </summary>
-    public static Property<Visibility> VisibilityProperty { get; } = Property.Register<Node, Visibility>(
-        nameof(Visibility),
-        defaultValue: Visibility.Visible,
-        onChanged: (node, visibility) =>
-        {
-            if (visibility == Visibility.Visible)
-            {
-                node.Hidden.Reset();
-                node.Shown.Trigger();
-            }
-            else
-            {
-                node.Shown.Reset();
-                node.Hidden.Trigger();
-            }
-        });
-
+    
     /// <summary>
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
     /// </summary>
-    [Property(DefaultValue = Visibility.Visible)]
-    public partial Visibility Visibility { get; set; }
+    [Property]
+    public Visibility Visibility { get; set; } = Visibility.Visible;
 
     /// <summary>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
     /// </summary>
-    [Property(DefaultValue = 1.0f)]
-    public partial float Opacity { get; set; }
+    [Property]
+    public float Opacity { get; set; } = 1.0f;
 
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
-    
-    /// <summary>
-    /// Property field for <see cref="Direction"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgDirection> DirectionProperty { get; } =
-        Property.RegisterDirect<Node, YgDirection>(
-            name:         nameof(Direction),
-            getter:       node => node.NodeInternal.Direction.ToNfmDirection(),
-            setter:       (node, value) => node.NodeInternal.Direction = value.ToYogaDirection(),
-            defaultValue: YgDirection.Inherit);
-
     /// <summary>
     /// CSS: direction - Establishes the main-axis (ltr/rtl/inherit)
     /// </summary>
     [Property]
-    public partial YgDirection Direction { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="FlexDirection"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgFlexDirection> FlexDirectionProperty { get; } =
-        Property.RegisterDirect<Node, YgFlexDirection>(
-            name:         nameof(FlexDirection),
-            getter:       node => node.NodeInternal.FlexDirection.ToNfmFlexDirection(),
-            setter:       (node, value) => node.NodeInternal.FlexDirection = value.ToYogaFlexDirection(),
-            defaultValue: YgFlexDirection.Row);
+    public YgDirection Direction
+    {
+        get => NodeInternal.Direction.ToNfmDirection();
+        set => NodeInternal.Direction = value.ToYogaDirection();
+    }
 
     /// <summary>
     /// CSS: flex-direction - Establishes the main-axis (row/column/row-reverse/column-reverse)
     /// </summary>
     [Property]
-    public partial YgFlexDirection FlexDirection { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="JustifyContent"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgJustify> JustifyContentProperty { get; } =
-        Property.RegisterDirect<Node, YgJustify>(
-            name:         nameof(JustifyContent),
-            getter:       node => node.NodeInternal.JustifyContent.ToNfmJustify(),
-            setter:       (node, value) => node.NodeInternal.JustifyContent = value.ToYogaJustify(),
-            defaultValue: YgJustify.FlexStart);
+    public YgFlexDirection FlexDirection
+    {
+        get => NodeInternal.FlexDirection.ToNfmFlexDirection();
+        set => NodeInternal.FlexDirection = value.ToYogaFlexDirection();
+    }
 
     /// <summary>
     /// CSS: justify-content - Defines alignment along the main axis
     /// </summary>
     [Property]
-    public partial YgJustify JustifyContent { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="AlignItems"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgAlign> AlignItemsProperty { get; } =
-        Property.RegisterDirect<Node, YgAlign>(
-            name:         nameof(AlignItems),
-            getter:       node => node.NodeInternal.AlignItems.ToNfmAlign(),
-            setter:       (node, value) => node.NodeInternal.AlignItems = value.ToYogaAlign(),
-            defaultValue: YgAlign.Stretch);
+    public YgJustify JustifyContent
+    {
+        get => NodeInternal.JustifyContent.ToNfmJustify();
+        set => NodeInternal.JustifyContent = value.ToYogaJustify();
+    }
 
     /// <summary>
     /// CSS: align-items - Defines default alignment for all children along the cross axis
     /// </summary>
     [Property]
-    public partial YgAlign AlignItems { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="AlignSelf"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgAlign> AlignSelfProperty { get; } =
-        Property.RegisterDirect<Node, YgAlign>(
-            name:         nameof(AlignSelf),
-            getter:       node => node.NodeInternal.AlignSelf.ToNfmAlign(),
-            setter:       (node, value) => node.NodeInternal.AlignSelf = value.ToYogaAlign(),
-            defaultValue: YgAlign.Auto);
+    public YgAlign AlignItems
+    {
+        get => NodeInternal.AlignItems.ToNfmAlign();
+        set => NodeInternal.AlignItems = value.ToYogaAlign();
+    }
 
     /// <summary>
     /// CSS: align-self - Allows a child to override the default cross-axis alignment
     /// </summary>
     [Property]
-    public partial YgAlign AlignSelf { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="AlignContent"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgAlign> AlignContentProperty { get; } =
-        Property.RegisterDirect<Node, YgAlign>(
-            name:         nameof(AlignContent),
-            getter:       node => node.NodeInternal.AlignContent.ToNfmAlign(),
-            setter:       (node, value) => node.NodeInternal.AlignContent = value.ToYogaAlign(),
-            defaultValue: YgAlign.FlexStart);
+    public YgAlign AlignSelf
+    {
+        get => NodeInternal.AlignSelf.ToNfmAlign();
+        set => NodeInternal.AlignSelf = value.ToYogaAlign();
+    }
 
     /// <summary>
     /// CSS: align-content - Aligns flex container's lines when there is extra space in the cross-axis
     /// </summary>
     [Property]
-    public partial YgAlign AlignContent { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Position"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgPositionType> PositionProperty { get; } =
-        Property.RegisterDirect<Node, YgPositionType>(
-            name:         nameof(Position),
-            getter:       node => node.NodeInternal.PositionType.ToNfmPositionType(),
-            setter:       (node, value) => node.NodeInternal.PositionType = value.ToYogaPositionType(),
-            defaultValue: YgPositionType.Static);
+    public YgAlign AlignContent
+    {
+        get => NodeInternal.AlignContent.ToNfmAlign();
+        set => NodeInternal.AlignContent = value.ToYogaAlign();
+    }
 
     /// <summary>
     /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)
     /// </summary>
     [Property]
-    public partial YgPositionType Position { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="FlexWrap"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgWrap> FlexWrapProperty { get; } =
-        Property.RegisterDirect<Node, YgWrap>(
-            name:         nameof(FlexWrap),
-            getter:       node => node.NodeInternal.FlexWrap.ToNfmWrap(),
-            setter:       (node, value) => node.NodeInternal.FlexWrap = value.ToYogaWrap(),
-            defaultValue: YgWrap.NoWrap);
+    public YgPositionType Position
+    {
+        get => NodeInternal.PositionType.ToNfmPositionType();
+        set => NodeInternal.PositionType = value.ToYogaPositionType();
+    }
 
     /// <summary>
     /// CSS: flex-wrap - Controls whether flex items wrap onto multiple lines (nowrap/wrap/wrap-reverse)
     /// </summary>
     [Property]
-    public partial YgWrap FlexWrap { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Overflow"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgOverflow> OverflowProperty { get; } =
-        Property.RegisterDirect<Node, YgOverflow>(
-            name:         nameof(Overflow),
-            getter:       node => node.NodeInternal.Overflow.ToNfmOverflow(),
-            setter:       (node, value) => node.NodeInternal.Overflow = value.ToYogaOverflow(),
-            defaultValue: YgOverflow.Visible);
+    public YgWrap FlexWrap
+    {
+        get => NodeInternal.FlexWrap.ToNfmWrap();
+        set => NodeInternal.FlexWrap = value.ToYogaWrap();
+    }
 
     /// <summary>
     /// CSS: overflow - Controls what happens to content that is too big to fit (visible/hidden/scroll)
     /// </summary>
     [Property]
-    public partial YgOverflow Overflow { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Display"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgDisplay> DisplayProperty { get; } =
-        Property.RegisterDirect<Node, YgDisplay>(
-            name:         nameof(Display),
-            getter:       node => node.NodeInternal.Display.ToNfmDisplay(),
-            setter:       (node, value) => node.NodeInternal.Display = value.ToYogaDisplay(),
-            defaultValue: YgDisplay.Flex);
+    public YgOverflow Overflow
+    {
+        get => NodeInternal.Overflow.ToNfmOverflow();
+        set => NodeInternal.Overflow = value.ToYogaOverflow();
+    }
 
     /// <summary>
     /// CSS: display - Defines the display type of the element (flex/none/block)
     /// </summary>
     [Property]
-    public partial YgDisplay Display { get; set; }
+    public YgDisplay Display
+    {
+        get => NodeInternal.Display.ToNfmDisplay();
+        set => NodeInternal.Display = value.ToYogaDisplay();
+    }
 
     public sealed class PixelsConverter : TypeConverter
     {
         public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
         {
-            return sourceType == typeof(string)
-                   || sourceType == typeof(float)
-                   || sourceType == typeof(double)
-                   || sourceType == typeof(int)
-                   || sourceType == typeof(long)
-                   || base.CanConvertFrom(context, sourceType);
+            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
         }
 
         public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
         {
-            if (value is float f) return f;
-            if (value is double d) return (float)d;
-            if (value is int i) return i;
-            if (value is long l) return l;
-            
             if (value is string str)
             {
                 var trimmed = str.AsSpan().Trim();
@@ -770,26 +442,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
         {
-            return sourceType == typeof(string)
-                   || sourceType == typeof(float)
-                   || sourceType == typeof(float?)
-                   || sourceType == typeof(double)
-                   || sourceType == typeof(double?)
-                   || sourceType == typeof(int)
-                   || sourceType == typeof(int?)
-                   || sourceType == typeof(long)
-                   || sourceType == typeof(long?)
-                   || base.CanConvertFrom(context, sourceType);
+            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
         }
 
-        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object? value)
+        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
         {
-            if (value is null) return null;
-            if (value is float f) return f;
-            if (value is double d) return (float)d;
-            if (value is int i) return i;
-            if (value is long l) return l;
-
             if (value is string str)
             {
                 var trimmed = str.AsSpan().Trim();
@@ -823,49 +480,34 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
-    /// Property field for <see cref="Flex"/>.
-    /// </summary>
-    public static DirectProperty<Node, float?> FlexProperty { get; } =
-        Property.RegisterDirect<Node, float?>(
-            name:         nameof(Flex),
-            getter:       node => node.NodeInternal.Flex is var v && !float.IsNaN(v) ? v : null,
-            setter:       (node, value) => node.NodeInternal.Flex = value ?? float.NaN);
-
-    /// <summary>
     /// CSS: flex - Shorthand for flex-grow, flex-shrink, and flex-basis combined
     /// </summary>
     [Property]
-    public partial float? Flex { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="FlexGrow"/>.
-    /// </summary>
-    public static DirectProperty<Node, float?> FlexGrowProperty { get; } =
-        Property.RegisterDirect<Node, float?>(
-            name:         nameof(FlexGrow),
-            getter:       node => node.NodeInternal.FlexGrow is var v && !float.IsNaN(v) ? v : null,
-            setter:       (node, value) => node.NodeInternal.FlexGrow = value ?? float.NaN);
+    public float? Flex
+    {
+        get => NodeInternal.Flex is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.Flex = value ?? float.NaN;
+    }
 
     /// <summary>
     /// CSS: flex-grow - Defines the ability for a flex item to grow if necessary
     /// </summary>
     [Property]
-    public partial float? FlexGrow { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="FlexShrink"/>.
-    /// </summary>
-    public static DirectProperty<Node, float?> FlexShrinkProperty { get; } =
-        Property.RegisterDirect<Node, float?>(
-            name:         nameof(FlexShrink),
-            getter:       node => node.NodeInternal.FlexShrink is var v && !float.IsNaN(v) ? v : null,
-            setter:       (node, value) => node.NodeInternal.FlexShrink = value ?? float.NaN);
+    public float? FlexGrow
+    {
+        get => NodeInternal.FlexGrow is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexGrow = value ?? float.NaN;
+    }
 
     /// <summary>
     /// CSS: flex-shrink - Defines the ability for a flex item to shrink if necessary
     /// </summary>
     [Property]
-    public partial float? FlexShrink { get; set; }
+    public float? FlexShrink
+    {
+        get => NodeInternal.FlexShrink is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.FlexShrink = value ?? float.NaN;
+    }
 
     [TypeConverter(typeof(MeasurementFlexBasisTypeConverter))]
     public struct MeasurementFlexBasis
@@ -874,21 +516,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
             {
-                return sourceType == typeof(string)
-                       || sourceType == typeof(float)
-                       || sourceType == typeof(double)
-                       || sourceType == typeof(int)
-                       || sourceType == typeof(long)
-                       || base.CanConvertFrom(context, sourceType);
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
             }
 
             public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
             {
-                if (value is float f) return Point(f);
-                if (value is double d) return Point((float)d);
-                if (value is int i) return Point(i);
-                if (value is long l) return Point(l);
-
                 if (value is string str)
                 {
                     var trimmed = str.AsSpan().Trim();
@@ -1044,21 +676,20 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             return this;
         }
     }
-    
-    /// <summary>
-    /// Property field for <see cref="FlexBasis"/>.
-    /// </summary>
-    public static readonly Property<MeasurementFlexBasis> FlexBasisProperty =
-        Property.Register<Node, MeasurementFlexBasis>(
-            name:         nameof(FlexBasis),
-            defaultValue: MeasurementFlexBasis.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.FlexBasis = value.Scale(ReactorG.Scale));
-    
+
     /// <summary>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
     /// </summary>
     [Property]
-    public partial MeasurementFlexBasis FlexBasis { get; set; }
+    public MeasurementFlexBasis FlexBasis
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.FlexBasis = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementFlexBasis.Undefined;
 
     [TypeConverter(typeof(MeasurementMarginPositionTypeConverter))]
     public struct MeasurementMarginPosition
@@ -1067,21 +698,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
             {
-                return sourceType == typeof(string)
-                       || sourceType == typeof(float)
-                       || sourceType == typeof(double)
-                       || sourceType == typeof(int)
-                       || sourceType == typeof(long)
-                       || base.CanConvertFrom(context, sourceType);
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
             }
 
             public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
             {
-                if (value is float f) return Point(f);
-                if (value is double d) return Point((float)d);
-                if (value is int i) return Point(i);
-                if (value is long l) return Point(l);
-
                 if (value is string str)
                 {
                     var trimmed = str.AsSpan().Trim();
@@ -1202,64 +823,60 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
-    /// Property field for <see cref="Left"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> LeftProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(Left),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Left = value.Scale(ReactorG.Scale));
-
-    /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition Left { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Top"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> TopProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(Top),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Top = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition Left
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Left = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: top - Specifies the top position of a positioned element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition Top { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Right"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> RightProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(Right),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Right = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition Top
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Top = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: right - Specifies the right position of a positioned element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition Right { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Bottom"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> BottomProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(Bottom),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Bottom = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition Right
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Right = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: bottom - Specifies the bottom position of a positioned element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition Bottom { get; set; }
+    public MeasurementMarginPosition Bottom
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Bottom = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     [TypeConverter(typeof(MeasurementMultiMarginTypeConverter))]
     public struct MeasurementMultiMargin
@@ -1387,96 +1004,85 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
-        public static implicit operator MeasurementMultiMargin(float value) => All(value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Margin"/>.
-    /// </summary>
-    public static readonly DirectProperty<Node, MeasurementMultiMargin> MarginProperty =
-        Property.RegisterDirect<Node, MeasurementMultiMargin>(
-            name:         nameof(Margin),
-            defaultValue: MeasurementMultiMargin.Undefined,
-            getter:       node => new MeasurementMultiMargin
-            {
-                Top = node.MarginTop,
-                Bottom = node.MarginBottom,
-                Left = node.MarginLeft,
-                Right = node.MarginRight
-            },
-            setter:       (node, value) =>
-            {
-                node.NodeInternal.MarginTop = value.Top;
-                node.NodeInternal.MarginBottom = value.Bottom;
-                node.NodeInternal.MarginLeft = value.Left;
-                node.NodeInternal.MarginRight = value.Right;
-            });
 
     /// <summary>
     /// CSS: margin - Shorthand for setting all margin values (top, right, bottom, left)
     /// </summary>
     [Property]
-    public partial MeasurementMultiMargin Margin { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MarginTop"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> MarginTopProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(MarginTop),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginTop = value.Scale(ReactorG.Scale));
+    public MeasurementMultiMargin Margin
+    {
+        get => new()
+        {
+            Top = MarginTop,
+            Bottom = MarginBottom,
+            Left = MarginLeft,
+            Right = MarginRight
+        };
+        set
+        {
+            MarginLeft = value.Left;
+            MarginRight = value.Right;
+            MarginTop = value.Top;
+            MarginBottom = value.Bottom;
+        }
+    }
 
     /// <summary>
     /// CSS: margin-top - Sets the top margin space outside the element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition MarginTop { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MarginBottom"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> MarginBottomProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(MarginBottom),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginBottom = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition MarginTop
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginTop = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: margin-bottom - Sets the bottom margin space outside the element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition MarginBottom { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MarginLeft"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> MarginLeftProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(MarginLeft),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginLeft = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition MarginBottom
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginBottom = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: margin-left - Sets the left margin space outside the element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition MarginLeft { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MarginRight"/>.
-    /// </summary>
-    public static readonly Property<MeasurementMarginPosition> MarginRightProperty =
-        Property.Register<Node, MeasurementMarginPosition>(
-            name:         nameof(MarginRight),
-            defaultValue: MeasurementMarginPosition.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MarginRight = value.Scale(ReactorG.Scale));
+    public MeasurementMarginPosition MarginLeft
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginLeft = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     /// <summary>
     /// CSS: margin-right - Sets the right margin space outside the element
     /// </summary>
     [Property]
-    public partial MeasurementMarginPosition MarginRight { get; set; }
+    public MeasurementMarginPosition MarginRight
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MarginRight = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementMarginPosition.Undefined;
 
     [TypeConverter(typeof(MeasurementPaddingTypeConverter))]
     public struct MeasurementPadding
@@ -1485,21 +1091,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
             {
-                return sourceType == typeof(string)
-                       || sourceType == typeof(float)
-                       || sourceType == typeof(double)
-                       || sourceType == typeof(int)
-                       || sourceType == typeof(long)
-                       || base.CanConvertFrom(context, sourceType);
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
             }
 
             public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
             {
-                if (value is float f) return Point(f);
-                if (value is double d) return Point((float)d);
-                if (value is int i) return Point(i);
-                if (value is long l) return Point(l);
-
                 if (value is string str)
                 {
                     var trimmed = str.AsSpan().Trim();
@@ -1726,96 +1322,85 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
-        public static implicit operator MeasurementMultiPadding(float value) => All(value);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Padding"/>.
-    /// </summary>
-    public static readonly DirectProperty<Node, MeasurementMultiPadding> PaddingProperty =
-        Property.RegisterDirect<Node, MeasurementMultiPadding>(
-            name:         nameof(Padding),
-            defaultValue: MeasurementMultiPadding.Undefined,
-            getter:       node => new MeasurementMultiPadding
-            {
-                Top = node.PaddingTop,
-                Bottom = node.PaddingBottom,
-                Left = node.PaddingLeft,
-                Right = node.PaddingRight
-            },
-            setter:       (node, value) =>
-            {
-                node.NodeInternal.PaddingTop = value.Top;
-                node.NodeInternal.PaddingBottom = value.Bottom;
-                node.NodeInternal.PaddingLeft = value.Left;
-                node.NodeInternal.PaddingRight = value.Right;
-            });
 
     /// <summary>
     /// CSS: padding - Shorthand for setting all padding values (top, right, bottom, left)
     /// </summary>
     [Property]
-    public partial MeasurementMultiPadding Padding { get; set; }
-    
-    /// <summary>
-    /// Property field for <see cref="PaddingTop"/>.
-    /// </summary>
-    public static readonly Property<MeasurementPadding> PaddingTopProperty =
-        Property.Register<Node, MeasurementPadding>(
-            name:         nameof(PaddingTop),
-            defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingTop = value.Scale(ReactorG.Scale));
+    public MeasurementMultiPadding Padding
+    {
+        get => new()
+        {
+            Left = PaddingLeft,
+            Right = PaddingRight,
+            Top = PaddingTop,
+            Bottom = PaddingBottom
+        };
+        set
+        {
+            PaddingLeft = value.Left;
+            PaddingRight = value.Right;
+            PaddingTop = value.Top;
+            PaddingBottom = value.Bottom;
+        }
+    }
 
     /// <summary>
     /// CSS: padding-top - Sets the top padding space inside the element
     /// </summary>
     [Property]
-    public partial MeasurementPadding PaddingTop { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="PaddingBottom"/>.
-    /// </summary>
-    public static readonly Property<MeasurementPadding> PaddingBottomProperty =
-        Property.Register<Node, MeasurementPadding>(
-            name:         nameof(PaddingBottom),
-            defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingBottom = value.Scale(ReactorG.Scale));
+    public MeasurementPadding PaddingTop
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingTop = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     /// <summary>
     /// CSS: padding-bottom - Sets the bottom padding space inside the element
     /// </summary>
     [Property]
-    public partial MeasurementPadding PaddingBottom { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="PaddingLeft"/>.
-    /// </summary>
-    public static readonly Property<MeasurementPadding> PaddingLeftProperty =
-        Property.Register<Node, MeasurementPadding>(
-            name:         nameof(PaddingLeft),
-            defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingLeft = value.Scale(ReactorG.Scale));
+    public MeasurementPadding PaddingBottom
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingBottom = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     /// <summary>
     /// CSS: padding-left - Sets the left padding space inside the element
     /// </summary>
     [Property]
-    public partial MeasurementPadding PaddingLeft { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="PaddingRight"/>.
-    /// </summary>
-    public static readonly Property<MeasurementPadding> PaddingRightProperty =
-        Property.Register<Node, MeasurementPadding>(
-            name:         nameof(PaddingRight),
-            defaultValue: MeasurementPadding.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.PaddingRight = value.Scale(ReactorG.Scale));
+    public MeasurementPadding PaddingLeft
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingLeft = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     /// <summary>
     /// CSS: padding-right - Sets the right padding space inside the element
     /// </summary>
     [Property]
-    public partial MeasurementPadding PaddingRight { get; set; }
+    public MeasurementPadding PaddingRight
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.PaddingRight = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementPadding.Undefined;
 
     [TypeConverter(typeof(MeasurementMultiBorderTypeConverter))]
     public struct MeasurementMultiBorder
@@ -1888,7 +1473,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
                         };
                     }
 
-                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiBorder. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+                    throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
                 }
                 return base.ConvertFrom(context, culture, value);
             }
@@ -1935,8 +1520,16 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: border - Shorthand for setting all border widths
     /// </summary>
+    [Property]
     public MeasurementMultiBorder Border
     {
+        get => new()
+        {
+            Left = BorderLeft,
+            Right = BorderRight,
+            Top = BorderTop,
+            Bottom = BorderBottom
+        };
         set
         {
             BorderLeft = value.Left;
@@ -1947,83 +1540,77 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
-    /// Property field for <see cref="BorderTop"/>.
-    /// </summary>
-    public static readonly Property<float?> BorderTopProperty =
-        Property.Register<Node, float?>(
-            name:         nameof(BorderTop),
-            onChanged:    (node, value) => node.NodeInternal.BorderTop = (value * ReactorG.Scale) ?? YG.YGUndefined);
-
-    /// <summary>
     /// CSS: border-top-width - Sets the width of the top border
     /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     [Property]
-    public partial float? BorderTop { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="BorderBottom"/>.
-    /// </summary>
-    public static readonly Property<float?> BorderBottomProperty =
-        Property.Register<Node, float?>(
-            name:         nameof(BorderBottom),
-            onChanged:    (node, value) => node.NodeInternal.BorderBottom = (value * ReactorG.Scale) ?? YG.YGUndefined);
+    public float? BorderTop
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderTop = (value * ReactorG.Scale) ?? YG.YGUndefined;
+        }
+    }
 
     /// <summary>
     /// CSS: border-bottom-width - Sets the width of the bottom border
     /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     [Property]
-    public partial float? BorderBottom { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="BorderLeft"/>.
-    /// </summary>
-    public static readonly Property<float?> BorderLeftProperty =
-        Property.Register<Node, float?>(
-            name:         nameof(BorderLeft),
-            onChanged:    (node, value) => node.NodeInternal.BorderLeft = (value * ReactorG.Scale) ?? YG.YGUndefined);
+    public float? BorderBottom
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderBottom = (value * ReactorG.Scale) ?? YG.YGUndefined;
+        }
+    }
 
     /// <summary>
     /// CSS: border-left-width - Sets the width of the left border
     /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     [Property]
-    public partial float? BorderLeft { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="BorderRight"/>.
-    /// </summary>
-    public static readonly Property<float?> BorderRightProperty =
-        Property.Register<Node, float?>(
-            name:         nameof(BorderRight),
-            onChanged:    (node, value) => node.NodeInternal.BorderRight = (value * ReactorG.Scale) ?? YG.YGUndefined);
+    public float? BorderLeft
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderLeft = (value * ReactorG.Scale) ?? YG.YGUndefined;
+        }
+    }
 
     /// <summary>
     /// CSS: border-right-width - Sets the width of the right border
     /// </summary>
+    [TypeConverter(typeof(PixelsOrUndefinedConverter))]
     [Property]
-    public partial float? BorderRight { get; set; }
+    public float? BorderRight
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.BorderRight = (value * ReactorG.Scale) ?? YG.YGUndefined;
+        }
+    }
 
     [TypeConverter(typeof(MeasurementGapTypeConverter))]
-    public struct MeasurementGap : IEquatable<MeasurementGap>
+    public struct MeasurementGap
     {
         public class MeasurementGapTypeConverter : TypeConverter
         {
             public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
             {
-                return sourceType == typeof(string)
-                    || sourceType == typeof(float)
-                    || sourceType == typeof(double)
-                    || sourceType == typeof(int)
-                    || sourceType == typeof(long)
-                    || base.CanConvertFrom(context, sourceType);
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
             }
 
             public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
             {
-                if (value is float f) return Point(f);
-                if (value is double d) return Point((float)d);
-                if (value is int i) return Point(i);
-                if (value is long l) return Point(l);
-
                 if (value is string str)
                 {
                     var trimmed = str.AsSpan().Trim();
@@ -2130,80 +1717,61 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
         
         // ReSharper disable once CompareOfFloatsByEqualityOperator
-        public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.InternalValue.value == right.InternalValue.value && left.InternalValue.unit == right.InternalValue.unit;
+        public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.Unit == right.Unit && left.Value == right.Value;
         public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
-        public override bool Equals(object? obj) => obj is MeasurementGap other && this == other;
-        public bool Equals(MeasurementGap other) => this == other;
-        public override int GetHashCode() => HashCode.Combine(InternalValue.value, InternalValue.unit);
     }
-
-    /// <summary>
-    /// Property field for <see cref="Gap"/>.
-    /// </summary>
-    public static readonly DirectProperty<Node, MeasurementGap> GapProperty =
-        Property.RegisterDirect<Node, MeasurementGap>(
-            name:         nameof(Gap),
-            defaultValue: MeasurementGap.Undefined,
-            getter:       node => node.GapColumn == node.GapRow ? node.GapColumn : MeasurementGap.Undefined,
-            setter:       (node, value) =>
-            {
-                node.NodeInternal.GapColumn = value;
-                node.NodeInternal.GapRow = value;
-            });
 
     /// <summary>
     /// CSS: gap - Shorthand for setting row-gap and column-gap
     /// </summary>
     [Property]
-    public partial MeasurementGap Gap { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="GapColumn"/>.
-    /// </summary>
-    public static readonly DirectProperty<Node, MeasurementGap> GapColumnProperty =
-        Property.RegisterDirect<Node, MeasurementGap>(
-            name:         nameof(GapColumn),
-            defaultValue: MeasurementGap.Undefined,
-            getter:       node => node.NodeInternal.GapColumn,
-            setter:       (node, value) => node.NodeInternal.GapColumn = value);
+    public MeasurementGap Gap
+    {
+        get => GapColumn == GapRow ? GapColumn : MeasurementGap.Undefined;
+        set
+        {
+            GapColumn = value;
+            GapRow = value;
+        }
+    }
 
     /// <summary>
     /// CSS: column-gap - Sets the gap between columns in a flex container
     /// </summary>
     [Property]
-    public partial MeasurementGap GapColumn { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="GapRow"/>.
-    /// </summary>
-    public static readonly DirectProperty<Node, MeasurementGap> GapRowProperty =
-        Property.RegisterDirect<Node, MeasurementGap>(
-            name:         nameof(GapRow),
-            defaultValue: MeasurementGap.Undefined,
-            getter:       node => node.NodeInternal.GapColumn,
-            setter:       (node, value) => node.NodeInternal.GapRow = value);
+    public MeasurementGap GapColumn
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.GapColumn = value;
+        }
+    } = MeasurementGap.Undefined;
 
     /// <summary>
     /// CSS: row-gap - Sets the gap between rows in a flex container
     /// </summary>
     [Property]
-    public partial MeasurementGap GapRow { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="BoxSizing"/>.
-    /// </summary>
-    public static DirectProperty<Node, YgBoxSizing> BoxSizingProperty { get; } =
-        Property.RegisterDirect<Node, YgBoxSizing>(
-            name:         nameof(BoxSizing),
-            getter:       node => node.NodeInternal.BoxSizing.ToNfmBoxSizing(),
-            setter:       (node, value) => node.NodeInternal.BoxSizing = value.ToYogaBoxSizing(),
-            defaultValue: YgBoxSizing.BorderBox);
+    public MeasurementGap GapRow
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.GapRow = value;
+        }
+    } = MeasurementGap.Undefined;
 
     /// <summary>
     /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
     /// </summary>
     [Property]
-    public partial YgBoxSizing BoxSizing { get; set; }
+    public YgBoxSizing BoxSizing
+    {
+        get => NodeInternal.BoxSizing.ToNfmBoxSizing();
+        set => NodeInternal.BoxSizing = value.ToYogaBoxSizing();
+    }
 
     [TypeConverter(typeof(MeasurementWidthHeightTypeConverter))]
     public struct MeasurementWidthHeight
@@ -2216,21 +1784,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType)
             {
-                return sourceType == typeof(string)
-                       || sourceType == typeof(float)
-                       || sourceType == typeof(double)
-                       || sourceType == typeof(int)
-                       || sourceType == typeof(long)
-                       || base.CanConvertFrom(context, sourceType);
+                return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
             }
 
             public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
             {
-                if (value is float f) return Point(f);
-                if (value is double d) return Point((float)d);
-                if (value is int i) return Point(i);
-                if (value is long l) return Point(l);
-
                 if (value is string str)
                 {
                     var trimmed = str.Trim();
@@ -2392,149 +1950,139 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     }
 
     /// <summary>
-    /// Property field for <see cref="Width"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> WidthProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(Width),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Width = value.Scale(ReactorG.Scale));
-
-    /// <summary>
     /// CSS: width - Sets the width of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight Width { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="Height"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> HeightProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(Height),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.Height = value.Scale(ReactorG.Scale));
+    public MeasurementWidthHeight Width
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Width = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: height - Sets the height of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight Height { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MinWidth"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> MinWidthProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(MinWidth),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MinWidth = value.Scale(ReactorG.Scale));
+    public MeasurementWidthHeight Height
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.Height = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: min-width - Sets the minimum width of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight MinWidth { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MinHeight"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> MinHeightProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(MinHeight),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MinHeight = value.Scale(ReactorG.Scale));
+    public MeasurementWidthHeight MinWidth
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MinWidth = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: min-height - Sets the minimum height of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight MinHeight { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MaxWidth"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> MaxWidthProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(MaxWidth),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MaxWidth = value.Scale(ReactorG.Scale));
+    public MeasurementWidthHeight MinHeight
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MinHeight = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: max-width - Sets the maximum width of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight MaxWidth { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="MaxHeight"/>.
-    /// </summary>
-    public static readonly Property<MeasurementWidthHeight> MaxHeightProperty =
-        Property.Register<Node, MeasurementWidthHeight>(
-            name:         nameof(MaxHeight),
-            defaultValue: MeasurementWidthHeight.Undefined,
-            onChanged:    (node, value) => node.NodeInternal.MaxHeight = value.Scale(ReactorG.Scale));
+    public MeasurementWidthHeight MaxWidth
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MaxWidth = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: max-height - Sets the maximum height of the element
     /// </summary>
     [Property]
-    public partial MeasurementWidthHeight MaxHeight { get; set; }
-
-    /// <summary>
-    /// Property field for <see cref="AspectRatio"/>.
-    /// </summary>
-    public static DirectProperty<Node, float?> AspectRatioProperty { get; } =
-        Property.RegisterDirect<Node, float?>(
-            name:         nameof(AspectRatio),
-            getter:       node => node.NodeInternal.AspectRatio is var v && !float.IsNaN(v) ? v : null,
-            setter:       (node, value) => node.NodeInternal.AspectRatio = value ?? float.NaN);
+    public MeasurementWidthHeight MaxHeight
+    {
+        get;
+        set
+        {
+            field = value;
+            NodeInternal.MaxHeight = value.Scale(ReactorG.Scale);
+        }
+    } = MeasurementWidthHeight.Undefined;
 
     /// <summary>
     /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
     /// </summary>
+    [TypeConverter(typeof(PixelsConverter))]
     [Property]
-    public partial float? AspectRatio { get; set; }
+    public float? AspectRatio
+    {
+        get => NodeInternal.AspectRatio is var v && !float.IsNaN(v) ? v : null;
+        set => NodeInternal.AspectRatio = value ?? float.NaN;
+    }
 
     #endregion
 
     #region Focus
     
     [Property]
-    public partial bool IsHovered { get; set; }
+    public bool IsHovered { get; set; }
 
     public override Vector2 FocusOrigin => LayoutPaddingPosition;
     public override Vector2 FocusSize => LayoutPaddingSize;
     
     [Property]
-    public partial Action<NodeEventArgs<MouseEvent>>? MousePressed { get; set; }
+    public Action<NodeEventArgs<MouseEvent>>? MousePressed { get; set; }
 
     [Property]
-    public partial Action<NodeEventArgs<MouseEvent>>? MouseReleased { get; set; }
+    public Action<NodeEventArgs<MouseEvent>>? MouseReleased { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<MouseDragEvent>>? MouseDragged { get; set; }
+    public Action<NodeEventArgs<MouseDragEvent>>? MouseDragged { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<MouseWheelEvent>>? MouseScrolled { get; set; }
+    public Action<NodeEventArgs<MouseWheelEvent>>? MouseScrolled { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<MouseMoveEvent>>? MouseMoved { get; set; }
+    public Action<NodeEventArgs<MouseMoveEvent>>? MouseMoved { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<MouseMoveEvent>>? MouseEntered { get; set; }
+    public Action<NodeEventArgs<MouseMoveEvent>>? MouseEntered { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<MouseMoveEvent>>? MouseLeft { get; set; }
+    public Action<NodeEventArgs<MouseMoveEvent>>? MouseLeft { get; set; }
     
     [Property]
-    public partial Action<NodeEventArgs<KeyboardTypingEvent>>? KeyTyped { get; set; }
+    public Action<NodeEventArgs<KeyboardTypingEvent>>? KeyTyped { get; set; }
 
     [Property]
-    public partial Action<NodeEventArgs<KeyboardEvent>>? KeyPressed { get; set; }
+    public Action<NodeEventArgs<KeyboardEvent>>? KeyPressed { get; set; }
 
     [Property]
-    public partial Action<NodeEventArgs<KeyboardEvent>>? KeyReleased { get; set; }
+    public Action<NodeEventArgs<KeyboardEvent>>? KeyReleased { get; set; }
 
     #endregion
 
