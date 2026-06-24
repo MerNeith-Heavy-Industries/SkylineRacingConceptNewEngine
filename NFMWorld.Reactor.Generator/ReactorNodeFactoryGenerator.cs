@@ -493,7 +493,6 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 sb.AppendLine("{");
 
                 using (sb.Indent())
-                using (sb.Indent())
                 {
                     sb.AppendLine($"var n = new {returnType}();");
                     sb.AppendLine();
