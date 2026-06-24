@@ -18,9 +18,9 @@ public interface IStyle : IStyleNode
 public class Setter
 {
     /// <summary>
-    /// The WorldXamlProperty to set.
+    /// The property setter.
     /// </summary>
-    public Property? Property { get; set; }
+    public Action<Visual, object?>? PropertySetter { get; set; }
 
     /// <summary>
     /// The value to assign.
@@ -30,9 +30,33 @@ public class Setter
     /// <summary>
     /// Apply this setter to the given target element.
     /// </summary>
-    public void Apply(PropertyObject target)
+    public void Apply(Visual target)
     {
-        if (Property is null) return;
-        target.SetBoxedValue(Property, Value);
+        PropertySetter?.Invoke(target, Value);
+    }
+}
+
+/// <summary>
+/// Applies a value to a property. Used inside Style or as standalone.
+/// </summary>
+public class Setter<TVisual, TProp> : Setter where TVisual : Visual
+{
+    /// <summary>
+    /// The property setter.
+    /// </summary>
+    public new Action<TVisual, TProp>? PropertySetter { get; set; }
+
+    public Setter()
+    {
+        base.PropertySetter = (v, val) => PropertySetter?.Invoke((TVisual)v, (TProp)val!);
+    }
+
+    /// <summary>
+    /// The value to assign.
+    /// </summary>
+    public new required TProp Value
+    {
+        get => (TProp)base.Value!;
+        set => base.Value = value;
     }
 }
