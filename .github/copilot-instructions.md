@@ -7,7 +7,8 @@ NFM World is a custom game engine and game written primarily in **C#**, targetin
 - **Big picture:** The playable app lives in `nfm-world/` (`NFMWorld.csproj`) and depends on many sibling projects (notably `NFMWorld.Library`, `FNA`, `NvgSharp`, `MonoGame.ImGuiNet`). Treat `nfm-world` as the app entry; engine/framework code is in `FNA/` and rendering/GUI glue under `NvgSharp/`, `FontStashSharp/`, and `MonoGame.ImGuiNet/`.
 
 Key characteristics:
-- Custom **XAML-based UI system** built on top of the Yoga layout engine. XAML is compiled to C# at build time via `Avalonia.Generators` (XamlX-based), **not** interpreted at runtime, except for hot reloading.
+- **NFMWorld.Reactor** — a React-like virtual DOM framework with hooks, memo, context, and source-generated factory methods. Built on top of Yoga layout. This is the new UI system replacing XAML.
+- Legacy **XAML-based UI system** built on top of the Yoga layout engine. XAML is compiled to C# at build time via `Avalonia.Generators` (XamlX-based). Being phased out in favor of Reactor.
 - A custom **shader pipeline**: shaders in `data/shaders/*.fx` are compiled to `.fxb` via `fxc.exe` during build.
 - **Fixed-point math** (`FixedMathSharp`) for deterministic physics and gameplay logic.
 - A **virtual file system** (`Maxine.VFS`) with path abstraction over real and in-memory backends.
@@ -27,6 +28,7 @@ Key characteristics:
 - **Project patterns / conventions:**
   - Most subprojects are referenced with `ProjectReference` from `NFMWorld.csproj`; prefer keeping cross-project ref changes small and use `dotnet sln` only when adding/removing whole projects.
   - Game logic vs UI: `NFMWorld.Library` contains backend/game systems; UI, rendering and native interops live in `nfm-world/`, `NvgSharp/`, and `FNA/`.
+  - **NFMWorld.Reactor** is the new VDOM UI framework; `NFMWorld.Reactor.Generator` provides Roslyn source generators for factory methods and typed VNode subclasses. Tests in `NFMWorld.Reactor.Test` and test fixtures in `NFMWorld.Reactor.TestFixtures`.
   - Data and assets: NFMWorld and NFMWorld.Library include `None Include="data\**\*" CopyToOutputDirectory=...` — follow existing CopyToOutputDirectory semantics rather than inventing new asset pipelines.
 
 - **Dependencies & runtime notes:**
@@ -100,7 +102,84 @@ The csproj must have `<Compile Remove="Generated/**" />` to prevent the implicit
 
 ---
 
-## XAML UI System (Yoga Flexbox)
+## NFMWorld.Reactor VDOM Framework (New UI System)
+
+A React-like virtual DOM framework built on top of the Yoga layout engine. Replaces the legacy XAML-based UI system.
+
+### Key projects
+
+| Project | Role |
+|---|---|
+| `NFMWorld.Reactor` | Core VDOM runtime: `VNode`, `VisualVNode`, `ComponentNode`, `Component`, hooks, `Reconciler`, `Context<T>`, `BasePropertySnapshot` |
+| `NFMWorld.Reactor.Generator` | Roslyn incremental source generators: `ReactorNodeFactoryGenerator` (Yoga VNodes + factory methods), `ReactorComponentFactoryGenerator` (Component wrappers), `PropertyGenerator` |
+| `NFMWorld.Reactor.Test` | MSTest tests (78 tests as of 2026-06) |
+| `NFMWorld.Reactor.TestFixtures` | Shared test components, rebuilt to generate ComponentNode subclasses |
+
+### VNode hierarchy
+
+- **`VNode`** — base node with `Key` and `WithKey` fluent method
+- **`VisualVNode`** — base for Yoga-backed nodes: `NodeType`, `Children`, `Classes`, `Name`, `CreateNative()`, `AssignProperties()`
+- **`ComponentNode`** — hosts a `Component`; has `CreateComponent()`, `GetInputs()` (for memo)
+- **Generated subclasses**: `NodeNode`, `FlexPanelNode`, `ViewNode` — each has typed `With*` methods, a nested `PropertySnapshot`, and generated `AssignProperties()`
+
+### Component system
+
+- **`Component`** — base class. Override `Render()` to return a `VNode` tree.
+- **Hooks**: `UseState<T>`, `UseEffect`, `UseMemo<T>`, `UseRef<T>`, `UseCallback`, `UseContext<T>`, `ProvideContext<T>`, `UseObservable<T>`, `UseObservableProperty<T,TProp>`, `UseCollection<T>`
+- **Memo**: enabled by default. `DisableMemo()` to opt out. Components skip `Render()` when inputs (constructor args + context versions) are unchanged.
+- **Lifecycle**: `Mount(FlexPanel)`, `Update()`, `Unmount()`; `OnMounted()`/`OnUnmounted()` virtuals; hooks re-run on each `Render()`.
+
+### Reconciler
+
+- **`Reconciler.Reconcile(VNode, Visual container, Visual? existingRoot)`** — diffs VNode tree against native Yoga tree.
+- **Property system**: `AssignProperties(Visual, ref BasePropertySnapshot?)` on each VNode saves old values into a `PropertySnapshot`, then applies new values. `ReconcileVisualNode` restores stale properties from the previous pass's snapshot before applying current values (per-property staleness).
+- **Children**: keyed reconciliation (`oldKeyMap`), positional matching for non-keyed children, type-change detection.
+- **Component slots**: `_componentSlots` dictionary keyed by `(parent, childIndex)` persists component instances across reconciles.
+- **Context stack**: `PushContextFrame`/`PopContextFrame` around each `ReconcileComponentNode`; `SetContext`/`GetContext` walk the stack.
+
+### Context system
+
+- **`Context<T>`** — typed context key with `DefaultValue` and `Version` (monotonically increments on `ProvideContext`).
+- **`ProvideContext<T>(ctx, value)`** — bumps `ctx.Version` and sets value in the Reconciler's context stack frame.
+- **`UseContext<T>(ctx)`** — reads from the stack (walks frames top→bottom), records version for memo comparison.
+- Deep context propagation works through memo-skipped intermediates: the cached VNode tree still reaches the consumer ComponentNode.
+
+### Source generators
+
+- **`ReactorNodeFactoryGenerator`** — produces `Nodes.g.cs` (unified factory class with `FlexPanel(...)`, `Node(...)`, `View(...)` methods) and `Nodes.Types.g.cs` (typed VNode subclasses with `With*` methods, nested `PropertySnapshot`, `AssignProperties`).
+  - Only emits types for the current project (assembly-based filtering via `SymbolEqualityComparer`).
+  - Collects properties with `[Property]` attribute across the full Yoga hierarchy. `IsDeclared` tracks whether the property is first declared on the current type.
+  - Factory parameters use `T?` (nullable) — not `Optional<T>` — to support implicit conversions through the built-in nullable conversion.
+- **`ReactorComponentFactoryGenerator`** — produces `Components.g.cs` (factory methods) and `Components.Types.g.cs` (typed `ComponentNode` subclasses with `With*` methods, `CreateComponent()`, `GetInputs()`).
+
+### Creating a new Component
+
+1. Subclass `Component` in `NFMWorld.Reactor.TestFixtures` (or your project).
+2. Add a public constructor with parameters (these become factory arguments).
+3. Override `Render()` — use factory methods like `FlexPanel(...)` from `static WorldXaml.UI.Yoga.Nodes`.
+4. Call `DisableMemo()` in the constructor if the component must always re-render.
+5. Rebuild so the source generator produces the `ComponentNode` subclass and factory method.
+
+### Key patterns
+
+- **Factory methods** produce typed VNode instances: `FlexPanel(name: "x", opacity: 0.5f, children: [...])`
+- **Fluent builders** on VNodes: `.WithName("x")`, `.WithKey("k")`, `.WithOpacity(0.5f)`
+- **Shadowed methods**: generated subclasses shadow base `With*` methods with `new` to return the correct type (e.g., `FlexPanelNode.WithName` returns `FlexPanelNode`)
+- **Stale properties**: if a property is set in pass N but omitted in pass N+1, it resets to its default value via the snapshot system
+
+### Test commands
+
+```bash
+# Run all Reactor tests
+dotnet test NFMWorld.Reactor.Test/NFMWorld.Reactor.Test.csproj
+
+# Run specific test
+dotnet test NFMWorld.Reactor.Test/NFMWorld.Reactor.Test.csproj --filter "Memo_SkipsRender"
+```
+
+---
+
+## XAML UI System (Legacy, being phased out)
 
 UI is defined in XAML files that are **compiled to C# at build time** by `Avalonia.Generators` (XamlX-based). There is no XAML interpreter at runtime (except when hot reloading) — only the generated `InitializeComponent()` method and the plain C# element classes.
 
@@ -447,6 +526,32 @@ public class SomeTests {
 **L1 — Fixed → float is lossy. Never use `==`.** Use epsilon-based comparison in all tests.
 
 **L2 — `FixedMathSharp` updates break dependent projects.** Run all downstream test suites after any bump.
+
+### NFMWorld.Reactor / VDOM
+
+**L1 — `AssignProperties` only handles properties with `[Property]` attribute.** Properties without it (like `Classes`) must be applied directly by the Reconciler.
+
+**L2 — Generated VNode subclasses only declare fields for `IsDeclared` properties.** Fields for inherited properties come from the base class (they're `protected`). The `AssignProperties` method iterates all hierarchy properties and accesses fields via inheritance.
+
+**L3 — The `PropertySnapshot` includes ALL hierarchy properties, not just declared ones.** Its `AssignProperties` method restores ALL properties that have `HasValue = true`.
+
+**L4 — The Reconciler's `ReconcileVisualNode` restores stale properties from the previous snapshot BEFORE calling `AssignProperties`.** This is the key to per-property staleness: `prev.AssignProperties` restores old values, then `AssignProperties` overwrites with current values. `SwapSnapshots` just rotates `prev = current; current = null`.
+
+**L5 — Don't call `current.AssignProperties` after `prev.AssignProperties` in `SwapSnapshots`.** The snapshot stores OLD values (pre-assignment), so re-applying it would restore the wrong state. Stale restoration must happen before `AssignProperties`, not after.
+
+**L6 — Component instances are reused via `_componentSlots` keyed by `(parent Visual, childIndex)`.** `TryReuseComponent` checks `HasSameInputs` to decide whether to reuse; if inputs differ, a new instance is created (constructor runs with new values).
+
+**L7 — Memo `ShouldSkipRender` compares constructor inputs AND context versions.** `HasSameInputs` only compares inputs (for instance reuse). `SaveMemoState` always saves inputs even when memo is disabled (needed for instance reuse decisions).
+
+**L8 — Deep context propagation works through memo-skipped intermediates.** The cached VNode tree from a memo-skipped parent still contains child ComponentNodes. The Reconciler walks into them and `ShouldSkipRender` detects context version changes.
+
+**L9 — Non-keyed children match by position and type compatibility.** Keyed children match by key first. Positional matching only applies to non-keyed existing children at the same index.
+
+**L10 — Source generators can't see each other's output.** The `ReactorNodeFactoryGenerator` uses `[Property]` attribute detection (not `*Property` static fields) because `PropertyGenerator`'s output isn't visible at analysis time.
+
+**L11 — Factory parameters use `T?` not `Optional<T>`.** C# allows chaining one user-defined implicit conversion + the built-in nullable conversion. `Optional<T>` required two user-defined conversions, which C# rejects.
+
+**L12 — `ClearChildren` handles `Children = null`.** The Reconciler calls `ClearChildren` when a VNode has no children but the native node has existing children, ensuring old children are removed.
 
 ---
 
