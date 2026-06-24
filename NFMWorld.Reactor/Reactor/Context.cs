@@ -2,11 +2,18 @@ namespace NFMWorld.Reactor;
 
 /// <summary>
 /// Non-generic base for <see cref="Context{T}"/>. Used internally by the Reconciler's
-/// context scope dictionary.
+/// context scope dictionary and memo version tracking.
 /// </summary>
 public abstract class Context
 {
     private protected Context() { }
+
+    /// <summary>
+    /// Monotonically increasing version. Incremented each time
+    /// <see cref="Component.ProvideContext{T}"/> sets a new value.
+    /// Used by memoized components to detect context changes.
+    /// </summary>
+    public long Version { get; internal set; }
 }
 
 /// <summary>

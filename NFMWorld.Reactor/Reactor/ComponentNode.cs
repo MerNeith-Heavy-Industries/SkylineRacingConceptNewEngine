@@ -28,6 +28,13 @@ public abstract class ComponentNode : VNode
     /// Overridden by generated subclasses to create the component with typed constructor args.
     /// </summary>
     public abstract Component CreateComponent();
+
+    /// <summary>
+    /// Returns the constructor argument values set via <c>With*</c> methods,
+    /// in the same order as the component's constructor parameters.
+    /// Used by <see cref="Component.ShouldSkipRender"/> for memo comparison.
+    /// </summary>
+    public abstract object?[] GetInputs();
 }
 
 /// <summary>
@@ -57,4 +64,6 @@ internal sealed class UntypedComponentNode(Type componentType) : ComponentNode
 
     public override Component CreateComponent()
         => (Component)Activator.CreateInstance(ComponentType, Args ?? [])!;
+
+    public override object?[] GetInputs() => Args ?? [];
 }
