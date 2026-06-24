@@ -1,6 +1,5 @@
 using NFMWorld.Reactor.TestFixtures;
 using static NFMWorld.Reactor.TestFixtures.Nodes;
-using static WorldXaml.UI.Yoga.Nodes;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Reactor.Test;

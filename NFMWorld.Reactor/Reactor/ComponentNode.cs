@@ -30,9 +30,15 @@ public abstract class ComponentNode : VNode
     public abstract Component CreateComponent();
 
     /// <summary>
+    /// Compares the constructor parameters of this component with another component.
+    /// Used by <see cref="Component.ShouldSkipRender"/> for memo comparison.
+    /// </summary>
+    public abstract bool InputsEqual(ComponentNode otherNode);
+    
+    /// <summary>
     /// Returns the constructor argument values set via <c>With*</c> methods,
     /// in the same order as the component's constructor parameters.
-    /// Used by <see cref="Component.ShouldSkipRender"/> for memo comparison.
+    /// Used for debugging.
     /// </summary>
     public abstract object?[] GetInputs();
 }
@@ -64,6 +70,19 @@ internal sealed class UntypedComponentNode(Type componentType) : ComponentNode
 
     public override Component CreateComponent()
         => (Component)Activator.CreateInstance(ComponentType, Args ?? [])!;
+
+    public override bool InputsEqual(ComponentNode otherNode)
+    {
+        if (otherNode is not UntypedComponentNode other) return false;
+        if (Args is null && other.Args is null) return true;
+        if (Args is null || other.Args is null) return false;
+        if (Args.Length != other.Args.Length) return false;
+        for (int i = 0; i < Args.Length; i++)
+        {
+            if (!Equals(Args[i], other.Args[i])) return false;
+        }
+        return true;
+    }
 
     public override object?[] GetInputs() => Args ?? [];
 }

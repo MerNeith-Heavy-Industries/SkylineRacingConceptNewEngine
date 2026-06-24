@@ -21,14 +21,9 @@ public class EmptyComponent : Component
 /// <summary>
 /// Component with a single required string parameter.
 /// </summary>
-public class TitleComponent : Component
+public class TitleComponent(string title) : Component
 {
-    public string Title { get; }
-
-    public TitleComponent(string title)
-    {
-        Title = title;
-    }
+    public string Title { get; } = title;
 
     protected override VNode Render()
         => FlexPanel().WithName(Title);
@@ -37,16 +32,10 @@ public class TitleComponent : Component
 /// <summary>
 /// Component with multiple parameters including a value type with a default.
 /// </summary>
-public class CounterComponent : Component
+public class CounterComponent(string label, int initialValue = 0) : Component
 {
-    public string Label { get; }
-    public int InitialValue { get; }
-
-    public CounterComponent(string label, int initialValue = 0)
-    {
-        Label = label;
-        InitialValue = initialValue;
-    }
+    public string Label { get; } = label;
+    public int InitialValue { get; } = initialValue;
 
     protected override VNode Render()
         => FlexPanel().WithName($"{Label}:{InitialValue}");
@@ -55,14 +44,9 @@ public class CounterComponent : Component
 /// <summary>
 /// Component with a nullable reference type parameter.
 /// </summary>
-public class OptionalTitleComponent : Component
+public class OptionalTitleComponent(string? subtitle = null) : Component
 {
-    public string? Subtitle { get; }
-
-    public OptionalTitleComponent(string? subtitle = null)
-    {
-        Subtitle = subtitle;
-    }
+    public string? Subtitle { get; } = subtitle;
 
     protected override VNode Render()
         => FlexPanel().WithName(Subtitle ?? "(none)");
@@ -71,16 +55,10 @@ public class OptionalTitleComponent : Component
 /// <summary>
 /// Component with a boolean and float parameter (value types with defaults).
 /// </summary>
-public class ToggleComponent : Component
+public class ToggleComponent(bool enabled = true, float opacity = 1.0f) : Component
 {
-    public bool Enabled { get; }
-    public float Opacity { get; }
-
-    public ToggleComponent(bool enabled = true, float opacity = 1.0f)
-    {
-        Enabled = enabled;
-        Opacity = opacity;
-    }
+    public bool Enabled { get; } = enabled;
+    public float Opacity { get; } = opacity;
 
     protected override VNode Render()
         => FlexPanel().WithName($"toggle:{Enabled}:{Opacity}");
@@ -89,14 +67,9 @@ public class ToggleComponent : Component
 /// <summary>
 /// Component that renders children passed via constructor (hybrid pattern).
 /// </summary>
-public class WrapperComponent : Component
+public class WrapperComponent(VNode child) : Component
 {
-    public VNode Child { get; }
-
-    public WrapperComponent(VNode child)
-    {
-        Child = child;
-    }
+    public VNode Child { get; } = child;
 
     protected override VNode Render()
         => Child;
@@ -109,44 +82,27 @@ public class WrapperComponent : Component
 /// <summary>
 /// Provides a <see cref="Context{T}"/> value to descendants and renders a child VNode.
 /// </summary>
-public class ContextProviderComponent : Component
+public class ContextProviderComponent(Context<string> context, string value, VNode child) : Component
 {
-    private readonly Context<string> _context;
-    private readonly string _value;
-    private readonly VNode _child;
-
-    public ContextProviderComponent(Context<string> context, string value, VNode child)
-    {
-        _context = context;
-        _value = value;
-        _child = child;
-    }
-
     protected override VNode Render()
     {
-        ProvideContext(_context, _value);
-        return FlexPanel(children: _child);
+        ProvideContext(context, value);
+        return FlexPanel(children: child);
     }
 }
 
 /// <summary>
 /// Reads a <see cref="Context{T}"/> value and renders a FlexPanel with Name = context value.
 /// </summary>
-public class ContextConsumerComponent : Component
+public class ContextConsumerComponent(Context<string> context) : Component
 {
-    private readonly Context<string> _context;
     public string? LastReadValue { get; private set; }
     public int RenderCount { get; private set; }
-
-    public ContextConsumerComponent(Context<string> context)
-    {
-        _context = context;
-    }
 
     protected override VNode Render()
     {
         RenderCount++;
-        LastReadValue = UseContext(_context);
+        LastReadValue = UseContext(context);
         return FlexPanel().WithName(LastReadValue ?? "(null)");
     }
 }
@@ -158,15 +114,10 @@ public class ContextConsumerComponent : Component
 /// <summary>
 /// Component with a single int id input. Tracks render count for memo tests.
 /// </summary>
-public class MemoIdComponent : Component
+public class MemoIdComponent(int id = 0) : Component
 {
-    public int Id { get; }
+    public int Id { get; } = id;
     public int RenderCount { get; private set; }
-
-    public MemoIdComponent(int id = 0)
-    {
-        Id = id;
-    }
 
     protected override VNode Render()
     {
@@ -200,21 +151,15 @@ public class NoMemoIdComponent : Component
 /// <summary>
 /// Reads a <see cref="Context{T}"/> value and renders it. Tracks render count for memo tests.
 /// </summary>
-public class MemoContextConsumerComponent : Component
+public class MemoContextConsumerComponent(Context<string> context) : Component
 {
-    private readonly Context<string> _context;
     public string? LastReadValue { get; private set; }
     public int RenderCount { get; private set; }
-
-    public MemoContextConsumerComponent(Context<string> context)
-    {
-        _context = context;
-    }
 
     protected override VNode Render()
     {
         RenderCount++;
-        LastReadValue = UseContext(_context);
+        LastReadValue = UseContext(context);
         return FlexPanel().WithName(LastReadValue ?? "(null)");
     }
 }
@@ -223,20 +168,14 @@ public class MemoContextConsumerComponent : Component
 /// Memoized component that passes a child VNode through without reading context.
 /// Used to test that context changes propagate through memo-skipped intermediates.
 /// </summary>
-public class MemoPassthroughComponent : Component
+public class MemoPassthroughComponent(VNode child) : Component
 {
-    private readonly VNode _child;
     public int RenderCount { get; private set; }
-
-    public MemoPassthroughComponent(VNode child)
-    {
-        _child = child;
-    }
 
     protected override VNode Render()
     {
         RenderCount++;
-        return FlexPanel(children: _child);
+        return FlexPanel(children: child);
     }
 }
 

@@ -224,7 +224,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 // ── Fields for each constructor parameter ────────────────
                 foreach (var p in type.Parameters)
                 {
-                    sb.AppendLine($"private {p.TypeFqn}? _{CamelCase(p.Name)};");
+                    sb.AppendLine($"private {p.TypeFqn} _{CamelCase(p.Name)} = {GetDefaultValueExpr(p)};");
                 }
                 
                 sb.AppendLine();
@@ -276,11 +276,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                             var p = type.Parameters[i];
                             var camel = CamelCase(p.Name);
                             var comma = i < type.Parameters.Count - 1 ? "," : "";
-                            var defaultVal = GetDefaultValueExpr(p);
-                            if (p.IsValueType)
-                                sb.AppendLine($"_{camel}.HasValue ? _{camel}.Value : {defaultVal}{comma}");
-                            else
-                                sb.AppendLine($"_{camel} ?? {defaultVal}{comma}");
+                            sb.AppendLine($"_{camel}{comma}");
                         }
                     }
 
@@ -289,11 +285,37 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
 
                 sb.AppendLine("}");
 
+                // ── InputsEqual override ────────────────────────────────────
+                sb.AppendLine();
+                sb.AppendLine("/// <inheritdoc />");
+                sb.AppendLine("public override bool InputsEqual(ComponentNode otherNode)");
+                sb.AppendLine("{");
+                using (sb.Indent())
+                {
+                    if (type.Parameters.Count == 0)
+                    {
+                        sb.AppendLine($"return otherNode.GetType() == typeof({genericNodeName});");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"if (otherNode is not {genericNodeName} v) return false;");
+                        sb.AppendLine($"if (otherNode.GetType() != typeof({genericNodeName})) return false;");
+                        
+                        for (int i = 0; i < type.Parameters.Count; i++)
+                        {
+                            var p = type.Parameters[i];
+                            sb.AppendLine($"if (!global::System.Collections.Generic.EqualityComparer<{p.TypeFqn}>.Default.Equals(_{CamelCase(p.Name)}, v._{CamelCase(p.Name)})) return false;");
+                        }
+                        
+                        sb.AppendLine("return true;");
+                    }
+                }
+                sb.AppendLine("}");
+                
                 // ── GetInputs override ────────────────────────────────────
                 sb.AppendLine();
                 sb.AppendLine("/// <inheritdoc />");
                 sb.AppendLine("public override object?[] GetInputs() =>");
-                using (sb.Indent())
                 using (sb.Indent())
                 {
                     if (type.Parameters.Count == 0)
@@ -343,8 +365,10 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
         var paramDecls = new List<string>();
         foreach (var p in type.Parameters)
         {
-            var paramType = IsAlreadyNullable(p.TypeFqn) ? p.TypeFqn : $"{p.TypeFqn}?";
-            paramDecls.Add($"{paramType} {CamelCase(p.Name)} = default");
+            if (p.HasDefaultValue)
+                paramDecls.Add($"{p.TypeFqn} {CamelCase(p.Name)} = {GetDefaultValueExpr(p)}");
+            else
+                paramDecls.Add($"{p.TypeFqn} {CamelCase(p.Name)}");
         }
 
         sb.AppendLine();
@@ -368,10 +392,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             {
                 var camel = CamelCase(p.Name);
                 var pascal = PascalCase(p.Name);
-                if (p.IsValueType)
-                    sb.AppendLine($"if ({camel}.HasValue) n.With{pascal}({camel}.Value);");
-                else
-                    sb.AppendLine($"if ({camel} is not null) n.With{pascal}({camel});");
+                sb.AppendLine($"n.With{pascal}({camel});");
             }
             sb.AppendLine();
             sb.AppendLine("return n;");

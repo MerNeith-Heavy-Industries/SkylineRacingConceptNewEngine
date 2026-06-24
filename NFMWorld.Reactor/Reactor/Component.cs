@@ -53,7 +53,7 @@ public abstract class Component
     #region Memoization
 
     private bool _shouldMemo = true;
-    private object?[]? _lastInputs;
+    private ComponentNode? _lastInputCNode;
     private VNode? _cachedVNode;
     private Dictionary<Context, long>? _contextVersionsRead;
     private Dictionary<Context, long>? _lastContextVersions;
@@ -81,11 +81,10 @@ public abstract class Component
     /// </summary>
     internal bool ShouldSkipRender(ComponentNode cnode)
     {
-        if (!_shouldMemo || _lastInputs is null || _cachedVNode is null)
+        if (!_shouldMemo || _lastInputCNode is null || _cachedVNode is null)
             return false;
 
-        var currentInputs = cnode.GetInputs();
-        if (!InputsEqual(_lastInputs, currentInputs))
+        if (!cnode.InputsEqual(_lastInputCNode))
             return false;
 
         // Check context versions
@@ -108,7 +107,7 @@ public abstract class Component
     /// </summary>
     internal void SaveMemoState(ComponentNode cnode, VNode vnode)
     {
-        _lastInputs = cnode.GetInputs();
+        _lastInputCNode = cnode;
 
         if (!_shouldMemo) return;
         _cachedVNode = vnode;
@@ -130,21 +129,8 @@ public abstract class Component
     /// </summary>
     internal bool HasSameInputs(ComponentNode cnode)
     {
-        if (_lastInputs is null) return false;
-        return InputsEqual(_lastInputs, cnode.GetInputs());
-    }
-
-    private static bool InputsEqual(object?[]? a, object?[]? b)
-    {
-        if (a is null) return b is null;
-        if (b is null) return false;
-        if (a.Length != b.Length) return false;
-        for (int i = 0; i < a.Length; i++)
-        {
-            if (!EqualityComparer<object?>.Default.Equals(a[i], b[i]))
-                return false;
-        }
-        return true;
+        if (_lastInputCNode is null) return false;
+        return cnode.InputsEqual(_lastInputCNode);
     }
 
     #endregion
