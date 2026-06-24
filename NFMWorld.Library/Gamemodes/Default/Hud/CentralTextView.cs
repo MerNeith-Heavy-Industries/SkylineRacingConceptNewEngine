@@ -6,13 +6,13 @@ using static NFMWorld.DriverInterface.UI.Nodes;
 namespace NFMWorld.UI.Hud;
 
 /// <summary>
-/// Center-screen text overlay. Reads all state from <see cref="HUDContexts.Hud"/>.
+/// Center-screen text overlay. Reads all state from <see cref="HudState.Context"/>.
 /// </summary>
 public class CentralTextView : Component
 {
     protected override VNode Render()
     {
-        var hud = UseContext(HUDContexts.Hud);
+        var hud = UseContext(HudState.Context);
         return FlexPanel(
             position: YgPositionType.Absolute,
             top: 0f, left: 0f, right: 0f, bottom: 0f,
@@ -22,10 +22,12 @@ public class CentralTextView : Component
                 FlexPanel(alignItems: YgAlign.Center, flex: 1, children:
                     TextRun(
                         opacity: hud.CenterTextOpacity,
-                        color: hud.CenterTextColor,
-                        font: hud.CenterTextFont,
+                        foreground: hud.CenterTextColor,
+                        fontFamily: hud.CenterTextFontFamily,
+                        fontStyle: hud.CenterTextFontStyle,
+                        fontSize: hud.CenterTextFontSize,
                         text: hud.CenterText,
-                        strokeColor: hud.CenterTextStrokeColor,
+                        stroke: hud.CenterTextStrokeColor,
                         display: YgDisplay.Flex
                     )
                 ),

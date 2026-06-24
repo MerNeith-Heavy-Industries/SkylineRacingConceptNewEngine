@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
 using NFMWorld.Sfx;
@@ -137,36 +138,39 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     #region Client
 
     
-    private Stopwatch _raceTimer = new Stopwatch();
+    private Stopwatch _raceTimer = new();
 
     private bool _writtenData;
     
     // demo playback and recording
-    private SavedTimeTrial? _bestTimeTrial = null;
+    private SavedTimeTrial? _bestTimeTrial;
     private int _tick = 0;
     public static bool PlaybackOnReset = true;
-    private SavedTimeTrial currentTimeTrial = null!;
+    private SavedTimeTrial? currentTimeTrial;
     private long _lastCheckpointSplitDiff = 0;
     private long _lastLapSplitDiff = 0;
     private long _lastLapTime = 0;
 
-    private PowerDamageBars _pdBars = new PowerDamageBars();
-
-    private TTLapTimerSplitsView _lapTimerSplits = new TTLapTimerSplitsView();
-
-    private CentralTextView _centralTextNode = new CentralTextView();
     private ushort _lastCurrentCheckpoint;
     private byte _lastLap;
 
+    [ClientOnly]
     public void SetLapText(int currentLap)
     {
-        _lapTimerSplits.DataContext.CurrentLap = currentLap + 1;
-        _lapTimerSplits.DataContext.TotalLaps = currentStage.nlaps;
+        Hud.State = Hud.State with
+        {
+            CurrentLap = currentLap + 1,
+            TotalLaps = currentStage.nlaps
+        };
     }
 
+    [ClientOnly]
     public void SetTimeText()
     {
-        _lapTimerSplits.TimeText.Text = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
+        Hud.State = Hud.State with
+        {
+            TimeText = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}"
+        };
     }
 
     [ClientOnly]
@@ -179,7 +183,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         _bestTimeTrial = null;
         _tick = 0;
 
-        carsInRace[PlayerCarIndex].CarPhysics.PowerUp += Hud.DataContext.EventPowerUp;
+        carsInRace[PlayerCarIndex].CarPhysics.PowerUp += Hud.EventPowerUp;
 
         // ghost
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(players[PlayerCarIndex].CarName, currentStage.Path);
@@ -199,24 +203,79 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
         SetTimeText();
 
-        Hud.DataContext = new HudViewModel();
+        Hud.State = new HudState();
         IBackend.Backend.StopAllSounds();
 
         SetLapText(0);
-        _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.None;
 
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
-        _lapTimerSplits.LapSplitsText.Display = YgDisplay.None;
         _lastLapTime = 0;
-        _lapTimerSplits.LapTimeText.Text = "";
-        _lapTimerSplits.LapTimeText.Display = YgDisplay.None;
     }
 
     [ClientOnly]
     protected void ClientGameTick()
     {
         FrameTrace.AddMessage($"contox: {carsInRace[PlayerCarIndex].Position.X:0.00}, contoz: {carsInRace[PlayerCarIndex].Position.Z:0.00}, contoy: {carsInRace[PlayerCarIndex].Position.Y:0.00}");
+        
+        if (_currentState == TimeTrialState.InProgress)
+        {
+            RenderInfo();
+        }
+        else if (_currentState == TimeTrialState.Countdown)
+        {
+            RenderInfo();
+            
+            Hud.State = Hud.State with
+            {
+                CenterTextOpacity = 1,
+                CenterTextFontFamily = FontFamily.Adventure,
+                CenterTextFontStyle = FontStyle.Bold,
+                CenterTextFontSize = 24,
+                CenterTextColor = new Color(255, 255, 255),
+                CenterTextStrokeColor = new Color(0, 0, 0),
+                CenterText = $"Starting in {_countdownTime}"
+            };
+        }
+        else if (_currentState == TimeTrialState.Finished)
+        {
+            RenderInfo();
+            
+            string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
+            string centerText = $"Finished! Time: {finalTime}";
+
+            bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
+
+            if (newBest)
+                centerText += "\nNew best time!";
+
+            if (_bestTimeTrial != null || newBest)
+            {
+                long bestTimeMs = Math.Min(currentTimeTrial != null ? currentTimeTrial.Splits.SplitTimes[^1] : long.MaxValue, _bestTimeTrial != null ? _bestTimeTrial.Splits.SplitTimes[^1] : long.MaxValue);
+
+                TimeSpan t = TimeSpan.FromMilliseconds(bestTimeMs);
+
+                var time = string.Format(CultureInfo.InvariantCulture, "{0:D2}:{1:D2}:{2:D2}",
+                    t.Minutes,
+                    t.Seconds,
+                    t.Milliseconds);
+
+                centerText += $"\nBest time: {time}";
+            }
+
+            centerText += "\nPress R to restart";
+            
+            Hud.State = Hud.State with
+            {
+                CenterTextOpacity = 1,
+                CenterTextColor = new Color(128, 255, 128),
+                CenterTextStrokeColor = new Color(0, 0, 0),
+                CenterTextFontFamily = FontFamily.DroidSans,
+                CenterTextFontStyle = FontStyle.Bold,
+                CenterTextFontSize = 24,
+                CenterText = centerText,
+            };
+        }
     }
 
     [ClientOnly]
@@ -225,8 +284,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         SetLapText(carsInRace[PlayerCarIndex].currentLap);
         SetTimeText();
 
-        Hud.DataContext.DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag;
-        Hud.DataContext.PowerFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f;
+        Hud.State = Hud.State with
+        {
+            DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag,
+            PowerFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f
+        };
 
         if (_bestTimeTrial != null)
         {
@@ -235,7 +297,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             carsInRace[GhostCarIndex].Drive(gamemodeData.CurrentStage);
         }
 
-        currentTimeTrial.RecordTick(carsInRace[PlayerCarIndex]);
+        currentTimeTrial?.RecordTick(carsInRace[PlayerCarIndex]);
 
         _lastCurrentCheckpoint = carsInRace[PlayerCarIndex].currentCheckpoint;
         _lastLap = carsInRace[PlayerCarIndex].currentLap;
@@ -246,24 +308,24 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     {
         if (carsInRace[PlayerCarIndex].currentCheckpoint != _lastCurrentCheckpoint)
         {
-            if (_bestTimeTrial != null && currentTimeTrial.Splits.SplitTimes.Count > PlayerCarIndex)
+            if (_bestTimeTrial != null && currentTimeTrial != null && currentTimeTrial.Splits.SplitTimes.Count > PlayerCarIndex)
             {
                 _lastCheckpointSplitDiff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
             }
 
             long currentLapSplitDiff = 0;
-            if (_lastLap > 0 && _bestTimeTrial != null)
+            if (_lastLap > 0 && _bestTimeTrial != null && currentTimeTrial != null)
             {
                 currentLapSplitDiff = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, _lastLap) - _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, _lastLap - 1);
             }
 
-            currentTimeTrial.RecordSplit(_raceTimer.ElapsedMilliseconds);
+            currentTimeTrial?.RecordSplit(_raceTimer.ElapsedMilliseconds);
 
             if (_lastLap != carsInRace[PlayerCarIndex].currentLap)
             {
                 // lap changed
                 _lastLapSplitDiff = currentLapSplitDiff;
-                _lastLapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, _lastLap);
+                _lastLapTime = currentTimeTrial?.GetLapTime(currentStage.checkpoints.Count, _lastLap) ?? 0;
             }
 
             SfxLibrary.checkpoint?.Play();
@@ -290,7 +352,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             _writtenData = true;
             if (_bestTimeTrial == null || (currentTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0))
             {
-                currentTimeTrial.Save();
+                currentTimeTrial?.Save();
             }
         }
     }
@@ -303,7 +365,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                Hud.DataContext.CenterTextOpacity = 0;
+                Hud.State = Hud.State with { CenterTextOpacity = 0 };
                 _raceTimer.Start();
             }
         }
@@ -330,103 +392,63 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     [ClientOnly]
     private void RenderInfo()
     {
-        if ((carsInRace[PlayerCarIndex].currentCheckpoint != 0 || carsInRace[PlayerCarIndex].currentLap != 0) && _bestTimeTrial != null)
+        if ((carsInRace[PlayerCarIndex].currentCheckpoint != 0 || carsInRace[PlayerCarIndex].currentLap != 0) && _bestTimeTrial != null && currentTimeTrial != null)
         {
-            _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.Flex;
             long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
-            _lapTimerSplits.CheckpointSplitsText.Color = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+            var checkpointSplitsTextColor = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
             long lastSplitChange = diff - _lastCheckpointSplitDiff;
             string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string thisDiffFmt = FormatTimeMs(diff, true);
-            _lapTimerSplits.CheckpointSplitsText.Text = $"CHK Diff: {thisDiffFmt} ({lastSplitFmt})";
+            Hud.State = Hud.State with
+            {
+                CheckpointSplitsColor = checkpointSplitsTextColor,
+                CheckpointSplitsText = $"{thisDiffFmt} ({lastSplitFmt})"
+            };
         }
         else
         {
-            _lapTimerSplits.CheckpointSplitsText.Display = YgDisplay.None;
+            Hud.State = Hud.State with
+            {
+                CheckpointSplitsColor = null,
+                CheckpointSplitsText = string.Empty
+            };
         }
 
-        if (carsInRace[PlayerCarIndex].currentLap > 0 && _bestTimeTrial != null)
+        if (carsInRace[PlayerCarIndex].currentLap > 0 && _bestTimeTrial != null && currentTimeTrial != null)
         {
-            _lapTimerSplits.LapSplitsText.Display = YgDisplay.Flex;
             long lapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[PlayerCarIndex].currentLap - 1);
             long bestLapTime = _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[PlayerCarIndex].currentLap - 1);
             long lapDiff = lapTime - bestLapTime;
-            _lapTimerSplits.LapSplitsText.Color = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
+            var lapSplitsColor = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
 
             long lastSplitChange = lapDiff - _lastLapSplitDiff;
             string lastLapSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string lapDiffFmt = FormatTimeMs(lapDiff, true);
 
-            _lapTimerSplits.LapSplitsText.Text = $"Lap Diff: {lapDiffFmt} ({lastLapSplitFmt})";
+            Hud.State = Hud.State with
+            {
+                LapSplitsColor = lapSplitsColor,
+                LapSplitsText = $"{lapDiffFmt} ({lastLapSplitFmt})"
+            };
         }
         else
         {
-            _lapTimerSplits.LapSplitsText.Display = YgDisplay.None;
+            Hud.State = Hud.State with
+            {
+                LapSplitsColor = null,
+                LapSplitsText = string.Empty
+            };
         }
 
         if(_lastLapTime > 0)
         {
-            _lapTimerSplits.LapTimeText.Display = YgDisplay.Flex;
-            _lapTimerSplits.LapTimeText.Text = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}";
-        }
-    }
-
-    public override void Render()
-    {
-        base.Render();
-        
-        _pdBars.LayoutAndRender(G.Viewport);
-        _lapTimerSplits.LayoutAndRender(G.Viewport);
-        _centralTextNode.LayoutAndRender(G.Viewport);
-
-        if (_currentState == TimeTrialState.InProgress)
-        {
-            RenderInfo();
-        }
-        else if (_currentState == TimeTrialState.Countdown)
-        {
-            RenderInfo();
-
-            Hud.DataContext.CenterTextOpacity = 1;
-            Hud.DataContext.CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24);
-            Hud.DataContext.CenterTextColor = new Color(255, 255, 255);
-            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            Hud.DataContext.CenterText = $"Starting in {_countdownTime}";
-        }
-        else if (_currentState == TimeTrialState.Finished)
-        {
-            RenderInfo();
-
-            string finalTime = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}";
-            Hud.DataContext.CenterTextOpacity = 1;
-            Hud.DataContext.CenterTextColor = new Color(128, 255, 128);
-            Hud.DataContext.CenterTextStrokeColor = new Color(0, 0, 0);
-            Hud.DataContext.CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24);
-            Hud.DataContext.CenterText = $"Finished! Time: {finalTime}";
-
-            bool newBest = _bestTimeTrial == null || (_bestTimeTrial != null && currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1) < 0);
-
-            if (newBest)
-                Hud.DataContext.CenterText += "\nNew best time!";
-
-            if (_bestTimeTrial != null || newBest)
+            Hud.State = Hud.State with
             {
-                long bestTimeMs = Math.Min(currentTimeTrial.Splits.SplitTimes[^1], _bestTimeTrial != null ? _bestTimeTrial.Splits.SplitTimes[^1] : long.MaxValue);
-
-                TimeSpan t = TimeSpan.FromMilliseconds(bestTimeMs);
-
-                string time = string.Format("{0:D2}:{1:D2}:{2:D2}",
-                    t.Minutes,
-                    t.Seconds,
-                    t.Milliseconds);
-
-                Hud.DataContext.CenterText += $"\nBest time: {time}";
-            }
-
-            Hud.DataContext.CenterText += "\nPress R to restart";
+                LapTimeText = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}"
+            };
         }
     }
 

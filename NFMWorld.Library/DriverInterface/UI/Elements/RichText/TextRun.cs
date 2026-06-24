@@ -29,24 +29,28 @@ public partial class TextRun : Node
     protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     /// <summary>
+    /// Sets the background color of the text.
+    /// </summary>
+    [Property]
+    public Color? Background { get; set; }
+
+    /// <summary>
     /// Sets the fill color of the text. The default value is white.
     /// </summary>
     [Property]
-    public Color Color { get; set; } = new(255, 255, 255);
+    public Color Foreground { get; set; } = new(255, 255, 255);
     
     /// <summary>
     /// Sets the stroke color of the text. Or set to null to disable the stroke.
     /// </summary>
     [Property]
-    public Color? StrokeColor { get; set; }
-    
-    [Property]
-    public TextElement[] Elements { get; set; } = [];
+    public Color? Stroke { get; set; }
 
-    public bool HasComplexContent => Elements.Length > 0;
-
+    /// <summary>
+    /// Gets or sets the font family.
+    /// </summary>
     [Property]
-    public Font Font
+    public FontFamily FontFamily
     {
         get;
         set
@@ -54,7 +58,40 @@ public partial class TextRun : Node
             field = value;
             Invalidate();
         }
-    }
+    } = FontFamily.DroidSans;
+
+    /// <summary>
+    /// Gets or sets the font size.
+    /// </summary>
+    [Property]
+    public float FontSize
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = 12;
+
+    /// <summary>
+    /// Gets or sets the font style.
+    /// </summary>
+    [Property]
+    public FontStyle FontStyle
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = FontStyle.Plain;
+
+    [Property]
+    public TextElement[] Elements { get; set; } = [];
+
+    public bool HasComplexContent => Elements.Length > 0;
 
     [Property]
     public BreakType BreakType
@@ -131,11 +168,12 @@ public partial class TextRun : Node
             flattened = ComplexTextMetrics.FlattenText(Elements.OfType<IRichTextElement>());
         }
         
+        var font = new Font(FontFamily, FontStyle, FontSize);
         if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
         {
-            flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+            flattened = ComplexTextMetrics.LayoutText(font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
         }
-        var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+        var measurements = ComplexTextMetrics.MeasureRichText(flattened, font);
 
         if (OverflowBehavior is OverflowBehavior.Stretch)
         {
@@ -181,8 +219,8 @@ public partial class TextRun : Node
 
         foreach (var element in LaidOutComplexText.Value.Elements)
         {
-            G.SetFont(element.Font with { Size = Font.Size * G.Scale });
-            if (element.Background is { } background)
+            G.SetFont(element.Font with { Size = element.FontSize ?? FontSize * G.Scale });
+            if ((element.Background ?? Background) is { } background)
             {
                 G.SetColor(background);
                 G.FillRect((int)basePosition.X, (int)basePosition.Y, (int)element.Size.X, (int)element.Size.Y);
@@ -201,13 +239,13 @@ public partial class TextRun : Node
             int x = (int)(basePosition.X + (element.Position.X * G.Scale));
             int y = (int)(basePosition.Y + (element.Position.Y * G.Scale) + yOff);
 
-            if ((element.Stroke ?? StrokeColor) is { } stroke)
+            if ((element.Stroke ?? Stroke) is { } stroke)
             {
                 G.SetColor(stroke);
                 G.DrawStringStroke(element.Text, x, y);
             }
             
-            G.SetColor(element.Foreground ?? Color);
+            G.SetColor(element.Foreground ?? Foreground);
             G.DrawString(element.Text, x, y);
         }
     }

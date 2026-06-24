@@ -22,7 +22,6 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Base;
-using WorldXaml.UI.Base.Xaml;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
 using Keys = WorldXaml.UI.Yoga.Events.Keys;
@@ -168,14 +167,6 @@ public class WorldGame : Game
 
 #if USE_BASS
         Bass.Init();
-#endif
-        
-#if DEBUG
-#pragma warning disable IL3050
-#pragma warning disable IL2026
-        XamlHotReload.Initialize(ProjectUtils.TryGetSolutionDirectory());
-#pragma warning restore IL2026
-#pragma warning restore IL3050
 #endif
 
         _oldKeyState = Keys.FromState(Keyboard.GetState());

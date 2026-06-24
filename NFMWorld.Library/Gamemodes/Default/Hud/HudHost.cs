@@ -13,7 +13,7 @@ public class HudHost(HudState state, params VNode[] children) : Component
 {
     protected override VNode Render()
     {
-        ProvideContext(HUDContexts.Hud, state);
+        ProvideContext(HudState.Context, state);
         return View(children: children);
     }
 }

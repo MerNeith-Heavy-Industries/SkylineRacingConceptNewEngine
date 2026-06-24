@@ -25,6 +25,7 @@ public partial class Image : Node
         }
     }
 
+    [Property]
     public float Scale
     {
         get;

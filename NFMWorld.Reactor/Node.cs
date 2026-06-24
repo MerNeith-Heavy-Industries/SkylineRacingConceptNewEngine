@@ -1322,6 +1322,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+        public static implicit operator MeasurementMultiPadding(float value) => All(value);
     }
 
     /// <summary>
