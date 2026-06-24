@@ -29,6 +29,19 @@ public abstract class VisualVNode : VNode
     public VisualVNode WithIsFocusable(bool value) { IsFocusable = value; return this; }
     public VisualVNode WithIsFocused(bool value) { IsFocused = value; return this; }
     
+    /// <summary>
+    /// Creates the native <see cref="Visual"/> type of this <see cref="VNode"/>.
+    /// </summary>
+    /// <returns>The created node.</returns>
     public abstract Visual CreateNative();
+    
+    /// <summary>
+    /// Assigns the properties of this <see cref="VNode"/> to the <see cref="Visual"/>.
+    /// </summary>
+    /// <param name="visual">The visual node</param>
+    /// <param name="propertySnapshot">
+    /// A reference to a property snapshot which will receive the previous values of changed properties. If <c>null</c>,
+    /// a new instance is created. It must have been created with this VNode type.
+    /// </param>
     public abstract void AssignProperties(Visual visual, ref BasePropertySnapshot? propertySnapshot);
 }
