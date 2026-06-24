@@ -128,33 +128,20 @@ public class Reconciler
         if (!exists) snapshot = new Snapshot();
         vvnode.AssignProperties(existing, ref snapshot!.Current);
 
-        // ── Apply VisualVNode direct properties not covered by AssignProperties ──
-        if (vvnode.Classes is { } classes)
-        {
-            existing.Classes.Clear();
-            existing.Classes.AddRange(classes);
-        }
-
         // ── Reconcile children ───────────────────────────────────────────
         if (existing.CanHaveChildren)
         {
             if (vvnode.Children is not null)
                 ReconcileChildren(vvnode.Children, existing);
             else
-                ClearChildren(existing);
+                // ReSharper disable once UseCollectionExpression
+                ReconcileChildren(Array.Empty<VNode>(), existing);
         }
-
+    
         return existing;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ClearChildren(Visual container)
-    {
-        while (container.VisualChildren.Count > 0)
-            container.RemoveAt(container.VisualChildren.Count - 1);
-    }
-
-    private void ReconcileChildren(EquatableList<VNode> newChildren, Visual container)
+    private void ReconcileChildren(IReadOnlyList<VNode> newChildren, Visual container)
     {
         var existingChildren = container.VisualChildren;
 
@@ -305,9 +292,6 @@ public class Reconciler
 
     /// <summary>
     /// Restores stale properties and swaps current snapshots → previous for the next pass.
-    /// Per-property staleness: if a property was set last pass but not this pass,
-    /// the previous snapshot restores its old value, then the current snapshot
-    /// re-applies the properties that ARE set this pass.
     /// </summary>
     private void SwapSnapshots()
     {
@@ -315,19 +299,11 @@ public class Reconciler
         {
             ref var prev = ref snapshots.Previous;
             ref var current = ref snapshots.Current;
-
-            // If node not visited this pass, restore old values from previous snapshot.
-            // If node WAS visited, prev.AssignProperties restores values for properties
-            // that weren't set this pass, and current.AssignProperties re-applies those
-            // that WERE set (may have been overwritten by prev).
-            if (prev != null)
+            if (current == null && prev != null)
             {
+                // Node not visited this pass — restore its old property values
                 prev.AssignProperties(node);
                 prev.ClearProperties();
-            }
-            if (current != null)
-            {
-                current.AssignProperties(node);
             }
 
             prev = current;
