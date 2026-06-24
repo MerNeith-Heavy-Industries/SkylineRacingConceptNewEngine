@@ -212,48 +212,86 @@ public class ReconcilerCoreTests
     // ════════════════════════════════════════════════════════════════════
 
     [TestMethod]
-    public void PropertyRestoration_StalePropertyResetToDefault()
+    public void PropertyRestoration_StalePropertyResetsToDefault()
     {
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        // First render: set Visibility to Hidden
-        var vnode1 = FlexPanel(name: "Test", visibility: Visibility.Hidden);
-        var root = reconciler.Reconcile(vnode1, container, null);
-        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)root).Visibility);
+        var vnode1 = FlexPanel(visibility: Visibility.Hidden);
+        var root = (FlexPanel)reconciler.Reconcile(vnode1, container, null);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility);
 
-        // Second render: same element, Visibility NOT set.
-        // Per-property staleness is not yet implemented — the snapshot system
-        // only restores properties when a node is removed entirely.
-        // So Visibility stays Hidden (from first render).
-        var vnode2 = FlexPanel(name: "Test");
+        // Second render: Visibility NOT set → should reset to default
+        var vnode2 = FlexPanel();
         reconciler.Reconcile(vnode2, container, root);
-        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)root).Visibility,
-            "Per-property staleness not yet implemented — stale property value persists");
+        Assert.AreEqual(Visibility.Visible, root.Visibility,
+            "Stale property should reset to default (Visible) when omitted");
     }
 
     [TestMethod]
-    public void PropertyRestoration_RemovedNode_PropertiesRestored()
+    public void PropertyRestoration_MultipleStalePropertiesReset()
     {
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        // First render: set Visibility to Hidden on the child
+        var vnode1 = FlexPanel(
+            visibility: Visibility.Hidden,
+            opacity: 0.3f,
+            flexDirection: YgFlexDirection.Column
+        );
+        var root = (FlexPanel)reconciler.Reconcile(vnode1, container, null);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility);
+        Assert.AreEqual(0.3f, root.Opacity, 0.001f);
+        Assert.AreEqual(YgFlexDirection.Column, root.FlexDirection);
+
+        var vnode2 = FlexPanel();
+        reconciler.Reconcile(vnode2, container, root);
+        Assert.AreEqual(Visibility.Visible, root.Visibility);
+        Assert.AreEqual(1.0f, root.Opacity, 0.001f, "Stale Opacity should reset to 1.0");
+        Assert.AreEqual(YgFlexDirection.Row, root.FlexDirection, "Stale FlexDirection should reset to Row");
+    }
+
+    [TestMethod]
+    public void PropertyRestoration_OneStaleOneFresh()
+    {
+        var container = new FlexPanel();
+        var reconciler = new Reconciler();
+
+        var vnode1 = FlexPanel(
+            visibility: Visibility.Hidden,
+            flexDirection: YgFlexDirection.Column
+        );
+        var root = (FlexPanel)reconciler.Reconcile(vnode1, container, null);
+
+        // Only set FlexDirection this pass; Visibility should reset
+        var vnode2 = FlexPanel(flexDirection: YgFlexDirection.ColumnReverse);
+        reconciler.Reconcile(vnode2, container, root);
+
+        Assert.AreEqual(Visibility.Visible, root.Visibility,
+            "Stale Visibility should reset to Visible");
+        Assert.AreEqual(YgFlexDirection.ColumnReverse, root.FlexDirection,
+            "Fresh FlexDirection should update");
+    }
+
+    [TestMethod]
+    public void PropertyRestoration_RemovedNode_RestoresOldValues()
+    {
+        var container = new FlexPanel();
+        var reconciler = new Reconciler();
+
         var vnode1 = FlexPanel(children:
             FlexPanel(name: "Child", visibility: Visibility.Hidden)
         );
-        var root = reconciler.Reconcile(vnode1, container, null);
-        var firstChild = (FlexPanel)((FlexPanel)root).Children[0];
-        Assert.AreEqual(Visibility.Hidden, firstChild.Visibility);
+        var root = (FlexPanel)reconciler.Reconcile(vnode1, container, null);
+        var child = (FlexPanel)root.Children[0];
+        Assert.AreEqual(Visibility.Hidden, child.Visibility);
 
-        // Second render: child removed — snapshot system restores its old properties
-        // (restoration on removed nodes is the current behavior)
         var vnode2 = FlexPanel(children:
             FlexPanel(name: "Replacement")
         );
         reconciler.Reconcile(vnode2, container, root);
-        Assert.HasCount(1, ((FlexPanel)root).Children);
-        Assert.AreEqual("Replacement", ((FlexPanel)root).Children[0].Name);
+        Assert.HasCount(1, root.Children);
+        Assert.AreEqual("Replacement", root.Children[0].Name);
     }
 
     [TestMethod]
@@ -262,15 +300,14 @@ public class ReconcilerCoreTests
         var container = new FlexPanel();
         var reconciler = new Reconciler();
 
-        // First render
-        var vnode1 = FlexPanel(visibility: Visibility.Hidden, name: "Keep");
-        var root = reconciler.Reconcile(vnode1, container, null);
-        var flexPanel = (FlexPanel)root;
+        var vnode1 = FlexPanel(visibility: Visibility.Hidden);
+        var root = (FlexPanel)reconciler.Reconcile(vnode1, container, null);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility);
 
-        // Second render: same visibility specified again — should stay
-        var vnode2 = FlexPanel(visibility: Visibility.Hidden, name: "Keep");
+        var vnode2 = FlexPanel(visibility: Visibility.Hidden);
         reconciler.Reconcile(vnode2, container, root);
-        Assert.AreEqual(Visibility.Hidden, flexPanel.Visibility, "Visibility should persist when set in both renders");
+        Assert.AreEqual(Visibility.Hidden, root.Visibility,
+            "Property should persist when set in both renders");
     }
 
     [TestMethod]

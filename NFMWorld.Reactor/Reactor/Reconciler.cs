@@ -126,6 +126,17 @@ public class Reconciler
         // ── Apply properties via the snapshot system ─────────────────────
         ref var snapshot = ref CollectionsMarshal.GetValueRefOrAddDefault(_snapshots, existing, out var exists);
         if (!exists) snapshot = new Snapshot();
+
+        // Restore stale properties from previous pass BEFORE applying current values.
+        // prev.AssignProperties resets all properties to their pre-last-pass state;
+        // AssignProperties then overwrites only the properties set this pass.
+        // Properties not set this pass keep their restored (default) values.
+        if (snapshot.Previous != null)
+        {
+            snapshot.Previous.AssignProperties(existing);
+            snapshot.Previous.ClearProperties();
+        }
+
         vvnode.AssignProperties(existing, ref snapshot!.Current);
 
         // ── Reconcile children ───────────────────────────────────────────
@@ -291,7 +302,9 @@ public class Reconciler
     }
 
     /// <summary>
-    /// Restores stale properties and swaps current snapshots → previous for the next pass.
+    /// Rotates current snapshots → previous for the next pass.
+    /// Per-property staleness is handled in <see cref="ReconcileVisualNode"/>
+    /// before <see cref="VisualVNode.AssignProperties"/> is called.
     /// </summary>
     private void SwapSnapshots()
     {
@@ -299,26 +312,16 @@ public class Reconciler
         {
             ref var prev = ref snapshots.Previous;
             ref var current = ref snapshots.Current;
-            if (current == null && prev != null)
-            {
-                // Node not visited this pass — restore its old property values
-                prev.AssignProperties(node);
-                prev.ClearProperties();
-            }
 
             prev = current;
             current = null;
 
             if (prev == null)
-            {
                 _snapshotKeysToRemove.Add(node);
-            }
         }
         
         foreach (var visual in _snapshotKeysToRemove)
-        {
             _snapshots.Remove(visual);
-        }
 
         _snapshotKeysToRemove.Clear();
     }
