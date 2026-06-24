@@ -359,9 +359,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             // Generate With* for all hierarchy properties (deduplicated by name)
             foreach (var prop in type.Properties)
             {
-                if (!prop.IsDeclared) continue;
                 var camelName = CamelCase(prop.Name);
-                sb.AppendLine($"public {nodeName} With{prop.Name}({prop.TypeFqn} value) {{ _{camelName} = value; return this; }}");
+                sb.AppendLine($"public {(!prop.IsDeclared ? "new " : "")}{nodeName} With{prop.Name}({prop.TypeFqn} value) {{ _{camelName} = value; return this; }}");
             }
 
             // Build set of With* names from properties to avoid shadow conflicts
