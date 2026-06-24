@@ -39,64 +39,51 @@ public partial class TextInput : TextRun
 
     // ── Styled properties ──────────────────────────────────────────
 
-    [Property(DefaultValueMember = nameof(DefaultBorderColor))]
-    public partial Color BorderColor { get; set; }
-    private static partial Color DefaultBorderColor => new(255, 255, 255, 255);
-
-    [Property(DefaultValueMember = nameof(DefaultBackgroundColor))]
-    public partial Color BackgroundColor { get; set; }
-    private static partial Color DefaultBackgroundColor => new(20, 20, 30, 255);
-
-    [Property(DefaultValueMember = nameof(DefaultCursorColor))]
-    public partial Color CursorColor { get; set; }
-    private static partial Color DefaultCursorColor => new(255, 255, 255, 255);
-
-    [Property(DefaultValueMember = nameof(DefaultSelectionColor))]
-    public partial Color SelectionColor { get; set; }
-    private static partial Color DefaultSelectionColor => new(100, 180, 255, 128);
-
-    [Property(DefaultValueMember = nameof(DefaultPlaceholderColor))]
-    public partial Color PlaceholderColor { get; set; }
-    private static partial Color DefaultPlaceholderColor => new(128, 128, 128, 255);
+    [Property]
+    public Color BorderColor { get; set; } = new(255, 255, 255, 255);
 
     [Property]
-    public partial int BorderTopLeftRadius { get; set; }
+    public Color BackgroundColor { get; set; } = new(20, 20, 30, 255);
+
     [Property]
-    public partial int BorderTopRightRadius { get; set; }
+    public Color CursorColor { get; set; } = new(255, 255, 255, 255);
+
     [Property]
-    public partial int BorderBottomLeftRadius { get; set; }
+    public Color SelectionColor { get; set; } = new(100, 180, 255, 128);
+
     [Property]
-    public partial int BorderBottomRightRadius { get; set; }
+    public Color PlaceholderColor { get; set; } = new(128, 128, 128, 255);
+
+    [Property]
+    public int BorderTopLeftRadius { get; set; }
+    [Property]
+    public int BorderTopRightRadius { get; set; }
+    [Property]
+    public int BorderBottomLeftRadius { get; set; }
+    [Property]
+    public int BorderBottomRightRadius { get; set; }
 
     /// <summary>
     /// Placeholder text shown when <see cref="TextRun.Text"/> is empty and the input is not focused.
     /// </summary>
-    [Property(DefaultValueMember = nameof(DefaultPlaceholder))]
-    public partial string Placeholder { get; set; }
-    private static partial string DefaultPlaceholder => "";
+    [Property]
+    public string Placeholder { get; set; } = "";
 
     /// <summary>
     /// Raised when the user presses Enter. The current <see cref="TextRun.Text"/> is passed as the argument.
     /// </summary>
     [Property]
-    public partial Action<string>? Submitted { get; set; }
+    public Action<string>? Submitted { get; set; }
 
     public TextInput()
     {
         IsFocusable = true;
-        // Single-line; TextRun defaults work well.
-
-        // React to text changes from the base TextRun.Text property
-        PropertyChanged += OnTextPropertyChanged;
     }
 
     // ── Property change handlers ───────────────────────────────────
 
-    private void OnTextPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    protected override void OnInvalidated()
     {
-        if (e.PropertyName != nameof(Text))
-            return;
-
         var len = (Text ?? "").Length;
         if (_cursorIndex > len)
             _cursorIndex = len;

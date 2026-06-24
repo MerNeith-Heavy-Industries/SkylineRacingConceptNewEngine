@@ -31,79 +31,84 @@ public partial class TextRun : Node
     /// <summary>
     /// Sets the fill color of the text. The default value is white.
     /// </summary>
-    [Property(DefaultValueMember = nameof(DefaultColor))]
-    public partial Color Color { get; set; }
-    
-    private static partial Color DefaultColor => new(255, 255, 255);
+    [Property]
+    public Color Color { get; set; } = new(255, 255, 255);
     
     /// <summary>
     /// Sets the stroke color of the text. Or set to null to disable the stroke.
     /// </summary>
     [Property]
-    public partial Color? StrokeColor { get; set; }
+    public Color? StrokeColor { get; set; }
     
     [Property]
-    public partial List<TextElement>? Elements { get; set; }
+    public TextElement[] Elements { get; set; } = [];
 
-    [MemberNotNullWhen(true, nameof(Elements))]
-    public bool HasComplexContent => Elements is { Count: > 0 };
+    public bool HasComplexContent => Elements.Length > 0;
 
-    [Property(OnChangedMethod = nameof(OnFontChanged))]
-    public partial Font Font { get; set; }
+    [Property]
+    public Font Font
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    }
 
-    [Property(DefaultValue = BreakType.Word, OnChangedMethod = nameof(OnBreakTypeChanged))]
-    public partial BreakType BreakType { get; set; }
+    [Property]
+    public BreakType BreakType
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = BreakType.Word;
 
-    [Property(DefaultValue = OverflowBehavior.Stretch, OnChangedMethod = nameof(OnOverflowBehaviorChanged))]
-    public partial OverflowBehavior OverflowBehavior { get; set; }
+    [Property]
+    public OverflowBehavior OverflowBehavior
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = OverflowBehavior.Stretch;
 
     /// <summary>
     /// Sets the text.
     /// </summary>
-    [Property(DefaultValue = "", OnChangedMethod = nameof(OnTextChanged))]
-    public partial string? Text { get; set; }
+    [Property]
+    public string? Text
+    {
+        get;
+        set
+        {
+            field = value;
+            
+            if (HasComplexContent)
+            {
+                Elements = [];
+            }
+
+            Invalidate();
+        }
+    } = "";
 
     /// <summary>
     /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
     /// </summary>
-    [Property(DefaultValue = TextHorizontalAlignment.Left)]
-    public partial TextHorizontalAlignment HorizontalAlignment { get; set; }
+    [Property]
+    public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
 
     /// <summary>
     /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
     /// </summary>
-    [Property(DefaultValue = TextVerticalAlignment.Top)]
-    public partial TextVerticalAlignment VerticalAlignment { get; set; }
-
-    private partial void OnBreakTypeChanged(BreakType prop)
-    {
-        Invalidate();
-    }
-
-    private partial void OnOverflowBehaviorChanged(OverflowBehavior prop)
-    {
-        Invalidate();
-    }
-
-    private partial void OnFontChanged(Font newFont)
-    {
-        Invalidate();
-    }
-    
-    public TextRun()
-    {
-        Elements = [];
-    }
-    
-    private partial void OnTextChanged(string? newText)
-    {
-        if (HasComplexContent && !_clearTextInternal)
-        {
-            Elements.Clear();
-        }
-
-        Invalidate();
-    }
+    [Property]
+    public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
 
     [ClientOnly]
     protected void RelayoutText(Vector2 size)
@@ -143,6 +148,10 @@ public partial class TextRun : Node
         _invalidated = false;
     }
 
+    protected virtual void OnInvalidated()
+    {
+    }
+
     [ClientOnly]
     protected override void RenderContent(Vector2 position, Vector2 size)
     {
@@ -156,6 +165,7 @@ public partial class TextRun : Node
         
         if (_invalidated)
         {
+            OnInvalidated();
             RelayoutText(size);
         }
 
@@ -206,20 +216,5 @@ public partial class TextRun : Node
     public void Invalidate()
     {
         _invalidated = true;
-    }
-
-
-    private bool _clearTextInternal;
-    internal void ClearTextInternal()
-    {
-        _clearTextInternal = true;
-        try
-        {
-            Text = null;
-        }
-        finally
-        {
-            _clearTextInternal = false;
-        }
     }
 }

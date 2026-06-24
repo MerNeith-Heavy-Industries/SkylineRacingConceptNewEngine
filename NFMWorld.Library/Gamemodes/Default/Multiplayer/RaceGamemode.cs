@@ -7,6 +7,7 @@ using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Util;
+using static NFMWorldLibrary.DriverInterface.UI.Elements.Nodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -231,6 +232,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
 
         Hud.State = new HudState(CurrentLap: 1, TotalLaps: currentStage.nlaps);
         IBackend.Backend.StopAllSounds();
+
+        Hud.SetElements(LapTimerSplitsView(), CentralTextView(), PowerDamageBars());
     }
 
     [ClientOnly]

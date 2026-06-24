@@ -5,15 +5,14 @@ namespace NFMWorld.DriverInterface.UI;
 
 public partial class MeasureBar : Image
 {
-    [Property(DefaultValueMember = nameof(DefaultColor))]
-    public partial Color Color { get; set; }
-    private static partial Color DefaultColor => new Color(255, 255, 255);
+    [Property]
+    public Color Color { get; set; } = new Color(255, 255, 255);
     
     /// <summary>
     /// 1f = full, 0f = empty
     /// </summary>
     [Property]
-    public partial float FillAmount { get; set; }
+    public float FillAmount { get; set; }
 
     protected override void RenderContent(Vector2 position, Vector2 size)
     {

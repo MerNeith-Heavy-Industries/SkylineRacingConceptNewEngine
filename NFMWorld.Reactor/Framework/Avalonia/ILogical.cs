@@ -8,11 +8,10 @@ namespace WorldXaml.UI;
 /// <param name="root">The root of the logical tree.</param>
 /// <param name="source">The control being attached/detached.</param>
 /// <param name="parent">The <see cref="Parent"/>.</param>
-public class VisualTreeAttachmentEventArgs(
+public readonly struct VisualTreeAttachmentEventArgs(
     IVisualRoot root,
     Visual source,
     Visual? parent)
-    : EventArgs
  {
     /// <summary>
     /// Gets the root of the logical tree that the control is being attached to or detached from.
