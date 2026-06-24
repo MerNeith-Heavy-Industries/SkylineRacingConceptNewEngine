@@ -81,7 +81,7 @@ public class Style
         // Class check
         if (Classes.Count > 0)
         {
-            var elementClasses = element.Classes;
+            var elementClasses = element.ClassList;
             foreach (var c in Classes)
             {
                 if (!elementClasses.Contains(c))

@@ -13,7 +13,6 @@ public abstract class VisualVNode : VNode
     public abstract Type NodeType { get; }
 
     public EquatableList<VNode>? Children { get; set; }
-    public string? Classes { get; set; }
 
     public sealed override object? Key
     {
@@ -21,8 +20,15 @@ public abstract class VisualVNode : VNode
         set => _key = value;
     }
 
+    public string? Name
+    {
+        get => _name;
+        set => _name = value;
+    }
+
     // Do not rename (source generator uses it)
     // ReSharper disable InconsistentNaming
+    protected string? _classes;
     protected object? _key;
     protected string? _name;
     protected int? _tabOrder;
@@ -32,7 +38,7 @@ public abstract class VisualVNode : VNode
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
 
-    public VisualVNode WithClasses(string? c) { Classes = c; return this; }
+    public VisualVNode WithClasses(string? c) { _classes = c; return this; }
     public VisualVNode WithName(string? n) { _name = n; return this; }
     public new VisualVNode WithKey(object? value) { Key = value; return this; }
     public VisualVNode WithTabOrder(int value) { _tabOrder = value; return this; }
