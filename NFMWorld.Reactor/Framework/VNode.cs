@@ -9,7 +9,7 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public abstract class VNode
 {
-    public object? Key { get; set; }
+    public abstract object? Key { get; set; }
 
     // ── Shared fluent builder ───────────────────────────────────────────
 

@@ -8,6 +8,8 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public abstract class ComponentNode : VNode
 {
+    public sealed override object? Key { get; set; }
+
     /// <summary>The component <see cref="Type"/> to instantiate. Must extend <see cref="Component"/>.</summary>
     public abstract Type ComponentType { get; }
 

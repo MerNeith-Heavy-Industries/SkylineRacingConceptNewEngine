@@ -14,20 +14,30 @@ public abstract class VisualVNode : VNode
 
     public EquatableList<VNode>? Children { get; set; }
     public string? Classes { get; set; }
-    public string? Name { get; set; }
-    
-    public int TabOrder { get; set; }
-    public bool IsFocusable { get; set; }
-    public bool IsFocused { get; set; }
+
+    public sealed override object? Key
+    {
+        get => _key;
+        set => _key = value;
+    }
+
+    // Do not rename (source generator uses it)
+    // ReSharper disable InconsistentNaming
+    protected object? _key;
+    protected string? _name;
+    protected int? _tabOrder;
+    protected bool? _isFocusable;
+    protected bool? _isFocused;
+    // ReSharper restore InconsistentNaming
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
 
     public VisualVNode WithClasses(string? c) { Classes = c; return this; }
-    public VisualVNode WithName(string? n) { Name = n; return this; }
+    public VisualVNode WithName(string? n) { _name = n; return this; }
     public new VisualVNode WithKey(object? value) { Key = value; return this; }
-    public VisualVNode WithTabOrder(int value) { TabOrder = value; return this; }
-    public VisualVNode WithIsFocusable(bool value) { IsFocusable = value; return this; }
-    public VisualVNode WithIsFocused(bool value) { IsFocused = value; return this; }
+    public VisualVNode WithTabOrder(int value) { _tabOrder = value; return this; }
+    public VisualVNode WithIsFocusable(bool value) { _isFocusable = value; return this; }
+    public VisualVNode WithIsFocused(bool value) { _isFocused = value; return this; }
     
     /// <summary>
     /// Creates the native <see cref="Visual"/> type of this <see cref="VNode"/>.
