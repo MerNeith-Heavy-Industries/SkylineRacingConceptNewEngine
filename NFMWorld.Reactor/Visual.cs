@@ -89,22 +89,10 @@ public abstract partial class Visual : IStyleNode, INamed
         get;
         set
         {
-            if (field is not null)
-            {
-                field.AttachedToVisualTree -= OnAttachedToVisualTreeCore;
-                field.DetachedFromVisualTree -= OnDetachedFromVisualTreeCore;
-            }
-
             if (!Equals(field, value))
             {
                 field = value;
                 OnParentChanged();
-
-                if (value is not null)
-                {
-                    value.AttachedToVisualTree += OnAttachedToVisualTreeCore;
-                    value.DetachedFromVisualTree += OnDetachedFromVisualTreeCore;
-                }
             }
         }
     }
