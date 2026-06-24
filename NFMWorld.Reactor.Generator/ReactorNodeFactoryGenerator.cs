@@ -339,12 +339,13 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             
             foreach (var prop in type.Properties)
             {
+                if (!prop.IsDeclared) continue;
                 var camelName = CamelCase(prop.Name);
                 var pascalName = PascalCase(prop.Name);
                 // If the type is already nullable (e.g. "float?"), use it as-is.
                 // Otherwise append "?" to make it optional.
                 var propType = IsAlreadyNullable(prop.TypeFqn) ? prop.TypeFqn : $"{prop.TypeFqn}?";
-                sb.AppendLine($"private {propType} _{camelName} = default;");
+                sb.AppendLine($"protected {propType} _{camelName} = default;");
             }
             sb.AppendLine();
 
