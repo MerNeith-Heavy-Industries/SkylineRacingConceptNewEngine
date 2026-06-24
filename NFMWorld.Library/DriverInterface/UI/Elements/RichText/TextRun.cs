@@ -29,81 +29,123 @@ public partial class TextRun : Node
     protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     /// <summary>
+    /// Sets the background color of the text.
+    /// </summary>
+    [Property]
+    public Color? Background { get; set; }
+
+    /// <summary>
     /// Sets the fill color of the text. The default value is white.
     /// </summary>
-    [Property(DefaultValueMember = nameof(DefaultColor))]
-    public partial Color Color { get; set; }
-    
-    private static partial Color DefaultColor => new(255, 255, 255);
+    [Property]
+    public Color Foreground { get; set; } = new(255, 255, 255);
     
     /// <summary>
     /// Sets the stroke color of the text. Or set to null to disable the stroke.
     /// </summary>
     [Property]
-    public partial Color? StrokeColor { get; set; }
-    
+    public Color? Stroke { get; set; }
+
+    /// <summary>
+    /// Gets or sets the font family.
+    /// </summary>
     [Property]
-    public partial List<TextElement>? Elements { get; set; }
+    public FontFamily FontFamily
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = FontFamily.DroidSans;
 
-    [MemberNotNullWhen(true, nameof(Elements))]
-    public bool HasComplexContent => Elements is { Count: > 0 };
+    /// <summary>
+    /// Gets or sets the font size.
+    /// </summary>
+    [Property]
+    public float FontSize
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = 12;
 
-    [Property(OnChangedMethod = nameof(OnFontChanged))]
-    public partial Font Font { get; set; }
+    /// <summary>
+    /// Gets or sets the font style.
+    /// </summary>
+    [Property]
+    public FontStyle FontStyle
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = FontStyle.Plain;
 
-    [Property(DefaultValue = BreakType.Word, OnChangedMethod = nameof(OnBreakTypeChanged))]
-    public partial BreakType BreakType { get; set; }
+    [Property]
+    public TextElement[] Elements { get; set; } = [];
 
-    [Property(DefaultValue = OverflowBehavior.Stretch, OnChangedMethod = nameof(OnOverflowBehaviorChanged))]
-    public partial OverflowBehavior OverflowBehavior { get; set; }
+    public bool HasComplexContent => Elements.Length > 0;
+
+    [Property]
+    public BreakType BreakType
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = BreakType.Word;
+
+    [Property]
+    public OverflowBehavior OverflowBehavior
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = OverflowBehavior.Stretch;
 
     /// <summary>
     /// Sets the text.
     /// </summary>
-    [Property(DefaultValue = "", OnChangedMethod = nameof(OnTextChanged))]
-    public partial string? Text { get; set; }
+    [Property]
+    public string? Text
+    {
+        get;
+        set
+        {
+            field = value;
+            
+            if (HasComplexContent)
+            {
+                Elements = [];
+            }
+
+            Invalidate();
+        }
+    } = "";
 
     /// <summary>
     /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
     /// </summary>
-    [Property(DefaultValue = TextHorizontalAlignment.Left)]
-    public partial TextHorizontalAlignment HorizontalAlignment { get; set; }
+    [Property]
+    public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
 
     /// <summary>
     /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
     /// </summary>
-    [Property(DefaultValue = TextVerticalAlignment.Top)]
-    public partial TextVerticalAlignment VerticalAlignment { get; set; }
-
-    private partial void OnBreakTypeChanged(BreakType prop)
-    {
-        Invalidate();
-    }
-
-    private partial void OnOverflowBehaviorChanged(OverflowBehavior prop)
-    {
-        Invalidate();
-    }
-
-    private partial void OnFontChanged(Font newFont)
-    {
-        Invalidate();
-    }
-    
-    public TextRun()
-    {
-        Elements = [];
-    }
-    
-    private partial void OnTextChanged(string? newText)
-    {
-        if (HasComplexContent && !_clearTextInternal)
-        {
-            Elements.Clear();
-        }
-
-        Invalidate();
-    }
+    [Property]
+    public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
 
     [ClientOnly]
     protected void RelayoutText(Vector2 size)
@@ -126,11 +168,12 @@ public partial class TextRun : Node
             flattened = ComplexTextMetrics.FlattenText(Elements.OfType<IRichTextElement>());
         }
         
+        var font = new Font(FontFamily, FontStyle, FontSize);
         if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
         {
-            flattened = ComplexTextMetrics.LayoutText(Font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+            flattened = ComplexTextMetrics.LayoutText(font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
         }
-        var measurements = ComplexTextMetrics.MeasureRichText(flattened, Font);
+        var measurements = ComplexTextMetrics.MeasureRichText(flattened, font);
 
         if (OverflowBehavior is OverflowBehavior.Stretch)
         {
@@ -141,6 +184,10 @@ public partial class TextRun : Node
         LaidOutComplexText = measurements;
 
         _invalidated = false;
+    }
+
+    protected virtual void OnInvalidated()
+    {
     }
 
     [ClientOnly]
@@ -156,6 +203,7 @@ public partial class TextRun : Node
         
         if (_invalidated)
         {
+            OnInvalidated();
             RelayoutText(size);
         }
 
@@ -171,8 +219,8 @@ public partial class TextRun : Node
 
         foreach (var element in LaidOutComplexText.Value.Elements)
         {
-            G.SetFont(element.Font with { Size = Font.Size * G.Scale });
-            if (element.Background is { } background)
+            G.SetFont(element.Font with { Size = element.FontSize ?? FontSize * G.Scale });
+            if ((element.Background ?? Background) is { } background)
             {
                 G.SetColor(background);
                 G.FillRect((int)basePosition.X, (int)basePosition.Y, (int)element.Size.X, (int)element.Size.Y);
@@ -191,13 +239,13 @@ public partial class TextRun : Node
             int x = (int)(basePosition.X + (element.Position.X * G.Scale));
             int y = (int)(basePosition.Y + (element.Position.Y * G.Scale) + yOff);
 
-            if ((element.Stroke ?? StrokeColor) is { } stroke)
+            if ((element.Stroke ?? Stroke) is { } stroke)
             {
                 G.SetColor(stroke);
                 G.DrawStringStroke(element.Text, x, y);
             }
             
-            G.SetColor(element.Foreground ?? Color);
+            G.SetColor(element.Foreground ?? Foreground);
             G.DrawString(element.Text, x, y);
         }
     }
@@ -206,20 +254,5 @@ public partial class TextRun : Node
     public void Invalidate()
     {
         _invalidated = true;
-    }
-
-
-    private bool _clearTextInternal;
-    internal void ClearTextInternal()
-    {
-        _clearTextInternal = true;
-        try
-        {
-            Text = null;
-        }
-        finally
-        {
-            _clearTextInternal = false;
-        }
     }
 }

@@ -473,7 +473,8 @@ public partial class TextInput : TextRun
         // Draw placeholder when empty and not focused
         if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
         {
-            G.SetFont(Font);
+            var font = new Font(FontFamily, FontStyle, FontSize);
+            G.SetFont(font);
             G.SetColor(PlaceholderColor);
             G.DrawString(Placeholder, (int)position.X, (int)position.Y);
             return;

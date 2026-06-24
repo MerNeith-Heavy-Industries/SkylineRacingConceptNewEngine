@@ -6,13 +6,13 @@ using static NFMWorld.DriverInterface.UI.Nodes;
 namespace NFMWorld.UI.Hud;
 
 /// <summary>
-/// Power and damage meter bars. Reads state from <see cref="HUDContexts.Hud"/>.
+/// Power and damage meter bars. Reads state from <see cref="HudState.Context"/>.
 /// </summary>
 public class PowerDamageBars : Component
 {
     protected override VNode Render()
     {
-        var hud = UseContext(HUDContexts.Hud);
+        var hud = UseContext(HudState.Context);
         return FlexPanel(
             position: YgPositionType.Absolute,
             top: 0f, right: 0f,

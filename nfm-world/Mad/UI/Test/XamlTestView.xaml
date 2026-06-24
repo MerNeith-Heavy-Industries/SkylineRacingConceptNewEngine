@@ -176,7 +176,7 @@ It should wrap as intended.</w:TextRun>
         <framework:Color x:Key="AccentColor">255,140,0,255</framework:Color>
         <Style Selector="w|TextRun.h1">
             <Setter Property="Font" Value="bold 32px Adventure" />
-            <Setter Property="Color" Value="{StaticResource AccentColor}" />
+            <Setter Property="Foreground" Value="{StaticResource AccentColor}" />
         </Style>
     </View.Styles>
 

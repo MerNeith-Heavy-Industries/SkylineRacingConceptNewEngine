@@ -265,7 +265,9 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             {
                 CenterTextOpacity = 1,
                 CenterText = $"Starting in {_countdownTime}",
-                CenterTextFont = new Font(FontFamily.Adventure, FontStyle.Bold, 24),
+                CenterTextFontFamily = FontFamily.Adventure,
+                CenterTextFontStyle = FontStyle.Bold,
+                CenterTextFontSize = 24,
                 CenterTextColor = new Color(255, 255, 255),
                 CenterTextStrokeColor = new Color(0, 0, 0)
             };
@@ -276,7 +278,9 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             {
                 CenterTextOpacity = 1,
                 CenterText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}\nPress R to restart",
-                CenterTextFont = new Font(FontFamily.DroidSans, FontStyle.Bold, 24),
+                CenterTextFontFamily = FontFamily.DroidSans,
+                CenterTextFontStyle = FontStyle.Bold,
+                CenterTextFontSize = 24,
                 CenterTextColor = new Color(128, 255, 128),
                 CenterTextStrokeColor = new Color(0, 0, 0)
             };

@@ -1,7 +1,7 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.UI;
 
-namespace NFMWorldLibrary.DriverInterface.UI.Elements;
+namespace NFMWorld.DriverInterface.UI;
 
 public static partial class Nodes
 {
