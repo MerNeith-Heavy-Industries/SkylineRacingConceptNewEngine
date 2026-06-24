@@ -47,7 +47,106 @@ public abstract class Component
     /// True after the first render has completed.
     /// </summary>
     public bool IsMounted => _mounted;
-    
+
+    #endregion
+
+    #region Memoization
+
+    private bool _shouldMemo = true;
+    private object?[]? _lastInputs;
+    private VNode? _cachedVNode;
+    private Dictionary<Context, long>? _contextVersionsRead;
+    private Dictionary<Context, long>? _lastContextVersions;
+
+    /// <summary>
+    /// Disable memoization for this component. When memo is enabled (the default),
+    /// the component skips <see cref="Render"/> and reuses the previous VNode tree if:
+    /// <list type="number">
+    /// <item>Constructor arguments (inputs) haven't changed (reference equality).</item>
+    /// <item>Context values read via <see cref="UseContext{T}"/> haven't changed
+    /// (tracked by <see cref="Context{T}.Version"/>).</item>
+    /// </list>
+    /// Call this from the constructor to opt out of memoization.
+    /// State changes via <see cref="UseState{T}"/> always trigger a re-render
+    /// regardless of memo.
+    /// </summary>
+    protected void DisableMemo()
+    {
+        _shouldMemo = false;
+    }
+
+    /// <summary>
+    /// True if memoization is enabled and inputs haven't changed since the last render.
+    /// Checks constructor arguments and context versions.
+    /// </summary>
+    internal bool ShouldSkipRender(ComponentNode cnode)
+    {
+        if (!_shouldMemo || _lastInputs is null || _cachedVNode is null)
+            return false;
+
+        var currentInputs = cnode.GetInputs();
+        if (!InputsEqual(_lastInputs, currentInputs))
+            return false;
+
+        // Check context versions
+        if (_lastContextVersions is not null)
+        {
+            foreach (var (ctx, lastVer) in _lastContextVersions)
+            {
+                if (ctx.Version != lastVer)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Saves the current inputs and context versions for the next memo check.
+    /// Inputs are always saved (needed for instance reuse decisions).
+    /// Memo-specific state (cached VNode, context versions) is only saved when memo is enabled.
+    /// </summary>
+    internal void SaveMemoState(ComponentNode cnode, VNode vnode)
+    {
+        _lastInputs = cnode.GetInputs();
+
+        if (!_shouldMemo) return;
+        _cachedVNode = vnode;
+
+        if (_contextVersionsRead is not null)
+        {
+            _lastContextVersions ??= [];
+            _lastContextVersions.Clear();
+            foreach (var (ctx, ver) in _contextVersionsRead)
+                _lastContextVersions[ctx] = ver;
+            _contextVersionsRead.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Returns true if the constructor inputs on <paramref name="cnode"/> match
+    /// the inputs from this component's last render. Used by the Reconciler
+    /// to decide whether to reuse a component instance or create a new one.
+    /// </summary>
+    internal bool HasSameInputs(ComponentNode cnode)
+    {
+        if (_lastInputs is null) return false;
+        return InputsEqual(_lastInputs, cnode.GetInputs());
+    }
+
+    private static bool InputsEqual(object?[]? a, object?[]? b)
+    {
+        if (a is null) return b is null;
+        if (b is null) return false;
+        if (a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++)
+        {
+            if (!EqualityComparer<object?>.Default.Equals(a[i], b[i]))
+                return false;
+        }
+        return true;
+    }
+
     #endregion
 
     #region Hooks
@@ -230,6 +329,14 @@ public abstract class Component
     {
         _ = ValidateHook<ContextHook>() ?? AddHook(new ContextHook());
         _hookIndex++;
+
+        // Track context version for memo comparison
+        if (_shouldMemo)
+        {
+            _contextVersionsRead ??= [];
+            _contextVersionsRead[context] = context.Version;
+        }
+
         return Reconciler.GetContext(context);
     }
 
@@ -239,6 +346,7 @@ public abstract class Component
     /// </summary>
     protected void ProvideContext<T>(Context<T> context, T value)
     {
+        context.Version++;
         Reconciler.SetContext(context, value);
     }
 
@@ -372,13 +480,20 @@ public abstract class Component
     /// (used when the component is hosted in a <see cref="ComponentNode"/>).
     /// Does not manage container placement — the caller's reconciler handles that.
     /// </summary>
-    internal Visual? RenderViaReconciler(Reconciler reconciler, Visual? existing)
+    internal Visual? RenderViaReconciler(Reconciler reconciler, Visual? existing, ComponentNode cnode)
     {
         Reconciler = reconciler;
         _treeHosted = true;
+
+        // ── Memo check ────────────────────────────────────────────────
+        if (ShouldSkipRender(cnode))
+            return _cachedVNode is not null ? reconciler.ReconcileNode(_cachedVNode, existing) : null;
+
         BeginRender();
         VNode vnode = Render();
         EndRender();
+        SaveMemoState(cnode, vnode);
+
         _root = reconciler.ReconcileNode(vnode, existing);
         if (!_mounted)
         {

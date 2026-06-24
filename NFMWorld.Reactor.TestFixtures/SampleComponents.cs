@@ -101,3 +101,166 @@ public class WrapperComponent : Component
     protected override VNode Render()
         => Child;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+//  Context test components
+// ════════════════════════════════════════════════════════════════════════
+
+/// <summary>
+/// Provides a <see cref="Context{T}"/> value to descendants and renders a child VNode.
+/// </summary>
+public class ContextProviderComponent : Component
+{
+    private readonly Context<string> _context;
+    private readonly string _value;
+    private readonly VNode _child;
+
+    public ContextProviderComponent(Context<string> context, string value, VNode child)
+    {
+        _context = context;
+        _value = value;
+        _child = child;
+    }
+
+    protected override VNode Render()
+    {
+        ProvideContext(_context, _value);
+        return FlexPanel(children: _child);
+    }
+}
+
+/// <summary>
+/// Reads a <see cref="Context{T}"/> value and renders a FlexPanel with Name = context value.
+/// </summary>
+public class ContextConsumerComponent : Component
+{
+    private readonly Context<string> _context;
+    public string? LastReadValue { get; private set; }
+    public int RenderCount { get; private set; }
+
+    public ContextConsumerComponent(Context<string> context)
+    {
+        _context = context;
+    }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        LastReadValue = UseContext(_context);
+        return FlexPanel().WithName(LastReadValue ?? "(null)");
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  Memoization test components
+// ════════════════════════════════════════════════════════════════════════
+
+/// <summary>
+/// Component with a single int id input. Tracks render count for memo tests.
+/// </summary>
+public class MemoIdComponent : Component
+{
+    public int Id { get; }
+    public int RenderCount { get; private set; }
+
+    public MemoIdComponent(int id = 0)
+    {
+        Id = id;
+    }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        return FlexPanel().WithName($"id:{Id}");
+    }
+}
+
+/// <summary>
+/// Like <see cref="MemoIdComponent"/> but calls <see cref="Component.DisableMemo"/>
+/// so it always re-renders regardless of input changes.
+/// </summary>
+public class NoMemoIdComponent : Component
+{
+    public int Id { get; }
+    public int RenderCount { get; private set; }
+
+    public NoMemoIdComponent(int id = 0)
+    {
+        Id = id;
+        DisableMemo();
+    }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        return FlexPanel().WithName($"id:{Id}");
+    }
+}
+
+/// <summary>
+/// Reads a <see cref="Context{T}"/> value and renders it. Tracks render count for memo tests.
+/// </summary>
+public class MemoContextConsumerComponent : Component
+{
+    private readonly Context<string> _context;
+    public string? LastReadValue { get; private set; }
+    public int RenderCount { get; private set; }
+
+    public MemoContextConsumerComponent(Context<string> context)
+    {
+        _context = context;
+    }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        LastReadValue = UseContext(_context);
+        return FlexPanel().WithName(LastReadValue ?? "(null)");
+    }
+}
+
+/// <summary>
+/// Memoized component that passes a child VNode through without reading context.
+/// Used to test that context changes propagate through memo-skipped intermediates.
+/// </summary>
+public class MemoPassthroughComponent : Component
+{
+    private readonly VNode _child;
+    public int RenderCount { get; private set; }
+
+    public MemoPassthroughComponent(VNode child)
+    {
+        _child = child;
+    }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        return FlexPanel(children: _child);
+    }
+}
+
+/// <summary>
+/// Like <see cref="ContextProviderComponent"/> but always re-renders (memo disabled).
+/// Useful for testing context propagation through the Reconciler.
+/// </summary>
+public class AlwaysRenderProviderComponent : Component
+{
+    private readonly Context<string> _context;
+    private readonly string _value;
+    private readonly VNode _child;
+
+    public AlwaysRenderProviderComponent(Context<string> context, string value, VNode child)
+    {
+        _context = context;
+        _value = value;
+        _child = child;
+        DisableMemo();
+    }
+
+    protected override VNode Render()
+    {
+        ProvideContext(_context, _value);
+        return FlexPanel(children: _child);
+    }
+}

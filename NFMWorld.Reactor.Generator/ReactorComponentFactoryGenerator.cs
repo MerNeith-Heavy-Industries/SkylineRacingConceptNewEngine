@@ -288,6 +288,33 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 }
 
                 sb.AppendLine("}");
+
+                // ── GetInputs override ────────────────────────────────────
+                sb.AppendLine();
+                sb.AppendLine("/// <inheritdoc />");
+                sb.AppendLine("public override object?[] GetInputs() =>");
+                using (sb.Indent())
+                using (sb.Indent())
+                {
+                    if (type.Parameters.Count == 0)
+                    {
+                        sb.AppendLine("[];");
+                    }
+                    else
+                    {
+                        sb.AppendLine("[");
+                        using (sb.Indent())
+                        {
+                            for (int i = 0; i < type.Parameters.Count; i++)
+                            {
+                                var p = type.Parameters[i];
+                                var comma = i < type.Parameters.Count - 1 ? "," : "";
+                                sb.AppendLine($"_{CamelCase(p.Name)}{comma}");
+                            }
+                        }
+                        sb.AppendLine("];");
+                    }
+                }
             }
 
             sb.AppendLine("}");

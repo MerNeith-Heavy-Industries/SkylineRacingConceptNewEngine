@@ -21,6 +21,8 @@ public class Reconciler
     private readonly Dictionary<Visual, HashSet<int>> _prevPropIds = [];
     private readonly Dictionary<Visual, HashSet<int>> _currPropIds = [];
     private readonly Stack<ContextFrame> _contextStack = new();
+    private readonly Dictionary<(Visual parent, int childIndex), Component> _componentSlots = [];
+    private readonly List<(Visual parent, int childIndex)> _slotCleanupList = [];
 
     private void PushContextFrame() => _contextStack.Push(new ContextFrame());
     private void PopContextFrame() => _contextStack.Pop();
@@ -165,14 +167,27 @@ public class Reconciler
         {
             if (newChildren[i].Key is { } key && oldKeyMap.TryGetValue(key, out var oldIdx))
             {
+                TryReuseComponent(newChildren[i], container, oldIdx);
                 var reuse = existingChildren[oldIdx];
                 ReconcileNode(newChildren[i], reuse);
+                SaveComponentSlot(newChildren[i], container, oldIdx);
                 newIndexToExisting[i] = reuse;
                 oldKeyMap.Remove(key);
             }
+            else if (i < existingChildren.Count && !HasKey(existingChildren[i]))
+            {
+                // Positional match: same index, non-keyed existing child
+                TryReuseComponent(newChildren[i], container, i);
+                var reuse = existingChildren[i];
+                ReconcileNode(newChildren[i], reuse);
+                SaveComponentSlot(newChildren[i], container, i);
+                newIndexToExisting[i] = reuse;
+            }
             else
             {
+                TryReuseComponent(newChildren[i], container, -1);
                 newIndexToExisting[i] = ReconcileNode(newChildren[i], null);
+                SaveComponentSlot(newChildren[i], container, i);
             }
         }
 
@@ -208,9 +223,46 @@ public class Reconciler
             container.RemoveAt(existingChildren.Count - 1);
     }
 
+    /// <summary>
+    /// Attempts to reuse a component instance from a previous reconciliation
+    /// at the given slot position.
+    /// </summary>
+    private void TryReuseComponent(VNode vnode, Visual container, int childIndex)
+    {
+        if (vnode is not ComponentNode cnode) return;
+        var slot = (container, childIndex);
+        if (_componentSlots.TryGetValue(slot, out var existingComp)
+            && existingComp.GetType() == cnode.ComponentType)
+        {
+            // Only reuse the instance if the inputs haven't changed.
+            // If inputs changed, the constructor must run again with new values.
+            if (existingComp.HasSameInputs(cnode))
+            {
+                cnode.Instance = existingComp;
+            }
+            else
+            {
+                _componentSlots.Remove(slot);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Saves a component instance in the slot map for reuse on the next reconciliation pass.
+    /// </summary>
+    private void SaveComponentSlot(VNode vnode, Visual container, int childIndex)
+    {
+        if (vnode is ComponentNode cnode && cnode.Instance is not null)
+            _componentSlots[(container, childIndex)] = cnode.Instance;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static object? GetNodeKey(Visual visual)
         => visual is Node node ? node.Key : null;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasKey(Visual visual)
+        => GetNodeKey(visual) is not null;
 
     private static int IndexOfVisual(IReadOnlyList<Visual> list, Visual item)
     {
@@ -225,6 +277,8 @@ public class Reconciler
     /// </summary>
     private Visual? ReconcileComponentNode(ComponentNode cnode, Visual? existing)
     {
+        // Component instance reuse is handled by the caller (ReconcileChildren)
+        // via _componentSlots. If not already set, create a new instance.
         if (cnode.Instance is null)
             cnode.Instance = cnode.CreateComponent();
 
@@ -233,7 +287,7 @@ public class Reconciler
         PushContextFrame();
         try
         {
-            return cnode.Instance.RenderViaReconciler(this, existing);
+            return cnode.Instance.RenderViaReconciler(this, existing, cnode);
         }
         finally
         {
