@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Maxine.Extensions;
 using Maxine.Extensions.Collections;
 
@@ -10,12 +11,18 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class Reconciler
 {
+    private class Snapshot
+    {
+        public BasePropertySnapshot? Previous;
+        public BasePropertySnapshot? Current;
+    }
+
     private readonly ThreadLocalObjectPool<Dictionary<object, int>> _dictPool = new(static () => new Dictionary<object, int>(), 50);
     private readonly ThreadLocalArrayPool<Visual?> _visualArrayPool = new(65536, 50);
     private readonly HashSet<Component> _activeComponents = [];
     private readonly HashSet<Component> _visitedComponents = [];
-    private readonly Dictionary<Visual, HashSet<int>> _prevPropIds = [];
-    private readonly Dictionary<Visual, HashSet<int>> _currPropIds = [];
+    private readonly List<Visual> _snapshotKeysToRemove = [];
+    private readonly Dictionary<Visual, Snapshot> _snapshots = [];
     private readonly Stack<ContextFrame> _contextStack = new();
     private readonly Dictionary<(Visual parent, int childIndex), Component> _componentSlots = [];
 
@@ -75,7 +82,7 @@ public class Reconciler
         // Unmount any components that were active last pass but not visited this pass
         UnmountStaleComponents();
 
-        SwapPropTracking();
+        SwapSnapshots();
 
         return result;
     }
@@ -108,7 +115,7 @@ public class Reconciler
 
     }
 
-    private Visual? ReconcileVisualNode(Visual? existing, VisualVNode vvnode)
+    private Visual ReconcileVisualNode(Visual? existing, VisualVNode vvnode)
     {
         // ── Create or reuse native node ──────────────────────────────────
         if (existing is null || existing.GetType() != vvnode.NodeType)
@@ -116,28 +123,27 @@ public class Reconciler
             existing = vvnode.CreateNative();
         }
 
-        // ── Apply properties (Name, and all [Property]-backed values) ──
-        if (vvnode.Properties is not null)
-        {
-            foreach (var (propId, value) in vvnode.Properties)
-            {
-                var prop = PropertyRegistry.Instance.FindById(propId);
-                if (prop is not null && existing is PropertyObject propObject)
-                    propObject.SetBoxedValue(prop, value);
-            }
-        }
+        // ── Apply properties via the snapshot system ─────────────────────
+        ref var snapshot = ref CollectionsMarshal.GetValueRefOrAddDefault(_snapshots, existing, out var exists);
+        if (!exists) snapshot = new Snapshot();
+        vvnode.AssignProperties(existing, ref snapshot!.Current);
 
-        // ── Reset properties that were set in the previous render but not this one ──
-        ResetStaleProperties(existing, vvnode);
-
-        // ── Apply VisualVNode direct properties ──────────────────
-        if (vvnode.Classes is not null)
+        // ── Apply VisualVNode direct properties not covered by AssignProperties ──
+        if (vvnode.Classes is { } classes)
         {
             existing.Classes.Clear();
-            existing.Classes.AddRange(vvnode.Classes);
+            existing.Classes.AddRange(classes);
         }
         if (vvnode.Name is not null)
             existing.Name = vvnode.Name;
+        if (vvnode.Key is not null)
+            existing.Key = vvnode.Key;
+        if (vvnode.TabOrder != 0)
+            existing.TabOrder = vvnode.TabOrder;
+        if (vvnode.IsFocusable)
+            existing.IsFocusable = vvnode.IsFocusable;
+        if (vvnode.IsFocused)
+            existing.IsFocused = vvnode.IsFocused;
 
         // ── Reconcile children ───────────────────────────────────────────
         if (vvnode.Children is not null && existing.CanHaveChildren)
@@ -298,57 +304,37 @@ public class Reconciler
     }
 
     /// <summary>
-    /// Resets any properties that were set on this native node in the previous
-    /// reconciliation pass but are absent from the current VNode's Properties.
+    /// Restores stale properties on native nodes that were present in the
+    /// previous reconciliation pass but not in this one, then swaps
+    /// current snapshots → previous for the next pass.
     /// </summary>
-    private void ResetStaleProperties(Visual native, VisualVNode vvnode)
+    private void SwapSnapshots()
     {
-        var currIds = GetOrCreateCurrIds(native);
-        currIds.Clear();
-        if (vvnode.Properties is not null)
+        foreach (var (node, snapshots) in _snapshots)
         {
-            foreach (var id in vvnode.Properties.Keys)
-                currIds.Add(id);
-        }
-
-        if (_prevPropIds.TryGetValue(native, out var prevIds))
-        {
-            foreach (var staleId in prevIds)
+            ref var prev = ref snapshots.Previous;
+            ref var current = ref snapshots.Current;
+            if (current == null && prev != null)
             {
-                if (currIds.Contains(staleId)) continue;
-                var prop = PropertyRegistry.Instance.FindById(staleId);
-                if (prop is not null && native is PropertyObject propObject)
-                    propObject.SetBoxedValue(prop, prop.DefaultValue);
+                // Node not visited this pass — restore its old property values
+                prev.AssignProperties(node);
+                prev.ClearProperties();
+            }
+
+            prev = current;
+            current = null;
+
+            if (prev == null)
+            {
+                _snapshotKeysToRemove.Add(node);
             }
         }
-    }
-
-    /// <summary>
-    /// Swaps current→previous property tracking at the end of a reconciliation pass.
-    /// </summary>
-    internal void SwapPropTracking()
-    {
-        foreach (var (node, currIds) in _currPropIds)
+        
+        foreach (var visual in _snapshotKeysToRemove)
         {
-            if (!_prevPropIds.TryGetValue(node, out var prevIds))
-            {
-                prevIds = [];
-                _prevPropIds[node] = prevIds;
-            }
-            prevIds.Clear();
-            foreach (var id in currIds)
-                prevIds.Add(id);
+            _snapshots.Remove(visual);
         }
-        _currPropIds.Clear();
-    }
 
-    private HashSet<int> GetOrCreateCurrIds(Visual node)
-    {
-        if (!_currPropIds.TryGetValue(node, out var ids))
-        {
-            ids = [];
-            _currPropIds[node] = ids;
-        }
-        return ids;
+        _snapshotKeysToRemove.Clear();
     }
 }
