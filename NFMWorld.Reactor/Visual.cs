@@ -64,18 +64,19 @@ public abstract partial class Visual : IStyleNode, INamed
     /// </summary>
     public bool IsAttachedToVisualTree => _root != null;
 
-    public Visual? VisualParent { get; set; }
+    public Visual? VisualParent
+    {
+        get;
+        set
+        {
+            if (!Equals(field, value))
+            {
+                field = value;
+                OnParentChanged();
+            }
+        }
+    }
 
-    /// <summary>
-    /// Triggered when the object is mounted onto the logical tree.
-    /// </summary>
-    public AnimationTrigger Mounted { get; } = new();
-    
-    /// <summary>
-    /// Triggered when the object is unmounted from the logical tree.
-    /// </summary>
-    public AnimationTrigger Unmounted { get; } = new();
-    
     public Visual()
     {
         _root = this as IVisualRoot;
