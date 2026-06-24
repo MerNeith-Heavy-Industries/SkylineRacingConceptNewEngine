@@ -50,7 +50,9 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         NodeInternal.Dispose();
     }
-    public event Action? AnimationFrameBegan;
+    
+    [Property]
+    public Action? AnimationFrameBegan { get; set; }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
     public virtual string DebugToString()
@@ -63,12 +65,12 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// Triggered when <see cref="Visibility"/> is set to <see cref="Visibility.Visible"/>
     /// </summary>
-    public AnimationTrigger Shown { get; } = new();
+    public Action? Shown { get; set; }
     
     /// <summary>
     /// Triggered when <see cref="Visibility"/> is set to <see cref="Visibility.Hidden"/>
     /// </summary>
-    public AnimationTrigger Hidden { get; } = new();
+    public Action? Hidden { get; set; }
 
     #endregion
 
@@ -296,13 +298,37 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
     /// </summary>
     [Property]
-    public Visibility Visibility { get; set; } = Visibility.Visible;
+    public Visibility Visibility
+    {
+        get;
+        set
+        {
+            var oldValue = field;
+            field = value;
+            if (value is Visibility.Visible && oldValue is Visibility.Hidden && Opacity > 0.0f)
+                Shown?.Invoke();
+            else if (value is Visibility.Hidden && oldValue is Visibility.Visible && Opacity > 0.0f)
+                Hidden?.Invoke();
+        }
+    } = Visibility.Visible;
 
     /// <summary>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
     /// </summary>
     [Property]
-    public float Opacity { get; set; } = 1.0f;
+    public float Opacity
+    {
+        get;
+        set
+        {
+            var oldValue = field;
+            field = value;
+            if (value <= 0.0f && oldValue > 0.0f && Visibility is Visibility.Visible)
+                Hidden?.Invoke();
+            else if (value > 0.0f && oldValue <= 0.0f && Visibility is Visibility.Visible)
+                Shown?.Invoke();
+        }
+    } = 1.0f;
 
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     /// <summary>
