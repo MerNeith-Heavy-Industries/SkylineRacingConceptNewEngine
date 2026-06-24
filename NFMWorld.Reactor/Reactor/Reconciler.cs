@@ -22,7 +22,6 @@ public class Reconciler
     private readonly Dictionary<Visual, HashSet<int>> _currPropIds = [];
     private readonly Stack<ContextFrame> _contextStack = new();
     private readonly Dictionary<(Visual parent, int childIndex), Component> _componentSlots = [];
-    private readonly List<(Visual parent, int childIndex)> _slotCleanupList = [];
 
     private void PushContextFrame() => _contextStack.Push(new ContextFrame());
     private void PopContextFrame() => _contextStack.Pop();
@@ -106,9 +105,15 @@ public class Reconciler
         if (vnode is ComponentNode cnode)
             return ReconcileComponentNode(cnode, existing);
 
-        if (vnode is not VisualVNode vvnode)
-            throw new InvalidOperationException("Invalid VNode type: must be VisualVNode or ComponentNode");
+        if (vnode is VisualVNode vvnode)
+            return ReconcileVisualNode(existing, vvnode);
 
+        throw new InvalidOperationException("Invalid VNode type: must be VisualVNode or ComponentNode");
+
+    }
+
+    private Visual? ReconcileVisualNode(Visual? existing, VisualVNode vvnode)
+    {
         // ── Create or reuse native node ──────────────────────────────────
         if (existing is null || existing.GetType() != vvnode.NodeType)
         {
@@ -252,8 +257,8 @@ public class Reconciler
     /// </summary>
     private void SaveComponentSlot(VNode vnode, Visual container, int childIndex)
     {
-        if (vnode is ComponentNode cnode && cnode.Instance is not null)
-            _componentSlots[(container, childIndex)] = cnode.Instance;
+        if (vnode is ComponentNode { Instance: { } instance })
+            _componentSlots[(container, childIndex)] = instance;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -264,6 +269,7 @@ public class Reconciler
     private static bool HasKey(Visual visual)
         => GetNodeKey(visual) is not null;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int IndexOfVisual(IReadOnlyList<Visual> list, Visual item)
     {
         for (int i = 0; i < list.Count; i++)
