@@ -201,6 +201,7 @@ public class RadParser
         else if (line.StartsWith("outdam(")) _stats = _stats with { Outdam = BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("name(")) _stats = _stats with { Name = BracketParser.GetString(line) };
         else if (line.StartsWith("enginsignature(")) _stats = _stats with { Enginsignature = BracketParser.GetNumber<sbyte>(line) };
+        else if (line.StartsWith("turnradius(")) _stats = _stats with { TurnRadius = BracketParser.GetNumber<int>(line) };
 
         else if (line.StartsWith("w("))
         {
