@@ -14,5 +14,7 @@ public readonly partial record struct Rad3dBoxDef(
     [property: JsonPropertyName("damage"), MemoryPackOrder(5)] int Damage,
     [property: JsonPropertyName("notwall"), MemoryPackOrder(6)] bool NotWall,
     [property: JsonPropertyName("c"), MemoryPackOrder(7)] Color3 Color,
-    [property: JsonPropertyName("tracMul"), MemoryPackOrder(8)] float TractionMultiplier = 1f
+    // ReSharper disable once InconsistentNaming
+    [property: JsonIgnore, MemoryPackOrder(8)] float _deprecated_TractionMultiplier = 1f,
+    [property: JsonPropertyName("gripmul"), MemoryPackOrder(9)] fix64? TractionMultiplier = null
 );

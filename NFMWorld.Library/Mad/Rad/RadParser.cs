@@ -202,6 +202,9 @@ public class RadParser
         else if (line.StartsWith("name(")) _stats = _stats with { Name = BracketParser.GetString(line) };
         else if (line.StartsWith("enginsignature(")) _stats = _stats with { Enginsignature = BracketParser.GetNumber<sbyte>(line) };
         else if (line.StartsWith("turnradius(")) _stats = _stats with { TurnRadius = BracketParser.GetNumber<int>(line) };
+        else if (line.StartsWith("roadgrip(")) _stats = _stats with { RoadGrip = BracketParser.GetNumber<fix64>(line) };
+        else if (line.StartsWith("offroadgrip(")) _stats = _stats with { OffRoadGrip = BracketParser.GetNumber<fix64>(line) };
+        else if (line.StartsWith("offtrackgrip(")) _stats = _stats with { OffTrackGrip = BracketParser.GetNumber<fix64>(line) };
 
         else if (line.StartsWith("w("))
         {
@@ -371,6 +374,8 @@ public class RadParser
                 currentBox = currentBox with { Damage = 3 };
             else if (line.StartsWith("notwall("))
                 currentBox = currentBox with { NotWall = true };
+            else if (line.StartsWith("gripmul("))
+                currentBox = currentBox with { TractionMultiplier = BracketParser.GetNumber<fix64>(line) };
         }
 
         // SRC custom wheel format

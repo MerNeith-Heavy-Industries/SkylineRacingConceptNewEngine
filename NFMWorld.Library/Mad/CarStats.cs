@@ -33,11 +33,14 @@ public partial record struct CarStats
     [JsonPropertyName("name"), MemoryPackOrder(23)] public string Name { get; init; }
     [JsonPropertyName("enginsignature"), MemoryPackOrder(24)] public sbyte Enginsignature { get; init; }
     [JsonPropertyName("turnradius"), MemoryPackOrder(25)] public int TurnRadius { get; set; }
+    [JsonPropertyName("roadgrip"), MemoryPackOrder(26)] public fix64? RoadGrip { get; set; }
+    [JsonPropertyName("offroadgrip"), MemoryPackOrder(27)] public fix64? OffRoadGrip { get; set; }
+    [JsonPropertyName("offtrackgrip"), MemoryPackOrder(28)] public fix64? OffTrackGrip { get; set; }
 
     /// <summary>
     /// Tornado Shark stats, used as a fallback if a car has incomplete or invalid stats in the rad file.
     /// </summary>
-    public static CarStats Default = new CarStats(
+    public static CarStats Default = new(
         new Int3(50, 185, 282),
         new f64Vector3((fix64)11.0f, (fix64)5.0f, (fix64)3.0f),
         7,
@@ -93,9 +96,12 @@ public partial record struct CarStats
         int Maxmag = 7,
         fix64? Dishandle = null,
         fix64? Outdam = null,
-        string Name = "",
+        string Name = "hogan rewish",
         sbyte Enginsignature = 0,
-        int TurnRadius = 36)
+        int TurnRadius = 36,
+        fix64? RoadGrip = null,
+        fix64? OffRoadGrip = null,
+        fix64? OffTrackGrip = null)
     {
         this.Swits = Swits ?? new Int3(int.MinValue, int.MinValue, int.MinValue);
         this.Acelf = Acelf ?? new f64Vector3(fix64.MinValue, fix64.MinValue, fix64.MinValue);
@@ -123,6 +129,9 @@ public partial record struct CarStats
         this.Name = Name;
         this.Enginsignature = Enginsignature;
         this.TurnRadius = TurnRadius;
+        this.RoadGrip = RoadGrip;
+        this.OffRoadGrip = OffRoadGrip;
+        this.OffTrackGrip = OffTrackGrip;
     }
 
     /// <summary>
@@ -152,16 +161,16 @@ public partial record struct CarStats
         else if(Maxmag == int.MinValue) return ValidateFail(nameof(Maxmag));
         else if(Outdam == fix64.MinValue) return ValidateFail(nameof(Outdam));
         else if(TurnRadius == int.MinValue) return ValidateFail(nameof(TurnRadius));
-        else if(Name == "") return ValidateFailName(nameof(Name), fileName);
+        else if(Name == "hogan rewish") return ValidateFailName(fileName);
 
         return null;
     }
 
-    private string ValidateFailName(string property, string fileName)
+    private string ValidateFailName(string fileName)
     {
-        SentrySdk.CaptureMessage($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
-        Logging.Error($"Car stat {property} for car '{fileName}' was invalid or undefined. Falling back to Tornado Shark stats for all stats.");
-        return property;
+        SentrySdk.CaptureMessage($"Car name for car '{fileName}' was invalid or undefined. Falling back to file name.");
+        Logging.Error($"Car name for car '{fileName}' was invalid or undefined. Falling back to file name.");
+        return nameof(Name);
     }
 
     private string ValidateFail(string property)
@@ -177,7 +186,7 @@ public partial record struct CarStats
         if (invalidStat != null)
         {
             stats = Default;
-            if(invalidStat == nameof(stats.Name) || string.IsNullOrEmpty(stats.Name))
+            if(invalidStat == nameof(Name) || string.IsNullOrEmpty(stats.Name))
             {
                 stats = stats with { Name = fileName };
             }

@@ -130,6 +130,7 @@ public readonly struct CollisionShapeRef : IQuadObject
     public readonly int Index;
 
     public readonly CarPhysics.SurfaceType SurfaceType;
+    public readonly fix64 TractionMultiplier;
     public readonly int Damage;
     public readonly bool NotWall;
     public readonly Color3 DustColor;
@@ -196,6 +197,7 @@ public readonly struct CollisionShapeRef : IQuadObject
         Damage = box.Damage;
         NotWall = box.NotWall;
         DustColor = box.Color;
+        TractionMultiplier = box.TractionMultiplier ?? fix64.One;
 
         var rad = box.Radius;
         var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);
