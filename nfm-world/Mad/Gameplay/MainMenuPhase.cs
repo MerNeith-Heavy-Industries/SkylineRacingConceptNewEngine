@@ -26,27 +26,27 @@ public class MainMenuPhase : BaseStageRenderingPhase
             FocusManager = FocusManager
         };
 
-        _uiManager.RootPanel.Children.Add(_mainMenuView);
-        Uis.Add(_uiManager);
+        // MVU: Mount the main menu view directly via its own reconciler
+        _mainMenuView.Mount(_uiManager.RootPanel);
 
-        _mainMenuView.DataContext.Garage += OnGarageClicked;
-        _mainMenuView.DataContext.Settings += OnSettingsClicked;
-        _mainMenuView.DataContext.Credits += OnClickUnavailable;
-        _mainMenuView.DataContext.Quit += OnQuitClicked;
-        _mainMenuView.DataContext.Login += OnLoginClicked;
-        _mainMenuView.DataContext.Logout += OnLogoutClicked;
-        _mainMenuView.DataContext.PlayNFM1 += OnClickUnavailable;
-        _mainMenuView.DataContext.PlayNFM2 += OnClickUnavailable;
-        _mainMenuView.DataContext.PlayCommunity += OnClickUnavailable;
-        _mainMenuView.DataContext.PlayFreePlay += OnFreePlayClicked;
-        _mainMenuView.DataContext.PlayCompetitive += OnClickUnavailable;
-        _mainMenuView.DataContext.PlayCasual += OnClickUnavailable;
-        _mainMenuView.DataContext.ModelEditor += OnModelEditorClicked;
-        _mainMenuView.DataContext.StageEditor += OnStageEditorClicked;
-        _mainMenuView.DataContext.CampaignEditor += OnClickUnavailable;
-        _mainMenuView.DataContext.TimeTrials += OnTTClicked;
-        _mainMenuView.DataContext.Challenges += OnClickUnavailable;
-        _mainMenuView.DataContext.GameInstructions += OnClickUnavailable;
+        _mainMenuView.Garage += OnGarageClicked;
+        _mainMenuView.Settings += OnSettingsClicked;
+        _mainMenuView.Credits += OnClickUnavailable;
+        _mainMenuView.Quit += OnQuitClicked;
+        _mainMenuView.Login += OnLoginClicked;
+        _mainMenuView.Logout += OnLogoutClicked;
+        _mainMenuView.PlayNFM1 += OnClickUnavailable;
+        _mainMenuView.PlayNFM2 += OnClickUnavailable;
+        _mainMenuView.PlayCommunity += OnClickUnavailable;
+        _mainMenuView.PlayFreePlay += OnFreePlayClicked;
+        _mainMenuView.PlayCompetitive += OnClickUnavailable;
+        _mainMenuView.PlayCasual += OnClickUnavailable;
+        _mainMenuView.ModelEditor += OnModelEditorClicked;
+        _mainMenuView.StageEditor += OnStageEditorClicked;
+        _mainMenuView.CampaignEditor += OnClickUnavailable;
+        _mainMenuView.TimeTrials += OnTTClicked;
+        _mainMenuView.Challenges += OnClickUnavailable;
+        _mainMenuView.GameInstructions += OnClickUnavailable;
     }
 
     private void OnFreePlayClicked()
@@ -147,6 +147,12 @@ public class MainMenuPhase : BaseStageRenderingPhase
                 System.Environment.Exit(0);
             }
         });
+    }
+
+    public override void GameTick()
+    {
+        base.GameTick();
+        _mainMenuView.Update();
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
