@@ -503,9 +503,14 @@ public abstract class Component
         EndRender();
 
         if (_treeHosted)
+        {
             _root = Reconciler.ReconcileNode(vnode, _root);
+            Reconciler.FinishPass();
+        }
         else
+        {
             _root = Reconciler.Reconcile(vnode, _container!, _root);
+        }
     }
 
     /// <summary>
