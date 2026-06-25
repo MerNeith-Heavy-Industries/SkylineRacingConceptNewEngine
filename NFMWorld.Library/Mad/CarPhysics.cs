@@ -941,18 +941,18 @@ public class CarPhysics
         if (control.Right)
         {
             conto.Wxz -= ((fix64)Stat.Turn * _tickRate);
-            if (conto.Wxz < -36)
+            if (conto.Wxz < -Stat.TurnRadius)
             {
-                conto.Wxz = -36;
+                conto.Wxz = -Stat.TurnRadius;
             }
         }
 
         if (control.Left)
         {
             conto.Wxz += ((fix64)Stat.Turn * _tickRate);
-            if (conto.Wxz > 36)
+            if (conto.Wxz > Stat.TurnRadius)
             {
-                conto.Wxz = 36;
+                conto.Wxz = Stat.TurnRadius;
             }
         } //
 

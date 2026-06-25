@@ -32,6 +32,7 @@ public partial record struct CarStats
     [JsonPropertyName("outdam"), MemoryPackOrder(22)] public fix64 Outdam { get; init; }
     [JsonPropertyName("name"), MemoryPackOrder(23)] public string Name { get; init; }
     [JsonPropertyName("enginsignature"), MemoryPackOrder(24)] public sbyte Enginsignature { get; init; }
+    [JsonPropertyName("turnradius"), MemoryPackOrder(25)] public int TurnRadius { get; set; }
 
     /// <summary>
     /// Tornado Shark stats, used as a fallback if a car has incomplete or invalid stats in the rad file.
@@ -60,8 +61,7 @@ public partial record struct CarStats
         7600,
         (fix64)0.65f,
         (fix64)0.68f,
-        "Tornado Shark",
-        0
+        "Tornado Shark"
     );
 
     public CarStats() : this(null)
@@ -94,7 +94,8 @@ public partial record struct CarStats
         fix64? Dishandle = null,
         fix64? Outdam = null,
         string Name = "",
-        sbyte Enginsignature = 0)
+        sbyte Enginsignature = 0,
+        int TurnRadius = 36)
     {
         this.Swits = Swits ?? new Int3(int.MinValue, int.MinValue, int.MinValue);
         this.Acelf = Acelf ?? new f64Vector3(fix64.MinValue, fix64.MinValue, fix64.MinValue);
@@ -121,6 +122,7 @@ public partial record struct CarStats
         this.Outdam = Outdam ?? fix64.MinValue;
         this.Name = Name;
         this.Enginsignature = Enginsignature;
+        this.TurnRadius = TurnRadius;
     }
 
     /// <summary>
@@ -149,6 +151,7 @@ public partial record struct CarStats
         else if(Dammult == fix64.MinValue) return ValidateFail(nameof(Dammult));
         else if(Maxmag == int.MinValue) return ValidateFail(nameof(Maxmag));
         else if(Outdam == fix64.MinValue) return ValidateFail(nameof(Outdam));
+        else if(TurnRadius == int.MinValue) return ValidateFail(nameof(TurnRadius));
         else if(Name == "") return ValidateFailName(nameof(Name), fileName);
 
         return null;
