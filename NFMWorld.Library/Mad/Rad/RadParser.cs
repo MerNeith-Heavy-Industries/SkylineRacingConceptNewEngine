@@ -1,14 +1,42 @@
 ﻿﻿using System.Collections.Immutable;
  using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using FixedMathSharp;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Rad;
 
-public class RadParser
+public partial class RadParser
 {
+    private class WheelMesh
+    {
+        public List<Rad3dPoly> Polys = [];
+        public int? Radius;
+        public int? Depth;
+
+        public Rad3dPoly[] GetScaledPolys(float radius, float depth)
+        {
+            if (Radius != null && Depth != null)
+            {
+                return Polys
+                    .Select(poly =>
+                    {
+                        var scaledPoints = poly.Points.Select(point => new Vector3(
+                            point.X * depth,
+                            point.Y * radius,
+                            point.Z * radius
+                        )).ToArray();
+                        return poly.WithPoints(scaledPoints, poly.Triangles);
+                    })
+                    .ToArray();
+            }
+
+            return Polys.ToArray();
+        }
+    }
+    
     private int _npoints = 0;
     private bool _stonecold;
     private bool _noOutline;
@@ -27,7 +55,7 @@ public class RadParser
     private bool _road;
     private bool _castsShadow;
 
-    private List<List<Rad3dPoly>> _wheelPolys = [];
+    private List<WheelMesh> _wheelMeshes = [];
 
     private List<Rad3dPoly> _currentPolys;
     
@@ -36,12 +64,17 @@ public class RadParser
     
     private List<f64Vector3> _hullVerts = [];
     private readonly string _fileName;
+    private float _scaleRadius;
+    private float _scaleDepth;
 
     private RadParser(string fileName)
     {
         _currentPolys = _mainCarPolys;
         _fileName = fileName;
     }
+    
+    [GeneratedRegex("""<wheel radius="(?<radius>\d+)" depth="(?<depth>\d+)">""", RegexOptions.Compiled)]
+    private static partial Regex PhyShotWheelDef { get; }
 
     public static Rad3d ParseRad(string radFile, string fileName = "hogan rewish")
     {
@@ -218,7 +251,7 @@ public class RadParser
                 Rotates: rotates,
                 Width: width * idiv * iwid,
                 Height: height * idiv,
-                Polys: _wheelPolys.Count > _wheels.Count ? _wheelPolys[_wheels.Count].ToArray() : null
+                Polys: _wheelMeshes.Count > _wheels.Count ? _wheelMeshes[_wheels.Count].GetScaledPolys(width * (float)idiv * (float)iwid, height * (float)idiv) : null
             ));
         }
 
@@ -381,16 +414,31 @@ public class RadParser
         // SRC custom wheel format
         if (line.StartsWith("<wheel>"))
         {
-            _wheelPolys.Add(_currentPolys = []);
+            _wheelMeshes.Add(new WheelMesh { Polys = _currentPolys = [] });
+        }
+        else if (line.StartsWith("<wheel") && PhyShotWheelDef.Match(new string(line)) is { Success: true } wheelMatch)
+        {
+            var radius = int.Parse(wheelMatch.Groups["radius"].ValueSpan);
+            var depth = int.Parse(wheelMatch.Groups["depth"].ValueSpan);
+            _wheelMeshes.Add(new WheelMesh
+            {
+                Polys = _currentPolys = [],
+                Radius = radius,
+                Depth = depth
+            });
+            _scaleRadius = 1f/radius;
+            _scaleDepth = 1f/depth;
         }
 
         // SRC custom wheel format
-        if (line.StartsWith("</wheel>"))
+        else if (line.StartsWith("</wheel>"))
         {
             _currentPolys = _mainCarPolys;
+            _scaleRadius = 1;
+            _scaleDepth = 1;
         }
 
-        if (line.StartsWith("<p>") || line.StartsWith("[p]"))
+        else if (line.StartsWith("<p>") || line.StartsWith("[p]"))
         {
             _currentPolys.Add(new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []));
             _noOutline = false;
@@ -437,9 +485,9 @@ public class RadParser
             {
                 var position = Int3.FromSpan(BracketParser.GetNumbers(line, stackalloc int[3]));
                 var transformedPoint = new Vector3(
-                    position.X * (float)idiv * (float)iwid * (float)scaleX,
-                    position.Y * (float)idiv * (float)scaleY,
-                    position.Z * (float)idiv * (float)scaleZ
+                    position.X * (float)idiv * (float)iwid * (float)scaleX * _scaleDepth,
+                    position.Y * (float)idiv * (float)scaleY * _scaleRadius,
+                    position.Z * (float)idiv * (float)scaleZ * _scaleRadius
                 );
                 _points.Add(transformedPoint);
             }
