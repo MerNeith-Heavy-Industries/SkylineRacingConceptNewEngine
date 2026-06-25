@@ -1,16 +1,27 @@
-using NFMWorld.UI.Hud;
-using NFMWorldLibrary.DriverInterface.UI.Elements;
+using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Menu;
 
-public partial class LoginModal : Modal
+public class LoginModal : Component
 {
-    public new LoginModalViewModel DataContext => (LoginModalViewModel)base.DataContext!;
-
     public LoginModal()
     {
-        base.DataContext = new LoginModalViewModel();
-        InitializeComponent();
+        DisableMemo();
+    }
+
+    protected override VNode Render()
+    {
+        return View(
+            name: "LoginModal",
+            flexDirection: YgFlexDirection.Column,
+            alignItems: YgAlign.Center,
+            justifyContent: YgJustify.Center,
+            padding: 20f,
+            gap: 16f,
+            children:
+                FlexPanel(name: "LoginContent")
+        );
     }
 }

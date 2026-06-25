@@ -113,30 +113,30 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         // create and position stat bars
         float switsLevel = (_backendCar.Stats.Swits[2] - 220) / 90f;
         switsLevel = Math.Max(0.05f, switsLevel);
-        _garageUiView.Bar0.TargetValue = switsLevel;
+        _garageUiView.SetBarValue(0, switsLevel);
 
         float accel = (float)(_backendCar.Stats.Acelf.X * _backendCar.Stats.Acelf.Y * _backendCar.Stats.Acelf.Z * _backendCar.Stats.Grip / 7700);
-        _garageUiView.Bar1.TargetValue = accel;
+        _garageUiView.SetBarValue(1, accel);
 
-        _garageUiView.Bar2.TargetValue = (float)_backendCar.Stats.Dishandle;
+        _garageUiView.SetBarValue(2, (float)_backendCar.Stats.Dishandle);
 
         float powerloss = _backendCar.Stats.Powerloss / 5500000f;
-        _garageUiView.Bar3.TargetValue = powerloss;
+        _garageUiView.SetBarValue(3, powerloss);
 
         float strength = ((float)_backendCar.Stats.Moment + 0.5f) / 2.6f;
-        _garageUiView.Bar4.TargetValue = strength;
+        _garageUiView.SetBarValue(4, strength);
 
         float health = (float)_backendCar.Stats.Outdam / 1.05f + _backendCar.Stats.Maxmag / 100000f;
-        _garageUiView.Bar5.TargetValue = health;
+        _garageUiView.SetBarValue(5, health);
 
         float airs = (_backendCar.Stats.Airc * 2 * ((float)_backendCar.Stats.Airs * 0.5f) * (float)_backendCar.Stats.Bounce + 28f) / 100f;
-        _garageUiView.Bar6.TargetValue = airs;
+        _garageUiView.SetBarValue(6, airs);
 
         float hglide = ((Math.Abs(_backendCar.Stats.Flipy) + Math.Abs(_backendCar.GroundAt)) / 2f / 70f) + (float)_backendCar.Stats.Airs / 230f;
-        _garageUiView.Bar7.TargetValue = hglide;
+        _garageUiView.SetBarValue(7, hglide);
 
         float ab = _backendCar.Stats.Airc / 75f;
-        _garageUiView.Bar8.TargetValue = ab;
+        _garageUiView.SetBarValue(8, ab);
     }
 
 
@@ -144,7 +144,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void GameTick()
     {
         base.GameTick();
-        _garageUiView.Update(_focusManager);
+        _garageUiView.Update();
     }
 
     public override void Render(float alpha)
@@ -275,7 +275,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void DrawCarStats()
     {
-        _garageUiView.LayoutAndRender(G.Viewport);
+        // MVU: Mount once on Enter, Update in GameTick — no LayoutAndRender needed
     }
 
     public override void Enter()

@@ -1,35 +1,22 @@
-using WorldXaml.UI.Base;
+using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
+using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Test;
 
-public partial class HStack : TemplatedControl
+public class HStack(VNode child, StackOrientation orientation = StackOrientation.Horizontal, float gapColumn = 0, float gapRow = 0) : Component
 {
-    public HStack()
+    protected override VNode Render()
     {
-        InitializeComponent();
-    }
-
-    [Property(OnChangedMethod = nameof(OnOrientationChanged))]
-    public partial StackOrientation Orientation { get; set; }
-    
-    [Property(DefaultValue = YgFlexDirection.Row)]
-    public partial YgFlexDirection BoxFlexDirection { get; set; }
-
-    [Property]
-    public partial float GapColumn { get; set; }
-
-    [Property]
-    public partial float GapRow { get; set; }
-
-    private partial void OnOrientationChanged(StackOrientation prop)
-    {
-        BoxFlexDirection = prop switch
-        {
-            StackOrientation.Horizontal => YgFlexDirection.Row,
-            StackOrientation.Vertical => YgFlexDirection.Column,
-            _ => throw new ArgumentOutOfRangeException(nameof(prop), prop, null)
-        };
+        return FlexPanel(
+            flexDirection: orientation == StackOrientation.Horizontal
+                ? YgFlexDirection.Row
+                : YgFlexDirection.Column,
+            alignItems: YgAlign.Center,
+            gapColumn: gapColumn,
+            gapRow: gapRow,
+            children: child
+        );
     }
 }
 

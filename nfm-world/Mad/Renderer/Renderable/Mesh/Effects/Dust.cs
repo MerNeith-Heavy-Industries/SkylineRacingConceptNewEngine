@@ -140,9 +140,9 @@ public class Dust : IDisposable
                         {
                             _sbln[dust] = tracker.SurfaceType switch
                             {
-                                0 => 0.2F,
-                                1 => 0.4F,
-                                2 => 0.45F,
+                                (NFMWorldLibrary.CarPhysics.SurfaceType)0 => 0.2F,
+                                (NFMWorldLibrary.CarPhysics.SurfaceType)1 => 0.4F,
+                                (NFMWorldLibrary.CarPhysics.SurfaceType)2 => 0.45F,
                                 _ => _sbln[dust]
                             };
 
