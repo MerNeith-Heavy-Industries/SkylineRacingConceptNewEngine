@@ -11,11 +11,13 @@ public class DefaultHudManager : UIManager, IHud
 {
     private readonly Reconciler _reconciler = new();
     private Visual? _root;
+    private ReactorDom _dom;
 
     private VNode[] _hudElements =
     [
         CentralTextView(),
-        PowerDamageBars()
+        PowerDamageBars(),
+        LapTimerSplitsView()
     ];
 
     public HudState State
@@ -31,6 +33,7 @@ public class DefaultHudManager : UIManager, IHud
     public DefaultHudManager()
     {
         RootPanel = new FlexPanel();
+        _dom = new ReactorDom();
         UpdateHud();
     }
 
@@ -38,7 +41,7 @@ public class DefaultHudManager : UIManager, IHud
     public void UpdateHud()
     {
         var host = HudHost(state: State, children: _hudElements);
-        _root = _reconciler.Reconcile(host, RootPanel, _root);
+        _dom.Mount(RootPanel, host);
     }
 
     public void SetElements(params VNode[] elements)

@@ -1,6 +1,7 @@
 using NFMWorld.Reactor;
 using NFMWorldLibrary.Backend.Gamemodes;
 using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.Reactor.Nodes;
 using static NFMWorldLibrary.DriverInterface.UI.Elements.Nodes;
 
 namespace NFMWorld.UI.Hud;
@@ -14,6 +15,6 @@ public class HudHost(HudState state, params VNode[] children) : Component
     protected override VNode Render()
     {
         ProvideContext(HudState.Context, state);
-        return View(children: children);
+        return View(children: OverlayPanel(children));
     }
 }
