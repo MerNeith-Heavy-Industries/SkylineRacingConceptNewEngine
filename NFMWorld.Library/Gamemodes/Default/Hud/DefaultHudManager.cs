@@ -11,6 +11,14 @@ public class DefaultHudManager : UIManager, IHud
 {
     private readonly Reconciler _reconciler = new();
     private Visual? _root;
+    private ReactorDom _dom;
+
+    private VNode[] _hudElements =
+    [
+        CentralTextView(),
+        PowerDamageBars(),
+        LapTimerSplitsView()
+    ];
 
     public HudState State
     {
@@ -25,17 +33,27 @@ public class DefaultHudManager : UIManager, IHud
     public DefaultHudManager()
     {
         RootPanel = new FlexPanel();
+        _dom = new ReactorDom();
         UpdateHud();
     }
 
     /// <summary>Push current state through the HUD component tree.</summary>
     public void UpdateHud()
     {
-        var host = HudHost(state: State, children: (VNode[])[
-            CentralTextView(),
-            PowerDamageBars()
-        ]);
-        _root = _reconciler.Reconcile(host, RootPanel, _root);
+        var host = HudHost(state: State, children: _hudElements);
+        _dom.Mount(RootPanel, host);
+    }
+
+    public void SetElements(params VNode[] elements)
+    {
+        _hudElements = elements;
+        UpdateHud();
+    }
+
+    public void AddElement(VNode element)
+    {
+        _hudElements = [.._hudElements, element];
+        UpdateHud();
     }
 
     public void GameTick()

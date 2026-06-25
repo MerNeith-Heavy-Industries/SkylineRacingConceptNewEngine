@@ -144,7 +144,8 @@ public class MemoizationTests
             "Should skip render when context is not provided and version is unchanged");
     }
 
-    // ════════════════════════════════════════════════════════════════════    //  Deep memo + deep context
+    // ════════════════════════════════════════════════════════════════════
+    //  Deep memo + deep context
     // ════════════════════════════════════════════════════════════════════
 
     [TestMethod]
