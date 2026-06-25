@@ -139,7 +139,7 @@ public class Reconciler
         // prev.AssignProperties resets all properties to their pre-last-pass state;
         // AssignProperties then overwrites only the properties set this pass.
         // Properties not set this pass keep their restored (default) values.
-        if (snapshot.Previous != null)
+        if (snapshot!.Previous != null)
         {
             snapshot.Previous.AssignProperties(existing);
             snapshot.Previous.ClearProperties();
