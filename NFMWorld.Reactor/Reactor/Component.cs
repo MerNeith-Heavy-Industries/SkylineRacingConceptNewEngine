@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using ObservableCollections;
 using WorldXaml.ObservableCollections;
 
@@ -9,15 +10,13 @@ namespace NFMWorld.Reactor;
 
 /// <summary>
 /// Base class for user-defined UI components. Subclass and override <see cref="Render"/>.
-/// Components can hold state via hooks (<see cref="UseState{T}"/>, <see cref="UseEffect"/>,
-/// <see cref="UseProperty{T}"/>) or fields, and receive props via constructor.
+/// Components can hold state via hooks (<see cref="UseState{T}"/>, <see cref="UseEffect"/>)
+/// or fields, and receive props via constructor.
 /// </summary>
 public abstract class Component
 {
     private Visual? _root;
-    private FlexPanel? _container;
     private bool _mounted;
-    private bool _treeHosted; // true when this component lives inside a ComponentNode tree
 
     #region Hooks infrastructure
 
@@ -30,18 +29,13 @@ public abstract class Component
     /// <summary>
     /// The reconciler that applies VNode diffs to the native tree.
     /// </summary>
-    public Reconciler Reconciler { get; set; } = new();
+    internal Reconciler? Reconciler { get; set; }
 
     /// <summary>
     /// The native Yoga node that is this component's root in the layout tree.
-    /// Created on first render. Null before <see cref="Mount"/>.
+    /// Created on first render. Null before <see cref="RenderViaReconciler"/>.
     /// </summary>
     public Visual? NativeRoot => _root;
-
-    /// <summary>
-    /// The container this component was mounted into.
-    /// </summary>
-    public FlexPanel? Container => _container;
 
     /// <summary>
     /// True after the first render has completed.
@@ -143,6 +137,8 @@ public abstract class Component
     /// </summary>
     protected (T value, Action<T> setValue) UseState<T>(T initialValue)
     {
+        VerifyReconciler();
+
         var box = ValidateHook<StateBox<T>>() ?? AddHook(new StateBox<T>(initialValue));
         
         return (box.Value, newValue =>
@@ -165,6 +161,8 @@ public abstract class Component
     /// </param>
     protected void UseEffect(Func<Action?> effect, params object?[]? dependencies)
     {
+        VerifyReconciler();
+
         var box = ValidateHook<DepsBox>() ?? AddHook(new DepsBox(null));
 
         // Check if dependencies changed since last render
@@ -200,6 +198,8 @@ public abstract class Component
     /// </summary>
     protected T UseMemo<T>(Func<T> factory, params object?[]? dependencies)
     {
+        VerifyReconciler();
+
         var box = ValidateHook<MemoBox<T>>() ?? AddHook(new MemoBox<T>());
 
         if (box.Dependencies is null || !DepsEqual(box.Dependencies, dependencies))
@@ -228,6 +228,8 @@ public abstract class Component
     /// </summary>
     protected Ref<T> UseRef<T>(T initialValue = default!)
     {
+        VerifyReconciler();
+
         var box = ValidateHook<StateBox<Ref<T>>>() ?? AddHook(new StateBox<Ref<T>>(new Ref<T>(initialValue)));
 
         return box.Value;
@@ -239,6 +241,8 @@ public abstract class Component
     /// </summary>
     protected T UseObservable<T>(T source) where T : INotifyPropertyChanged
     {
+        VerifyReconciler();
+
         var (tick, setTick) = UseState(0);
         UseEffect(() =>
         {
@@ -256,6 +260,8 @@ public abstract class Component
     protected TProp UseObservableProperty<T, TProp>(T source, Func<T, TProp> selector, string propertyName)
         where T : INotifyPropertyChanged
     {
+        VerifyReconciler();
+
         var (tick, setTick) = UseState(0);
         UseEffect(() =>
         {
@@ -277,6 +283,8 @@ public abstract class Component
     /// </summary>
     protected ObservableCollection<T> UseCollection<T>(ObservableCollection<T> collection)
     {
+        VerifyReconciler();
+
         var (tick, setTick) = UseState(0);
         UseEffect(() =>
         {
@@ -294,6 +302,8 @@ public abstract class Component
     protected TCollection UseCollection<TCollection, T>(TCollection collection)
         where TCollection : INonSynchronizedObservableCollection<T>
     {
+        VerifyReconciler();
+
         var (tick, setTick) = UseState(0);
         UseEffect(() =>
         {
@@ -313,6 +323,8 @@ public abstract class Component
     /// </summary>
     protected T UseContext<T>(Context<T> context)
     {
+        VerifyReconciler();
+
         _ = ValidateHook<ContextHook>() ?? AddHook(new ContextHook());
         _hookIndex++;
 
@@ -332,6 +344,8 @@ public abstract class Component
     /// </summary>
     protected void ProvideContext<T>(Context<T> context, T value)
     {
+        VerifyReconciler();
+
         context.Version++;
         Reconciler.SetContext(context, value);
     }
@@ -447,21 +461,6 @@ public abstract class Component
     protected virtual void OnUnmounted() { }
 
     /// <summary>
-    /// Re-render and reconcile into the given container.
-    /// </summary>
-    public Visual Mount(FlexPanel container)
-    {
-        _container = container;
-        BeginRender();
-        VNode vnode = Render();
-        EndRender();
-        _root = Reconciler.Reconcile(vnode, container, null);
-        _mounted = true;
-        OnMounted();
-        return _root;
-    }
-
-    /// <summary>
     /// Render and reconcile as part of a parent <see cref="Reconciler"/> pass
     /// (used when the component is hosted in a <see cref="ComponentNode"/>).
     /// Does not manage container placement — the caller's reconciler handles that.
@@ -469,7 +468,6 @@ public abstract class Component
     internal Visual? RenderViaReconciler(Reconciler reconciler, Visual? existing, ComponentNode cnode)
     {
         Reconciler = reconciler;
-        _treeHosted = true;
 
         // ── Memo check ────────────────────────────────────────────────
         if (ShouldSkipRender(cnode))
@@ -493,40 +491,34 @@ public abstract class Component
     /// Re-render and reconcile changes. When tree-hosted (inside a ComponentNode),
     /// re-renders in-place; otherwise reconciles into the mounted container.
     /// </summary>
-    public void Update()
+    internal void Update()
     {
+        VerifyReconciler();
+        
         if (!_mounted || _root is null) return;
-        if (!_treeHosted && _container is null) return;
 
-        BeginRender();
-        VNode vnode = Render();
-        EndRender();
-
-        if (_treeHosted)
+        // Schedule an update on the next tick
+        Reconciler.ScheduleOnNextTick(this, () =>
         {
+            if (!_mounted || _root is null) return;
+
+            BeginRender();
+            VNode vnode = Render();
+            EndRender();
+
             _root = Reconciler.ReconcileNode(vnode, _root);
             Reconciler.FinishPass();
-        }
-        else
-        {
-            _root = Reconciler.Reconcile(vnode, _container!, _root);
-        }
+        });
     }
 
     /// <summary>
     /// Remove from the native tree. Runs effect cleanups and <see cref="OnUnmounted"/>.
     /// </summary>
-    public void Unmount()
+    internal void Unmount()
     {
         RunUnmountCleanups();
-        if (!_treeHosted && _container is not null && _root is not null)
-        {
-            _container.Children.Remove(_root);
-        }
         _root = null;
-        _container = null;
         _mounted = false;
-        _treeHosted = false;
         _hookIndex = 0;
         _prevHookCount = 0;
         _hooks?.Clear();
@@ -571,4 +563,12 @@ public abstract class Component
     }
     
     #endregion
+    
+    [MemberNotNull(nameof(Reconciler))]
+    private void VerifyReconciler([CallerMemberName] string method = "")
+    {
+        if (Reconciler is null)
+            throw new InvalidOperationException($"{method} can only be called during Render when the component is hosted in a Reconciler.");
+    }
+
 }

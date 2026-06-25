@@ -9,7 +9,7 @@ namespace NFMWorld.Reactor;
 /// Diffs a VNode tree against the native Yoga node tree and applies
 /// minimal changes: property updates, child insertion/removal/reorder.
 /// </summary>
-public class Reconciler
+internal class Reconciler(SynchronizationContext synchronizationContext)
 {
     private class Snapshot
     {
@@ -25,6 +25,9 @@ public class Reconciler
     private readonly Dictionary<Visual, Snapshot> _snapshots = [];
     private readonly Stack<ContextFrame> _contextStack = new();
     private readonly Dictionary<(Visual parent, int childIndex), Component> _componentSlots = [];
+    private Dictionary<object, Action> _workOnNextTick = [];
+    private Dictionary<object, Action> _otherWorkOnNextTick = [];
+    private bool _queuedWorkForNextTick;
 
     private void PushContextFrame() => _contextStack.Push(new ContextFrame());
     private void PopContextFrame() => _contextStack.Pop();
@@ -332,5 +335,33 @@ public class Reconciler
             _snapshots.Remove(visual);
 
         _snapshotKeysToRemove.Clear();
+    }
+
+    public void ScheduleOnNextTick(object key, Action action)
+    {
+        _workOnNextTick[key] = action;
+        if (!_queuedWorkForNextTick)
+        {
+            _queuedWorkForNextTick = true;
+            synchronizationContext.Post(Tick, this);
+        }
+    }
+
+    private static void Tick(object? state)
+    {
+        var self = (Reconciler)state!;
+        
+        // reset the queued work status
+        self._queuedWorkForNextTick = false;
+        
+        // swap _workOnNextTick and _otherWorkOnNextTick because we want to allow scheduling new work during the tick
+        var workOnNextTick = self._workOnNextTick;
+        self._workOnNextTick = self._otherWorkOnNextTick;
+        self._otherWorkOnNextTick = workOnNextTick;
+        foreach (var (_, action) in workOnNextTick)
+        {
+            action();
+        }
+        workOnNextTick.Clear();
     }
 }
