@@ -2,12 +2,13 @@
 
 public class ReactorDom
 {
-    private Reconciler _reconciler = new();
+    private readonly Reconciler _reconciler;
     private VNode? _rootNode;
     private Visual? _container;
 
-    public ReactorDom()
+    public ReactorDom(SynchronizationContext synchronizationContext)
     {
+        _reconciler = new Reconciler(synchronizationContext);
         HotReloadService.UpdateApplicationEvent += OnHotReloadServiceOnUpdateApplicationEvent;
     }
 

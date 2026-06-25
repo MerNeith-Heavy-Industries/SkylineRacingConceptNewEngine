@@ -154,7 +154,7 @@ public class WorldGame : Game
         }
 
         {
-            var transaction = SentrySdk.StartTransaction("GameThreadContnext", "gameloop.gamethread");
+            var transaction = SentrySdk.StartTransaction("GameThreadContext", "gameloop.gamethread");
             GameThreadContext.Current.ExecutePendingTasks();
             transaction.Finish();
         }
