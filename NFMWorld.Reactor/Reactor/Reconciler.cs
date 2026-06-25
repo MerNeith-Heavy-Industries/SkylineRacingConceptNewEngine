@@ -65,8 +65,6 @@ public class Reconciler
     /// </summary>
     public Visual Reconcile(VNode vnode, Visual container, Visual? existingRoot)
     {
-        _visitedComponents.Clear();
-
         var result = ReconcileNode(vnode, existingRoot);
         if (result is null)
             return existingRoot!; // Shouldn't happen for root
@@ -79,12 +77,22 @@ public class Reconciler
             container.InsertAt(0, result);
         }
 
-        // Unmount any components that were active last pass but not visited this pass
-        UnmountStaleComponents();
-
-        SwapSnapshots();
+        FinishPass();
 
         return result;
+    }
+
+    /// <summary>
+    /// Runs post-reconciliation cleanup: unmounts stale components and rotates snapshots.
+    /// Called automatically by <see cref="Reconcile"/>; call manually after
+    /// <see cref="ReconcileNode"/> when reconciling tree-hosted components via
+    /// <see cref="Component.Update"/>.
+    /// </summary>
+    public void FinishPass()
+    {
+        UnmountStaleComponents();
+        SwapSnapshots();
+        _visitedComponents.Clear();
     }
 
     private void UnmountStaleComponents()
