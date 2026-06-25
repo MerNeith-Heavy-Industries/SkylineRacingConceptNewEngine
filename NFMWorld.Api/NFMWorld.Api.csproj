@@ -13,11 +13,11 @@
       </PackageReference>
     </ItemGroup>
 
-    <Target Name="NSwag" BeforeTargets="Build">
-        <PropertyGroup>
-            <NSwagConfiguration>nswag.json</NSwagConfiguration>
-            <GeneratedOutput>Client.g.cs</GeneratedOutput>
-        </PropertyGroup>
-        <Exec Command="$(NSwagExe_Net80) run $(NSwagConfiguration) /variables:GeneratedOutput=$(GeneratedOutput)" />
-    </Target>
+<!--    <Target Name="NSwag" BeforeTargets="Build">-->
+<!--        <PropertyGroup>-->
+<!--            <NSwagConfiguration>nswag.json</NSwagConfiguration>-->
+<!--            <GeneratedOutput>Client.g.cs</GeneratedOutput>-->
+<!--        </PropertyGroup>-->
+<!--        <Exec Command="$(NSwagExe_Net80) run $(NSwagConfiguration) /variables:GeneratedOutput=$(GeneratedOutput)" />-->
+<!--    </Target>-->
 </Project>
