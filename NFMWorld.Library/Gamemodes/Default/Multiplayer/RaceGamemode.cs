@@ -8,6 +8,7 @@ using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Util;
 using static NFMWorldLibrary.DriverInterface.UI.Elements.Nodes;
+using static NFMWorld.UI.Hud.Nodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 

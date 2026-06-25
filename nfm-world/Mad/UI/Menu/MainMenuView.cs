@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
@@ -5,41 +6,35 @@ using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Menu;
 
-public class MainMenuView : Component
+public class MainMenuView(
+    string Title = "NFM WORLD?",
+    Action? Garage = null,
+    Action? Settings = null,
+    Action? Credits = null,
+    Action? Quit = null,
+    Action? Login = null,
+    Action? Logout = null,
+    Action? PlayNFM1 = null,
+    Action? PlayNFM2 = null,
+    Action? PlayCommunity = null,
+    Action? PlayFreePlay = null,
+    Action? PlayCompetitive = null,
+    Action? PlayCasual = null,
+    Action? ModelEditor = null,
+    Action? StageEditor = null,
+    Action? CampaignEditor = null,
+    Action? TimeTrials = null,
+    Action? Challenges = null,
+    Action? GameInstructions = null
+) : Component
 {
-    private readonly MainMenuViewModel _vm;
-
-    // Navigation events — hooked by MainMenuPhase
-    public event Action? Garage { add => _vm.Garage += value; remove => _vm.Garage -= value; }
-    public event Action? Settings { add => _vm.Settings += value; remove => _vm.Settings -= value; }
-    public event Action? Credits { add => _vm.Credits += value; remove => _vm.Credits -= value; }
-    public event Action? Quit { add => _vm.Quit += value; remove => _vm.Quit -= value; }
-    public event Action? Login { add => _vm.Login += value; remove => _vm.Login -= value; }
-    public event Action? Logout { add => _vm.Logout += value; remove => _vm.Logout -= value; }
-    public event Action? PlayNFM1 { add => _vm.PlayNFM1 += value; remove => _vm.PlayNFM1 -= value; }
-    public event Action? PlayNFM2 { add => _vm.PlayNFM2 += value; remove => _vm.PlayNFM2 -= value; }
-    public event Action? PlayCommunity { add => _vm.PlayCommunity += value; remove => _vm.PlayCommunity -= value; }
-    public event Action? PlayFreePlay { add => _vm.PlayFreePlay += value; remove => _vm.PlayFreePlay -= value; }
-    public event Action? PlayCompetitive { add => _vm.PlayCompetitive += value; remove => _vm.PlayCompetitive -= value; }
-    public event Action? PlayCasual { add => _vm.PlayCasual += value; remove => _vm.PlayCasual -= value; }
-    public event Action? ModelEditor { add => _vm.ModelEditor += value; remove => _vm.ModelEditor -= value; }
-    public event Action? StageEditor { add => _vm.StageEditor += value; remove => _vm.StageEditor -= value; }
-    public event Action? CampaignEditor { add => _vm.CampaignEditor += value; remove => _vm.CampaignEditor -= value; }
-    public event Action? TimeTrials { add => _vm.TimeTrials += value; remove => _vm.TimeTrials -= value; }
-    public event Action? Challenges { add => _vm.Challenges += value; remove => _vm.Challenges -= value; }
-    public event Action? GameInstructions { add => _vm.GameInstructions += value; remove => _vm.GameInstructions -= value; }
-
-    public MainMenuView()
-    {
-        _vm = new MainMenuViewModel();
-        DisableMemo();
-    }
-
+    public record MainMenuItem(string Text, string Description, Action? OnClick);
+    
     protected override VNode Render()
     {
-        var vm = UseObservable(_vm);
-        var items = UseCollection(vm.Items);
-
+        var (menuHistory, setMenuHistory) = UseState(new ImmutableArray<Action>());
+        var (activeItem, setActiveItem) = UseState<MainMenuItem?>(null);
+        
         return View(
             name: "MainMenu",
             flexDirection: YgFlexDirection.Column,

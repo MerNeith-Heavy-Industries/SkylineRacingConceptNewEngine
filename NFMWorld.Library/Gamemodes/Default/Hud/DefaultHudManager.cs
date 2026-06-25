@@ -2,6 +2,7 @@
 using NFMWorld.UI.Hud;
 using WorldXaml.UI.Yoga;
 using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.UI.Hud.Nodes;
 using static NFMWorldLibrary.DriverInterface.UI.Elements.Nodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
