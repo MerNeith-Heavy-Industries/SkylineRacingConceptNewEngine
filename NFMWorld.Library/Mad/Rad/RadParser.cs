@@ -55,9 +55,16 @@ public partial class RadParser
     private bool _road;
     private bool _castsShadow;
 
+    // physhot and SRC format wheel meshes (declared before the wheel)
     private List<WheelMesh> _wheelMeshes = [];
 
+    // phy-addons wheel meshes (declared after the wheel, wheel has )c suffix)
+    private UnlimitedArray<List<Rad3dPoly>?> _phyAddonsWheelMeshes = [];
+
     private List<Rad3dPoly> _currentPolys;
+
+    private Rad3dPoly _currentPoly;
+    private bool _inPoly;
     
     private List<f64Vector3> _meshCollisionVerts = [];
     private List<ushort> _meshCollisionIndices = [];
@@ -66,6 +73,7 @@ public partial class RadParser
     private readonly string _fileName;
     private float _scaleRadius;
     private float _scaleDepth;
+    private int? _phyAddonsWheelId;
 
     private RadParser(string fileName)
     {
@@ -93,7 +101,19 @@ public partial class RadParser
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error parsing line {lineNumber}: '{line.ToString()}'\n{ex.Message}", ex);
+                throw new InvalidOperationException($"Error parsing line {lineNumber}: '{line.ToString()}'\n{ex.Message}", ex);
+            }
+        }
+        
+        // reconcile phy-addons custom wheels
+        for (var i = 0; i < parser._phyAddonsWheelMeshes.Count; i++)
+        {
+            if (parser._phyAddonsWheelMeshes[i] is { } wheelMesh)
+            {
+                parser._wheels[i] = parser._wheels[i] with
+                {
+                    Polys = wheelMesh.ToArray()
+                };
             }
         }
 
@@ -251,8 +271,17 @@ public partial class RadParser
                 Rotates: rotates,
                 Width: width * idiv * iwid,
                 Height: height * idiv,
-                Polys: _wheelMeshes.Count > _wheels.Count ? _wheelMeshes[_wheels.Count].GetScaledPolys(width * (float)idiv * (float)iwid, height * (float)idiv) : null
+                Polys: _wheelMeshes.Count > _wheels.Count
+                    // physhot custom wheels
+                    ? _wheelMeshes[_wheels.Count].GetScaledPolys(width * (float)idiv * (float)iwid, height * (float)idiv)
+                    : null
             ));
+
+            // phy-addons custom wheels
+            if (line.EndsWith(")c"))
+            {
+                _phyAddonsWheelMeshes[_wheels.Count - 1] = [];
+            }
         }
 
         else if (line.StartsWith("rims("))
@@ -440,36 +469,37 @@ public partial class RadParser
 
         else if (line.StartsWith("<p>") || line.StartsWith("[p]"))
         {
-            _currentPolys.Add(new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []));
+            _currentPoly = new Rad3dPoly(new Color3(), null, PolyType.Flat, LineType.Flat, 0.0f, []);
+            _inPoly = true;
             _noOutline = false;
+            _phyAddonsWheelId = null;
         }
         
-        if (_currentPolys.Count > 0)
+        if (_inPoly)
         {
-            ref var poly = ref _currentPolys.GetValueRef(^1);
             if (line.StartsWith("c(g)")) // SRC extension
             {
-                poly = poly with { PolyType = PolyType.CGround };
+                _currentPoly = _currentPoly with { PolyType = PolyType.CGround };
             }
             else if (line.StartsWith("c("))
             {
                 var color = Color3.FromSpan(BracketParser.GetShorts(line, stackalloc short[3]));
-                poly = poly with { Color = color };
+                _currentPoly = _currentPoly with { Color = color };
                 if (_colors.TryGetValue(color, out var colNum))
                 {
-                    poly = poly with { ColNum = colNum };
+                    _currentPoly = _currentPoly with { ColNum = colNum };
                 }
             }
 
-            else if (line.StartsWith("glass")) poly = poly with { PolyType = PolyType.Glass };
-            else if (line.StartsWith("lightB")) poly = poly with { PolyType = PolyType.BrakeLight };
-            else if (line.StartsWith("lightR")) poly = poly with { PolyType = PolyType.ReverseLight };
-            else if (line.StartsWith("light")) poly = poly with { PolyType = PolyType.Light };
-            else if (line.StartsWith("gr(-10)")) poly = poly with { LineType = LineType.BrightColored };
-            else if (line.StartsWith("gr(-18)")) poly = poly with { LineType = LineType.Charged };
-            else if (line.StartsWith("gr(-13)")) poly = poly with { PolyType = PolyType.Finish };
+            else if (line.StartsWith("glass")) _currentPoly = _currentPoly with { PolyType = PolyType.Glass };
+            else if (line.StartsWith("lightB")) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
+            else if (line.StartsWith("lightR")) _currentPoly = _currentPoly with { PolyType = PolyType.ReverseLight };
+            else if (line.StartsWith("light")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
+            else if (line.StartsWith("gr(-10)")) _currentPoly = _currentPoly with { LineType = LineType.BrightColored };
+            else if (line.StartsWith("gr(-18)")) _currentPoly = _currentPoly with { LineType = LineType.Charged };
+            else if (line.StartsWith("gr(-13)")) _currentPoly = _currentPoly with { PolyType = PolyType.Finish };
             // SRC extension
-            else if (line.StartsWith("proad")) poly = poly with { LineType = LineType.Colored };
+            else if (line.StartsWith("proad")) _currentPoly = _currentPoly with { LineType = LineType.Colored };
             // NFMW extension
             else if (line.StartsWith("decal"))
             {
@@ -479,7 +509,7 @@ public partial class RadParser
                 {
                     decalValue = BracketParser.GetNumber<float>(line);
                 }
-                poly = poly with { DecalOffset = decalValue };
+                _currentPoly = _currentPoly with { DecalOffset = decalValue };
             }
             else if (line.StartsWith("p("))
             {
@@ -498,25 +528,53 @@ public partial class RadParser
             }
             
             else if (line.StartsWith("noOutline")) _noOutline = true;
+            
+            else if (line.StartsWith("wheel("))
+            {
+                _phyAddonsWheelId = BracketParser.GetNumber<int>(line);
+            }
+            else if (line.StartsWith("wheel"))
+            {
+                _phyAddonsWheelId = -1;
+            }
 
             else if (line.StartsWith("</p>") || line.StartsWith("[/p]"))
             {
-                poly = poly.WithPoints(_points.ToArray(), _tris.Count > 0 ? _tris.ToImmutableArray() : null);
+                _currentPoly = _currentPoly.WithPoints(_points.ToArray(), _tris.Count > 0 ? _tris.ToImmutableArray() : null);
                 _points.Clear();
                 _tris.Clear();
                 if (_stonecold || _noOutline)
                 {
-                    if (poly.LineType == LineType.Flat)
+                    if (_currentPoly.LineType == LineType.Flat)
                     {
                         if (_road)
                         {
-                            poly = poly with { LineType = LineType.Colored };
+                            _currentPoly = _currentPoly with { LineType = LineType.Colored };
                         }
                         else
                         {
-                            poly = poly with { LineType = null };
+                            _currentPoly = _currentPoly with { LineType = null };
                         }
                     }
+                }
+
+                if (_phyAddonsWheelId is { } wheelId)
+                {
+                    if (wheelId != -1 && _phyAddonsWheelMeshes[wheelId] is { } list)
+                    {
+                        list.Add(_currentPoly);
+                    }
+                    else
+                    {
+                        foreach (var otherList in _phyAddonsWheelMeshes)
+                        {
+                            otherList?.Add(_currentPoly);
+                        }
+                    }
+                }
+                else
+                {
+                    _currentPolys.Add(_currentPoly);
                 }
             }
         }
