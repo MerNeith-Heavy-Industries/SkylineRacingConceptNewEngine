@@ -7,6 +7,7 @@ using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Util;
+using static NFMWorld.UI.Hud.Nodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 

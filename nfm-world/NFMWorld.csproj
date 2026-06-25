@@ -18,9 +18,6 @@
   <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
         <Compile Remove="Generated/**" />
-        <Compile Update="Mad\UI\Test\HStack.cs">
-          <DependentUpon>HStack.xaml</DependentUpon>
-        </Compile>
         <Compile Update="Mad\UI\LoginModal.cs">
           <DependentUpon>LoginModal.xaml</DependentUpon>
         </Compile>
@@ -86,9 +83,6 @@
     <!-- XAML files to compile -->
     <ItemGroup>
         <AvaloniaXaml Include="Mad\UI\LoginModal.xaml" />
-        <AvaloniaXaml Include="Mad\UI\Menu\GarageUiView.xaml" />
-        <AvaloniaXaml Include="Mad\UI\Menu\MainMenuView.xaml" />
-        <AvaloniaXaml Include="Mad\UI\Test\HStack.xaml" />
         <AvaloniaXaml Include="Mad\UI\Test\XamlTestView.xaml" />
     </ItemGroup>
     
@@ -175,12 +169,6 @@
 
 
     <ItemGroup>
-        <Compile Update="Mad\UI\Menu\GarageUiView.cs">
-            <DependentUpon>GarageUiView.xaml</DependentUpon>
-        </Compile>
-        <Compile Update="Mad\UI\Menu\MainMenuView.cs">
-            <DependentUpon>MainMenuView.xaml</DependentUpon>
-        </Compile>
         <Compile Update="Mad\UI\Test\XamlTestView.cs">
             <DependentUpon>XamlTestView.xaml</DependentUpon>
         </Compile>
