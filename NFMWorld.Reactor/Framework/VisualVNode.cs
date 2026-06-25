@@ -28,6 +28,8 @@ public abstract class VisualVNode : VNode
 
     // Do not rename (source generator uses it)
     // ReSharper disable InconsistentNaming
+    protected Action<VisualTreeAttachmentEventArgs>? _attachedToVisualTree;
+    protected Action<VisualTreeAttachmentEventArgs>? _detachedFromVisualTree;
     protected string? _classes;
     protected object? _key;
     protected string? _name;
