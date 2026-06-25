@@ -28,6 +28,16 @@ namespace NFMWorldLibrary;
 
 public class CarPhysics
 {
+    public enum SurfaceType
+    {
+        Road = 0,
+        OffTrack = 1,
+        OffRoad = 2,
+        Bump = 3,
+        BumpySides = 4,
+        Spikes = 5
+    }
+    
     private static readonly fix64 _tickRate = Physics.PHYSICS_MULTIPLIER_F64;
     private static readonly fix64 _oneOverTickRate = 1 / _tickRate;
     public Boolean Halted = false;
@@ -111,7 +121,7 @@ public class CarPhysics
     internal fix64 py = 0;
 
     public event EventHandler<(float f, int i)> SfxPlayCrash;
-    public event EventHandler<(int i, float f)> SfxPlaySkid;
+    public event EventHandler<(SurfaceType i, float f)> SfxPlaySkid;
     public event EventHandler<(int i, int i2, int i3)> SfxPlayScrape;
     public event EventHandler<(int i, int i2, int i3)> SfxPlayGscrape;
     public event EventHandler<float> PowerUp;
@@ -1112,7 +1122,7 @@ public class CarPhysics
             wheelz[i29] += (Scz[0] + Scz[1] + Scz[2] + Scz[3]) * fix64.Quarter * _tickRate;
         } //
 
-        var surfaceType = 1;
+        var surfaceType = SurfaceType.OffRoad;
         foreach (var collidable in stage.RetrievePointCollidables(conto.X, conto.Z))
         {
             if (collidable.TryGetValue(out ShapeRoad boxRoad))
@@ -1161,12 +1171,12 @@ public class CarPhysics
                 Skid = 2;
             }
 
-            if (surfaceType == 1)
+            if (surfaceType == SurfaceType.OffTrack)
             {
                 traction *= (fix64)0.75f;
             }
 
-            if (surfaceType == 2)
+            if (surfaceType == SurfaceType.OffRoad)
             {
                 traction *= (fix64)0.55f;
             }
@@ -1253,7 +1263,7 @@ public class CarPhysics
                     if (_dcnt > 40 * traction / Stat.Grip || BadLanding)
                     {
                         fix64 f42 = 1;
-                        if (surfaceType != 0)
+                        if (surfaceType != SurfaceType.Road)
                         {
                             f42 = (fix64)(1.2F);
                         }
@@ -1272,13 +1282,13 @@ public class CarPhysics
                     }
                     else
                     {
-                        if (surfaceType == 1 && random.NextFixed6401() > (fix64)0.8f)
+                        if (surfaceType == SurfaceType.OffTrack && random.NextFixed6401() > (fix64)0.8f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.1F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
                         }
 
-                        if ((surfaceType == 2 || surfaceType == 3) && random.NextFixed6401() > (fix64)0.6f)
+                        if ((surfaceType == SurfaceType.OffRoad || surfaceType == SurfaceType.Bump) && random.NextFixed6401() > (fix64)0.6f)
                         {
                             conto.Dust(j, wheelx[j], wheely[j], wheelz[j], (int)Scx[j], (int)Scz[j],
                                 (fix64)1.15F * Stat.Simag, (int)_tilt, BadLanding && Mtouch, wheelGround);
@@ -1290,10 +1300,10 @@ public class CarPhysics
                     _dcnt = Math.Max(_dcnt - 2, 0);
                 }
 
-                if (surfaceType == 3 || surfaceType == 4)
+                if (surfaceType == SurfaceType.Bump || surfaceType == SurfaceType.BumpySides)
                 {
                     int k = random.Next(4); // choose 4 wheels randomly to bounce up, usually some wheel will be chosen twice, which means another wheel is not chosen, causing tilt
-                    fix64 bumpLift = surfaceType == 3 ? -100 : -150;
+                    fix64 bumpLift = surfaceType == SurfaceType.Bump ? -100 : -150;
                     fix64 rng = (fix64)0.55F;
                     Scy[k] = bumpLift * rng * Speed / Stat.Swits[2] * (Stat.Bounce - (fix64)0.3F);
                 }
@@ -1328,7 +1338,7 @@ public class CarPhysics
 
             if (BadLanding && scxsum == 0 && sczsum == 0)
             {
-                surfaceType = 0;
+                surfaceType = SurfaceType.Road;
             } //
 
             Mtouch = false;
@@ -1362,7 +1372,7 @@ public class CarPhysics
                         f50 = (fix64)(0.3F);
                     }
 
-                    if (surfaceType == 0)
+                    if (surfaceType == SurfaceType.Road)
                     {
                         f50 += (fix64)1.1f;
                     }
@@ -1748,14 +1758,14 @@ public class CarPhysics
         {
             _tilt = 0;
         }
-        if (Wtouch && surfaceType == 2)
+        if (Wtouch && surfaceType == SurfaceType.OffRoad)
         {
             conto.Zy += (int)((random.NextFixed6401() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
             conto.Xy += (int)((random.NextFixed6401() * 6 * Speed / Stat.Swits[2] - 3 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         }
-        if (Wtouch && surfaceType == 1)
+        if (Wtouch && surfaceType == SurfaceType.OffTrack)
         {
             conto.Zy += (int)((random.NextFixed6401() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
@@ -2276,7 +2286,7 @@ public class CarPhysics
         IStage stage, Control control, ContO conto,
         Span<fix64> wheelx, Span<fix64> wheely, Span<fix64> wheelz,
         fix64 groundY, fix64 wheelYThreshold, fix64 wheelGround, ref int nGroundedWheels, bool wasMtouch,
-        int surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, Span<f64Vector3> wheelContactNormal,
+        SurfaceType surfaceType, out bool hitVertical, Span<bool> isWheelGrounded, Span<f64Vector3> wheelContactNormal,
         DeterministicRandom random)
     {
         hitVertical = false;
@@ -2376,7 +2386,7 @@ public class CarPhysics
                                         fix64 dustMag = Scy[k] / (fix64)(333.33F);
                                         if (dustMag > (fix64)(0.3F))
                                             dustMag = (fix64)(0.3F);
-                                        if (surfaceType == 0)
+                                        if (surfaceType == SurfaceType.Road)
                                             dustMag += (fix64)1.1f;
                                         else
                                             dustMag += (fix64)1.2f;
@@ -2455,7 +2465,7 @@ public class CarPhysics
                                 fix64 dustMag = Scy[k] / (fix64)(333.33F);
                                 if (dustMag > (fix64)(0.3F))
                                     dustMag = (fix64)(0.3F);
-                                if (surfaceType == 0)
+                                if (surfaceType == SurfaceType.Road)
                                     dustMag += (fix64)1.1f;
                                 else
                                     dustMag += (fix64)1.2f;
@@ -2464,7 +2474,7 @@ public class CarPhysics
                             wheely[k] = collision.newY + wheelGround; // snap wheel to the surface
                             
                             // sparks and scrape
-                            if (BadLanding && collidable.SurfaceType is 0 or 1)
+                            if (BadLanding && collidable.SurfaceType is SurfaceType.Road or SurfaceType.OffTrack)
                             {
                                 conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                 //if (Im == /*this.xt.im*/ 0)
@@ -2490,9 +2500,9 @@ public class CarPhysics
                             }
                             
                             // sparks and scrapes
-                            if (collidable.SurfaceType != 2)
+                            if (collidable.SurfaceType != SurfaceType.OffRoad)
                                 _crank[0, k]++;
-                            if (collidable.SurfaceType == 5 && random.NextFixed6401() > fix64.Half)
+                            if (collidable.SurfaceType == SurfaceType.Spikes && random.NextFixed6401() > fix64.Half)
                                 _crank[0, k]++;
                             if (_crank[0, k] > 1)
                             {
@@ -2543,7 +2553,7 @@ public class CarPhysics
 
                             if (collision.zTmp > -30)
                             {
-                                if (collidable.SurfaceType == 2)
+                                if (collidable.SurfaceType == SurfaceType.OffRoad)
                                     nWheelsDirtRamp++;
                                 else
                                     nWheelsRoadRamp++;
@@ -2552,7 +2562,7 @@ public class CarPhysics
                                 Gtouch = false;
 
                                 // sparks and scrape
-                                if (BadLanding && collidable.SurfaceType is 0 or 1)
+                                if (BadLanding && collidable.SurfaceType is SurfaceType.Road or SurfaceType.OffTrack)
                                 {
                                     conto.Spark(wheelx[k], wheely[k], wheelz[k], Scx[k], Scy[k], Scz[k], 1, (int)wheelGround);
                                     if (IsClientPlayer)
@@ -2561,7 +2571,7 @@ public class CarPhysics
                                     }
                                 }
 
-                                if (!wasMtouch && surfaceType != 0)
+                                if (!wasMtouch && surfaceType != SurfaceType.Road)
                                 {
                                     fix64 dustMag = (fix64)1.4F;
                                     conto.Dust(k, wheelx[k], wheely[k], wheelz[k], (int)Scx[k], (int)Scz[k], dustMag * Stat.Simag, 0, BadLanding && Mtouch, (int)wheelGround);

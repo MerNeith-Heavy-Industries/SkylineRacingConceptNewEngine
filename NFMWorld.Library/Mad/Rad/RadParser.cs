@@ -246,7 +246,7 @@ public class RadParser
                 Zy: 0,
                 Radius: new f64Vector3(),
                 Translation: new f64Vector3(),
-                SurfaceType: 0,
+                SurfaceType: CarPhysics.SurfaceType.Road,
                 Damage: 0,
                 NotWall: false,
                 Color: new Color3()
@@ -366,7 +366,7 @@ public class RadParser
                     }
                 };
             else if (line.StartsWith("skid("))
-                currentBox = currentBox with { SurfaceType = BracketParser.GetNumber<int>(line) };
+                currentBox = currentBox with { SurfaceType = (CarPhysics.SurfaceType)BracketParser.GetNumber<int>(line) };
             else if (line.StartsWith("dam"))
                 currentBox = currentBox with { Damage = 3 };
             else if (line.StartsWith("notwall("))
