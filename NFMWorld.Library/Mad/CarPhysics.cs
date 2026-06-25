@@ -1123,6 +1123,7 @@ public class CarPhysics
         } //
 
         var surfaceType = SurfaceType.OffRoad;
+        var surfaceTracMul = fix64.One;
         foreach (var collidable in stage.RetrievePointCollidables(conto.X, conto.Z))
         {
             if (collidable.TryGetValue(out ShapeRoad boxRoad))
@@ -1140,6 +1141,7 @@ public class CarPhysics
                 if (theBox.ResolveCollision(position) is not null)
                 {
                     surfaceType = collidable.SurfaceType;
+                    surfaceTracMul = collidable.TractionMultiplier;
                 }
             }
         }
@@ -1171,14 +1173,21 @@ public class CarPhysics
                 Skid = 2;
             }
 
-            if (surfaceType == SurfaceType.OffTrack)
+            if (surfaceTracMul != fix64.One)
             {
-                traction *= (fix64)0.75f;
+                traction *= surfaceTracMul;
             }
-
-            if (surfaceType == SurfaceType.OffRoad)
+            else if (surfaceType == SurfaceType.Road)
             {
-                traction *= (fix64)0.55f;
+                traction *= Stat.RoadGrip ?? 1;
+            }
+            else if (surfaceType == SurfaceType.OffTrack)
+            {
+                traction *= Stat.OffTrackGrip ?? (fix64)0.75f;
+            }
+            else if (surfaceType == SurfaceType.OffRoad)
+            {
+                traction *= Stat.OffRoadGrip ?? (fix64)0.55f;
             }
 
             var speedx = -(Speed * UMath.Sin(conto.Xz) * UMath.Cos(Pzy));
