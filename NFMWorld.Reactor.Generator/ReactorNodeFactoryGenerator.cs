@@ -288,9 +288,8 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             ? baseNode
             : "global::NFMWorld.Reactor.VisualVNode";
 
-        // Only seal leaf types; use abstract for abstract native types
-        var isInherited = allTypes.Any(t2 => t2.BaseTypeFqn == type.FullName);
-        var classMod = type.IsAbstract ? "abstract " : isInherited ? "" : "sealed ";
+        // Use abstract for abstract native types
+        var classMod = type.IsAbstract ? "abstract " : "";
 
         sb.AppendLine();
         sb.AppendLine($"/// <summary>Typed VNode for <see cref=\"{type.FullName}\"/>.</summary>");
@@ -309,7 +308,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     sb.AppendLine($"public global::NFMWorld.Reactor.Optional<{prop.TypeFqn}> {pascalName};");
                 }
                 
-                sb.AppendLine("public override void AssignProperties(Visual visual)");
+                sb.AppendLine("public override void AssignProperties(global::WorldXaml.UI.Yoga.Visual visual)");
                 sb.AppendLine("{");
                 using (sb.Indent())
                 {
@@ -414,7 +413,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                             sb.AppendLine("{");
                             using (sb.Indent())
                             {
-                                sb.AppendLine($"snapshot.{pascalName} = typedVisual.{prop.Name};");
+                                sb.AppendLine($"snapshot.{pascalName} = new global::NFMWorld.Reactor.Optional<{prop.TypeFqn}>(typedVisual.{prop.Name});");
                                 sb.AppendLine($"typedVisual.{prop.Name} = _{camelName}.Value;");
                             }
                             sb.AppendLine("}");
@@ -425,7 +424,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                             sb.AppendLine("{");
                             using (sb.Indent())
                             {
-                                sb.AppendLine($"snapshot.{pascalName} = typedVisual.{prop.Name};");
+                                sb.AppendLine($"snapshot.{pascalName} = new global::NFMWorld.Reactor.Optional<{prop.TypeFqn}>(typedVisual.{prop.Name});");
                                 sb.AppendLine($"typedVisual.{prop.Name} = _{camelName};");
                             }
                             sb.AppendLine("}");

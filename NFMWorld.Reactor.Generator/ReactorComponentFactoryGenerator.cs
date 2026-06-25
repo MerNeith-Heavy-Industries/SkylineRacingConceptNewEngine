@@ -288,7 +288,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
                 // ── InputsEqual override ────────────────────────────────────
                 sb.AppendLine();
                 sb.AppendLine("/// <inheritdoc />");
-                sb.AppendLine("public override bool InputsEqual(ComponentNode otherNode)");
+                sb.AppendLine("public override bool InputsEqual(global::NFMWorld.Reactor.ComponentNode otherNode)");
                 sb.AppendLine("{");
                 using (sb.Indent())
                 {
