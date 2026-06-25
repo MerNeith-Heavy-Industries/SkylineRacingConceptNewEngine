@@ -129,7 +129,7 @@ public readonly struct CollisionShapeRef : IQuadObject
 {
     public readonly int Index;
 
-    public readonly int SurfaceType;
+    public readonly CarPhysics.SurfaceType SurfaceType;
     public readonly int Damage;
     public readonly bool NotWall;
     public readonly Color3 DustColor;
