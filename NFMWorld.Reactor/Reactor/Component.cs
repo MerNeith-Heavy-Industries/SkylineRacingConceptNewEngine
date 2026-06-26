@@ -411,8 +411,8 @@ public abstract class Component
                 "Hooks cannot be called conditionally. Ensure every render calls the same number of hooks in the same order.");
         }
 
-        // Run cleanup from previous effects
-        if (_cleanupActions is not null)
+        // Run cleanup from previous effects ONLY when new effects are about to replace them
+        if (_cleanupActions is not null && _pendingEffects is { Count: > 0 })
         {
             foreach (var cleanup in _cleanupActions)
                 cleanup();
