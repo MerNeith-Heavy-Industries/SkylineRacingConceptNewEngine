@@ -122,7 +122,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 
                     properties.Add(new PropInfo(
                         Name: prop.Name,
-                        TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                        TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + (prop.NullableAnnotation == NullableAnnotation.Annotated ? "?" : ""),
                         IsValueType: prop.Type.IsValueType,
                         HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
                         DefaultValue: defaultVal,
