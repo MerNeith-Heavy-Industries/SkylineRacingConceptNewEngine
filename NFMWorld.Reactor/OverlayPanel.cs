@@ -12,10 +12,14 @@ public class OverlayPanel(params VNode[] children) : Component
 {
     protected override VNode Render()
     {
-        var wrapped = children
-            .Select(c => FlexPanel(position: Position.Absolute, children: c))
-            .ToArray();
-        return FlexPanel(flex: 1, position: Position.Relative, children: wrapped);
+        foreach (var child in children)
+        {
+            if (child is FlexPanelNode flexPanel)
+            {
+                flexPanel.WithPosition(Position.Absolute);
+            }            
+        }
+
+        return FlexPanel(flex: 1, position: Position.Relative, children: children);
     }
 }
-
