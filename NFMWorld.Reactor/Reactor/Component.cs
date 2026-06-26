@@ -52,6 +52,7 @@ public abstract class Component
     private VNode? _cachedVNode;
     private Dictionary<Context, long>? _contextVersionsRead;
     private Dictionary<Context, long>? _lastContextVersions;
+    private long _lastHotReloadGeneration;
 
     /// <summary>
     /// Disable memoization for this component. When memo is enabled (the default),
@@ -103,6 +104,7 @@ public abstract class Component
     internal void SaveMemoState(ComponentNode cnode, VNode vnode)
     {
         _lastInputCNode = cnode;
+        _lastHotReloadGeneration = HotReloadService.Generation;
 
         if (!_shouldMemo) return;
         _cachedVNode = vnode;
@@ -453,6 +455,20 @@ public abstract class Component
         }
     }
 
+    /// <summary>
+    /// Nulls out stored dependencies for <see cref="DepsBox"/> and
+    /// <see cref="MemoBox{T}"/> hooks so that <see cref="UseEffect"/>
+    /// and <see cref="UseMemo"/> detect a change and re-execute on the
+    /// next render. <see cref="StateBox{T}"/> hooks are left untouched
+    /// — component state survives hot reloads.
+    /// </summary>
+    private void InvalidateStableHooks()
+    {
+        if (_hooks is null) return;
+        foreach (var hook in _hooks)
+            hook?.Invalidate();
+    }
+
     #endregion
 
     #region Lifecycle
@@ -481,9 +497,17 @@ public abstract class Component
     {
         Reconciler = reconciler;
 
-        // ── Memo check ────────────────────────────────────────────────
-        if (ShouldSkipRender(cnode))
+        // ── Hot reload detection ──────────────────────────────────────
+        bool isHotReload = HotReloadService.Generation != _lastHotReloadGeneration;
+
+        // ── Memo check (bypassed on hot reload) ───────────────────────
+        if (!isHotReload && ShouldSkipRender(cnode))
             return _cachedVNode is not null ? reconciler.ReconcileNode(_cachedVNode, existing) : null;
+
+        // After a hot reload, invalidate stable hook dependencies so
+        // UseEffect / UseMemo re-execute with the updated code.
+        if (isHotReload)
+            InvalidateStableHooks();
 
         // Capture context stack for replay during deferred re-renders
         _contextStackSnapshot = reconciler.SnapshotContextStack();
@@ -522,6 +546,11 @@ public abstract class Component
     internal void PerformUpdate()
     {
         if (!_mounted || _root is null) return;
+
+        // After a hot reload, invalidate stable hook dependencies so
+        // UseEffect / UseMemo re-execute with the updated code.
+        if (HotReloadService.Generation != _lastHotReloadGeneration)
+            InvalidateStableHooks();
 
         RestoreContextFrames();
         try
@@ -574,7 +603,16 @@ public abstract class Component
 
     private sealed record PendingEffect(Func<Action?> Effect, int HookIndex);
 
-    private class Hook;
+    private class Hook
+    {
+        /// <summary>
+        /// Called after a hot reload to clear stable dependency state,
+        /// forcing <see cref="UseEffect"/> and <see cref="UseMemo"/> to
+        /// re-execute on the next render. <see cref="StateBox{T}"/> does
+        /// NOT override this — state is preserved across hot reloads.
+        /// </summary>
+        public virtual void Invalidate() { }
+    }
 
     private sealed class StateBox<T>(T value, IEqualityComparer<T> comparer) : Hook
     {
@@ -585,6 +623,12 @@ public abstract class Component
     private sealed class DepsBox(object?[]? dependencies) : Hook
     {
         public object?[]? Dependencies = dependencies;
+
+        public override void Invalidate()
+        {
+            if (Dependencies is not null)
+                Dependencies = null;
+        }
     }
 
     private sealed class ContextHook : Hook;
@@ -593,6 +637,12 @@ public abstract class Component
     {
         public T Value = default!;
         public object?[]? Dependencies;
+
+        public override void Invalidate()
+        {
+            if (Dependencies is not null)
+                Dependencies = null;
+        }
     }
 
     private static bool DepsEqual(object?[]? a, object?[]? b)
