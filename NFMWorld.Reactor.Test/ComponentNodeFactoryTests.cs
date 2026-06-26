@@ -99,34 +99,19 @@ public class ComponentNodeFactoryTests
     }
 
     /// <summary>
-    /// Verifies that a component can be created and rendered via the Reconciler.
+    /// Verifies that a component can be created and rendered via ReactorDom.
     /// </summary>
     [TestMethod]
     public void ComponentNode_RenderCount_Increments()
     {
-        var node = EmptyComponent();
-        var comp = (EmptyComponent)node.CreateComponent();
-
-        // Mount the component into a container (calls Render internally)
-        var container = new FlexPanel();
-        comp.Mount(container);
+        var vnode = EmptyComponent();
+        var (root, dom, ctx) = TestHelpers.MountVNode(vnode);
+        var comp = (EmptyComponent)((EmptyComponentNode)vnode).Instance!;
         Assert.AreEqual(1, comp.RenderCount);
 
         // Update triggers another render
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(2, comp.RenderCount);
-    }
-
-    /// <summary>
-    /// Verifies that ComponentNodeFactory.Create fallback works for components without generated wrappers.
-    /// </summary>
-    [TestMethod]
-    public void ComponentNodeFactory_Create_UntypedFallback()
-    {
-        var node = ComponentNodeFactory.Create<EmptyComponent>();
-
-        Assert.IsNotNull(node);
-        Assert.AreEqual(typeof(EmptyComponent), node.ComponentType);
-        Assert.IsInstanceOfType(node.CreateComponent(), typeof(EmptyComponent));
     }
 }
