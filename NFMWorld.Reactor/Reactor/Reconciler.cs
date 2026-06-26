@@ -65,9 +65,27 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
     /// <summary>
     /// Apply the VNode tree to the given native root container.
     /// Returns the native root element (created if needed).
+    /// Pass <paramref name="vnode"/> as null to unmount the existing tree
+    /// from the container (runs all effect cleanups and <see cref="Component.OnUnmounted"/>).
     /// </summary>
-    public Visual Reconcile(VNode vnode, Visual container, Visual? existingRoot)
+    public Visual? Reconcile(VNode? vnode, Visual container, Visual? existingRoot)
     {
+        // ── Null vnode: unmount everything ───────────────────────────
+        if (vnode is null)
+        {
+            // Remove existing root from container
+            if (existingRoot is not null)
+            {
+                if (container.VisualChildren.Count > 0)
+                    container.RemoveAt(0);
+            }
+
+            // Unmount all active components (runs effect cleanups + OnUnmounted)
+            UnmountAllComponents();
+
+            return null;
+        }
+
         var result = ReconcileNode(vnode, existingRoot);
         if (result is null)
             return existingRoot!; // Shouldn't happen for root
@@ -119,6 +137,19 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
         // Swap: visited become active for next pass
         foreach (var comp in _visitedComponents)
             _activeComponents.Add(comp);
+    }
+
+    /// <summary>
+    /// Unmounts ALL active components unconditionally (runs effect cleanups
+    /// and <see cref="Component.OnUnmounted"/>). Used when reconciling a null
+    /// VNode to tear down the entire tree.
+    /// </summary>
+    private void UnmountAllComponents()
+    {
+        foreach (var comp in _activeComponents)
+            comp.Unmount();
+        _activeComponents.Clear();
+        _visitedComponents.Clear();
     }
 
     internal Visual? ReconcileNode(VNode vnode, Visual? existing)

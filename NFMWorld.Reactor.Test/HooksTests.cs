@@ -202,10 +202,126 @@ public class HooksTests
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  Test Components
+    //  UseEffect — cleanup on unmount
     // ════════════════════════════════════════════════════════════════════
 
-    // ── Hook Order Enforcement ──────────────────────────────────────────
+    [TestMethod]
+    public void UseEffect_CleanupRunsOnUnmount_ReconcileNull()
+    {
+        var (comp, dom, ctx) = TestHelpers.MountComponent<UseEffectWithCleanupComponent>();
+        Assert.AreEqual(1, comp.EffectRunCount, "Effect should run on mount");
+        Assert.AreEqual(0, comp.CleanupRunCount, "Cleanup should not run on mount");
+
+        // Unmount via ReactorDom.Unmount → Reconciler.Reconcile(null, ...)
+        dom.Unmount();
+        ctx.Drain();
+        Assert.AreEqual(1, comp.CleanupRunCount, "Cleanup should run on unmount");
+        Assert.IsFalse(comp.IsMounted, "Component should no longer be mounted");
+    }
+
+    [TestMethod]
+    public void UseEffect_CleanupRunsOnUnmount_ChildRemoved()
+    {
+        var container = new FlexPanel();
+        var (dom, ctx) = TestHelpers.CreateDom();
+
+        // Mount parent with a child that has an effect+cleanup
+        var childCNode = ComponentNodeFactory.Create<UseEffectWithCleanupComponent>();
+        var parentVNode = FlexPanel(children: childCNode);
+        dom.Mount(container, parentVNode);
+        ctx.Drain();
+        var childNode = parentVNode.Children![0];
+        var child = ((ComponentNode)childNode).Instance! as UseEffectWithCleanupComponent;
+        Assert.IsNotNull(child);
+        Assert.AreEqual(1, child.EffectRunCount);
+        Assert.AreEqual(0, child.CleanupRunCount);
+
+        // Re-reconcile parent without the child
+        var parentVNode2 = FlexPanel();
+        dom.Mount(container, parentVNode2);
+        ctx.Drain();
+        Assert.AreEqual(1, child.CleanupRunCount, "Cleanup should run when child is removed");
+        Assert.IsFalse(child.IsMounted);
+    }
+
+    [TestMethod]
+    public void UseEffect_CleanupRunsOnUnmount_UpdatePath()
+    {
+        var (parent, _, ctx) = TestHelpers.MountComponent<ToggleCleanupChildComponent>(true);
+        var child = parent.ChildInstance!;
+        Assert.IsTrue(child.IsMounted);
+        Assert.AreEqual(1, child.EffectRunCount);
+        Assert.AreEqual(0, child.CleanupRunCount);
+
+        // Toggle off → child removed → cleanup should run
+        parent.ShowChild = false;
+        parent.Update();
+        ctx.Drain();
+        Assert.AreEqual(1, child.CleanupRunCount, "Cleanup should run when child removed via Update()");
+        Assert.IsFalse(child.IsMounted);
+    }
+
+    [TestMethod]
+    public void UseEffect_MultipleCleanupsRunOnUnmount()
+    {
+        var (comp, dom, ctx) = TestHelpers.MountComponent<MultiEffectComponent>();
+        Assert.AreEqual(3, comp.EffectRunCount, "3 effects should run on mount");
+        Assert.AreEqual(0, comp.CleanupRunCount);
+
+        dom.Unmount();
+        ctx.Drain();
+        Assert.AreEqual(3, comp.CleanupRunCount, "All 3 cleanups should run on unmount");
+        Assert.IsFalse(comp.IsMounted);
+    }
+
+    [TestMethod]
+    public void UseEffect_EmptyDepsCleanupRunsOnUnmount()
+    {
+        var (comp, dom, ctx) = TestHelpers.MountComponent<UseEffectOnceWithCleanupComponent>();
+        Assert.AreEqual(1, comp.EffectRunCount);
+        Assert.AreEqual(0, comp.CleanupRunCount);
+
+        // Re-render — effect should not re-run (empty deps)
+        comp.Update();
+        ctx.Drain();
+        Assert.AreEqual(1, comp.EffectRunCount, "Empty deps effect should not re-run");
+        Assert.AreEqual(0, comp.CleanupRunCount, "Cleanup should not run yet");
+
+        // Unmount — cleanup should run
+        dom.Unmount();
+        ctx.Drain();
+        Assert.AreEqual(1, comp.CleanupRunCount, "Cleanup should run on unmount");
+    }
+
+    [TestMethod]
+    public void UseEffect_CleanupBetweenRerenders_ThenFinalCleanupOnUnmount()
+    {
+        var (comp, dom, ctx) = TestHelpers.MountComponent<UseEffectWithCleanupComponent>();
+        Assert.AreEqual(1, comp.EffectRunCount);
+        Assert.AreEqual(0, comp.CleanupRunCount);
+
+        // Trigger re-render by changing dep → cleanup from first effect runs, then new effect
+        comp.ExposedSetCount(1);
+        ctx.Drain();
+        Assert.AreEqual(1, comp.CleanupRunCount, "Cleanup from first effect should run before second effect");
+        Assert.AreEqual(2, comp.EffectRunCount, "Second effect should run");
+
+        // Another re-render
+        comp.ExposedSetCount(2);
+        ctx.Drain();
+        Assert.AreEqual(2, comp.CleanupRunCount, "Cleanup from second effect should run");
+        Assert.AreEqual(3, comp.EffectRunCount);
+
+        // Now unmount — cleanup from the last effect should run
+        dom.Unmount();
+        ctx.Drain();
+        Assert.AreEqual(3, comp.CleanupRunCount, "Final cleanup should run on unmount");
+        Assert.IsFalse(comp.IsMounted);
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Hook Order Enforcement
+    // ════════════════════════════════════════════════════════════════════
 
     [TestMethod]
     public void HookOrder_SameOrderOnEachRender_Ok()
@@ -243,7 +359,7 @@ public class HooksTests
     }
 
     // ════════════════════════════════════════════════════════════════════
-    //  Test Components
+    //  Test Components — Hooks
     // ════════════════════════════════════════════════════════════════════
 
     private class UseStateComponent : Component
@@ -413,6 +529,112 @@ public class HooksTests
 
         private void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Test Components — Unmount Cleanup
+    // ════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Component with a UseEffect that tracks both effect invocations and cleanup invocations.
+    /// </summary>
+    private class UseEffectWithCleanupComponent : Component
+    {
+        public int EffectRunCount { get; private set; }
+        public int CleanupRunCount { get; private set; }
+        private (int count, Action<int> setCount) _state;
+
+        public void ExposedSetCount(int c) => _state.setCount(c);
+
+        protected override VNode Render()
+        {
+            _state = UseState(0);
+            UseEffect(() =>
+            {
+                EffectRunCount++;
+                return () => CleanupRunCount++;
+            }, [_state.count]);
+            return FlexPanel();
+        }
+    }
+
+    /// <summary>
+    /// Component with an empty-deps UseEffect that returns a cleanup action.
+    /// Verifies that the cleanup runs on unmount even for "run once" effects.
+    /// </summary>
+    private class UseEffectOnceWithCleanupComponent : Component
+    {
+        public int EffectRunCount { get; private set; }
+        public int CleanupRunCount { get; private set; }
+
+        protected override VNode Render()
+        {
+            UseEffect(() =>
+            {
+                EffectRunCount++;
+                return () => CleanupRunCount++;
+            }, []); // empty deps → run once, cleanup on unmount
+            return FlexPanel();
+        }
+    }
+
+    /// <summary>
+    /// Component with multiple UseEffect calls, each with a cleanup.
+    /// Verifies all cleanups run on unmount.
+    /// </summary>
+    private class MultiEffectComponent : Component
+    {
+        public int EffectRunCount { get; private set; }
+        public int CleanupRunCount { get; private set; }
+
+        protected override VNode Render()
+        {
+            UseEffect(() =>
+            {
+                EffectRunCount++;
+                return () => CleanupRunCount++;
+            });
+            UseEffect(() =>
+            {
+                EffectRunCount++;
+                return () => CleanupRunCount++;
+            });
+            UseEffect(() =>
+            {
+                EffectRunCount++;
+                return () => CleanupRunCount++;
+            });
+            return FlexPanel();
+        }
+    }
+
+    /// <summary>
+    /// Parent component that conditionally renders a UseEffectWithCleanupComponent child.
+    /// Uses DisableMemo for deterministic re-renders.
+    /// </summary>
+    private class ToggleCleanupChildComponent : Component
+    {
+        public bool ShowChild { get; set; }
+        private ComponentNode? _childNode;
+        public UseEffectWithCleanupComponent? ChildInstance => _childNode?.Instance as UseEffectWithCleanupComponent;
+
+        public ToggleCleanupChildComponent(bool showChild)
+        {
+            ShowChild = showChild;
+            DisableMemo();
+        }
+
+        protected override VNode Render()
+        {
+            if (ShowChild)
+            {
+                _childNode = ComponentNodeFactory.Create<UseEffectWithCleanupComponent>();
+                return FlexPanel(children: _childNode);
+            }
+
+            _childNode = null;
+            return FlexPanel();
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════
