@@ -1,8 +1,7 @@
 using System.Net;
-using NFMWorld.Account.OAuth2;
 using NFMWorld.Api;
 
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
 public class AccountManager
 {
