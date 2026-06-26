@@ -95,4 +95,6 @@ public static class G
     public static void SetStrokeWidth(float width = 1f) => Graphics.SetStrokeWidth(width);
 
     public static Vector2 Viewport => IBackend.Backend.Viewport;
+
+    public static IImage LoadImage(string path) => IBackend.Backend.LoadCachedImage(path);
 }

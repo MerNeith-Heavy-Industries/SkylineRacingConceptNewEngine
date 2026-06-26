@@ -15,17 +15,12 @@ public partial class Image : Node
         set
         {
             field = value;
-            if (Width.Unit is YGUnit.YGUnitUndefined or YGUnit.YGUnitPoint or YGUnit.YGUnitAuto)
-            {
-                Width = Scale * value?.Width ?? 0;
-            }
-            if (Height.Unit is YGUnit.YGUnitUndefined or YGUnit.YGUnitPoint or YGUnit.YGUnitAuto)
-            {
-                Height = Scale * value?.Height ?? 0;
-            }
+            Width = Scale * value?.Width ?? 0;
+            Height = Scale * value?.Height ?? 0;
         }
     }
 
+    [ClientOnly]
     [Property]
     public float Scale
     {
@@ -33,13 +28,10 @@ public partial class Image : Node
         set
         {
             field = value;
-            if (Width.PointValue is {} widthValue)
+            if (ImageData is { } imageData)
             {
-                Width = (int)(value * widthValue);
-            }
-            if (Height.PointValue is {} heightValue)
-            {
-                Height = (int)(value * heightValue);
+                Width = value * imageData.Width;
+                Height = value * imageData.Height;
             }
         }
     } = 1f;
