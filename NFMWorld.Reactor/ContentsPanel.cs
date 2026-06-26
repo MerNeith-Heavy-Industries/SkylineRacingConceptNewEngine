@@ -10,5 +10,5 @@ namespace NFMWorld.Reactor;
 public class ContentsPanel(params VNode[] children) : Component
 {
     protected override VNode Render()
-        => FlexPanel(display: YgDisplay.Contents, children: children);
+        => FlexPanel(display: Display.Contents, children: children);
 }

@@ -11,9 +11,9 @@ public class GarageUiView(ImmutableArray<float> barValues) : Component
     {
         return View(
             name: "LapTimerSplits",
-            flexDirection: YgFlexDirection.Column,
-            alignItems: YgAlign.FlexStart,
-            justifyContent: YgJustify.FlexStart,
+            flexDirection: FlexDirection.Column,
+            alignItems: Align.FlexStart,
+            justifyContent: Justify.FlexStart,
             gap: 10f,
             padding: 10f,
             children: [
@@ -26,7 +26,7 @@ public class GarageUiView(ImmutableArray<float> barValues) : Component
 
     private VNode MakeBarRow(int i0, string n0, int i1, string n1, int i2, string n2)
     {
-        return FlexPanel(flexDirection: YgFlexDirection.Row, gap: 25f, marginBottom: 25f, children: [
+        return FlexPanel(flexDirection: FlexDirection.Row, gap: 25f, marginBottom: 25f, children: [
             Bar(i0, n0), Bar(i1, n1), Bar(i2, n2)
         ]);
     }
@@ -35,6 +35,6 @@ public class GarageUiView(ImmutableArray<float> barValues) : Component
     {
         var pct = (int)(Math.Clamp(barValues[index], 0f, 1f) * 100);
         return FlexPanel(name: $"{name}: {pct}%", width: 120f, height: 40f,
-            flexDirection: YgFlexDirection.Column, alignItems: YgAlign.Center);
+            flexDirection: FlexDirection.Column, alignItems: Align.Center);
     }
 }

@@ -262,21 +262,21 @@ public class ReconcilerCoreTests
         var vnode1 = FlexPanel(
             visibility: Visibility.Hidden,
             opacity: 0.3f,
-            flexDirection: YgFlexDirection.Column
+            flexDirection: FlexDirection.Column
         );
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
         Assert.AreEqual(Visibility.Hidden, root.Visibility);
         Assert.AreEqual(0.3f, root.Opacity, 0.001f);
-        Assert.AreEqual(YgFlexDirection.Column, root.FlexDirection);
+        Assert.AreEqual(FlexDirection.Column, root.FlexDirection);
 
         var vnode2 = FlexPanel();
         dom.Mount(container, vnode2);
         ctx.Drain();
         Assert.AreEqual(Visibility.Visible, root.Visibility);
         Assert.AreEqual(1.0f, root.Opacity, 0.001f, "Stale Opacity should reset to 1.0");
-        Assert.AreEqual(YgFlexDirection.Row, root.FlexDirection, "Stale FlexDirection should reset to Row");
+        Assert.AreEqual(FlexDirection.Row, root.FlexDirection, "Stale FlexDirection should reset to Row");
     }
 
     [TestMethod]
@@ -287,20 +287,20 @@ public class ReconcilerCoreTests
 
         var vnode1 = FlexPanel(
             visibility: Visibility.Hidden,
-            flexDirection: YgFlexDirection.Column
+            flexDirection: FlexDirection.Column
         );
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
 
         // Only set FlexDirection this pass; Visibility should reset
-        var vnode2 = FlexPanel(flexDirection: YgFlexDirection.ColumnReverse);
+        var vnode2 = FlexPanel(flexDirection: FlexDirection.ColumnReverse);
         dom.Mount(container, vnode2);
         ctx.Drain();
 
         Assert.AreEqual(Visibility.Visible, root.Visibility,
             "Stale Visibility should reset to Visible");
-        Assert.AreEqual(YgFlexDirection.ColumnReverse, root.FlexDirection,
+        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection,
             "Fresh FlexDirection should update");
     }
 
@@ -499,8 +499,8 @@ public class ReconcilerCoreTests
         var vnode = FlexPanel(
             opacity: 0.5f,
             visibility: Visibility.Hidden,
-            flexDirection: YgFlexDirection.Column,
-            alignItems: YgAlign.Center
+            flexDirection: FlexDirection.Column,
+            alignItems: Align.Center
         );
         dom.Mount(container, vnode);
         ctx.Drain();
@@ -508,8 +508,8 @@ public class ReconcilerCoreTests
 
         Assert.AreEqual(0.5f, root.Opacity, 0.001f);
         Assert.AreEqual(Visibility.Hidden, root.Visibility);
-        Assert.AreEqual(YgFlexDirection.Column, root.FlexDirection);
-        Assert.AreEqual(YgAlign.Center, root.AlignItems);
+        Assert.AreEqual(FlexDirection.Column, root.FlexDirection);
+        Assert.AreEqual(Align.Center, root.AlignItems);
     }
 
     [TestMethod]
@@ -574,7 +574,7 @@ public class ReconcilerCoreTests
         var vnode = View(
             name: "ShadowedView",
             key: "sv",
-            flexDirection: YgFlexDirection.Row
+            flexDirection: FlexDirection.Row
         );
         dom.Mount(container, vnode);
         ctx.Drain();
@@ -584,7 +584,7 @@ public class ReconcilerCoreTests
         var view = (View)root;
         Assert.AreEqual("ShadowedView", view.Name);
         Assert.AreEqual("sv", view.Key);
-        Assert.AreEqual(YgFlexDirection.Row, view.FlexDirection);
+        Assert.AreEqual(FlexDirection.Row, view.FlexDirection);
     }
 
     [TestMethod]
@@ -615,7 +615,7 @@ public class ReconcilerCoreTests
         var vnode = View()
             .WithName("fluent")
             .WithKey("f")
-            .WithFlexDirection(YgFlexDirection.Column)
+            .WithFlexDirection(FlexDirection.Column)
             .WithOpacity(0.3f);
 
         Assert.IsInstanceOfType(vnode, typeof(ViewNode));
@@ -668,7 +668,7 @@ public class ReconcilerCoreTests
         var vnode = View(
             name: "V",
             opacity: 0.75f,
-            flexDirection: YgFlexDirection.ColumnReverse,
+            flexDirection: FlexDirection.ColumnReverse,
             visibility: Visibility.Hidden
         );
         dom.Mount(container, vnode);
@@ -677,7 +677,7 @@ public class ReconcilerCoreTests
 
         Assert.AreEqual("V", root.Name);
         Assert.AreEqual(0.75f, root.Opacity, 0.001f);
-        Assert.AreEqual(YgFlexDirection.ColumnReverse, root.FlexDirection);
+        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection);
         Assert.AreEqual(Visibility.Hidden, root.Visibility);
     }
 }

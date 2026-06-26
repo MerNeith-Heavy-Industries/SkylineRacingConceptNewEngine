@@ -139,15 +139,15 @@ public class MainMenuView(
         
         // Top row: title + login button
         return View(
-            flexDirection: YgFlexDirection.Column,
+            flexDirection: FlexDirection.Column,
             margin: 15,
             children:
             [
                 FlexPanel(
                     name: "TopRow",
-                    flexDirection: YgFlexDirection.Row,
-                    justifyContent: YgJustify.SpaceBetween,
-                    alignItems: YgAlign.FlexEnd,
+                    flexDirection: FlexDirection.Row,
+                    justifyContent: Justify.SpaceBetween,
+                    alignItems: Align.FlexEnd,
                     minHeight: 200,
                     marginBottom: 30,
                     children:
@@ -165,9 +165,9 @@ public class MainMenuView(
 
                         FlexPanel(
                             name: "LoginButton",
-                            flexDirection: YgFlexDirection.Row,
-                            justifyContent: YgJustify.FlexEnd,
-                            alignItems: YgAlign.FlexEnd,
+                            flexDirection: FlexDirection.Row,
+                            justifyContent: Justify.FlexEnd,
+                            alignItems: Align.FlexEnd,
                             flex: 1,
                             minWidth: 250,
                             minHeight: 35,
@@ -192,15 +192,15 @@ public class MainMenuView(
                 // Menu items
                 FlexPanel(
                     name: "MenuItems",
-                    flexDirection: YgFlexDirection.Column,
-                    alignItems: YgAlign.FlexStart,
+                    flexDirection: FlexDirection.Column,
+                    alignItems: Align.FlexStart,
                     gap: 15,
                     children: [
                         ..activePage?.Items.Select((item, idx) => SolidBox(
                             key: idx,
                             name: "ItemRow",
-                            flexDirection: YgFlexDirection.Row,
-                            alignItems: YgAlign.Center,
+                            flexDirection: FlexDirection.Row,
+                            alignItems: Align.Center,
                             minWidth: 230,
                             minHeight: 35,
                             padding: Node.MeasurementMultiPadding.XY(12, 8),
@@ -253,9 +253,9 @@ public class MainMenuView(
                 // Account status row
                 FlexPanel(
                     name: "AccountRow",
-                    flexDirection: YgFlexDirection.Row,
-                    justifyContent: YgJustify.SpaceBetween,
-                    alignItems: YgAlign.Center,
+                    flexDirection: FlexDirection.Row,
+                    justifyContent: Justify.SpaceBetween,
+                    alignItems: Align.Center,
                     marginTop: 10,
                     children:
                     [

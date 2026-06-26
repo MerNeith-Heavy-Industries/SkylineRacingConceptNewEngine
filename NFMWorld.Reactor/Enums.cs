@@ -1,13 +1,13 @@
 namespace WorldXaml.UI.Yoga;
 
-public enum YgDirection
+public enum Direction
 {
     Inherit,
     Ltr,
     Rtl,
 }
 
-public enum YgFlexDirection
+public enum FlexDirection
 {
     Column,
     ColumnReverse,
@@ -15,7 +15,7 @@ public enum YgFlexDirection
     RowReverse,
 }
 
-public enum YgJustify
+public enum Justify
 {
     FlexStart,
     Center,
@@ -25,7 +25,7 @@ public enum YgJustify
     SpaceEvenly,
 }
 
-public enum YgAlign
+public enum Align
 {
     Auto,
     FlexStart,
@@ -38,40 +38,40 @@ public enum YgAlign
     SpaceEvenly,
 }
 
-public enum YgPosition
+public enum Position
 {
     Static,
     Relative,
     Absolute,
 }
 
-public enum YgWrap
+public enum Wrap
 {
     NoWrap,
     Wrap,
     WrapReverse,
 }
 
-public enum YgOverflow
+public enum Overflow
 {
     Visible,
     Hidden,
     Scroll,
 }
 
-public enum YgDisplay
+public enum Display
 {
     Flex,
     None,
     Contents,
 }
 
-public enum YgBoxSizing
+public enum BoxSizing
 {
     BorderBox,
     ContentBox,
 }
-public enum YgNodeType
+public enum NodeType
 {
     Default,
     Text,
@@ -83,40 +83,27 @@ public enum Visibility
     Visible
 }
 
-public enum YgUnit
-{
-    Undefined,
-    Point,
-    Percent,
-    Auto,
-    MaxContent,
-    FitContent,
-    Stretch,
-}
-
 // Implicit conversions between these enums and Yoga-CS enums
 public static class Conversions
 {
-    public static global::Yoga.YGDirection ToYogaDirection(this YgDirection d) => (global::Yoga.YGDirection)d;
-    public static YgDirection ToNfmDirection(this global::Yoga.YGDirection d) => (YgDirection)d;
-    public static global::Yoga.YGFlexDirection ToYogaFlexDirection(this YgFlexDirection d) => (global::Yoga.YGFlexDirection)d;
-    public static YgFlexDirection ToNfmFlexDirection(this global::Yoga.YGFlexDirection d) => (YgFlexDirection)d;
-    public static global::Yoga.YGJustify ToYogaJustify(this YgJustify j) => (global::Yoga.YGJustify)j;
-    public static YgJustify ToNfmJustify(this global::Yoga.YGJustify j) => (YgJustify)j;
-    public static global::Yoga.YGAlign ToYogaAlign(this YgAlign a) => (global::Yoga.YGAlign)a;
-    public static YgAlign ToNfmAlign(this global::Yoga.YGAlign a) => (YgAlign)a;
-    public static global::Yoga.YGPositionType ToYogaPositionType(this YgPosition p) => (global::Yoga.YGPositionType)p;
-    public static YgPosition ToNfmPositionType(this global::Yoga.YGPositionType p) => (YgPosition)p;
-    public static global::Yoga.YGWrap ToYogaWrap(this YgWrap w) => (global::Yoga.YGWrap)w;
-    public static YgWrap ToNfmWrap(this global::Yoga.YGWrap w) => (YgWrap)w;
-    public static global::Yoga.YGOverflow ToYogaOverflow(this YgOverflow o) => (global::Yoga.YGOverflow)o;
-    public static YgOverflow ToNfmOverflow(this global::Yoga.YGOverflow o) => (YgOverflow)o;
-    public static global::Yoga.YGDisplay ToYogaDisplay(this YgDisplay d) => (global::Yoga.YGDisplay)d;
-    public static YgDisplay ToNfmDisplay(this global::Yoga.YGDisplay d) => (YgDisplay)d;
-    public static global::Yoga.YGBoxSizing ToYogaBoxSizing(this YgBoxSizing b) => (global::Yoga.YGBoxSizing)b;
-    public static YgBoxSizing ToNfmBoxSizing(this global::Yoga.YGBoxSizing b) => (YgBoxSizing)b;
-    public static global::Yoga.YGNodeType ToYogaNodeType(this YgNodeType n) => (global::Yoga.YGNodeType)n;
-    public static YgNodeType ToNfmNodeType(this global::Yoga.YGNodeType n) => (YgNodeType)n;
-    public static global::Yoga.YGUnit ToYogaUnit(this YgUnit u) => (global::Yoga.YGUnit)u;
-    public static YgUnit ToNfmUnit(this global::Yoga.YGUnit u) => (YgUnit)u;
+    public static global::Yoga.YGDirection ToYogaDirection(this Direction d) => (global::Yoga.YGDirection)d;
+    public static Direction ToNfmDirection(this global::Yoga.YGDirection d) => (Direction)d;
+    public static global::Yoga.YGFlexDirection ToYogaFlexDirection(this FlexDirection d) => (global::Yoga.YGFlexDirection)d;
+    public static FlexDirection ToNfmFlexDirection(this global::Yoga.YGFlexDirection d) => (FlexDirection)d;
+    public static global::Yoga.YGJustify ToYogaJustify(this Justify j) => (global::Yoga.YGJustify)j;
+    public static Justify ToNfmJustify(this global::Yoga.YGJustify j) => (Justify)j;
+    public static global::Yoga.YGAlign ToYogaAlign(this Align a) => (global::Yoga.YGAlign)a;
+    public static Align ToNfmAlign(this global::Yoga.YGAlign a) => (Align)a;
+    public static global::Yoga.YGPositionType ToYogaPositionType(this Position p) => (global::Yoga.YGPositionType)p;
+    public static Position ToNfmPositionType(this global::Yoga.YGPositionType p) => (Position)p;
+    public static global::Yoga.YGWrap ToYogaWrap(this Wrap w) => (global::Yoga.YGWrap)w;
+    public static Wrap ToNfmWrap(this global::Yoga.YGWrap w) => (Wrap)w;
+    public static global::Yoga.YGOverflow ToYogaOverflow(this Overflow o) => (global::Yoga.YGOverflow)o;
+    public static Overflow ToNfmOverflow(this global::Yoga.YGOverflow o) => (Overflow)o;
+    public static global::Yoga.YGDisplay ToYogaDisplay(this Display d) => (global::Yoga.YGDisplay)d;
+    public static Display ToNfmDisplay(this global::Yoga.YGDisplay d) => (Display)d;
+    public static global::Yoga.YGBoxSizing ToYogaBoxSizing(this BoxSizing b) => (global::Yoga.YGBoxSizing)b;
+    public static BoxSizing ToNfmBoxSizing(this global::Yoga.YGBoxSizing b) => (BoxSizing)b;
+    public static global::Yoga.YGNodeType ToYogaNodeType(this NodeType n) => (global::Yoga.YGNodeType)n;
+    public static NodeType ToNfmNodeType(this global::Yoga.YGNodeType n) => (NodeType)n;
 }
