@@ -131,7 +131,7 @@ public class MainMenuView(
 
         MainMenuItem? HoveredItem()
         {
-            return activePage.Items.FirstOrDefault(item => item.Hovered);
+            return activePage?.Items.FirstOrDefault(item => item.Hovered);
         }
         
         // Top row: title + login button
