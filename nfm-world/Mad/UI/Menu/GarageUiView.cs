@@ -1,24 +1,12 @@
+using System.Collections.Immutable;
 using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
 using static WorldXaml.UI.Yoga.Nodes;
 
 namespace NFMWorld.UI.Menu;
 
-public class GarageUiView : Component
+public class GarageUiView(ImmutableArray<float> barValues) : Component
 {
-    private readonly float[] _barValues = new float[9];
-
-    public GarageUiView()
-    {
-        DisableMemo();
-    }
-
-    public void SetBarValue(int index, float value)
-    {
-        if (index >= 0 && index < _barValues.Length)
-            _barValues[index] = value;
-    }
-
     protected override VNode Render()
     {
         return View(
@@ -45,7 +33,7 @@ public class GarageUiView : Component
 
     private VNode Bar(int index, string name)
     {
-        var pct = (int)(Math.Clamp(_barValues[index], 0f, 1f) * 100);
+        var pct = (int)(Math.Clamp(barValues[index], 0f, 1f) * 100);
         return FlexPanel(name: $"{name}: {pct}%", width: 120f, height: 40f,
             flexDirection: YgFlexDirection.Column, alignItems: YgAlign.Center);
     }

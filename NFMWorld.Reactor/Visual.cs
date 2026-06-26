@@ -8,7 +8,6 @@ namespace WorldXaml.UI.Yoga;
 public abstract partial class Visual : IStyleNode, INamed
 {
     #region Resources
-    
     /// <summary>
     /// Local resource dictionary for this element.
     /// Resource lookup walks the logical tree through IResourceNode parents.

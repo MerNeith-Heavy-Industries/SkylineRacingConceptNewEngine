@@ -13,7 +13,7 @@ public class Modal(params VNode[] children) : Component
 {
     protected override VNode Render()
         => FlexPanel(
-            position: YgPositionType.Absolute,
+            position: YgPosition.Absolute,
             top: Node.MeasurementMarginPosition.Point(0), left: Node.MeasurementMarginPosition.Point(0), right: Node.MeasurementMarginPosition.Point(0), bottom: Node.MeasurementMarginPosition.Point(0),
             flexDirection: YgFlexDirection.Column,
             justifyContent: YgJustify.Center,

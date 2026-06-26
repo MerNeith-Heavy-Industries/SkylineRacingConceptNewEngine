@@ -395,7 +395,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)
     /// </summary>
     [Property]
-    public YgPositionType Position
+    public YgPosition Position
     {
         get => NodeInternal.PositionType.ToNfmPositionType();
         set => NodeInternal.PositionType = value.ToYogaPositionType();
@@ -1349,6 +1349,17 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
         public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
         public static implicit operator MeasurementMultiPadding(float value) => All(value);
+
+        public static MeasurementMultiPadding? XY(float x, float y)
+        {
+            return new MeasurementMultiPadding
+            {
+                Left = MeasurementPadding.Point(x),
+                Right = MeasurementPadding.Point(x),
+                Top = MeasurementPadding.Point(y),
+                Bottom = MeasurementPadding.Point(y)
+            };
+        }
     }
 
     /// <summary>
