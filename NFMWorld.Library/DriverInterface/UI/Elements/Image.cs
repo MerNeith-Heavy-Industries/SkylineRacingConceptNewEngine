@@ -1,6 +1,7 @@
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
+using Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
 
@@ -14,11 +15,11 @@ public partial class Image : Node
         set
         {
             field = value;
-            if (Width.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            if (Width.Unit is YGUnit.YGUnitUndefined or YGUnit.YGUnitPoint or YGUnit.YGUnitAuto)
             {
                 Width = Scale * value?.Width ?? 0;
             }
-            if (Height.Unit is YgUnit.Undefined or YgUnit.Point or YgUnit.Auto)
+            if (Height.Unit is YGUnit.YGUnitUndefined or YGUnit.YGUnitPoint or YGUnit.YGUnitAuto)
             {
                 Height = Scale * value?.Height ?? 0;
             }
