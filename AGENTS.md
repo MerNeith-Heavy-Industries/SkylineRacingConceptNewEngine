@@ -108,6 +108,12 @@ The csproj must have `<Compile Remove="Generated/**" />` to prevent the implicit
 
 A React-like virtual DOM framework built on top of the Yoga layout engine. Replaces the legacy XAML-based UI system.
 
+### Important notes
+
+- Components ARE immutable! They are reused indefinitely when mounted but this is only an implementation detail and you
+  should never rely on internal state. Pass inputs as props and use state for internal data. Use `UseState<T>` for
+  stateful values and `UseEffect` for side effects.
+
 ### Key projects
 
 | Project | Role |
