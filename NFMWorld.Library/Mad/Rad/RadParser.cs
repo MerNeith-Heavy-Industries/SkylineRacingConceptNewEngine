@@ -16,24 +16,73 @@ public partial class RadParser
         public int? Radius;
         public int? Depth;
 
-        public Rad3dPoly[] GetScaledPolys(float radius, float depth)
+        public Rad3dPoly[] GetScaledPolys(float wh, float ww, bool flipX)
         {
-            if (Radius != null && Depth != null)
+            if (Radius is not { } tr || Depth is not { } td)
             {
-                return Polys
-                    .Select(poly =>
-                    {
-                        var scaledPoints = poly.Points.Select(point => new Vector3(
-                            point.X * depth,
-                            point.Y * radius,
-                            point.Z * radius
-                        )).ToArray();
-                        return poly.WithPoints(scaledPoints, poly.Triangles);
-                    })
-                    .ToArray();
+                throw new InvalidOperationException("PhyShot wheel must have radius=1234 and depth=5678 attributes");
             }
+            
+            // for(int i = 0; i < this.n; ++i) {
+            //     if (tr > 0) {
+            //         if (pl.ox[i] == td) {
+            //             pl.ox[i] = flipX ? -ww : ww;
+            //             pl.gr = wgr;
+            //             pl.solo = true;
+            //         } else {
+            //             pl.ox[i] = (int)((float)pl.ox[i] * ((float)wh / ((float)tr * 0.77F)));
+            //         }
+            //
+            //         pl.oy[i] = (int)((float)pl.oy[i] * ((float)wh / ((float)tr * 0.77F)));
+            //         pl.oz[i] = (int)((float)pl.oz[i] * ((float)wh / ((float)tr * 0.77F)));
+            //         pl.ox[i] -= wh / 2;
+            //     }
+            //
+            //     if (flipX) {
+            //         pl.ox[i] = -pl.ox[i];
+            //     }
+            //
+            //     pl.ox[i] += wx;
+            //     pl.oy[i] += wy;
+            //     pl.oz[i] += wz;
+            // }
+            
+            return Polys
+                .Select(poly =>
+                {
+                    var scaledPoints = poly.Points.Select(point =>
+                    {
+                        var x = point.X;
+                        var y = point.Y;
+                        var z = point.Z;
+                        
+                        if (tr > 0)
+                        {
+                            if (x == td) // LOOKS INCORRECT BECAUSE FLOAT COMPARISON BETWEEN DIV AND NON-DIV VALUE, BUT IS ACTUALLY CORRECT BECAUSE PHYSHOT WHEELS DO NOT SCALE BY DIV!!!!
+                            {
+                                x = flipX ? -ww : ww;
+                            }
+                            else
+                            {
+                                x = x * (wh / (tr));
+                            }
+                            
+                            y = y * (wh / (tr));
+                            z = z * (wh / (tr));
 
-            return Polys.ToArray();
+                            x -= wh / 2;
+                        }
+
+                        if (flipX)
+                        {
+                            x = -x;
+                        }
+
+                        return new Vector3(x, y, z);
+                    }).ToArray();
+                    return poly.WithPoints(scaledPoints, poly.Triangles);
+                })
+                .ToArray();
         }
     }
     
@@ -71,9 +120,9 @@ public partial class RadParser
     
     private List<f64Vector3> _hullVerts = [];
     private readonly string _fileName;
-    private float _scaleRadius = 1f;
-    private float _scaleDepth = 1f;
     private int? _phyAddonsWheelId;
+    private bool _inPhyshotWheel;
+    private UnlimitedArray<bool> _isPhyshotWheel = [];
 
     private RadParser(string fileName)
     {
@@ -273,7 +322,7 @@ public partial class RadParser
                 Height: height * idiv,
                 Polys: _wheelMeshes.Count > _wheels.Count
                     // physhot custom wheels
-                    ? _wheelMeshes[_wheels.Count].GetScaledPolys(width * (float)idiv * (float)iwid, height * (float)idiv)
+                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wh: width * (float)idiv * (float)iwid, ww: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
                     : null
             ));
 
@@ -445,6 +494,7 @@ public partial class RadParser
         {
             _wheelMeshes.Add(new WheelMesh { Polys = _currentPolys = [] });
         }
+        // PhyShot custom wheel format
         else if (line.StartsWith("<wheel") && PhyShotWheelDef.Match(new string(line)) is { Success: true } wheelMatch)
         {
             var radius = int.Parse(wheelMatch.Groups["radius"].ValueSpan);
@@ -455,16 +505,15 @@ public partial class RadParser
                 Radius = radius,
                 Depth = depth
             });
-            _scaleRadius = 1f/radius;
-            _scaleDepth = 1f/depth;
+            _inPhyshotWheel = true;
+            _isPhyshotWheel[_wheelMeshes.Count - 1] = true;
         }
 
         // SRC custom wheel format
         else if (line.StartsWith("</wheel>"))
         {
             _currentPolys = _mainCarPolys;
-            _scaleRadius = 1;
-            _scaleDepth = 1;
+            _inPhyshotWheel = false;
         }
 
         else if (line.StartsWith("<p>") || line.StartsWith("[p]"))
@@ -492,7 +541,8 @@ public partial class RadParser
             }
 
             else if (line.StartsWith("glass")) _currentPoly = _currentPoly with { PolyType = PolyType.Glass };
-            else if (line.StartsWith("lightB")) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
+            else if (line.StartsWith("lightBrake")) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
+            else if (line.StartsWith("lightB")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
             else if (line.StartsWith("lightR")) _currentPoly = _currentPoly with { PolyType = PolyType.ReverseLight };
             else if (line.StartsWith("light")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
             else if (line.StartsWith("gr(-10)")) _currentPoly = _currentPoly with { LineType = LineType.BrightColored };
@@ -514,12 +564,24 @@ public partial class RadParser
             else if (line.StartsWith("p("))
             {
                 var position = Int3.FromSpan(BracketParser.GetNumbers(line, stackalloc int[3]));
-                var transformedPoint = new Vector3(
-                    position.X * (float)idiv * (float)iwid * (float)scaleX * _scaleDepth,
-                    position.Y * (float)idiv * (float)scaleY * _scaleRadius,
-                    position.Z * (float)idiv * (float)scaleZ * _scaleRadius
-                );
-                _points.Add(transformedPoint);
+                if (!_inPhyshotWheel) // PhyShot custom wheels do NOT use the div/scale values
+                {
+                    var transformedPoint = new Vector3(
+                        position.X * (float)idiv * (float)iwid * (float)scaleX,
+                        position.Y * (float)idiv * (float)scaleY,
+                        position.Z * (float)idiv * (float)scaleZ
+                    );
+                    _points.Add(transformedPoint);
+                }
+                else
+                {
+                    var transformedPoint = new Vector3(
+                        position.X,
+                        position.Y,
+                        position.Z
+                    );
+                    _points.Add(transformedPoint);
+                }
             }
             else if (line.StartsWith("tri("))
             {
@@ -529,11 +591,11 @@ public partial class RadParser
             
             else if (line.StartsWith("noOutline")) _noOutline = true;
             
-            else if (line.StartsWith("wheel("))
+            else if (line.StartsWith("wheel(")) // Phy-addons extension
             {
                 _phyAddonsWheelId = BracketParser.GetNumber<int>(line);
             }
-            else if (line.StartsWith("wheel"))
+            else if (line.StartsWith("wheel")) // Phy-addons extension
             {
                 _phyAddonsWheelId = -1;
             }
