@@ -198,6 +198,7 @@ public class ClientStage
 
     public void Render(float alpha, bool useShadowMapping = true, bool clearRenderBuffer = true)
     {
+        Renderer.ApplyValues();
         _scene.ActiveCamera = Camera;
         _scene.Render(alpha, useShadowMapping, clearRenderBuffer);
     }
