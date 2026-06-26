@@ -113,8 +113,11 @@ public class MainMenuView(
                 new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
             ]);
         }
-
-        setActivePage(BuildMainMenu());
+        
+        UseEffect(() =>
+        {
+            setActivePage(BuildMainMenu());
+        });
 
         void SetHover(int itemIndex, bool hoverState)
         {
@@ -135,125 +138,137 @@ public class MainMenuView(
         }
         
         // Top row: title + login button
-        return View(children:
-        [
-            FlexPanel(
-                name: "TopRow",
-                flexDirection: YgFlexDirection.Row,
-                justifyContent: YgJustify.SpaceBetween,
-                alignItems: YgAlign.FlexEnd,
-                minHeight: 200,
-                marginBottom: 30,
-                children:
-                [
-                    // Title
-                    TextRun(
-                        name: "TitleText",
-                        fontStyle: FontStyle.Bold,
-                        fontSize: 48,
-                        fontFamily: FontFamily.Adventure,
-                        foreground: new Color(255, 140, 0),
-                        stroke: Color.Black,
-                        text: activePage?.Title ?? "NFM WORLD?"
-                    ),
+        return View(
+            flexDirection: YgFlexDirection.Column,
+            margin: 15,
+            children:
+            [
+                FlexPanel(
+                    name: "TopRow",
+                    flexDirection: YgFlexDirection.Row,
+                    justifyContent: YgJustify.SpaceBetween,
+                    alignItems: YgAlign.FlexEnd,
+                    minHeight: 200,
+                    marginBottom: 30,
+                    children:
+                    [
+                        // Title
+                        TextRun(
+                            name: "TitleText",
+                            fontStyle: FontStyle.Bold,
+                            fontSize: 48,
+                            fontFamily: FontFamily.Adventure,
+                            foreground: new Color(255, 140, 0),
+                            stroke: Color.Black,
+                            text: activePage?.Title ?? "NFM WORLD?"
+                        ),
 
-                    FlexPanel(
-                        name: "LoginButton",
-                        flexDirection: YgFlexDirection.Row,
-                        justifyContent: YgJustify.FlexEnd,
-                        alignItems: YgAlign.FlexEnd,
-                        flex: 1,
-                        minWidth: 250,
-                        minHeight: 35,
-                        padding: 12,
-                        children:
-                        [
-                            // Login / Logout button
-                            TextRun(
-                                name: "LoginButtonText",
-                                fontStyle: FontStyle.Bold,
-                                fontSize: 24,
-                                fontFamily: FontFamily.Adventure,
-                                foreground: account is null ? new Color(255, 140, 0) : new Color(180, 180, 180),
-                                stroke: Color.Black,
-                                text: account is null ? "Login" : "Logout",
-                                mousePressed: account is null ? _ => login?.Invoke() : _ => logout?.Invoke()
-                            )
-                        ]
-                    )
-                ]
-            ),
-            // Menu items
-            ..activePage?.Items.Select((item, idx) => SolidBox(
-                key: idx,
-                name: "ItemRow",
-                flexDirection: YgFlexDirection.Row,
-                alignItems: YgAlign.Center,
-                minWidth: 230,
-                minHeight: 35,
-                padding: Node.MeasurementMultiPadding.XY(12, 8),
-                mouseEntered: _ => SetHover(idx, true),
-                mouseLeft: _ => SetHover(idx, false),
-                isFocusable: true,
-                mousePressed: _ => item.OnClick?.Invoke(),
-                gap: 0,
-                
-                backgroundColor: IsHovered(idx) ? new Color(20, 15, 35) : Color.Transparent,
-                borderColor: IsHovered(idx) ? new Color(255, 140, 0) : Color.Transparent,
-                borderTop: 1,
-                borderLeft: 1,
-                borderRight: 1,
-                borderBottom: 1,
-                borderTopLeftRadius: 5,
-                borderTopRightRadius: 5,
-                borderBottomRightRadius: 5,
-                borderBottomLeftRadius: 5,
+                        FlexPanel(
+                            name: "LoginButton",
+                            flexDirection: YgFlexDirection.Row,
+                            justifyContent: YgJustify.FlexEnd,
+                            alignItems: YgAlign.FlexEnd,
+                            flex: 1,
+                            minWidth: 250,
+                            minHeight: 35,
+                            padding: 12,
+                            children:
+                            [
+                                // Login / Logout button
+                                TextRun(
+                                    name: "LoginButtonText",
+                                    fontStyle: FontStyle.Bold,
+                                    fontSize: 24,
+                                    fontFamily: FontFamily.Adventure,
+                                    foreground: account is null ? new Color(255, 140, 0) : new Color(180, 180, 180),
+                                    stroke: Color.Black,
+                                    text: account is null ? "Login" : "Logout",
+                                    mousePressed: account is null ? _ => login?.Invoke() : _ => logout?.Invoke()
+                                )
+                            ]
+                        )
+                    ]
+                ),
+                // Menu items
+                FlexPanel(
+                    name: "MenuItems",
+                    flexDirection: YgFlexDirection.Column,
+                    alignItems: YgAlign.FlexStart,
+                    gap: 15,
+                    children: [
+                        ..activePage?.Items.Select((item, idx) => SolidBox(
+                            key: idx,
+                            name: "ItemRow",
+                            flexDirection: YgFlexDirection.Row,
+                            alignItems: YgAlign.Center,
+                            minWidth: 230,
+                            minHeight: 35,
+                            padding: Node.MeasurementMultiPadding.XY(12, 8),
+                            mouseEntered: _ => SetHover(idx, true),
+                            mouseLeft: _ => SetHover(idx, false),
+                            isFocusable: true,
+                            mousePressed: _ => item.OnClick?.Invoke(),
+                            gap: 0,
+                        
+                            backgroundColor: IsHovered(idx) ? new Color(20, 15, 35) : Color.Transparent,
+                            borderColor: IsHovered(idx) ? new Color(255, 140, 0) : Color.Transparent,
+                            borderTop: 1,
+                            borderLeft: 1,
+                            borderRight: 1,
+                            borderBottom: 1,
+                            borderTopLeftRadius: 5,
+                            borderTopRightRadius: 5,
+                            borderBottomRightRadius: 5,
+                            borderBottomLeftRadius: 5,
 
-                children:
-                [
-                    // button text
-                    TextRun(
-                        name: "ButtonText",
-                        fontStyle: FontStyle.Bold,
-                        fontSize: 24,
-                        fontFamily: FontFamily.Adventure,
-                        foreground: new Color(255, 140, 0),
-                        stroke: Color.Black,
-                        text: item.Text
-                    )
-                ])
-            ) ?? [],
+                            children:
+                            [
+                                // button text
+                                TextRun(
+                                    name: "ButtonText",
+                                    fontStyle: FontStyle.Bold,
+                                    fontSize: 24,
+                                    fontFamily: FontFamily.Adventure,
+                                    foreground: new Color(255, 140, 0),
+                                    stroke: Color.Black,
+                                    text: item.Text
+                                )
+                            ])
+                        ) ?? []
+                    ]
+                ),
 
-            // Spacer to push description to bottom
-            Node(flex: 1),
+                // Spacer to push description to bottom
+                Node(flex: 1),
 
-            // Description / tooltip
-            TextRun(
-                name: "DescriptionText",
-                fontSize: 14,
-                fontFamily: FontFamily.Adventure,
-                foreground: new Color(255, 140, 0),
-                text: HoveredItem()?.Description ?? ""
-            ),
+                // Description / tooltip
+                TextRun(
+                    name: "DescriptionText",
+                    fontSize: 14,
+                    fontFamily: FontFamily.Adventure,
+                    foreground: new Color(255, 140, 0),
+                    text: HoveredItem()?.Description ?? ""
+                ),
 
-            // Account status row
-            FlexPanel(
-                name: "AccountRow",
-                flexDirection: YgFlexDirection.Row,
-                justifyContent: YgJustify.SpaceBetween,
-                alignItems: YgAlign.Center,
-                marginTop: 10,
-                children:
-                [
-                    TextRun(
-                        name: "AccountStatusText",
-                        fontSize: 14,
-                        fontFamily: FontFamily.Adventure,
-                        foreground: new Color(180, 180, 180),
-                        text: account is null ? "Not logged in" : $"Logged in as {account.Username}"
-                    )
-                ]
-            )
-        ]);
+                // Account status row
+                FlexPanel(
+                    name: "AccountRow",
+                    flexDirection: YgFlexDirection.Row,
+                    justifyContent: YgJustify.SpaceBetween,
+                    alignItems: YgAlign.Center,
+                    marginTop: 10,
+                    children:
+                    [
+                        TextRun(
+                            name: "AccountStatusText",
+                            fontSize: 14,
+                            fontFamily: FontFamily.Adventure,
+                            foreground: new Color(180, 180, 180),
+                            text: account is null ? "Not logged in" : $"Logged in as {account.Username}"
+                        )
+                    ]
+                )
+            ]
+        );
     }
 }
