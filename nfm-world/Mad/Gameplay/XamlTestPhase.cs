@@ -15,7 +15,7 @@ public class XamlTestPhase : BasePhase
     public override void Enter()
     {
         base.Enter();
-        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _dom = new ReactorDom();
         _dom.Mount(_container, XamlTestView(_counter));
     }
 
