@@ -98,6 +98,14 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
         _visitedComponents.Clear();
     }
 
+    /// <summary>
+    /// Marks a component as visited so <see cref="FinishPass"/> doesn't
+    /// treat it as stale. Called by <see cref="Component.Update"/> before
+    /// <see cref="FinishPass"/> since tree-hosted updates bypass
+    /// <see cref="ReconcileComponentNode"/>.
+    /// </summary>
+    internal void MarkComponentVisited(Component comp) => _visitedComponents.Add(comp);
+
     private void UnmountStaleComponents()
     {
         foreach (var comp in _activeComponents)

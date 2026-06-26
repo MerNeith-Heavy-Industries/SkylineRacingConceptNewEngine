@@ -507,6 +507,7 @@ public abstract class Component
             EndRender();
 
             _root = Reconciler.ReconcileNode(vnode, _root);
+            Reconciler.MarkComponentVisited(this);
             Reconciler.FinishPass();
         });
     }
