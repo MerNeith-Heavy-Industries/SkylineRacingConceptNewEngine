@@ -49,12 +49,6 @@ public class DefaultHudManager : UIManager, IHud
         UpdateHud();
     }
 
-    public void AddElement(VNode element)
-    {
-        _hudElements = [.._hudElements, element];
-        UpdateHud();
-    }
-
     public void GameTick()
     {
         State = State with
