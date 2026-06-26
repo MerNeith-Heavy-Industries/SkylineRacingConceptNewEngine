@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.Account;
 using NFMWorld.DriverInterface;
+using NFMWorld.Reactor;
 using NFMWorld.UI;
 using NFMWorld.UI.Menu;
 using NFMWorld.Util;
@@ -16,7 +17,9 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
-    private MainMenuView _mainMenuView = new();
+    private MainMenuView _mainMenuView;
+    private ComponentNode _mainMenuViewNode;
+    private ReactorDom _dom;
     private UIManager _uiManager;
 
     public MainMenuPhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
@@ -26,27 +29,30 @@ public class MainMenuPhase : BaseStageRenderingPhase
             FocusManager = FocusManager
         };
 
-        // MVU: Mount the main menu view directly via its own reconciler
-        _mainMenuView.Mount(_uiManager.RootPanel);
+        _mainMenuView = new MainMenuView(
+            Garage: OnGarageClicked,
+            Settings: OnSettingsClicked,
+            Credits: OnClickUnavailable,
+            Quit: OnQuitClicked,
+            Login: OnLoginClicked,
+            Logout: OnLogoutClicked,
+            PlayNFM1: OnClickUnavailable,
+            PlayNFM2: OnClickUnavailable,
+            PlayCommunity: OnClickUnavailable,
+            PlayFreePlay: OnFreePlayClicked,
+            PlayCompetitive: OnClickUnavailable,
+            PlayCasual: OnClickUnavailable,
+            ModelEditor: OnModelEditorClicked,
+            StageEditor: OnStageEditorClicked,
+            CampaignEditor: OnClickUnavailable,
+            TimeTrials: OnTTClicked,
+            Challenges: OnClickUnavailable,
+            GameInstructions: OnClickUnavailable
+        );
 
-        _mainMenuView.Garage += OnGarageClicked;
-        _mainMenuView.Settings += OnSettingsClicked;
-        _mainMenuView.Credits += OnClickUnavailable;
-        _mainMenuView.Quit += OnQuitClicked;
-        _mainMenuView.Login += OnLoginClicked;
-        _mainMenuView.Logout += OnLogoutClicked;
-        _mainMenuView.PlayNFM1 += OnClickUnavailable;
-        _mainMenuView.PlayNFM2 += OnClickUnavailable;
-        _mainMenuView.PlayCommunity += OnClickUnavailable;
-        _mainMenuView.PlayFreePlay += OnFreePlayClicked;
-        _mainMenuView.PlayCompetitive += OnClickUnavailable;
-        _mainMenuView.PlayCasual += OnClickUnavailable;
-        _mainMenuView.ModelEditor += OnModelEditorClicked;
-        _mainMenuView.StageEditor += OnStageEditorClicked;
-        _mainMenuView.CampaignEditor += OnClickUnavailable;
-        _mainMenuView.TimeTrials += OnTTClicked;
-        _mainMenuView.Challenges += OnClickUnavailable;
-        _mainMenuView.GameInstructions += OnClickUnavailable;
+        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _mainMenuViewNode = ComponentNodeFactory.Create(_mainMenuView);
+        _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
     }
 
     private void OnFreePlayClicked()
@@ -152,7 +158,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
     public override void GameTick()
     {
         base.GameTick();
-        _mainMenuView.Update();
+        _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)

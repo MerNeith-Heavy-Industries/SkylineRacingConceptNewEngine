@@ -10,9 +10,7 @@ namespace NFMWorldLibrary.Backend.Gamemodes;
 [ClientOnly]
 public class DefaultHudManager : UIManager, IHud
 {
-    private readonly Reconciler _reconciler = new();
-    private Visual? _root;
-    private ReactorDom _dom;
+    private readonly ReactorDom _dom;
 
     private VNode[] _hudElements =
     [
@@ -34,7 +32,7 @@ public class DefaultHudManager : UIManager, IHud
     public DefaultHudManager()
     {
         RootPanel = new FlexPanel();
-        _dom = new ReactorDom();
+        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
         UpdateHud();
     }
 
