@@ -1,4 +1,4 @@
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
 public class Account
 {
