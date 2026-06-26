@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
 public class RequestResult
 {

@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
 public class CreateLocalAccountResult(string? username, string message, HttpStatusCode code) : RequestResult(message, code)
 {
