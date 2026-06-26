@@ -1030,6 +1030,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
 
         public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+        public static implicit operator MeasurementMultiMargin(float value) => All(value);
     }
 
     /// <summary>
