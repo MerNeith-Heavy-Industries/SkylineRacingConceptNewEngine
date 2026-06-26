@@ -559,7 +559,33 @@ public abstract class Component
             VNode vnode = Render();
             EndRender();
 
-            _root = Reconciler.ReconcileNode(vnode, _root);
+            var oldRoot = _root;
+            _root = Reconciler.ReconcileNode(vnode, oldRoot);
+
+            // When the rendered root type changes, ReconcileNode creates a
+            // new native node. The old one is still in the parent's children
+            // list — replace it via VisualParent so the ordering phase's
+            // work isn't silently invalidated.
+            if (_root != oldRoot)
+            {
+                var parent = oldRoot.VisualParent;
+                if (parent != null)
+                {
+                    var children = parent.VisualChildren;
+                    for (int i = 0; i < children.Count; i++)
+                    {
+                        if (children[i] == oldRoot)
+                        {
+                            parent.RemoveAt(i);
+                            parent.InsertAt(i, _root);
+                            break;
+                        }
+                    }
+                }
+
+                Reconciler.RemoveSnapshots(oldRoot);
+            }
+
             Reconciler.MarkComponentVisited(this);
         }
         finally

@@ -419,6 +419,16 @@ internal class Reconciler
     }
 
     /// <summary>
+    /// Removes all snapshot state associated with a native node that is
+    /// being detached from the visual tree. Called when a type change
+    /// replaces a node so the old one doesn't leak snapshot memory.
+    /// </summary>
+    internal void RemoveSnapshots(Visual node)
+    {
+        _snapshots.Remove(node);
+    }
+
+    /// <summary>
     /// Enqueues a component for synchronous re-render. If not already in a batch
     /// (i.e., called from outside a <see cref="Reconcile"/> pass), drains the queue
     /// immediately. During a reconciliation pass, updates are collected and drained
