@@ -17,6 +17,9 @@ public class LapTimerSplitsView : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
+            position: Position.Absolute,
+            top: 0,
+            left: 0,
             flexDirection: FlexDirection.Column,
             alignItems: Align.FlexStart,
             justifyContent: Justify.Center,
