@@ -10,6 +10,7 @@ using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
+using static NFMWorld.UI.Menu.Nodes;
 
 namespace NFMWorld.Gameplay;
 
@@ -34,7 +35,6 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private BackendCar? _backendCar;
 
     private FocusManager _focusManager = new();
-    private GarageUiView _garageUiView = new();
     private ComponentNode _garageUiViewNode;
     private ReactorDom _garageDom;
     private FlexPanel _garageUiContainer = new();
@@ -117,30 +117,33 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         // create and position stat bars
         float switsLevel = (_backendCar.Stats.Swits[2] - 220) / 90f;
         switsLevel = Math.Max(0.05f, switsLevel);
-        _garageUiView.SetBarValue(0, switsLevel);
 
         float accel = (float)(_backendCar.Stats.Acelf.X * _backendCar.Stats.Acelf.Y * _backendCar.Stats.Acelf.Z * _backendCar.Stats.Grip / 7700);
-        _garageUiView.SetBarValue(1, accel);
-
-        _garageUiView.SetBarValue(2, (float)_backendCar.Stats.Dishandle);
 
         float powerloss = _backendCar.Stats.Powerloss / 5500000f;
-        _garageUiView.SetBarValue(3, powerloss);
 
         float strength = ((float)_backendCar.Stats.Moment + 0.5f) / 2.6f;
-        _garageUiView.SetBarValue(4, strength);
 
         float health = (float)_backendCar.Stats.Outdam / 1.05f + _backendCar.Stats.Maxmag / 100000f;
-        _garageUiView.SetBarValue(5, health);
 
         float airs = (_backendCar.Stats.Airc * 2 * ((float)_backendCar.Stats.Airs * 0.5f) * (float)_backendCar.Stats.Bounce + 28f) / 100f;
-        _garageUiView.SetBarValue(6, airs);
 
         float hglide = ((Math.Abs(_backendCar.Stats.Flipy) + Math.Abs(_backendCar.GroundAt)) / 2f / 70f) + (float)_backendCar.Stats.Airs / 230f;
-        _garageUiView.SetBarValue(7, hglide);
 
         float ab = _backendCar.Stats.Airc / 75f;
-        _garageUiView.SetBarValue(8, ab);
+        
+        _garageUiViewNode = GarageUiView([
+            switsLevel,
+            accel,
+            (float)_backendCar.Stats.Dishandle,
+            powerloss,
+            strength,
+            health,
+            airs,
+            hglide,
+            ab
+        ]);
+        UpdateUi();
     }
 
 
@@ -154,6 +157,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void Render(float alpha)
     {
         base.Render(alpha);
+        _garageUiContainer.LayoutAndRender(G.Viewport);
     }
 
     public override void RenderImgui()
@@ -284,10 +288,16 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void Enter()
     {
-        _garageDom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
-        _garageUiViewNode = ComponentNodeFactory.Create(_garageUiView);
-        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
+        _garageDom = new ReactorDom(SynchronizationContext.Current!);
+        _garageUiViewNode = GarageUiView([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        
+        UpdateUi();
         SetupCurrentCar();
+    }
+
+    private void UpdateUi()
+    {
+        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
     }
 
     public override void Exit()

@@ -18,9 +18,6 @@
   <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
         <Compile Remove="Generated/**" />
-        <Compile Update="Mad\UI\LoginModal.cs">
-          <DependentUpon>LoginModal.xaml</DependentUpon>
-        </Compile>
   </ItemGroup>
 <!--
     <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
@@ -81,10 +78,6 @@
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
 
     <!-- XAML files to compile -->
-    <ItemGroup>
-        <AvaloniaXaml Include="Mad\UI\LoginModal.xaml" />
-        <AvaloniaXaml Include="Mad\UI\Test\XamlTestView.xaml" />
-    </ItemGroup>
     
     <!-- Shaders to compile -->
     <ItemGroup>
@@ -165,13 +158,6 @@
 
     <ItemGroup>
         <CompileShader Include="data/shaders/*.fx" />
-    </ItemGroup>
-
-
-    <ItemGroup>
-        <Compile Update="Mad\UI\Test\XamlTestView.cs">
-            <DependentUpon>XamlTestView.xaml</DependentUpon>
-        </Compile>
     </ItemGroup>
 
 

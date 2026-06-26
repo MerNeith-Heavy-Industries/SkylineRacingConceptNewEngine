@@ -14,7 +14,7 @@ public class CentralTextView : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
-            position: YgPositionType.Absolute,
+            position: YgPosition.Absolute,
             top: 0f, left: 0f, right: 0f, bottom: 0f,
             alignItems: YgAlign.Center,
             flexDirection: YgFlexDirection.Column,

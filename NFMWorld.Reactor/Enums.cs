@@ -38,7 +38,7 @@ public enum YgAlign
     SpaceEvenly,
 }
 
-public enum YgPositionType
+public enum YgPosition
 {
     Static,
     Relative,
@@ -105,8 +105,8 @@ public static class Conversions
     public static YgJustify ToNfmJustify(this global::Yoga.YGJustify j) => (YgJustify)j;
     public static global::Yoga.YGAlign ToYogaAlign(this YgAlign a) => (global::Yoga.YGAlign)a;
     public static YgAlign ToNfmAlign(this global::Yoga.YGAlign a) => (YgAlign)a;
-    public static global::Yoga.YGPositionType ToYogaPositionType(this YgPositionType p) => (global::Yoga.YGPositionType)p;
-    public static YgPositionType ToNfmPositionType(this global::Yoga.YGPositionType p) => (YgPositionType)p;
+    public static global::Yoga.YGPositionType ToYogaPositionType(this YgPosition p) => (global::Yoga.YGPositionType)p;
+    public static YgPosition ToNfmPositionType(this global::Yoga.YGPositionType p) => (YgPosition)p;
     public static global::Yoga.YGWrap ToYogaWrap(this YgWrap w) => (global::Yoga.YGWrap)w;
     public static YgWrap ToNfmWrap(this global::Yoga.YGWrap w) => (YgWrap)w;
     public static global::Yoga.YGOverflow ToYogaOverflow(this YgOverflow o) => (global::Yoga.YGOverflow)o;

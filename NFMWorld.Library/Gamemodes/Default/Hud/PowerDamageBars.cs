@@ -14,7 +14,7 @@ public class PowerDamageBars : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
-            position: YgPositionType.Absolute,
+            position: YgPosition.Absolute,
             top: 0f, right: 0f,
             padding: 10f,
             flexDirection: YgFlexDirection.Column,

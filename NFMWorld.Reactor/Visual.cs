@@ -8,7 +8,6 @@ namespace WorldXaml.UI.Yoga;
 public abstract partial class Visual : IStyleNode, INamed
 {
     #region Resources
-    
     /// <summary>
     /// Local resource dictionary for this element.
     /// Resource lookup walks the logical tree through IResourceNode parents.
@@ -48,6 +47,11 @@ public abstract partial class Visual : IStyleNode, INamed
     #region Parent/child tree
 
     private IVisualRoot? _root;
+
+    // Reusable snapshot buffer so dispatch methods don't allocate a new list
+    // every time VisualChildren is iterated. Allocated once per Visual, cleared
+    // and repopulated on each use.
+    private List<Visual>? _childSnapshot;
 
     /// <summary>
     /// Raised when the control is attached to a rooted logical tree.
@@ -240,11 +244,6 @@ public abstract partial class Visual : IStyleNode, INamed
     /// </summary>
     [Property]
     public object? Key { get; set; }
-
-    // Reusable snapshot buffer so dispatch methods don't allocate a new list
-    // every time VisualChildren is iterated. Allocated once per Visual, cleared
-    // and repopulated on each use.
-    private List<Visual>? _childSnapshot;
 
     private protected List<Visual> GetChildSnapshot()
     {
