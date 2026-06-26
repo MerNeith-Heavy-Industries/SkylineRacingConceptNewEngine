@@ -13,24 +13,24 @@ using Node = WorldXaml.UI.Yoga.Node;
 namespace NFMWorld.UI.Menu;
 
 public class MainMenuView(
-    Action? Garage = null,
-    Action? Settings = null,
-    Action? Credits = null,
-    Action? Quit = null,
-    Action? Login = null,
-    Action? Logout = null,
-    Action? PlayNFM1 = null,
-    Action? PlayNFM2 = null,
-    Action? PlayCommunity = null,
-    Action? PlayFreePlay = null,
-    Action? PlayCompetitive = null,
-    Action? PlayCasual = null,
-    Action? ModelEditor = null,
-    Action? StageEditor = null,
-    Action? CampaignEditor = null,
-    Action? TimeTrials = null,
-    Action? Challenges = null,
-    Action? GameInstructions = null
+    Action? garage = null,
+    Action? settings = null,
+    Action? credits = null,
+    Action? quit = null,
+    Action? login = null,
+    Action? logout = null,
+    Action? playNfm1 = null,
+    Action? playNfm2 = null,
+    Action? playCommunity = null,
+    Action? playFreePlay = null,
+    Action? playCompetitive = null,
+    Action? playCasual = null,
+    Action? modelEditor = null,
+    Action? stageEditor = null,
+    Action? campaignEditor = null,
+    Action? timeTrials = null,
+    Action? challenges = null,
+    Action? gameInstructions = null
 ) : Component
 {
     public record MainMenuPage(string Title, ImmutableArray<MainMenuItem> Items);
@@ -56,11 +56,11 @@ public class MainMenuView(
         {
             return new MainMenuPage("NFM WORLD?", [
                 new MainMenuItem("PLAY", "Play public, private matches online or play singleplayer.", () => PushPage(BuildPlayMenu)),
-                new MainMenuItem("GARAGE", "Customize and inspect your vehicles in the garage.", () => Garage?.Invoke()),
+                new MainMenuItem("GARAGE", "Customize and inspect your vehicles in the garage.", () => garage?.Invoke()),
                 new MainMenuItem("WORKSHOP", "Build your own models and stages.", () => PushPage(BuildWorkshopMenu)),
-                new MainMenuItem("SETTINGS", "Adjust game settings.", () => Settings?.Invoke()),
-                new MainMenuItem("CREDITS", "View game credits.", () => Credits?.Invoke()),
-                new MainMenuItem("QUIT", "Exit the game.", () => Quit?.Invoke()),
+                new MainMenuItem("SETTINGS", "Adjust game settings.", () => settings?.Invoke()),
+                new MainMenuItem("CREDITS", "View game credits.", () => credits?.Invoke()),
+                new MainMenuItem("QUIT", "Exit the game.", () => quit?.Invoke()),
             ]);
         }
 
@@ -77,10 +77,10 @@ public class MainMenuView(
         MainMenuPage BuildSPMenu()
         {
             return new MainMenuPage("SINGLEPLAYER", [
-                new MainMenuItem("NFM1", "Play the original NFM1 singleplayer campaign.", () => PlayNFM1?.Invoke()),
-                new MainMenuItem("NFM2", "Play the original NFM2 singleplayer campaign.", () => PlayNFM2?.Invoke()),
-                new MainMenuItem("COMMUNITY", "Play custom experiences crafted by the community.", () => PlayCommunity?.Invoke()),
-                new MainMenuItem("FREE PLAY", "Play freely without any restrictions.", () => PlayFreePlay?.Invoke()),
+                new MainMenuItem("NFM1", "Play the original NFM1 singleplayer campaign.", () => playNfm1?.Invoke()),
+                new MainMenuItem("NFM2", "Play the original NFM2 singleplayer campaign.", () => playNfm2?.Invoke()),
+                new MainMenuItem("COMMUNITY", "Play custom experiences crafted by the community.", () => playCommunity?.Invoke()),
+                new MainMenuItem("FREE PLAY", "Play freely without any restrictions.", () => playFreePlay?.Invoke()),
                 new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
             ]);
         }
@@ -88,8 +88,8 @@ public class MainMenuView(
         MainMenuPage BuildMPMenu()
         {
             return new MainMenuPage("MULTIPLAYER", [
-                new MainMenuItem("COMPETITIVE", "Compete against other players via matchmaking.", () => PlayCompetitive?.Invoke()),
-                new MainMenuItem("CASUAL", "Play with people in a free relaxed environment.", () => PlayCasual?.Invoke()),
+                new MainMenuItem("COMPETITIVE", "Compete against other players via matchmaking.", () => playCompetitive?.Invoke()),
+                new MainMenuItem("CASUAL", "Play with people in a free relaxed environment.", () => playCasual?.Invoke()),
                 new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
             ]);
         }
@@ -97,9 +97,9 @@ public class MainMenuView(
         MainMenuPage BuildWorkshopMenu()
         {
             return new MainMenuPage("WORKSHOP", [
-                new MainMenuItem("MODEL EDITOR", "View and edit custom models.", () => ModelEditor?.Invoke()),
-                new MainMenuItem("STAGE EDITOR", "Design your own stages.", () => StageEditor?.Invoke()),
-                new MainMenuItem("CAMPAIGN EDITOR", "Craft custom experiences.", () => CampaignEditor?.Invoke()),
+                new MainMenuItem("MODEL EDITOR", "View and edit custom models.", () => modelEditor?.Invoke()),
+                new MainMenuItem("STAGE EDITOR", "Design your own stages.", () => stageEditor?.Invoke()),
+                new MainMenuItem("CAMPAIGN EDITOR", "Craft custom experiences.", () => campaignEditor?.Invoke()),
                 new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
             ]);
         }
@@ -107,9 +107,9 @@ public class MainMenuView(
         MainMenuPage BuildTrainingMenu()
         {
             return new MainMenuPage("TRAINING", [
-                new MainMenuItem("TIME TRIALS", "Flex your fastest time against other people.", () => TimeTrials?.Invoke()),
-                new MainMenuItem("CHALLENGES", "Complete challenges to sharpen your mechanical skills.", () => Challenges?.Invoke()),
-                new MainMenuItem("GAME INSTRUCTIONS", "Read about the rules and controls of the game.", () => GameInstructions?.Invoke()),
+                new MainMenuItem("TIME TRIALS", "Flex your fastest time against other people.", () => timeTrials?.Invoke()),
+                new MainMenuItem("CHALLENGES", "Complete challenges to sharpen your mechanical skills.", () => challenges?.Invoke()),
+                new MainMenuItem("GAME INSTRUCTIONS", "Read about the rules and controls of the game.", () => gameInstructions?.Invoke()),
                 new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
             ]);
         }
@@ -177,7 +177,7 @@ public class MainMenuView(
                                 foreground: account is null ? new Color(255, 140, 0) : new Color(180, 180, 180),
                                 stroke: Color.Black,
                                 text: account is null ? "Login" : "Logout",
-                                mousePressed: account is null ? _ => Login?.Invoke() : _ => Logout?.Invoke()
+                                mousePressed: account is null ? _ => login?.Invoke() : _ => logout?.Invoke()
                             )
                         ]
                     )
