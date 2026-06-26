@@ -16,8 +16,7 @@ public class ContextTests
     public void UseContext_ReturnsDefaultValue_WhenNoProvider()
     {
         var ctx = new Context<string>("default-value");
-        var comp = new ContextConsumerComponent(ctx);
-        Mount(comp);
+        var (comp, _, _) = TestHelpers.MountComponent<ContextConsumerComponent>(ctx);
 
         Assert.AreEqual("default-value", comp.LastReadValue);
     }
@@ -30,29 +29,21 @@ public class ContextTests
     public void Reconciler_SetAndGetContext_Directly()
     {
         var ctx = new Context<string>("default");
-        var reconciler = new Reconciler();
-
-        // Set context via the internal method — test via a component
-        var provider = new DirectContextProvider();
-        // Mount triggers Render which calls ProvideContext, but Mount doesn't push a frame
-        // So ProvideContext is a no-op. Use the reconciler path instead.
         var container = new FlexPanel();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
+
         var vnode = View(children:
             ContextProviderComponent(context: ctx, value: "direct", child:
                 ContextConsumerComponent(context: ctx)
             )
         );
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        syncCtx.Drain();
 
         var viewNative = container.Children[0] as FlexPanel;
         var providerNative = viewNative!.Children[0] as FlexPanel;
         var consumerOutput = providerNative!.Children[0] as FlexPanel;
         Assert.AreEqual("direct", consumerOutput!.Name);
-    }
-
-    private class DirectContextProvider : Component
-    {
-        protected override VNode Render() => FlexPanel();
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -64,7 +55,7 @@ public class ContextTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         var vnode = View(children:
             ContextProviderComponent(context: ctx, value: "provided", child:
@@ -72,7 +63,8 @@ public class ContextTests
             )
         );
 
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        syncCtx.Drain();
 
         // container → View's FlexPanel → Provider's FlexPanel → Consumer's FlexPanel
         var viewNative = container.Children[0] as FlexPanel;
@@ -89,7 +81,7 @@ public class ContextTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         var vnode = View(children:
             ContextProviderComponent(context: ctx, value: "outer", child:
@@ -99,9 +91,8 @@ public class ContextTests
             )
         );
 
-        reconciler.Reconcile(vnode, container, null);
-
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        syncCtx.Drain();
 
         // container → View's FP → outer FP → inner FP → Consumer's FP
         var viewNative = container.Children[0] as FlexPanel;
@@ -126,7 +117,7 @@ public class ContextTests
         var initialVersion = ctx.Version;
 
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         // First reconcile — ProvideContext bumps version
         var vnode1 = View(children:
@@ -134,7 +125,8 @@ public class ContextTests
                 ContextConsumerComponent(context: ctx)
             )
         );
-        reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        syncCtx.Drain();
         Assert.IsGreaterThan(initialVersion, ctx.Version, "ProvideContext should increment version");
 
         // Second reconcile with same provider — version increments again
@@ -144,7 +136,8 @@ public class ContextTests
                 ContextConsumerComponent(context: ctx)
             )
         );
-        reconciler.Reconcile(vnode2, container, null);
+        dom.Mount(container, vnode2);
+        syncCtx.Drain();
         Assert.IsGreaterThan(versionAfterFirst, ctx.Version, "Version should increment on each ProvideContext");
     }
 
@@ -155,23 +148,15 @@ public class ContextTests
         var initialVersion = ctx.Version;
 
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         // Reconcile a tree WITHOUT a provider for this context
         var vnode = View(children:
             ContextConsumerComponent(context: ctx)
         );
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        syncCtx.Drain();
 
         Assert.AreEqual(initialVersion, ctx.Version, "Version should not change when context is not provided");
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    //  Helpers
-    // ════════════════════════════════════════════════════════════════════
-
-    private static void Mount(Component comp)
-    {
-        comp.Mount(new FlexPanel());
     }
 }

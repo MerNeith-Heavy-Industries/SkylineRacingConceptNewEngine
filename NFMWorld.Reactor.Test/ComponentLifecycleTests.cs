@@ -15,34 +15,33 @@ public class ComponentLifecycleTests
     [TestMethod]
     public void Update_UnmountsStaleChildComponent()
     {
-        var parent = new ToggleChildComponent(showChild: true);
-        Mount(parent);
+        var (parent, _, ctx) = TestHelpers.MountComponent<ToggleChildComponent>(true);
         var child = parent.ChildInstance;
         Assert.IsNotNull(child, "Child should exist when showChild=true");
         Assert.IsTrue(child!.IsMounted, "Child should be mounted");
 
         parent.ShowChild = false;
         parent.Update();
+        ctx.Drain();
         Assert.IsFalse(child.IsMounted, "Child should be unmounted after removal via Update()");
     }
 
     [TestMethod]
     public void Update_PersistingChildStaysMounted()
     {
-        var parent = new ToggleChildComponent(showChild: true);
-        Mount(parent);
+        var (parent, _, ctx) = TestHelpers.MountComponent<ToggleChildComponent>(true);
         var child = parent.ChildInstance!;
         Assert.IsTrue(child.IsMounted);
 
         parent.Update();
+        ctx.Drain();
         Assert.IsTrue(child.IsMounted, "Persisting child should remain mounted");
     }
 
     [TestMethod]
     public void Update_MultipleCycles_StaleComponentsCleanedUp()
     {
-        var parent = new ToggleChildComponent(showChild: true);
-        Mount(parent);
+        var (parent, _, ctx) = TestHelpers.MountComponent<ToggleChildComponent>(true);
 
         var firstChild = parent.ChildInstance!;
         Assert.IsTrue(firstChild.IsMounted);
@@ -50,11 +49,13 @@ public class ComponentLifecycleTests
         // Cycle 1: toggle off
         parent.ShowChild = false;
         parent.Update();
+        ctx.Drain();
         Assert.IsFalse(firstChild.IsMounted);
 
         // Cycle 2: toggle on (new child)
         parent.ShowChild = true;
         parent.Update();
+        ctx.Drain();
         var secondChild = parent.ChildInstance!;
         Assert.IsTrue(secondChild.IsMounted);
         Assert.AreNotSame(firstChild, secondChild);
@@ -62,23 +63,25 @@ public class ComponentLifecycleTests
         // Cycle 3: toggle off again
         parent.ShowChild = false;
         parent.Update();
+        ctx.Drain();
         Assert.IsFalse(secondChild.IsMounted);
     }
 
     [TestMethod]
     public void Update_ReplacesChild_OldUnmountedNewMounted()
     {
-        var parent = new ToggleChildComponent(showChild: true);
-        Mount(parent);
+        var (parent, _, ctx) = TestHelpers.MountComponent<ToggleChildComponent>(true);
         var firstChild = parent.ChildInstance!;
         Assert.IsTrue(firstChild.IsMounted);
 
         parent.ShowChild = false;
         parent.Update();
+        ctx.Drain();
         Assert.IsFalse(firstChild.IsMounted, "First child should be unmounted");
 
         parent.ShowChild = true;
         parent.Update();
+        ctx.Drain();
         var secondChild = parent.ChildInstance!;
         Assert.IsTrue(secondChild.IsMounted, "New child should be mounted");
         Assert.AreNotSame(firstChild, secondChild, "Should be a different instance");
@@ -92,16 +95,18 @@ public class ComponentLifecycleTests
     public void Reconcile_UnmountsStaleChildComponent()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: EmptyComponent());
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var childNode1 = (EmptyComponentNode)vnode1.Children![0];
         var child = (EmptyComponent)childNode1.Instance!;
         Assert.IsTrue(child.IsMounted);
 
         var vnode2 = View();
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
         Assert.IsFalse(child.IsMounted, "Reconcile should unmount removed child");
     }
 
@@ -109,16 +114,18 @@ public class ComponentLifecycleTests
     public void Reconcile_PersistingChildStaysMounted()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: EmptyComponent());
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var childNode1 = (EmptyComponentNode)vnode1.Children![0];
         var child = (EmptyComponent)childNode1.Instance!;
         Assert.IsTrue(child.IsMounted);
 
         var vnode2 = View(children: EmptyComponent());
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
         Assert.IsTrue(child.IsMounted, "Persisting child should stay mounted");
     }
 
@@ -129,12 +136,12 @@ public class ComponentLifecycleTests
     [TestMethod]
     public void Update_StalePropertyResetsAfterUpdate()
     {
-        var comp = new ToggleVisibilityComponent(visible: Visibility.Hidden);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<ToggleVisibilityComponent>(Visibility.Hidden);
         Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
 
         comp.Visible = null;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility,
             "Stale property should reset after Update via FinishPass snapshot rotation");
     }
@@ -142,15 +149,16 @@ public class ComponentLifecycleTests
     [TestMethod]
     public void Update_PropertyPreservedWhenRespecifiedAcrossMultipleUpdates()
     {
-        var comp = new ToggleVisibilityComponent(visible: Visibility.Hidden);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<ToggleVisibilityComponent>(Visibility.Hidden);
 
         comp.Visible = Visibility.Visible;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
 
         comp.Visible = Visibility.Visible;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility,
             "Property should persist across multiple updates");
     }
@@ -158,28 +166,24 @@ public class ComponentLifecycleTests
     [TestMethod]
     public void Update_AlternatingProperties_ResetCorrectly()
     {
-        var comp = new ToggleVisibilityComponent(visible: Visibility.Hidden);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<ToggleVisibilityComponent>(Visibility.Hidden);
         Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
 
         comp.Visible = null;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
 
         comp.Visible = Visibility.Hidden;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
 
         comp.Visible = null;
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
     }
-
-    // ════════════════════════════════════════════════════════════════════
-    //  Helpers
-    // ════════════════════════════════════════════════════════════════════
-
-    private static void Mount(Component comp) => comp.Mount(new FlexPanel());
 
     // ════════════════════════════════════════════════════════════════════
     //  Test Components

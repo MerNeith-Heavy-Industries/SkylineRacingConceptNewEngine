@@ -15,15 +15,16 @@ public class ReconcilerComponentTests
     public void Reconcile_ComponentNode_RendersIntoContainer()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode = View(name: "vnode", children:
             EmptyComponent()
         );
 
-        var root = reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        ctx.Drain();
 
-        Assert.IsNotNull(root);
+        Assert.IsNotNull(dom.Root);
         Assert.HasCount(1, container.Children);
     }
 
@@ -34,23 +35,27 @@ public class ReconcilerComponentTests
     public void Reconcile_ComponentRendersNamedNode_NameApplied()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
-        
+        var (dom, ctx) = TestHelpers.CreateDom();
+
         // Step 1: verify the factory-produced VNode has Name
         var compNode = TitleComponent(title: "CompName");
         var comp = (TitleComponent)compNode.CreateComponent();
         var rendered = (VNode)comp.GetType().GetMethod("Render", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             !.Invoke(comp, null)!;
         Assert.AreEqual("CompName", ((VisualVNode)rendered).Name, "VNode name should be set after Render");
-        
+
         // Step 2: reconcile directly (should work)
-        var directResult = reconciler.Reconcile(rendered, new FlexPanel(), null);
-        Assert.AreEqual("CompName", directResult.Name, "Direct reconcile should preserve name");
-        
+        var directContainer = new FlexPanel();
+        var (dom2, ctx2) = TestHelpers.CreateDom();
+        dom2.Mount(directContainer, rendered);
+        ctx2.Drain();
+        Assert.AreEqual("CompName", dom2.Root!.Name, "Direct reconcile should preserve name");
+
         // Step 3: reconcile through View wrapper
         var vnode = View(name: "vnode", children: compNode);
-        var root = reconciler.Reconcile(vnode, container, null);
-        Assert.IsNotNull(root);
+        dom.Mount(container, vnode);
+        ctx.Drain();
+        Assert.IsNotNull(dom.Root);
         var flexChild = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(flexChild);
         Assert.AreEqual("CompName", flexChild.Name, "Wrapped reconcile should preserve name");
@@ -63,12 +68,13 @@ public class ReconcilerComponentTests
     public void Reconcile_ComponentNodeDirect_NameApplied()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
         var compNode = TitleComponent(title: "DirectComp");
-        var root = reconciler.Reconcile(compNode, container, null);
+        dom.Mount(container, compNode);
+        ctx.Drain();
 
-        Assert.IsNotNull(root);
-        Assert.AreEqual("DirectComp", root.Name);
+        Assert.IsNotNull(dom.Root);
+        Assert.AreEqual("DirectComp", dom.Root!.Name);
     }
 
     /// <summary>
@@ -78,10 +84,11 @@ public class ReconcilerComponentTests
     public void Reconcile_DirectName_Applied()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
         var flexNode = FlexPanel(name: "DirectName");
-        var root = reconciler.Reconcile(flexNode, container, null);
-        Assert.AreEqual("DirectName", root.Name);
+        dom.Mount(container, flexNode);
+        ctx.Drain();
+        Assert.AreEqual("DirectName", dom.Root!.Name);
     }
 
     /// <summary>
@@ -92,13 +99,14 @@ public class ReconcilerComponentTests
     public void Reconcile_EmptyComponent_RendersFlexPanel()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode = View(name: "vnode", children:
             EmptyComponent()
         );
 
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        ctx.Drain();
 
         // The component renders a FlexPanel, so the View's child should be a FlexPanel
         Assert.IsInstanceOfType(container.Children[0], typeof(FlexPanel));
@@ -112,13 +120,14 @@ public class ReconcilerComponentTests
     public void Reconcile_TitleComponent_SetsName()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode = View(name: "vnode", children:
             TitleComponent(title: "MyTitle")
         );
 
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        ctx.Drain();
 
         var child = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(child);
@@ -132,19 +141,21 @@ public class ReconcilerComponentTests
     public void Reconcile_UpdateComponent_ReflectsNewTitle()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         // First render
         var vnode1 = View(name: "vnode1", children:
             TitleComponent(title: "First")
         );
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
 
         // Second render with different title
         var vnode2 = View(name: "vnode2", children:
             TitleComponent(title: "Second")
         );
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
 
         var child = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(child);
@@ -159,13 +170,14 @@ public class ReconcilerComponentTests
     public void Reconcile_WrapperComponent_PassesChildThrough()
     {
         var container = new FlexPanel { Name = "container" };
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var inner = FlexPanel(name: "inner");
         var wrapperNode = WrapperComponent(child: inner);
 
         var vnode = View(children: wrapperNode, name: "view");
-        reconciler.Reconcile(vnode, container, null);
+        dom.Mount(container, vnode);
+        ctx.Drain();
 
         var wrapperOutput = (container.Children[0] as FlexPanel)?.Children[0] as FlexPanel;
         Assert.IsNotNull(wrapperOutput);

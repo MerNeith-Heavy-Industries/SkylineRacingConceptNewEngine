@@ -14,18 +14,17 @@ public class HooksTests
     [TestMethod]
     public void UseState_InitialValue()
     {
-        var comp = new UseStateComponent();
-        Mount(comp);
+        var (comp, _, _) = TestHelpers.MountComponent<UseStateComponent>();
         Assert.AreEqual(42, comp.ExposedValue);
     }
 
     [TestMethod]
     public void UseState_SetterTriggersRerender()
     {
-        var comp = new UseStateComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseStateComponent>();
         var initial = comp.RenderCount;
         comp.ExposedSetValue(99);
+        ctx.Drain();
         Assert.AreEqual(99, comp.ExposedValue);
         Assert.IsGreaterThan(initial, comp.RenderCount);
     }
@@ -33,10 +32,10 @@ public class HooksTests
     [TestMethod]
     public void UseState_SameValueSkipsRerender()
     {
-        var comp = new UseStateComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseStateComponent>();
         var initial = comp.RenderCount;
         comp.ExposedSetValue(42); // same as initial
+        ctx.Drain();
         Assert.AreEqual(initial, comp.RenderCount);
     }
 
@@ -45,17 +44,16 @@ public class HooksTests
     [TestMethod]
     public void UseEffect_RunsOnMount()
     {
-        var comp = new UseEffectComponent();
-        Mount(comp);
+        var (comp, _, _) = TestHelpers.MountComponent<UseEffectComponent>();
         Assert.AreEqual(1, comp.EffectRunCount);
     }
 
     [TestMethod]
     public void UseEffect_CleanupRunsBeforeNextEffect()
     {
-        var comp = new UseEffectComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseEffectComponent>();
         comp.ExposedSetCount(1); // change dep → triggers update → cleanup + new effect
+        ctx.Drain();
         Assert.AreEqual(1, comp.CleanupRunCount, "Cleanup should run before new effect");
         Assert.AreEqual(2, comp.EffectRunCount, "New effect should run after deps change");
     }
@@ -63,20 +61,20 @@ public class HooksTests
     [TestMethod]
     public void UseEffect_SkipsWhenDepsUnchanged()
     {
-        var comp = new UseEffectComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseEffectComponent>();
         var after = comp.EffectRunCount;
         comp.Update(); // deps unchanged
+        ctx.Drain();
         Assert.AreEqual(after, comp.EffectRunCount);
     }
 
     [TestMethod]
     public void UseEffect_EmptyDepsRunsOnce()
     {
-        var comp = new UseEffectOnceComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseEffectOnceComponent>();
         Assert.AreEqual(1, comp.EffectRunCount);
         comp.Update();
+        ctx.Drain();
         Assert.AreEqual(1, comp.EffectRunCount, "Empty deps should run only on mount");
     }
 
@@ -85,28 +83,27 @@ public class HooksTests
     [TestMethod]
     public void UseMemo_ComputesValue()
     {
-        var comp = new UseMemoComponent();
-        Mount(comp);
+        var (comp, _, _) = TestHelpers.MountComponent<UseMemoComponent>();
         Assert.AreEqual(84, comp.MemoizedValue); // 42 * 2
     }
 
     [TestMethod]
     public void UseMemo_RecomputesOnDepChange()
     {
-        var comp = new UseMemoComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseMemoComponent>();
         Assert.AreEqual(84, comp.MemoizedValue);
         comp.ExposedSetBase(10);
+        ctx.Drain();
         Assert.AreEqual(20, comp.MemoizedValue);
     }
 
     [TestMethod]
     public void UseMemo_SkipsWhenDepsUnchanged()
     {
-        var comp = new UseMemoComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseMemoComponent>();
         var computeCount = comp.MemoComputeCount;
         comp.Update(); // deps unchanged
+        ctx.Drain();
         Assert.AreEqual(computeCount, comp.MemoComputeCount);
     }
 
@@ -115,10 +112,10 @@ public class HooksTests
     [TestMethod]
     public void UseRef_PersistsAcrossRenders()
     {
-        var comp = new UseRefComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseRefComponent>();
         var ref1 = comp.ExposedRef;
         comp.Update();
+        ctx.Drain();
         var ref2 = comp.ExposedRef;
         Assert.AreSame(ref1, ref2, "Ref should be the same object across renders");
     }
@@ -126,10 +123,10 @@ public class HooksTests
     [TestMethod]
     public void UseRef_MutationDoesNotRerender()
     {
-        var comp = new UseRefComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseRefComponent>();
         var before = comp.RenderCount;
         comp.ExposedRef.Current = "changed";
+        ctx.Drain();
         Assert.AreEqual(before, comp.RenderCount, "Ref mutation should not trigger re-render");
     }
 
@@ -138,10 +135,10 @@ public class HooksTests
     [TestMethod]
     public void UseCallback_ReturnsStableReference()
     {
-        var comp = new UseCallbackComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseCallbackComponent>();
         var cb1 = comp.ExposedCallback;
         comp.Update(); // deps unchanged
+        ctx.Drain();
         var cb2 = comp.ExposedCallback;
         Assert.AreSame(cb1, cb2, "Callback should be stable when deps unchanged");
     }
@@ -152,11 +149,11 @@ public class HooksTests
     public void UseObservable_RerendersOnPropertyChange()
     {
         var vm = new TestViewModel { Name = "Initial" };
-        var comp = new UseObservableComponent(vm);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseObservableComponent>(vm);
 
         var before = comp.RenderCount;
         vm.Name = "Changed";
+        ctx.Drain();
         Assert.IsGreaterThan(before, comp.RenderCount, "Should re-render on property change");
     }
 
@@ -166,14 +163,15 @@ public class HooksTests
     public void UseObservableProperty_RerendersOnlyOnMatchingProperty()
     {
         var vm = new TestViewModel { Name = "A", Age = 1 };
-        var comp = new UseObservablePropertyComponent(vm);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseObservablePropertyComponent>(vm);
 
         var before = comp.RenderCount;
         vm.Age = 2; // different property
+        ctx.Drain();
         Assert.AreEqual(before, comp.RenderCount, "Should NOT re-render on Age change");
 
         vm.Name = "B"; // watched property
+        ctx.Drain();
         Assert.IsGreaterThan(before, comp.RenderCount, "Should re-render on Name change");
     }
 
@@ -183,11 +181,11 @@ public class HooksTests
     public void UseCollection_RerendersOnAdd()
     {
         var collection = new ObservableCollection<string>();
-        var comp = new UseCollectionComponent(collection);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseCollectionComponent>(collection);
 
         var before = comp.RenderCount;
         collection.Add("item");
+        ctx.Drain();
         Assert.IsGreaterThan(before, comp.RenderCount, "Should re-render on Add");
     }
 
@@ -195,11 +193,11 @@ public class HooksTests
     public void UseCollection_RerendersOnRemove()
     {
         var collection = new ObservableCollection<string> { "item" };
-        var comp = new UseCollectionComponent(collection);
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<UseCollectionComponent>(collection);
 
         var before = comp.RenderCount;
         collection.Remove("item");
+        ctx.Drain();
         Assert.IsGreaterThan(before, comp.RenderCount, "Should re-render on Remove");
     }
 
@@ -212,20 +210,19 @@ public class HooksTests
     [TestMethod]
     public void HookOrder_SameOrderOnEachRender_Ok()
     {
-        var comp = new UseStateComponent();
-        Mount(comp);
+        var (comp, _, _) = TestHelpers.MountComponent<UseStateComponent>();
         comp.Update(); // same hooks in same order, should not throw
     }
 
     [TestMethod]
     public void HookOrder_ConditionalHook_Throws()
     {
-        var comp = new ConditionalHookComponent { ShowExtra = false };
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<ConditionalHookComponent>(); comp.ShowExtra = false;
         comp.ShowExtra = true;
         try
         {
             comp.Update();
+            ctx.Drain();
             Assert.Fail("Expected HookOrderException was not thrown");
         }
         catch (HookOrderException) { /* expected */ }
@@ -234,24 +231,15 @@ public class HooksTests
     [TestMethod]
     public void HookOrder_MissingHook_Throws()
     {
-        var comp = new SkippingHookComponent { Skip = false };
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<SkippingHookComponent>(); comp.Skip = false;
         comp.Skip = true;
         try
         {
             comp.Update();
+            ctx.Drain();
             Assert.Fail("Expected HookOrderException was not thrown");
         }
         catch (HookOrderException) { /* expected */ }
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    //  Helpers
-    // ════════════════════════════════════════════════════════════════════
-
-    private static void Mount(Component comp)
-    {
-        comp.Mount(new FlexPanel());
     }
 
     // ════════════════════════════════════════════════════════════════════

@@ -16,16 +16,18 @@ public class MemoizationTests
     public void Memo_SkipsRender_WhenInputsUnchanged()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: MemoIdComponent(id: 42));
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var compNode1 = (MemoIdComponentNode)vnode1.Children![0];
         var comp = (MemoIdComponent)compNode1.Instance!;
         Assert.AreEqual(1, comp.RenderCount);
 
         var vnode2 = View(children: MemoIdComponent(id: 42));
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
         Assert.AreEqual(1, comp.RenderCount, "Should skip Render when inputs unchanged");
     }
 
@@ -33,16 +35,18 @@ public class MemoizationTests
     public void Memo_Rerenders_WhenInputsChanged()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: MemoIdComponent(id: 42));
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var compNode1 = (MemoIdComponentNode)vnode1.Children![0];
         var comp = (MemoIdComponent)compNode1.Instance!;
         Assert.AreEqual(1, comp.RenderCount);
 
         var vnode2 = View(children: MemoIdComponent(id: 99));
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
         // Different inputs → new instance created with new constructor args
         var comp2 = (MemoIdComponent)((MemoIdComponentNode)vnode2.Children![0]).Instance!;
         Assert.AreEqual(1, comp2.RenderCount, "New instance renders once");
@@ -53,36 +57,38 @@ public class MemoizationTests
     public void Memo_ValueTypeInput_SameValueSkipsRender()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: MemoIdComponent(id: 7));
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var compNode1 = (MemoIdComponentNode)vnode1.Children![0];
         var comp = (MemoIdComponent)compNode1.Instance!;
         Assert.AreEqual(1, comp.RenderCount);
 
         var vnode2 = View(children: MemoIdComponent(id: 7));
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
         // Same value (boxed int 7 == 7) → instance reused → memo skips
         Assert.AreEqual(1, comp.RenderCount, "Same value type input should skip render");
     }
-
-    // (Memo_ValueTypeInput test removed — same pattern as Memo_SkipsRender)
 
     [TestMethod]
     public void DisableMemo_AlwaysRerenders()
     {
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, ctx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: NoMemoIdComponent(id: 1));
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
         var compNode1 = (NoMemoIdComponentNode)vnode1.Children![0];
         var comp = (NoMemoIdComponent)compNode1.Instance!;
         Assert.AreEqual(1, comp.RenderCount);
 
         var vnode2 = View(children: NoMemoIdComponent(id: 1));
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
 
         // Same inputs → instance reused → but memo is disabled, so it re-renders
         Assert.AreEqual(2, comp.RenderCount, "DisableMemo should re-render every time");
@@ -97,14 +103,15 @@ public class MemoizationTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children:
             AlwaysRenderProviderComponent(context: ctx, value: "alpha", child:
                 MemoContextConsumerComponent(context: ctx)
             )
         );
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        syncCtx.Drain();
 
         var consumerNode1 = ExtractInnerConsumer(vnode1);
         var consumer = (MemoContextConsumerComponent)consumerNode1.Instance!;
@@ -116,7 +123,8 @@ public class MemoizationTests
                 MemoContextConsumerComponent(context: ctx)
             )
         );
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        syncCtx.Drain();
 
         Assert.AreEqual(2, consumer.RenderCount,
             "Should re-render when context version changes (even with same value)");
@@ -127,10 +135,11 @@ public class MemoizationTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children: MemoContextConsumerComponent(context: ctx));
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        syncCtx.Drain();
 
         var compNode1 = (MemoContextConsumerComponentNode)vnode1.Children![0];
         var comp = (MemoContextConsumerComponent)compNode1.Instance!;
@@ -138,7 +147,8 @@ public class MemoizationTests
         Assert.AreEqual("default", comp.LastReadValue);
 
         var vnode2 = View(children: MemoContextConsumerComponent(context: ctx));
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        syncCtx.Drain();
 
         Assert.AreEqual(1, comp.RenderCount,
             "Should skip render when context is not provided and version is unchanged");
@@ -153,7 +163,7 @@ public class MemoizationTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         // Structure: AlwaysRenderProvider → MemoPassthrough (×2) → MemoContextConsumer
         var vnode1 = View(children:
@@ -165,7 +175,8 @@ public class MemoizationTests
                 )
             )
         );
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        syncCtx.Drain();
 
         // Extract the leaf consumer
         var consumer = ExtractDeepConsumer(vnode1);
@@ -187,7 +198,8 @@ public class MemoizationTests
                 )
             )
         );
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        syncCtx.Drain();
 
         // Both passthroughs have same inputs → should memo-skip
         Assert.AreEqual(1, passthroughs.outer.RenderCount,
@@ -207,7 +219,7 @@ public class MemoizationTests
     {
         var ctx = new Context<string>("default");
         var container = new FlexPanel();
-        var reconciler = new Reconciler();
+        var (dom, syncCtx) = TestHelpers.CreateDom();
 
         var vnode1 = View(children:
             AlwaysRenderProviderComponent(context: ctx, value: "same", child:
@@ -216,7 +228,8 @@ public class MemoizationTests
                 )
             )
         );
-        var root = reconciler.Reconcile(vnode1, container, null);
+        dom.Mount(container, vnode1);
+        syncCtx.Drain();
 
         var consumer = ExtractShallowConsumer(vnode1);
         var passthrough = (MemoPassthroughComponent)
@@ -233,16 +246,14 @@ public class MemoizationTests
                 )
             )
         );
-        reconciler.Reconcile(vnode2, container, root);
+        dom.Mount(container, vnode2);
+        syncCtx.Drain();
 
         // Passthrough has same inputs → skips
         Assert.AreEqual(1, passthrough.RenderCount,
             "Passthrough should memo-skip");
 
         // Consumer: same inputs, but context version changed → must re-render.
-        // Read from vnode2 since the old VNode tree's Instance reference is still valid
-        // (component instances are reused), but verifying via the new tree is cleaner.
-        // The consumer instance is reused across renders, so reading from vnode1 also works.
         Assert.AreEqual(2, consumer.RenderCount,
             "Consumer should re-render even when context value is same (version bumped)");
         Assert.AreEqual("same", consumer.LastReadValue,
@@ -256,23 +267,18 @@ public class MemoizationTests
     [TestMethod]
     public void Memo_StateUpdateAlwaysRerenders()
     {
-        var comp = new MemoStateComponent();
-        Mount(comp);
+        var (comp, _, ctx) = TestHelpers.MountComponent<MemoStateComponent>();
 
         Assert.AreEqual(1, comp.RenderCount, "Should render on mount");
 
         comp.ExposedSetValue(99);
+        ctx.Drain();
         Assert.AreEqual(2, comp.RenderCount, "UseState setter should always re-render, bypassing memo");
     }
 
     // ════════════════════════════════════════════════════════════════════
     //  Helpers
     // ════════════════════════════════════════════════════════════════════
-
-    private static void Mount(Component comp)
-    {
-        comp.Mount(new FlexPanel());
-    }
 
     /// <summary>
     /// Walks a provider→child VNode chain to extract the innermost consumer ComponentNode.
