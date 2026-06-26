@@ -2,14 +2,22 @@
 
 public class ReactorDom : IDisposable
 {
-    internal readonly Reconciler Reconciler;
+    internal readonly Reconciler Reconciler = new();
     private VNode? _rootNode;
     private Visual? _container;
 
-    public ReactorDom(SynchronizationContext synchronizationContext)
+    public ReactorDom()
     {
-        Reconciler = new Reconciler(synchronizationContext);
         HotReloadService.UpdateApplicationEvent += OnHotReloadServiceOnUpdateApplicationEvent;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="ReactorDom"/> with an optional <see cref="SynchronizationContext"/>
+    /// for backward compatibility. The <paramref name="synchronizationContext"/> is no longer
+    /// used since updates are now synchronous.
+    /// </summary>
+    public ReactorDom(SynchronizationContext? synchronizationContext) : this()
+    {
     }
 
     public void Dispose()
