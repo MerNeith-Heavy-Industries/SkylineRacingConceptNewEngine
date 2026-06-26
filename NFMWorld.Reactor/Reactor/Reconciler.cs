@@ -268,6 +268,7 @@ internal class Reconciler
         // Remove stale keyed children
         foreach (var (_, oldIdx) in oldKeyMap.OrderByDescending(kv => kv.Value))
             container.RemoveAt(oldIdx);
+        oldKeyMap.Clear();
         _dictPool.Return(oldKeyMap);
 
         // Apply final ordering
