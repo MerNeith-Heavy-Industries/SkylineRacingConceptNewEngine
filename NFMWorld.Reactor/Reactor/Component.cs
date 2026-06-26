@@ -136,15 +136,15 @@ public abstract class Component
     /// Declare a state variable. Returns the current value and a setter.
     /// Calling the setter schedules a re-render.
     /// </summary>
-    protected (T value, Action<T> setValue) UseState<T>(T initialValue)
+    protected (T value, Action<T> setValue) UseState<T>(T initialValue, IEqualityComparer<T>? comparer = null)
     {
         VerifyReconciler();
 
-        var box = ValidateHook<StateBox<T>>() ?? AddHook(new StateBox<T>(initialValue));
+        var box = ValidateHook<StateBox<T>>() ?? AddHook(new StateBox<T>(initialValue, comparer ?? EqualityComparer<T>.Default));
         
         return (box.Value, newValue =>
         {
-            if (EqualityComparer<T>.Default.Equals(box.Value, newValue)) return;
+            if (box.Comparer.Equals(box.Value, newValue)) return;
             box.Value = newValue;
             Update();
         });
@@ -160,14 +160,14 @@ public abstract class Component
     /// changes (shallow reference equality). Pass <c>null</c> to run on every render.
     /// Pass an empty array to run only on mount and unmount.
     /// </param>
-    protected void UseEffect(Func<Action?> effect, params object?[]? dependencies)
+    protected void UseEffect(Func<Action?> effect, params object?[] dependencies)
     {
         VerifyReconciler();
 
         var box = ValidateHook<DepsBox>() ?? AddHook(new DepsBox(null));
 
         // Check if dependencies changed since last render
-        var hasChanged = dependencies is null || !DepsEqual(box.Dependencies, dependencies);
+        var hasChanged = !DepsEqual(box.Dependencies, dependencies);
         
         if (hasChanged)
         {
@@ -186,7 +186,7 @@ public abstract class Component
     /// changes (shallow reference equality). Pass <c>null</c> to run on every render.
     /// Pass an empty array to run only on mount and unmount.
     /// </param>
-    protected void UseEffect(Action effect, params object?[]? dependencies)
+    protected void UseEffect(Action effect, params object?[] dependencies)
     {
         UseEffect(() =>
         {
@@ -232,7 +232,7 @@ public abstract class Component
     {
         VerifyReconciler();
 
-        var box = ValidateHook<StateBox<Ref<T>>>() ?? AddHook(new StateBox<Ref<T>>(new Ref<T>(initialValue)));
+        var box = ValidateHook<StateBox<Ref<T>>>() ?? AddHook(new StateBox<Ref<T>>(new Ref<T>(initialValue), EqualityComparer<Ref<T>>.Default));
 
         return box.Value;
     }
@@ -576,9 +576,10 @@ public abstract class Component
 
     private class Hook;
 
-    private sealed class StateBox<T>(T value) : Hook
+    private sealed class StateBox<T>(T value, IEqualityComparer<T> comparer) : Hook
     {
         public T Value = value;
+        public readonly IEqualityComparer<T> Comparer = comparer;
     }
 
     private sealed class DepsBox(object?[]? dependencies) : Hook
