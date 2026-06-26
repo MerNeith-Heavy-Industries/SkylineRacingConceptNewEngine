@@ -71,8 +71,8 @@ public partial class RadParser
     
     private List<f64Vector3> _hullVerts = [];
     private readonly string _fileName;
-    private float _scaleRadius;
-    private float _scaleDepth;
+    private float _scaleRadius = 1f;
+    private float _scaleDepth = 1f;
     private int? _phyAddonsWheelId;
 
     private RadParser(string fileName)
