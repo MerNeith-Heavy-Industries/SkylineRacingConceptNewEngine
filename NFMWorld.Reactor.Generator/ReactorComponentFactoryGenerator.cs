@@ -114,7 +114,7 @@ public class ReactorComponentFactoryGenerator : IIncrementalGenerator
             {
                 parameters.Add(new ComponentParamInfo(
                     Name: p.Name,
-                    TypeFqn: p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    TypeFqn: p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + (p is { NullableAnnotation: NullableAnnotation.Annotated, Type.IsValueType: false } ? "?" : ""),
                     IsValueType: p.Type.IsValueType,
                     HasDefaultValue: p.HasExplicitDefaultValue,
                     DefaultValue: p.HasExplicitDefaultValue ? FormatDefaultValue(p.ExplicitDefaultValue, p.Type) : null
