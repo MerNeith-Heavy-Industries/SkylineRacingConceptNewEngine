@@ -25,7 +25,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
             FocusManager = FocusManager
         };
 
-        _dom = new ReactorDom(SynchronizationContext.Current!);
+        _dom = new ReactorDom();
         _mainMenuViewNode = MainMenuView(
             garage: OnGarageClicked,
             settings: OnSettingsClicked,

@@ -32,7 +32,7 @@ public class DefaultHudManager : UIManager, IHud
     public DefaultHudManager()
     {
         RootPanel = new FlexPanel();
-        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _dom = new ReactorDom();
         UpdateHud();
     }
 

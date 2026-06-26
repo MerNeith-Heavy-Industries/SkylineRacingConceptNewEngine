@@ -288,7 +288,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void Enter()
     {
-        _garageDom = new ReactorDom(SynchronizationContext.Current!);
+        _garageDom = new ReactorDom();
         _garageUiViewNode = GarageUiView([0, 0, 0, 0, 0, 0, 0, 0, 0]);
         
         UpdateUi();
