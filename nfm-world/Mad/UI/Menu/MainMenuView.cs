@@ -1,8 +1,11 @@
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using NFMWorld.Accounts;
+using NFMWorld.DriverInterface.UI;
 using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
 using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.DriverInterface.UI.Nodes;
 
 namespace NFMWorld.UI.Menu;
 
@@ -34,6 +37,7 @@ public class MainMenuView(
     {
         var (menuHistory, setMenuHistory) = UseState(new ImmutableArray<Action>());
         var (activeItem, setActiveItem) = UseState<MainMenuItem?>(null);
+        var (account, setAccount) = UseState<Account?>(null);
         
         return View(
             name: "MainMenu",
@@ -44,25 +48,25 @@ public class MainMenuView(
             padding: 20f,
             children: [
                 // Title
-                FlexPanel(name: vm.Title, flexDirection: YgFlexDirection.Row, minHeight: 60f,
+                FlexPanel(name: Title, flexDirection: YgFlexDirection.Row, minHeight: 60f,
                     alignItems: YgAlign.Center, justifyContent: YgJustify.SpaceBetween, children: [
-                        FlexPanel(name: vm.LoginButtonText,
+                        FlexPanel(
                             flexDirection: YgFlexDirection.Row, justifyContent: YgJustify.FlexEnd, minWidth: 200f,
                             children:
-                                FlexPanel(name: vm.LoginButtonText)
+                                TextRun(name: account != null ? "LOGOUT" : "LOGIN")
                         )
                     ]
                 ),
                 // Menu items
                 FlexPanel(flexDirection: YgFlexDirection.Column, alignItems: YgAlign.FlexStart, gap: 12f,
-                    children: RenderItems(items)
+                    children: RenderItems([]) // TODO
                 ),
                 // Spacer
                 FlexPanel(flex: 1f),
                 // Description
-                FlexPanel(name: vm.Description),
+                FlexPanel(name: activeItem?.Description ?? ""),
                 // Account status
-                FlexPanel(name: vm.AccountStatus)
+                FlexPanel(name: account != null ? $"Logged in as: {account.Username}" : "Logged out")
             ]
         );
     }

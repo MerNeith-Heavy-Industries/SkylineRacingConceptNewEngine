@@ -1,4 +1,5 @@
 ﻿using NFMWorld.DriverInterface;
+using NFMWorld.Reactor;
 using NFMWorld.UI.Test;
 using WorldXaml.UI.Yoga;
 
@@ -6,26 +7,27 @@ namespace NFMWorld.Gameplay;
 
 public class XamlTestPhase : BasePhase
 {
-    public XamlTestView _testView = new();
-    private bool _mounted;
+    private XamlTestView _testView = new();
+    private ReactorDom _dom;
+    private FlexPanel _container = new();
 
     public override void Enter()
     {
         base.Enter();
-        _testView.Mount(new FlexPanel());
-        _mounted = true;
+        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _dom.Mount(_container, ComponentNodeFactory.Create(_testView));
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
-        _testView.Update();
+        _dom.Mount(_container, ComponentNodeFactory.Create(_testView));
     }
 
     public override void GameTick()
     {
         base.GameTick();
         _testView.Tick();
-        _testView.Update();
+        _dom.Mount(_container, ComponentNodeFactory.Create(_testView));
     }
 }

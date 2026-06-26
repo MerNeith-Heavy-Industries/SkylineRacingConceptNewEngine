@@ -1,6 +1,7 @@
 using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
+using NFMWorld.Reactor;
 using NFMWorld.UI.Menu;
 using NFMWorld.Util;
 using NFMWorldLibrary;
@@ -34,6 +35,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private FocusManager _focusManager = new();
     private GarageUiView _garageUiView = new();
+    private ComponentNode _garageUiViewNode;
+    private ReactorDom _garageDom;
+    private FlexPanel _garageUiContainer = new();
 
     private int _statsBarBaseX = 120;
     private int _statsBarBaseY = 200;
@@ -144,7 +148,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void GameTick()
     {
         base.GameTick();
-        _garageUiView.Update();
+        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
     }
 
     public override void Render(float alpha)
@@ -280,6 +284,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void Enter()
     {
+        _garageDom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _garageUiViewNode = ComponentNodeFactory.Create(_garageUiView);
+        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
         SetupCurrentCar();
     }
 
