@@ -1,15 +1,12 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Account;
-using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorld.UI;
 using NFMWorld.UI.Menu;
-using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
-using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
+using static NFMWorld.UI.Menu.Nodes;
 
 namespace NFMWorld.Gameplay;
 
@@ -17,7 +14,6 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
-    private MainMenuView _mainMenuView;
     private ComponentNode _mainMenuViewNode;
     private ReactorDom _dom;
     private UIManager _uiManager;
@@ -29,29 +25,27 @@ public class MainMenuPhase : BaseStageRenderingPhase
             FocusManager = FocusManager
         };
 
-        _mainMenuView = new MainMenuView(
-            Garage: OnGarageClicked,
-            Settings: OnSettingsClicked,
-            Credits: OnClickUnavailable,
-            Quit: OnQuitClicked,
-            Login: OnLoginClicked,
-            Logout: OnLogoutClicked,
-            PlayNFM1: OnClickUnavailable,
-            PlayNFM2: OnClickUnavailable,
-            PlayCommunity: OnClickUnavailable,
-            PlayFreePlay: OnFreePlayClicked,
-            PlayCompetitive: OnClickUnavailable,
-            PlayCasual: OnClickUnavailable,
-            ModelEditor: OnModelEditorClicked,
-            StageEditor: OnStageEditorClicked,
-            CampaignEditor: OnClickUnavailable,
-            TimeTrials: OnTTClicked,
-            Challenges: OnClickUnavailable,
-            GameInstructions: OnClickUnavailable
-        );
-
         _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
-        _mainMenuViewNode = ComponentNodeFactory.Create(_mainMenuView);
+        _mainMenuViewNode = MainMenuView(
+            garage: OnGarageClicked,
+            settings: OnSettingsClicked,
+            credits: OnClickUnavailable,
+            quit: OnQuitClicked,
+            login: OnLoginClicked,
+            logout: OnLogoutClicked,
+            playNfm1: OnClickUnavailable,
+            playNfm2: OnClickUnavailable,
+            playCommunity: OnClickUnavailable,
+            playFreePlay: OnFreePlayClicked,
+            playCompetitive: OnClickUnavailable,
+            playCasual: OnClickUnavailable,
+            modelEditor: OnModelEditorClicked,
+            stageEditor: OnStageEditorClicked,
+            campaignEditor: OnClickUnavailable,
+            timeTrials: OnTTClicked,
+            challenges: OnClickUnavailable,
+            gameInstructions: OnClickUnavailable
+        );
         _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
     }
 
