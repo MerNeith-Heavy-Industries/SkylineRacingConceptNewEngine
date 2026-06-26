@@ -1,6 +1,6 @@
 ﻿namespace NFMWorld.Reactor;
 
-public class ReactorDom
+public class ReactorDom : IDisposable
 {
     private readonly Reconciler _reconciler;
     private VNode? _rootNode;
@@ -12,7 +12,7 @@ public class ReactorDom
         HotReloadService.UpdateApplicationEvent += OnHotReloadServiceOnUpdateApplicationEvent;
     }
 
-    ~ReactorDom()
+    public void Dispose()
     {
         HotReloadService.UpdateApplicationEvent -= OnHotReloadServiceOnUpdateApplicationEvent;
     }
