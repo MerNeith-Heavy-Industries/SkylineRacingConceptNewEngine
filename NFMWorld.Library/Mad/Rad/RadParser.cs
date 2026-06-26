@@ -16,9 +16,9 @@ public partial class RadParser
         public int? Radius;
         public int? Depth;
 
-        public Rad3dPoly[] GetScaledPolys(float wh, float ww, bool flipX)
+        public Rad3dPoly[] GetScaledPolys(float wheelHeight, float wheelWidth, bool flipX)
         {
-            if (Radius is not { } tr || Depth is not { } td)
+            if (Radius is not { } trueRadius || Depth is not { } trueDepth)
             {
                 throw new InvalidOperationException("PhyShot wheel must have radius=1234 and depth=5678 attributes");
             }
@@ -56,21 +56,21 @@ public partial class RadParser
                         var y = point.Y;
                         var z = point.Z;
                         
-                        if (tr > 0)
+                        if (trueRadius > 0)
                         {
-                            if (x == td) // LOOKS INCORRECT BECAUSE FLOAT COMPARISON BETWEEN DIV AND NON-DIV VALUE, BUT IS ACTUALLY CORRECT BECAUSE PHYSHOT WHEELS DO NOT SCALE BY DIV!!!!
+                            if (x == trueDepth) // LOOKS INCORRECT BECAUSE FLOAT COMPARISON BETWEEN DIV AND NON-DIV VALUE, BUT IS ACTUALLY CORRECT BECAUSE PHYSHOT WHEELS DO NOT SCALE BY DIV!!!!
                             {
-                                x = flipX ? -ww : ww;
+                                x = flipX ? -wheelWidth : wheelWidth;
                             }
                             else
                             {
-                                x = x * (wh / (tr));
+                                x = x * (wheelHeight / (trueRadius));
                             }
                             
-                            y = y * (wh / (tr));
-                            z = z * (wh / (tr));
+                            y = y * (wheelHeight / (trueRadius));
+                            z = z * (wheelHeight / (trueRadius));
 
-                            x -= wh / 2;
+                            x -= wheelHeight / 2;
                         }
 
                         if (flipX)
@@ -322,7 +322,7 @@ public partial class RadParser
                 Height: height * idiv,
                 Polys: _wheelMeshes.Count > _wheels.Count
                     // physhot custom wheels
-                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wh: width * (float)idiv * (float)iwid, ww: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
+                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wheelHeight: width * (float)idiv * (float)iwid, wheelWidth: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
                     : null
             ));
 
