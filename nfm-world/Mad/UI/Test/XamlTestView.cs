@@ -35,17 +35,17 @@ public class XamlTestView(int counter) : Component
 
         return View(
             name: "XamlTest",
-            flexDirection: YgFlexDirection.Row,
-            alignItems: YgAlign.Stretch,
-            justifyContent: YgJustify.FlexStart,
+            flexDirection: FlexDirection.Row,
+            alignItems: Align.Stretch,
+            justifyContent: Justify.FlexStart,
             gap: 16f,
             padding: 20f,
             children: [
                 // ── Left side ──────────────────────────────────────────
                 FlexPanel(
-                    flexDirection: YgFlexDirection.Column,
-                    alignItems: YgAlign.FlexStart,
-                    justifyContent: YgJustify.FlexStart,
+                    flexDirection: FlexDirection.Column,
+                    alignItems: Align.FlexStart,
+                    justifyContent: Justify.FlexStart,
                     gap: 16f,
                     padding: 20f,
                     children: [
@@ -54,12 +54,12 @@ public class XamlTestView(int counter) : Component
                         Section(w: subtitle, font: bodyFont, color: subtitleColor),
 
                         // Section 2: Inline text with counter
-                        FlexPanel(flexDirection: YgFlexDirection.Row, gap: 4f, children:
+                        FlexPanel(flexDirection: FlexDirection.Row, gap: 4f, children:
                             Section(w: $"Counter: {counter}", font: new Font(FontFamily.Adventure, FontStyle.Bold, 18), color: new Color(255, 255, 255, 255))
                         ),
 
                         // Section 3: Color swatches
-                        FlexPanel(flexDirection: YgFlexDirection.Row, gap: 8f, alignItems: YgAlign.Center, children: [
+                        FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, children: [
                             SolidBox(backgroundColor: new Color(255, 0, 0, 255), width: 24f, height: 24f),
                             SolidBox(backgroundColor: new Color(0, 255, 0, 255), width: 24f, height: 24f),
                             SolidBox(backgroundColor: new Color(0, 0, 255, 255), width: 24f, height: 24f),
@@ -68,7 +68,7 @@ public class XamlTestView(int counter) : Component
                         ]),
 
                         // Section 4: Visibility binding
-                        FlexPanel(flexDirection: YgFlexDirection.Row, gap: 8f, alignItems: YgAlign.Center, children: [
+                        FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, children: [
                             SolidBox(backgroundColor: new Color(0, 255, 255, 255), width: 16f, height: 16f, visibility: badgeVisibility),
                             Section(w: "Badge (visibility-bound)", font: new Font(FontFamily.Adventure, FontStyle.Plain, 18), color: new Color(255, 255, 255, 255))
                         ]),
@@ -90,14 +90,14 @@ public class XamlTestView(int counter) : Component
 
                         // Section 6: Nested layout — Row of Columns
                         Section(w: "Nested layout:", font: new Font(FontFamily.Adventure, FontStyle.Bold, 18), color: accentColor),
-                        FlexPanel(flexDirection: YgFlexDirection.Row, gap: counterModulo, children: [
-                            FlexPanel(flexDirection: YgFlexDirection.Column, gap: 4f, children: [
+                        FlexPanel(flexDirection: FlexDirection.Row, gap: counterModulo, children: [
+                            FlexPanel(flexDirection: FlexDirection.Column, gap: 4f, children: [
                                 Section(w: "Column A", font: new Font(FontFamily.Adventure, FontStyle.Bold, 14), color: new Color(255, 200, 100, 255)),
                                 SolidBox(backgroundColor: new Color(170, 68, 68, 255), width: 60f, height: 20f),
                                 SolidBox(backgroundColor: new Color(170, 102, 102, 255), width: 60f, height: 20f),
                                 SolidBox(backgroundColor: new Color(170, 136, 136, 255), width: 60f, height: 20f)
                             ]),
-                            FlexPanel(flexDirection: YgFlexDirection.Column, gap: 4f, children: [
+                            FlexPanel(flexDirection: FlexDirection.Column, gap: 4f, children: [
                                 Section(w: "Column B", font: new Font(FontFamily.Adventure, FontStyle.Bold, 14), color: new Color(100, 200, 255, 255)),
                                 SolidBox(backgroundColor: new Color(68, 68, 170, 255), width: 60f, height: 20f),
                                 SolidBox(backgroundColor: new Color(102, 102, 170, 255), width: 60f, height: 20f),
@@ -106,7 +106,7 @@ public class XamlTestView(int counter) : Component
                         ]),
 
                         // Section 7: Fade-in animation on mount
-                        FlexPanel(flexDirection: YgFlexDirection.Row, gap: 8f, alignItems: YgAlign.Center, opacity: 1f, children: [
+                        FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, opacity: 1f, children: [
                             SolidBox(backgroundColor: new Color(255, 255, 255, 255), width: 12f, height: 12f),
                             Section(w: "Fade-in on mount", font: new Font(FontFamily.Adventure, FontStyle.Plain, 18), color: new Color(255, 255, 255, 255))
                         ]),
@@ -126,7 +126,7 @@ public class XamlTestView(int counter) : Component
 
     private static FlexPanelNode Section(string w, Font font, Color color, Color? strokeColor = null, float marginLeft = 0f)
     {
-        return FlexPanel(flexDirection: YgFlexDirection.Row, gap: 4f, marginLeft: marginLeft, children: [
+        return FlexPanel(flexDirection: FlexDirection.Row, gap: 4f, marginLeft: marginLeft, children: [
             TextRun(fontFamily: font.FontFamily, fontSize: font.Size, fontStyle: font.Style, foreground: color, stroke: strokeColor, text: w)
         ]);
     }

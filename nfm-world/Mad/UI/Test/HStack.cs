@@ -10,9 +10,9 @@ public class HStack(VNode child, StackOrientation orientation = StackOrientation
     {
         return FlexPanel(
             flexDirection: orientation == StackOrientation.Horizontal
-                ? YgFlexDirection.Row
-                : YgFlexDirection.Column,
-            alignItems: YgAlign.Center,
+                ? FlexDirection.Row
+                : FlexDirection.Column,
+            alignItems: Align.Center,
             gapColumn: gapColumn,
             gapRow: gapRow,
             children: child

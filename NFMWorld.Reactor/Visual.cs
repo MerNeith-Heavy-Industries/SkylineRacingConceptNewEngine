@@ -209,8 +209,8 @@ public abstract partial class Visual : IStyleNode, INamed
     /// <para>
     /// The node behind this property should not change during the lifetime of a visual element, because changes to it
     /// will not automatically be reflected in the parent Yoga node. Thus if the visual element needs to change the Yoga
-    /// node it uses for its contents, it is desirable to provide a wrapper Yoga node with <see cref="YgDisplay"/> set
-    /// to <see cref="YgDisplay.Contents"/> instead.
+    /// node it uses for its contents, it is desirable to provide a wrapper Yoga node with <see cref="Display"/> set
+    /// to <see cref="Display.Contents"/> instead.
     /// </para>
     /// </summary>
     internal abstract YGNodePtr Contents { get; }

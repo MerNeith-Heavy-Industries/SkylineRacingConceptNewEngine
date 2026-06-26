@@ -14,12 +14,12 @@ public class CentralTextView : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
-            position: YgPosition.Absolute,
+            position: Position.Absolute,
             top: 0f, left: 0f, right: 0f, bottom: 0f,
-            alignItems: YgAlign.Center,
-            flexDirection: YgFlexDirection.Column,
+            alignItems: Align.Center,
+            flexDirection: FlexDirection.Column,
             children: [
-                FlexPanel(alignItems: YgAlign.Center, flex: 1, children:
+                FlexPanel(alignItems: Align.Center, flex: 1, children:
                     TextRun(
                         opacity: hud.CenterTextOpacity,
                         foreground: hud.CenterTextColor,
@@ -28,7 +28,7 @@ public class CentralTextView : Component
                         fontSize: hud.CenterTextFontSize,
                         text: hud.CenterText,
                         stroke: hud.CenterTextStrokeColor,
-                        display: YgDisplay.Flex
+                        display: Display.Flex
                     )
                 ),
                 FlexPanel(flex: 1) // spacer

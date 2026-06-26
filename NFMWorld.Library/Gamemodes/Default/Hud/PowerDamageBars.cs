@@ -14,12 +14,12 @@ public class PowerDamageBars : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
-            position: YgPosition.Absolute,
+            position: Position.Absolute,
             top: 0f, right: 0f,
             padding: 10f,
-            flexDirection: YgFlexDirection.Column,
+            flexDirection: FlexDirection.Column,
             gap: 10f,
-            alignItems: YgAlign.FlexEnd,
+            alignItems: Align.FlexEnd,
             children: [
                 FlexPanel(children: MeasureBar(fillAmount: hud.DamageFillAmount, color: hud.DamageColor, scale: 1.2f)),
                 FlexPanel(children: MeasureBar(fillAmount: hud.PowerFillAmount, color: hud.PowerColor, scale: 1.2f))

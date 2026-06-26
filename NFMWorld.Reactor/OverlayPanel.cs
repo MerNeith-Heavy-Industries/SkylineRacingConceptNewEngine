@@ -13,9 +13,9 @@ public class OverlayPanel(params VNode[] children) : Component
     protected override VNode Render()
     {
         var wrapped = children
-            .Select(c => FlexPanel(position: YgPosition.Absolute, children: c))
+            .Select(c => FlexPanel(position: Position.Absolute, children: c))
             .ToArray();
-        return FlexPanel(flex: 1, position: YgPosition.Relative, children: wrapped);
+        return FlexPanel(flex: 1, position: Position.Relative, children: wrapped);
     }
 }
 

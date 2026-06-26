@@ -14,7 +14,7 @@ public class ItemsRepeater<T>(T[] items, Func<T, VNode> renderItem) : Component
     protected override VNode Render()
     {
         return FlexPanel(
-            flexDirection: YgFlexDirection.Column,
+            flexDirection: FlexDirection.Column,
             children: items.Select(renderItem).ToArray()
         );
     }

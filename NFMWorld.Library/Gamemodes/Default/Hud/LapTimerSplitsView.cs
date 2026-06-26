@@ -17,35 +17,35 @@ public class LapTimerSplitsView : Component
     {
         var hud = UseContext(HudState.Context);
         return FlexPanel(
-            flexDirection: YgFlexDirection.Column,
-            alignItems: YgAlign.FlexStart,
-            justifyContent: YgJustify.Center,
+            flexDirection: FlexDirection.Column,
+            alignItems: Align.FlexStart,
+            justifyContent: Justify.Center,
             gap: 10f,
             padding: 10f,
             children: [
-                FlexPanel(flexDirection: YgFlexDirection.Row, children:
+                FlexPanel(flexDirection: FlexDirection.Row, children:
                     TextRun(flex: 1, fontFamily: Adventure, fontStyle: Bold, fontSize: 24, foreground: Color.White, stroke: Color.Black,
                         text: $"Lap: {hud.CurrentLap}/{hud.TotalLaps}")
                 ),
-                FlexPanel(flexDirection: YgFlexDirection.Row, children: [
+                FlexPanel(flexDirection: FlexDirection.Row, children: [
                     TextRun(flex: 1, fontStyle: Bold, fontSize: 24, foreground: Color.White, stroke: Color.Black, elements: [
                         Run(fontFamily: Adventure, text: "Time: "),
                         Run(fontFamily: DroidSans, text: hud.TimeText)
                     ])
                 ]),
-                FlexPanel(display: hud.LapTimeText != "" ? YgDisplay.Flex : YgDisplay.None, children: [
+                FlexPanel(display: hud.LapTimeText != "" ? Display.Flex : Display.None, children: [
                     TextRun(flex: 1, fontStyle: Bold, fontSize: 24, foreground: Color.White, stroke: Color.Black, elements: [
                         Run(fontFamily: Adventure, text: "Lap Time: "),
                         Run(fontFamily: DroidSans, text: hud.LapTimeText)
                     ])
                 ]),
-                FlexPanel(display: hud.CheckpointSplitsText != "" ? YgDisplay.Flex : YgDisplay.None, children: [
+                FlexPanel(display: hud.CheckpointSplitsText != "" ? Display.Flex : Display.None, children: [
                     TextRun(flex: 1, fontStyle: Bold, fontSize: 24, foreground: hud.CheckpointSplitsColor ?? Color.White, stroke: Color.Black, elements: [
                         Run(fontFamily: Adventure, text: "CHK Diff: "),
                         Run(fontFamily: DroidSans, text: hud.CheckpointSplitsText)
                     ])
                 ]),
-                FlexPanel(display: hud.LapSplitsText != "" ? YgDisplay.Flex : YgDisplay.None, children: [
+                FlexPanel(display: hud.LapSplitsText != "" ? Display.Flex : Display.None, children: [
                     TextRun(flex: 1, fontStyle: Bold, fontSize: 24, foreground: hud.CheckpointSplitsColor ?? Color.White, stroke: Color.Black, elements: [
                         Run(fontFamily: Adventure, text: "Lap Diff: "),
                         Run(fontFamily: DroidSans, text: hud.LapSplitsText)
