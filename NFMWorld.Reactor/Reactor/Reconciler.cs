@@ -243,9 +243,20 @@ internal class Reconciler
             {
                 TryReuseComponent(newChildren[i], container, oldIdx);
                 var reuse = existingChildren[oldIdx];
-                ReconcileNode(newChildren[i], reuse);
+                var result = ReconcileNode(newChildren[i], reuse);
                 SaveComponentSlot(newChildren[i], container, oldIdx);
-                newIndexToExisting[i] = reuse;
+
+                // When the node type changes, ReconcileNode creates a new
+                // native node. Replace the old one in the container so it
+                // doesn't leak stale content.
+                if (result != reuse)
+                {
+                    _snapshots.Remove(reuse);
+                    container.RemoveAt(oldIdx);
+                    container.InsertAt(oldIdx, result);
+                }
+
+                newIndexToExisting[i] = result;
                 oldKeyMap.Remove(key);
             }
             else if (i < existingChildren.Count && !HasKey(existingChildren[i]))
@@ -253,9 +264,20 @@ internal class Reconciler
                 // Positional match: same index, non-keyed existing child
                 TryReuseComponent(newChildren[i], container, i);
                 var reuse = existingChildren[i];
-                ReconcileNode(newChildren[i], reuse);
+                var result = ReconcileNode(newChildren[i], reuse);
                 SaveComponentSlot(newChildren[i], container, i);
-                newIndexToExisting[i] = reuse;
+
+                // When the node type changes, ReconcileNode creates a new
+                // native node. Replace the old one in the container so it
+                // doesn't leak stale content.
+                if (result != reuse)
+                {
+                    _snapshots.Remove(reuse);
+                    container.RemoveAt(i);
+                    container.InsertAt(i, result);
+                }
+
+                newIndexToExisting[i] = result;
             }
             else
             {
