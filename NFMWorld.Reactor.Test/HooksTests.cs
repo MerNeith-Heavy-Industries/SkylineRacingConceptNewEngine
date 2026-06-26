@@ -202,6 +202,47 @@ public class HooksTests
     }
 
     // ════════════════════════════════════════════════════════════════════
+    //  Infinite Re-render Detection
+    // ════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void UseState_InfiniteReentrancy_Throws()
+    {
+        // Component calls setState with a new value on every Render.
+        // The synchronous work loop should detect this and throw.
+
+        try
+        {
+            TestHelpers.MountComponent<InfiniteReentrancyComponent>();
+            Assert.Fail("Expected InvalidOperationException was not thrown");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Assert.IsTrue(ex.Message.Contains("Infinite re-render detected"), 
+                $"Expected 'Infinite re-render detected' in message, got: {ex.Message}");
+        }
+    }
+
+    [TestMethod]
+    public void UseState_FrequentExternalUpdates_NoFalsePositive()
+    {
+        // External code calls setState many times with different values.
+        // Since Render() does NOT call setState, the chain counter resets
+        // after each drain, and no exception is thrown.
+
+        var (comp, _, ctx) = TestHelpers.MountComponent<FrequentExternalUpdateComponent>();
+
+        // Fire 60 external updates via the exposed setter
+        for (int i = 0; i < 60; i++)
+        {
+            comp.TriggerUpdate(i + 1);
+            ctx.Drain();
+        }
+
+        Assert.IsGreaterThan(60, comp.RenderCount, "Should have re-rendered at least 60 times");
+    }
+
+    // ════════════════════════════════════════════════════════════════════
     //  UseEffect — cleanup on unmount
     // ════════════════════════════════════════════════════════════════════
 
@@ -718,6 +759,57 @@ public class HooksTests
                 UseState(2);
             // When Skip=true, hook #2 is missing → throws
             UseState(3);
+            return FlexPanel();
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Infinite Re-render Detection Test Components
+    // ════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Component that calls setState with value+1 on every Render,
+    /// creating an infinite re-render chain.
+    /// </summary>
+    private class InfiniteReentrancyComponent : Component
+    {
+        private (int value, Action<int> setValue) _state;
+
+        public InfiniteReentrancyComponent()
+        {
+            DisableMemo();
+        }
+
+        protected override VNode Render()
+        {
+            _state = UseState(0);
+            // Set a new value every render → infinite chain
+            _state.setValue(_state.value + 1);
+            return FlexPanel();
+        }
+    }
+
+    /// <summary>
+    /// Component that exposes a setter for external triggers.
+    /// Render() does NOT call setState itself, so externally-triggered updates
+    /// should not accumulate the re-render chain counter.
+    /// </summary>
+    private class FrequentExternalUpdateComponent : Component
+    {
+        public int RenderCount { get; private set; }
+        private (int value, Action<int> setValue) _state;
+
+        public void TriggerUpdate(int v) => _state.setValue(v);
+
+        public FrequentExternalUpdateComponent()
+        {
+            DisableMemo();
+        }
+
+        protected override VNode Render()
+        {
+            RenderCount++;
+            _state = UseState(0);
             return FlexPanel();
         }
     }

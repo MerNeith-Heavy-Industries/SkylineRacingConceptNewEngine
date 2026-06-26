@@ -9,7 +9,7 @@ namespace NFMWorld.Reactor;
 /// Diffs a VNode tree against the native Yoga node tree and applies
 /// minimal changes: property updates, child insertion/removal/reorder.
 /// </summary>
-internal class Reconciler(SynchronizationContext synchronizationContext)
+internal class Reconciler
 {
     private class Snapshot
     {
@@ -25,12 +25,13 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
     private readonly Dictionary<Visual, Snapshot> _snapshots = [];
     private readonly Stack<ContextFrame> _contextStack = new();
     private readonly Dictionary<(Visual parent, int childIndex), Component> _componentSlots = [];
-    private Dictionary<object, Action> _workOnNextTick = [];
-    private Dictionary<object, Action> _otherWorkOnNextTick = [];
-    private bool _queuedWorkForNextTick;
+    private readonly Queue<Component> _pendingUpdates = new();
+    private bool _inBatch;
+    private int _batchIterations;
+    private const int MaxBatchIterations = 50;
 
     private void PushContextFrame() => _contextStack.Push(new ContextFrame());
-    private void PopContextFrame() => _contextStack.Pop();
+    internal void PopContextFrame() => _contextStack.Pop();
 
     internal void SetContext<T>(Context<T> context, T value)
     {
@@ -60,6 +61,13 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
             if (_entries is null) { value = null; return false; }
             return _entries.TryGetValue(key, out value);
         }
+        public readonly int EntryCount => _entries?.Count ?? 0;
+        public readonly void CopyTo(Dictionary<object, object?> destination)
+        {
+            if (_entries is null) return;
+            foreach (var (k, v) in _entries)
+                destination[k] = v;
+        }
     }
 
     /// <summary>
@@ -70,37 +78,48 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
     /// </summary>
     public Visual? Reconcile(VNode? vnode, Visual container, Visual? existingRoot)
     {
-        // ── Null vnode: unmount everything ───────────────────────────
-        if (vnode is null)
+        _inBatch = true;
+        _batchIterations = 0;
+        try
         {
-            // Remove existing root from container
-            if (existingRoot is not null)
+            // ── Null vnode: unmount everything ───────────────────────────
+            if (vnode is null)
             {
-                if (container.VisualChildren.Count > 0)
-                    container.RemoveAt(0);
+                // Remove existing root from container
+                if (existingRoot is not null)
+                {
+                    if (container.VisualChildren.Count > 0)
+                        container.RemoveAt(0);
+                }
+
+                // Unmount all active components (runs effect cleanups + OnUnmounted)
+                UnmountAllComponents();
+
+                return null;
             }
 
-            // Unmount all active components (runs effect cleanups + OnUnmounted)
-            UnmountAllComponents();
+            var result = ReconcileNode(vnode, existingRoot);
+            if (result is null)
+                return existingRoot!; // Shouldn't happen for root
 
-            return null;
+            // Ensure the root is a child of the container
+            if (container.VisualChildren.Count == 0 || container.VisualChildren[0] != result)
+            {
+                if (container.VisualChildren.Count > 0 && existingRoot is not null)
+                    container.RemoveAt(0);
+                container.InsertAt(0, result);
+            }
+
+            DrainPendingUpdates();
+            FinishPass();
+
+            return result;
         }
-
-        var result = ReconcileNode(vnode, existingRoot);
-        if (result is null)
-            return existingRoot!; // Shouldn't happen for root
-
-        // Ensure the root is a child of the container
-        if (container.VisualChildren.Count == 0 || container.VisualChildren[0] != result)
+        finally
         {
-            if (container.VisualChildren.Count > 0 && existingRoot is not null)
-                container.RemoveAt(0);
-            container.InsertAt(0, result);
+            _inBatch = false;
+            _batchIterations = 0;
         }
-
-        FinishPass();
-
-        return result;
     }
 
     /// <summary>
@@ -376,31 +395,81 @@ internal class Reconciler(SynchronizationContext synchronizationContext)
         _snapshotKeysToRemove.Clear();
     }
 
-    public void ScheduleOnNextTick(object key, Action action)
+    /// <summary>
+    /// Enqueues a component for synchronous re-render. If not already in a batch
+    /// (i.e., called from outside a <see cref="Reconcile"/> pass), drains the queue
+    /// immediately. During a reconciliation pass, updates are collected and drained
+    /// at the end by <see cref="Reconcile"/>.
+    /// </summary>
+    public void EnqueueComponentUpdate(Component comp)
     {
-        _workOnNextTick[key] = action;
-        if (!_queuedWorkForNextTick)
+        _pendingUpdates.Enqueue(comp);
+        if (!_inBatch)
         {
-            _queuedWorkForNextTick = true;
-            synchronizationContext.Post(Tick, this);
+            _inBatch = true;
+            try
+            {
+                DrainPendingUpdates();
+                FinishPass();
+            }
+            finally
+            {
+                _inBatch = false;
+                _batchIterations = 0;
+            }
         }
     }
 
-    private static void Tick(object? state)
+    /// <summary>
+    /// Processes all pending component re-renders synchronously.
+    /// Does NOT set or clear <see cref="_inBatch"/> — callers are responsible
+    /// for managing the batch flag.
+    /// </summary>
+    private void DrainPendingUpdates()
     {
-        var self = (Reconciler)state!;
-        
-        // reset the queued work status
-        self._queuedWorkForNextTick = false;
-        
-        // swap _workOnNextTick and _otherWorkOnNextTick because we want to allow scheduling new work during the tick
-        var workOnNextTick = self._workOnNextTick;
-        self._workOnNextTick = self._otherWorkOnNextTick;
-        self._otherWorkOnNextTick = workOnNextTick;
-        foreach (var (_, action) in workOnNextTick)
+        while (_pendingUpdates.TryDequeue(out var comp))
         {
-            action();
+            if (++_batchIterations >= MaxBatchIterations)
+                throw new InvalidOperationException(
+                    $"Infinite re-render detected: setState calls during Render caused " +
+                    $"more than {MaxBatchIterations} consecutive re-renders. " +
+                    "Ensure you're not calling setState with a new value on every render.");
+
+            comp.PerformUpdate();
         }
-        workOnNextTick.Clear();
+    }
+
+    /// <summary>
+    /// Captures a snapshot of the current context stack for replay during
+    /// component re-renders. Each frame's entries are copied into a dictionary.
+    /// </summary>
+    internal List<Dictionary<object, object?>> SnapshotContextStack()
+    {
+        var snapshots = new List<Dictionary<object, object?>>(_contextStack.Count);
+        foreach (var frame in _contextStack)
+        {
+            var dict = new Dictionary<object, object?>();
+            frame.CopyTo(dict);
+            snapshots.Add(dict);
+        }
+        // Reverse so the top of the stack is at the end of the list
+        snapshots.Reverse();
+        return snapshots;
+    }
+
+    /// <summary>
+    /// Pushes context frames from a previously captured snapshot onto the stack.
+    /// Used by <see cref="Component.PerformUpdate"/> to restore the context that
+    /// was visible during the component's initial render.
+    /// </summary>
+    internal void PushRestoredFrames(List<Dictionary<object, object?>> frames)
+    {
+        foreach (var frameDict in frames)
+        {
+            var frame = new ContextFrame();
+            foreach (var (key, val) in frameDict)
+                frame[(Context)key] = val;
+            _contextStack.Push(frame);
+        }
     }
 }

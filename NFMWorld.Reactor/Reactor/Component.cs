@@ -25,6 +25,7 @@ public abstract class Component
     private List<Hook?>? _hooks;
     private List<PendingEffect>? _pendingEffects;
     private Action?[]? _cleanupActions;
+    private List<Dictionary<object, object?>>? _contextStackSnapshot;
 
     /// <summary>
     /// The reconciler that applies VNode diffs to the native tree.
@@ -484,6 +485,9 @@ public abstract class Component
         if (ShouldSkipRender(cnode))
             return _cachedVNode is not null ? reconciler.ReconcileNode(_cachedVNode, existing) : null;
 
+        // Capture context stack for replay during deferred re-renders
+        _contextStackSnapshot = reconciler.SnapshotContextStack();
+
         BeginRender();
         VNode vnode = Render();
         EndRender();
@@ -499,28 +503,55 @@ public abstract class Component
     }
 
     /// <summary>
-    /// Re-render and reconcile changes. When tree-hosted (inside a ComponentNode),
-    /// re-renders in-place; otherwise reconciles into the mounted container.
+    /// Enqueues a synchronous re-render. Called by hooks (<see cref="UseState{T}"/> setter, etc.)
+    /// when state changes. During a <see cref="Reconciler.Reconcile"/> pass, updates are batched
+    /// and drained at the end. Outside a pass, the drain happens immediately.
     /// </summary>
     internal void Update()
     {
         VerifyReconciler();
-        
+        Reconciler.EnqueueComponentUpdate(this);
+    }
+
+    /// <summary>
+    /// Performs a synchronous re-render of this component. Called by the
+    /// Reconciler's work loop during <see cref="Reconciler.DrainPendingUpdates"/>.
+    /// Restores the context stack snapshot captured during the initial render
+    /// so that <see cref="UseContext{T}"/> works correctly during re-renders.
+    /// </summary>
+    internal void PerformUpdate()
+    {
         if (!_mounted || _root is null) return;
 
-        // Schedule an update on the next tick
-        Reconciler.ScheduleOnNextTick(this, () =>
+        RestoreContextFrames();
+        try
         {
-            if (!_mounted || _root is null) return;
-
             BeginRender();
             VNode vnode = Render();
             EndRender();
 
             _root = Reconciler.ReconcileNode(vnode, _root);
             Reconciler.MarkComponentVisited(this);
-            Reconciler.FinishPass();
-        });
+        }
+        finally
+        {
+            ClearContextFrames();
+        }
+    }
+
+    private void RestoreContextFrames()
+    {
+        if (_contextStackSnapshot is { Count: > 0 })
+            Reconciler!.PushRestoredFrames(_contextStackSnapshot);
+    }
+
+    private void ClearContextFrames()
+    {
+        if (_contextStackSnapshot is not null)
+        {
+            for (int i = 0; i < _contextStackSnapshot.Count; i++)
+                Reconciler!.PopContextFrame();
+        }
     }
 
     /// <summary>

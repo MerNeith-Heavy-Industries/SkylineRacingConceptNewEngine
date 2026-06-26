@@ -25,7 +25,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
             FocusManager = FocusManager
         };
 
-        _dom = new ReactorDom(SynchronizationContext.Current ?? new SynchronizationContext());
+        _dom = new ReactorDom(SynchronizationContext.Current!);
         _mainMenuViewNode = MainMenuView(
             garage: OnGarageClicked,
             settings: OnSettingsClicked,
@@ -47,6 +47,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
             gameInstructions: OnClickUnavailable
         );
         _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
+        Uis.Add(_uiManager);
     }
 
     private void OnFreePlayClicked()
@@ -152,7 +153,6 @@ public class MainMenuPhase : BaseStageRenderingPhase
     public override void GameTick()
     {
         base.GameTick();
-        _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
