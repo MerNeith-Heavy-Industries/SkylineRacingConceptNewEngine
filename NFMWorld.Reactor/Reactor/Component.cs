@@ -24,7 +24,7 @@ public abstract class Component
     private int _prevHookCount;
     private List<Hook?>? _hooks;
     private List<PendingEffect>? _pendingEffects;
-    private List<Action>? _cleanupActions;
+    private Action?[]? _cleanupActions;
 
     /// <summary>
     /// The reconciler that applies VNode diffs to the native tree.
@@ -171,7 +171,8 @@ public abstract class Component
         if (hasChanged)
         {
             box.Dependencies = dependencies;
-            (_pendingEffects ??= []).Add(new PendingEffect(effect));
+            var hookIdx = _hookIndex - 1; // ValidateHook already incremented _hookIndex
+            (_pendingEffects ??= []).Add(new PendingEffect(effect, hookIdx));
         }
     }
 
@@ -411,23 +412,31 @@ public abstract class Component
                 "Hooks cannot be called conditionally. Ensure every render calls the same number of hooks in the same order.");
         }
 
-        // Run cleanup from previous effects ONLY when new effects are about to replace them
+        // Run cleanups ONLY for the specific hooks whose effects are re-running
         if (_cleanupActions is not null && _pendingEffects is { Count: > 0 })
         {
-            foreach (var cleanup in _cleanupActions)
-                cleanup();
-            _cleanupActions.Clear();
+            foreach (var pending in _pendingEffects)
+            {
+                var idx = pending.HookIndex;
+                if (idx < _cleanupActions.Length && _cleanupActions[idx] is { } cleanup)
+                {
+                    cleanup();
+                    _cleanupActions[idx] = null;
+                }
+            }
         }
 
-        // Run new effects, collect their cleanups
+        // Run new effects, store their cleanups at the corresponding hook index
         if (_pendingEffects is not null)
         {
             _cleanupActions ??= [];
             foreach (var pending in _pendingEffects)
             {
                 var cleanup = pending.Effect();
-                if (cleanup is not null)
-                    _cleanupActions.Add(cleanup);
+                var idx = pending.HookIndex;
+                if (idx >= _cleanupActions.Length)
+                    Array.Resize(ref _cleanupActions, idx + 1);
+                _cleanupActions[idx] = cleanup;
             }
             _pendingEffects.Clear();
         }
@@ -436,9 +445,11 @@ public abstract class Component
     private void RunUnmountCleanups()
     {
         if (_cleanupActions is null) return;
-        foreach (var cleanup in _cleanupActions)
-            cleanup();
-        _cleanupActions.Clear();
+        for (int i = 0; i < _cleanupActions.Length; i++)
+        {
+            _cleanupActions[i]?.Invoke();
+            _cleanupActions[i] = null;
+        }
     }
 
     #endregion
@@ -530,7 +541,7 @@ public abstract class Component
 
     #region Internal types
 
-    private sealed record PendingEffect(Func<Action?> Effect);
+    private sealed record PendingEffect(Func<Action?> Effect, int HookIndex);
 
     private class Hook;
 

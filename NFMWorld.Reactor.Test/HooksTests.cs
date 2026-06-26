@@ -319,6 +319,24 @@ public class HooksTests
         Assert.IsFalse(comp.IsMounted);
     }
 
+    [TestMethod]
+    public void UseEffect_PartialDepChange_OnlyRunsCleanupForChangedEffect()
+    {
+        var (comp, _, ctx) = TestHelpers.MountComponent<DualEffectComponent>();
+        Assert.AreEqual(1, comp.EffectARunCount, "Effect A should run on mount");
+        Assert.AreEqual(0, comp.CleanupARunCount, "Cleanup A should not run on mount");
+        Assert.AreEqual(1, comp.EffectBRunCount, "Effect B should run on mount");
+        Assert.AreEqual(0, comp.CleanupBRunCount, "Cleanup B should not run on mount");
+
+        // Change only Effect A's dependency
+        comp.ExposedSetCountA(1);
+        ctx.Drain();
+        Assert.AreEqual(1, comp.CleanupARunCount, "Cleanup A should run before re-running effect A");
+        Assert.AreEqual(2, comp.EffectARunCount, "Effect A should re-run");
+        Assert.AreEqual(0, comp.CleanupBRunCount, "Cleanup B should NOT run — its deps didn't change");
+        Assert.AreEqual(1, comp.EffectBRunCount, "Effect B should NOT re-run — its deps didn't change");
+    }
+
     // ════════════════════════════════════════════════════════════════════
     //  Hook Order Enforcement
     // ════════════════════════════════════════════════════════════════════
@@ -604,6 +622,40 @@ public class HooksTests
                 EffectRunCount++;
                 return () => CleanupRunCount++;
             });
+            return FlexPanel();
+        }
+    }
+
+    /// <summary>
+    /// Component with two independent UseEffect calls with separate deps and cleanup counters.
+    /// Verifies that changing one effect's deps doesn't run the other effect's cleanup.
+    /// </summary>
+    private class DualEffectComponent : Component
+    {
+        public int EffectARunCount { get; private set; }
+        public int CleanupARunCount { get; private set; }
+        public int EffectBRunCount { get; private set; }
+        public int CleanupBRunCount { get; private set; }
+        private (int count, Action<int> setCount) _stateA;
+        private (int count, Action<int> setCount) _stateB;
+
+        public void ExposedSetCountA(int c) => _stateA.setCount(c);
+        public void ExposedSetCountB(int c) => _stateB.setCount(c);
+
+        protected override VNode Render()
+        {
+            _stateA = UseState(0);
+            _stateB = UseState(0);
+            UseEffect(() =>
+            {
+                EffectARunCount++;
+                return () => CleanupARunCount++;
+            }, [_stateA.count]);
+            UseEffect(() =>
+            {
+                EffectBRunCount++;
+                return () => CleanupBRunCount++;
+            }, [_stateB.count]);
             return FlexPanel();
         }
     }
