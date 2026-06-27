@@ -17,9 +17,9 @@ public partial class MeasureBar : Image
     protected override void RenderContent(Vector2 position, Vector2 size)
     {
         // positions of bar in image file
-        const int barX = 486;
+        const int barX = 485;
         const int barY = 28;
-        const int barWidth = 824;
+        const int barWidth = 825;
         const int barHeight = 78;
 
         // image file size
@@ -30,7 +30,6 @@ public partial class MeasureBar : Image
         var renderedWidth = size.X;
         var renderedHeight = size.Y;
         
-        base.RenderContent(position, size);
         G.SetColor(Color);
         G.FillRect(
             (int)MathF.Round(position.X + (barX * (renderedWidth / imgWidth)) * Scale),
@@ -38,5 +37,6 @@ public partial class MeasureBar : Image
             (int)MathF.Round(FillAmount * (barWidth * (renderedWidth / imgWidth)) * Scale),
             (int)MathF.Round(barHeight * (renderedHeight / imgHeight) * Scale)
         );
+        base.RenderContent(position, size);
     }
 }
