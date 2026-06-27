@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using LibTessDotNet;
+using Microsoft.Xna.Framework;
 using Poly2Tri;
 
 namespace HoleyDiver;
@@ -27,325 +28,52 @@ public class PolygonTriangulator
         }
 
         var projected2D = ProjectTo2D(vertices, centroid, normal);
+        
+        // Create an instance of the tessellator. Can be reused.
+        var tess = new Tess();
 
-        const float epsilon = 1e-5f;
-        var uniqueVertices = new List<Vector2>();
-        var indexMap = new List<int>(projected2D.Count);
-
-        for (int i = 0; i < projected2D.Count; i++)
+        // Construct the contour from inputData.
+        // A polygon can be composed of multiple contours which are all tessellated at the same time.
+        int numPoints = projected2D.Count;
+        var contour = new ContourVertex[numPoints];
+        for (int i = 0; i < numPoints; i++)
         {
-            int found = -1;
-            for (int j = 0; j < uniqueVertices.Count; j++)
+            if (float.IsNaN(projected2D[i].X) || float.IsNaN(projected2D[i].Y))
             {
-                if (Vector2.Distance(projected2D[i], uniqueVertices[j]) < epsilon)
-                {
-                    found = j;
-                    break;
-                }
+                Console.WriteLine($"Projected vertex {i} has NaN coordinates: {vertices[i]}");
+                continue;
             }
 
-            if (found >= 0)
-            {
-                indexMap.Add(found);
-            }
-            else
-            {
-                indexMap.Add(uniqueVertices.Count);
-                uniqueVertices.Add(projected2D[i]);
-            }
+            // NOTE : Z is here for convenience if you want to keep a 3D vertex position throughout the tessellation process but only X and Y are important.
+            contour[i].Position = new Vec3(projected2D[i].X, projected2D[i].Y, i);
         }
+        // Add the contour with a specific orientation, use "Original" if you want to keep the input orientation.
+        tess.AddContour(contour);
 
-        var initialPoly = new List<int>(vertices.Count);
-        for (int i = 0; i < vertices.Count; i++)
+        // Tessellate!
+        // The winding rule determines how the different contours are combined together.
+        // See http://www.glprogramming.com/red/chapter11.html (section "Winding Numbers and Winding Rules") for more information.
+        // If you want triangles as output, you need to use "Polygons" type as output and 3 vertices per polygon.
+        tess.Tessellate(WindingRule.EvenOdd);
+
+        // Same call but the last callback is optional. Data will be null because no interpolated data would have been generated.
+        //tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3); // Some vertices will have null Data in this case.
+
+        var simpleTriangles = new List<uint>();
+        int numTriangles = tess.ElementCount;
+        for (int i = 0; i < numTriangles; i++)
         {
-            initialPoly.Add(indexMap[i]);
-        }
-
-        var uniqueIndices = new HashSet<int>(initialPoly);
-
-        List<List<int>> polyLines;
-        if (uniqueIndices.Count == initialPoly.Count)
-        {
-            polyLines = [initialPoly];
-        }
-        else
-        {
-            polyLines = ExtractRegions(initialPoly, uniqueVertices);
-        }
-
-        // WORKAROUND: ExtractRegions sometimes produces incomplete outer boundaries
-        // The outer boundary should include all vertices not in holes, in path order
-        if (polyLines.Count > 1)
-        {
-            // Collect all hole vertices
-            var holeVertices = new HashSet<int>();
-            for (int r = 1; r < polyLines.Count; r++)
-            {
-                foreach (var idx in polyLines[r])
-                {
-                    if (idx != -1)  // Skip the hole marker
-                        holeVertices.Add(idx);
-                }
-            }
-
-            // Reconstruct outer polygon from original path, excluding hole vertices
-            var reconstructedOuter = new List<int>();
-            var seenOuter = new HashSet<int>();
-
-            foreach (var idx in initialPoly)
-            {
-                if (!holeVertices.Contains(idx) && !seenOuter.Contains(idx))
-                {
-                    reconstructedOuter.Add(idx);
-                    seenOuter.Add(idx);
-                }
-            }
-
-            if (reconstructedOuter.Count >= 3)
-            {
-                polyLines[0] = reconstructedOuter;
-            }
-        }
-
-        // Separate outer polygon from holes (holes are marked with -1 as first element)
-        List<int>? outerPoly = null;
-        var holePolys = new List<List<int>>();
-
-        foreach (var region in polyLines)
-        {
-            if (region.Count > 0 && region[0] == -1)
-            {
-                // This is a hole - remove the marker
-                holePolys.Add(region.Skip(1).ToList());
-            }
-            else if (outerPoly == null)
-            {
-                outerPoly = region;
-            }
-            else
-            {
-                // Additional outer regions (shouldn't happen with current logic)
-                // Just add them as separate polygons to triangulate
-            }
-        }
-
-        // Remove any hole vertices that are shared with the outer boundary (bridge points)
-        if (outerPoly != null && holePolys.Count > 0)
-        {
-            var outerSet = new HashSet<int>(outerPoly);
-
-            for (int h = 0; h < holePolys.Count; h++)
-            {
-                holePolys[h] = holePolys[h].Where(idx => !outerSet.Contains(idx)).ToList();
-            }
-            // Remove any holes that became too small
-            holePolys.RemoveAll(h => h.Count < 3);
-        }
-
-        if (outerPoly == null || outerPoly.Count < 3)
-        {
-            return new TriangulationResult
-            {
-                Triangles = Array.Empty<uint>(),
-                PlaneNormal = normal,
-                Centroid = centroid,
-                RegionCount = 0
-            };
-        }
-
-        // For polygons with holes, we need to include hole vertices in the triangulation
-        // Build a complete vertex list and use constrained triangulation
-        var allTriangles = new List<uint>();
-
-        // If there are holes, we need to use a different approach
-        // Since simple centroid filtering doesn't work well, let's try adding hole vertices
-        // to create a proper constrained triangulation
-
-        if (holePolys.Count > 0)
-        {
-            // Use Poly2Tri constrained Delaunay triangulation for polygons with holes
-            try
-            {
-                // Convert outer polygon to PolygonPoints
-                var outerPoints = new List<PolygonPoint>(outerPoly.Count);
-                foreach (var idx in outerPoly)
-                {
-                    var pt = uniqueVertices[idx];
-                    outerPoints.Add(new PolygonPoint(pt.X, pt.Y));
-                }
-
-                var poly = new Polygon(outerPoints);
-
-                // Add each hole
-                foreach (var hole in holePolys)
-                {
-                    var holePoints = new List<PolygonPoint>(hole.Count);
-                    foreach (var idx in hole)
-                    {
-                        var pt = uniqueVertices[idx];
-                        holePoints.Add(new PolygonPoint(pt.X, pt.Y));
-                    }
-
-                    poly.AddHole(new Polygon(holePoints));
-                }
-
-                // Triangulate using constrained Delaunay
-                DTSweepContext tcx = new DTSweepContext();
-                tcx.PrepareTriangulation(poly);
-                DTSweep.Triangulate(tcx);
-
-                // Extract triangles and map back to original vertex indices
-                foreach (var tri in poly.Triangles)
-                {
-                    var triIndices = new List<uint>(3);
-                    for (int i = 0; i < 3; i++)
-                    {
-                        var p = tri.Points[i];
-                        // Find the unique vertex index that matches this point
-                        int uniqueIdx = -1;
-                        for (int j = 0; j < uniqueVertices.Count; j++)
-                        {
-                            if (Math.Abs(uniqueVertices[j].X - p.X) < 1e-5f &&
-                                Math.Abs(uniqueVertices[j].Y - p.Y) < 1e-5f)
-                            {
-                                uniqueIdx = j;
-                                break;
-                            }
-                        }
-
-                        if (uniqueIdx >= 0)
-                        {
-                            // Map to original vertex index
-                            int origIdx = -1;
-                            for (int k = 0; k < indexMap.Count; k++)
-                            {
-                                if (indexMap[k] == uniqueIdx)
-                                {
-                                    origIdx = k;
-                                    break;
-                                }
-                            }
-                            if (origIdx >= 0)
-                            {
-                                triIndices.Add((uint)origIdx);
-                            }
-                        }
-                    }
-
-                    // Only add complete triangles (must have exactly 3 vertices)
-                    if (triIndices.Count == 3)
-                    {
-                        allTriangles.AddRange(triIndices);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Delaunay created degenerate triangle, this should never happen!");
-                    }
-                }
-
-                return new TriangulationResult
-                {
-                    Triangles = allTriangles.ToArray(),
-                    PlaneNormal = normal,
-                    Centroid = centroid,
-                    RegionCount = 1 + holePolys.Count
-                };
-            }
-            catch (Exception ex)
-            {
-                // If Poly2Tri fails, fall back to simple ear-cut with centroid filtering
-                Console.WriteLine($"Poly2Tri triangulation failed: {ex.Message}. Falling back to ear-cut.");
-            }
-
-            // Fallback: use ear-cut with centroid filtering
-            var outerVerts = new List<Vector2>(outerPoly.Count);
-            foreach (var idx in outerPoly)
-                outerVerts.Add(uniqueVertices[idx]);
-
-            var outerTris = EarCutTriangulateSimple(outerVerts);
-
-            // For the outer triangles, filter out any that have centroid inside a hole
-            for (int t = 0; t < outerTris.Count; t += 3)
-            {
-                int i0 = outerPoly[outerTris[t]];
-                int i1 = outerPoly[outerTris[t + 1]];
-                int i2 = outerPoly[outerTris[t + 2]];
-
-                Vector2 triCentroid = (uniqueVertices[i0] + uniqueVertices[i1] + uniqueVertices[i2]) / 3f;
-
-                bool insideHole = false;
-                foreach (var hole in holePolys)
-                {
-                    var holeVerts = new List<Vector2>();
-                    foreach (var idx in hole)
-                        holeVerts.Add(uniqueVertices[idx]);
-
-                    if (PointInPolygon(triCentroid, holeVerts))
-                    {
-                        insideHole = true;
-                        break;
-                    }
-                }
-
-                if (!insideHole)
-                {
-                    // Map back to original indices
-                    for (int vi = 0; vi < 3; vi++)
-                    {
-                        int uniqueIdx = outerPoly[outerTris[t + vi]];
-                        int origIdx = -1;
-                        for (int i = 0; i < indexMap.Count; i++)
-                        {
-                            if (indexMap[i] == uniqueIdx)
-                            {
-                                origIdx = i;
-                                break;
-                            }
-                        }
-                        if (origIdx >= 0)
-                            allTriangles.Add((uint)origIdx);
-                    }
-                }
-            }
-
-            return new TriangulationResult
-            {
-                Triangles = allTriangles.ToArray(),
-                PlaneNormal = normal,
-                Centroid = centroid,
-                RegionCount = 1 + holePolys.Count
-            };
-        }
-
-        // No holes - simple triangulation
-        var outerVertsSimple = new List<Vector2>();
-        foreach (var idx in outerPoly)
-            outerVertsSimple.Add(uniqueVertices[idx]);
-
-        var trisSimple = EarCutTriangulateSimple(outerVertsSimple);
-
-        for (int t = 0; t < trisSimple.Count; t += 3)
-        {
-            for (int vi = 0; vi < 3; vi++)
-            {
-                int uniqueIdx = outerPoly[trisSimple[t + vi]];
-                int origIdx = -1;
-                for (int i = 0; i < indexMap.Count; i++)
-                {
-                    if (indexMap[i] == uniqueIdx)
-                    {
-                        origIdx = i;
-                        break;
-                    }
-                }
-                if (origIdx >= 0)
-                    allTriangles.Add((uint)origIdx);
-            }
+            var v0 = tess.Vertices[tess.Elements[i * 3]].Position;
+            var v1 = tess.Vertices[tess.Elements[i * 3 + 1]].Position;
+            var v2 = tess.Vertices[tess.Elements[i * 3 + 2]].Position;
+            simpleTriangles.Add((uint)v0.Z);
+            simpleTriangles.Add((uint)v1.Z);
+            simpleTriangles.Add((uint)v2.Z);
         }
 
         return new TriangulationResult
         {
-            Triangles = allTriangles.ToArray(),
+            Triangles = simpleTriangles.ToArray(),
             PlaneNormal = normal,
             Centroid = centroid,
             RegionCount = 1
@@ -488,6 +216,12 @@ public class PolygonTriangulator
         {
             for (int j = i + 1; j < vertices3D.Count; j++)
             {
+                if (float.IsNaN(projected2D[i].X) || float.IsNaN(projected2D[j].X) ||
+                    float.IsNaN(projected2D[i].Y) || float.IsNaN(projected2D[j].Y))
+                {
+                    return false;
+                }
+                
                 float dist3D = Vector3.Distance(vertices3D[i], vertices3D[j]);
                 float dist2D = Vector2.Distance(projected2D[i], projected2D[j]);
 
@@ -602,6 +336,14 @@ public class PolygonTriangulator
                     newRegion.Add(polyLines[0][end]);
                 }
 
+                // If the extracted region is the entire polygon, we've found
+                // a wrap-around duplicate (polygon closure) rather than a true hole.
+                // Stop iterating to avoid an infinite loop.
+                if (newRegion.Count >= n)
+                {
+                    break;
+                }
+
                 var toDelete = new bool[n];
                 k = bestI0;
                 safetyCounter = 0;
@@ -660,6 +402,61 @@ public class PolygonTriangulator
 
         polyLines.RemoveAll(r => r.Count < 3);
 
+        // Recursively split any region that still contains duplicate vertices
+        // (i.e., self-intersecting polygons that weren't fully decomposed)
+        bool anySplit = true;
+        int maxRecursivePasses = 10;
+        int recursivePass = 0;
+        while (anySplit && recursivePass < maxRecursivePasses)
+        {
+            anySplit = false;
+            recursivePass++;
+            var newRegions = new List<List<int>>();
+            foreach (var region in polyLines)
+            {
+                // Skip hole markers
+                if (region.Count > 0 && region[0] == -1)
+                {
+                    newRegions.Add(region);
+                    continue;
+                }
+
+                var uniqueSet = new HashSet<int>(region);
+                if (uniqueSet.Count < region.Count && region.Count >= 6)
+                {
+                    // This region has duplicate vertices — try to split it further
+                    var subRegions = ExtractRegions(region, vertices);
+                    if (subRegions.Count > 1)
+                    {
+                        // Successfully split — add all sub-regions.
+                        // ExtractRegions returns [outer, -1+hole1, -1+hole2, ...]
+                        // We need to find the outer (largest area) and add holes separately.
+                        // But since we're going to re-select the outer by area later,
+                        // just add all sub-region vertices (stripping -1 markers from holes).
+                        foreach (var sr in subRegions)
+                        {
+                            // Strip -1 hole marker if present
+                            var cleaned = sr.Count > 0 && sr[0] == -1 ? sr.Skip(1).ToList() : sr;
+                            var deduped = RemoveConsecutiveDuplicates(cleaned);
+                            if (deduped.Count >= 3)
+                                newRegions.Add(deduped);
+                        }
+                        anySplit = true;
+                    }
+                    else
+                    {
+                        newRegions.Add(region);
+                    }
+                }
+                else
+                {
+                    newRegions.Add(region);
+                }
+            }
+            polyLines = newRegions;
+            polyLines.RemoveAll(r => r.Count < 3);
+        }
+
         if (polyLines.Count == 0)
         {
             return new List<List<int>>();
@@ -708,6 +505,323 @@ public class PolygonTriangulator
         }
 
         return polyLines;
+    }
+
+    /// <summary>
+    /// Specialized region extraction for zigzag bridge-format polygons
+    /// (e.g., car grills). Identifies vertical "bars" and extracts the
+    /// rectangular holes between consecutive bar pairs.
+    /// Returns null if the polygon doesn't match this pattern.
+    /// </summary>
+    private static List<List<int>>? ExtractRegionsByBarPairs(List<int> polyIndices, List<Vector2> vertices)
+    {
+        int n = polyIndices.Count;
+
+        // Map each unique vertex to its positions in the polygon
+        var posMap = new Dictionary<int, List<int>>();
+        for (int i = 0; i < n; i++)
+        {
+            int idx = polyIndices[i];
+            if (!posMap.ContainsKey(idx))
+                posMap[idx] = new List<int>();
+            posMap[idx].Add(i);
+        }
+
+        // Only applies to polygons with duplicate vertices
+        if (posMap.Count == n) return null;
+
+        // Build bars: find vertices at similar X that form vertical segments.
+        // A "bar" is defined by a top vertex (high Y) and a bottom vertex (low Y)
+        // that are connected by an edge in the polygon, or are at the same X.
+        // For grill patterns, bars connect vertices at the same X coordinate
+        // (one at Y≈63-75, one at Y≈-7-6).
+        var bars = new List<(int topIdx, int botIdx, float x, float topY, float botY)>();
+
+        foreach (var kvp in posMap)
+        {
+            int idx = kvp.Key;
+            var v = vertices[idx];
+
+            // Look for another vertex at the same X with significantly different Y
+            foreach (var otherKvp in posMap)
+            {
+                int otherIdx = otherKvp.Key;
+                if (otherIdx <= idx) continue;
+                var otherV = vertices[otherIdx];
+
+                if (Math.Abs(v.X - otherV.X) < 2f && Math.Abs(v.Y - otherV.Y) > 20f)
+                {
+                    // Found a potential bar pair
+                    float topY, botY;
+                    int topIdx, botIdx;
+                    if (v.Y > otherV.Y)
+                    {
+                        topIdx = idx; botIdx = otherIdx;
+                        topY = v.Y; botY = otherV.Y;
+                    }
+                    else
+                    {
+                        topIdx = otherIdx; botIdx = idx;
+                        topY = otherV.Y; botY = v.Y;
+                    }
+                    bars.Add((topIdx, botIdx, (v.X + otherV.X) / 2f, topY, botY));
+                }
+            }
+        }
+
+        if (bars.Count < 2) return null;
+
+        // Sort bars by X coordinate (left to right)
+        bars.Sort((a, b) => a.x.CompareTo(b.x));
+
+        // Build holes: each hole is the rectangular space between consecutive bars.
+        // Hole vertices: top-left, top-right, bottom-right, bottom-left.
+        var holes = new List<List<int>>();
+        for (int i = 0; i < bars.Count - 1; i++)
+        {
+            var leftBar = bars[i];
+            var rightBar = bars[i + 1];
+
+            // Check if these bars are actually connected by edges in the polygon
+            // (i.e., there's a top-edge segment and a bottom-edge segment)
+            // For simplicity, just create the quadrilateral hole.
+            int tl = leftBar.topIdx;   // top-left
+            int tr = rightBar.topIdx;  // top-right
+            int br = rightBar.botIdx;  // bottom-right
+            int bl = leftBar.botIdx;   // bottom-left
+
+            // Validate: all 4 vertices must exist and be distinct
+            var holeSet = new HashSet<int> { tl, tr, br, bl };
+            if (holeSet.Count == 4)
+            {
+                holes.Add(new List<int> { tl, tr, br, bl });
+            }
+        }
+
+        if (holes.Count == 0) return null;
+
+        // Build outer polygon: all unique vertices NOT exclusively used by holes.
+        // Bridge vertices (used by 2+ holes) stay in the outer.
+        var holeInteriorVerts = new HashSet<int>();
+        var holeVerts = new HashSet<int>();
+        foreach (var hole in holes)
+        {
+            foreach (var idx in hole)
+                holeVerts.Add(idx);
+        }
+
+        // Count how many holes each vertex appears in
+        var vertHoleCount = new Dictionary<int, int>();
+        foreach (var hole in holes)
+        {
+            var seen = new HashSet<int>();
+            foreach (var idx in hole)
+            {
+                if (seen.Add(idx))
+                {
+                    vertHoleCount.TryGetValue(idx, out int c);
+                    vertHoleCount[idx] = c + 1;
+                }
+            }
+        }
+
+        // Vertices that appear in exactly 1 hole are hole-interior
+        foreach (var kvp in vertHoleCount)
+        {
+            if (kvp.Value == 1)
+                holeInteriorVerts.Add(kvp.Key);
+        }
+
+        // Outer = all unique vertices in path order, excluding hole-interior vertices
+        var outerPoly = new List<int>();
+        var seenOuter = new HashSet<int>();
+        foreach (var idx in polyIndices)
+        {
+            if (!holeInteriorVerts.Contains(idx) && !seenOuter.Contains(idx))
+            {
+                outerPoly.Add(idx);
+                seenOuter.Add(idx);
+            }
+        }
+
+        if (outerPoly.Count < 3) return null;
+
+        // Mark holes with -1 prefix
+        var result = new List<List<int>> { outerPoly };
+        foreach (var hole in holes)
+        {
+            var markedHole = new List<int> { -1 };
+            markedHole.AddRange(hole);
+            result.Add(markedHole);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Splits a self-touching polygon into simple regions by reconnecting edges
+    /// at duplicate vertices (bridge points). At each bridge point, the polygon
+    /// touches itself; by swapping the outgoing edge connections we separate the
+    /// polygon into non-self-intersecting loops.
+    /// The largest loop by area is the outer boundary; the rest are holes.
+    /// </summary>
+    private static List<List<int>> ExtractRegionsByDuplicateVertices(List<int> polyIndices, List<Vector2> vertices)
+    {
+        int n = polyIndices.Count;
+
+        // Build occurrence map: vertex -> list of positions
+        var occurrenceMap = new Dictionary<int, List<int>>();
+        for (int i = 0; i < n; i++)
+        {
+            int idx = polyIndices[i];
+            if (!occurrenceMap.ContainsKey(idx))
+                occurrenceMap[idx] = new List<int>();
+            occurrenceMap[idx].Add(i);
+        }
+
+        // Build adjacency: for each position, the "next" position (forward edge).
+        // We'll modify this to split at bridge points.
+        // next[i] = position that follows i in the (possibly modified) polygon
+        var next = new int[n];
+        for (int i = 0; i < n; i++)
+            next[i] = (i + 1) % n;
+
+        // At each duplicate vertex, swap outgoing edges to separate the loops.
+        // For a vertex appearing at positions a and b:
+        //   Original: ...prev(a)→a→next(a)...   ...prev(b)→b→next(b)...
+        //   Swapped:  ...prev(a)→a→next(b)...   ...prev(b)→b→next(a)...
+        // (prev = the position that points TO a/b via the 'next' array)
+        foreach (var kvp in occurrenceMap)
+        {
+            var positions = kvp.Value;
+            // Process pairs of consecutive occurrences
+            for (int p = 0; p < positions.Count - 1; p++)
+            {
+                int a = positions[p];
+                int b = positions[p + 1];
+
+                // Find prev(a): the position i where next[i] == a
+                int prevA = -1;
+                for (int i = 0; i < n; i++)
+                {
+                    if (next[i] == a) { prevA = i; break; }
+                }
+
+                // Find prev(b):
+                int prevB = -1;
+                for (int i = 0; i < n; i++)
+                {
+                    if (next[i] == b) { prevB = i; break; }
+                }
+
+                if (prevA < 0 || prevB < 0) continue;
+
+                // Swap: prevA→a should now go to next[b], prevB→b should go to next[a]
+                // But also, the edges leaving a and b need to be rewired.
+                // After swap:
+                //   next[prevA] = b  (so prevA→b instead of prevA→a)
+                //   next[a] stays as is for now, or we swap the outgoing edges
+                //
+                // Actually, the standard polygon-splitting operation at a
+                // self-touching vertex with two entries and two exits:
+                //   Entry edges: prevA→a, prevB→b
+                //   Exit edges:  a→next[a], b→next[b]
+                // Swap the exit connections: prevA→a→next[b], prevB→b→next[a]
+                int nextA = next[a];
+                int nextB = next[b];
+                next[a] = nextB;
+                next[b] = nextA;
+            }
+        }
+
+        // Now extract all cycles from the 'next' array
+        var visited = new bool[n];
+        var cycles = new List<List<int>>();
+
+        for (int start = 0; start < n; start++)
+        {
+            if (visited[start]) continue;
+
+            var cycle = new List<int>();
+            int cur = start;
+            do
+            {
+                visited[cur] = true;
+                cycle.Add(polyIndices[cur]);
+                cur = next[cur];
+            } while (cur != start && !visited[cur]);
+
+            if (cycle.Count >= 3)
+                cycles.Add(cycle);
+        }
+
+        if (cycles.Count <= 1)
+            return new List<List<int>> { new(polyIndices) };
+
+        // Remove consecutive duplicates from each cycle
+        for (int i = 0; i < cycles.Count; i++)
+            cycles[i] = RemoveConsecutiveDuplicates(cycles[i]);
+
+        cycles.RemoveAll(c => c.Count < 3);
+
+        if (cycles.Count <= 1)
+            return new List<List<int>> { new(polyIndices) };
+
+        // Find the largest-area cycle — this is the outer boundary
+        int outerIdx = 0;
+        float maxArea = 0;
+        for (int i = 0; i < cycles.Count; i++)
+        {
+            var verts = new List<Vector2>();
+            foreach (var idx in cycles[i])
+                verts.Add(vertices[idx]);
+            float area = Math.Abs(ComputeSignedArea(verts));
+            if (area > maxArea)
+            {
+                maxArea = area;
+                outerIdx = i;
+            }
+        }
+
+        var outerPoly = cycles[outerIdx];
+
+        // Remaining cycles that are geometrically inside the outer are holes
+        var outerVerts = new List<Vector2>();
+        foreach (var idx in outerPoly)
+            outerVerts.Add(vertices[idx]);
+
+        var holes = new List<List<int>>();
+        for (int i = 0; i < cycles.Count; i++)
+        {
+            if (i == outerIdx) continue;
+            if (cycles[i].Count < 3) continue;
+
+            // Check if all vertices of this cycle are inside the outer polygon
+            bool allInside = true;
+            foreach (var idx in cycles[i])
+            {
+                if (!PointInPolygon(vertices[idx], outerVerts))
+                {
+                    allInside = false;
+                    break;
+                }
+            }
+
+            if (allInside)
+                holes.Add(cycles[i]);
+        }
+
+        if (holes.Count == 0)
+            return new List<List<int>> { outerPoly };
+
+        // Mark holes with -1 prefix
+        var result = new List<List<int>> { outerPoly };
+        foreach (var hole in holes)
+        {
+            var markedHole = new List<int> { -1 };
+            markedHole.AddRange(hole);
+            result.Add(markedHole);
+        }
+        return result;
     }
 
     private static List<int> RemoveConsecutiveDuplicates(List<int> indices)
@@ -1335,59 +1449,48 @@ public class Program
     {
         var vertices = new List<Vector3>
         {
-            // Door with window cutout
-            new Vector3(-56,-17,192),
-            new Vector3(-56,-9,192),
-            new Vector3(-56,40,192),
-            new Vector3(-57,40,177),
-            new Vector3(-59,40,161),
-            new Vector3(-60,40,145),
-            new Vector3(-62,40,129),
-            new Vector3(-63,40,118),
-            new Vector3(-63,-73,118),
-            new Vector3(-56,-73,185),
-            new Vector3(-56,-37,192),
-            new Vector3(-56,-37,185),
-            new Vector3(-57,-65,180),
-            new Vector3(-62,-65,128),
-            new Vector3(-62,-32,128),
-            new Vector3(-59,-32,157),
-            new Vector3(-58,-22,163),
-            new Vector3(-56,-22,185),
-            new Vector3(-56,-37,185),
-            new Vector3(-56,-37,192),
+            new(-99, 6, 298),
+            new(-99, 63, 313),
+            new(-88, 63, 318),
+            new(-76, 63, 324),
+            new(-65, 63, 329),
+            new(-53, 63, 336),
+            new(-42, 63, 342),
+            new(-28, 63, 349),
+            new(-17, 63, 355),
+            new(-17, 6, 331),
+            new(-29, 6, 326),
+            new(-28, 63, 349),
+            new(-42, 63, 342),
+            new(-41, 6, 321),
+            new(-53, 6, 316),
+            new(-53, 63, 336),
+            new(-65, 63, 329),
+            new(-65, 6, 311),
+            new(-76, 6, 306),
+            new(-76, 63, 324),
+            new(-88, 63, 318),
+            new(-88, 6, 302),
+            new(-99, 6, 298),
+            new(-112, -7, 288),
+            new(0, -7, 326),
+            new(0, 75, 374),
+            new(-112, 75, 311),
+            new(-112, -7, 288),
         };
 
         var result = PolygonTriangulator.Triangulate(vertices);
 
-        Console.WriteLine($"Plane Normal: {result.PlaneNormal}");
         Console.WriteLine($"Regions Detected: {result.RegionCount}");
-        Console.WriteLine($"Triangles: {result.Triangles.Length / 3f}");
+        Console.WriteLine($"Triangles: {result.Triangles.Length / 3}");
+        Console.WriteLine($"Plane normal: {result.PlaneNormal}");
 
         for (int i = 0; i < result.Triangles.Length; i += 3)
         {
-            Console.WriteLine("[");
-            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
-            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i + 1]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
-            Console.WriteLine($"new Vector3({vertices[(int)result.Triangles[i + 2]]}f)".Replace("<", "").Replace(">", "").Replace(",", "f,") + ",");
-            Console.WriteLine("],");
-            Console.WriteLine();
-        }
-
-        for (int i = 0; i < result.Triangles.Length; i += 3)
-        {
-            Console.WriteLine("<p>");
-            Console.WriteLine($"c({Random.Shared.Next(0, 256)},{Random.Shared.Next(0, 256)},{Random.Shared.Next(0, 256)})");
-            Console.WriteLine("gr(40)");
-            Console.WriteLine("fs(1)");
-            Console.WriteLine($"p({vertices[(int)result.Triangles[i]]})".Replace("<", "").Replace(">", "")
-                .Replace(", ", ","));
-            Console.WriteLine($"p({vertices[(int)result.Triangles[i + 1]]})".Replace("<", "").Replace(">", "")
-                .Replace(", ", ","));
-            Console.WriteLine($"p({vertices[(int)result.Triangles[i + 2]]})".Replace("<", "").Replace(">", "")
-                .Replace(", ", ","));
-            Console.WriteLine("</p>");
-            Console.WriteLine();
+            var v0 = vertices[(int)result.Triangles[i]];
+            var v1 = vertices[(int)result.Triangles[i + 1]];
+            var v2 = vertices[(int)result.Triangles[i + 2]];
+            Console.WriteLine($"  tri {i / 3}: [{result.Triangles[i]}] {v0}, [{result.Triangles[i + 1]}] {v1}, [{result.Triangles[i + 2]}] {v2}");
         }
     }
 }
