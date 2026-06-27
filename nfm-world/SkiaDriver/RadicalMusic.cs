@@ -78,6 +78,11 @@ internal class RadicalMusic : IRadicalMusic
     {
         // empty
     }
+    
+    ~RadicalMusic()
+    {
+        Unload();
+    }
 
     public void SetPaused(bool p0)
     {
