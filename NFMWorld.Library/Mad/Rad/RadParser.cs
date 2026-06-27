@@ -65,11 +65,11 @@ public partial class RadParser
                             }
                             else
                             {
-                                x = x * (wheelHeight / (trueRadius));
+                                x = x * (wheelHeight / (trueRadius * 0.77f));
                             }
                             
-                            y = y * (wheelHeight / (trueRadius));
-                            z = z * (wheelHeight / (trueRadius));
+                            y = y * (wheelHeight / (trueRadius * 0.77f));
+                            z = z * (wheelHeight / (trueRadius * 0.77f));
 
                             x -= wheelHeight / 2;
                         }
@@ -335,7 +335,7 @@ public partial class RadParser
                 Height: height * idiv,
                 Polys: _wheelMeshes.Count > _wheels.Count
                     // physhot custom wheels
-                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wheelHeight: width * (float)idiv * (float)iwid, wheelWidth: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
+                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wheelWidth: width * (float)idiv * (float)iwid, wheelHeight: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
                     : null
             ));
 
