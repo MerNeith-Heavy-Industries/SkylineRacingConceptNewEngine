@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
