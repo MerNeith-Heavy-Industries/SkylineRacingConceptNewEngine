@@ -596,7 +596,7 @@ public static class BackendGameSparker
 
     public static (int Id, Rad3d? Rad) GetStagePart(string name)
     {
-        IReadOnlyList<Rad3d>[] arrays = [stage_parts, vendor_stage_parts, user_stage_parts];
+        IReadOnlyList<Rad3d>[] arrays = [stage_parts, vendor_stage_parts, user_stage_parts, src_stage_parts];
 
         var total = 0;
         foreach (var t in arrays)
