@@ -15,17 +15,19 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
+using NFMWorld.Reactor;
+using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
 using NFMWorld.UI.Hud;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
 using Keys = WorldXaml.UI.Yoga.Events.Keys;
 using Logging = NFMWorldLibrary.Logging;
+using LogLevel = NFMWorld.Reactor.LogLevel;
 
 namespace NFMWorld;
 
@@ -74,13 +76,13 @@ public class WorldGame : Game
         ReactorConfig.LogMessage = (level, message) =>
         {
 #pragma warning disable CA2254
-            if (level == WorldXaml.UI.Base.LogLevel.Info)
+            if (level == LogLevel.Info)
                 xamlLogger.LogInformation(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Warning)
+            else if (level == LogLevel.Warning)
                 xamlLogger.LogWarning(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Error)
+            else if (level == LogLevel.Error)
                 xamlLogger.LogError(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Debug)
+            else if (level == LogLevel.Debug)
                 xamlLogger.LogDebug(message);
             else
                 throw new ArgumentOutOfRangeException(nameof(level), level, null);

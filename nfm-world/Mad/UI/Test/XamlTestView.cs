@@ -1,7 +1,7 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
 using WorldXaml.UI.Yoga;
-using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.Reactor.Nodes;
 using static NFMWorld.DriverInterface.UI.Nodes;
 using static NFMWorld.UI.Test.Nodes;
 using static NFMWorld.Reactor.Nodes;
@@ -60,32 +60,32 @@ public class XamlTestView(int counter) : Component
 
                         // Section 3: Color swatches
                         FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, children: [
-                            SolidBox(backgroundColor: new Color(255, 0, 0, 255), width: 24f, height: 24f),
-                            SolidBox(backgroundColor: new Color(0, 255, 0, 255), width: 24f, height: 24f),
-                            SolidBox(backgroundColor: new Color(0, 0, 255, 255), width: 24f, height: 24f),
-                            SolidBox(backgroundColor: new Color(255, 255, 0, 255), width: 24f, height: 24f),
+                            PaintedBox(backgroundColor: new Color(255, 0, 0, 255), width: 24f, height: 24f),
+                            PaintedBox(backgroundColor: new Color(0, 255, 0, 255), width: 24f, height: 24f),
+                            PaintedBox(backgroundColor: new Color(0, 0, 255, 255), width: 24f, height: 24f),
+                            PaintedBox(backgroundColor: new Color(255, 255, 0, 255), width: 24f, height: 24f),
                             Section(w: "Color swatches", font: new Font(FontFamily.Adventure, FontStyle.Plain, 18), color: new Color(180, 180, 180, 255), marginLeft: 8f)
                         ]),
 
                         // Section 4: Visibility binding
                         FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, children: [
-                            SolidBox(backgroundColor: new Color(0, 255, 255, 255), width: 16f, height: 16f, visibility: badgeVisibility),
+                            PaintedBox(backgroundColor: new Color(0, 255, 255, 255), width: 16f, height: 16f, visibility: badgeVisibility),
                             Section(w: "Badge (visibility-bound)", font: new Font(FontFamily.Adventure, FontStyle.Plain, 18), color: new Color(255, 255, 255, 255))
                         ]),
 
                         // Section 5: HStack — horizontal and vertical
                         Section(w: "HStack (Horizontal):", font: new Font(FontFamily.Adventure, FontStyle.Bold, 18), color: accentColor),
                         HStack(orientation: StackOrientation.Horizontal, gapColumn: 8f, child: FlexPanel(children: [
-                            SolidBox(backgroundColor: new Color(255, 136, 0, 255), width: 40f, height: 40f),
-                            SolidBox(backgroundColor: new Color(0, 136, 255, 255), width: 40f, height: 40f),
-                            SolidBox(backgroundColor: new Color(136, 255, 0, 255), width: 40f, height: 40f)
+                            PaintedBox(backgroundColor: new Color(255, 136, 0, 255), width: 40f, height: 40f),
+                            PaintedBox(backgroundColor: new Color(0, 136, 255, 255), width: 40f, height: 40f),
+                            PaintedBox(backgroundColor: new Color(136, 255, 0, 255), width: 40f, height: 40f)
                         ])),
 
                         Section(w: "HStack (Vertical):", font: new Font(FontFamily.Adventure, FontStyle.Bold, 18), color: accentColor),
                         HStack(orientation: StackOrientation.Vertical, gapRow: 8f, child: FlexPanel(children: [
-                            SolidBox(backgroundColor: new Color(255, 136, 0, 255), width: 40f, height: 40f),
-                            SolidBox(backgroundColor: new Color(0, 136, 255, 255), width: 40f, height: 40f),
-                            SolidBox(backgroundColor: new Color(136, 255, 0, 255), width: 40f, height: 40f)
+                            PaintedBox(backgroundColor: new Color(255, 136, 0, 255), width: 40f, height: 40f),
+                            PaintedBox(backgroundColor: new Color(0, 136, 255, 255), width: 40f, height: 40f),
+                            PaintedBox(backgroundColor: new Color(136, 255, 0, 255), width: 40f, height: 40f)
                         ])),
 
                         // Section 6: Nested layout — Row of Columns
@@ -93,21 +93,21 @@ public class XamlTestView(int counter) : Component
                         FlexPanel(flexDirection: FlexDirection.Row, gap: counterModulo, children: [
                             FlexPanel(flexDirection: FlexDirection.Column, gap: 4f, children: [
                                 Section(w: "Column A", font: new Font(FontFamily.Adventure, FontStyle.Bold, 14), color: new Color(255, 200, 100, 255)),
-                                SolidBox(backgroundColor: new Color(170, 68, 68, 255), width: 60f, height: 20f),
-                                SolidBox(backgroundColor: new Color(170, 102, 102, 255), width: 60f, height: 20f),
-                                SolidBox(backgroundColor: new Color(170, 136, 136, 255), width: 60f, height: 20f)
+                                PaintedBox(backgroundColor: new Color(170, 68, 68, 255), width: 60f, height: 20f),
+                                PaintedBox(backgroundColor: new Color(170, 102, 102, 255), width: 60f, height: 20f),
+                                PaintedBox(backgroundColor: new Color(170, 136, 136, 255), width: 60f, height: 20f)
                             ]),
                             FlexPanel(flexDirection: FlexDirection.Column, gap: 4f, children: [
                                 Section(w: "Column B", font: new Font(FontFamily.Adventure, FontStyle.Bold, 14), color: new Color(100, 200, 255, 255)),
-                                SolidBox(backgroundColor: new Color(68, 68, 170, 255), width: 60f, height: 20f),
-                                SolidBox(backgroundColor: new Color(102, 102, 170, 255), width: 60f, height: 20f),
-                                SolidBox(backgroundColor: new Color(136, 136, 170, 255), width: 60f, height: 20f)
+                                PaintedBox(backgroundColor: new Color(68, 68, 170, 255), width: 60f, height: 20f),
+                                PaintedBox(backgroundColor: new Color(102, 102, 170, 255), width: 60f, height: 20f),
+                                PaintedBox(backgroundColor: new Color(136, 136, 170, 255), width: 60f, height: 20f)
                             ])
                         ]),
 
                         // Section 7: Fade-in animation on mount
                         FlexPanel(flexDirection: FlexDirection.Row, gap: 8f, alignItems: Align.Center, opacity: 1f, children: [
-                            SolidBox(backgroundColor: new Color(255, 255, 255, 255), width: 12f, height: 12f),
+                            PaintedBox(backgroundColor: new Color(255, 255, 255, 255), width: 12f, height: 12f),
                             Section(w: "Fade-in on mount", font: new Font(FontFamily.Adventure, FontStyle.Plain, 18), color: new Color(255, 255, 255, 255))
                         ]),
 

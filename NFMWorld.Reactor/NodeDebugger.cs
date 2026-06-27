@@ -1,4 +1,4 @@
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 public static class NodeDebugger
 {

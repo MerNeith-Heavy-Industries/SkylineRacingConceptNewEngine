@@ -1,4 +1,4 @@
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 /// <summary>
 /// Represents a generic container view that can hold multiple child nodes.
