@@ -41,91 +41,98 @@ public class MainMenuView(
     {
         var (activePage, setActivePage) = UseState<MainMenuPage?>(null);
         var (account, setAccount) = UseState<Account?>(null);
-        
-        void PushPage(Func<MainMenuPage> pageBuilder)
-        {
-            setActivePage(pageBuilder());
-        }
-        
-        void GoBack()
-        {
-            // TODO
-        }
+        var pageHistory = UseRef(new Stack<MainMenuPage>());
+        var activePageRef = UseRef<MainMenuPage?>(null);
+        activePageRef.Current = activePage; // keep ref in sync during render
 
-        MainMenuPage BuildMainMenu()
+        var pushPage = UseCallback<Func<MainMenuPage>>(pageBuilder =>
         {
-            return new MainMenuPage("NFM WORLD?", [
-                new MainMenuItem("PLAY", "Play public, private matches online or play singleplayer.", () => PushPage(BuildPlayMenu)),
-                new MainMenuItem("GARAGE", "Customize and inspect your vehicles in the garage.", () => garage?.Invoke()),
-                new MainMenuItem("WORKSHOP", "Build your own models and stages.", () => PushPage(BuildWorkshopMenu)),
-                new MainMenuItem("SETTINGS", "Adjust game settings.", () => settings?.Invoke()),
-                new MainMenuItem("CREDITS", "View game credits.", () => credits?.Invoke()),
-                new MainMenuItem("QUIT", "Exit the game.", () => quit?.Invoke()),
-            ]);
-        }
-
-        MainMenuPage BuildPlayMenu()
-        {
-            return new MainMenuPage("PLAY", [
-                new MainMenuItem("SINGLEPLAYER", "Play the original single player experiences.", () => PushPage(BuildSPMenu)),
-                new MainMenuItem("MULTIPLAYER", "Play online with other players.", () => PushPage(BuildMPMenu)),
-                new MainMenuItem("TRAINING", "Train your skills and learn the game mechanics.", () => PushPage(BuildTrainingMenu)),
-                new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
-            ]);
-        }
+            if (activePageRef.Current is not null)
+                pageHistory.Current.Push(activePageRef.Current);
+            setActivePage(_ => pageBuilder());
+        }, []);
         
-        MainMenuPage BuildSPMenu()
+        var goBack = UseCallback(() =>
+        {
+            if (pageHistory.Current.TryPop(out var previousPage))
+                setActivePage(_ => previousPage);
+        }, [pageHistory.Current]);
+
+        var buildSpMenu = UseCallback(() =>
         {
             return new MainMenuPage("SINGLEPLAYER", [
                 new MainMenuItem("NFM1", "Play the original NFM1 singleplayer campaign.", () => playNfm1?.Invoke()),
                 new MainMenuItem("NFM2", "Play the original NFM2 singleplayer campaign.", () => playNfm2?.Invoke()),
                 new MainMenuItem("COMMUNITY", "Play custom experiences crafted by the community.", () => playCommunity?.Invoke()),
                 new MainMenuItem("FREE PLAY", "Play freely without any restrictions.", () => playFreePlay?.Invoke()),
-                new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
+                new MainMenuItem("BACK", "Return to the previous menu.", goBack)
             ]);
-        }
+        }, [goBack, playNfm1, playNfm2, playCommunity, playFreePlay]);
         
-        MainMenuPage BuildMPMenu()
+        var buildMpMenu = UseCallback(() =>
         {
             return new MainMenuPage("MULTIPLAYER", [
                 new MainMenuItem("COMPETITIVE", "Compete against other players via matchmaking.", () => playCompetitive?.Invoke()),
                 new MainMenuItem("CASUAL", "Play with people in a free relaxed environment.", () => playCasual?.Invoke()),
-                new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
+                new MainMenuItem("BACK", "Return to the previous menu.", goBack)
             ]);
-        }
-        
-        MainMenuPage BuildWorkshopMenu()
+        }, [goBack, playCompetitive, playCasual]);
+
+        var buildWorkshopMenu = UseCallback(() =>
         {
             return new MainMenuPage("WORKSHOP", [
                 new MainMenuItem("MODEL EDITOR", "View and edit custom models.", () => modelEditor?.Invoke()),
                 new MainMenuItem("STAGE EDITOR", "Design your own stages.", () => stageEditor?.Invoke()),
                 new MainMenuItem("CAMPAIGN EDITOR", "Craft custom experiences.", () => campaignEditor?.Invoke()),
-                new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
+                new MainMenuItem("BACK", "Return to the previous menu.", goBack)
             ]);
-        }
+        }, [goBack, modelEditor, stageEditor, campaignEditor]);
         
-        MainMenuPage BuildTrainingMenu()
+        var buildTrainingMenu = UseCallback(() =>
         {
             return new MainMenuPage("TRAINING", [
                 new MainMenuItem("TIME TRIALS", "Flex your fastest time against other people.", () => timeTrials?.Invoke()),
                 new MainMenuItem("CHALLENGES", "Complete challenges to sharpen your mechanical skills.", () => challenges?.Invoke()),
                 new MainMenuItem("GAME INSTRUCTIONS", "Read about the rules and controls of the game.", () => gameInstructions?.Invoke()),
-                new MainMenuItem("BACK", "Return to the previous menu.", GoBack)
+                new MainMenuItem("BACK", "Return to the previous menu.", goBack)
             ]);
-        }
+        }, [goBack, timeTrials, challenges, gameInstructions]);
         
+        var buildPlayMenu = UseCallback(() =>
+        {
+            return new MainMenuPage("PLAY", [
+                new MainMenuItem("SINGLEPLAYER", "Play the original single player experiences.", () => pushPage(buildSpMenu)),
+                new MainMenuItem("MULTIPLAYER", "Play online with other players.", () => pushPage(buildMpMenu)),
+                new MainMenuItem("TRAINING", "Train your skills and learn the game mechanics.", () => pushPage(buildTrainingMenu)),
+                new MainMenuItem("BACK", "Return to the previous menu.", goBack)
+            ]);
+        }, [goBack, buildSpMenu, buildMpMenu, buildTrainingMenu]);
+
+        var buildMainMenu = UseCallback(() =>
+        {
+            return new MainMenuPage("NFM WORLD?", [
+                new MainMenuItem("PLAY", "Play public, private matches online or play singleplayer.", () => pushPage(buildPlayMenu)),
+                new MainMenuItem("GARAGE", "Customize and inspect your vehicles in the garage.", () => garage?.Invoke()),
+                new MainMenuItem("WORKSHOP", "Build your own models and stages.", () => pushPage(buildWorkshopMenu)),
+                new MainMenuItem("SETTINGS", "Adjust game settings.", () => settings?.Invoke()),
+                new MainMenuItem("CREDITS", "View game credits.", () => credits?.Invoke()),
+                new MainMenuItem("QUIT", "Exit the game.", () => quit?.Invoke()),
+            ]);
+        }, [garage, settings, credits, quit, buildPlayMenu, buildWorkshopMenu]);
+
         UseEffect(() =>
         {
-            setActivePage(BuildMainMenu());
+            setActivePage(_ => buildMainMenu());
         });
 
-        void SetHover(int itemIndex, bool hoverState)
+        var setHover = UseCallback<int, bool>((itemIndex, hoverState) =>
         {
-            setActivePage(activePage with
+            if (activePage is null) return;
+            setActivePage(page => page with
             {
-                Items = activePage.Items.SetItem(itemIndex, activePage.Items[itemIndex] with { Hovered = hoverState })
+                Items = [..page.Items.Select((item, idx) => idx == itemIndex ? item with { Hovered = hoverState } : item with { Hovered = false })]
             });
-        }
+        }, [activePage]);
 
         bool IsHovered(int itemIndex)
         {
@@ -204,8 +211,8 @@ public class MainMenuView(
                             minWidth: 230,
                             minHeight: 35,
                             padding: Node.MeasurementMultiPadding.XY(12, 8),
-                            mouseEntered: _ => SetHover(idx, true),
-                            mouseLeft: _ => SetHover(idx, false),
+                            mouseEntered: _ => setHover(idx, true),
+                            mouseLeft: _ => setHover(idx, false),
                             isFocusable: true,
                             mousePressed: _ => item.OnClick?.Invoke(),
                             gap: 0,
