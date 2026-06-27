@@ -278,6 +278,39 @@ public abstract class Component
     }
 
     /// <summary>
+    /// Subscribes to an <see cref="IObservable{T}"/> source and re-renders
+    /// when its value changes. Returns the value.
+    /// </summary>
+    protected T UseObservable<T>(IObservable<T> source)
+    {
+        VerifyReconciler();
+
+        var (value, setValue) = UseState(default(T)!);
+        UseEffect(() =>
+        {
+            var subscription = source.Subscribe(new ReactiveObserver<T>(setValue));
+            return subscription.Dispose;
+        }, source);
+        return value;
+    }
+
+    private sealed class ReactiveObserver<T>(Action<Func<T, T>> setValue) : IObserver<T>
+    {
+        public void OnCompleted()
+        {
+        }
+
+        public void OnError(Exception error)
+        {
+        }
+
+        public void OnNext(T value)
+        {
+            setValue(_ => value);
+        }
+    }
+
+    /// <summary>
     /// Subscribes to a specific property on an <see cref="INotifyPropertyChanged"/> source.
     /// Re-renders only when that property changes.
     /// </summary>
