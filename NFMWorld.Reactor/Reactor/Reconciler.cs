@@ -289,7 +289,12 @@ internal class Reconciler
 
         // Remove stale keyed children
         foreach (var (_, oldIdx) in oldKeyMap.OrderByDescending(kv => kv.Value))
+        {
+            var staleChild = existingChildren[oldIdx];
+            _snapshots.Remove(staleChild);
+            _componentSlots.Remove((container, oldIdx));
             container.RemoveAt(oldIdx);
+        }
         oldKeyMap.Clear();
         _dictPool.Return(oldKeyMap);
 
@@ -317,7 +322,13 @@ internal class Reconciler
 
         // Trim excess
         while (existingChildren.Count > newChildren.Count)
-            container.RemoveAt(existingChildren.Count - 1);
+        {
+            var lastIdx = existingChildren.Count - 1;
+            var excessChild = existingChildren[lastIdx];
+            _snapshots.Remove(excessChild);
+            _componentSlots.Remove((container, lastIdx));
+            container.RemoveAt(lastIdx);
+        }
     }
 
     /// <summary>
