@@ -103,8 +103,8 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
     public override void BeginGameTick()
     {
+        CurrentStage.OnBeforeGameTick();
         base.BeginGameTick();
-        CurrentStage.OnBeforeUpdate();
     }
 
     public override void GameTick()
