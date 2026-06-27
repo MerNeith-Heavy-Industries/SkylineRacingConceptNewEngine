@@ -65,6 +65,7 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             sb.AppendLine(
                 $$"""
+                  #nullable enable
                   using NFMWorldLibrary.Util;
 
                   namespace NFMWorldLibrary.Multiplayer;
@@ -139,6 +140,7 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             sb.AppendLine(
                 $$"""
+                  #nullable enable
                   using MemoryPack;
                   
                   namespace {{packetInfo.Namespace}};
