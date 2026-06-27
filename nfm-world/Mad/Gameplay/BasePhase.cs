@@ -79,6 +79,8 @@ public abstract class BasePhase
     /// </summary>
     public virtual void Exit()
     {
+        FocusManager.ClearHover();
+        FocusManager.ClearFocus();
     }
 
     /// <summary>

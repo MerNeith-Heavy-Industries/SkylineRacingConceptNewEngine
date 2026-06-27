@@ -227,4 +227,20 @@ public class FocusManager
 
     /// <summary>Clear focus entirely.</summary>
     public void ClearFocus() => FocusedElement = null;
+
+    /// <summary>
+    /// Clear the hover chain, resetting <see cref="Visual.IsHovered"/>
+    /// on all currently-hovered elements.
+    /// </summary>
+    public void ClearHover()
+    {
+        if (_hoveredChain.Count == 0) return;
+
+        // Walk leaf→root so MouseLeft propagates naturally
+        for (int i = _hoveredChain.Count - 1; i >= 0; i--)
+            _hoveredChain[i].IsHovered = false;
+
+        _hoveredChain.Clear();
+        HoveredChanged?.Invoke(null);
+    }
 }

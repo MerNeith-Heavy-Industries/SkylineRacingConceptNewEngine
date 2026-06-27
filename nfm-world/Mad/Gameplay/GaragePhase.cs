@@ -303,6 +303,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void Exit()
     {
+        base.Exit();
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
