@@ -99,13 +99,11 @@ public class ClientStage
 
     // ── Scene lifecycle ──
 
-    public void OnBeforeUpdate()
+    public void OnBeforeGameTick()
     {
-        Camera.OnBeforeRender(0);
+        Camera.OnBeforeGameTick();
         foreach (var lightCamera in LightCameras)
-            lightCamera.OnBeforeRender(0);
-        foreach (var obj in _scene.Objects)
-            obj.OnBeforeRender(0);
+            lightCamera.OnBeforeGameTick();
     }
 
     /// <summary>
