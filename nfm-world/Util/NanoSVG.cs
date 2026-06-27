@@ -31,11 +31,16 @@ public sealed class NanoSVGImage : IImage
 		{
 			throw new InvalidOperationException("Failed to parse SVG data: Invalid encoding");
 		}
+
+		arr1.Advance(count);
 		return new NanoSVGImage(NsvgParser.Parse(arr1.WrittenSpan[..charsWritten], units, dpi));
 	}
 
-	public void Draw(NvgContext vg)
+	public void Draw(NvgContext vg, float x, float y, float width, float height)
 	{
+		vg.SaveState();
+		vg.Translate(x, y);
 		NsvgRenderer.Render(vg, _image);
+		vg.RestoreState();
 	}
 }

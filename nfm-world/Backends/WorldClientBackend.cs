@@ -46,6 +46,11 @@ internal class WorldClientBackend(NvgContext context) : IBackend
         {
             return NanoSVGImage.FromStream(stream);
         }
+        if (VFS.Path.GetExtension(file) == ".dds")
+        {
+            return new NanoVGImage(Texture2D.DDSFromStreamEXT(context.GraphicsDevice, stream));
+        }
+
         return new NanoVGImage(Texture2D.FromStream(context.GraphicsDevice, stream));
     }
     
@@ -213,14 +218,21 @@ internal class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y)
         {
-            if (image is not NanoVGImage img) throw new ArgumentException("Invalid image type for NanoVGBackend.");
+            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
 
-            var imgPaint = _context.ImagePattern(x, y, img.Width, img.Height, 0.0f, img.Texture, 1.0f);
-            _context.BeginPath();
-            _context.FillPaint(imgPaint);
-            _context.Rect(x, y, img.Width, img.Height);
-            _context.Fill();
-            _context.FillPaint(_paint);
+            if (image is NanoVGImage img)
+            {
+                var imgPaint = _context.ImagePattern(x, y, img.Width, img.Height, 0.0f, img.Texture, 1.0f);
+                _context.BeginPath();
+                _context.FillPaint(imgPaint);
+                _context.Rect(x, y, img.Width, img.Height);
+                _context.Fill();
+                _context.FillPaint(_paint);
+            }
+            else if (image is NanoSVGImage nsvg)
+            {
+                nsvg.Draw(_context, x, y, nsvg.Width, nsvg.Height);
+            }
         }
 
         public void SetFont(Font font)
@@ -326,14 +338,21 @@ internal class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y, int width, int height)
         {
-            if (image is not NanoVGImage img) throw new ArgumentException("Invalid image type for NanoVGBackend.");
+            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
 
-            var imgPaint = _context.ImagePattern(x, y, width, height, 0.0f, img.Texture, 1.0f);
-            _context.BeginPath();
-            _context.FillPaint(imgPaint);
-            _context.Rect(x, y, width, height);
-            _context.Fill();
-            _context.FillPaint(_paint);
+            if (image is NanoVGImage img)
+            {
+                var imgPaint = _context.ImagePattern(x, y, width, height, 0.0f, img.Texture, 1.0f);
+                _context.BeginPath();
+                _context.FillPaint(imgPaint);
+                _context.Rect(x, y, width, height);
+                _context.Fill();
+                _context.FillPaint(_paint);
+            }
+            else if (image is NanoSVGImage nsvg)
+            {
+                nsvg.Draw(_context, x, y, width, height);
+            }
         }
     }
 
