@@ -425,9 +425,9 @@ public class HooksTests
     {
         public int RenderCount { get; private set; }
         public int ExposedValue { get; private set; }
-        private Action<int>? _setValue;
+        private Action<Func<int, int>>? _setValue;
 
-        public void ExposedSetValue(int v) => _setValue?.Invoke(v);
+        public void ExposedSetValue(int v) => _setValue?.Invoke(_ => v);
 
         protected override VNode Render()
         {
@@ -444,9 +444,9 @@ public class HooksTests
         public int RenderCount { get; private set; }
         public int EffectRunCount { get; private set; }
         public int CleanupRunCount { get; private set; }
-        private (int count, Action<int> setCount) _state;
+        private (int count, Action<Func<int, int>> setCount) _state;
 
-        public void ExposedSetCount(int c) => _state.setCount(c);
+        public void ExposedSetCount(int c) => _state.setCount(_ => c);
 
         protected override VNode Render()
         {
@@ -478,11 +478,11 @@ public class HooksTests
 
     private class UseMemoComponent : Component
     {
-        private (int value, Action<int> setValue) _base;
+        private (int value, Action<Func<int, int>> setValue) _base;
         public int MemoComputeCount { get; private set; }
         public int MemoizedValue { get; private set; }
 
-        public void ExposedSetBase(int v) => _base.setValue(v);
+        public void ExposedSetBase(int v) => _base.setValue(_ => v);
 
         protected override VNode Render()
         {
@@ -511,7 +511,7 @@ public class HooksTests
 
     private class UseCallbackComponent : Component
     {
-        private (int value, Action<int> setValue) _state;
+        private (int value, Action<Func<int, int>> setValue) _state;
         public Action ExposedCallback { get; private set; } = null!;
 
         protected override VNode Render()
@@ -601,9 +601,9 @@ public class HooksTests
     {
         public int EffectRunCount { get; private set; }
         public int CleanupRunCount { get; private set; }
-        private (int count, Action<int> setCount) _state;
+        private (int count, Action<Func<int, int>> setCount) _state;
 
-        public void ExposedSetCount(int c) => _state.setCount(c);
+        public void ExposedSetCount(int c) => _state.setCount(_ => c);
 
         protected override VNode Render()
         {
@@ -677,11 +677,11 @@ public class HooksTests
         public int CleanupARunCount { get; private set; }
         public int EffectBRunCount { get; private set; }
         public int CleanupBRunCount { get; private set; }
-        private (int count, Action<int> setCount) _stateA;
-        private (int count, Action<int> setCount) _stateB;
+        private (int count, Action<Func<int, int>> setCount) _stateA;
+        private (int count, Action<Func<int, int>> setCount) _stateB;
 
-        public void ExposedSetCountA(int c) => _stateA.setCount(c);
-        public void ExposedSetCountB(int c) => _stateB.setCount(c);
+        public void ExposedSetCountA(int c) => _stateA.setCount(_ => c);
+        public void ExposedSetCountB(int c) => _stateB.setCount(_ => c);
 
         protected override VNode Render()
         {
@@ -773,7 +773,7 @@ public class HooksTests
     /// </summary>
     private class InfiniteReentrancyComponent : Component
     {
-        private (int value, Action<int> setValue) _state;
+        private (int value, Action<Func<int, int>> setValue) _state;
 
         public InfiniteReentrancyComponent()
         {
@@ -784,7 +784,7 @@ public class HooksTests
         {
             _state = UseState(0);
             // Set a new value every render → infinite chain
-            _state.setValue(_state.value + 1);
+            _state.setValue(_ => _state.value + 1);
             return FlexPanel();
         }
     }
@@ -797,9 +797,9 @@ public class HooksTests
     private class FrequentExternalUpdateComponent : Component
     {
         public int RenderCount { get; private set; }
-        private (int value, Action<int> setValue) _state;
+        private (int value, Action<Func<int, int>> setValue) _state;
 
-        public void TriggerUpdate(int v) => _state.setValue(v);
+        public void TriggerUpdate(int v) => _state.setValue(_ => v);
 
         public FrequentExternalUpdateComponent()
         {
