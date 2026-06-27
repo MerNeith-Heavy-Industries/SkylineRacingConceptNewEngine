@@ -14,7 +14,13 @@ public class PolygonTriangulator
         public int RegionCount;
     }
 
-    public static TriangulationResult Triangulate(IReadOnlyList<Vector3> vertices)
+    public enum TriangulationAlgorithm : byte
+    {
+        Phyrexian,
+        Libtess
+    }
+
+    public static TriangulationResult Triangulate(IReadOnlyList<Vector3> vertices, TriangulationAlgorithm algorithm = TriangulationAlgorithm.Libtess)
     {
         if (vertices == null || vertices.Count < 3)
             throw new ArgumentException("Must have at least 3 vertices");
@@ -28,56 +34,385 @@ public class PolygonTriangulator
         }
 
         var projected2D = ProjectTo2D(vertices, centroid, normal);
-        
-        // Create an instance of the tessellator. Can be reused.
-        var tess = new Tess();
 
-        // Construct the contour from inputData.
-        // A polygon can be composed of multiple contours which are all tessellated at the same time.
-        int numPoints = projected2D.Count;
-        var contour = new ContourVertex[numPoints];
-        for (int i = 0; i < numPoints; i++)
+        if (algorithm == TriangulationAlgorithm.Libtess)
         {
-            if (float.IsNaN(projected2D[i].X) || float.IsNaN(projected2D[i].Y))
+            // Create an instance of the tessellator. Can be reused.
+            var tess = new Tess();
+
+            // Construct the contour from inputData.
+            // A polygon can be composed of multiple contours which are all tessellated at the same time.
+            int numPoints = projected2D.Count;
+            var contour = new ContourVertex[numPoints];
+            for (int i = 0; i < numPoints; i++)
             {
-                Console.WriteLine($"Projected vertex {i} has NaN coordinates: {vertices[i]}");
-                continue;
+                if (float.IsNaN(projected2D[i].X) || float.IsNaN(projected2D[i].Y))
+                {
+                    Console.WriteLine($"Projected vertex {i} has NaN coordinates: {vertices[i]}");
+                    continue;
+                }
+
+                // NOTE : Z is here for convenience if you want to keep a 3D vertex position throughout the tessellation process but only X and Y are important.
+                contour[i].Position = new Vec3(projected2D[i].X, projected2D[i].Y, i);
             }
 
-            // NOTE : Z is here for convenience if you want to keep a 3D vertex position throughout the tessellation process but only X and Y are important.
-            contour[i].Position = new Vec3(projected2D[i].X, projected2D[i].Y, i);
+            // Add the contour with a specific orientation, use "Original" if you want to keep the input orientation.
+            tess.AddContour(contour);
+
+            // Tessellate!
+            // The winding rule determines how the different contours are combined together.
+            // See http://www.glprogramming.com/red/chapter11.html (section "Winding Numbers and Winding Rules") for more information.
+            // If you want triangles as output, you need to use "Polygons" type as output and 3 vertices per polygon.
+            tess.Tessellate();
+
+            // Same call but the last callback is optional. Data will be null because no interpolated data would have been generated.
+            //tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3); // Some vertices will have null Data in this case.
+
+            var simpleTriangles = new uint[tess.ElementCount * 3];
+            int numTriangles = tess.ElementCount;
+            for (int i = 0; i < numTriangles; i++)
+            {
+                var v0 = tess.Vertices[tess.Elements[i * 3]].Position;
+                var v1 = tess.Vertices[tess.Elements[i * 3 + 1]].Position;
+                var v2 = tess.Vertices[tess.Elements[i * 3 + 2]].Position;
+                simpleTriangles[i * 3] = (uint)v0.Z;
+                simpleTriangles[i * 3 + 1] = (uint)v1.Z;
+                simpleTriangles[i * 3 + 2] = (uint)v2.Z;
+            }
+
+            return new TriangulationResult
+            {
+                Triangles = simpleTriangles,
+                PlaneNormal = normal,
+                Centroid = centroid,
+                RegionCount = 1
+            };
         }
-        // Add the contour with a specific orientation, use "Original" if you want to keep the input orientation.
-        tess.AddContour(contour);
-
-        // Tessellate!
-        // The winding rule determines how the different contours are combined together.
-        // See http://www.glprogramming.com/red/chapter11.html (section "Winding Numbers and Winding Rules") for more information.
-        // If you want triangles as output, you need to use "Polygons" type as output and 3 vertices per polygon.
-        tess.Tessellate(WindingRule.EvenOdd);
-
-        // Same call but the last callback is optional. Data will be null because no interpolated data would have been generated.
-        //tess.Tessellate(LibTessDotNet.WindingRule.EvenOdd, LibTessDotNet.ElementType.Polygons, 3); // Some vertices will have null Data in this case.
-
-        var simpleTriangles = new List<uint>();
-        int numTriangles = tess.ElementCount;
-        for (int i = 0; i < numTriangles; i++)
+        else
         {
-            var v0 = tess.Vertices[tess.Elements[i * 3]].Position;
-            var v1 = tess.Vertices[tess.Elements[i * 3 + 1]].Position;
-            var v2 = tess.Vertices[tess.Elements[i * 3 + 2]].Position;
-            simpleTriangles.Add((uint)v0.Z);
-            simpleTriangles.Add((uint)v1.Z);
-            simpleTriangles.Add((uint)v2.Z);
+            const float epsilon = 1e-5f;
+            var uniqueVertices = new List<Vector2>();
+            var indexMap = new List<int>(projected2D.Count);
+
+            for (int i = 0; i < projected2D.Count; i++)
+            {
+                int found = -1;
+                for (int j = 0; j < uniqueVertices.Count; j++)
+                {
+                    if (Vector2.Distance(projected2D[i], uniqueVertices[j]) < epsilon)
+                    {
+                        found = j;
+                        break;
+                    }
+                }
+
+                if (found >= 0)
+                {
+                    indexMap.Add(found);
+                }
+                else
+                {
+                    indexMap.Add(uniqueVertices.Count);
+                    uniqueVertices.Add(projected2D[i]);
+                }
+            }
+
+            var initialPoly = new List<int>(vertices.Count);
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                initialPoly.Add(indexMap[i]);
+            }
+
+            var uniqueIndices = new HashSet<int>(initialPoly);
+
+            List<List<int>> polyLines;
+            if (uniqueIndices.Count == initialPoly.Count)
+            {
+                polyLines = [initialPoly];
+            }
+            else
+            {
+                polyLines = ExtractRegions(initialPoly, uniqueVertices);
+            }
+
+            // WORKAROUND: ExtractRegions sometimes produces incomplete outer boundaries
+            // The outer boundary should include all vertices not in holes, in path order
+            if (polyLines.Count > 1)
+            {
+                // Collect all hole vertices
+                var holeVertices = new HashSet<int>();
+                for (int r = 1; r < polyLines.Count; r++)
+                {
+                    foreach (var idx in polyLines[r])
+                    {
+                        if (idx != -1)  // Skip the hole marker
+                            holeVertices.Add(idx);
+                    }
+                }
+
+                // Reconstruct outer polygon from original path, excluding hole vertices
+                var reconstructedOuter = new List<int>();
+                var seenOuter = new HashSet<int>();
+
+                foreach (var idx in initialPoly)
+                {
+                    if (!holeVertices.Contains(idx) && !seenOuter.Contains(idx))
+                    {
+                        reconstructedOuter.Add(idx);
+                        seenOuter.Add(idx);
+                    }
+                }
+
+                if (reconstructedOuter.Count >= 3)
+                {
+                    polyLines[0] = reconstructedOuter;
+                }
+            }
+
+            // Separate outer polygon from holes (holes are marked with -1 as first element)
+            List<int>? outerPoly = null;
+            var holePolys = new List<List<int>>();
+
+            foreach (var region in polyLines)
+            {
+                if (region.Count > 0 && region[0] == -1)
+                {
+                    // This is a hole - remove the marker
+                    holePolys.Add(region.Skip(1).ToList());
+                }
+                else if (outerPoly == null)
+                {
+                    outerPoly = region;
+                }
+                else
+                {
+                    // Additional outer regions (shouldn't happen with current logic)
+                    // Just add them as separate polygons to triangulate
+                }
+            }
+
+            // Remove any hole vertices that are shared with the outer boundary (bridge points)
+            if (outerPoly != null && holePolys.Count > 0)
+            {
+                var outerSet = new HashSet<int>(outerPoly);
+
+                for (int h = 0; h < holePolys.Count; h++)
+                {
+                    holePolys[h] = holePolys[h].Where(idx => !outerSet.Contains(idx)).ToList();
+                }
+                // Remove any holes that became too small
+                holePolys.RemoveAll(h => h.Count < 3);
+            }
+
+            if (outerPoly == null || outerPoly.Count < 3)
+            {
+                return new TriangulationResult
+                {
+                    Triangles = Array.Empty<uint>(),
+                    PlaneNormal = normal,
+                    Centroid = centroid,
+                    RegionCount = 0
+                };
+            }
+
+            // For polygons with holes, we need to include hole vertices in the triangulation
+            // Build a complete vertex list and use constrained triangulation
+            var allTriangles = new List<uint>();
+
+            // If there are holes, we need to use a different approach
+            // Since simple centroid filtering doesn't work well, let's try adding hole vertices
+            // to create a proper constrained triangulation
+
+            if (holePolys.Count > 0)
+            {
+                // Use Poly2Tri constrained Delaunay triangulation for polygons with holes
+                try
+                {
+                    // Convert outer polygon to PolygonPoints
+                    var outerPoints = new List<PolygonPoint>(outerPoly.Count);
+                    foreach (var idx in outerPoly)
+                    {
+                        var pt = uniqueVertices[idx];
+                        outerPoints.Add(new PolygonPoint(pt.X, pt.Y));
+                    }
+
+                    var poly = new Polygon(outerPoints);
+
+                    // Add each hole
+                    foreach (var hole in holePolys)
+                    {
+                        var holePoints = new List<PolygonPoint>(hole.Count);
+                        foreach (var idx in hole)
+                        {
+                            var pt = uniqueVertices[idx];
+                            holePoints.Add(new PolygonPoint(pt.X, pt.Y));
+                        }
+
+                        poly.AddHole(new Polygon(holePoints));
+                    }
+
+                    // Triangulate using constrained Delaunay
+                    DTSweepContext tcx = new DTSweepContext();
+                    tcx.PrepareTriangulation(poly);
+                    DTSweep.Triangulate(tcx);
+
+                    // Extract triangles and map back to original vertex indices
+                    foreach (var tri in poly.Triangles)
+                    {
+                        var triIndices = new List<uint>(3);
+                        for (int i = 0; i < 3; i++)
+                        {
+                            var p = tri.Points[i];
+                            // Find the unique vertex index that matches this point
+                            int uniqueIdx = -1;
+                            for (int j = 0; j < uniqueVertices.Count; j++)
+                            {
+                                if (Math.Abs(uniqueVertices[j].X - p.X) < 1e-5f &&
+                                    Math.Abs(uniqueVertices[j].Y - p.Y) < 1e-5f)
+                                {
+                                    uniqueIdx = j;
+                                    break;
+                                }
+                            }
+
+                            if (uniqueIdx >= 0)
+                            {
+                                // Map to original vertex index
+                                int origIdx = -1;
+                                for (int k = 0; k < indexMap.Count; k++)
+                                {
+                                    if (indexMap[k] == uniqueIdx)
+                                    {
+                                        origIdx = k;
+                                        break;
+                                    }
+                                }
+                                if (origIdx >= 0)
+                                {
+                                    triIndices.Add((uint)origIdx);
+                                }
+                            }
+                        }
+
+                        // Only add complete triangles (must have exactly 3 vertices)
+                        if (triIndices.Count == 3)
+                        {
+                            allTriangles.AddRange(triIndices);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Delaunay created degenerate triangle, this should never happen!");
+                        }
+                    }
+
+                    return new TriangulationResult
+                    {
+                        Triangles = allTriangles.ToArray(),
+                        PlaneNormal = normal,
+                        Centroid = centroid,
+                        RegionCount = 1 + holePolys.Count
+                    };
+                }
+                catch (Exception ex)
+                {
+                    // If Poly2Tri fails, fall back to simple ear-cut with centroid filtering
+                    Console.WriteLine($"Poly2Tri triangulation failed: {ex.Message}. Falling back to ear-cut.");
+                }
+
+                // Fallback: use ear-cut with centroid filtering
+                var outerVerts = new List<Vector2>(outerPoly.Count);
+                foreach (var idx in outerPoly)
+                    outerVerts.Add(uniqueVertices[idx]);
+
+                var outerTris = EarCutTriangulateSimple(outerVerts);
+
+                // For the outer triangles, filter out any that have centroid inside a hole
+                for (int t = 0; t < outerTris.Count; t += 3)
+                {
+                    int i0 = outerPoly[outerTris[t]];
+                    int i1 = outerPoly[outerTris[t + 1]];
+                    int i2 = outerPoly[outerTris[t + 2]];
+
+                    Vector2 triCentroid = (uniqueVertices[i0] + uniqueVertices[i1] + uniqueVertices[i2]) / 3f;
+
+                    bool insideHole = false;
+                    foreach (var hole in holePolys)
+                    {
+                        var holeVerts = new List<Vector2>();
+                        foreach (var idx in hole)
+                            holeVerts.Add(uniqueVertices[idx]);
+
+                        if (PointInPolygon(triCentroid, holeVerts))
+                        {
+                            insideHole = true;
+                            break;
+                        }
+                    }
+
+                    if (!insideHole)
+                    {
+                        // Map back to original indices
+                        for (int vi = 0; vi < 3; vi++)
+                        {
+                            int uniqueIdx = outerPoly[outerTris[t + vi]];
+                            int origIdx = -1;
+                            for (int i = 0; i < indexMap.Count; i++)
+                            {
+                                if (indexMap[i] == uniqueIdx)
+                                {
+                                    origIdx = i;
+                                    break;
+                                }
+                            }
+                            if (origIdx >= 0)
+                                allTriangles.Add((uint)origIdx);
+                        }
+                    }
+                }
+
+                return new TriangulationResult
+                {
+                    Triangles = allTriangles.ToArray(),
+                    PlaneNormal = normal,
+                    Centroid = centroid,
+                    RegionCount = 1 + holePolys.Count
+                };
+            }
+
+            // No holes - simple triangulation
+            var outerVertsSimple = new List<Vector2>();
+            foreach (var idx in outerPoly)
+                outerVertsSimple.Add(uniqueVertices[idx]);
+
+            var trisSimple = EarCutTriangulateSimple(outerVertsSimple);
+
+            for (int t = 0; t < trisSimple.Count; t += 3)
+            {
+                for (int vi = 0; vi < 3; vi++)
+                {
+                    int uniqueIdx = outerPoly[trisSimple[t + vi]];
+                    int origIdx = -1;
+                    for (int i = 0; i < indexMap.Count; i++)
+                    {
+                        if (indexMap[i] == uniqueIdx)
+                        {
+                            origIdx = i;
+                            break;
+                        }
+                    }
+                    if (origIdx >= 0)
+                        allTriangles.Add((uint)origIdx);
+                }
+            }
+
+            return new TriangulationResult
+            {
+                Triangles = allTriangles.ToArray(),
+                PlaneNormal = normal,
+                Centroid = centroid,
+                RegionCount = 1
+            };
         }
-
-        return new TriangulationResult
-        {
-            Triangles = simpleTriangles.ToArray(),
-            PlaneNormal = normal,
-            Centroid = centroid,
-            RegionCount = 1
-        };
     }
 
     private static bool TryTriangulateSimple(IReadOnlyList<Vector3> vertices, Vector3 centroid, Vector3 normal, out TriangulationResult result)

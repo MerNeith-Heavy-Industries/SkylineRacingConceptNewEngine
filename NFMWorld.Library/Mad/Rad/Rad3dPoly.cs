@@ -10,7 +10,7 @@ namespace NFMWorldLibrary.Rad;
 [MemoryPackable(GenerateType.CircularReference)]
 public readonly partial record struct Rad3dPoly
 {
-    public const int CurrentTriangulationVersion = 1;
+    public const int CurrentTriangulationVersion = 2;
     
     [JsonPropertyName("c"), MemoryPackOrder(0)]
     public Color3 Color { get; init; }
@@ -41,6 +41,9 @@ public readonly partial record struct Rad3dPoly
 
     [JsonPropertyName("triVersion"), MemoryPackOrder(9)]
     public int TriangulationVersion { get; init; }
+    
+    [JsonPropertyName("triAlgorithm"), MemoryPackOrder(10)]
+    public PolygonTriangulator.TriangulationAlgorithm TriangulationAlgorithm { get; init; } = PolygonTriangulator.TriangulationAlgorithm.Libtess;
 
     private readonly int _hashCode;
 
@@ -58,7 +61,8 @@ public readonly partial record struct Rad3dPoly
         Vector3[] Points,
         ImmutableArray<uint>? Triangles = null,
         Vector3? Centroid = null,
-        Vector3? Normal = null)
+        Vector3? Normal = null,
+        PolygonTriangulator.TriangulationAlgorithm TriangulationAlgorithm = PolygonTriangulator.TriangulationAlgorithm.Libtess)
     {
         this.Color = Color;
         this.ColNum = ColNum;
@@ -69,6 +73,7 @@ public readonly partial record struct Rad3dPoly
         this.Triangles = Triangles ?? Triangulate(Points);
         this.Centroid = Centroid ?? PolygonTriangulator.ComputeCentroid(Points);
         this.Normal = Normal ?? GetNormal(Points, this.Centroid);
+        this.TriangulationAlgorithm = TriangulationAlgorithm;
         TriangulationVersion = Triangles != null ? int.MaxValue : CurrentTriangulationVersion; // Manual triangulation = max value
         _hashCode = CalculateHashCode(Color, ColNum, PolyType, LineType, DecalOffset, Points, this.Triangles.AsSpan());
     }
@@ -94,7 +99,7 @@ public readonly partial record struct Rad3dPoly
         return PolygonTriangulator.ComputeBestFitPlaneNormal(verts, centroid);
     }
 
-    private static ImmutableArray<uint> Triangulate(Vector3[] verts)
+    private ImmutableArray<uint> Triangulate(Vector3[] verts)
     {
         if (verts.Length <= 2)
         {
@@ -106,8 +111,8 @@ public readonly partial record struct Rad3dPoly
             return [0, 1, 2];
         }
 
-        var transaction = SentrySdk.StartTransaction("TriangulatePoly", "rad3dpoly.triangulation");
-        var arr = ImmutableCollectionsMarshal.AsImmutableArray(PolygonTriangulator.Triangulate(verts).Triangles);
+        var transaction = SentrySdk.StartTransaction($"TriangulatePoly_{TriangulationAlgorithm}", "rad3dpoly.triangulation");
+        var arr = ImmutableCollectionsMarshal.AsImmutableArray(PolygonTriangulator.Triangulate(verts, TriangulationAlgorithm).Triangles);
         transaction.Finish();
         return arr;
     }
