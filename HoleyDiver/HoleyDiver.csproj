@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FNA.Math\FNA.Math.csproj" />
+      <ProjectReference Include="..\LibTessDotNet\LibTessDotNet\LibTessDotNet.csproj" />
     </ItemGroup>
 
 </Project>
