@@ -28,7 +28,7 @@ public abstract class VisualVNode : VNode
 
     // Do not rename (source generator uses it)
     // ReSharper disable InconsistentNaming
-    protected StyleSheet? _styleSheet;
+    protected StyleSheet? _style;
     protected Action<VisualTreeAttachmentEventArgs>? _attachedToVisualTree;
     protected Action<VisualTreeAttachmentEventArgs>? _detachedFromVisualTree;
     protected object? _key;
@@ -42,7 +42,7 @@ public abstract class VisualVNode : VNode
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
 
-    public VisualVNode WithStyleSheet(StyleSheet? styles) { _styleSheet = styles; return this; }
+    public VisualVNode WithStyleSheet(StyleSheet? styles) { _style = styles; return this; }
     public VisualVNode WithName(string? n) { _name = n; return this; }
     public new VisualVNode WithKey(object? value) { Key = value; return this; }
     public VisualVNode WithTabOrder(int value) { _tabOrder = value; return this; }
