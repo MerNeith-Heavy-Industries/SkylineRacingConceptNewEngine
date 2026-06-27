@@ -42,4 +42,4 @@
 	url = https://github.com/uwx/NanoSVGSharp
 [submodule "LibTessDotNet"]
 	path = LibTessDotNet
-	url = https://github.com/speps/LibTessDotNet
+	url = https://github.com/uwx/LibTessDotNet
