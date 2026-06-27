@@ -42,21 +42,22 @@ public class MainMenuView(
         var (activePage, setActivePage) = UseState<MainMenuPage?>(null);
         var (account, setAccount) = UseState<Account?>(null);
         var pageHistory = UseRef(new Stack<MainMenuPage>());
-        var activePageRef = UseRef<MainMenuPage?>(null);
-        activePageRef.Current = activePage; // keep ref in sync during render
 
         var pushPage = UseCallback<Func<MainMenuPage>>(pageBuilder =>
         {
-            if (activePageRef.Current is not null)
-                pageHistory.Current.Push(activePageRef.Current);
-            setActivePage(_ => pageBuilder());
+            setActivePage(prev =>
+            {
+                if (prev is not null)
+                    pageHistory.Current.Push(prev);
+                return pageBuilder();
+            });
         }, []);
         
         var goBack = UseCallback(() =>
         {
-            if (pageHistory.Current.TryPop(out var previousPage))
-                setActivePage(_ => previousPage);
-        }, [pageHistory.Current]);
+            setActivePage(prev =>
+                pageHistory.Current.TryPop(out var previousPage) ? previousPage : prev);
+        }, []);
 
         var buildSpMenu = UseCallback(() =>
         {
