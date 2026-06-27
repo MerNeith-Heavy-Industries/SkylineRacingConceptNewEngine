@@ -27,11 +27,11 @@ public class Button(
             isFocusable: true,
             mouseEntered: _ =>
             {
-                setIsHovered(true);
+                setIsHovered(static _ => true);
             },
             mouseLeft: _ =>
             {
-                setIsHovered(false);
+                setIsHovered(static _ => false);
             },
             children: [
                 SolidBox(
