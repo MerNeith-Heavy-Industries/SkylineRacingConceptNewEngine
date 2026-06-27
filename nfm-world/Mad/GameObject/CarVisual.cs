@@ -36,8 +36,6 @@ public class CarVisual : MeshedGameObject, IDisposable
 
     public MadSfx? Sfx;
 
-    private event Action? GameTicked;
-
     public CarVisual(GraphicsDevice graphicsDevice, IInGameCar car)
         : base(new CarMesh(graphicsDevice, car.Rad))
     {
@@ -114,11 +112,14 @@ public class CarVisual : MeshedGameObject, IDisposable
 
     public override void GameTick(IStage? stage = null)
     {
+        // IMPORTANT: call base first to snapshot the OLD position into PreviousState
+        // for interpolation. Then sync the NEW position from the backend car.
+        base.GameTick(stage);
+
         // Sync position/rotation from backend car
         Position = _car.Position;
         Rotation = _car.Rotation;
 
-        base.GameTick(stage);
         foreach (var wheel in _wheels)
         {
             wheel.GameTick(stage);
