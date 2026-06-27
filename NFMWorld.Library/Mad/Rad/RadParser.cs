@@ -109,6 +109,10 @@ public partial class RadParser
 
     // phy-addons wheel meshes (declared after the wheel, wheel has )c suffix)
     private UnlimitedArray<List<Rad3dPoly>?> _phyAddonsWheelMeshes = [];
+    
+    // tracks which wheels have their own side-specific meshes (wheel(N) where N != -1).
+    // these wheels do NOT need X-axis mirroring because the meshes are already modeled for their side.
+    private HashSet<int> _wheelsWithSpecificPolys = [];
 
     private List<Rad3dPoly> _currentPolys;
 
@@ -159,9 +163,17 @@ public partial class RadParser
         {
             if (parser._phyAddonsWheelMeshes[i] is { } wheelMesh)
             {
+                // Wheels with their own side-specific meshes (wheel(N)) are already modeled
+                // for their target side and do NOT need X-axis mirroring.
+                // Wheels without specific meshes use the shared generic mesh, which is
+                // modeled for the right side and must be mirrored for left-side wheels.
+                var shouldMirrorX = parser._wheels[i].Position.X < 0
+                    && !parser._wheelsWithSpecificPolys.Contains(i);
                 parser._wheels[i] = parser._wheels[i] with
                 {
-                    Polys = wheelMesh.ToArray()
+                    Polys = shouldMirrorX
+                        ? wheelMesh.Select(poly => poly.WithPoints(poly.Points.Select(p => p with { X = -p.X }).ToArray(), null)).ToArray()
+                        : wheelMesh.ToArray()
                 };
             }
         }
@@ -282,7 +294,7 @@ public partial class RadParser
         else if (line.StartsWith("handb(")) _stats = _stats with { Handb = BracketParser.GetNumber<int>(line) };
         else if (line.StartsWith("airs(")) _stats = _stats with { Airs = BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("airc(")) _stats = _stats with { Airc = BracketParser.GetNumber<int>(line) };
-        else if (line.StartsWith("turn(")) _stats = _stats with { Turn = BracketParser.GetNumber<int>(line) };
+        else if (line.StartsWith("turn(")) _stats = _stats with { Turn = (int)BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("grip(")) _stats = _stats with { Grip = BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("bounce(")) _stats = _stats with { Bounce = BracketParser.GetNumber<fix64>(line) };
         else if (line.StartsWith("simag(")) _stats = _stats with { Simag = BracketParser.GetNumber<fix64>(line) };
@@ -625,12 +637,18 @@ public partial class RadParser
                     if (wheelId != -1 && _phyAddonsWheelMeshes[wheelId] is { } list)
                     {
                         list.Add(_currentPoly);
+                        // this wheel has its own side-specific mesh — it does NOT need X-axis mirroring
+                        _wheelsWithSpecificPolys.Add(wheelId);
                     }
                     else
                     {
-                        foreach (var otherList in _phyAddonsWheelMeshes)
+                        // generic wheel mesh: add to all wheels EXCEPT those that have their own specific meshes
+                        for (var wi = 0; wi < _phyAddonsWheelMeshes.Count; wi++)
                         {
-                            otherList?.Add(_currentPoly);
+                            if (!_wheelsWithSpecificPolys.Contains(wi) && _phyAddonsWheelMeshes[wi] is { } sharedList)
+                            {
+                                sharedList.Add(_currentPoly);
+                            }
                         }
                     }
                 }
