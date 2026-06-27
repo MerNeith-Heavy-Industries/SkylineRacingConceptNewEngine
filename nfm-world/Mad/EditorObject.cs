@@ -11,9 +11,16 @@ public class EditorObject : StaticMeshObject
 
     private readonly CollisionDebugMesh? _collisionDebugMesh;
 
+    private readonly MeshedGameObject[] _wheels;
+
+    public IReadOnlyList<MeshedGameObject> WheelObjects => _wheels;
+
+    public Rad3dWheelDef[] Wheels { get; }
+
     public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
         Boxes = rad.Boxes;
+        Wheels = rad.Wheels;
         if (rad.Boxes.Length > 0)
         {
             _collisionDebugMesh = new CollisionDebugMesh(rad.Boxes)
@@ -21,6 +28,11 @@ public class EditorObject : StaticMeshObject
                 Parent = this
             };
         }
+
+        Wheels = rad.Wheels;
+        _wheels = rad.Wheels
+            .Select(wheel => new WheelMeshBuilder(wheel, rad.Rims).BuildGameObject(graphicsDevice, this))
+            .ToArray();
     }
 
     public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad, f64Vector3 position, f64Euler rotation) : this(graphicsDevice, rad)
@@ -35,11 +47,36 @@ public class EditorObject : StaticMeshObject
         {
             yield return renderData;
         }
+        
+        for (var i = 0; i < _wheels.Length; i++)
+        {
+            var wheel = _wheels[i];
+            wheel.Parent = this;
+
+            foreach (var renderData in wheel.GetRenderData(lighting))
+            {
+                yield return renderData;
+            }
+        }
+    }
+
+    public override void OnBeforeRender(float alpha)
+    {
+        base.OnBeforeRender(alpha);
+        foreach (var wheel in _wheels)
+        {
+            wheel.OnBeforeRender(alpha);
+        }
     }
 
     public override void Render(Camera camera, Lighting? lighting)
     {
         base.Render(camera, lighting);
+
+        foreach (var wheel in _wheels)
+        {
+            wheel.Render(camera, lighting);
+        }
         _collisionDebugMesh?.Render(camera, lighting);
     }
 }
