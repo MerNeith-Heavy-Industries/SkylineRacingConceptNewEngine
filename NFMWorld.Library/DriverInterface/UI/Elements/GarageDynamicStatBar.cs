@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
@@ -11,33 +11,38 @@ public partial class GarageDynamicStatBar : Node
     private const float SpeedUp = 0.1f;
     private const int FullBar = 100;
 
-    [Property(OnChangedMethod = nameof(OnBarMaxWidthChanged), DefaultValue = 100)]
-    public partial int BarMaxWidth { get; set; }
-
-    private partial void OnBarMaxWidthChanged(int value)
+    [Property]
+    public int BarMaxWidth
     {
-        Width = value;
-    }
+        get;
+        set
+        {
+            field = value;
+            Width = value;
+        }
+    } = 100;
 
-    [Property(OnChangedMethod = nameof(OnBarMaxHeightChanged), DefaultValue = 10)]
-    public partial int BarHeight { get; set; }
-
-    private partial void OnBarMaxHeightChanged(int value)
+    [Property]
+    public int BarHeight
     {
-        Height = value + 28;
-    }
+        get;
+        set
+        {
+            field = value;
+            Height = value + 28;
+        }
+    } = 10;
 
     private float _currentValue = 0f;
 
     [Property]
-    public partial float TargetValue { get; set; }
+    public float TargetValue { get; set; }
 
     private float _speed = SpeedUp;
-    
-    [Property(DefaultValue = "Unknown Stat")]
-    public partial string StatName { get; set; }
 
-    private Color[] _barColors =
+    public string StatName { get; set; } = "Unknown Stat";
+
+    private static readonly Color[] BarColors =
     [
         new(255, 0, 0),
         new(128, 128, 128),
@@ -67,8 +72,8 @@ public partial class GarageDynamicStatBar : Node
 
     public GarageDynamicStatBar()
     {
-        OnBarMaxWidthChanged(BarMaxWidth);
-        OnBarMaxHeightChanged(BarHeight);
+        Width = BarMaxWidth;
+        Height = BarHeight + 28;
     }
 
     protected override void GameTick()
@@ -91,8 +96,8 @@ public partial class GarageDynamicStatBar : Node
         var x = (int)position.X;
         var y = (int)position.Y;
         
-        int multiples = 0;
-        float remaining = _currentValue;
+        var multiples = 0;
+        var remaining = _currentValue;
 
         while (remaining > FullBar)
         {
@@ -106,16 +111,16 @@ public partial class GarageDynamicStatBar : Node
         G.SetColor(new Color(255, 255, 255));
         G.DrawString(StatName, x, y - 5);
 
-        Color baseBarColorStart = multiples > 0 ? _barColors[GetColor(_barColors.Length, multiples - 1)] : new Color(0, 0, 0, 0);
-        Color baseBarColorEnd = multiples > 0 ? _barColors[GetColor(_barColors.Length, multiples)] : new Color(0, 0, 0, 0);
+        var baseBarColorStart = multiples > 0 ? BarColors[GetColor(BarColors.Length, multiples - 1)] : new Color(0, 0, 0, 0);
+        var baseBarColorEnd = multiples > 0 ? BarColors[GetColor(BarColors.Length, multiples)] : new Color(0, 0, 0, 0);
 
-        Color barColorStart = _barColors[GetColor(_barColors.Length, multiples)];
-        Color barColorEnd = _barColors[GetColor(_barColors.Length, multiples + 1)];
+        var barColorStart = BarColors[GetColor(BarColors.Length, multiples)];
+        var barColorEnd = BarColors[GetColor(BarColors.Length, multiples + 1)];
 
         G.SetLinearGradient(x, y, BarMaxWidth, BarHeight, [baseBarColorStart, baseBarColorEnd], null);
         G.FillRect(x, y, BarMaxWidth, BarHeight);
 
-        int barRatio = (int)(remaining / FullBar * 100);
+        var barRatio = (int)(remaining / FullBar * 100);
         barRatio *= BarMaxWidth / FullBar;
 
         G.SetLinearGradient(x, y, BarMaxWidth, BarHeight, [barColorStart, barColorEnd], null);
