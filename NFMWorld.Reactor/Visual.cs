@@ -1,65 +1,29 @@
 using System.Numerics;
-using WorldXaml.UI.Base;
-using WorldXaml.UI.Controls;
-using WorldXaml.UI.Yoga.Events;
+using NFMWorld.Reactor.Events;
 
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
-public abstract partial class Visual : IStyleNode, INamed
+public abstract partial class Visual : INamed
 {
-    #region Resources
-    /// <summary>
-    /// Local resource dictionary for this element.
-    /// Resource lookup walks the logical tree through IResourceNode parents.
-    /// </summary>
-    public StyleSheet? Styles { get; set; }
-
-    /// <summary>
-    /// Finds a resource by key, walking up the logical tree.
-    /// Returns null if not found.
-    /// </summary>
-    public object? FindResource(object key)
-    {
-        IStyleNode? node = this;
-        while (node is not null)
-        {
-            if (node.Styles is not null && node.Styles.TryGetValue(key, out var value))
-                return value;
-
-            node = node is Visual logical && logical.VisualParent is IStyleNode parent
-                ? parent
-                : null;
-        }
-        return null;
-    }
-    
-    #endregion
-    
     [Property]
     public string? Name { get; set; }
 
     /// <summary>
     /// List of classes applied to this element.
     /// </summary>
-    public IReadOnlyList<string> ClassList => _classes ??= [];
-    
-    private Classes? _classes;
-
-    /// <summary>
-    /// CSS-like class names applied to this element.
-    /// Styles can match on these via Selector="Type.classname".
-    /// </summary>
     [Property]
-    public string? Classes
+    public StyleSheet? StyleSheet
     {
         get;
         set
         {
             field = value;
-            _classes ??= [];
-            _classes.Clear();
-            _classes.AddRange(value);
+            UpdateStyles(field, StyleSheet);
         }
+    }
+
+    protected void UpdateStyles(StyleSheet? oldStyleSheet, StyleSheet? newStyleSheet)
+    {
     }
 
     #region Parent/child tree

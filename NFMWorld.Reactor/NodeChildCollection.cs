@@ -1,7 +1,6 @@
-using System.Collections.ObjectModel;
 using WorldXaml.ObservableCollections;
 
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 public class NodeChildCollection(Node parent) : NonSynchronizedObservableCollection<Visual>
 {

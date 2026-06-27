@@ -1,4 +1,4 @@
-namespace WorldXaml.UI.Base;
+namespace NFMWorld.Reactor;
 
 public enum LogLevel : byte
 {
@@ -8,7 +8,7 @@ public enum LogLevel : byte
     Debug
 }
 
-public static class Logging
+internal static class Logging
 {
     internal static void Info(string message) => ReactorConfig.LogMessage(LogLevel.Info, message);
     internal static void Warning(string message) => ReactorConfig.LogMessage(LogLevel.Warning, message);

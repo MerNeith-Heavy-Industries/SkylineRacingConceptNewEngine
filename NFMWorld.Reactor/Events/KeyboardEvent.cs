@@ -1,4 +1,6 @@
-namespace WorldXaml.UI.Yoga.Events;
+using WorldXaml.UI.Yoga.Events;
+
+namespace NFMWorld.Reactor.Events;
 
 public readonly record struct KeyboardEvent(
     Key KeyChar,

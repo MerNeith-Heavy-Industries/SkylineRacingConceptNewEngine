@@ -11,10 +11,9 @@ namespace NFMWorld.Reactor.Generator;
 [Generator(LanguageNames.CSharp)]
 public class ReactorNodeFactoryGenerator : IIncrementalGenerator
 {
-    private const string PropertyAttributeFqn = "global::WorldXaml.UI.Base.PropertyAttribute";
-    private const string ContentAttributeFqn = "global::WorldXaml.UI.Metadata.ContentAttribute";
-    private const string VisualFqn = "global::WorldXaml.UI.Yoga.Visual";
-
+    private const string PropertyAttributeFqn = "global::NFMWorld.Reactor.PropertyAttribute";
+    private const string ContentAttributeFqn = "global::NFMWorld.Reactor.ContentAttribute";
+    private const string VisualFqn = "global::NFMWorld.Reactor.Visual";
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(spc =>
@@ -38,7 +37,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     CollectSubtypes(compilation.Assembly.GlobalNamespace, baseType, compilation.Assembly, allTypes);
                 }
 
-                SearchAll("WorldXaml.UI.Yoga.Visual");
+                SearchAll("NFMWorld.Reactor.Visual");
 
                 var projectAssembly = compilation.Assembly;
                 var seen = new HashSet<string>();
@@ -308,7 +307,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                     sb.AppendLine($"public global::NFMWorld.Reactor.Optional<{prop.TypeFqn}> {pascalName};");
                 }
                 
-                sb.AppendLine("public override void AssignProperties(global::WorldXaml.UI.Yoga.Visual visual)");
+                sb.AppendLine("public override void AssignProperties(global::NFMWorld.Reactor.Visual visual)");
                 sb.AppendLine("{");
                 using (sb.Indent())
                 {
@@ -368,8 +367,6 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                 propMethodNames.Add("With" + prop.Name);
 
             // Shadow common VNode members with correct return type (skip if a property already provides it)
-            if (!propMethodNames.Contains("WithClasses"))
-                sb.AppendLine($"public new {nodeName} WithClasses(string? classes) {{ base.WithClasses(classes); return this; }}");
             if (!propMethodNames.Contains("WithKey"))
                 sb.AppendLine($"public new {nodeName} WithKey(object? key) {{ base.WithKey(key); return this; }}");
 
@@ -389,10 +386,10 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
             if (!type.IsAbstract)
             {
                 sb.AppendLine();
-                sb.AppendLine($"public override global::WorldXaml.UI.Yoga.Visual CreateNative() => new {type.FullName}();");
+                sb.AppendLine($"public override global::NFMWorld.Reactor.Visual CreateNative() => new {type.FullName}();");
                 
                 sb.AppendLine();
-                sb.AppendLine("public override void AssignProperties(global::WorldXaml.UI.Yoga.Visual visual, ref global::NFMWorld.Reactor.BasePropertySnapshot? propertySnapshot)");
+                sb.AppendLine("public override void AssignProperties(global::NFMWorld.Reactor.Visual visual, ref global::NFMWorld.Reactor.BasePropertySnapshot? propertySnapshot)");
                 sb.AppendLine("{");
                 using (sb.Indent())
                 {

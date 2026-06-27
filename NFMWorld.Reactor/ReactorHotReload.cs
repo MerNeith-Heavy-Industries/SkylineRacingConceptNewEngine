@@ -1,6 +1,4 @@
 ﻿#if DEBUG
-using WorldXaml.UI.Base;
-
 [assembly: System.Reflection.Metadata.MetadataUpdateHandlerAttribute(typeof(NFMWorld.Reactor.HotReloadService))]
 
 namespace NFMWorld.Reactor;

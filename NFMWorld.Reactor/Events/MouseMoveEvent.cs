@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WorldXaml.UI.Yoga.Events;
+namespace NFMWorld.Reactor.Events;
 
 public readonly record struct MouseMoveEvent(
     Vector2 Position,

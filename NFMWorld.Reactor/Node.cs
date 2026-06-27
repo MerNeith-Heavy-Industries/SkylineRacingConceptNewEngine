@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using WorldXaml.UI.Base;
-using WorldXaml.UI.Yoga.Events;
+using NFMWorld.DriverInterface;
+using NFMWorld.Reactor.Events;
 using Yoga;
 
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 // ReSharper disable InconsistentNaming
 /// <summary>
@@ -623,7 +623,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.FlexBasis = value.Scale(ReactorG.Scale);
+            NodeInternal.FlexBasis = value.Scale(G.Scale);
         }
     } = MeasurementFlexBasis.Undefined;
 
@@ -755,7 +755,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Left = value.Scale(ReactorG.Scale);
+            NodeInternal.Left = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -769,7 +769,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Top = value.Scale(ReactorG.Scale);
+            NodeInternal.Top = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -783,7 +783,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Right = value.Scale(ReactorG.Scale);
+            NodeInternal.Right = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -797,7 +797,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Bottom = value.Scale(ReactorG.Scale);
+            NodeInternal.Bottom = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -960,7 +960,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MarginTop = value.Scale(ReactorG.Scale);
+            NodeInternal.MarginTop = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -974,7 +974,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MarginBottom = value.Scale(ReactorG.Scale);
+            NodeInternal.MarginBottom = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -988,7 +988,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MarginLeft = value.Scale(ReactorG.Scale);
+            NodeInternal.MarginLeft = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -1002,7 +1002,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MarginRight = value.Scale(ReactorG.Scale);
+            NodeInternal.MarginRight = value.Scale(G.Scale);
         }
     } = MeasurementMarginPosition.Undefined;
 
@@ -1265,7 +1265,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.PaddingTop = value.Scale(ReactorG.Scale);
+            NodeInternal.PaddingTop = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
 
@@ -1279,7 +1279,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.PaddingBottom = value.Scale(ReactorG.Scale);
+            NodeInternal.PaddingBottom = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
 
@@ -1293,7 +1293,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.PaddingLeft = value.Scale(ReactorG.Scale);
+            NodeInternal.PaddingLeft = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
 
@@ -1307,7 +1307,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.PaddingRight = value.Scale(ReactorG.Scale);
+            NodeInternal.PaddingRight = value.Scale(G.Scale);
         }
     } = MeasurementPadding.Undefined;
 
@@ -1455,7 +1455,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.BorderTop = (value?.Value * ReactorG.Scale) ?? YG.YGUndefined;
+            NodeInternal.BorderTop = (value?.Value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
@@ -1469,7 +1469,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.BorderBottom = (value?.Value * ReactorG.Scale) ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = (value?.Value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
@@ -1483,7 +1483,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.BorderLeft = (value?.Value * ReactorG.Scale) ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = (value?.Value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
@@ -1497,7 +1497,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.BorderRight = (value?.Value * ReactorG.Scale) ?? YG.YGUndefined;
+            NodeInternal.BorderRight = (value?.Value * G.Scale) ?? YG.YGUndefined;
         }
     }
 
@@ -1831,7 +1831,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Width = value.Scale(ReactorG.Scale);
+            NodeInternal.Width = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -1845,7 +1845,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.Height = value.Scale(ReactorG.Scale);
+            NodeInternal.Height = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -1859,7 +1859,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MinWidth = value.Scale(ReactorG.Scale);
+            NodeInternal.MinWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -1873,7 +1873,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MinHeight = value.Scale(ReactorG.Scale);
+            NodeInternal.MinHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -1887,7 +1887,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MaxWidth = value.Scale(ReactorG.Scale);
+            NodeInternal.MaxWidth = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -1901,7 +1901,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         set
         {
             field = value;
-            NodeInternal.MaxHeight = value.Scale(ReactorG.Scale);
+            NodeInternal.MaxHeight = value.Scale(G.Scale);
         }
     } = MeasurementWidthHeight.Undefined;
 
@@ -2002,7 +2002,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <returns>true if scale changed</returns>
     internal bool Rescale()
     {
-        if (Math.Abs(_lastScale - ReactorG.Scale) > 0.001f)
+        if (Math.Abs(_lastScale - G.Scale) > 0.001f)
         {
             // Update all size related properties to trigger re-calculation with new scale
 #pragma warning disable CA2245
@@ -2033,7 +2033,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             Bottom = Bottom;
 #pragma warning restore CA2245
 
-            _lastScale = ReactorG.Scale;
+            _lastScale = G.Scale;
 
             return true;
         }
@@ -2076,7 +2076,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         if (Display != Display.None && Visibility == Visibility.Visible && Opacity > 0f)
         {
             var ownOpacity = context.InheritedOpacity * Opacity;
-            ReactorG.Alpha = ownOpacity;
+            G.SetAlpha(ownOpacity);
             RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
             RenderBorder(LayoutBorderPosition, LayoutBorderSize);
             RenderContent(LayoutContentPosition, LayoutContentSize);
@@ -2084,7 +2084,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             {
                 child.Render(new RenderContext(_root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
             }
-            ReactorG.Alpha = 1f;
+            G.SetAlpha(1f);
         }
     }
 

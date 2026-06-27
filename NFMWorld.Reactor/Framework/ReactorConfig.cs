@@ -1,7 +1,7 @@
 using System.Numerics;
 using JetBrains.Annotations;
 
-namespace WorldXaml.UI.Base;
+namespace NFMWorld.Reactor;
 
 public static class ReactorConfig
 {

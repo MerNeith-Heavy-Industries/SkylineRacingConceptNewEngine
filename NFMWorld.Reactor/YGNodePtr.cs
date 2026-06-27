@@ -2,7 +2,7 @@ using System.Collections;
 using System.Numerics;
 using Yoga;
 
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 public readonly unsafe struct YGNodePtr : IDisposable, IEnumerable<YGNodePtr>
 {

@@ -1,4 +1,4 @@
-namespace WorldXaml.UI.Base;
+namespace NFMWorld.Reactor;
 
 /// <summary>
 /// <para>

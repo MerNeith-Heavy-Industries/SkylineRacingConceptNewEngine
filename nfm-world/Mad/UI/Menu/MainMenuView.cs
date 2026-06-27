@@ -6,9 +6,9 @@ using NFMWorld.DriverInterface.UI;
 using NFMWorld.Reactor;
 using NFMWorldLibrary.DriverInterface.UI.Elements;
 using WorldXaml.UI.Yoga;
-using static WorldXaml.UI.Yoga.Nodes;
+using static NFMWorld.Reactor.Nodes;
 using static NFMWorld.DriverInterface.UI.Nodes;
-using Node = WorldXaml.UI.Yoga.Node;
+using Node = NFMWorld.Reactor.Node;
 
 namespace NFMWorld.UI.Menu;
 
@@ -204,7 +204,7 @@ public class MainMenuView(
                     alignItems: Align.FlexStart,
                     gap: 15,
                     children: [
-                        ..activePage?.Items.Select((item, idx) => SolidBox(
+                        ..activePage?.Items.Select((item, idx) => PaintedBox(
                             key: idx,
                             name: "ItemRow",
                             flexDirection: FlexDirection.Row,

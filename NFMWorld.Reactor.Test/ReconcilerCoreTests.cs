@@ -1,5 +1,4 @@
-using static WorldXaml.UI.Yoga.Nodes;
-using WorldXaml.UI.Yoga;
+using static NFMWorld.Reactor.Nodes;
 
 namespace NFMWorld.Reactor.Test;
 
@@ -837,7 +836,7 @@ internal class DeferredRootChangeComponent : Component
         {
             // First render: return FlexPanel, but enqueue a state change
             // so the deferred re-render (in DrainPendingUpdates) returns Node.
-            setSwitched(true);
+            setSwitched(_ => true);
             return FlexPanel(name: "FlexRoot");
         }
         else

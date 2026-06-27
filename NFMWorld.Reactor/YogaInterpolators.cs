@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
-using WorldXaml.UI.Base;
 
-namespace WorldXaml.UI.Yoga;
+namespace NFMWorld.Reactor;
 
 internal static class YogaInterpolators
 {
