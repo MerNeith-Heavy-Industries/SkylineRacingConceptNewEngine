@@ -34,6 +34,10 @@ public class ModelEditorTab
     // Selection state
     public int SelectedPolygonIndex { get; set; } = -1;
     
+    // Wheel polygon selection
+    public int SelectedWheelIndex { get; set; } = -1;
+    public int SelectedWheelPolygonIndex { get; set; } = -1;
+    
     // Mouse drag state for camera control
     public bool IsDragging { get; set; } = false;
     public int DragStartX { get; set; } = 0;
@@ -51,6 +55,8 @@ public class ModelEditorTab
     public string PolygonEditorContent { get; set; } = "";
     public bool PolygonEditorDirty { get; set; } = false;
     public int PolygonEditorLastSelectedIndex { get; set; } = -1;
+    public bool PolygonEditorIsWheel { get; set; } = false;
+    public int PolygonEditorWheelIndex { get; set; } = -1;
     
     // Reference car overlay for scaling
     public bool ShowReferenceOverlay { get; set; } = false;
@@ -707,16 +713,28 @@ public class ModelEditorPhase : BasePhase
             {
                 if (tab.EditMode == ModelEditorTab.EditModeEnum.Polygon)
                 {
-                    var pickedIndex = PerformRayPicking(x, y, tab);
+                    var result = PerformRayPicking(x, y, tab);
                     
-                    if (pickedIndex >= 0)
+                    if (result.WheelIndex >= 0)
                     {
-                        tab.SelectedPolygonIndex = pickedIndex;
+                        // Wheel polygon was picked
+                        tab.SelectedPolygonIndex = -1;
+                        tab.SelectedWheelIndex = result.WheelIndex;
+                        tab.SelectedWheelPolygonIndex = result.PolygonIndex;
+                    }
+                    else if (result.PolygonIndex >= 0)
+                    {
+                        // Body polygon was picked
+                        tab.SelectedPolygonIndex = result.PolygonIndex;
+                        tab.SelectedWheelIndex = -1;
+                        tab.SelectedWheelPolygonIndex = -1;
                     }
                     else
                     {
                         // Clicked on background, deselect
                         tab.SelectedPolygonIndex = -1;
+                        tab.SelectedWheelIndex = -1;
+                        tab.SelectedWheelPolygonIndex = -1;
                     }
                 }
                 else if (tab.EditMode == ModelEditorTab.EditModeEnum.Collision)
@@ -737,9 +755,11 @@ public class ModelEditorPhase : BasePhase
         }
     }
 
-    private int PerformRayPicking(int screenX, int screenY, ModelEditorTab tab)
+    private readonly record struct RayPickResult(int PolygonIndex, int WheelIndex);
+
+    private RayPickResult PerformRayPicking(int screenX, int screenY, ModelEditorTab tab)
     {
-        if (tab.Object == null) return -1;
+        if (tab.Object == null) return new RayPickResult(-1, -1);
         
         var viewport = GameSparker.GraphicsDevice.Viewport;
         
@@ -800,9 +820,9 @@ public class ModelEditorPhase : BasePhase
         var rayOrigin = nearPoint;
         var rayDirection = Vector3.Normalize(farPoint - nearPoint);
         
-        // Test against all polygons
-        float closestDistance = float.MaxValue;
-        int closestPolyIndex = -1;
+        // Test against all body polygons
+        float closestBodyDistance = float.MaxValue;
+        int closestBodyPolyIndex = -1;
         
         for (int i = 0; i < tab.Object.Mesh.Polys.Length; i++)
         {
@@ -822,16 +842,60 @@ public class ModelEditorPhase : BasePhase
                 
                 if (RayIntersectsTriangle(rayOrigin, rayDirection, v0, v1, v2, out float distance))
                 {
-                    if (distance < closestDistance)
+                    if (distance < closestBodyDistance)
                     {
-                        closestDistance = distance;
-                        closestPolyIndex = i;
+                        closestBodyDistance = distance;
+                        closestBodyPolyIndex = i;
                     }
                 }
             }
         }
         
-        return closestPolyIndex;
+        // Test against all wheel polygons
+        float closestWheelDistance = float.MaxValue;
+        int closestWheelIndex = -1;
+        int closestWheelPolyIndex = -1;
+        
+        var wheelObjects = tab.Object.WheelObjects;
+        for (int wi = 0; wi < wheelObjects.Count; wi++)
+        {
+            var wheelObj = wheelObjects[wi];
+            var wheelWorld = wheelObj.MatrixWorld;
+            
+            for (int pi = 0; pi < wheelObj.Mesh.Polys.Length; pi++)
+            {
+                var poly = wheelObj.Mesh.Polys[pi];
+                
+                for (int t = 0; t < poly.Triangles.Length; t += 3)
+                {
+                    var i0 = poly.Triangles[t];
+                    var i1 = poly.Triangles[t + 1];
+                    var i2 = poly.Triangles[t + 2];
+                    
+                    var v0 = Vector3.Transform(poly.Points[i0], wheelWorld);
+                    var v1 = Vector3.Transform(poly.Points[i1], wheelWorld);
+                    var v2 = Vector3.Transform(poly.Points[i2], wheelWorld);
+                    
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, v0, v1, v2, out float distance))
+                    {
+                        if (distance < closestWheelDistance)
+                        {
+                            closestWheelDistance = distance;
+                            closestWheelIndex = wi;
+                            closestWheelPolyIndex = pi;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Return the closest hit: prefer wheel if closer, otherwise body
+        if (closestWheelIndex >= 0 && (closestBodyPolyIndex < 0 || closestWheelDistance < closestBodyDistance))
+        {
+            return new RayPickResult(closestWheelPolyIndex, closestWheelIndex);
+        }
+        
+        return new RayPickResult(closestBodyPolyIndex, -1);
     }
     
     // Möller–Trumbore ray-triangle intersection algorithm
@@ -1043,7 +1107,16 @@ public class ModelEditorPhase : BasePhase
     private void JumpToSelectedPolygonInText()
     {
         var tab = ActiveTab;
-        if (tab == null || tab.SelectedPolygonIndex < 0 || tab.Object == null) return;
+        if (tab == null || tab.Object == null) return;
+        
+        // Handle wheel polygon selection
+        if (tab.SelectedWheelIndex >= 0 && tab.SelectedWheelPolygonIndex >= 0)
+        {
+            JumpToSelectedWheelPolygonInText();
+            return;
+        }
+        
+        if (tab.SelectedPolygonIndex < 0) return;
         
         // Find the polygon in the text by searching for <p> tags and counting
         int polygonCount = 0;
@@ -1054,7 +1127,7 @@ public class ModelEditorPhase : BasePhase
         {
             // Check if we're at the start of a <p> tag
             if (i + 3 <= tab.TextContent.Length && 
-                tab.TextContent.Substring(i, 3) is "<p>" or "[p]")
+                tab.TextContent.Substring(i, 3) == "<p>")
             {
                 if (polygonCount == tab.SelectedPolygonIndex)
                 {
@@ -1065,7 +1138,7 @@ public class ModelEditorPhase : BasePhase
                     int searchPos = i + 3;
                     while (searchPos + 4 <= tab.TextContent.Length)
                     {
-                        if (tab.TextContent.Substring(searchPos, 4) is "</p>" or "[/p]")
+                        if (tab.TextContent.Substring(searchPos, 4) == "</p>")
                         {
                             selectionEnd = searchPos + 4; // Include the closing tag
                             break;
@@ -1109,12 +1182,273 @@ public class ModelEditorPhase : BasePhase
             tab.ShowPolygonEditor = true;
             tab.PolygonEditorDirty = false;
             tab.PolygonEditorLastSelectedIndex = tab.SelectedPolygonIndex; // Remember which polygon we're editing
+            tab.PolygonEditorIsWheel = false;
+            tab.PolygonEditorWheelIndex = -1;
         }
         
         // Debug output
         if (selectionStart >= 0)
         {
             Logging.Debug($"Polygon {tab.SelectedPolygonIndex + 1}: selection range {selectionStart}-{selectionEnd}");
+        }
+    }
+    
+    private void JumpToSelectedWheelPolygonInText()
+    {
+        var tab = ActiveTab;
+        if (tab == null || tab.SelectedWheelIndex < 0 || tab.SelectedWheelPolygonIndex < 0 || tab.Object == null) return;
+        
+        int selectionStart = -1;
+        int selectionEnd = -1;
+        var wheelIndex = tab.SelectedWheelIndex;
+        var polyIndex = tab.SelectedWheelPolygonIndex;
+        
+        var text = tab.TextContent;
+        
+        // First, check if this wheel uses SRC/PhyShot format (<wheel> blocks before w(...) lines)
+        // SRC/PhyShot wheel meshes are declared before the wheel and correspond 1:1 by index
+        int srcWheelBlockCount = 0;
+        int srcWheelBlockStart = -1;
+        int srcWheelBlockEnd = -1;
+        
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (i + 7 <= text.Length && text.Substring(i, 7) == "<wheel>")
+            {
+                if (srcWheelBlockCount == wheelIndex)
+                {
+                    srcWheelBlockStart = i;
+                    // Find closing </wheel>
+                    int searchPos = i + 7;
+                    while (searchPos + 8 <= text.Length)
+                    {
+                        if (text.Substring(searchPos, 8) == "</wheel>")
+                        {
+                            srcWheelBlockEnd = searchPos + 8;
+                            break;
+                        }
+                        searchPos++;
+                    }
+                    break;
+                }
+                srcWheelBlockCount++;
+            }
+            else if (i + 7 <= text.Length && text.Substring(i, 7) == "<wheel " &&
+                     text.IndexOf("radius=", i, Math.Min(30, text.Length - i)) > i)
+            {
+                // PhyShot format: <wheel radius="..." depth="...">
+                if (srcWheelBlockCount == wheelIndex)
+                {
+                    srcWheelBlockStart = i;
+                    int searchPos = i + 7;
+                    while (searchPos + 8 <= text.Length)
+                    {
+                        if (text.Substring(searchPos, 8) == "</wheel>")
+                        {
+                            srcWheelBlockEnd = searchPos + 8;
+                            break;
+                        }
+                        searchPos++;
+                    }
+                    break;
+                }
+                srcWheelBlockCount++;
+            }
+        }
+        
+        if (srcWheelBlockStart >= 0 && srcWheelBlockEnd >= 0)
+        {
+            // SRC/PhyShot format: find the Nth polygon block inside this <wheel> block.
+            // Supports both <p>/</p> and [p]/[/p] formats.
+            int polyCount = 0;
+            for (int i = srcWheelBlockStart; i < srcWheelBlockEnd && i < text.Length; i++)
+            {
+                // Check for open tag: <p> or [p]
+                if (i + 3 <= text.Length)
+                {
+                    string openTag = text.Substring(i, 3);
+                    bool isOpenTag = openTag == "<p>" || openTag == "[p]";
+                    if (isOpenTag)
+                    {
+                        if (polyCount == polyIndex)
+                        {
+                            selectionStart = i;
+                            string closeTag = openTag == "<p>" ? "</p>" : "[/p]";
+                            int searchPos = i + 3;
+                            while (searchPos + closeTag.Length <= text.Length && searchPos < srcWheelBlockEnd)
+                            {
+                                if (text.Substring(searchPos, closeTag.Length) == closeTag)
+                                {
+                                    selectionEnd = searchPos + closeTag.Length;
+                                    break;
+                                }
+                                searchPos++;
+                            }
+                            if (selectionEnd == -1 || selectionEnd > srcWheelBlockEnd)
+                                selectionEnd = srcWheelBlockEnd;
+                            break;
+                        }
+                        polyCount++;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // phy-addons format: polygons with wheel/wheel(N) markers after w(...)c lines
+            // Find the Nth w(...)c line (phy-addons wheel declaration)
+            int phyWheelCount = 0;
+            int phyWheelLineEnd = -1;
+            
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == 'w' && i + 2 < text.Length && text[i + 1] == '(')
+                {
+                    // Find the closing ) of w(...)
+                    int closeParen = text.IndexOf(')', i + 2);
+                    if (closeParen > 0 && closeParen + 1 < text.Length && text[closeParen + 1] == 'c')
+                    {
+                        // This is a phy-addons wheel: w(...)c
+                        if (phyWheelCount == wheelIndex)
+                        {
+                            phyWheelLineEnd = text.IndexOf('\n', closeParen + 1);
+                            if (phyWheelLineEnd < 0) phyWheelLineEnd = text.Length;
+                            break;
+                        }
+                        phyWheelCount++;
+                    }
+                }
+            }
+            
+            if (phyWheelLineEnd >= 0)
+            {
+                // After the w(...)c line, find polygon blocks that contain wheel or wheel(N) markers.
+                // Supports both <p>/</p> and [p]/[/p] formats.
+                int wheelPolyCount = 0;
+                
+                for (int i = phyWheelLineEnd; i < text.Length; i++)
+                {
+                    // Check for open tag: <p> or [p]
+                    int openLen = 0;
+                    if (i + 3 <= text.Length && text.Substring(i, 3) == "<p>")
+                        openLen = 3;
+                    else if (i + 3 <= text.Length && text.Substring(i, 3) == "[p]")
+                        openLen = 3;
+                    
+                    if (openLen > 0)
+                    {
+                        int polyStart = i;
+                        
+                        // Find matching close tag: </p> or [/p]
+                        int polyEnd = -1;
+                        string closeTag = openLen == 3 && text[i] == '<' ? "</p>" : "[/p]";
+                        int searchPos = i + openLen;
+                        while (searchPos + closeTag.Length <= text.Length)
+                        {
+                            if (text.Substring(searchPos, closeTag.Length) == closeTag)
+                            {
+                                polyEnd = searchPos + closeTag.Length;
+                                break;
+                            }
+                            searchPos++;
+                        }
+                        
+                        if (polyEnd < 0)
+                        {
+                            // No closing tag found; skip this block
+                            i = searchPos;
+                            continue;
+                        }
+                        
+                        // Check if this block contains wheel/wheel(N) marker
+                        bool isWheelPoly = false;
+                        bool matchesWheel = false;
+                        
+                        // Check for wheel(N) — specific wheel assignment
+                        int wheelMarkerPos = text.IndexOf("wheel(", polyStart, polyEnd - polyStart);
+                        if (wheelMarkerPos > polyStart && wheelMarkerPos < polyEnd)
+                        {
+                            isWheelPoly = true;
+                            int numStart = wheelMarkerPos + 6;
+                            int numEnd = text.IndexOf(')', numStart);
+                            if (numEnd > numStart && numEnd < polyEnd)
+                            {
+                                if (int.TryParse(text.Substring(numStart, numEnd - numStart), out int parsedWheelId))
+                                {
+                                    matchesWheel = (parsedWheelId == wheelIndex);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Check for bare "wheel" (shared mesh)
+                            int bareWheelPos = text.IndexOf("wheel", polyStart, polyEnd - polyStart);
+                            if (bareWheelPos > polyStart && bareWheelPos < polyEnd)
+                            {
+                                // Make sure it's not "wheel(" 
+                                if (bareWheelPos + 5 >= polyEnd || text[bareWheelPos + 5] != '(')
+                                {
+                                    isWheelPoly = true;
+                                    // Shared mesh — belongs to all wheels without specific meshes
+                                    // Check if THIS wheel uses the shared mesh (no specific polys)
+                                    bool wheelHasSpecificPolys = false;
+                                    for (int checkI = phyWheelLineEnd; checkI < polyStart; checkI++)
+                                    {
+                                        if (text.IndexOf($"wheel({wheelIndex})", checkI, polyStart - checkI) > checkI)
+                                        {
+                                            wheelHasSpecificPolys = true;
+                                            break;
+                                        }
+                                    }
+                                    matchesWheel = !wheelHasSpecificPolys;
+                                }
+                            }
+                        }
+                        
+                        if (isWheelPoly && matchesWheel)
+                        {
+                            if (wheelPolyCount == polyIndex)
+                            {
+                                selectionStart = polyStart;
+                                selectionEnd = polyEnd;
+                                break;
+                            }
+                            wheelPolyCount++;
+                        }
+                        
+                        i = polyEnd - 1; // Continue after this block
+                        
+                        // Stop when we hit the next w(...) line (start of next wheel pair)
+                        int nextCheck = polyEnd;
+                        while (nextCheck < text.Length && (text[nextCheck] == '\n' || text[nextCheck] == '\r' || text[nextCheck] == '-'))
+                            nextCheck++;
+                        if (nextCheck < text.Length && text[nextCheck] == 'w' && 
+                            nextCheck + 1 < text.Length && text[nextCheck + 1] == '(')
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Store selection and open editor
+        tab.TextEditorSelectionStart = selectionStart;
+        tab.TextEditorSelectionEnd = selectionEnd;
+        
+        if (selectionStart >= 0 && selectionEnd >= 0 && selectionEnd <= text.Length)
+        {
+            tab.PolygonEditorContent = text.Substring(selectionStart, selectionEnd - selectionStart);
+            tab.ShowPolygonEditor = true;
+            tab.PolygonEditorDirty = false;
+            tab.PolygonEditorLastSelectedIndex = polyIndex;
+            tab.PolygonEditorIsWheel = true;
+            tab.PolygonEditorWheelIndex = wheelIndex;
+        }
+        
+        if (selectionStart >= 0)
+        {
+            Logging.Debug($"Wheel {wheelIndex + 1} Polygon {polyIndex + 1}: selection range {selectionStart}-{selectionEnd}");
         }
     }
     
@@ -1187,6 +1521,8 @@ public class ModelEditorPhase : BasePhase
             tab.ShowPolygonEditor = true;
             tab.PolygonEditorDirty = false;
             tab.PolygonEditorLastSelectedIndex = tab.SelectedCollisionIndex; // Remember which collision we're editing
+            tab.PolygonEditorIsWheel = false;
+            tab.PolygonEditorWheelIndex = -1;
         }
         
         // Debug output
@@ -1541,6 +1877,8 @@ public class ModelEditorPhase : BasePhase
                     {
                         tab.EditMode = ModelEditorTab.EditModeEnum.Collision;
                         tab.SelectedPolygonIndex = -1;
+                        tab.SelectedWheelIndex = -1;
+                        tab.SelectedWheelPolygonIndex = -1;
                     }
                     ImGui.SameLine();
                     // ImGui.TextDisabled($"({tab.Model.Boxes.Length} collision boxes)");
@@ -1549,7 +1887,28 @@ public class ModelEditorPhase : BasePhase
                 // Polygon editing UI
                 if (tab.EditMode == ModelEditorTab.EditModeEnum.Polygon)
                 {
-                    if (tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex < tab.Object.Mesh.Polys.Length)
+                    // Check for wheel polygon selection first
+                    if (tab.SelectedWheelIndex >= 0 && tab.SelectedWheelPolygonIndex >= 0 &&
+                        tab.SelectedWheelIndex < tab.Object.WheelObjects.Count &&
+                        tab.SelectedWheelPolygonIndex < tab.Object.WheelObjects[tab.SelectedWheelIndex].Mesh.Polys.Length)
+                    {
+                        var wheelObj = tab.Object.WheelObjects[tab.SelectedWheelIndex];
+                        ImGui.Text($"[ Wheel {tab.SelectedWheelIndex + 1} of {tab.Object.WheelObjects.Count}, Piece {tab.SelectedWheelPolygonIndex + 1} of {wheelObj.Mesh.Polys.Length} selected ]");
+                        ImGui.SameLine();
+                        
+                        if (ImGui.Button("Edit Polygon"))
+                        {
+                            JumpToSelectedPolygonInText();
+                        }
+                        ImGui.SameLine();
+                        
+                        if (ImGui.Button("X"))
+                        {
+                            tab.SelectedWheelIndex = -1;
+                            tab.SelectedWheelPolygonIndex = -1;
+                        }
+                    }
+                    else if (tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex < tab.Object.Mesh.Polys.Length)
                     {
                         ImGui.Text($"[ Piece {tab.SelectedPolygonIndex + 1} of {tab.Object.Mesh.Polys.Length} selected ]");
                         ImGui.SameLine();
@@ -2042,11 +2401,20 @@ public class ModelEditorPhase : BasePhase
         bool editingCollision = tab.EditMode == ModelEditorTab.EditModeEnum.Collision;
         
         // Check if user selected a different polygon/collision while editor is open
-        if (!editingCollision && tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex != tab.PolygonEditorLastSelectedIndex)
+        if (!editingCollision && !tab.PolygonEditorIsWheel && tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex != tab.PolygonEditorLastSelectedIndex)
         {
-            // Update the editor content to the newly selected polygon
+            // Update the editor content to the newly selected body polygon
             JumpToSelectedPolygonInText();
             return; // JumpToSelectedPolygonInText will refresh the window
+        }
+        else if (!editingCollision && tab.PolygonEditorIsWheel && 
+                 tab.SelectedWheelIndex >= 0 && tab.SelectedWheelPolygonIndex >= 0 &&
+                 (tab.SelectedWheelIndex != tab.PolygonEditorWheelIndex || 
+                  tab.SelectedWheelPolygonIndex != tab.PolygonEditorLastSelectedIndex))
+        {
+            // Update the editor content to the newly selected wheel polygon
+            JumpToSelectedWheelPolygonInText();
+            return;
         }
         else if (editingCollision && tab.SelectedCollisionIndex >= 0 && tab.SelectedCollisionIndex != tab.PolygonEditorLastSelectedIndex)
         {
@@ -2062,16 +2430,35 @@ public class ModelEditorPhase : BasePhase
         ImGui.SetNextWindowSize(new Vector2(600, 400), ImGuiCond.FirstUseEver);
         
         bool isOpen = tab.ShowPolygonEditor;
-        string windowTitle = editingCollision ? "Edit Collision" : "Edit Polygon";
+        string windowTitle;
+        if (editingCollision)
+            windowTitle = "Edit Collision";
+        else if (tab.PolygonEditorIsWheel)
+            windowTitle = $"Edit Wheel {tab.PolygonEditorWheelIndex + 1} Polygon";
+        else
+            windowTitle = "Edit Polygon";
         if (ImGui.Begin(windowTitle, ref isOpen, ImGuiWindowFlags.None))
         {
             if (editingCollision)
             {
                 ImGui.Text($"Editing collision {tab.SelectedCollisionIndex + 1} of {tab.Object?.Boxes.Length ?? 0}");
             }
+            else if (tab.PolygonEditorIsWheel)
+            {
+                int wheelIdx = tab.PolygonEditorWheelIndex;
+                if (wheelIdx >= 0 && wheelIdx < (tab.Object?.WheelObjects.Count ?? 0))
+                {
+                    var wheelObj = tab.Object!.WheelObjects[wheelIdx];
+                    ImGui.Text($"Editing wheel {wheelIdx + 1}, polygon {tab.PolygonEditorLastSelectedIndex + 1} of {wheelObj.Mesh.Polys.Length}");
+                }
+                else
+                {
+                    ImGui.Text($"Editing wheel polygon {tab.PolygonEditorLastSelectedIndex + 1}");
+                }
+            }
             else
             {
-                ImGui.Text($"Editing polygon {tab.SelectedPolygonIndex + 1} of {tab.Object?.Mesh.Polys.Length ?? 0}");
+                ImGui.Text($"Editing polygon {tab.PolygonEditorLastSelectedIndex + 1} of {tab.Object?.Mesh.Polys.Length ?? 0}");
             }
             ImGui.Separator();
             
@@ -2255,11 +2642,17 @@ public class ModelEditorPhase : BasePhase
         
         // Check if content is empty or whitespace (user is removing the element)
         bool editingCollision = tab.EditMode == ModelEditorTab.EditModeEnum.Collision;
-        int editedIndex = editingCollision ? tab.SelectedCollisionIndex : tab.SelectedPolygonIndex;
+        bool editingWheel = !editingCollision && tab.PolygonEditorIsWheel;
+        int editedIndex = editingCollision ? tab.SelectedCollisionIndex 
+            : editingWheel ? tab.SelectedWheelPolygonIndex 
+            : tab.SelectedPolygonIndex;
+        
+        var itemType = editingCollision ? "collision" 
+            : editingWheel ? "wheel polygon" 
+            : "polygon";
         
         if (string.IsNullOrWhiteSpace(tab.PolygonEditorContent))
         {
-            var itemType = editingCollision ? "collision" : "polygon";
             GameSparker.MessageWindow.ShowCustom("Remove Element",
                 $"Are you sure you want to remove this {itemType}?\n\nThis will delete {itemType} {editedIndex + 1} from the model.",
                 new[] { "Remove", "Cancel" },
@@ -2300,6 +2693,11 @@ public class ModelEditorPhase : BasePhase
                 {
                     tab.SelectedCollisionIndex = -1;
                 }
+                else if (tab.PolygonEditorIsWheel)
+                {
+                    tab.SelectedWheelIndex = -1;
+                    tab.SelectedWheelPolygonIndex = -1;
+                }
                 else
                 {
                     tab.SelectedPolygonIndex = -1;
@@ -2318,9 +2716,19 @@ public class ModelEditorPhase : BasePhase
                     // Find the updated collision in the text
                     JumpToSelectedCollisionInText();
                 }
+                else if (tab.PolygonEditorIsWheel)
+                {
+                    tab.SelectedPolygonIndex = -1;
+                    tab.SelectedWheelIndex = tab.PolygonEditorWheelIndex;
+                    tab.SelectedWheelPolygonIndex = editedIndex;
+                    // Find the updated wheel polygon in the text
+                    JumpToSelectedWheelPolygonInText();
+                }
                 else
                 {
                     tab.SelectedPolygonIndex = editedIndex;
+                    tab.SelectedWheelIndex = -1;
+                    tab.SelectedWheelPolygonIndex = -1;
                     // Find the updated polygon in the text
                     JumpToSelectedPolygonInText();
                 }
@@ -2426,10 +2834,17 @@ public class ModelEditorPhase : BasePhase
         }
         
         // Render selected polygon overlay with transparency
-        if (tab.EditMode == ModelEditorTab.EditModeEnum.Polygon && 
-            tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex < tab.Object.Mesh.Polys.Length)
+        if (tab.EditMode == ModelEditorTab.EditModeEnum.Polygon)
         {
-            RenderSelectionOverlay(tab);
+            if (tab.SelectedWheelIndex >= 0 && tab.SelectedWheelPolygonIndex >= 0 &&
+                tab.SelectedWheelIndex < tab.Object.WheelObjects.Count)
+            {
+                RenderWheelSelectionOverlay(tab);
+            }
+            else if (tab.SelectedPolygonIndex >= 0 && tab.SelectedPolygonIndex < tab.Object.Mesh.Polys.Length)
+            {
+                RenderSelectionOverlay(tab);
+            }
         }
         
         // Render selected collision box overlay
@@ -2479,6 +2894,57 @@ public class ModelEditorPhase : BasePhase
         {
             DepthBufferEnable = true,
             DepthBufferWriteEnable = false,  // Don't write to depth, just read
+            DepthBufferFunction = CompareFunction.LessEqual
+        };
+        GameSparker.GraphicsDevice.DepthStencilState = depthRead;
+        
+        // Render the overlay
+        overlayScene.Objects.Clear();
+        overlayScene.Objects.Add(overlayMesh);
+        overlayScene.Render(1, false, false);
+        
+        // Restore previous states
+        GameSparker.GraphicsDevice.BlendState = oldBlendState;
+        GameSparker.GraphicsDevice.DepthStencilState = oldDepthStencilState;
+    }
+    
+    private void RenderWheelSelectionOverlay(ModelEditorTab tab)
+    {
+        if (tab.Object == null || tab.SelectedWheelIndex < 0 || tab.SelectedWheelPolygonIndex < 0) return;
+        if (tab.SelectedWheelIndex >= tab.Object.WheelObjects.Count) return;
+        
+        var wheelObj = tab.Object.WheelObjects[tab.SelectedWheelIndex];
+        if (tab.SelectedWheelPolygonIndex >= wheelObj.Mesh.Polys.Length) return;
+        
+        var selectedPoly = wheelObj.Mesh.Polys[tab.SelectedWheelPolygonIndex];
+        
+        // Make it bright yellow with semi-transparency for visibility
+        var highlightPoly = selectedPoly with { 
+            Color = new Color3(255, 255, 0),
+            PolyType = PolyType.Flat
+        };
+        
+        var overlayPolys = new Rad3dPoly[] { highlightPoly };
+        
+        // Create a temporary mesh for the overlay, parented to the wheel
+        var overlayMesh = new MeshedGameObject(
+            new Mesh(GameSparker.GraphicsDevice, new Rad3d(overlayPolys, false, "wheelOverlay"))
+        )
+        {
+            Position = f64Vector3.Zero, // At wheel's local origin since parent is the wheel
+            Parent = wheelObj
+        };
+
+        // Save current blend state
+        var oldBlendState = GameSparker.GraphicsDevice.BlendState;
+        var oldDepthStencilState = GameSparker.GraphicsDevice.DepthStencilState;
+        
+        // Enable alpha blending and disable depth write (but keep depth test)
+        GameSparker.GraphicsDevice.BlendState = BlendState.AlphaBlend;
+        var depthRead = new DepthStencilState
+        {
+            DepthBufferEnable = true,
+            DepthBufferWriteEnable = false,
             DepthBufferFunction = CompareFunction.LessEqual
         };
         GameSparker.GraphicsDevice.DepthStencilState = depthRead;
