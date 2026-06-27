@@ -275,6 +275,9 @@ public class StageEditorPhase : BasePhase
     // Auto-update stage walls when pieces are placed/moved
     private bool _autoUpdateWalls = false;
     
+    // Auto-generate ground polys mesh (disable for performance with large stages)
+    private bool _autoGeneratePolys = true;
+    
     // Snapping
     private bool _snapEnabled = false;
     
@@ -1428,7 +1431,12 @@ public class StageEditorPhase : BasePhase
         ActiveTab.StageRenderer.sky = new Sky(_graphicsDevice);
         ActiveTab.StageRenderer.ground = new Ground(_graphicsDevice);
         if (ActiveTab.PolysEnabled && ActiveTab.Stage != null)
-            ActiveTab.StageRenderer.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+        {
+            if (_autoGeneratePolys)
+                ActiveTab.StageRenderer.polys = Environment.MakePolys(ActiveTab.Stage, -10000, 20000, -10000, 20000, ActiveTab.ScenePieces.Count, _graphicsDevice);
+            // else: preserve existing polys (don't touch) so manually-generated polys from the
+            //        Properties dialog survive across piece placements when auto-generate is off.
+        }
         else
             ActiveTab.StageRenderer.polys = null;
         if (ActiveTab.CloudsEnabled)
@@ -3574,6 +3582,18 @@ public class StageEditorPhase : BasePhase
             
             if (ImGui.BeginMenu("Edit"))
             {
+                ImGui.Separator();
+                bool autoPolys = _autoGeneratePolys;
+                if (ImGui.MenuItem("Auto-Generate Ground Polys", "", ref autoPolys, true))
+                {
+                    _autoGeneratePolys = autoPolys;
+                    if (_autoGeneratePolys)
+                        RecreateEnvironment();
+                }
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("When disabled, ground polys are not regenerated during piece placement.\nThis significantly speeds up editing for large stages.\nRe-enable to refresh the polys mesh.");
+
+                ImGui.Separator();
                 if (ImGui.MenuItem("Properties", "", false, ActiveTab?.Stage != null))
                 {
                     // Initialize dialog values from active tab's stored values
@@ -3647,6 +3667,11 @@ public class StageEditorPhase : BasePhase
                 }
                 ImGui.SameLine();
                 ImGui.TextDisabled($"  Yaw={ActiveTab.CameraYaw:F1}°  Pitch={ActiveTab.CameraPitch:F1}°  |  {ActiveTab.ScenePieces.Count} pieces");
+                if (!_autoGeneratePolys)
+                {
+                    ImGui.SameLine();
+                    ImGui.TextColored(new Vector4(1.0f, 0.6f, 0.1f, 1.0f), "  |  Polys: OFF");
+                }
             }
             else
             {
