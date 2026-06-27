@@ -252,7 +252,7 @@ public class MainMenuView(
                     gap: 15,
                     children: [
                         ..activePage?.Items.Select((item, idx) => PaintedBox(
-                            key: idx,
+                            key: $"{activePage.Title}::{idx}",
                             name: "ItemRow",
                             style: Styles.Button,
 
