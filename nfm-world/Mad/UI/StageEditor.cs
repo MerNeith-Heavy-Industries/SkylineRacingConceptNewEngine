@@ -4442,8 +4442,18 @@ public class StageEditorPhase : BasePhase
 
         var dragged = ActiveTab.ScenePieces[draggedIndex];
         ActiveTab.ScenePieces.RemoveAt(draggedIndex);
-        // Adjust for the removal shifting indices
-        int insertAt = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex; // TODO is this correct?
+        // Insert AFTER the target. When draggedIndex < targetIndex, the removal
+        // shifted the target left by 1, so the target's new position is targetIndex-1.
+        // Inserting at targetIndex places the dragged item right after the target.
+        // When draggedIndex > targetIndex, the target didn't shift; insert at
+        // targetIndex+1 to place after the target.
+        int insertAt = draggedIndex < targetIndex ? targetIndex : targetIndex + 1;
+        // Safety: if the key somehow still exists (e.g. duplicate from corrupted state),
+        // remove the stale entry before inserting.
+        if (ActiveTab.ScenePieces.Contains(dragged.Id))
+        {
+            ActiveTab.ScenePieces.Remove(dragged.Id);
+        }
         ActiveTab.ScenePieces.Insert(insertAt, dragged);
 
         // ── Sync group membership when dragging across groups ──────────────────
