@@ -34,33 +34,34 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
         Camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
         Camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
+
+        GameSparker.CurrentMusic = _stageMusic;
     }
 
     public override void Exit()
     {
         base.Exit();
-        GameSparker.CurrentMusic?.Unload();
+        GameSparker.CurrentMusic = null;
     }
+
+    private IRadicalMusic? _stageMusic;
 
     /// <summary>
     /// Loads a fresh stage. Each call creates a new <see cref="ClientStage"/> —
     /// stages are no longer shared between phases.
     /// </summary>
-    public virtual void LoadStage(string stageName, bool loadMusic = true)
+    public virtual void LoadStage(string stageName, bool loadMusic = true, bool reloadIfLoaded = false)
     {
         CurrentStage = new ClientStage(GraphicsDevice, stageName, CarsInRace, Camera, LightCameras);
 
         if (loadMusic && !string.IsNullOrEmpty(CurrentStage.MusicPath))
-            LoadStageMusic(reloadIfLoaded: false);
+            LoadStageMusic(reloadIfLoaded: reloadIfLoaded);
     }
 
     public virtual void LoadStageMusic(bool reloadIfLoaded = false)
     {
-        if ((reloadIfLoaded && GameSparker.CurrentMusic != null) || GameSparker.CurrentMusic == null)
+        if ((reloadIfLoaded && GameSparker.CurrentMusic != null) || _stageMusic == null)
         {
-            if (reloadIfLoaded && GameSparker.CurrentMusic != null)
-                GameSparker.CurrentMusic?.Unload();
-
             Logging.Debug("playing stage music: " + CurrentStage.MusicPath);
 
             bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath);
@@ -68,11 +69,11 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
             double tempoMul = !useRemastered ? CurrentStage.MusicTempoMul : 0d;
             double freqMul = !useRemastered ? CurrentStage.MusicFreqMul : 1d;
 
-            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
-            GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
-            GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
-            GameSparker.CurrentMusic.Play();
+            _stageMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
+            _stageMusic.SetFreqMultiplier(freqMul);
         }
+
+        GameSparker.CurrentMusic = _stageMusic;
     }
 
     public CarVisual GetCarVisual(int index)

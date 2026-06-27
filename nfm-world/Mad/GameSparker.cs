@@ -59,7 +59,22 @@ public static class GameSparker
         CurrentPhase.Enter();
     }
 
-    public static IRadicalMusic? CurrentMusic;
+    public static IRadicalMusic? CurrentMusic
+    {
+        get;
+        set
+        {
+            field?.SetPaused(true);
+
+            field = value;
+
+            if (field != null)
+            {
+                field.SetVolume(IRadicalMusic.CurrentVolume);
+                field.Play();
+            }
+        }
+    }
     /// <summary>
     /// Use remastered music (soundtrackremaster in stage files) where available.
     /// </summary>
