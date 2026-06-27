@@ -145,6 +145,39 @@ public partial class TextRun : Node
     [Property]
     public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
 
+    protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
+    {
+        base.UpdateStyles(oldStyleSheet, newStyleSheet);
+        
+        if (oldStyleSheet is { } oldStyleSheetValue)
+        {
+            if (oldStyleSheetValue.Background is not null) Background = null;
+            if (oldStyleSheetValue.Foreground is not null) Foreground = new Color(255, 255, 255);
+            if (oldStyleSheetValue.Stroke is not null) Stroke = null;
+            if (oldStyleSheetValue.FontFamily is not null) FontFamily = FontFamily.DroidSans;
+            if (oldStyleSheetValue.FontSize is not null) FontSize = 12;
+            if (oldStyleSheetValue.FontStyle is not null) FontStyle = FontStyle.Plain;
+            if (oldStyleSheetValue.BreakType is not null) BreakType = BreakType.Word;
+            if (oldStyleSheetValue.OverflowBehavior is not null) OverflowBehavior = OverflowBehavior.Stretch;
+            if (oldStyleSheetValue.HorizontalAlignment is not null) HorizontalAlignment = TextHorizontalAlignment.Left;
+            if (oldStyleSheetValue.VerticalAlignment is not null) VerticalAlignment = TextVerticalAlignment.Top;
+        }
+        
+        if (newStyleSheet is { } newStyleSheetValue)
+        {
+            if (newStyleSheetValue.Background is {} background) Background = background;
+            if (newStyleSheetValue.Foreground is {} foreground) Foreground = foreground;
+            if (newStyleSheetValue.Stroke is {} stroke) Stroke = stroke;
+            if (newStyleSheetValue.FontFamily is {} fontFamily) FontFamily = fontFamily;
+            if (newStyleSheetValue.FontSize is {} fontSize) FontSize = fontSize;
+            if (newStyleSheetValue.FontStyle is {} fontStyle) FontStyle = fontStyle;
+            if (newStyleSheetValue.BreakType is {} breakType) BreakType = breakType;
+            if (newStyleSheetValue.OverflowBehavior is {} overflowBehavior) OverflowBehavior = overflowBehavior;
+            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) HorizontalAlignment = horizontalAlignment;
+            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) VerticalAlignment = verticalAlignment;
+        }
+    }
+
     [ClientOnly]
     protected void RelayoutText(Vector2 size)
     {

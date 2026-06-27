@@ -8,6 +8,8 @@ public abstract partial class Visual : INamed
     [Property]
     public string? Name { get; set; }
 
+    private StyleSheetState _oldStyleState;
+
     /// <summary>
     /// List of classes applied to this element.
     /// </summary>
@@ -18,11 +20,33 @@ public abstract partial class Visual : INamed
         set
         {
             field = value;
-            UpdateStyles(field, StyleSheet);
+            UpdateStyleSheet(field, StyleSheet);
         }
     }
 
-    protected void UpdateStyles(StyleSheet? oldStyleSheet, StyleSheet? newStyleSheet)
+    private StyleSheetState GetSheetState()
+    {
+        var state = StyleSheetState.Normal;
+        if (IsHovered)
+            state |= StyleSheetState.Hover;
+        if (IsActive)
+            state |= StyleSheetState.Active;
+        if (IsFocused)
+            state |= StyleSheetState.Focus;
+        return state;
+    }
+
+    private void UpdateStyleSheet(StyleSheet? oldStyleSheet, StyleSheet? newStyleSheet)
+    {
+        var newState = GetSheetState();
+        if (newState != _oldStyleState)
+        {
+            UpdateStyles(oldStyleSheet?.GetStylesForState(_oldStyleState), newStyleSheet?.GetStylesForState(newState));
+            _oldStyleState = newState;
+        }
+    }
+
+    protected virtual void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
     {
     }
 
@@ -206,10 +230,40 @@ public abstract partial class Visual : INamed
     public abstract Vector2 FocusOrigin { get; }
     
     public abstract Vector2 FocusSize { get; }
-    
+
     [Property]
-    public bool IsFocused { get; set; }
-    
+    public bool IsHovered
+    {
+        get;
+        set
+        {
+            field = value;
+            UpdateStyleSheet(StyleSheet, StyleSheet);
+        }
+    }
+
+    [Property]
+    public bool IsActive
+    {
+        get;
+        set
+        {
+            field = value;
+            UpdateStyleSheet(StyleSheet, StyleSheet);
+        }
+    }
+
+    [Property]
+    public bool IsFocused
+    {
+        get;
+        set
+        {
+            field = value;
+            UpdateStyleSheet(StyleSheet, StyleSheet);
+        }
+    }
+
     [Property]
     public int TabOrder { get; set; }
 

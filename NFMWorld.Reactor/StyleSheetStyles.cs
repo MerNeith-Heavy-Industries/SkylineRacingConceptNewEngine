@@ -3,7 +3,53 @@ using NFMWorld.DriverInterface;
 
 namespace NFMWorld.Reactor;
 
-public struct StyleSheet
+[Flags]
+public enum StyleSheetState
+{
+    Normal = 0,
+    Hover = 1,
+    Active = 2,
+    Focus = 3
+}
+
+public class StyleSheet
+{
+    public StyleSheetStyles Default { get; set; }
+    public StyleSheetStyles Hover { get; set; }
+    public StyleSheetStyles Active { get; set; }
+    public StyleSheetStyles Focus { get; set; }
+
+    public static StyleSheet Merge(params ReadOnlySpan<StyleSheet> styleSheets)
+    {
+        var styleSheet = new StyleSheet();
+
+        foreach (var sheet in styleSheets)
+        {
+            styleSheet.Default = StyleSheetStyles.Merge(styleSheet.Default, sheet.Default);
+            styleSheet.Hover = StyleSheetStyles.Merge(sheet.Default, styleSheet.Hover, sheet.Hover);
+            styleSheet.Active = StyleSheetStyles.Merge(sheet.Default, styleSheet.Active, sheet.Active);
+            styleSheet.Focus = StyleSheetStyles.Merge(sheet.Default, styleSheet.Focus, sheet.Focus);
+        }
+
+        return styleSheet;
+    }
+
+    public static implicit operator StyleSheet(ReadOnlySpan<StyleSheet> styleSheets) => Merge(styleSheets);
+
+    public StyleSheetStyles GetStylesForState(StyleSheetState state)
+    {
+        return state switch
+        {
+            StyleSheetState.Normal => Default,
+            StyleSheetState.Hover => Hover,
+            StyleSheetState.Active => Active,
+            StyleSheetState.Focus => Focus,
+            _ => Default
+        };
+    }
+}
+
+public struct StyleSheetStyles
 {
     #region Node
     
@@ -368,11 +414,11 @@ public struct StyleSheet
     
      */
 
-    public static implicit operator StyleSheet(ReadOnlySpan<StyleSheet> styleSheets) => StyleSheet.Merge(styleSheets);
+    public static implicit operator StyleSheetStyles(ReadOnlySpan<StyleSheetStyles> styleSheets) => StyleSheetStyles.Merge(styleSheets);
 
-    private static StyleSheet Merge(params ReadOnlySpan<StyleSheet> styleSheets)
+    public static StyleSheetStyles Merge(params ReadOnlySpan<StyleSheetStyles> styleSheets)
     {
-        var styleSheet = new StyleSheet();
+        var styleSheet = new StyleSheetStyles();
 
         foreach (var sheet in styleSheets)
         {

@@ -36,6 +36,8 @@ public abstract class VisualVNode : VNode
     protected int? _tabOrder;
     protected bool? _isFocusable;
     protected bool? _isFocused;
+    protected bool? _isHovered;
+    protected bool? _isActive;
     // ReSharper restore InconsistentNaming
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
@@ -46,6 +48,8 @@ public abstract class VisualVNode : VNode
     public VisualVNode WithTabOrder(int value) { _tabOrder = value; return this; }
     public VisualVNode WithIsFocusable(bool value) { _isFocusable = value; return this; }
     public VisualVNode WithIsFocused(bool value) { _isFocused = value; return this; }
+    public VisualVNode WithIsHovered(bool value) { _isHovered = value; return this; }
+    public VisualVNode WithIsActive(bool value) { _isActive = value; return this; }
     
     /// <summary>
     /// Creates the native <see cref="Visual"/> type of this <see cref="VNode"/>.
