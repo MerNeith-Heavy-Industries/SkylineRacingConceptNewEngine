@@ -1253,7 +1253,7 @@ public class StageEditorPhase : BasePhase
                         }
                         else if (int.TryParse(key, out int legacyIdx) && legacyIdx >= 0 && legacyIdx < tab.ScenePieces.Count)
                         {
-                            var legacyPiece = tab.ScenePieces[legacyIdx];
+                            var legacyPiece = tab.ScenePieces.ByIndex(legacyIdx);
                             if (!resolved.Contains(legacyPiece.Id))
                                 resolved.Add(legacyPiece.Id);
                         }
@@ -4458,7 +4458,7 @@ public class StageEditorPhase : BasePhase
         int targetIndex  = ActiveTab.ScenePieces.FindIndex(p => p.Id == targetId);
         if (draggedIndex < 0 || targetIndex < 0) return;
 
-        var dragged = ActiveTab.ScenePieces[draggedIndex];
+        var dragged = ActiveTab.ScenePieces.ByIndex(draggedIndex);
         ActiveTab.ScenePieces.RemoveAt(draggedIndex);
         // Insert AFTER the target. When draggedIndex < targetIndex, the removal
         // shifted the target left by 1, so the target's new position is targetIndex-1.
@@ -5561,7 +5561,7 @@ public class StageEditorPhase : BasePhase
                     var swapPieceIdx = ActiveTab.ScenePieces.FindIndex(p => p.Id == ActiveTab.ActivePieceId);
                     if (swapPieceIdx != -1)
                     {
-                        var swapPiece = ActiveTab.ScenePieces[swapPieceIdx];
+                        var swapPiece = ActiveTab.ScenePieces.ByIndex(swapPieceIdx);
                         
                         if (part != swapPiece.Rad)
                         {
