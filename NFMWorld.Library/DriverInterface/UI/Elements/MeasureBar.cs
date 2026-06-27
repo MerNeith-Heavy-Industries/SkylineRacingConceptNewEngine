@@ -17,14 +17,14 @@ public partial class MeasureBar : Image
     protected override void RenderContent(Vector2 position, Vector2 size)
     {
         // positions of bar in image file
-        const int barX = 304;
-        const int barY = 18;
-        const int barWidth = 543;
-        const int barHeight = 49;
+        const int barX = 486;
+        const int barY = 28;
+        const int barWidth = 824;
+        const int barHeight = 78;
 
         // image file size
-        const int imgWidth = 905;
-        const int imgHeight = 87;
+        const int imgWidth = 1398;
+        const int imgHeight = 135;
 
         // layout size of the element
         var renderedWidth = size.X;
@@ -33,10 +33,10 @@ public partial class MeasureBar : Image
         base.RenderContent(position, size);
         G.SetColor(Color);
         G.FillRect(
-            (int)(position.X + (barX * (renderedWidth / imgWidth)) * Scale),
-            (int)(position.Y + (barY * (renderedHeight / imgHeight)) * Scale),
-            (int)(FillAmount * (barWidth * (renderedWidth / imgWidth)) * Scale),
-            (int)(barHeight * (renderedHeight / imgHeight) * Scale)
+            (int)MathF.Round(position.X + (barX * (renderedWidth / imgWidth)) * Scale),
+            (int)MathF.Round(position.Y + (barY * (renderedHeight / imgHeight)) * Scale),
+            (int)MathF.Round(FillAmount * (barWidth * (renderedWidth / imgWidth)) * Scale),
+            (int)MathF.Round(barHeight * (renderedHeight / imgHeight) * Scale)
         );
     }
 }
