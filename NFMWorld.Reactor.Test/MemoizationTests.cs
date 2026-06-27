@@ -333,11 +333,11 @@ public class MemoizationTests
 
     private class MemoStateComponent : Component
     {
-        private (int value, Action<int> setValue) _state;
+        private (int value, Action<Func<int, int>> setValue) _state;
         public int RenderCount { get; private set; }
         public int ExposedValue => _state.value;
 
-        public void ExposedSetValue(int v) => _state.setValue(v);
+        public void ExposedSetValue(int v) => _state.setValue(_ => v);
 
         protected override VNode Render()
         {
