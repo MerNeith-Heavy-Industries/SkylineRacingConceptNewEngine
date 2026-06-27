@@ -1054,7 +1054,7 @@ public class ModelEditorPhase : BasePhase
         {
             // Check if we're at the start of a <p> tag
             if (i + 3 <= tab.TextContent.Length && 
-                tab.TextContent.Substring(i, 3) == "<p>")
+                tab.TextContent.Substring(i, 3) is "<p>" or "[p]")
             {
                 if (polygonCount == tab.SelectedPolygonIndex)
                 {
@@ -1065,7 +1065,7 @@ public class ModelEditorPhase : BasePhase
                     int searchPos = i + 3;
                     while (searchPos + 4 <= tab.TextContent.Length)
                     {
-                        if (tab.TextContent.Substring(searchPos, 4) == "</p>")
+                        if (tab.TextContent.Substring(searchPos, 4) is "</p>" or "[/p]")
                         {
                             selectionEnd = searchPos + 4; // Include the closing tag
                             break;
