@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Base;
 using WorldXaml.UI.Yoga;
@@ -8,23 +8,21 @@ namespace NFMWorld.DriverInterface.UI;
 /// <summary>
 /// Represents a box element with solid colors for border, background, and content.
 /// </summary>
-public partial class SolidBox : FlexPanel
+public class SolidBox : FlexPanel
 {
-    [Property(DefaultValueMember = nameof(DefaultBorderColor))]
-    public partial Color BorderColor { get; set; }
-    private static partial Color DefaultBorderColor => new Color(0, 0, 0, 255);
-    [Property(DefaultValueMember = nameof(DefaultBackgroundColor))]
-    public partial Color BackgroundColor { get; set; }
-    private static partial Color DefaultBackgroundColor => new Color(150, 255, 150, 255);
+    [Property]
+    public Color BorderColor { get; set; } = new Color(0, 0, 0, 255);
+    [Property]
+    public Color BackgroundColor { get; set; } = new Color(150, 255, 150, 255);
 
     [Property]
-    public partial int BorderTopLeftRadius { get; set; }
+    public int BorderTopLeftRadius { get; set; }
     [Property]
-    public partial int BorderTopRightRadius { get; set; }
+    public int BorderTopRightRadius { get; set; }
     [Property]
-    public partial int BorderBottomLeftRadius { get; set; }
+    public int BorderBottomLeftRadius { get; set; }
     [Property]
-    public partial int BorderBottomRightRadius { get; set; }
+    public int BorderBottomRightRadius { get; set; }
 
     [ClientOnly]
     protected override void RenderBackground(Vector2 position, Vector2 size)
