@@ -138,14 +138,16 @@ public abstract class Component
     /// Declare a state variable. Returns the current value and a setter.
     /// Calling the setter schedules a re-render.
     /// </summary>
-    protected (T value, Action<T> setValue) UseState<T>(T initialValue, IEqualityComparer<T>? comparer = null)
+    protected (T value, Action<Func<T, T>> setValue) UseState<T>(T initialValue, IEqualityComparer<T>? comparer = null)
     {
         VerifyReconciler();
 
         var box = ValidateHook<StateBox<T>>() ?? AddHook(new StateBox<T>(initialValue, comparer ?? EqualityComparer<T>.Default));
         
-        return (box.Value, newValue =>
+        return (box.Value, newValueFactory =>
         {
+            var newValue = newValueFactory(box.Value);
+            
             if (box.Comparer.Equals(box.Value, newValue)) return;
             box.Value = newValue;
             Update();
@@ -223,7 +225,25 @@ public abstract class Component
     /// <summary>
     /// Returns a stable callback that only changes when dependencies change.
     /// </summary>
+    protected Func<T> UseCallback<T>(Func<T> callback, params object?[]? dependencies)
+        => UseMemo(() => callback, dependencies);
+
+    /// <summary>
+    /// Returns a stable callback that only changes when dependencies change.
+    /// </summary>
     protected Action<T> UseCallback<T>(Action<T> callback, params object?[]? dependencies)
+        => UseMemo(() => callback, dependencies);
+
+    /// <summary>
+    /// Returns a stable callback that only changes when dependencies change.
+    /// </summary>
+    protected Action<T1, T2> UseCallback<T1, T2>(Action<T1, T2> callback, params object?[]? dependencies)
+        => UseMemo(() => callback, dependencies);
+
+    /// <summary>
+    /// Returns a stable callback that only changes when dependencies change.
+    /// </summary>
+    protected Func<TIn, TOut> UseCallback<TIn, TOut>(Func<TIn, TOut> callback, params object?[]? dependencies)
         => UseMemo(() => callback, dependencies);
 
     /// <summary>
@@ -252,7 +272,7 @@ public abstract class Component
         {
             source.PropertyChanged += Handler;
             return () => source.PropertyChanged -= Handler;
-            void Handler(object? s, PropertyChangedEventArgs e) => setTick(tick + 1);
+            void Handler(object? s, PropertyChangedEventArgs e) => setTick(static tick => tick + 1);
         }, source);
         return source;
     }
@@ -275,7 +295,7 @@ public abstract class Component
             void Handler(object? s, PropertyChangedEventArgs e)
             {
                 if (e.PropertyName == propertyName || string.IsNullOrEmpty(e.PropertyName))
-                    setTick(tick + 1);
+                    setTick(static tick => tick + 1);
             }
         }, source, propertyName);
         return selector(source);
@@ -294,7 +314,7 @@ public abstract class Component
         {
             collection.CollectionChanged += Handler;
             return () => collection.CollectionChanged -= Handler;
-            void Handler(object? s, NotifyCollectionChangedEventArgs e) => setTick(tick + 1);
+            void Handler(object? s, NotifyCollectionChangedEventArgs e) => setTick(static tick => tick + 1);
         }, collection);
         return collection;
     }
@@ -313,7 +333,7 @@ public abstract class Component
         {
             collection.CollectionChanged += Handler;
             return () => collection.CollectionChanged -= Handler;
-            void Handler(in NotifyCollectionChangedEventArgs<T> notifyCollectionChangedEventArgs) => setTick(tick + 1);
+            void Handler(in NotifyCollectionChangedEventArgs<T> notifyCollectionChangedEventArgs) => setTick(static tick => tick + 1);
         }, collection);
         return collection;
     }
