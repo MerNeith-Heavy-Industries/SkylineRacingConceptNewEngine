@@ -39,29 +39,44 @@ public abstract partial class Visual : IStyleNode, INamed
     public string? Name { get; set; }
 
     /// <summary>
+    /// List of classes applied to this element.
+    /// </summary>
+    public IReadOnlyList<string> ClassList => _classes ??= [];
+    
+    private Classes? _classes;
+
+    /// <summary>
     /// CSS-like class names applied to this element.
     /// Styles can match on these via Selector="Type.classname".
     /// </summary>
-    public Classes Classes => field ??= new Classes();
+    [Property]
+    public string? Classes
+    {
+        get;
+        set
+        {
+            field = value;
+            _classes ??= [];
+            _classes.Clear();
+            _classes.AddRange(value);
+        }
+    }
 
     #region Parent/child tree
 
     private IVisualRoot? _root;
 
-    // Reusable snapshot buffer so dispatch methods don't allocate a new list
-    // every time VisualChildren is iterated. Allocated once per Visual, cleared
-    // and repopulated on each use.
-    private List<Visual>? _childSnapshot;
-
     /// <summary>
     /// Raised when the control is attached to a rooted logical tree.
     /// </summary>
-    public event EventHandler<VisualTreeAttachmentEventArgs>? AttachedToVisualTree;
+    [Property]
+    public Action<VisualTreeAttachmentEventArgs>? AttachedToVisualTree { get; set; }
     
     /// <summary>
     /// Raised when the control is detached from a rooted logical tree.
     /// </summary>
-    public event EventHandler<VisualTreeAttachmentEventArgs>? DetachedFromVisualTree;
+    [Property]
+    public Action<VisualTreeAttachmentEventArgs>? DetachedFromVisualTree { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the element is attached to a rooted logical tree.
@@ -86,7 +101,7 @@ public abstract partial class Visual : IStyleNode, INamed
         _root = this as IVisualRoot;
         if (_root != null)
         {
-            Mounted.Trigger();
+            AttachedToVisualTree?.Invoke(new VisualTreeAttachmentEventArgs(_root, this, VisualParent));
         }
     }
 
@@ -94,9 +109,7 @@ public abstract partial class Visual : IStyleNode, INamed
     {
         if (_root != null)
         {
-            Mounted.Reset();
-            DetachedFromVisualTree?.Invoke(this, args);
-            Unmounted.Trigger();
+            DetachedFromVisualTree?.Invoke(args);
 
             var logicalChildren = VisualChildren;
             var logicalChildrenCount = logicalChildren.Count;
@@ -117,9 +130,7 @@ public abstract partial class Visual : IStyleNode, INamed
     {
         if (_root == null)
         {
-            Unmounted.Reset();
-            AttachedToVisualTree?.Invoke(this, args);
-            Mounted.Trigger();
+            AttachedToVisualTree?.Invoke( args);
 
             var logicalChildren = VisualChildren;
             var logicalChildrenCount = logicalChildren.Count;
@@ -244,6 +255,11 @@ public abstract partial class Visual : IStyleNode, INamed
     /// </summary>
     [Property]
     public object? Key { get; set; }
+
+    // Reusable snapshot buffer so dispatch methods don't allocate a new list
+    // every time VisualChildren is iterated. Allocated once per Visual, cleared
+    // and repopulated on each use.
+    private List<Visual>? _childSnapshot;
 
     private protected List<Visual> GetChildSnapshot()
     {
