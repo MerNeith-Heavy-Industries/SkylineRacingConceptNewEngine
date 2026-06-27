@@ -358,6 +358,77 @@ public class SomeTests {
 
 **L2 — `FixedMathSharp` updates break dependent projects.** Run all downstream test suites after any bump.
 
+### Polygon Triangulation (HoleyDiver)
+
+The `HoleyDiver` project (`HoleyDiver/Program.cs`) provides a robust polygon triangulator for non-planar 3D n-gons with holes defined by self-intersecting paths. It uses **Poly2Tri** (constrained Delaunay) as the primary triangulator with an ear-cut fallback.
+
+**Pipeline overview:**
+
+1. **Best-fit plane projection** — Compute centroid + covariance matrix → eigenvector for plane normal. Project 3D vertices to 2D via `GetProjectionBasis`. Falls back to axis-aligned projections (XY/XZ/YZ) if the best-fit plane collapses distinct 3D points.
+2. **Vertex deduplication** — Merge vertices within epsilon (`1e-5`) using `Vector2.Distance`. Build an `indexMap` from original indices → unique indices.
+3. **Region extraction** (`ExtractRegions`) — Detects holes in self-intersecting paths by finding mirrored vertex sequences. Ported from a Python reference algorithm.
+4. **Outer boundary reconstruction** — After `ExtractRegions`, the outer polygon is reconstructed from the original path by **excluding all hole vertices** (in path order). This is critical: do NOT use convex hull as it strips concave features.
+5. **Bridge vertex filtering** — Vertices shared between outer and holes (bridge points from self-intersection) are removed from hole definitions to avoid duplicate constraints in Poly2Tri.
+6. **Poly2Tri triangulation** — Outer polygon + cleaned holes passed as `Polygon` constraints. Triangles mapped back through unique→original indices.
+7. **Incomplete triangle filtering** — Only triangles with all 3 vertices successfully mapped to original indices are emitted. Poly2Tri may produce degenerate triangles when hole vertices share edges with the outer boundary.
+
+**Key types / entry point:**
+
+| Type | Role |
+|---|---|
+| `PolygonTriangulator.Triangulate(IReadOnlyList<Vector3>)` | Main entry — returns `TriangulationResult` with `Triangles`, `PlaneNormal`, `Centroid`, `RegionCount` |
+| `ExtractRegions(List<int>, List<Vector2>)` | Mirrored-sequence hole detection; returns list of poly-lines with holes marked by `-1` prefix |
+| `Poly2Tri.Polygon` / `DTSweepContext` | Constrained Delaunay triangulation |
+
+**Lessons learned:**
+
+**L1 — Convex hull destroys concave features. Never use it as an outer boundary replacement.**
+The Graham scan convex hull was initially used to "fix" incomplete outer boundaries from `ExtractRegions`. This silently removed concave indentations (e.g., the bottom indentation of a car rear panel: vertices `(19,-43)`, `(0,-45)`, `(-19,-43)` were dropped). The correct outer boundary **must** be reconstructed from the original path by filtering out hole vertices while preserving path order.
+
+**L2 — `ExtractRegions` may produce incomplete outer boundaries. Always validate and reconstruct.**
+The mirrored-sequence detection algorithm can leave the outer polygon with only a subset of vertices. The workaround: collect all vertices belonging to non-outer regions (holes), then rebuild `polyLines[0]` as `initialPoly \ holeVertices` (in original path order, with deduplication).
+
+**L3 — Poly2Tri requires clean hole definitions. Filter bridge vertices.**
+Self-intersecting path holes share "bridge" vertices with the outer polygon (the points where the path crosses itself). These must be removed from hole vertex lists before passing to Poly2Tri, otherwise the triangulator sees duplicate constraints and may fail or produce degenerate output.
+
+**L4 — Map triangles through unique→original indices carefully. Reject incomplete ones.**
+Poly2Tri works with the deduplicated unique vertex set. Each triangle vertex must be mapped: `PolygonPoint` → `uniqueVertices` index → `indexMap` → original 3D vertex index. If any of the 3 vertices fails to map (e.g., Poly2Tri created a triangle using a point not in the original set), **reject the entire triangle**. Without this filter, the triangle count can be non-integer.
+
+**L5 — The Python hole-finding algorithm was ported directly.**
+The `ExtractRegions` method is a direct C# translation of a Python reference implementation. It finds mirrored sequences in a self-intersecting path by testing all `(i,j)` pairs, walking forward from `i` and backward from `j`, measuring the length of matching vertices. When `le == 1` (mirror length 1), it checks containment via `AllPointsInPolygon` to decide whether to swap outer/hole roles. The algorithm requires `polyLines[0].Count >= 6` to continue (minimum path for a hole).
+
+**L6 — Polygon winding direction matters for Poly2Tri but is handled automatically.**
+Poly2Tri's `Polygon` constructor and `AddHole` handle winding internally. Do NOT manually reverse hole winding before passing to Poly2Tri — the library expects holes in their natural winding and will reverse them if needed.
+
+**L7 — Best-fit plane fallback is essential for near-planar or degenerate input.**
+When the covariance matrix produces a near-zero normal (length < `1e-10`), fall back to Newell's method (sum of cross products of adjacent edges). If that also fails, default to `Vector3.UnitZ`. The projection validator also checks that no two 3D points collapse to the same 2D point under the chosen projection.
+
+**L8 — Do NOT add "safety" guards to the mirrored-sequence walker.**
+The Python algorithm walks `while k0 != k1 && poly[0][k0] == poly[0][k1]`. An earlier C# implementation added `maxMatchIterations` bounds and extra `break` conditions (nextK0 == k1, k0 == nextK1) that diverged from the reference, causing subtle mismatches. The walker naturally terminates because `k0` advances forward and `k1` advances backward — they either meet or mismatch. Trust the reference algorithm.
+
+**L9 — The `le == 1` containment check differs from `le > 1`.**
+When the mirrored sequence length is exactly 1, the Python algorithm checks if all points of `polyLines[0]` are inside the new region (`AllPointsInPolygon(points0, pointsNew)`). If so, it swaps them (the new region becomes the outer). The old C# code also required `!newInsidePoly0` (an "only one contains" check), which was wrong. For `le > 1`, no containment check is performed — the new region is always treated as a hole.
+
+**L10 — The `CombineWithHoles` / ear-cut path is fallback-only.**
+`CombineWithHoles` (bridge-based hole merging for ear-cut) and `EarCutTriangulateSimple` are the fallback path used only when Poly2Tri throws. They are NOT exercised during normal operation. Changes to the primary pipeline should focus on `ExtractRegions` + Poly2Tri.
+
+**L11 — Test polygons are embedded in `Main()`.**
+Two test cases exist in `Program.Main()`: (1) a windshield-shaped polygon with 1 rectangular hole (19 vertices, planar Z≈207.4), (2) a car rear panel with 2 holes and concave bottom indentation (19 vertices, near-planar Z≈-103). Swap between them by commenting/uncommenting vertex blocks. Validate with `dotnet run 2>$null | Select-String -Pattern 'Plane|Regions|Triangles:'`.
+
+**Common gotchas:**
+
+| Gotcha | Rule |
+|---|---|
+| Convex hull for outer boundary | **Never** — reconstruct from original path minus hole vertices |
+| Duplicate vertices | Deduplicate with epsilon before region extraction |
+| Bridge vertices in holes | Filter out vertices that also appear in outer polygon |
+| Poly2Tri degenerate triangles | Check `triIndices.Count == 3` before emitting |
+| Hole marker convention | Holes are prefixed with `-1` in the poly-lines list |
+| Ear-cut fallback | Only used when Poly2Tri throws; filters triangles by centroid-in-hole test |
+| Safety guards in walker | Do NOT add `maxMatchIterations` or extra `break` conditions — trust the reference algorithm |
+| `le == 1` containment check | Check only `AllPointsInPolygon(points0, pointsNew)` — not both directions |
+| Test polygon swapping | Comment/uncomment vertex blocks in `Main()`; validate with `dotnet run` |
+
 ### NFMWorld.Reactor / VDOM
 
 **L1 — `AssignProperties` only handles properties with `[Property]` attribute.** Properties without it (like `Classes`) must be applied directly by the Reconciler.
