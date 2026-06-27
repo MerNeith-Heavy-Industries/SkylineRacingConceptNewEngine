@@ -3,6 +3,7 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using FixedMathSharp;
+using HoleyDiver;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
 
@@ -552,6 +553,8 @@ public partial class RadParser
                 }
             }
 
+            else if (line.StartsWith("phyangulation")) _currentPoly = _currentPoly with { TriangulationAlgorithm = PolygonTriangulator.TriangulationAlgorithm.Phyrexian };
+            else if (line.StartsWith("libtess")) _currentPoly = _currentPoly with { TriangulationAlgorithm = PolygonTriangulator.TriangulationAlgorithm.Libtess };
             else if (line.StartsWith("glass")) _currentPoly = _currentPoly with { PolyType = PolyType.Glass };
             else if (line.StartsWith("lightBrake")) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
             else if (line.StartsWith("lightB")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
