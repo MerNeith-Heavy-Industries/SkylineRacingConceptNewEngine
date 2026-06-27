@@ -540,6 +540,7 @@ public class StageEditorPhase : BasePhase
 
     public override void Exit()
     {
+        base.Exit();
         _isOpen = false;
         
         // Restore walls to all stages before exiting so they appear in gameplay
