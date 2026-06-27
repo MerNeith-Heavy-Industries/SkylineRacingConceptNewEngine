@@ -272,6 +272,9 @@ public class StageEditorPhase : BasePhase
     private float _pendingPlacementYaw = 0f;  // degrees, modified by Q/E while in placement mode
     private int _pendingPlacementYOff = 0;
     
+    // Auto-update stage walls when pieces are placed/moved
+    private bool _autoUpdateWalls = false;
+    
     // Snapping
     private bool _snapEnabled = false;
     
@@ -1388,7 +1391,11 @@ public class StageEditorPhase : BasePhase
         ApplyTabWorldValuesToWorld();
         RecreateEnvironment();
         RecreateScene();
-        RebuildAllWalls();
+
+        if (_autoUpdateWalls && HasPlaceableStageGeometry())
+            AutoGenerateStageBordersFromGeometry();
+        else
+            RebuildAllWalls();
     }
     
     private void ApplyTabWorldValuesToWorld()
@@ -1787,10 +1794,13 @@ public class StageEditorPhase : BasePhase
     {
         if (ActiveTab == null) return;
 
+        // Collect all non-wall pieces (in the NFM editor, all piece types are unified in ScenePieces)
         var pieces = ActiveTab.ScenePieces.Where(p => !p.PiecePlacement.IsWall).ToList();
         if (pieces.Count == 0)
             return;
 
+        // ── Compute min/max bounds expanded by each piece's MaxRadius ──
+        // Matches the Java makeWalls logic: iterate nodes, parts, fixPoints, repairPoints, piles
         float minX = float.PositiveInfinity;
         float maxX = float.NegativeInfinity;
         float minZ = float.PositiveInfinity;
@@ -1800,7 +1810,8 @@ public class StageEditorPhase : BasePhase
         {
             float px = (float)piece.Position.X;
             float pz = (float)piece.Position.Z;
-            float radius = Math.Max(0f, piece.Rad.MaxRadius);
+            // maxR from Models.partMap in Java  ≡  Rad.MaxRadius in C#
+            float radius = piece.Rad.MaxRadius > 0 ? piece.Rad.MaxRadius : 0f;
             minX = MathF.Min(minX, px - radius);
             maxX = MathF.Max(maxX, px + radius);
             minZ = MathF.Min(minZ, pz - radius);
@@ -1811,26 +1822,29 @@ public class StageEditorPhase : BasePhase
             return;
 
         const int wallSpacing = 4800;
-        const float borderPadding = wallSpacing * 0.5f;
+        const int halfSpacing = wallSpacing / 2; // 2400 — matches the Java constant
 
-        float spanStartZ = minZ - borderPadding;
-        float spanEndZ = maxZ + borderPadding;
-        int offsetZ = (int)(MathF.Floor(spanStartZ / wallSpacing) * wallSpacing);
-        int endZ = (int)(MathF.Ceiling(spanEndZ / wallSpacing) * wallSpacing);
-        int countZ = Math.Max(1, ((endZ - offsetZ) / wallSpacing) + 1);
+        // ── X axis (top/bottom walls) — per Java makeWalls: count = ceil(span/4800) or span/4800+1, center, offset = min+2400 ──
+        int minXa = (int)MathF.Floor(minX);
+        int maxXa = (int)MathF.Ceiling(maxX);
+        int spanX = maxXa - minXa;
+        int countX = (int)(spanX / (float)wallSpacing) + 1;
+        int stageCenterX = (countX * wallSpacing - spanX) / 2;
+        minXa -= stageCenterX;
+        maxXa += stageCenterX;
+        int offsetX = minXa + halfSpacing;
 
-        float spanStartX = minX - borderPadding;
-        float spanEndX = maxX + borderPadding;
-        int offsetX = (int)(MathF.Floor(spanStartX / wallSpacing) * wallSpacing);
-        int endX = (int)(MathF.Ceiling(spanEndX / wallSpacing) * wallSpacing);
-        int countX = Math.Max(1, ((endX - offsetX) / wallSpacing) + 1);
+        // ── Z axis (left/right walls) ──
+        int minZa = (int)MathF.Floor(minZ);
+        int maxZa = (int)MathF.Ceiling(maxZ);
+        int spanZ = maxZa - minZa;
+        int countZ = (int)(spanZ / (float)wallSpacing) + 1;
+        int stageCenterZ = (countZ * wallSpacing - spanZ) / 2;
+        minZa -= stageCenterZ;
+        maxZa += stageCenterZ;
+        int offsetZ = minZa + halfSpacing;
 
-        int rightPos = (int)MathF.Round(maxX + borderPadding);
-        int leftPos = (int)MathF.Round(minX - borderPadding);
-        // Stage loader expects maxt > maxb (Ncz = maxt - maxb).
-        int topPos = (int)MathF.Round(maxZ + borderPadding);
-        int bottomPos = (int)MathF.Round(minZ - borderPadding);
-
+        // ── Assign wall IDs ──
         int nextWallId = 0;
         foreach (var piece in ActiveTab.ScenePieces)
             nextWallId = Math.Max(nextWallId, piece.Id + 1);
@@ -1839,18 +1853,22 @@ public class StageEditorPhase : BasePhase
 
         var rebuiltWalls = KeyedCollection.From<int, EditorStageWall>(w => w.Id);
 
-        var right = new EditorStageWall(WallDirection.Right, countZ, rightPos, offsetZ, nextWallId++);
-        var left = new EditorStageWall(WallDirection.Left, countZ, leftPos, offsetZ, nextWallId++);
-        var top = new EditorStageWall(WallDirection.Top, countX, topPos, offsetX, nextWallId++);
-        var bottom = new EditorStageWall(WallDirection.Bottom, countX, bottomPos, offsetX, nextWallId++);
+        // Per Java: maxl={countZ, minXa, offsetZ}  maxr={countZ, maxXa, offsetZ}
+        //           maxb={countX, minZa, offsetX}  maxt={countX, maxZa, offsetX}
+        var leftWall   = new EditorStageWall(WallDirection.Left,   countZ, minXa, offsetZ, nextWallId++);
+        var rightWall  = new EditorStageWall(WallDirection.Right,  countZ, maxXa, offsetZ, nextWallId++);
+        var bottomWall = new EditorStageWall(WallDirection.Bottom, countX, minZa, offsetX, nextWallId++);
+        var topWall    = new EditorStageWall(WallDirection.Top,    countX, maxZa, offsetX, nextWallId++);
 
-        rebuiltWalls.Add(right);
-        rebuiltWalls.Add(left);
-        rebuiltWalls.Add(top);
-        rebuiltWalls.Add(bottom);
+        rebuiltWalls.Add(leftWall);
+        rebuiltWalls.Add(rightWall);
+        rebuiltWalls.Add(bottomWall);
+        rebuiltWalls.Add(topWall);
         ActiveTab.StageWalls = rebuiltWalls;
 
-        ActiveTab.SelectedWallId = right.Id;
+        // Select the right wall by default (convention from original code)
+        ActiveTab.SelectedWallId = rightWall.Id;
+        ActiveTab.ActivePieceId = -1;
         ActiveTab.ActivePieceId = -1;
         ActiveTab.SelectedPieceIds.Clear();
         ActiveTab.HasUnsavedChanges = true;
@@ -4514,35 +4532,45 @@ public class StageEditorPhase : BasePhase
         bool hasFilter = !string.IsNullOrWhiteSpace(_hierarchySearch);
         
         // Stage Borders section
-        if (ActiveTab.StageWalls.Count > 0)
+        bool bordersOpen = ImGui.TreeNodeEx("Stage Borders", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
+        if (bordersOpen)
         {
-            bool bordersOpen = ImGui.TreeNodeEx("Stage Borders", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanFullWidth);
-            if (bordersOpen)
-            {
-                foreach (var wall in ActiveTab.StageWalls)
-                {
-                    string label = $"{wall.GetDisplayName()} ({wall.Count} walls)";
-                    if (hasFilter && !label.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    
-                    bool isSelected = wall.Id == ActiveTab.SelectedWallId;
-                    if (isSelected)
-                        ImGui.PushStyleColor(ImGuiCol.Header, new Vector4(0.26f, 0.59f, 0.98f, 0.45f));
-                    
-                    if (ImGui.Selectable($"  {label}##wall{wall.Id}", isSelected, ImGuiSelectableFlags.SpanAllColumns))
-                    {
-                        ActiveTab.SelectedWallId = wall.Id;
-                        ActiveTab.ActivePieceId = -1;
-                        ActiveTab.SelectedPieceIds.Clear();
-                    }
-                    
-                    if (isSelected)
-                        ImGui.PopStyleColor();
-                }
-                ImGui.TreePop();
-            }
+            // Auto-update checkbox — when enabled, walls are recalculated automatically on piece changes
+            bool autoWalls = _autoUpdateWalls;
+            if (ImGui.Checkbox("Auto-update when pieces placed", ref autoWalls))
+                _autoUpdateWalls = autoWalls;
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("When enabled, stage borders are automatically recalculated from placed pieces using the makeWalls algorithm.");
+
             ImGui.Spacing();
+            RenderAutoGenerateBordersButton("_hierarchy");
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+
+            foreach (var wall in ActiveTab.StageWalls)
+            {
+                string label = $"{wall.GetDisplayName()} ({wall.Count} walls)";
+                if (hasFilter && !label.Contains(_hierarchySearch, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                bool isSelected = wall.Id == ActiveTab.SelectedWallId;
+                if (isSelected)
+                    ImGui.PushStyleColor(ImGuiCol.Header, new Vector4(0.26f, 0.59f, 0.98f, 0.45f));
+
+                if (ImGui.Selectable($"  {label}##wall{wall.Id}", isSelected, ImGuiSelectableFlags.SpanAllColumns))
+                {
+                    ActiveTab.SelectedWallId = wall.Id;
+                    ActiveTab.ActivePieceId = -1;
+                    ActiveTab.SelectedPieceIds.Clear();
+                }
+
+                if (isSelected)
+                    ImGui.PopStyleColor();
+            }
+            ImGui.TreePop();
         }
+        ImGui.Spacing();
         
         // All non-wall pieces
         var allPieces = ActiveTab.ScenePieces.Where(p => !p.PiecePlacement.IsWall).ToArray();
