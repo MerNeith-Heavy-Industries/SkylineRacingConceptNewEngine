@@ -33,6 +33,57 @@ public class MainMenuView(
     Action? gameInstructions = null
 ) : Component
 {
+    public static class Colors
+    {
+        public static readonly Color Primary = new(255, 140, 0);
+        public static readonly Color Unimportant = new Color(180, 180, 180);
+        public static readonly Color Background = new Color(20, 15, 35);
+    }
+
+    public static class Styles
+    {
+        public static readonly StyleSheet Button = Styles(
+            flexDirection: FlexDirection.Row,
+            alignItems: Align.Center,
+            minWidth: 230,
+            minHeight: 35,
+            padding: Node.MeasurementMultiPadding.XY(12, 8),
+            gap: 0,
+
+            backgroundColor: Color.Transparent,
+            borderColor: Color.Transparent,
+            borderTop: 1,
+            borderLeft: 1,
+            borderRight: 1,
+            borderBottom: 1,
+            borderTopLeftRadius: 5,
+            borderTopRightRadius: 5,
+            borderBottomRightRadius: 5,
+            borderBottomLeftRadius: 5,
+        
+            hover: Styles(
+                backgroundColor: Colors.Background,
+                borderColor: Colors.Primary
+            )
+        );
+
+        public static readonly StyleSheet ButtonText = Styles(
+            fontStyle: FontStyle.Bold,
+            fontSize: 24,
+            fontFamily: FontFamily.Adventure,
+            foreground: Colors.Primary,
+            stroke: Color.Black
+        );
+
+        public static readonly StyleSheet Title = Styles(
+            fontStyle: FontStyle.Bold,
+            fontSize: 48,
+            fontFamily: FontFamily.Adventure,
+            foreground: Colors.Primary,
+            stroke: Color.Black
+        );
+    }
+
     public record MainMenuPage(string Title, ImmutableArray<MainMenuItem> Items);
 
     public record MainMenuItem(string Text, string Description, Action? OnClick, bool Hovered = false);
@@ -163,11 +214,7 @@ public class MainMenuView(
                         // Title
                         TextRun(
                             name: "TitleText",
-                            fontStyle: FontStyle.Bold,
-                            fontSize: 48,
-                            fontFamily: FontFamily.Adventure,
-                            foreground: new Color(255, 140, 0),
-                            stroke: Color.Black,
+                            style: Styles.Title,
                             text: activePage?.Title ?? "NFM WORLD?"
                         ),
 
@@ -188,7 +235,7 @@ public class MainMenuView(
                                     fontStyle: FontStyle.Bold,
                                     fontSize: 24,
                                     fontFamily: FontFamily.Adventure,
-                                    foreground: account is null ? new Color(255, 140, 0) : new Color(180, 180, 180),
+                                    foreground: account is null ? Colors.Primary : Colors.Unimportant,
                                     stroke: Color.Black,
                                     text: account is null ? "Login" : "Logout",
                                     mousePressed: account is null ? _ => login?.Invoke() : _ => logout?.Invoke()
@@ -207,38 +254,19 @@ public class MainMenuView(
                         ..activePage?.Items.Select((item, idx) => PaintedBox(
                             key: idx,
                             name: "ItemRow",
-                            flexDirection: FlexDirection.Row,
-                            alignItems: Align.Center,
-                            minWidth: 230,
-                            minHeight: 35,
-                            padding: Node.MeasurementMultiPadding.XY(12, 8),
+                            style: Styles.Button,
+
                             mouseEntered: _ => setHover(idx, true),
                             mouseLeft: _ => setHover(idx, false),
                             isFocusable: true,
                             mousePressed: _ => item.OnClick?.Invoke(),
-                            gap: 0,
-                        
-                            backgroundColor: IsHovered(idx) ? new Color(20, 15, 35) : Color.Transparent,
-                            borderColor: IsHovered(idx) ? new Color(255, 140, 0) : Color.Transparent,
-                            borderTop: 1,
-                            borderLeft: 1,
-                            borderRight: 1,
-                            borderBottom: 1,
-                            borderTopLeftRadius: 5,
-                            borderTopRightRadius: 5,
-                            borderBottomRightRadius: 5,
-                            borderBottomLeftRadius: 5,
 
                             children:
                             [
                                 // button text
                                 TextRun(
                                     name: "ButtonText",
-                                    fontStyle: FontStyle.Bold,
-                                    fontSize: 24,
-                                    fontFamily: FontFamily.Adventure,
-                                    foreground: new Color(255, 140, 0),
-                                    stroke: Color.Black,
+                                    style: Styles.ButtonText,
                                     text: item.Text
                                 )
                             ])
@@ -254,7 +282,7 @@ public class MainMenuView(
                     name: "DescriptionText",
                     fontSize: 14,
                     fontFamily: FontFamily.Adventure,
-                    foreground: new Color(255, 140, 0),
+                    foreground: Colors.Primary,
                     text: HoveredItem()?.Description ?? ""
                 ),
 
@@ -271,7 +299,7 @@ public class MainMenuView(
                             name: "AccountStatusText",
                             fontSize: 14,
                             fontFamily: FontFamily.Adventure,
-                            foreground: new Color(180, 180, 180),
+                            foreground: Colors.Unimportant,
                             text: account is null ? "Not logged in" : $"Logged in as {account.Username}"
                         )
                     ]

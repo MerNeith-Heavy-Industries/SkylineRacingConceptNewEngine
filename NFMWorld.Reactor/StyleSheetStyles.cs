@@ -26,9 +26,9 @@ public class StyleSheet
         foreach (var sheet in styleSheets)
         {
             styleSheet.Default = StyleSheetStyles.Merge(styleSheet.Default, sheet.Default);
-            styleSheet.Hover = StyleSheetStyles.Merge(sheet.Default, styleSheet.Hover, sheet.Hover);
-            styleSheet.Active = StyleSheetStyles.Merge(sheet.Default, styleSheet.Active, sheet.Active);
-            styleSheet.Focus = StyleSheetStyles.Merge(sheet.Default, styleSheet.Focus, sheet.Focus);
+            styleSheet.Hover = StyleSheetStyles.Merge(styleSheet.Hover, sheet.Hover);
+            styleSheet.Active = StyleSheetStyles.Merge(styleSheet.Active, sheet.Active);
+            styleSheet.Focus = StyleSheetStyles.Merge(styleSheet.Focus, sheet.Focus);
         }
 
         return styleSheet;
@@ -38,14 +38,14 @@ public class StyleSheet
 
     public StyleSheetStyles GetStylesForState(StyleSheetState state)
     {
-        return state switch
-        {
-            StyleSheetState.Normal => Default,
-            StyleSheetState.Hover => Hover,
-            StyleSheetState.Active => Active,
-            StyleSheetState.Focus => Focus,
-            _ => Default
-        };
+        var style = Default;
+        if (state.HasFlag(StyleSheetState.Hover))
+            style = StyleSheetStyles.Merge(style, Hover);
+        if (state.HasFlag(StyleSheetState.Active))
+            style = StyleSheetStyles.Merge(style, Active);
+        if (state.HasFlag(StyleSheetState.Focus))
+            style = StyleSheetStyles.Merge(style, Focus);
+        return style;
     }
 }
 

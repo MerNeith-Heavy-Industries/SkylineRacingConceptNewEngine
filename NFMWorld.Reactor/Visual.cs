@@ -8,19 +8,19 @@ public abstract partial class Visual : INamed
     [Property]
     public string? Name { get; set; }
 
-    private StyleSheetState _oldStyleState;
+    private StyleSheetState? _oldStyleState;
 
     /// <summary>
     /// List of classes applied to this element.
     /// </summary>
     [Property]
-    public StyleSheet? StyleSheet
+    public StyleSheet? Style
     {
         get;
         set
         {
             field = value;
-            UpdateStyleSheet(field, StyleSheet);
+            UpdateStyleSheet(field, Style);
         }
     }
 
@@ -41,7 +41,7 @@ public abstract partial class Visual : INamed
         var newState = GetSheetState();
         if (newState != _oldStyleState)
         {
-            UpdateStyles(oldStyleSheet?.GetStylesForState(_oldStyleState), newStyleSheet?.GetStylesForState(newState));
+            UpdateStyles(_oldStyleState is {} oldStyleState ? oldStyleSheet?.GetStylesForState(oldStyleState) : null, newStyleSheet?.GetStylesForState(newState));
             _oldStyleState = newState;
         }
     }
@@ -238,7 +238,7 @@ public abstract partial class Visual : INamed
         set
         {
             field = value;
-            UpdateStyleSheet(StyleSheet, StyleSheet);
+            UpdateStyleSheet(Style, Style);
         }
     }
 
@@ -249,7 +249,7 @@ public abstract partial class Visual : INamed
         set
         {
             field = value;
-            UpdateStyleSheet(StyleSheet, StyleSheet);
+            UpdateStyleSheet(Style, Style);
         }
     }
 
@@ -260,7 +260,7 @@ public abstract partial class Visual : INamed
         set
         {
             field = value;
-            UpdateStyleSheet(StyleSheet, StyleSheet);
+            UpdateStyleSheet(Style, Style);
         }
     }
 
