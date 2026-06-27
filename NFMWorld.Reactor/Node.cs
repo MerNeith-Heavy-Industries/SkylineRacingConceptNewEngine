@@ -290,7 +290,112 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     #endregion
 
     #region Style
-    
+
+    protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
+    {
+        base.UpdateStyles(oldStyleSheet, newStyleSheet);
+
+        if (oldStyleSheet is { } oldStyleSheetValue)
+        {
+            if (oldStyleSheetValue.Visibility is not null) Visibility = Visibility.Visible;
+            if (oldStyleSheetValue.Opacity is not null) Opacity = 1.0f;
+            if (oldStyleSheetValue.Direction is not null) Direction = default;
+            if (oldStyleSheetValue.FlexDirection is not null) FlexDirection = default;
+            if (oldStyleSheetValue.JustifyContent is not null) JustifyContent = default;
+            if (oldStyleSheetValue.AlignItems is not null) AlignItems = default;
+            if (oldStyleSheetValue.AlignSelf is not null) AlignSelf = default;
+            if (oldStyleSheetValue.AlignContent is not null) AlignContent = default;
+            if (oldStyleSheetValue.Position is not null) Position = default;
+            if (oldStyleSheetValue.FlexWrap is not null) FlexWrap = default;
+            if (oldStyleSheetValue.Overflow is not null) Overflow = default;
+            if (oldStyleSheetValue.Display is not null) Display = default;
+            if (oldStyleSheetValue.Flex is not null) Flex = null;
+            if (oldStyleSheetValue.FlexGrow is not null) FlexGrow = null;
+            if (oldStyleSheetValue.FlexShrink is not null) FlexShrink = null;
+            if (oldStyleSheetValue.FlexBasis is not null) FlexBasis = MeasurementFlexBasis.Undefined;
+            if (oldStyleSheetValue.Left is not null) Left = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.Top is not null) Top = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.Right is not null) Right = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.Bottom is not null) Bottom = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.Margin is not null) Margin = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.MarginTop is not null) MarginTop = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.MarginBottom is not null) MarginBottom = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.MarginLeft is not null) MarginLeft = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.MarginRight is not null) MarginRight = MeasurementMarginPosition.Undefined;
+            if (oldStyleSheetValue.Padding is not null) Padding = MeasurementPadding.Undefined;
+            if (oldStyleSheetValue.PaddingTop is not null) PaddingTop = MeasurementPadding.Undefined;
+            if (oldStyleSheetValue.PaddingBottom is not null) PaddingBottom = MeasurementPadding.Undefined;
+            if (oldStyleSheetValue.PaddingLeft is not null) PaddingLeft = MeasurementPadding.Undefined;
+            if (oldStyleSheetValue.PaddingRight is not null) PaddingRight = MeasurementPadding.Undefined;
+            if (oldStyleSheetValue.Border is not null) Border = MeasurementMultiBorder.Undefined;
+            if (oldStyleSheetValue.BorderTop is not null) BorderTop = null;
+            if (oldStyleSheetValue.BorderBottom is not null) BorderBottom = null;
+            if (oldStyleSheetValue.BorderLeft is not null) BorderLeft = null;
+            if (oldStyleSheetValue.BorderRight is not null) BorderRight = null;
+            if (oldStyleSheetValue.Gap is not null) Gap = MeasurementGap.Undefined;
+            if (oldStyleSheetValue.GapColumn is not null) GapColumn = MeasurementGap.Undefined;
+            if (oldStyleSheetValue.GapRow is not null) GapRow = MeasurementGap.Undefined;
+            if (oldStyleSheetValue.BoxSizing is not null) BoxSizing = default;
+            if (oldStyleSheetValue.Width is not null) Width = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.Height is not null) Height = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.MinWidth is not null) MinWidth = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.MinHeight is not null) MinHeight = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.MaxWidth is not null) MaxWidth = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.MaxHeight is not null) MaxHeight = MeasurementWidthHeight.Undefined;
+            if (oldStyleSheetValue.AspectRatio is not null) AspectRatio = null;
+        }
+        
+        if (newStyleSheet is { } newStyleSheetValue)
+        {
+            if (newStyleSheetValue.Visibility is { } visibility) Visibility = visibility;
+            if (newStyleSheetValue.Opacity is { } opacity) Opacity = opacity;
+            if (newStyleSheetValue.Direction is { } direction) Direction = direction;
+            if (newStyleSheetValue.FlexDirection is { } flexDirection) FlexDirection = flexDirection;
+            if (newStyleSheetValue.JustifyContent is { } justifyContent) JustifyContent = justifyContent;
+            if (newStyleSheetValue.AlignItems is { } alignItems) AlignItems = alignItems;
+            if (newStyleSheetValue.AlignSelf is { } alignSelf) AlignSelf = alignSelf;
+            if (newStyleSheetValue.AlignContent is { } alignContent) AlignContent = alignContent;
+            if (newStyleSheetValue.Position is { } position) Position = position;
+            if (newStyleSheetValue.FlexWrap is { } flexWrap) FlexWrap = flexWrap;
+            if (newStyleSheetValue.Overflow is { } overflow) Overflow = overflow;
+            if (newStyleSheetValue.Display is { } display) Display = display;
+            if (newStyleSheetValue.Flex is { } flex) Flex = flex;
+            if (newStyleSheetValue.FlexGrow is { } flexGrow) FlexGrow = flexGrow;
+            if (newStyleSheetValue.FlexShrink is { } flexShrink) FlexShrink = flexShrink;
+            if (newStyleSheetValue.FlexBasis is { } flexBasis) FlexBasis = flexBasis;
+            if (newStyleSheetValue.Left is { } left) Left = left;
+            if (newStyleSheetValue.Top is { } top) Top = top;
+            if (newStyleSheetValue.Right is { } right) Right = right;
+            if (newStyleSheetValue.Bottom is { } bottom) Bottom = bottom;
+            if (newStyleSheetValue.Margin is { } margin) Margin = margin;
+            if (newStyleSheetValue.MarginTop is { } marginTop) MarginTop = marginTop;
+            if (newStyleSheetValue.MarginBottom is { } marginBottom) MarginBottom = marginBottom;
+            if (newStyleSheetValue.MarginLeft is { } marginLeft) MarginLeft = marginLeft;
+            if (newStyleSheetValue.MarginRight is { } marginRight) MarginRight = marginRight;
+            if (newStyleSheetValue.Padding is { } padding) Padding = padding;
+            if (newStyleSheetValue.PaddingTop is { } paddingTop) PaddingTop = paddingTop;
+            if (newStyleSheetValue.PaddingBottom is { } paddingBottom) PaddingBottom = paddingBottom;
+            if (newStyleSheetValue.PaddingLeft is { } paddingLeft) PaddingLeft = paddingLeft;
+            if (newStyleSheetValue.PaddingRight is { } paddingRight) PaddingRight = paddingRight;
+            if (newStyleSheetValue.Border is { } border) Border = border;
+            if (newStyleSheetValue.BorderTop is { } borderTop) BorderTop = borderTop;
+            if (newStyleSheetValue.BorderBottom is { } borderBottom) BorderBottom = borderBottom;
+            if (newStyleSheetValue.BorderLeft is { } borderLeft) BorderLeft = borderLeft;
+            if (newStyleSheetValue.BorderRight is { } borderRight) BorderRight = borderRight;
+            if (newStyleSheetValue.Gap is { } gap) Gap = gap;
+            if (newStyleSheetValue.GapColumn is { } gapColumn) GapColumn = gapColumn;
+            if (newStyleSheetValue.GapRow is { } gapRow) GapRow = gapRow;
+            if (newStyleSheetValue.BoxSizing is { } boxSizing) BoxSizing = boxSizing;
+            if (newStyleSheetValue.Width is { } width) Width = width;
+            if (newStyleSheetValue.Height is { } height) Height = height;
+            if (newStyleSheetValue.MinWidth is { } minWidth) MinWidth = minWidth;
+            if (newStyleSheetValue.MinHeight is { } minHeight) MinHeight = minHeight;
+            if (newStyleSheetValue.MaxWidth is { } maxWidth) MaxWidth = maxWidth;
+            if (newStyleSheetValue.MaxHeight is { } maxHeight) MaxHeight = maxHeight;
+            if (newStyleSheetValue.AspectRatio is { } aspectRatio) AspectRatio = aspectRatio;
+        }
+    }
+
     /// <summary>
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
     /// </summary>
@@ -1956,9 +2061,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     #region Focus
     
-    [Property]
-    public bool IsHovered { get; set; }
-
     public override Vector2 FocusOrigin => LayoutPaddingPosition;
     public override Vector2 FocusSize => LayoutPaddingSize;
     
@@ -2215,6 +2317,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
                 ShiftKey: @event.ShiftKey,
                 RelativePosition: @event.Position - LayoutPaddingPosition
             );
+            if (IsFocusable)
+            {
+                IsActive = true;
+            }
+
             if (MousePressed != null)
             {
                 Logging.Info(
@@ -2248,6 +2355,11 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
                 ShiftKey: @event.ShiftKey,
                 RelativePosition: @event.Position - LayoutPaddingPosition
             );
+            if (IsFocusable)
+            {
+                IsActive = false;
+            }
+
             MouseReleased?.Invoke(new NodeEventArgs<MouseEvent>(relativeEvent, focusManager));
             OnMouseReleased(focusManager, relativeEvent);
         }
