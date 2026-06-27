@@ -12,7 +12,8 @@ public partial record struct CarStats
     [JsonPropertyName("handb"), MemoryPackOrder(2)] public int Handb { get; init; }
     [JsonPropertyName("airs"), MemoryPackOrder(3)] public fix64 Airs { get; init; }
     [JsonPropertyName("airc"), MemoryPackOrder(4)] public int Airc { get; init; }
-    [JsonPropertyName("turn"), MemoryPackOrder(5)] public int Turn { get; init; }
+    // ReSharper disable once InconsistentNaming
+    [JsonIgnore, MemoryPackOrder(5)] public int _deprecated_Turn { get; init; }
     [JsonPropertyName("grip"), MemoryPackOrder(6)] public fix64 Grip { get; init; }
     [JsonPropertyName("bounce"), MemoryPackOrder(7)] public fix64 Bounce { get; init; }
     [JsonPropertyName("simag"), MemoryPackOrder(8)] public fix64 Simag { get; init; }
@@ -36,6 +37,7 @@ public partial record struct CarStats
     [JsonPropertyName("roadgrip"), MemoryPackOrder(26)] public fix64? RoadGrip { get; set; }
     [JsonPropertyName("offroadgrip"), MemoryPackOrder(27)] public fix64? OffRoadGrip { get; set; }
     [JsonPropertyName("offtrackgrip"), MemoryPackOrder(28)] public fix64? OffTrackGrip { get; set; }
+    [JsonPropertyName("turn"), MemoryPackOrder(29)] public fix64 Turn { get; init; }
 
     /// <summary>
     /// Tornado Shark stats, used as a fallback if a car has incomplete or invalid stats in the rad file.
@@ -78,7 +80,7 @@ public partial record struct CarStats
         int Handb = int.MinValue,
         fix64? Airs = null,
         int Airc = int.MinValue,
-        int Turn = int.MinValue,
+        fix64? Turn = null,
         fix64? Grip = null,
         fix64? Bounce = null,
         fix64? Simag = null,
@@ -108,7 +110,7 @@ public partial record struct CarStats
         this.Handb = Handb;
         this.Airs = Airs ?? fix64.MinValue;
         this.Airc = Airc;
-        this.Turn = Turn;
+        this.Turn = Turn ?? fix64.MinValue;
         this.Grip = Grip ?? fix64.MinValue;
         this.Bounce = Bounce ?? fix64.MinValue;
         this.Simag = Simag ?? (fix64)1.3f;
@@ -145,7 +147,7 @@ public partial record struct CarStats
         else if(Handb == int.MinValue) return ValidateFail(nameof(Handb));
         else if(Airs == fix64.MinValue) return ValidateFail(nameof(Airs));
         else if(Airc == int.MinValue) return ValidateFail(nameof(Airc));
-        else if(Turn == int.MinValue) return ValidateFail(nameof(Turn));
+        else if(Turn == fix64.MinValue) return ValidateFail(nameof(Turn));
         else if(Grip == fix64.MinValue) return ValidateFail(nameof(Grip));
         else if(Bounce == fix64.MinValue) return ValidateFail(nameof(Bounce));
         //else if(Simag == fix64.MinValue) return ValidateFail(nameof(Simag));
