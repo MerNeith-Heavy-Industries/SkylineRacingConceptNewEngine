@@ -68,7 +68,6 @@ jobs:
       matrix:
         rid:
           - win-x64
-          - win-x64-v3
 
     steps:
       - name: Checkout code
@@ -100,22 +99,11 @@ jobs:
 
       - name: Publish ${{ matrix.rid }}
         run: |
-          $rid = "${{ matrix.rid }}"
-          $publishRid = $rid
-          $extraArgs = ""
-          
-          # For v3 variants, use base RID for publishing and add IlcInstructionSet
-          if ($rid.EndsWith("-v3")) {
-            $publishRid = $rid.Substring(0, $rid.Length - 3)
-            $extraArgs = "-p:IlcInstructionSet=x86-64-v3"
-          }
-          
           dotnet publish nfm-world/NFMWorld.csproj `
             -c Release `
-            -r $publishRid `
+            -r ${{ matrix.rid }} `
             -p:Version="${{ steps.version.outputs.semantic_version }}" `
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" `
-            $extraArgs `
             -o ./publish/${{ matrix.rid }} `
             -p:SelfContained=true `
             -p:PublishReadyToRun=true `
@@ -127,18 +115,9 @@ jobs:
         shell: bash
         run: |
           set -e
-          RID="${{ matrix.rid }}"
-          PUBLISH_RID="$RID"
-          EXTRA_ARGS=""
-          if [[ "$RID" == *-v3 ]]; then
-            PUBLISH_RID="${RID%-v3}"
-            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
-          fi
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
-            -r "$PUBLISH_RID" \
-            -p:PublishReadyToRun=true \
-            $EXTRA_ARGS \
+            -r "${{ matrix.rid }}" \
             -o "./publish/${{ matrix.rid }}/native"
 
       - name: Upload artifact
@@ -154,7 +133,6 @@ jobs:
       matrix:
         rid:
           - linux-x64
-          - linux-x64-v3
 
     steps:
       - name: Checkout code
@@ -228,41 +206,13 @@ jobs:
           echo "semantic_version=${SEMANTIC_VERSION}" >> $GITHUB_OUTPUT
           echo "info_version=${INFO_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Install cross-compilation dependencies
-        if: matrix.rid == 'linux-arm64'
-        run: |
-          sudo apt-get update
-          # Install ARM64 cross-compilation toolchain
-          sudo apt-get install -y clang zlib1g-dev gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu libc6-dev-arm64-cross
-
       - name: Publish ${{ matrix.rid }}
         run: |
-          RID="${{ matrix.rid }}"
-          PUBLISH_RID="$RID"
-          EXTRA_ARGS=""
-          
-          # For v3 variants, use base RID for publishing and add IlcInstructionSet
-          if [[ "$RID" == *-v3 ]]; then
-            PUBLISH_RID="${RID%-v3}"
-            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
-          fi
-          
-          if [[ "$RID" == "linux-arm64" ]]; then
-            # Set cross-compilation tools for ARM64
-            export COMPlus_CrossLinker=/usr/bin/aarch64-linux-gnu-ld
-            # Create wrapper for objcopy to use the ARM64 version
-            mkdir -p $HOME/bin
-            echo '#!/bin/bash' > $HOME/bin/objcopy
-            echo 'exec /usr/bin/aarch64-linux-gnu-objcopy "$@"' >> $HOME/bin/objcopy
-            chmod +x $HOME/bin/objcopy
-            export PATH=$HOME/bin:$PATH
-          fi
           dotnet publish nfm-world/NFMWorld.csproj \
             -c Release \
-            -r $PUBLISH_RID \
+            -r ${{ matrix.rid }} \
             -p:Version="${{ steps.version.outputs.semantic_version }}" \
             -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
-            $EXTRA_ARGS \
             -o ./publish/${{ matrix.rid }} \
             -p:SelfContained=true \
             -p:PublishReadyToRun=true \
@@ -273,18 +223,9 @@ jobs:
       - name: Publish NFMWorld.Library native library (${{ matrix.rid }})
         run: |
           set -e
-          RID="${{ matrix.rid }}"
-          PUBLISH_RID="$RID"
-          EXTRA_ARGS=""
-          if [[ "$RID" == *-v3 ]]; then
-            PUBLISH_RID="${RID%-v3}"
-            EXTRA_ARGS="-p:IlcInstructionSet=x86-64-v3"
-          fi
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
-            -r "$PUBLISH_RID" \
-            -p:PublishReadyToRun=true \
-            $EXTRA_ARGS \
+            -r "${{ matrix.rid }}" \
             -o "./publish/${{ matrix.rid }}/native"
 
       - name: Upload artifact
@@ -391,7 +332,6 @@ jobs:
             dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
               -c Release \
               -r "$RID" \
-              -p:PublishReadyToRun=true \
               -o "./publish/$RID/native"
           done
 
