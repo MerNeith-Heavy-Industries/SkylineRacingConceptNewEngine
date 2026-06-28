@@ -485,8 +485,8 @@ public class ReconcilerCoreTests
         Assert.AreEqual("TestName", root.Name);
         Assert.AreEqual("the-key", root.Key);
         Assert.AreEqual(5, root.TabOrder);
-        Assert.AreEqual(true, root.IsFocusable);
-        Assert.AreEqual(false, root.IsFocused);
+        Assert.IsTrue(root.IsFocusable);
+        Assert.IsFalse(root.IsFocused);
     }
 
     [TestMethod]
