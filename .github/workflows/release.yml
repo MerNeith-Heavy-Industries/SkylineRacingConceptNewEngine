@@ -116,6 +116,7 @@ jobs:
             $extraArgs `
             -o ./publish/${{ matrix.rid }} `
             -p:SelfContained=true `
+            -p:PublishReadyToRun=true `
             -p:IncludeNativeLibrariesForSelfExtract=false `
             -p:IncludeAllContentForSelfExtract=false `
             -p:ErrorOnDuplicatePublishOutputFiles=false
@@ -134,6 +135,7 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
+            -p:PublishReadyToRun=true \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -260,6 +262,7 @@ jobs:
             $EXTRA_ARGS \
             -o ./publish/${{ matrix.rid }} \
             -p:SelfContained=true \
+            -p:PublishReadyToRun=true \
             -p:IncludeNativeLibrariesForSelfExtract=false \
             -p:IncludeAllContentForSelfExtract=false \
             -p:ErrorOnDuplicatePublishOutputFiles=false
@@ -277,6 +280,7 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "$PUBLISH_RID" \
+            -p:PublishReadyToRun=true \
             $EXTRA_ARGS \
             -o "./publish/${{ matrix.rid }}/native"
 
@@ -375,6 +379,7 @@ jobs:
               -p:InformationalVersion="${{ steps.version.outputs.info_version }}" \
               -o ./publish/$RID \
               -p:SelfContained=true \
+              -p:PublishReadyToRun=true \
               -p:IncludeNativeLibrariesForSelfExtract=false \
               -p:IncludeAllContentForSelfExtract=false \
               -p:ErrorOnDuplicatePublishOutputFiles=false
@@ -382,6 +387,7 @@ jobs:
             dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
               -c Release \
               -r "$RID" \
+              -p:PublishReadyToRun=true \
               -o "./publish/$RID/native"
           done
 
