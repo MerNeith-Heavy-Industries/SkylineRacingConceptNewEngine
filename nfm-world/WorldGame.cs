@@ -6,7 +6,6 @@ using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Opus;
 using Maxine.Extensions;
-using Maxine.Extensions.Collections.SpanLinq;
 using Maxine.Extensions.Mathematics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
