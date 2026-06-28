@@ -11,6 +11,7 @@
     <ItemGroup>
       <ProjectReference Include="..\FNA.Math\FNA.Math.csproj" />
       <ProjectReference Include="..\LibTessDotNet\LibTessDotNet\LibTessDotNet.csproj" />
+      <ProjectReference Include="..\Poly2Tri\Poly2Tri.csproj" />
     </ItemGroup>
 
 </Project>
