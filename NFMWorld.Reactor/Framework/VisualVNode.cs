@@ -42,7 +42,9 @@ public abstract class VisualVNode : VNode
 
     // ── Shared fluent builders (Visual-level properties) ─────────────────
 
-    public VisualVNode WithStyleSheet(StyleSheet? styles) { _style = styles; return this; }
+    public VisualVNode WithStyle(StyleSheet? styles) { _style = styles; return this; }
+    public VisualVNode WithAttachedToVisualTree(Action<VisualTreeAttachmentEventArgs>? v) { _attachedToVisualTree = v; return this; }
+    public VisualVNode WithDetachedFromVisualTree(Action<VisualTreeAttachmentEventArgs>? v) { _detachedFromVisualTree = v; return this; }
     public VisualVNode WithName(string? n) { _name = n; return this; }
     public new VisualVNode WithKey(object? value) { Key = value; return this; }
     public VisualVNode WithTabOrder(int value) { _tabOrder = value; return this; }
