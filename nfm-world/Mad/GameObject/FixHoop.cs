@@ -17,12 +17,29 @@ public class FixHoop : StageObjectGameObject
 
     private VertexPositionColor[] _vertices = new VertexPositionColor[8*CntLines];
     private short[] _indices = new short[18*CntLines];
+    private DynamicVertexBuffer _vertexBuffer;
+    private DynamicIndexBuffer _indexBuffer;
 
     public FixHoop(Mesh mesh, StageObject obj) : base(mesh, obj)
     {
         _graphicsDevice = mesh.GraphicsDevice;
 
+        _vertexBuffer = new DynamicVertexBuffer(_graphicsDevice, VertexPositionColor.VertexDeclaration, _vertices.Length, BufferUsage.WriteOnly)
+        {
+            Name = "FixHoopVertexBuffer"
+        };
+        _indexBuffer = new DynamicIndexBuffer(_graphicsDevice, IndexElementSize.SixteenBits, _indices.Length, BufferUsage.WriteOnly)
+        {
+            Name = "FixHoopIndexBuffer"
+        };
+        
         MakeElectrifiedMesh();
+    }
+    
+    ~FixHoop()
+    {
+        _vertexBuffer.Dispose();
+        _indexBuffer.Dispose();
     }
 
     public bool IsSpecial { get; set; }
@@ -35,19 +52,19 @@ public class FixHoop : StageObjectGameObject
         Effects.FixHoop.Projection = camera.ProjectionMatrix;
         
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+        _graphicsDevice.Indices = _indexBuffer;
+        _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         foreach (var pass in Effects.FixHoop.CurrentTechnique.Passes)
         {
             pass.Apply();
 
-            _graphicsDevice.DrawUserIndexedPrimitives(
+            _graphicsDevice.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList,
-                _vertices,
+                0,
                 0,
                 8*CntLines,
-                _indices,
                 0,
-                6*CntLines,
-                VertexPositionColor.VertexDeclaration
+                6*CntLines
             );
         }
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -203,5 +220,7 @@ public class FixHoop : StageObjectGameObject
         {
             PrepareLine(i);
         }
+        _vertexBuffer.SetDataEXT(_vertices, SetDataOptions.Discard);
+        _indexBuffer.SetDataEXT(_indices, SetDataOptions.Discard);
     }
 }
