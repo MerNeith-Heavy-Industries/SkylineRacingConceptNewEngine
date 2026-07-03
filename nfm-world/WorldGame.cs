@@ -483,7 +483,6 @@ public class WorldGame : Game
 #endif
 
         FPSCounter.Render();
-        Console.WriteLine($"DepthStencilFormat: {GraphicsDevice.PresentationParameters.DepthStencilFormat}");
         _nvg.Render();
 
         GameSparker.Render3DOverlays();
