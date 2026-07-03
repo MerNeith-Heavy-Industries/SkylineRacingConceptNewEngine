@@ -22,6 +22,7 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
+using Sokol;
 using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
 using Keys = WorldXaml.UI.Yoga.Events.Keys;
@@ -90,6 +91,7 @@ public class WorldGame : Game
         
         Graphics = new GraphicsDeviceManager(this);
         Graphics.GraphicsProfile = GraphicsProfile.Reach;
+        Graphics.PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8;
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
 
@@ -481,7 +483,7 @@ public class WorldGame : Game
 #endif
 
         FPSCounter.Render();
-        
+        Console.WriteLine($"DepthStencilFormat: {GraphicsDevice.PresentationParameters.DepthStencilFormat}");
         _nvg.Render();
 
         GameSparker.Render3DOverlays();
@@ -512,6 +514,7 @@ public class WorldGame : Game
         NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassFx).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassOpus).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(SokolExtensions).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
         

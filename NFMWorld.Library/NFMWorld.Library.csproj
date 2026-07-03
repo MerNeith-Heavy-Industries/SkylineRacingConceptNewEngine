@@ -28,7 +28,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.2.26081.104" />
         <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
         <PackageReference Include="Sentry.Extensions.Logging" Version="6.1.0-alpha.2" />
-        <None Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
