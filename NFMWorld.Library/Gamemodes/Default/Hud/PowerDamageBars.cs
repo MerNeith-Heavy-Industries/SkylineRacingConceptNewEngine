@@ -24,8 +24,8 @@ public class PowerDamageBars : Component
             gap: 10f,
             alignItems: Align.FlexEnd,
             children: [
-                MeasureBar(fillAmount: hud.DamageFillAmount, color: hud.DamageColor, width: 176 * 1.2f, height: 16 * 1.2f, imageData: G.LoadImage("data/images/damage.dds")),
-                MeasureBar(fillAmount: hud.PowerFillAmount, color: hud.PowerColor, width: 176 * 1.2f, height: 16 * 1.2f, imageData: G.LoadImage("data/images/power.dds"))
+                MeasureBar(fillAmount: hud.DamageFillAmount, color: hud.DamageColor, width: 176 * 1.2f, height: 16 * 1.2f, imageData: G.LoadImage("data/images/damage.svg")),
+                MeasureBar(fillAmount: hud.PowerFillAmount, color: hud.PowerColor, width: 176 * 1.2f, height: 16 * 1.2f, imageData: G.LoadImage("data/images/power.svg"))
             ]
         );
     }
