@@ -16,5 +16,5 @@ public readonly partial record struct Rad3dWheelDef(
     [MemoryPackIgnore]
     public int Sparkat { get; } = (int) fix64.Round((Height / (fix64)10f) * (fix64)24.0F);
     [MemoryPackIgnore]
-    public int Ground { get; } = (int) fix64.Round(Position.Y + (fix64)13.0F * (Height / (fix64)10f));
+    public int Ground { get; } = (int) fix64.Round(Position.Y + (fix64)13.0F * (Height / (fix64)10f) + 3);
 }
