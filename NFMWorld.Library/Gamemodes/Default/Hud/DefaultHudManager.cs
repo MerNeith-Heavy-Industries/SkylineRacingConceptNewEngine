@@ -14,9 +14,9 @@ public class DefaultHudManager : UIManager, IHud
 
     private VNode[] _hudElements =
     [
+        LapTimerSplitsView(),
         CentralTextView(),
         PowerDamageBars(),
-        LapTimerSplitsView()
     ];
 
     public HudState State

@@ -20,6 +20,7 @@ public class LapTimerSplitsView : Component
             position: Position.Absolute,
             top: 0,
             left: 0,
+            bottom: 0,
             flexDirection: FlexDirection.Column,
             alignItems: Align.FlexStart,
             justifyContent: Justify.Center,
