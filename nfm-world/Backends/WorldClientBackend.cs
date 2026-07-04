@@ -18,7 +18,7 @@ public class NanoVGRenderer
 
     public NanoVGRenderer(GraphicsDevice graphicsDevice)
     {
-        _context = new NvgContext(graphicsDevice);
+        _context = new NvgContext(graphicsDevice, false);
         IBackend.Backend = new WorldClientBackend(_context);
     }
 
