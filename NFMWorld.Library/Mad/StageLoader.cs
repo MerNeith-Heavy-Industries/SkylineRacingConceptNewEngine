@@ -133,14 +133,13 @@ public partial class StageLoader
         currentGroup = ungrouped;
 
         Path = stageName;
-        //var customStagePath = "stages/" + CheckPoints.Stage + ".txt";
-        var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
+        var customStagePath = VFS.Path.Combine("data", "stages", stageName + ".txt");
         var line = "";
         int lineNumber = 0;
 
         try
         {
-            foreach (var aline in File.ReadAllLines(customStagePath))
+            foreach (var aline in VFS.ReadAllLines(customStagePath))
             {
                 line = aline.Trim();
                 lineNumber++;
