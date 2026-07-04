@@ -28,7 +28,7 @@ public class NanoVGRenderer
     }
 }
 
-internal class WorldClientBackend(NvgContext context) : IBackend
+internal sealed class WorldClientBackend(NvgContext context) : IBackend
 {
     public float Scale { get; set; } = 1;
     
@@ -77,7 +77,7 @@ internal class WorldClientBackend(NvgContext context) : IBackend
 
     public IGraphics Graphics { get; } = new NvgGraphics(context);
 
-    public class NvgGraphics : IGraphics
+    public sealed class NvgGraphics : IGraphics
     {
         private Paint _paint;
         private float layerDepth = 0.0f;
@@ -153,52 +153,44 @@ internal class WorldClientBackend(NvgContext context) : IBackend
             _context.StrokePaint(_paint);
         }
 
-        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
+        public void BeginPath()
         {
-            if (n < 1) return;
             _context.BeginPath();
-            _context.MoveTo(x[0], y[0]);
-            for (int i = 1; i < n; i++)
-            {
-                _context.LineTo(x[i], y[i]);
-            }
-            _context.ClosePath();
-            _context.Fill();
         }
 
-        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
+        public void MoveTo(float x, float y)
         {
-            if (n < 1) return;
-            _context.BeginPath();
-            _context.MoveTo(x[0], y[0]);
-            for (int i = 1; i < n; i++)
-            {
-                _context.LineTo(x[i], y[i]);
-            }
+            _context.MoveTo(x, y);
+        }
+        
+        public void LineTo(float x, float y)
+        {
+            _context.LineTo(x, y);
+        }
+
+        public void BezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y)
+        {
+            _context.BezierTo(c1x, c1y, c2x, c2y, x, y);
+        }
+
+        public void ClosePath()
+        {
             _context.ClosePath();
+        }
+
+        public void MarkHole()
+        {
+            _context.PathWinding(Solidity.Hole);
+        }
+
+        public void Stroke()
+        {
             _context.Stroke();
         }
 
-        public void FillRect(int x1, int y1, int width, int height)
+        public void Fill()
         {
-            _context.BeginPath();
-            _context.Rect(x1, y1, width, height);
             _context.Fill();
-        }
-
-        public void FillRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft)
-        {
-            _context.BeginPath();
-            _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
-            _context.Fill();
-        }
-
-        public void DrawLine(int x1, int y1, int x2, int y2)
-        {
-            _context.BeginPath();
-            _context.MoveTo(x1, y1);
-            _context.LineTo(x2, y2);
-            _context.Stroke();
         }
 
         public float Alpha
@@ -305,35 +297,6 @@ internal class WorldClientBackend(NvgContext context) : IBackend
                 y += areaHeight;
                 y -= _font.LineHeight;
             }
-        }
-
-        public void FillOval(int x, int y, int width, int height)
-        {
-            _context.BeginPath();
-            _context.Ellipse(x + width / 2f, y + height / 2f, width / 2f, height / 2f);
-            _context.Fill();
-        }
-
-        public void DrawOval(int x1, int y1, int x2, int y2)
-        {
-            _context.BeginPath();
-            _context.Ellipse(x1 + (x2 - x1) / 2f, y1 + (y2 - y1) / 2f, (x2 - x1) / 2f, (y2 - y1) / 2f);
-            _context.Stroke();
-        }
-
-        public void DrawRect(int x1, int y1, int width, int height)
-        {
-            _context.BeginPath();
-            _context.Rect(x1, y1, width, height);
-            _context.Stroke();
-        }
-
-        public void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
-            float radBottomRight, float radBottomLeft)
-        {
-            _context.BeginPath();
-            _context.RoundedRectVarying(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
-            _context.Stroke();
         }
 
         public void DrawImage(IImage image, int x, int y, int width, int height)

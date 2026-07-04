@@ -50,22 +50,6 @@ public sealed class DummyBackend : IBackend
         {
         }
 
-        public void FillPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
-        {
-        }
-
-        public void DrawPolygon(ReadOnlySpan<int> x, ReadOnlySpan<int> y, int n)
-        {
-        }
-
-        public void FillRect(int x1, int y1, int width, int height)
-        {
-        }
-
-        public void DrawLine(int x1, int y1, int x2, int y2)
-        {
-        }
-
         public float Alpha
         {
             set { }
@@ -100,27 +84,39 @@ public sealed class DummyBackend : IBackend
         {
         }
 
-        public void FillOval(int p0, int p1, int p2, int p3)
-        {
-        }
-
-        public void DrawOval(int x, int y, int width, int height)
-        {
-        }
-
-        public void FillRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei)
-        {
-        }
-
-        public void DrawRoundRect(int x, int y, int wid, int hei, int arcWid, int arcHei)
-        {
-        }
-
-        public void DrawRect(int x1, int y1, int width, int height)
-        {
-        }
-
         public void DrawImage(IImage image, int x, int y, int width, int height)
+        {
+        }
+
+        public void BeginPath()
+        {
+        }
+
+        public void MoveTo(float x, float y)
+        {
+        }
+
+        public void LineTo(float x, float y)
+        {
+        }
+
+        public void BezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y)
+        {
+        }
+
+        public void ClosePath()
+        {
+        }
+
+        public void MarkHole()
+        {
+        }
+
+        public void Stroke()
+        {
+        }
+
+        public void Fill()
         {
         }
     }
