@@ -17,8 +17,7 @@ public class PolygonTriangulator
     public enum TriangulationAlgorithm : byte
     {
         Phyrexian,
-        Libtess,
-        BlenderEarClip
+        Libtess
     }
 
     public static TriangulationResult Triangulate(IReadOnlyList<Vector3> vertices, TriangulationAlgorithm algorithm = TriangulationAlgorithm.Libtess)
@@ -84,67 +83,6 @@ public class PolygonTriangulator
             return new TriangulationResult
             {
                 Triangles = simpleTriangles,
-                PlaneNormal = normal,
-                Centroid = centroid,
-                RegionCount = 1
-            };
-        }
-        else if (algorithm == TriangulationAlgorithm.BlenderEarClip)
-        {
-            // Blender two-pass ear-clip: handles simple polygons and key-holes natively.
-            // Self-intersecting polygons may produce overlapping triangles (use Phyrexian/Libtess).
-            const float epsilon = 1e-5f;
-            var uniqueVerts = new List<Vector2>();
-            var indexMap = new List<int>(projected2D.Count);
-
-            for (int i = 0; i < projected2D.Count; i++)
-            {
-                int found = -1;
-                for (int j = 0; j < uniqueVerts.Count; j++)
-                {
-                    if (Vector2.Distance(projected2D[i], uniqueVerts[j]) < epsilon)
-                    {
-                        found = j;
-                        break;
-                    }
-                }
-
-                if (found >= 0)
-                    indexMap.Add(found);
-                else
-                {
-                    indexMap.Add(uniqueVerts.Count);
-                    uniqueVerts.Add(projected2D[i]);
-                }
-            }
-
-            var coordsArray = uniqueVerts.ToArray();
-            var blenderTris = BlenderEarClip.Triangulate(coordsArray, coordsSign: 0);
-
-            var allTris = new List<uint>();
-            foreach (var tri in blenderTris)
-            {
-                // Map unique vertex indices back to original 3D indices
-                for (int vi = 0; vi < 3; vi++)
-                {
-                    uint uniqueIdx = tri[vi];
-                    int origIdx = -1;
-                    for (int k = 0; k < indexMap.Count; k++)
-                    {
-                        if (indexMap[k] == uniqueIdx)
-                        {
-                            origIdx = k;
-                            break;
-                        }
-                    }
-                    if (origIdx >= 0)
-                        allTris.Add((uint)origIdx);
-                }
-            }
-
-            return new TriangulationResult
-            {
-                Triangles = allTris.ToArray(),
                 PlaneNormal = normal,
                 Centroid = centroid,
                 RegionCount = 1
