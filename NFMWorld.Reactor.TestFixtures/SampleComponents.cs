@@ -202,3 +202,60 @@ public class AlwaysRenderProviderComponent : Component
         return FlexPanel(children: _child);
     }
 }
+
+// ════════════════════════════════════════════════════════════════════════
+//  HUD layout test components — simulates HudHost + LapTimerSplitsView
+// ════════════════════════════════════════════════════════════════════════
+
+/// <summary>
+/// A record used as context state for HUD layout tests.
+/// </summary>
+public record HudLayoutState(int CurrentLap = 0, int TotalLaps = 0)
+{
+    public static readonly Context<HudLayoutState> Context = new(new HudLayoutState());
+}
+
+/// <summary>
+/// Simulates the HudHost pattern: provides <see cref="HudLayoutState"/> context
+/// and wraps each child in an absolutely-positioned full-viewport FlexPanel.
+/// </summary>
+public class HudHostTestComponent(HudLayoutState state, params VNode[] children) : Component
+{
+    public int RenderCount { get; private set; }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        ProvideContext(HudLayoutState.Context, state);
+        return View(flex: 1, children: [
+            ..children.Select(child =>
+                FlexPanel(position: Position.Absolute, top: 0, right: 0, left: 0, bottom: 0, children: child))
+        ]);
+    }
+}
+
+/// <summary>
+/// Simulates LapTimerSplitsView: absolutely positioned at top-left,
+/// reads <see cref="HudLayoutState"/> from context and displays lap info.
+/// </summary>
+public class LapCounterTestComponent : Component
+{
+    public int RenderCount { get; private set; }
+    public int LastCurrentLap { get; private set; }
+    public int LastTotalLaps { get; private set; }
+
+    protected override VNode Render()
+    {
+        RenderCount++;
+        var hud = UseContext(HudLayoutState.Context);
+        LastCurrentLap = hud.CurrentLap;
+        LastTotalLaps = hud.TotalLaps;
+        return FlexPanel(
+            name: $"lap:{hud.CurrentLap}/{hud.TotalLaps}",
+            position: Position.Absolute,
+            top: 0,
+            left: 0,
+            padding: 10f
+        );
+    }
+}

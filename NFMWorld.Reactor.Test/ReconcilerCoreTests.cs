@@ -1,4 +1,7 @@
 using static NFMWorld.Reactor.Nodes;
+using NFMWorld.DriverInterface;
+using NFMWorld.Reactor.TestFixtures;
+using static NFMWorld.Reactor.TestFixtures.Nodes;
 
 namespace NFMWorld.Reactor.Test;
 
@@ -812,6 +815,171 @@ public class ReconcilerCoreTests
         Assert.IsInstanceOfType(root.Children[0], typeof(Node),
             "Child should be a Node (the post-setState root type), not a leaked FlexPanel");
         Assert.AreEqual("NodeRoot", root.Children[0].Name);
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Absolute positioning survives memo + context propagation
+    // ════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Reproduces the HudHost → LapTimerSplitsView pattern where a parent
+    /// provides context and wraps children in absolutely-positioned full-viewport
+    /// FlexPanels. Verifies that the child's absolute position (top:0, left:0)
+    /// survives memo skips and state updates — catching stale-property issues
+    /// where bottom/right might leak from a prior wrapper configuration.
+    /// </summary>
+    [TestMethod]
+    public void AbsolutePositioning_SurvivesMemoAndStateUpdates()
+    {
+        IBackend.Backend = new DummyBackend();
+        var container = new FlexPanel();
+        var (dom, ctx) = TestHelpers.CreateDom();
+
+        // Wrap HudHost in a View so it becomes a child component —
+        // TryReuseComponent only works for children (not root).
+        var state1 = new HudLayoutState(CurrentLap: 1, TotalLaps: 3);
+        VNode[] elements = [LapCounterTestComponent()];
+        var host1 = HudHostTestComponent(state: state1, children: elements);
+
+        var vnode1 = View(children: host1);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
+
+        var lapInst1 = (LapCounterTestComponent)((LapCounterTestComponentNode)elements[0]).Instance!;
+        Assert.AreEqual(1, lapInst1.RenderCount);
+
+        // ── Pass 2: same inputs → memo reuses host ────────────────────
+        var host2 = HudHostTestComponent(state: state1, children: elements);
+        var vnode2 = View(children: host2);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
+
+        Assert.AreSame(((HudHostTestComponentNode)host1).Instance,
+            ((HudHostTestComponentNode)host2).Instance,
+            "HudHost should be reused when inputs unchanged");
+
+        // ── Pass 3: state changes → new host instance, child re-renders ──
+        var state3 = new HudLayoutState(CurrentLap: 2, TotalLaps: 3);
+        var host3 = HudHostTestComponent(state: state3, children: elements);
+        var vnode3 = View(children: host3);
+        dom.Mount(container, vnode3);
+        ctx.Drain();
+
+        Assert.AreNotSame(((HudHostTestComponentNode)host1).Instance,
+            ((HudHostTestComponentNode)host3).Instance,
+            "HudHost should be NEW when state changes");
+
+        var lapInst3 = (LapCounterTestComponent)((LapCounterTestComponentNode)elements[0]).Instance!;
+        Assert.AreEqual(2, lapInst3.LastCurrentLap,
+            "LapCounter should see updated context value");
+
+        // ── Layout verification ───────────────────────────────────────
+        var rootFlex = (FlexPanel)dom.Root!;
+        // tree: View → HudHost output: View → FlexPanel(relative) → wrapper(Absolute,0,0,0,0) → lapPanel
+        // tree: container → View(wrapper) → View(HudHost) → wrapper(Absolute) → lapPanel
+        var hostOutput = (FlexPanel)rootFlex.Children[0]; // View inside HudHost
+        var wrapper = (FlexPanel)hostOutput.Children[0];
+        var lapPanel = (FlexPanel)wrapper.Children[0];
+
+        Assert.AreEqual(Position.Absolute, wrapper.Position);
+        Assert.AreEqual(0f, wrapper.Top.Value, "Wrapper Top should be 0");
+        Assert.AreEqual(0f, wrapper.Bottom.Value, "Wrapper Bottom should be 0");
+        Assert.AreEqual(Position.Absolute, lapPanel.Position);
+        Assert.AreEqual(0f, lapPanel.Top.Value, "Lap panel Top should be 0");
+        Assert.AreEqual(0f, lapPanel.Left.Value, "Lap panel Left should be 0");
+    }
+
+    /// <summary>
+    /// Tests that context is properly propagated through a memo-skipped
+    /// intermediate component. When HudHost memo-skips, ProvideContext is
+    /// NOT called (since Render doesn't run), yet child components that
+    /// re-render (due to their own state or different inputs) must still
+    /// be able to read the context value.
+    /// </summary>
+    [TestMethod]
+    public void ContextPropagation_ThroughMemoSkippedParent()
+    {
+        IBackend.Backend = new DummyBackend();
+        var container = new FlexPanel();
+        var (dom, ctx) = TestHelpers.CreateDom();
+
+        // Wrap HudHost in a View so TryReuseComponent can reuse it.
+        var stateA = new HudLayoutState(CurrentLap: 1, TotalLaps: 5);
+        VNode[] elements = [LapCounterTestComponent()];
+        var hostA = HudHostTestComponent(state: stateA, children: elements);
+
+        var vnode1 = View(children: hostA);
+        dom.Mount(container, vnode1);
+        ctx.Drain();
+
+        var hostInst1 = (HudHostTestComponent)((HudHostTestComponentNode)hostA).Instance!;
+        Assert.AreEqual(1, hostInst1.RenderCount);
+
+        // ── Pass 2: same inputs → instance reused (memo skip) ─────────
+        var hostB = HudHostTestComponent(state: stateA, children: elements);
+        var vnode2 = View(children: hostB);
+        dom.Mount(container, vnode2);
+        ctx.Drain();
+
+        Assert.AreSame(hostInst1, ((HudHostTestComponentNode)hostB).Instance,
+            "Host instance should be reused when inputs unchanged");
+
+        // ── Pass 3: state changes → new instance, context propagated ──
+        var stateC = new HudLayoutState(CurrentLap: 2, TotalLaps: 5);
+        var hostC = HudHostTestComponent(state: stateC, children: elements);
+        var vnode3 = View(children: hostC);
+        dom.Mount(container, vnode3);
+        ctx.Drain();
+
+        Assert.AreNotSame(hostInst1, ((HudHostTestComponentNode)hostC).Instance,
+            "Host should be new instance when state changes");
+        var counterInst3 = (LapCounterTestComponent)((LapCounterTestComponentNode)elements[0]).Instance!;
+        Assert.AreEqual(2, counterInst3.LastCurrentLap,
+            "Counter should see updated context value CurrentLap=2");
+    }
+
+    /// <summary>
+    /// Simulates the gamemode switch scenario: create a fresh ReactorDom
+    /// (as happens when a new DefaultHudManager is created), mount the
+    /// HUD tree, then update state. Verifies positions remain correct.
+    /// </summary>
+    [TestMethod]
+    public void FreshDom_ThenStateUpdate_PositionsCorrect()
+    {
+        IBackend.Backend = new DummyBackend();
+
+        // ── Simulate gamemode switch (TimeTrial) — new Dom, new RootPanel ──
+        var container = new FlexPanel();
+        var (dom, ctx) = TestHelpers.CreateDom();
+
+        // Simulate what TimeTrialGamemode.ClientReset does:
+        // Step 1: set initial state (triggers UpdateHud)
+        var ttState1 = new HudLayoutState();
+        dom.Mount(container, HudHostTestComponent(state: ttState1, children: [
+            LapCounterTestComponent()
+        ]));
+        ctx.Drain();
+
+        // Step 2: update state (like SetLapText)
+        var ttState2 = new HudLayoutState(CurrentLap: 1, TotalLaps: 3);
+        dom.Mount(container, HudHostTestComponent(state: ttState2, children: [
+            LapCounterTestComponent()
+        ]));
+        ctx.Drain();
+
+        // Verify layout: tree is View → wrapper(Absolute) → lapPanel
+        var rootFlex = (FlexPanel)dom.Root!;
+        var wrapper = (FlexPanel)rootFlex.Children[0];
+        var lapPanel = (FlexPanel)wrapper.Children[0];
+
+        Assert.AreEqual(Position.Absolute, lapPanel.Position,
+            "Lap panel should remain Absolute after state update");
+        Assert.AreEqual(0f, lapPanel.Top.Value,
+            "Lap panel Top should be 0 after state update");
+        Assert.AreEqual(0f, lapPanel.Left.Value,
+            "Lap panel Left should be 0 after state update");
+        Assert.AreEqual("lap:1/3", lapPanel.Name,
+            "Lap panel should show updated lap count");
     }
 }
 
