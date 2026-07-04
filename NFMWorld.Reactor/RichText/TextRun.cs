@@ -250,7 +250,7 @@ public partial class TextRun : Node
 
         foreach (var element in LaidOutComplexText.Value.Elements)
         {
-            G.SetFont(element.Font with { Size = element.FontSize ?? FontSize * G.Scale });
+            G.SetFont(element.Font with { Size = (element.FontSize ?? FontSize) * G.Scale });
             if ((element.Background ?? Background) is { } background)
             {
                 G.SetColor(background);
