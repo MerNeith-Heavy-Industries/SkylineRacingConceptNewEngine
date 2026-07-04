@@ -48,9 +48,12 @@ public static class G
 
     public static IFontMetrics GetFontMetrics(Font font) => Graphics.GetFontMetrics(font);
 
-    public static void DrawString(ReadOnlySpan<char> text, int x, int y) => Graphics.DrawString(text, x, y);
+    public static void DrawString(ReadOnlySpan<char> text, int x, int y)
+        => Graphics.DrawString(text, x, y);
+
     public static void DrawStringAligned(ReadOnlySpan<char> text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
         => Graphics.DrawStringAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign);
+
     public static void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
         => Graphics.DrawStringAligned(text, x, y, areaWidth, areaHeight, hAlign, vAlign);
     
@@ -60,27 +63,45 @@ public static class G
     public static void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
         => Graphics.DrawStringStrokeAligned(text, x, y, areaWidth, areaHeight, hAlign, vAlign, effectAmount);
 
-    public static void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1) => Graphics.DrawStringStroke(text, x, y, effectAmount);
+    public static void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
+        => Graphics.DrawStringStroke(text, x, y, effectAmount);
 
-    public static void FillOval(int x, int y, int width, int height) => Graphics.FillOval(x, y, width, height);
+    public static void FillOval(int x, int y, int width, int height)
+        => Graphics.FillOval(x, y, width, height);
 
-    public static void DrawOval(int x, int y, int width, int height) => Graphics.DrawOval(x, y, width, height);
+    public static void DrawOval(int x, int y, int width, int height)
+        => Graphics.DrawOval(x, y, width, height);
     
-    public static void DrawRect(int x1, int y1, int width, int height) => Graphics.DrawRect(x1, y1, width, height);
+    public static void DrawRect(int x1, int y1, int width, int height)
+        => Graphics.DrawRect(x1, y1, width, height);
     
-    public static void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight,
-        float radBottomRight, float radBottomLeft) => Graphics.DrawRoundedRect(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
+    public static void DrawRoundedRect(int x1, int y1, int width, int height, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft)
+        => Graphics.DrawRoundedRect(x1, y1, width, height, radTopLeft, radTopRight, radBottomRight, radBottomLeft);
     
-    public static void DrawImage(IImage? bggo, int p1, int i429, int p3, int i, object o)
-    {
-        if (bggo == null)
-        {
-            return;
-        }
+    public static void BeginPath() 
+        => Graphics.BeginPath();
 
-        Graphics.DrawImage(bggo, p1, i429, p3, i);
-    }
+    public static void MoveTo(float x, float y) 
+        => Graphics.MoveTo(x, y);
 
+    public static void LineTo(float x, float y) 
+        => Graphics.LineTo(x, y);
+
+    public static void BezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y) 
+        => Graphics.BezierTo(c1x, c1y, c2x, c2y, x, y);
+
+    public static void ClosePath() 
+        => Graphics.ClosePath();
+
+    public static void MarkHole() 
+        => Graphics.MarkHole();
+
+    public static void Stroke() 
+        => Graphics.Stroke();
+
+    public static void Fill() 
+        => Graphics.Fill();
+    
     public static void DrawImage(IImage? image, int x, int y, int wid, int hei)
     {
         if (image == null)
