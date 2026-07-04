@@ -2055,7 +2055,7 @@ public class StageEditorPhase : BasePhase
         var oldBlend = _graphicsDevice.BlendState;
         var oldRasterizer = _graphicsDevice.RasterizerState;
         
-        var effect = new BasicEffect(_graphicsDevice);
+        using var effect = new BasicEffect(_graphicsDevice);
         effect.View = activeCamera.ViewMatrix;
         effect.Projection = activeCamera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
@@ -2191,7 +2191,7 @@ public class StageEditorPhase : BasePhase
         var oldDepth = _graphicsDevice.DepthStencilState;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
         
-        var effect = new BasicEffect(_graphicsDevice);
+        using var effect = new BasicEffect(_graphicsDevice);
         effect.View = activeCamera.ViewMatrix;
         effect.Projection = activeCamera.ProjectionMatrix;
         effect.VertexColorEnabled = true;
@@ -2641,7 +2641,7 @@ public class StageEditorPhase : BasePhase
         var oldDepth = _graphicsDevice.DepthStencilState;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
 
-        var effect = new BasicEffect(_graphicsDevice)
+        using var effect = new BasicEffect(_graphicsDevice)
         {
             View = activeCamera.ViewMatrix,
             Projection = activeCamera.ProjectionMatrix,
