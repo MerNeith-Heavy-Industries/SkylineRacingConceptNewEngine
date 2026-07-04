@@ -447,7 +447,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         {
             Hud.State = Hud.State with
             {
-                LapTimeText = $"Lap Time: {FormatTimeMs(_lastLapTime, false)}"
+                LapTimeText = FormatTimeMs(_lastLapTime, false)
             };
         }
     }
