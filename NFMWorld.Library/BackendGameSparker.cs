@@ -567,16 +567,18 @@ public static class BackendGameSparker
             }
         }
 
-        if (Path.IsPathRooted(name))
+        if (dynamic_models.TryGetValue(name, out var dynRad))
         {
-            if (dynamic_models.TryGetValue(name, out var dynRad))
-            {
-                return dynRad;
-            }
+            return dynRad;
+        }
+
+        var relativePath = VFS.Path.Combine("data", "models", name + ".rad");
+        if (VFS.FileExists(relativePath))
+        {
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(File.ReadAllText(name), name);
+                var rad = RadParser.ParseRad(VFS.ReadAllText(relativePath), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)
@@ -612,16 +614,13 @@ public static class BackendGameSparker
             }
         }
 
-        if (Path.IsPathRooted(name))
+        var relativePath = VFS.Path.Combine("data", "models", name + ".rad");
+        if (VFS.FileExists(relativePath))
         {
-            if (dynamic_models.TryGetValue(name, out var dynRad))
-            {
-                return dynRad;
-            }
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(File.ReadAllText(name), name);
+                var rad = RadParser.ParseRad(VFS.ReadAllText(relativePath), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)
