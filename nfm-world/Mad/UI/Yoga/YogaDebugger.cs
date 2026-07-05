@@ -1,15 +1,12 @@
-﻿using Maxine.Extensions;
-using NFMWorld;
+﻿using NFMWorld;
 using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
-using NFMWorld.Util;
 
 namespace WorldXaml.UI.Yoga;
 
 public static class YogaDebugger
 {
     private static Vector2 _mousePosition;
-    private static string slnDir = ProjectUtils.TryGetSolutionDirectory() ?? Directory.GetCurrentDirectory();
 
     public const int MaxPages = 2;
 
@@ -21,7 +18,7 @@ public static class YogaDebugger
             RenderPage2();
         else if (page == 2)
             RenderPage3();
-        
+
         // draw two lines intersecting the mouse position
         G.SetColor(Color.Magenta);
         G.DrawLine(0, (int)_mousePosition.Y, (int)G.Viewport.X, (int)_mousePosition.Y);
@@ -35,235 +32,261 @@ public static class YogaDebugger
         G.DrawString(mousePosText, (int)_mousePosition.X + 12, (int)_mousePosition.Y + 12);
     }
 
+    // ── Helper: get the deepest NativeVisual that is a Node (for layout queries) ──
+
+    private static Node? GetLayoutNode(ReactorDebugNode debugNode)
+        => debugNode.NativeVisual as Node;
+
+    private static Node? GetLayoutNode(ReactorDebugNode[] chain)
+    {
+        // Walk the chain from leaf to root to find the deepest Node with layout.
+        for (int i = chain.Length - 1; i >= 0; i--)
+        {
+            if (chain[i].NativeVisual is Node n)
+                return n;
+        }
+        return null;
+    }
+
+    // ── Page 2: full VDOM tree with layout info text ────────────────────
+
     private static void RenderPage3()
     {
-        // draw a tree of all elements and their layout info in the top-left corner,
-        // with a gradient from red to yellow based on depth
+        var roots = NodeDebugger.VDomRoots;
+        if (roots.Count == 0) return;
+
         var maxDepth = 0;
-        foreach (var root in NodeDebugger.YogaRootsThisFrame)
-        {
-            maxDepth = Math.Max(maxDepth, GetMaxDepth(root, 0));
-            continue;
-
-            static int GetMaxDepth(Visual visual, int depth)
-            {
-                var childMax = depth;
-                foreach (var child in visual.VisualChildren)
-                {
-                    childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
-                }
-
-                return childMax;
-            }
-        }
+        foreach (var root in roots)
+            maxDepth = Math.Max(maxDepth, GetReactorMaxDepth(root, 0));
 
         var y = 24;
-        foreach (var root in NodeDebugger.YogaRootsThisFrame)
+        foreach (var root in roots)
         {
-            DrawElementAndChildren(root, y, 0);
-            y += 24 * (1 + (root is FlexPanel box ? GetChildCount(box) : 0));
+            DrawReactorElementAndChildren(root, ref y, 0, maxDepth);
         }
 
         return;
 
-        void DrawElementAndChildren(Visual visual, int y = 15, int depth = 0)
+        static int GetReactorMaxDepth(ReactorDebugNode node, int depth)
         {
-            if (visual is Node node)
+            var childMax = depth;
+            foreach (var child in node.Children)
+                childMax = Math.Max(childMax, GetReactorMaxDepth(child, depth + 1));
+            return childMax;
+        }
+
+        void DrawReactorElementAndChildren(ReactorDebugNode node, ref int y, int depth, int maxDepth)
+        {
+            var color = maxDepth > 0
+                ? Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth)
+                : Color.Red;
+
+            // Draw rect for VisualVNodes (which have a distinct native visual)
+            if (node.Type == ReactorDebugNodeType.VisualVNode && node.NativeVisual is Node layoutNode)
             {
-                var color = Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth);
                 G.SetColor(color);
                 G.DrawRect(
-                    (int)node.LayoutBorderPosition.X,
-                    (int)node.LayoutBorderPosition.Y,
-                    (int)node.LayoutBorderSize.X,
-                    (int)node.LayoutBorderSize.Y
+                    (int)layoutNode.LayoutBorderPosition.X,
+                    (int)layoutNode.LayoutBorderPosition.Y,
+                    (int)layoutNode.LayoutBorderSize.X,
+                    (int)layoutNode.LayoutBorderSize.Y
                 );
-
-                var layoutInfo = $"""
-                                  {node.Name ?? ""}[{node.GetType().Name}] {node.LayoutBorderSize.X}px x {node.LayoutBorderSize.Y}px at ({node.LayoutBorderPosition.X}, {node.LayoutBorderPosition.Y})
-                                  """;
-                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 24));
-                var indent = new string(' ', depth * 2);
-                G.SetColor(Color.White);
-                G.DrawStringStroke(indent + layoutInfo, 12, y);
-                G.SetColor(color);
-                G.DrawString(indent + layoutInfo, 12, y);
-                y += 24;
             }
 
-            foreach (var child in visual.VisualChildren)
+            // Build layout info string
+            var display = node.ToDisplayString();
+            string layoutInfo;
+            if (node.NativeVisual is Node n)
             {
-                DrawElementAndChildren(child, y, depth + 1);
-                y += 24 * (1 + (child is FlexPanel childBox ? GetChildCount(childBox) : 0));
+                layoutInfo = $"{display}  {n.LayoutBorderSize.X}px x {n.LayoutBorderSize.Y}px at ({n.LayoutBorderPosition.X}, {n.LayoutBorderPosition.Y})";
             }
-        }
-        
-        static int GetChildCount(FlexPanel child)
-        {
-            var count = child.Children.Count;
-            foreach (var grandChild in child.Children)
+            else
             {
-                if (grandChild is FlexPanel box)
-                    count += GetChildCount(box);
+                layoutInfo = display;
             }
-            return count;
+
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 22));
+            var indent = new string(' ', depth * 2);
+            G.SetColor(Color.White);
+            G.DrawStringStroke(indent + layoutInfo, 12, y);
+            G.SetColor(color);
+            G.DrawString(indent + layoutInfo, 12, y);
+            y += 24;
+
+            foreach (var child in node.Children)
+                DrawReactorElementAndChildren(child, ref y, depth + 1, maxDepth);
         }
     }
+
+    // ── Page 1: full VDOM tree with depth-colored outlines ──────────────
 
     private static void RenderPage2()
     {
-        // draw an outline around every element with a gradient from red to yellow based on depth
+        var roots = NodeDebugger.VDomRoots;
+        if (roots.Count == 0) return;
+
         var maxDepth = 0;
-        foreach (var root in NodeDebugger.YogaRootsThisFrame)
+        foreach (var root in roots)
+            maxDepth = Math.Max(maxDepth, GetReactorMaxDepth(root, 0));
+
+        foreach (var root in roots)
+            DrawReactorNodeAndChildren(root, 0, maxDepth);
+
+        return;
+
+        static int GetReactorMaxDepth(ReactorDebugNode node, int depth)
         {
-            maxDepth = Math.Max(maxDepth, GetMaxDepth(root, 0));
-            continue;
-
-            static int GetMaxDepth(Visual node, int depth)
-            {
-                var childMax = depth;
-                foreach (var child in node.VisualChildren)
-                {
-                    childMax = Math.Max(childMax, GetMaxDepth(child, depth + 1));
-                }
-
-                return childMax;
-            }
+            var childMax = depth;
+            foreach (var child in node.Children)
+                childMax = Math.Max(childMax, GetReactorMaxDepth(child, depth + 1));
+            return childMax;
         }
-        
-        foreach (var root in NodeDebugger.YogaRootsThisFrame)
+
+        void DrawReactorNodeAndChildren(ReactorDebugNode node, int depth, int maxDepth)
         {
-            DrawNodeAndChildren(root, 0);
-            continue;
+            var color = maxDepth > 0
+                ? Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth)
+                : Color.Red;
 
-            void DrawNodeAndChildren(Visual visual, int depth)
+            if (node.NativeVisual is Node layoutNode)
             {
-                if (visual is Node node)
-                {
-                    var color = Color.Lerp(Color.Red, Color.Yellow, depth / (float)maxDepth);
-                    G.SetColor(color);
-                    G.DrawRect(
-                        (int)node.LayoutBorderPosition.X,
-                        (int)node.LayoutBorderPosition.Y,
-                        (int)node.LayoutBorderSize.X,
-                        (int)node.LayoutBorderSize.Y
-                    );
+                G.SetColor(color);
+                G.DrawRect(
+                    (int)layoutNode.LayoutBorderPosition.X,
+                    (int)layoutNode.LayoutBorderPosition.Y,
+                    (int)layoutNode.LayoutBorderSize.X,
+                    (int)layoutNode.LayoutBorderSize.Y
+                );
 
-                    // draw text + outline with element name
-                    G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 24));
-                    var info = $"{node.Name ?? ""}[{node.GetType().Name}]";
-                    G.SetColor(Color.White);
-                    G.DrawStringStroke(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
-                    G.SetColor(color);
-                    G.DrawString(info, (int)node.LayoutBorderPosition.X, (int)node.LayoutBorderPosition.Y - 12);
-                }
-
-                foreach (var child in visual.VisualChildren)
-                {
-                    DrawNodeAndChildren(child, depth + 1);
-                }
+                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 20));
+                var info = node.ToDisplayString();
+                G.SetColor(Color.White);
+                G.DrawStringStroke(info, (int)layoutNode.LayoutBorderPosition.X, (int)layoutNode.LayoutBorderPosition.Y - 12);
+                G.SetColor(color);
+                G.DrawString(info, (int)layoutNode.LayoutBorderPosition.X, (int)layoutNode.LayoutBorderPosition.Y - 12);
             }
+
+            foreach (var child in node.Children)
+                DrawReactorNodeAndChildren(child, depth + 1, maxDepth);
         }
     }
 
+    // ── Page 0: mouse-over chain with VDOM info and box model ───────────
+
     private static void RenderPage1()
     {
-        var mouseOverNodeTree = NodeDebugger.YogaRootsThisFrame
-            .Select(FindMouseOverNodeTree)
-            .MaxBy(n => n.Length);
-        if (mouseOverNodeTree?.Length > 0)
+        var roots = NodeDebugger.VDomRoots;
+        if (roots.Count == 0) return;
+
+        var mouseOverChain = roots
+            .Select(FindMouseOverReactorNodeTree)
+            .MaxBy(c => c.Length);
+
+        if (mouseOverChain is not { Length: > 0 }) return;
+
+        // Draw rects for each node in the chain (only VisualVNodes)
+        for (int i = 0; i < mouseOverChain.Length; i++)
         {
-            for (int i = 0; i < mouseOverNodeTree.Length; i++)
-            {
-                var node = mouseOverNodeTree[i];
-                var color = Color.Lerp(Color.Red, Color.Yellow, i / (float)mouseOverNodeTree.Length);
-                G.SetColor(color);
-                G.DrawRect(
-                    (int)node.LayoutBorderPosition.X,
-                    (int)node.LayoutBorderPosition.Y,
-                    (int)node.LayoutBorderSize.X,
-                    (int)node.LayoutBorderSize.Y
-                );
-                
-                G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 20));
-                var debugInfo = NodeDebugger.GetDebugInfo(node);
-                var info = $"Node: {node.Name ?? ""}[{node.GetType().Name}] from {(debugInfo.CtorCallerFilePath != "" ? Path.GetRelativePath(slnDir, debugInfo.CtorCallerFilePath) : "")}:{debugInfo.CtorCallerMemberName}:{debugInfo.CtorCallerLineNumber}";
-                var prefix = new string(' ', i * 2);
-                
-                G.SetColor(Color.White);
-                G.DrawStringStroke(prefix + info, 12, 24 + (i * 24));
-                G.SetColor(color);
-                G.DrawString(prefix + info, 12, 24 + (i * 24));
-            }
-            
-            var lastEntry = mouseOverNodeTree[^1];
+            var node = mouseOverChain[i];
+            if (node.NativeVisual is not Node layoutNode) continue;
+
+            var color = Color.Lerp(Color.Red, Color.Yellow, i / (float)mouseOverChain.Length);
+            G.SetColor(color);
+            G.DrawRect(
+                (int)layoutNode.LayoutBorderPosition.X,
+                (int)layoutNode.LayoutBorderPosition.Y,
+                (int)layoutNode.LayoutBorderSize.X,
+                (int)layoutNode.LayoutBorderSize.Y
+            );
+        }
+
+        // Draw type/input info for each node in the chain
+        for (int i = 0; i < mouseOverChain.Length; i++)
+        {
+            var node = mouseOverChain[i];
+            var color = Color.Lerp(Color.Red, Color.Yellow, i / (float)mouseOverChain.Length);
+
+            G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 18));
+            var info = node.ToDisplayString();
+            var prefix = new string(' ', i * 2);
+
+            G.SetColor(Color.White);
+            G.DrawStringStroke(prefix + info, 12, 24 + (i * 24));
+            G.SetColor(color);
+            G.DrawString(prefix + info, 12, 24 + (i * 24));
+        }
+
+        // Box model visualization for the deepest node with a Node visual
+        var lastNode = GetLayoutNode(mouseOverChain);
+        if (lastNode is not null)
+        {
             G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             var layoutInfo = $"""
                               Layout:
-                              Margin: {lastEntry.LayoutMarginSize.X}px x {lastEntry.LayoutMarginSize.Y}px at ({lastEntry.LayoutMarginPosition.X}, {lastEntry.LayoutMarginPosition.Y})
-                              Border: {lastEntry.LayoutBorderSize.X}px x {lastEntry.LayoutBorderSize.Y}px at ({lastEntry.LayoutBorderPosition.X}, {lastEntry.LayoutBorderPosition.Y})
-                              Padding: {lastEntry.LayoutPaddingSize.X}px x {lastEntry.LayoutPaddingSize.Y}px at ({lastEntry.LayoutPaddingPosition.X}, {lastEntry.LayoutPaddingPosition.Y})
-                              Content: {lastEntry.LayoutContentSize.X}px x {lastEntry.LayoutContentSize.Y}px at ({lastEntry.LayoutContentPosition.X}, {lastEntry.LayoutContentPosition.Y})
+                              Margin: {lastNode.LayoutMarginSize.X}px x {lastNode.LayoutMarginSize.Y}px at ({lastNode.LayoutMarginPosition.X}, {lastNode.LayoutMarginPosition.Y})
+                              Border: {lastNode.LayoutBorderSize.X}px x {lastNode.LayoutBorderSize.Y}px at ({lastNode.LayoutBorderPosition.X}, {lastNode.LayoutBorderPosition.Y})
+                              Padding: {lastNode.LayoutPaddingSize.X}px x {lastNode.LayoutPaddingSize.Y}px at ({lastNode.LayoutPaddingPosition.X}, {lastNode.LayoutPaddingPosition.Y})
+                              Content: {lastNode.LayoutContentSize.X}px x {lastNode.LayoutContentSize.Y}px at ({lastNode.LayoutContentPosition.X}, {lastNode.LayoutContentPosition.Y})
                               """;
             G.SetColor(Color.White);
-            G.DrawStringStroke(layoutInfo, 12, 24 + (mouseOverNodeTree.Length * 24));
+            G.DrawStringStroke(layoutInfo, 12, 24 + (mouseOverChain.Length * 24));
             G.SetColor(Color.Cyan);
-            G.DrawString(layoutInfo, 12, 24 + (mouseOverNodeTree.Length * 24));
-            
+            G.DrawString(layoutInfo, 12, 24 + (mouseOverChain.Length * 24));
+
             // draw margin, padding, border, content
             G.SetColor(Color.Gray with { A = 128 });
             FillRectExceptForRect(
                 new RectangleF(
-                    lastEntry.LayoutMarginPosition.X,
-                    lastEntry.LayoutMarginPosition.Y,
-                    lastEntry.LayoutMarginSize.X,
-                    lastEntry.LayoutMarginSize.Y
+                    lastNode.LayoutMarginPosition.X,
+                    lastNode.LayoutMarginPosition.Y,
+                    lastNode.LayoutMarginSize.X,
+                    lastNode.LayoutMarginSize.Y
                 ),
                 new RectangleF(
-                    lastEntry.LayoutBorderPosition.X,
-                    lastEntry.LayoutBorderPosition.Y,
-                    lastEntry.LayoutBorderSize.X,
-                    lastEntry.LayoutBorderSize.Y
+                    lastNode.LayoutBorderPosition.X,
+                    lastNode.LayoutBorderPosition.Y,
+                    lastNode.LayoutBorderSize.X,
+                    lastNode.LayoutBorderSize.Y
                 )
             );
             G.SetColor(Color.Yellow with { A = 128 });
             FillRectExceptForRect(
                 new RectangleF(
-                    lastEntry.LayoutBorderPosition.X,
-                    lastEntry.LayoutBorderPosition.Y,
-                    lastEntry.LayoutBorderSize.X,
-                    lastEntry.LayoutBorderSize.Y
+                    lastNode.LayoutBorderPosition.X,
+                    lastNode.LayoutBorderPosition.Y,
+                    lastNode.LayoutBorderSize.X,
+                    lastNode.LayoutBorderSize.Y
                 ),
                 new RectangleF(
-                    lastEntry.LayoutPaddingPosition.X,
-                    lastEntry.LayoutPaddingPosition.Y,
-                    lastEntry.LayoutPaddingSize.X,
-                    lastEntry.LayoutPaddingSize.Y
+                    lastNode.LayoutPaddingPosition.X,
+                    lastNode.LayoutPaddingPosition.Y,
+                    lastNode.LayoutPaddingSize.X,
+                    lastNode.LayoutPaddingSize.Y
                 )
             );
             G.SetColor(Color.Green with { A = 128 });
             FillRectExceptForRect(
                 new RectangleF(
-                    lastEntry.LayoutPaddingPosition.X,
-                    lastEntry.LayoutPaddingPosition.Y,
-                    lastEntry.LayoutPaddingSize.X,
-                    lastEntry.LayoutPaddingSize.Y
+                    lastNode.LayoutPaddingPosition.X,
+                    lastNode.LayoutPaddingPosition.Y,
+                    lastNode.LayoutPaddingSize.X,
+                    lastNode.LayoutPaddingSize.Y
                 ),
                 new RectangleF(
-                    lastEntry.LayoutContentPosition.X,
-                    lastEntry.LayoutContentPosition.Y,
-                    lastEntry.LayoutContentSize.X,
-                    lastEntry.LayoutContentSize.Y
+                    lastNode.LayoutContentPosition.X,
+                    lastNode.LayoutContentPosition.Y,
+                    lastNode.LayoutContentSize.X,
+                    lastNode.LayoutContentSize.Y
                 )
             );
             G.SetColor(Color.Blue with { A = 128 });
             G.FillRect(
-                (int)lastEntry.LayoutContentPosition.X,
-                (int)lastEntry.LayoutContentPosition.Y,
-                (int)lastEntry.LayoutContentSize.X,
-                (int)lastEntry.LayoutContentSize.Y
+                (int)lastNode.LayoutContentPosition.X,
+                (int)lastNode.LayoutContentPosition.Y,
+                (int)lastNode.LayoutContentSize.X,
+                (int)lastNode.LayoutContentSize.Y
             );
-            
+
             // draw layout box in the corner with labels
             const int scale = 48;
             var margin = new RectangleF(
@@ -290,39 +313,39 @@ public static class YogaDebugger
                 padding.Width - (scale * 2),
                 padding.Height - (scale * 2)
             );
-            
+
             DrawBoxWithLabels(
                 Color.Gray with { A = 128 },
                 "margin",
                 margin, border,
-                lastEntry.LayoutMarginTop,
-                lastEntry.LayoutMarginRight,
-                lastEntry.LayoutMarginBottom,
-                lastEntry.LayoutMarginLeft
+                lastNode.LayoutMarginTop,
+                lastNode.LayoutMarginRight,
+                lastNode.LayoutMarginBottom,
+                lastNode.LayoutMarginLeft
             );
             DrawBoxWithLabels(
                 Color.Yellow with { A = 128 },
                 "border",
                 border, padding,
-                lastEntry.LayoutBorderTop,
-                lastEntry.LayoutBorderRight,
-                lastEntry.LayoutBorderBottom,
-                lastEntry.LayoutBorderLeft
+                lastNode.LayoutBorderTop,
+                lastNode.LayoutBorderRight,
+                lastNode.LayoutBorderBottom,
+                lastNode.LayoutBorderLeft
             );
             DrawBoxWithLabels(
                 Color.Green with { A = 128 },
                 "padding",
                 padding, content,
-                lastEntry.LayoutPaddingTop,
-                lastEntry.LayoutPaddingRight,
-                lastEntry.LayoutPaddingBottom,
-                lastEntry.LayoutPaddingLeft
+                lastNode.LayoutPaddingTop,
+                lastNode.LayoutPaddingRight,
+                lastNode.LayoutPaddingBottom,
+                lastNode.LayoutPaddingLeft
             );
-            
+
             // draw centred widthxheight in middle box
             G.SetColor(Color.Blue with { A = 128 });
             G.FillRect((int)content.X, (int)content.Y, (int)content.Width, (int)content.Height);
-            
+
             G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
             G.SetColor(Color.Black);
             G.DrawStringStroke("content", (int)content.X, (int)content.Y + 16);
@@ -330,7 +353,7 @@ public static class YogaDebugger
             G.DrawString("content", (int)content.X, (int)content.Y + 16);
 
             G.SetFont(new Font(FontFamily.RobotoMono, FontStyle.Plain, 16));
-            var contentSizeText = $"{(int)lastEntry.LayoutContentSize.X}px x {(int)lastEntry.LayoutContentSize.Y}px";
+            var contentSizeText = $"{(int)lastNode.LayoutContentSize.X}px x {(int)lastNode.LayoutContentSize.Y}px";
             G.SetColor(Color.Black);
             G.DrawStringStrokeAligned(
                 contentSizeText,
@@ -429,41 +452,40 @@ public static class YogaDebugger
         );
     }
 
-    private static Node[] FindMouseOverNodeTree(Visual visual)
+    // ── Mouse-over traversal (VDOM tree) ──────────────────────────────────
+
+    private static ReactorDebugNode[] FindMouseOverReactorNodeTree(ReactorDebugNode node)
     {
-        // Depth-first search for the node whose border box contains the mouse position, and its parents
-        if (visual is Node node)
+        // Depth-first search for the node whose margin box contains the mouse position.
+        if (node.NativeVisual is Node layoutNode)
         {
             var rect = new RectangleF(
-                node.LayoutMarginPosition.X,
-                node.LayoutMarginPosition.Y,
-                node.LayoutMarginSize.X,
-                node.LayoutMarginSize.Y
+                layoutNode.LayoutMarginPosition.X,
+                layoutNode.LayoutMarginPosition.Y,
+                layoutNode.LayoutMarginSize.X,
+                layoutNode.LayoutMarginSize.Y
             );
             if (rect.Contains(_mousePosition))
             {
-                foreach (var child in node.VisualChildren)
+                foreach (var child in node.Children)
                 {
-                    var childResult = FindMouseOverNodeTree(child);
+                    var childResult = FindMouseOverReactorNodeTree(child);
                     if (childResult.Length > 0)
-                    {
-                        return [node, ..childResult];
-                    }
+                        return layoutNode.DebugIsContentfulNode
+                            ? [node, ..childResult]
+                            : childResult;
                 }
 
-                return [node];
+                return layoutNode.DebugIsContentfulNode ? [node] : [];
             }
         }
-        else
+
+        // Component nodes or nodes without layout: check children anyway
+        foreach (var child in node.Children)
         {
-            foreach (var child in visual.VisualChildren)
-            {
-                var childResult = FindMouseOverNodeTree(child);
-                if (childResult.Length > 0)
-                {
-                    return childResult;
-                }
-            }
+            var childResult = FindMouseOverReactorNodeTree(child);
+            if (childResult.Length > 0)
+                return [node, ..childResult];
         }
 
         return [];

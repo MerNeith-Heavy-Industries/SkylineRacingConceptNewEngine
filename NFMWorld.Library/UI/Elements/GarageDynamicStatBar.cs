@@ -11,6 +11,8 @@ public partial class GarageDynamicStatBar : Node
     private const float SpeedUp = 0.1f;
     private const int FullBar = 100;
 
+    public override bool DebugIsContentfulNode => true;
+
     [Property]
     public int BarMaxWidth
     {
