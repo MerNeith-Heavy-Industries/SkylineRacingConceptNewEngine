@@ -114,8 +114,16 @@ internal class Reconciler
             // Ensure the root is a child of the container
             if (container.VisualChildren.Count == 0 || container.VisualChildren[0] != result)
             {
-                if (container.VisualChildren.Count > 0 && existingRoot is not null)
-                    container.RemoveAt(0);
+                // If existingRoot is null, the container's current children are stale
+                // (e.g. from a previous ReactorDom lifecycle). Clear them all.
+                if (container.VisualChildren.Count > 0)
+                {
+                    if (existingRoot is not null)
+                        container.RemoveAt(0);
+                    else
+                        while (container.VisualChildren.Count > 0)
+                            container.RemoveAt(0);
+                }
                 container.InsertAt(0, result);
             }
 
