@@ -1373,7 +1373,10 @@ public class StageEditorPhase : BasePhase
     {
         if (ActiveTab?.Stage == null) return;
 
-        ActiveTab.StageRenderer = new ClientStageRenderer(_graphicsDevice, ActiveTab.Stage);
+        if (ActiveTab.StageRenderer == null)
+            ActiveTab.StageRenderer = new ClientStageRenderer(_graphicsDevice, ActiveTab.Stage);
+        else
+            ActiveTab.StageRenderer.DetectChanges(true);
         
         // ClientStageRenderer.ctor calls World.ResetValues(), re-apply our tab settings
         ApplyTabWorldValuesToWorld();
