@@ -42,6 +42,7 @@ public partial class GarageDynamicStatBar : Node
 
     private float _speed = SpeedUp;
 
+    [Property]
     public string StatName { get; set; } = "Unknown Stat";
 
     private static readonly Color[] BarColors =
