@@ -565,10 +565,11 @@ public partial class RadParser
             else if (line.StartsWith("phyangulation")) _currentPoly = _currentPoly with { TriangulationAlgorithm = PolygonTriangulator.TriangulationAlgorithm.Phyrexian };
             else if (line.StartsWith("libtess")) _currentPoly = _currentPoly with { TriangulationAlgorithm = PolygonTriangulator.TriangulationAlgorithm.Libtess };
             else if (line.StartsWith("glass")) _currentPoly = _currentPoly with { PolyType = PolyType.Glass };
-            else if (line.StartsWith("lightBrake")) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
-            else if (line.StartsWith("lightB")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
-            else if (line.StartsWith("lightR")) _currentPoly = _currentPoly with { PolyType = PolyType.ReverseLight };
-            else if (line.StartsWith("light")) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
+            // confusing: NFMM allows you to have a polygon be BOTH glass and light, which doesn't make any sense in NFMW. so we just ignore the light part if it's non flat.
+            else if (line.StartsWith("lightBrake") && _currentPoly.PolyType == PolyType.Flat) _currentPoly = _currentPoly with { PolyType = PolyType.BrakeLight };
+            else if (line.StartsWith("lightB") && _currentPoly.PolyType == PolyType.Flat) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
+            else if (line.StartsWith("lightR") && _currentPoly.PolyType == PolyType.Flat) _currentPoly = _currentPoly with { PolyType = PolyType.ReverseLight };
+            else if (line.StartsWith("light") && _currentPoly.PolyType == PolyType.Flat) _currentPoly = _currentPoly with { PolyType = PolyType.Light };
             else if (line.StartsWith("gr(-10)")) _currentPoly = _currentPoly with { LineType = LineType.BrightColored };
             else if (line.StartsWith("gr(-18)")) _currentPoly = _currentPoly with { LineType = LineType.Charged };
             else if (line.StartsWith("gr(-13)")) _currentPoly = _currentPoly with { PolyType = PolyType.Finish };
