@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -12,8 +13,10 @@ But does NOT hold any information relating to the actual game being played, unle
 */
 public class ClientStageRenderer : GameObject
 {
-    public UnlimitedArray<StageObjectGameObject> checkpoints = [];
-    public UnlimitedArray<StageObjectGameObject> fixhoops = [];
+    private GraphicsDevice _graphicsDevice;
+
+    private UnlimitedArray<StageObjectGameObject> checkpoints = [];
+    private UnlimitedArray<StageObjectGameObject> fixhoops = [];
     
     public Sky? sky;
     public Ground? ground;
@@ -23,14 +26,41 @@ public class ClientStageRenderer : GameObject
 
     private readonly BackendStage backendStage;
 
+    private readonly Dictionary<StageObject, StageObjectGameObject> _cachedObjects = new(StageObjectVisualComparer.Instance);
+    private List<GameObject> _mutableChildren = [];
+    
+    private (bool drawPolys, int sx, int ncx, int sz, int ncz, int stagePartCount) _polysKey;
+    private (bool drawClouds, int maxl, int maxr, int maxb, int maxt) _cloudsKey;
+    private (bool drawMountains, int maxl, int maxr, int maxb, int maxt) _mountainsKey;
+
+    // we use the object instance hashcode instead of the value hashcode for performance
+    private class StageObjectVisualComparer : IEqualityComparer<StageObject>
+    {
+        public static StageObjectVisualComparer Instance { get; } = new();
+        
+        public bool Equals(StageObject? x, StageObject? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null) return false;
+            if (y is null) return false;
+            if (x.GetType() != y.GetType()) return false;
+            return ReferenceEquals(x.Rad, y.Rad) && x.Position.Equals(y.Position) && x.Rotation.Equals(y.Rotation) && x.IsSpecial == y.IsSpecial && x.Kind == y.Kind;
+        }
+
+        public int GetHashCode(StageObject obj)
+        {
+            return HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Rad), obj.Position, obj.Rotation, obj.IsSpecial, obj.Kind);
+        }
+    }
+
     /**
      * Loads stage currently set by checkpoints.stage onto stageContos
      */
     public ClientStageRenderer(GraphicsDevice graphicsDevice, BackendStage backendStage)
     {
+        _graphicsDevice = graphicsDevice;
         this.backendStage = backendStage;
-        var children = new List<GameObject>();
-        Children = children;
+        Children = _mutableChildren;
         World.ResetValues();
         try
         {
@@ -38,32 +68,42 @@ public class ClientStageRenderer : GameObject
 
             ApplyValues();
 
-            // Medium.Newpolys(maxl, maxr - maxl, maxb, maxt - maxb, stagePartCount);
-            // Medium.Newmountains(maxl, maxr, maxb, maxt);
-            // Medium.Newclouds(maxl, maxr, maxb, maxt);
-            // Medium.Newstars();
             if (stageLoader.DrawPolys)
             {
-                polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl,
-                    stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
+                polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
+                _polysKey = (stageLoader.DrawPolys, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount);
+            }
+            else
+            {
+                _polysKey = (false, 0, 0, 0, 0, 0);
             }
 
             if (stageLoader.DrawClouds)
             {
-                clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
-                    stageLoader.maxt, graphicsDevice);
+                clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, graphicsDevice);
+                _cloudsKey = (stageLoader.DrawClouds, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
+            }
+            else
+            {
+                _cloudsKey = (false, 0, 0, 0, 0);
             }
 
             if (stageLoader.DrawMountains)
             {
-                mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb,
-                    stageLoader.maxt, graphicsDevice);
+                mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, graphicsDevice);
+                _mountainsKey = (stageLoader.DrawMountains, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
+            }
+            else
+            {
+                _mountainsKey = (false, 0, 0, 0, 0);
             }
             
             foreach (var piece in backendStage.pieces)
             {
                 if (piece is StageObject obj)
                 {
+                    if (_cachedObjects.ContainsKey(obj)) continue;
+                    
                     var mesh = GameSparker.GetStagePartMesh(obj.Rad);
                     if (obj.Kind == AiNodeKind.CheckPoint)
                     {
@@ -71,9 +111,11 @@ public class ClientStageRenderer : GameObject
                         {
                             Parent = this
                         };
-                        children.Add(clientObj);
+                        _mutableChildren.Add(clientObj);
 
                         checkpoints.Add(clientObj);
+                        
+                        _cachedObjects[obj] = clientObj;
                     }
                     else if (obj.Kind == AiNodeKind.FixHoop)
                     {
@@ -81,9 +123,11 @@ public class ClientStageRenderer : GameObject
                         {
                             Parent = this
                         };
-                        children.Add(clientObj);
+                        _mutableChildren.Add(clientObj);
 
                         fixhoops.Add(clientObj);
+                        
+                        _cachedObjects[obj] = clientObj;
                     }
                     else
                     {
@@ -91,7 +135,9 @@ public class ClientStageRenderer : GameObject
                         {
                             Parent = this
                         };
-                        children.Add(clientObj);
+                        _mutableChildren.Add(clientObj);
+                        
+                        _cachedObjects[obj] = clientObj;
                     }
                 }
             }
@@ -104,6 +150,125 @@ public class ClientStageRenderer : GameObject
         }
         sky = new Sky(graphicsDevice);
         ground = new Ground(graphicsDevice);
+    }
+
+    public void DetectChanges(bool updateEnvironment = false)
+    {
+        var seenObjects = new List<StageObject>();
+        
+        var stageLoader = backendStage.stageLoader;
+        
+        (bool drawPolys, int sx, int ncx, int sz, int ncz, int stagePartCount) polysKey;
+        (bool drawClouds, int maxl, int maxr, int maxb, int maxt) cloudsKey;
+        (bool drawMountains, int maxl, int maxr, int maxb, int maxt) mountainsKey;
+
+        if (stageLoader.DrawPolys)
+        {
+            polysKey = (stageLoader.DrawPolys, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount);
+        }
+        else
+        {
+            polysKey = (false, 0, 0, 0, 0, 0);
+        }
+
+        if (stageLoader.DrawClouds)
+        {
+            cloudsKey = (stageLoader.DrawClouds, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
+        }
+        else
+        {
+            cloudsKey = (false, 0, 0, 0, 0);
+        }
+
+        if (stageLoader.DrawMountains)
+        {
+            mountainsKey = (stageLoader.DrawMountains, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
+        }
+        else
+        {
+            mountainsKey = (false, 0, 0, 0, 0);
+        }
+
+        if (_polysKey != polysKey)
+        {
+            polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, _graphicsDevice);
+            _polysKey = polysKey;
+        }
+
+        if (_cloudsKey != cloudsKey)
+        {
+            clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, _graphicsDevice);
+            _cloudsKey = cloudsKey;
+        }
+
+        if (_mountainsKey != mountainsKey)
+        {
+            mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, _graphicsDevice);
+            _mountainsKey = mountainsKey;
+        }
+
+        foreach (var piece in backendStage.pieces)
+        {
+            if (piece is StageObject obj)
+            {
+                seenObjects.Add(obj);
+                if (_cachedObjects.ContainsKey(obj)) continue;
+                
+                var mesh = GameSparker.GetStagePartMesh(obj.Rad);
+                if (obj.Kind == AiNodeKind.CheckPoint)
+                {
+                    var clientObj = new StageObjectGameObject(mesh, obj)
+                    {
+                        Parent = this
+                    };
+                    _mutableChildren.Add(clientObj);
+
+                    checkpoints.Add(clientObj);
+                    
+                    _cachedObjects[obj] = clientObj;
+                }
+                else if (obj.Kind == AiNodeKind.FixHoop)
+                {
+                    var clientObj = new FixHoop(mesh, obj)
+                    {
+                        Parent = this
+                    };
+                    _mutableChildren.Add(clientObj);
+
+                    fixhoops.Add(clientObj);
+                    
+                    _cachedObjects[obj] = clientObj;
+                }
+                else
+                {
+                    var clientObj = new StageObjectGameObject(mesh, obj)
+                    {
+                        Parent = this
+                    };
+                    _mutableChildren.Add(clientObj);
+                    
+                    _cachedObjects[obj] = clientObj;
+                }
+            }
+        }
+        
+        var objsToRemove = new List<StageObject>();
+        
+        foreach (var (obj, clientObj) in _cachedObjects)
+        {
+            if (!seenObjects.Contains(obj))
+            {
+                _mutableChildren.Remove(clientObj);
+                checkpoints.Remove(clientObj);
+                fixhoops.Remove(clientObj);
+                objsToRemove.Add(obj);
+            }
+        }
+
+        foreach (var obj in objsToRemove)
+        {
+            _cachedObjects.Remove(obj);
+        }
     }
 
     public void ApplyValues()
