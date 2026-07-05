@@ -1,4 +1,5 @@
 ﻿﻿using System.Collections.Immutable;
+ using System.Diagnostics.CodeAnalysis;
  using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -127,7 +128,9 @@ public partial class RadParser
     private readonly string _fileName;
     private int? _phyAddonsWheelId;
     private bool _inPhyshotWheel;
-    private UnlimitedArray<bool> _isPhyshotWheel = [];
+    
+    // mapping of wheel mesh index to indices of wheels it applies to or -1 for all wheels
+    private UnlimitedArray<int[]> _physhotWheelTargets = [];
 
     private RadParser(string fileName)
     {
@@ -135,7 +138,7 @@ public partial class RadParser
         _fileName = fileName;
     }
     
-    [GeneratedRegex("""<wheel radius="(?<radius>\d+)" depth="(?<depth>\d+)">""", RegexOptions.Compiled)]
+    [GeneratedRegex("""<wheel(?: radius="(?<radius>\d+)")?(?: depth="(?<depth>\d+)")?(?: target="[\d,]+")?>""", RegexOptions.Compiled)]
     private static partial Regex PhyShotWheelDef { get; }
 
     public static Rad3d ParseRad(string radFile, string fileName = "hogan rewish")
@@ -333,10 +336,14 @@ public partial class RadParser
                 Rotates: rotates,
                 Width: width * idiv * iwid,
                 Height: height * idiv,
-                Polys: _wheelMeshes.Count > _wheels.Count
+                Polys: 
                     // physhot custom wheels
-                    ? _isPhyshotWheel[_wheels.Count] ? _wheelMeshes[_wheels.Count].GetScaledPolys(wheelWidth: width * (float)idiv * (float)iwid, wheelHeight: height * (float)idiv, flipX: width < 0) : _wheelMeshes[_wheels.Count].Polys.ToArray()
-                    : null
+                    TryGetTargetWheelMesh(_wheels.Count, out var wheelMesh)
+                        ? wheelMesh.GetScaledPolys(wheelWidth: width * (float)idiv * (float)iwid, wheelHeight: height * (float)idiv, flipX: width < 0)
+                        // SRC custom wheels
+                        : _wheelMeshes.Count > _wheels.Count
+                            ? _wheelMeshes[_wheels.Count].Polys.ToArray()
+                            : null
             ));
 
             // phy-addons custom wheels
@@ -519,7 +526,9 @@ public partial class RadParser
                 Depth = depth
             });
             _inPhyshotWheel = true;
-            _isPhyshotWheel[_wheelMeshes.Count - 1] = true;
+            _physhotWheelTargets[_wheelMeshes.Count - 1] = !wheelMatch.Groups["target"].ValueSpan.IsEmpty
+                ? wheelMatch.Groups["target"].ValueSpan.ToString().Split(',').Select(int.Parse).ToArray()
+                : [-1];
         }
 
         // SRC custom wheel format
@@ -661,5 +670,21 @@ public partial class RadParser
                 }
             }
         }
+    }
+
+    private bool TryGetTargetWheelMesh(int wheelIndex, [NotNullWhen(true)] out WheelMesh? wheelMesh)
+    {
+        for (var i = 0; i < _physhotWheelTargets.Count; i++)
+        {
+            var targets = _physhotWheelTargets[i];
+            if (targets.Contains(-1) || targets.Contains(wheelIndex))
+            {
+                wheelMesh = _wheelMeshes[i];
+                return true;
+            }
+        }
+
+        wheelMesh = null;
+        return false;
     }
 }
