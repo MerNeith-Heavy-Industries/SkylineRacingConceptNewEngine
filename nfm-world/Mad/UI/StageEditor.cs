@@ -353,7 +353,6 @@ public class StageEditorPhase : BasePhase
     private const int PreviewSize = 64;
     
     // Gizmo state
-    private enum GizmoAxis { None, X, Y, Z, RotY }
     private GizmoAxis _gizmoHovered = GizmoAxis.None;
     private GizmoAxis _gizmoDragging = GizmoAxis.None;
     private int _gizmoDragStartX;
@@ -367,21 +366,10 @@ public class StageEditorPhase : BasePhase
     // Start positions of ALL selected pieces at gizmo drag start (id -> position/rotY)
     private Dictionary<int, f64Vector3> _gizmoDragStartPositions = new();
     private Dictionary<int, float> _gizmoDragStartRotations = new();
-    private const float GIZMO_ARROW_LENGTH = 600f;
-    private const float GIZMO_ARROW_THICKNESS = 12f;
-    private const float GIZMO_ROT_RADIUS = 400f;
-    private const float GIZMO_TARGET_AXIS_PIXELS = 120f;
-    private const float GIZMO_MAX_SCALE = 8f;
     private const float WALL_SEGMENT_SPACING = 4800f;
     private const float WALL_SEGMENT_HALF_LENGTH = WALL_SEGMENT_SPACING * 0.5f;
     private const float WALL_SEGMENT_HALF_WIDTH = 450f;
     private const float WALL_SEGMENT_HALF_HEIGHT = 700f;
-    private readonly record struct GizmoMetrics(float ArrowLength, float ArrowThickness, float RotRadius);
-
-    // Selection highlight rendering cache/state (outline-only for performance)
-    private readonly Dictionary<Rad3d, Vector3[]> _selectionOutlineLocalEdges = new(ReferenceEqualityComparer.Instance);
-    private VertexPositionColor[] _selectionOutlineVertices = [];
-    private BasicEffect? _selectionHighlightEffect;
     
     // Undo / Redo
     private readonly record struct PieceSnapshot(PiecePlacement Piece, StageObject Obj, int Id);
@@ -599,9 +587,6 @@ public class StageEditorPhase : BasePhase
         
         _tabs.Clear();
         _activeTabIndex = -1;
-        _selectionOutlineLocalEdges.Clear();
-        _selectionHighlightEffect?.Dispose();
-        _selectionHighlightEffect = null;
         Logging.Debug("Stage Editor closed");
     }
     
@@ -1387,7 +1372,7 @@ public class StageEditorPhase : BasePhase
     private void RebuildClientRenderer()
     {
         if (ActiveTab?.Stage == null) return;
-        
+
         ActiveTab.StageRenderer = new ClientStageRenderer(_graphicsDevice, ActiveTab.Stage);
         
         // ClientStageRenderer.ctor calls World.ResetValues(), re-apply our tab settings
@@ -1904,72 +1889,10 @@ public class StageEditorPhase : BasePhase
         }
     }
     
-    private Vector3[] GetOrCreateOutlineEdges(Rad3d rad)
-    {
-        if (_selectionOutlineLocalEdges.TryGetValue(rad, out var cached))
-            return cached;
-
-        float minX = float.MaxValue;
-        float minY = float.MaxValue;
-        float minZ = float.MaxValue;
-        float maxX = float.MinValue;
-        float maxY = float.MinValue;
-        float maxZ = float.MinValue;
-
-        foreach (var poly in rad.Polys)
-        {
-            foreach (var p in poly.Points)
-            {
-                minX = Math.Min(minX, p.X);
-                minY = Math.Min(minY, p.Y);
-                minZ = Math.Min(minZ, p.Z);
-                maxX = Math.Max(maxX, p.X);
-                maxY = Math.Max(maxY, p.Y);
-                maxZ = Math.Max(maxZ, p.Z);
-            }
-        }
-
-        // Fallback for malformed assets with no poly points.
-        if (minX > maxX)
-        {
-            float r = rad.MaxRadius > 0 ? rad.MaxRadius : 500f;
-            minX = -r;
-            minY = -r;
-            minZ = -r;
-            maxX = r;
-            maxY = r;
-            maxZ = r;
-        }
-
-        var c0 = new Vector3(minX, minY, minZ);
-        var c1 = new Vector3(maxX, minY, minZ);
-        var c2 = new Vector3(maxX, maxY, minZ);
-        var c3 = new Vector3(minX, maxY, minZ);
-        var c4 = new Vector3(minX, minY, maxZ);
-        var c5 = new Vector3(maxX, minY, maxZ);
-        var c6 = new Vector3(maxX, maxY, maxZ);
-        var c7 = new Vector3(minX, maxY, maxZ);
-
-        // 12 line segments represented as 24 vertices.
-        var lines = new[]
-        {
-            c0, c1, c1, c2, c2, c3, c3, c0,
-            c4, c5, c5, c6, c6, c7, c7, c4,
-            c0, c4, c1, c5, c2, c6, c3, c7
-        };
-
-        _selectionOutlineLocalEdges[rad] = lines;
-        return lines;
-    }
-
-    private void RenderSelectionHighlights(StageEditorTab tab)
+    private static void RenderSelectionHighlights(StageEditorTab tab)
     {
         if (tab.SelectedPieceIds.Count == 0)
             return;
-
-        _selectionHighlightEffect ??= new BasicEffect(_graphicsDevice) { VertexColorEnabled = true };
-        _selectionHighlightEffect.View = activeCamera.ViewMatrix;
-        _selectionHighlightEffect.Projection = activeCamera.ProjectionMatrix;
 
         int neededVertices = 0;
         foreach (var id in tab.SelectedPieceIds)
@@ -1981,56 +1904,10 @@ public class StageEditorPhase : BasePhase
         if (neededVertices == 0)
             return;
 
-        if (_selectionOutlineVertices.Length < neededVertices)
-            _selectionOutlineVertices = new VertexPositionColor[neededVertices];
-
-        var color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-        int cursor = 0;
-
-        foreach (var id in tab.SelectedPieceIds)
-        {
-            var piece = tab.ScenePieces.GetValueOrDefault(id);
-            if (piece?.Obj == null)
-                continue;
-
-            var yaw = -piece.Rotation.Yaw.Radians;
-            var pitch = piece.Rotation.Pitch.Radians;
-            var roll = piece.Rotation.Roll.Radians;
-            var rotationMatrix =
-                Matrix.CreateRotationY((float)yaw) *
-                Matrix.CreateRotationX((float)pitch) *
-                Matrix.CreateRotationZ((float)roll);
-
-            var position = new Vector3(
-                (float)piece.Position.X,
-                (float)piece.Position.Y,
-                (float)piece.Position.Z);
-
-            var localOutline = GetOrCreateOutlineEdges(piece.Rad);
-            for (int i = 0; i < localOutline.Length; i++)
-            {
-                var world = Vector3.Transform(localOutline[i], rotationMatrix) + position;
-                _selectionOutlineVertices[cursor++] = new VertexPositionColor(world, color);
-            }
-        }
-
-        if (cursor == 0)
-            return;
-
-        var oldDepthStencilState = _graphicsDevice.DepthStencilState;
-        _graphicsDevice.DepthStencilState = DepthStencilState.None;
-
-        foreach (var pass in _selectionHighlightEffect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
-            _graphicsDevice.DrawUserPrimitives(
-                PrimitiveType.LineList,
-                _selectionOutlineVertices,
-                0,
-                cursor / 2);
-        }
-
-        _graphicsDevice.DepthStencilState = oldDepthStencilState;
+        Debug.RenderHighlights(tab.SelectedPieceIds
+            .Select(id => tab.ScenePieces.GetValueOrDefault(id)?.Obj!)
+            .Where(obj => obj != null!),
+            activeCamera);
     }
     
     /// <summary>
@@ -2046,87 +1923,12 @@ public class StageEditorPhase : BasePhase
         float yawRad = -_pendingPlacementYaw * (float)Math.PI / 180f; // negate to match engine convention
         var rotMatrix = Matrix.CreateRotationY(yawRad);
         
-        var oldDepth = _graphicsDevice.DepthStencilState;
-        var oldBlend = _graphicsDevice.BlendState;
-        var oldRasterizer = _graphicsDevice.RasterizerState;
-        
-        using var effect = new BasicEffect(_graphicsDevice);
-        effect.View = activeCamera.ViewMatrix;
-        effect.Projection = activeCamera.ProjectionMatrix;
-        effect.VertexColorEnabled = true;
-        
-        // Semi-transparent fill (both faces so it looks solid from any angle)
-        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        _graphicsDevice.BlendState = BlendState.AlphaBlend;
-        _graphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
+        var worldMatrix = rotMatrix * Matrix.CreateTranslation(pos);
         
         var fillColor = new Color(0.3f, 0.8f, 1.0f, 0.35f);
-        var fillVerts = new List<VertexPositionColor>();
-        
-        foreach (var poly in part.Polys)
-        {
-            if (poly.Points.Length < 3) continue;
-            for (int i = 1; i < poly.Points.Length - 1; i++)
-            {
-                fillVerts.Add(new(Vector3.Transform(new Vector3(poly.Points[0].X, poly.Points[0].Y, poly.Points[0].Z), rotMatrix) + pos, fillColor));
-                fillVerts.Add(new(Vector3.Transform(new Vector3(poly.Points[i].X, poly.Points[i].Y, poly.Points[i].Z), rotMatrix) + pos, fillColor));
-                fillVerts.Add(new(Vector3.Transform(new Vector3(poly.Points[i + 1].X, poly.Points[i + 1].Y, poly.Points[i + 1].Z), rotMatrix) + pos, fillColor));
-            }
-        }
-        
-        if (fillVerts.Count > 0)
-        {
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                _graphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, fillVerts.ToArray(), 0, fillVerts.Count / 3);
-            }
-        }
-        
-        // Bright wireframe on top (depth-ignore so it's always visible)
-        _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        _graphicsDevice.BlendState = BlendState.Opaque;
         var wireColor = new Color(0.1f, 0.9f, 1.0f, 1.0f);
-        var wireVerts = new List<VertexPositionColor>();
         
-        foreach (var poly in part.Polys)
-        {
-            if (poly.Points.Length < 2) continue;
-            for (int i = 0; i < poly.Points.Length; i++)
-            {
-                int next = (i + 1) % poly.Points.Length;
-                wireVerts.Add(new(Vector3.Transform(new Vector3(poly.Points[i].X, poly.Points[i].Y, poly.Points[i].Z), rotMatrix) + pos, wireColor));
-                wireVerts.Add(new(Vector3.Transform(new Vector3(poly.Points[next].X, poly.Points[next].Y, poly.Points[next].Z), rotMatrix) + pos, wireColor));
-            }
-        }
-        
-        if (wireVerts.Count > 0)
-        {
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                _graphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, wireVerts.ToArray(), 0, wireVerts.Count / 2);
-            }
-        }
-        
-        _graphicsDevice.DepthStencilState = oldDepth;
-        _graphicsDevice.BlendState = oldBlend;
-        _graphicsDevice.RasterizerState = oldRasterizer;
-    }
-    
-    // Project a world-space point to screen coordinates (returns false if behind camera)
-    private bool WorldToScreen(Vector3 worldPos, out Vector2 screenPos)
-    {
-        var viewport = _graphicsDevice.Viewport;
-        var clip = Vector4.Transform(new Vector4(worldPos, 1f),
-            activeCamera.ViewMatrix * activeCamera.ProjectionMatrix);
-        screenPos = default;
-        if (clip.W <= 0f) return false;
-        var ndc = new Vector3(clip.X / clip.W, clip.Y / clip.W, clip.Z / clip.W); // XNA Vector3
-        screenPos = new Vector2(
-            (ndc.X + 1f) * 0.5f * viewport.Width,
-            (1f - ndc.Y) * 0.5f * viewport.Height);
-        return true;
+        Debug.RenderGhost(part, worldMatrix, fillColor, wireColor, activeCamera);
     }
     
     private Vector3 ComputeSelectionCentroid()
@@ -2141,198 +1943,6 @@ public class StageEditorPhase : BasePhase
             (float)pieces.Average(p => (double)p.Position.Z));
     }
 
-    private GizmoMetrics ComputeGizmoMetrics(Vector3 piecePos)
-    {
-        float scale = 1f;
-
-        if (TryGetProjectedAxisLength(piecePos, GIZMO_ARROW_LENGTH, out var axisPx) && axisPx > 1f)
-        {
-            // Keep the gizmo readable at long distances by targeting a minimum on-screen axis length.
-            scale = Math.Clamp(GIZMO_TARGET_AXIS_PIXELS / axisPx, 1f, GIZMO_MAX_SCALE);
-        }
-
-        return new GizmoMetrics(
-            GIZMO_ARROW_LENGTH * scale,
-            GIZMO_ARROW_THICKNESS * scale,
-            GIZMO_ROT_RADIUS * scale);
-    }
-
-    private bool TryGetProjectedAxisLength(Vector3 piecePos, float axisLength, out float projectedAxisLength)
-    {
-        projectedAxisLength = 0f;
-
-        if (!WorldToScreen(piecePos, out var ss0))
-            return false;
-
-        if (WorldToScreen(piecePos + new Vector3(axisLength, 0, 0), out var ssX))
-            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssX));
-        if (WorldToScreen(piecePos + new Vector3(0, -axisLength, 0), out var ssY))
-            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssY));
-        if (WorldToScreen(piecePos + new Vector3(0, 0, axisLength), out var ssZ))
-            projectedAxisLength = Math.Max(projectedAxisLength, Vector2.Distance(ss0, ssZ));
-
-        return projectedAxisLength > 0f;
-    }
-
-    private void RenderGizmo(Vector3 gizmoPos)
-    {
-        var piecePos = gizmoPos;
-        var gizmoMetrics = ComputeGizmoMetrics(piecePos);
-        var xEnd = piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0);
-        // Y arrow points up in world space (negative Y in FNA because Y is flipped)
-        var yEnd = piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0);
-        var zEnd = piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength);
-        
-        var oldDepth = _graphicsDevice.DepthStencilState;
-        _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        
-        using var effect = new BasicEffect(_graphicsDevice);
-        effect.View = activeCamera.ViewMatrix;
-        effect.Projection = activeCamera.ProjectionMatrix;
-        effect.VertexColorEnabled = true;
-        
-        // Colors: red=X, yellow=Y(up), blue=Z, green=RotY ring
-        var colX = _gizmoHovered == GizmoAxis.X || _gizmoDragging == GizmoAxis.X
-            ? new Color(1f, 0.6f, 0.6f, 1f)
-            : new Color(1f, 0.1f, 0.1f, 1f);
-        var colY = _gizmoHovered == GizmoAxis.Y || _gizmoDragging == GizmoAxis.Y
-            ? new Color(1f, 1f, 0.6f, 1f)
-            : new Color(1f, 0.9f, 0.1f, 1f);
-        var colZ = _gizmoHovered == GizmoAxis.Z || _gizmoDragging == GizmoAxis.Z
-            ? new Color(0.6f, 0.6f, 1f, 1f)
-            : new Color(0.1f, 0.1f, 1f, 1f);
-        var colRot = _gizmoHovered == GizmoAxis.RotY || _gizmoDragging == GizmoAxis.RotY
-            ? new Color(0.6f, 1f, 0.6f, 1f)
-            : new Color(0.1f, 0.9f, 0.1f, 1f);
-        
-        // Arrowhead side fins and tip offsets for each axis
-        var xSide     = new Vector3(0, gizmoMetrics.ArrowThickness * 2, 0);
-        var ySide     = new Vector3(gizmoMetrics.ArrowThickness * 2, 0, 0);
-        var zSide     = new Vector3(gizmoMetrics.ArrowThickness * 2, 0, 0);
-        var xTipOffset = new Vector3(gizmoMetrics.ArrowLength * 0.15f, 0, 0);
-        var yTipOffset = new Vector3(0, -gizmoMetrics.ArrowLength * 0.15f, 0); // negative = upward
-        var zTipOffset = new Vector3(0, 0, gizmoMetrics.ArrowLength * 0.15f);
-        
-        var verts = new List<VertexPositionColor>();
-        
-        // X arrow shaft
-        verts.Add(new(piecePos, colX)); verts.Add(new(xEnd, colX));
-        // X arrowhead
-        verts.Add(new(xEnd - xTipOffset + xSide, colX)); verts.Add(new(xEnd, colX));
-        verts.Add(new(xEnd - xTipOffset - xSide, colX)); verts.Add(new(xEnd, colX));
-        
-        // Y arrow shaft (points up)
-        verts.Add(new(piecePos, colY)); verts.Add(new(yEnd, colY));
-        // Y arrowhead
-        verts.Add(new(yEnd - yTipOffset + ySide, colY)); verts.Add(new(yEnd, colY));
-        verts.Add(new(yEnd - yTipOffset - ySide, colY)); verts.Add(new(yEnd, colY));
-        
-        // Z arrow shaft
-        verts.Add(new(piecePos, colZ)); verts.Add(new(zEnd, colZ));
-        // Z arrowhead
-        verts.Add(new(zEnd - zTipOffset + zSide, colZ)); verts.Add(new(zEnd, colZ));
-        verts.Add(new(zEnd - zTipOffset - zSide, colZ)); verts.Add(new(zEnd, colZ));
-        
-        // Rotation ring (circle of line segments at piece Y level)
-        const int ringSegs = 32;
-        for (int i = 0; i < ringSegs; i++)
-        {
-            float a0 = i / (float)ringSegs * (2f * MathF.PI);
-            float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
-            verts.Add(new(piecePos + new Vector3(MathF.Cos(a0) * gizmoMetrics.RotRadius, 0, MathF.Sin(a0) * gizmoMetrics.RotRadius), colRot));
-            verts.Add(new(piecePos + new Vector3(MathF.Cos(a1) * gizmoMetrics.RotRadius, 0, MathF.Sin(a1) * gizmoMetrics.RotRadius), colRot));
-        }
-        
-        var arr = verts.ToArray();
-        
-        // Compute camera-relative perpendicular offsets so lines appear ~5px wide at any distance.
-        // Camera right/up come from the columns of the view matrix (orthonormal rotation part).
-        float dist = Vector3.Distance(activeCamera.Position, piecePos);
-        float halfFovRad = perspectiveCamera.Fov * MathF.PI / 180f * 0.5f;
-        // World units that map to 1 screen pixel at this distance
-        float pixelSize = dist * MathF.Tan(halfFovRad) * 2f / _graphicsDevice.Viewport.Height;
-        float s = pixelSize * 2f; // 2 px each side = ~5px total visual width
-        var camRight = new Vector3(activeCamera.ViewMatrix.M11, activeCamera.ViewMatrix.M21, activeCamera.ViewMatrix.M31);
-        var camUp    = new Vector3(activeCamera.ViewMatrix.M12, activeCamera.ViewMatrix.M22, activeCamera.ViewMatrix.M32);
-        var thickOffsets = new[]
-        {
-            Vector3.Zero,
-            camRight *  s, camRight * -s,
-            camUp    *  s, camUp    * -s,
-        };
-        
-        foreach (var offset in thickOffsets)
-        {
-            var offsetArr = offset == Vector3.Zero
-                ? arr
-                : arr.Select(v => new VertexPositionColor(v.Position + offset, v.Color)).ToArray();
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                _graphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, offsetArr, 0, offsetArr.Length / 2);
-            }
-        }
-        
-        _graphicsDevice.DepthStencilState = oldDepth;
-        
-        // Update hover state based on screen-space distances
-        UpdateGizmoHover(piecePos, gizmoMetrics);
-    }
-    
-    private void UpdateGizmoHover(Vector3 piecePos, GizmoMetrics gizmoMetrics)
-    {
-        if (_gizmoDragging != GizmoAxis.None) return;
-        
-        float mx = _mouseX, my = _mouseY;
-        float closestDist = 20f; // hover threshold in pixels
-        _gizmoHovered = GizmoAxis.None;
-        
-        // Check X arrow
-        if (WorldToScreen(piecePos, out var ss0) &&
-            WorldToScreen(piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0), out var ss1))
-        {
-            float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
-            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.X; }
-        }
-        // Check Y arrow (up)
-        if (WorldToScreen(piecePos, out ss0) &&
-            WorldToScreen(piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0), out ss1))
-        {
-            float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
-            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Y; }
-        }
-        // Check Z arrow
-        if (WorldToScreen(piecePos, out ss0) &&
-            WorldToScreen(piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength), out ss1))
-        {
-            float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
-            if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.Z; }
-        }
-        // Check rotation ring (test each segment)
-        const int ringSegs = 32;
-        for (int i = 0; i < ringSegs; i++)
-        {
-            float a0 = i / (float)ringSegs * (2f * MathF.PI);
-            float a1 = (i + 1) / (float)ringSegs * (2f * MathF.PI);
-            var p0 = piecePos + new Vector3(MathF.Cos(a0) * gizmoMetrics.RotRadius, 0, MathF.Sin(a0) * gizmoMetrics.RotRadius);
-            var p1 = piecePos + new Vector3(MathF.Cos(a1) * gizmoMetrics.RotRadius, 0, MathF.Sin(a1) * gizmoMetrics.RotRadius);
-            if (WorldToScreen(p0, out ss0) && WorldToScreen(p1, out ss1))
-            {
-                float d = DistanceToSegment(new Vector2(mx, my), ss0, ss1);
-                if (d < closestDist) { closestDist = d; _gizmoHovered = GizmoAxis.RotY; }
-            }
-        }
-    }
-    
-    private static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
-    {
-        var ab = b - a;
-        var ap = p - a;
-        float t = Vector2.Dot(ap, ab) / Vector2.Dot(ab, ab);
-        t = Math.Clamp(t, 0f, 1f);
-        return Vector2.Distance(p, a + t * ab);
-    }
-    
     private void ProcessOnePreviewThumbnail()
     {
         if (_previewQueue.Count == 0) return;
@@ -2797,8 +2407,8 @@ public class StageEditorPhase : BasePhase
                 {
                     // Project the gizmo arrow from the centroid to get pixels-per-world-unit ratio
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0), out var ss1))
+                    var gizmoMetrics = Debug.ComputeGizmoMetrics(piecePos, activeCamera);
+                    if (Debug.WorldToScreen(piecePos, out var ss0, activeCamera) && Debug.WorldToScreen(piecePos + new Vector3(gizmoMetrics.ArrowLength, 0, 0), out var ss1, activeCamera))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -2825,8 +2435,8 @@ public class StageEditorPhase : BasePhase
                 {
                     // Y axis: project the upward arrow (world -Y direction) to screen
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0), out var ss1))
+                    var gizmoMetrics = Debug.ComputeGizmoMetrics(piecePos, activeCamera);
+                    if (Debug.WorldToScreen(piecePos, out var ss0, activeCamera) && Debug.WorldToScreen(piecePos + new Vector3(0, -gizmoMetrics.ArrowLength, 0), out var ss1, activeCamera))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -2852,8 +2462,8 @@ public class StageEditorPhase : BasePhase
                 else if (_gizmoDragging == GizmoAxis.Z)
                 {
                     var piecePos = new Vector3(_gizmoCentroidX, _gizmoCentroidY, _gizmoCentroidZ);
-                    var gizmoMetrics = ComputeGizmoMetrics(piecePos);
-                    if (WorldToScreen(piecePos, out var ss0) && WorldToScreen(piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength), out var ss1))
+                    var gizmoMetrics = Debug.ComputeGizmoMetrics(piecePos, activeCamera);
+                    if (Debug.WorldToScreen(piecePos, out var ss0, activeCamera) && Debug.WorldToScreen(piecePos + new Vector3(0, 0, gizmoMetrics.ArrowLength), out var ss1, activeCamera))
                     {
                         var screenArrow = ss1 - ss0;
                         float screenLen = screenArrow.Length();
@@ -3236,7 +2846,7 @@ public class StageEditorPhase : BasePhase
                     {
                         if (piece.Obj == null) continue;
                         var wp = new Vector3((float)piece.Position.X, (float)piece.Position.Y, (float)piece.Position.Z);
-                        if (WorldToScreen(wp, out var sp))
+                        if (Debug.WorldToScreen(wp, out var sp, activeCamera))
                         {
                             if (sp.X >= minX && sp.X <= maxX && sp.Y >= minY && sp.Y <= maxY)
                             {
@@ -3503,7 +3113,7 @@ public class StageEditorPhase : BasePhase
         {
             var selectedPiece = ActiveTab.ScenePieces.GetValueOrDefault(ActiveTab.ActivePieceId);
             if (selectedPiece?.Obj != null)
-                RenderGizmo(ComputeSelectionCentroid());
+                Debug.RenderGizmo(ComputeSelectionCentroid(), activeCamera, ref _gizmoHovered, ref _gizmoDragging, new Vector2(_mouseX, _mouseY));
         }
         
         // Process pending preview thumbnails
