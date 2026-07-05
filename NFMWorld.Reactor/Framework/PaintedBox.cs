@@ -9,6 +9,8 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class PaintedBox : FlexPanel
 {
+    public override bool DebugIsContentfulNode => BackgroundColor != null || BorderColor != null;
+
     [Property]
     public Color? BorderColor { get; set; }
     [Property]

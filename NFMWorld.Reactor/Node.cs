@@ -24,6 +24,8 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
     internal readonly string __INTERNAL_CtorCallerMemberName = "";
 
+    public virtual bool DebugIsContentfulNode => false;
+
     static Node()
     {
         Config = YGConfigPtr.GetDefault();

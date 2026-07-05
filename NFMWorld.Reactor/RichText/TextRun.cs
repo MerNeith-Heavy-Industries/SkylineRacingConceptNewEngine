@@ -26,6 +26,8 @@ public partial class TextRun : Node
     private bool _invalidated = true;
     protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
+    public override bool DebugIsContentfulNode => true;
+    
     /// <summary>
     /// Sets the background color of the text.
     /// </summary>

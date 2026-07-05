@@ -15,6 +15,29 @@ public static class NodeDebugger
 
     public static IReadOnlyList<Node> YogaRootsThisFrame => Node.__INTERNAL_YogaRootsThisFrame;
 
+#if DEBUG
+    internal static readonly List<ReactorDebugNode> _VDomRootsThisFrame = [];
+#endif
+
+    /// <summary>
+    /// The root nodes of the Reactor VDOM tree captured during this frame's
+    /// reconciliation pass. Each node carries its VNode type, associated
+    /// native <see cref="Visual"/> (for layout lookup), and — for Component
+    /// nodes — constructor inputs.
+    /// </summary>
+    /// <remarks>Only populated in DEBUG builds.</remarks>
+    public static IReadOnlyList<ReactorDebugNode> VDomRoots
+    {
+        get
+        {
+#if DEBUG
+            return _VDomRootsThisFrame;
+#else
+            return Array.Empty<ReactorDebugNode>();
+#endif
+        }
+    }
+
     public static DebugInfo GetDebugInfo(Node node)
     {
         return new DebugInfo(
@@ -27,5 +50,8 @@ public static class NodeDebugger
     public static void NewFrame()
     {
         Node.__INTERNAL_YogaRootsThisFrame.Clear();
+#if DEBUG
+        _VDomRootsThisFrame.Clear();
+#endif
     }
 }

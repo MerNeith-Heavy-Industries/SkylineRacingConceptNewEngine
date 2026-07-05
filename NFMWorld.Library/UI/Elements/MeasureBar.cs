@@ -5,6 +5,8 @@ namespace NFMWorld.DriverInterface.UI;
 
 public partial class MeasureBar : Image
 {
+    public override bool DebugIsContentfulNode => true;
+    
     [Property]
     public Color Color { get; set; } = new Color(255, 255, 255);
     

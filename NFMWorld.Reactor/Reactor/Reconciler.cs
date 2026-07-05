@@ -30,6 +30,11 @@ internal class Reconciler
     private int _batchIterations;
     private const int MaxBatchIterations = 50;
 
+#if DEBUG
+    private readonly Stack<ReactorDebugNode> _debugParents = new();
+    private readonly List<ReactorDebugNode> _debugRoots = [];
+#endif
+
     private void PushContextFrame() => _contextStack.Push(new ContextFrame());
     internal void PopContextFrame() => _contextStack.Pop();
 
@@ -80,6 +85,10 @@ internal class Reconciler
     {
         _inBatch = true;
         _batchIterations = 0;
+#if DEBUG
+        _debugRoots.Clear();
+        _debugParents.Clear();
+#endif
         try
         {
             // ── Null vnode: unmount everything ───────────────────────────
@@ -112,6 +121,11 @@ internal class Reconciler
 
             DrainPendingUpdates();
             FinishPass();
+
+#if DEBUG
+            NodeDebugger._VDomRootsThisFrame.Clear();
+            NodeDebugger._VDomRootsThisFrame.AddRange(_debugRoots);
+#endif
 
             return result;
         }
@@ -192,6 +206,11 @@ internal class Reconciler
             existing = vvnode.CreateNative();
         }
 
+#if DEBUG
+        var debugNode = new ReactorDebugNode(vvnode.NodeType, vvnode.Name, vvnode.Key, existing);
+        PushDebugNode(debugNode);
+#endif
+
         // ── Apply properties via the snapshot system ─────────────────────
         ref var snapshot = ref CollectionsMarshal.GetValueRefOrAddDefault(_snapshots, existing, out var exists);
         if (!exists) snapshot = new Snapshot();
@@ -217,7 +236,11 @@ internal class Reconciler
                 // ReSharper disable once UseCollectionExpression
                 ReconcileChildren(Array.Empty<VNode>(), existing);
         }
-    
+
+#if DEBUG
+        PopDebugNode();
+#endif
+
         return existing;
     }
 
@@ -393,14 +416,27 @@ internal class Reconciler
 
         _visitedComponents.Add(cnode.Instance);
 
+#if DEBUG
+        var debugNode = new ReactorDebugNode(cnode.ComponentType, cnode.GetInputs(), existing);
+        // The native visual is the component's rendered root — update after RenderViaReconciler.
+        PushDebugNode(debugNode);
+#endif
+
         PushContextFrame();
         try
         {
-            return cnode.Instance.RenderViaReconciler(this, existing, cnode);
+            var result = cnode.Instance.RenderViaReconciler(this, existing, cnode);
+#if DEBUG
+            debugNode.UpdateNativeVisual(result);
+#endif
+            return result;
         }
         finally
         {
             PopContextFrame();
+#if DEBUG
+            PopDebugNode();
+#endif
         }
     }
 
@@ -516,4 +552,20 @@ internal class Reconciler
             _contextStack.Push(frame);
         }
     }
+
+#if DEBUG
+    private void PushDebugNode(ReactorDebugNode node)
+    {
+        if (_debugParents.TryPeek(out var parent))
+            parent.Children.Add(node);
+        else
+            _debugRoots.Add(node);
+        _debugParents.Push(node);
+    }
+
+    private void PopDebugNode()
+    {
+        _debugParents.Pop();
+    }
+#endif
 }

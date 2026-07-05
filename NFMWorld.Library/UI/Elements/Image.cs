@@ -7,6 +7,8 @@ namespace NFMWorld.DriverInterface.UI;
 
 public partial class Image : Node
 {
+    public override bool DebugIsContentfulNode => true;
+
     [ClientOnly]
     [Property]
     public IImage? ImageData
