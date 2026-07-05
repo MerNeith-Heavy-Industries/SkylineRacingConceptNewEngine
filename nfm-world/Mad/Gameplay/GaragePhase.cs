@@ -133,7 +133,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
         float ab = _backendCar.Stats.Airc / 75f;
         
-        _garageUiViewNode = GarageUiView([
+        _garageUiViewNode = GarageUiView(
             switsLevel,
             accel,
             (float)_backendCar.Stats.Dishandle,
@@ -143,7 +143,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             airs,
             hglide,
             ab
-        ]);
+        );
         UpdateUi();
     }
 
@@ -153,6 +153,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     {
         base.GameTick();
         _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
+        _garageUiContainer.Update(FocusManager);
     }
 
     public override void Render(float alpha)
@@ -290,7 +291,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void Enter()
     {
         _garageDom = new ReactorDom();
-        _garageUiViewNode = GarageUiView([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        _garageUiViewNode = GarageUiView(0, 0, 0, 0, 0, 0, 0, 0, 0);
         
         UpdateUi();
         SetupCurrentCar();
@@ -303,6 +304,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     public override void Exit()
     {
+        _garageDom?.Unmount();
         base.Exit();
     }
 

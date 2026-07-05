@@ -514,6 +514,14 @@ public class SettingsMenu(WorldGame game)
                 graphicsChanged = true;
             }
         }
+        else
+        {
+            if (game.Graphics.PreferMultiSampling)
+            {
+                game.Graphics.PreferMultiSampling = false;
+                graphicsChanged = true;
+            }
+        }
         
         if (_selectedDisplayMode == 0) // fullscreen
         {
