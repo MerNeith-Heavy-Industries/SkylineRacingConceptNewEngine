@@ -179,9 +179,15 @@ public class WorldGame : Game
         _oldScrollValue = mouseState.ScrollWheelValue;
         
         _nvg = new NanoVGRenderer(GraphicsDevice);
-        
-        GraphicsDevice.PresentationParameters.MultiSampleCount = 8;
-        
+
+        // MSAA is set by SettingsMenu.LoadConfig -> ApplySettings at startup.
+        // Fallback: ensure MSAA is at least enabled if no config file exists.
+        if (GraphicsDevice.PresentationParameters.MultiSampleCount == 0)
+        {
+            GraphicsDevice.PresentationParameters.MultiSampleCount = 8;
+            Graphics.ApplyChanges();
+        }
+
         base.Initialize();
     }
 
