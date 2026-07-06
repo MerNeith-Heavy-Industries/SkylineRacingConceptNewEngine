@@ -55,7 +55,6 @@
     <Project Path="MemoryPack/src/MemoryPack/MemoryPack.csproj" />
   </Folder>
   <Folder Name="/NvgSharp/">
-    <Project Path="NvgSharp/samples/NvgSharp.Samples.Demo/NvgSharp.Samples.Demo.FNA.Core.csproj" />
     <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj" />
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
   </Folder>
