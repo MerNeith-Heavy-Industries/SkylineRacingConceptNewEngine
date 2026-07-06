@@ -8,6 +8,7 @@ using NFMWorldLibrary.DriverInterface.UI.Elements;
 using WorldXaml.UI.Yoga;
 using static NFMWorld.Reactor.Nodes;
 using static NFMWorld.DriverInterface.UI.Nodes;
+using static NFMWorld.UI.Nodes;
 using Node = NFMWorld.Reactor.Node;
 
 namespace NFMWorld.UI.Menu;
@@ -17,7 +18,6 @@ public class MainMenuView(
     Action? settings = null,
     Action? credits = null,
     Action? quit = null,
-    Action? login = null,
     Action? logout = null,
     Action? playNfm1 = null,
     Action? playNfm2 = null,
@@ -30,7 +30,10 @@ public class MainMenuView(
     Action? campaignEditor = null,
     Action? timeTrials = null,
     Action? challenges = null,
-    Action? gameInstructions = null
+    Action? gameInstructions = null,
+    Action<string, string>? signIn = null,
+    Action<string, string, string>? signUp = null,
+    Action? discordSignIn = null
 ) : Component
 {
     public static class Colors
@@ -172,6 +175,8 @@ public class MainMenuView(
             ]);
         }, [garage, settings, credits, quit, buildPlayMenu, buildWorkshopMenu]);
 
+        var (loginVisible, setLoginVisible) = UseState(false);
+
         UseEffect(() =>
         {
             setActivePage(_ => buildMainMenu());
@@ -238,7 +243,7 @@ public class MainMenuView(
                                     foreground: account is null ? Colors.Primary : Colors.Unimportant,
                                     stroke: Color.Black,
                                     text: account is null ? "Login" : "Logout",
-                                    mousePressed: account is null ? _ => login?.Invoke() : _ => logout?.Invoke()
+                                    mousePressed: account is null ? _ => setLoginVisible(_ => true) : _ => logout?.Invoke()
                                 )
                             ]
                         )
@@ -303,6 +308,14 @@ public class MainMenuView(
                             text: account is null ? "Not logged in" : $"Logged in as {account.Username}"
                         )
                     ]
+                ),
+                
+                LoginModal(
+                    isVisible: loginVisible,
+                    onSignIn: signIn,
+                    onSignUp: signUp,
+                    onDiscordSignIn: discordSignIn,
+                    onClose: () => setLoginVisible(_ => false)
                 )
             ]
         );

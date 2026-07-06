@@ -76,6 +76,13 @@ public partial class TextInput : TextRun
     [Property]
     public Action<string>? Submitted { get; set; }
 
+    /// <summary>
+    /// Raised whenever the text content changes (typing, backspace, delete, paste, programmatic set).
+    /// The new text value is passed as the argument.
+    /// </summary>
+    [Property]
+    public Action<string>? TextChanged { get; set; }
+
     public TextInput()
     {
         IsFocusable = true;
@@ -93,6 +100,8 @@ public partial class TextInput : TextRun
         // Reset cursor blink so it is visible immediately after typing
         _cursorBlinkTimer = 0;
         _cursorVisible = true;
+
+        TextChanged?.Invoke(Text ?? "");
     }
 
     // ── Selection helpers ──────────────────────────────────────────

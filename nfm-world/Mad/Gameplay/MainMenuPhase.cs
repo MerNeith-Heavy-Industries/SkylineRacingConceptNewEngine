@@ -31,7 +31,6 @@ public class MainMenuPhase : BaseStageRenderingPhase
             settings: OnSettingsClicked,
             credits: OnClickUnavailable,
             quit: OnQuitClicked,
-            login: OnLoginClicked,
             logout: OnLogoutClicked,
             playNfm1: OnClickUnavailable,
             playNfm2: OnClickUnavailable,
@@ -58,11 +57,6 @@ public class MainMenuPhase : BaseStageRenderingPhase
         GameSparker.SetPhase(inRace);
 
         Logging.Info("Game started!");
-    }
-
-    private void OnLoginClicked()
-    {
-        // accountManagerMenu ??= new AccountManagerModal();
     }
 
     private void OnLogoutClicked()
