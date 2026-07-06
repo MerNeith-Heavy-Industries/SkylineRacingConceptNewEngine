@@ -200,7 +200,7 @@ public class Dust : IDisposable
         var g = _srgb[dust, 1];
         var b = _srgb[dust, 2];
         // TODO apply fog here
-            
+
         var color = new Color3((short)r, (short)g, (short)b);
         var alpha = _sbln[dust] - Stg[dust] * (_sbln[dust] / 8.0F);
 
