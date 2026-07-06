@@ -9,7 +9,7 @@ public enum StyleSheetState
     Normal = 0,
     Hover = 1,
     Active = 2,
-    Focus = 3
+    Focus = 4
 }
 
 public class StyleSheet
