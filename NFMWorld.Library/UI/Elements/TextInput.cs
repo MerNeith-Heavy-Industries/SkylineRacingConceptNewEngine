@@ -171,7 +171,7 @@ public partial class TextInput : TextRun
                 return elem.Position.X;
 
             var fontMetrics = G.GetFontMetrics(elem.Font);
-            var measured = fontMetrics.MeasureText(elem.Text[..charsBefore]);
+            var measured = fontMetrics.MeasureText(elem.Text.AsSpan(..charsBefore));
             return elem.Position.X + measured.X;
         }
 
