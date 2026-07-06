@@ -54,6 +54,7 @@ Key characteristics:
 - **Do NOT:**
   - Remove or flatten the MSBuild platform conditionals without testing on all OSes.
   - Change shader/tool expectations without keeping a non-Windows fallback path (`tools/fxc.exe` or documented wine steps).
+  
 
 If anything above is unclear or you want examples inserted for a specific task (adding a native plugin, publishing for Linux, or modifying shader flow), tell me which area to expand and I will update this file.
 
@@ -172,7 +173,7 @@ A React-like virtual DOM framework built on top of the Yoga layout engine. Repla
 
 ### Key patterns
 
-- **Factory methods** produce typed VNode instances: `FlexPanel(name: "x", opacity: 0.5f, children: [...])`
+- **Factory methods** produce typed VNode instances: `FlexPanel(name: "x", opacity: 0.5f, children: [...])` (access with `using static` on the generated `Nodes` class in the same namespace).
 - **Fluent builders** on VNodes: `.WithName("x")`, `.WithKey("k")`, `.WithOpacity(0.5f)`
 - **Shadowed methods**: generated subclasses shadow base `With*` methods with `new` to return the correct type (e.g., `FlexPanelNode.WithName` returns `FlexPanelNode`)
 - **Stale properties**: if a property is set in pass N but omitted in pass N+1, it resets to its default value via the snapshot system
@@ -215,20 +216,20 @@ public PowerDamageBars()
 }
 ```
 
-### Current Limitations
-
-- **No styles/templates** — All styling is inline or in code-behind
-- **Limited type converters** — Only Font, Color, Measurement types have converters
-- **Build task required** — XAML files must be in `<AvaloniaXaml>` ItemGroup to be compiled
-
 ### Troubleshooting
 
 | Symptom | Cause / Fix |
 |---|---|
 | "Partial class with single part" warning | Expected; the source generator produces the other `partial` declaration |
-| Missing `InitializeComponent` | Ensure XAML is in `<AvaloniaXaml>` ItemGroup and `x:Class` matches code-behind |
-| "Type not found" at build | Check `xmlns` namespace matches actual C# namespace |
-| "Property not found" at build | Ensure property has a public setter decorated with `[Property]` attribute |
+
+### Common Nodes/Components
+
+- FlexPanel — a Yoga-backed container with flex layout
+- PaintedBox — like FlexPanel but with a background and border; supports `BackgroundColor`, `BorderColor`, `BorderWidth`, `BorderRadius`
+- TextRun — a rich text layouting component with many knobs for tweaking
+- ContentsPanel — renders its children without participating in layout. Equivalent to `display: contents`
+- View — usually the top-level element of the tree. Required for root Visual detection.
+- Modal — part of NFMWorld.UI. Renders a VNode centered horizontally and vertically on screen.
 
 ### Yoga Layout Engine
 
@@ -239,6 +240,107 @@ The layout system wraps Facebook's **Yoga** (flexbox for native UIs). The C# wra
 Both directions of conversion (`→ native` and `← native`) must be present. Missing one direction causes obscure type errors in XAML-generated code when adding new enum values.
 
 The property system (in `WorldXaml.UI.Yoga` namespace, implemented in `NFMWorld.Reactor`) is the reactive backbone. UI element properties that should be settable from XAML must be declared with the `[Property]` attribute.
+
+### Reactor Styling System
+
+A CSS-in-C# styling system built on `StyleSheet`, `StyleSheetStyles`, and the `Styles()` factory. Styles cascade from stylesheets to native Visuals at reconcile time.
+
+**Key types:**
+
+| Type | Role |
+|---|---|
+| `StyleSheet` | Container with 4 `StyleSheetStyles` slots: `Default`, `Hover`, `Active`, `Focus` |
+| `StyleSheetStyles` | Struct holding ~55 CSS-like properties (layout, paint, text) — all nullable |
+| `StyleSheetState` | `[Flags]` enum: `Normal=0`, `Hover=1`, `Active=2`, `Focus=4` |
+
+**Key files:**
+- `NFMWorld.Reactor/StyleSheetStyles.cs` — `StyleSheet`, `StyleSheetStyles`, `StyleSheetState`, `Merge()`
+- `NFMWorld.Reactor/StyleFactory.cs` — `Nodes.Styles()` factory method
+- `NFMWorld.Reactor/Visual.cs` — `Style` property, `UpdateStyleSheet()`, `GetSheetState()`
+- `NFMWorld.Reactor/Node.cs` — `UpdateStyles()` override (layout props)
+- `NFMWorld.Reactor/VisualVNode.cs` — `_style` field + `WithStyle()`
+
+**The `Styles()` API** (from `static Nodes`):
+
+```csharp
+// Single entry point with all CSS-like properties + pseudo-state sub-sheets
+StyleSheet Styles(
+    // ~55 layout/paint/text params (all nullable)
+    FlexDirection? flexDirection = null,
+    Align? alignItems = null,
+    Color? backgroundColor = null,
+    float? fontSize = null,
+    // ...
+    // Pseudo-state sub-sheets:
+    StyleSheet? hover = null,
+    StyleSheet? active = null,
+    StyleSheet? focus = null
+)
+```
+
+**Usage pattern** (static cached sheets preferred):
+
+```csharp
+public static class Styles
+{
+    public static readonly StyleSheet Button = Styles(
+        flexDirection: FlexDirection.Row,
+        alignItems: Align.Center,
+        minWidth: 230, minHeight: 35,
+        backgroundColor: Color.Transparent,
+        borderColor: Color.Transparent,
+        borderRadius: 5,
+        hover: Styles(
+            backgroundColor: Colors.Background,
+            borderColor: Colors.Primary
+        )
+    );
+}
+
+// Apply via factory method:
+PaintedBox(style: Styles.Button, children: [...])
+
+// Or via fluent builder:
+FlexPanel(...).WithStyle(Styles.Button)
+```
+
+**How styles flow through the pipeline:**
+
+1. **Factory method** → `if (style is not null) n.WithStyle(style)` → stores in `VNode._style`
+2. **`AssignProperties`** (generated) → sets `typedVisual.Style = _style` → triggers `Visual.Style` setter
+3. **`Visual.Style` setter** → calls `UpdateStyleSheet()` which computes `GetSheetState()` (`Normal | Hover | Active | Focus`)
+4. **`GetStylesForState(state)`** → merges `Default` + `Hover?` + `Active?` + `Focus?` via `StyleSheetStyles.Merge` (last non-null wins)
+5. **`UpdateStyles(old, new)`** → each Visual subclass resets old values to defaults, applies new ones:
+   - `Node.UpdateStyles()` → layout props (Flex, Margin, Padding, Width/Height, etc.)
+   - `PaintedBox.UpdateStyles()` → + border/background colors, border radii
+   - `TextRun.UpdateStyles()` → + font, foreground, stroke, text alignment
+
+**Precedence: direct property > style > default.** The generated `AssignProperties` sets `Visual.Style` first (which triggers `UpdateStyles` → sets layout/paint/text props), then sets direct properties afterward. Direct values overwrite any style-derived values.
+
+**Pseudo-state transitions** are automatic: when `Visual.IsHovered`, `IsActive`, or `IsFocused` changes, the setter triggers `UpdateStyleSheet()` which re-merges the appropriate pseudo-state sheets and calls `UpdateStyles()` to apply the diff.
+
+**Composition / merging:**
+
+```csharp
+// Merge multiple sheets — later sheets win for non-null properties
+StyleSheet combined = StyleSheet.Merge(baseSheet, overrideSheet);
+// or via implicit operator:
+StyleSheet combined = new[] { baseSheet, overrideSheet };
+```
+
+**Staleness and the snapshot system:** The generated `AssignProperties` saves `typedVisual.Style` into the property snapshot before overwriting. On the next reconcile pass, `prev.AssignProperties` restores the old style, then the current style is applied. This ensures that when a style is removed from a VNode, the native Visual is reset correctly.
+
+**Lessons learned:**
+
+**L1 — Styles are applied BEFORE direct properties in `AssignProperties`.** This ordering is intentional and gives direct props priority. Do not reorder without updating tests.
+
+**L2 — Cache styles as `static readonly` fields.** Creating new `StyleSheet` instances every render allocates unnecessary objects. The `Styles.Button` pattern in `MainMenuView.cs` is the recommended approach.
+
+**L3 — `UpdateStyles` resets old values to defaults before applying new ones.** This means omitting a property from a style sheet resets it. Use `StyleSheet.Merge` to layer partial sheets safely.
+
+**L4 — Pseudo-state sub-sheets are just `StyleSheet.Default` lifted into the slot.** In `Styles()`, `hover?.Default ?? default` is used (not `hover` itself). This means nested pseudo-state styles are flattened into the parent sheet's Hover/Active/Focus slots.
+
+**L5 — No dedicated style unit tests exist.** The styling system is tested implicitly through UI integration. If making significant changes, manually verify with a running app.
 
 ---
 
