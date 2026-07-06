@@ -88,8 +88,6 @@ public class LoginModal(
                 name: "backdrop",
                 backgroundColor: new Color(0, 0, 0, 180),
                 borderColor: Color.Transparent,
-                position: Position.Absolute,
-                top: 0, left: 0, right: 0, bottom: 0,
 
                 flexDirection: FlexDirection.Column,
                 minWidth: 380,
@@ -107,8 +105,6 @@ public class LoginModal(
                         borderTopRightRadius: 8,
                         borderBottomLeftRadius: 8,
                         borderBottomRightRadius: 8,
-                        position: Position.Absolute,
-                        top: 0, left: 0, right: 0, bottom: 0,
 
                         flexDirection: FlexDirection.Column,
 
@@ -121,23 +117,20 @@ public class LoginModal(
                                 marginBottom: 8,
                                 children: [
                                     // Sign In tab
-                                    FlexPanel(
+                                    PaintedBox(
                                         name: "signInTab",
                                         flex: 1,
                                         padding: "12,10",
                                         alignItems: Align.Center,
                                         justifyContent: Justify.Center,
                                         mousePressed: _ => switchToSignIn(),
+                                        
+                                        backgroundColor: activeTab == 0 ? ActiveTabBg : InactiveTabBg,
+                                        borderColor: Orange,
+                                        borderTopLeftRadius: 6,
+                                        borderTopRightRadius: 6,
+                                        
                                         children: [
-                                            PaintedBox(
-                                                name: "signInTabBg",
-                                                backgroundColor: activeTab == 0 ? ActiveTabBg : InactiveTabBg,
-                                                borderColor: Orange,
-                                                position: Position.Absolute,
-                                                top: 0, left: 0, right: 0, bottom: 0,
-                                                borderTopLeftRadius: 6,
-                                                borderTopRightRadius: 6
-                                            ),
                                             TextRun(
                                                 name: "signInTabText",
                                                 fontFamily: FontFamily.Adventure,
@@ -150,23 +143,20 @@ public class LoginModal(
                                         ]
                                     ),
                                     // Sign Up tab
-                                    FlexPanel(
+                                    PaintedBox(
                                         name: "signUpTab",
                                         flex: 1,
                                         padding: "12,10",
                                         alignItems: Align.Center,
                                         justifyContent: Justify.Center,
                                         mousePressed: _ => switchToSignUp(),
+                                        
+                                        backgroundColor: activeTab == 1 ? ActiveTabBg : InactiveTabBg,
+                                        borderColor: Orange,
+                                        borderTopLeftRadius: 6,
+                                        borderTopRightRadius: 6,
+                                        
                                         children: [
-                                            PaintedBox(
-                                                name: "signUpTabBg",
-                                                backgroundColor: activeTab == 1 ? ActiveTabBg : InactiveTabBg,
-                                                borderColor: Orange,
-                                                position: Position.Absolute,
-                                                top: 0, left: 0, right: 0, bottom: 0,
-                                                borderTopLeftRadius: 6,
-                                                borderTopRightRadius: 6
-                                            ),
                                             TextRun(
                                                 name: "signUpTabText",
                                                 fontFamily: FontFamily.Adventure,
@@ -193,7 +183,7 @@ public class LoginModal(
                                         placeholder: "Username",
                                         text: signInUsername,
                                         textChanged: t => setSignInUsername(_ => t),
-                                        fontSize: 18,
+                                        fontSize: 24,
                                         fontFamily: FontFamily.DroidSans,
                                         foreground: Color.White,
                                         placeholderColor: Gray,
@@ -213,7 +203,7 @@ public class LoginModal(
                                         placeholder: "Password",
                                         text: signInPassword,
                                         textChanged: t => setSignInPassword(_ => t),
-                                        fontSize: 18,
+                                        fontSize: 24,
                                         fontFamily: FontFamily.DroidSans,
                                         foreground: Color.White,
                                         placeholderColor: Gray,
@@ -229,25 +219,22 @@ public class LoginModal(
                                         submitted: _ => handleSignIn()
                                     ),
                                     // Sign In button
-                                    FlexPanel(
+                                    PaintedBox(
                                         name: "signInButton",
                                         alignItems: Align.Center,
                                         justifyContent: Justify.Center,
                                         padding: "10,8",
                                         marginTop: 4,
                                         mousePressed: _ => handleSignIn(),
+                                        
+                                        backgroundColor: Orange,
+                                        borderColor: Orange,
+                                        borderTopLeftRadius: 4,
+                                        borderTopRightRadius: 4,
+                                        borderBottomLeftRadius: 4,
+                                        borderBottomRightRadius: 4,
+                                        
                                         children: [
-                                            PaintedBox(
-                                                name: "signInBtnBg",
-                                                backgroundColor: Orange,
-                                                borderColor: Orange,
-                                                borderTopLeftRadius: 4,
-                                                borderTopRightRadius: 4,
-                                                borderBottomLeftRadius: 4,
-                                                borderBottomRightRadius: 4,
-                                                position: Position.Absolute,
-                                                top: 0, left: 0, right: 0, bottom: 0
-                                            ),
                                             TextRun(
                                                 name: "signInBtnText",
                                                 fontFamily: FontFamily.Adventure,
@@ -273,7 +260,7 @@ public class LoginModal(
                                         placeholder: "Username",
                                         text: signUpUsername,
                                         textChanged: t => setSignUpUsername(_ => t),
-                                        fontSize: 18,
+                                        fontSize: 24,
                                         fontFamily: FontFamily.DroidSans,
                                         foreground: Color.White,
                                         placeholderColor: Gray,
@@ -292,7 +279,7 @@ public class LoginModal(
                                         placeholder: "Email",
                                         text: signUpEmail,
                                         textChanged: t => setSignUpEmail(_ => t),
-                                        fontSize: 18,
+                                        fontSize: 24,
                                         fontFamily: FontFamily.DroidSans,
                                         foreground: Color.White,
                                         placeholderColor: Gray,
@@ -311,7 +298,7 @@ public class LoginModal(
                                         placeholder: "Password",
                                         text: signUpPassword,
                                         textChanged: t => setSignUpPassword(_ => t),
-                                        fontSize: 18,
+                                        fontSize: 24,
                                         fontFamily: FontFamily.DroidSans,
                                         foreground: Color.White,
                                         placeholderColor: Gray,
@@ -326,25 +313,22 @@ public class LoginModal(
                                         padding: "10,8"
                                     ),
                                     // Sign Up button
-                                    FlexPanel(
+                                    PaintedBox(
                                         name: "signUpButton",
                                         alignItems: Align.Center,
                                         justifyContent: Justify.Center,
                                         padding: "10,8",
                                         marginTop: 4,
                                         mousePressed: _ => handleSignUp(),
+                                        
+                                        backgroundColor: Orange,
+                                        borderColor: Orange,
+                                        borderTopLeftRadius: 4,
+                                        borderTopRightRadius: 4,
+                                        borderBottomLeftRadius: 4,
+                                        borderBottomRightRadius: 4,
+                                        
                                         children: [
-                                            PaintedBox(
-                                                name: "signUpBtnBg",
-                                                backgroundColor: Orange,
-                                                borderColor: Orange,
-                                                borderTopLeftRadius: 4,
-                                                borderTopRightRadius: 4,
-                                                borderBottomLeftRadius: 4,
-                                                borderBottomRightRadius: 4,
-                                                position: Position.Absolute,
-                                                top: 0, left: 0, right: 0, bottom: 0
-                                            ),
                                             TextRun(
                                                 name: "signUpBtnText",
                                                 fontFamily: FontFamily.Adventure,
@@ -368,7 +352,7 @@ public class LoginModal(
                             ),
 
                             // Discord button
-                            FlexPanel(
+                            PaintedBox(
                                 name: "discordButton",
                                 flexDirection: FlexDirection.Row,
                                 alignItems: Align.Center,
@@ -376,18 +360,15 @@ public class LoginModal(
                                 padding: "10,8",
                                 gap: 8,
                                 mousePressed: _ => handleDiscord(),
+                                
+                                backgroundColor: DiscordBlue,
+                                borderColor: DiscordBlue,
+                                borderTopLeftRadius: 4,
+                                borderTopRightRadius: 4,
+                                borderBottomLeftRadius: 4,
+                                borderBottomRightRadius: 4,
+                                
                                 children: [
-                                    PaintedBox(
-                                        name: "discordBtnBg",
-                                        backgroundColor: DiscordBlue,
-                                        borderColor: DiscordBlue,
-                                        borderTopLeftRadius: 4,
-                                        borderTopRightRadius: 4,
-                                        borderBottomLeftRadius: 4,
-                                        borderBottomRightRadius: 4,
-                                        position: Position.Absolute,
-                                        top: 0, left: 0, right: 0, bottom: 0
-                                    ),
                                     TextRun(
                                         name: "discordBtnText",
                                         fontFamily: FontFamily.Adventure,
