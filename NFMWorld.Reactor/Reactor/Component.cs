@@ -612,6 +612,13 @@ public abstract class Component
             VNode vnode = Render();
             EndRender();
 
+            // Save memo state so ShouldSkipRender uses the latest VNode tree
+            // on future parent-triggered reconciliation passes.
+            // _lastInputCNode was set during the initial render and remains valid
+            // since inputs haven't changed (this is a state-triggered update).
+            if (_lastInputCNode is not null)
+                SaveMemoState(_lastInputCNode, vnode);
+
             var oldRoot = _root;
             _root = Reconciler.ReconcileNode(vnode, oldRoot);
 
