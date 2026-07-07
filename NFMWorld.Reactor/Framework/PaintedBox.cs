@@ -97,7 +97,7 @@ public class PaintedBox : FlexPanel
                 var radTopRight = BorderTopRightRadius;
                 var radBottomRight = BorderBottomRightRadius;
                 var radBottomLeft = BorderBottomLeftRadius;
-                G.DrawRoundedRect((int)(position.X + avgBorder / 2), (int)(position.Y + avgBorder / 2), (int)size.X, (int)size.Y, radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
+                G.DrawRoundedRect((int)(position.X), (int)(position.Y), (int)size.X, (int)size.Y, radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
                 G.SetStrokeWidth();
             }
         }
