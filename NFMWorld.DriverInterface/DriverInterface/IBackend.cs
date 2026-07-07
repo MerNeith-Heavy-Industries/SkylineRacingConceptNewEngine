@@ -24,22 +24,7 @@ public interface IBackend
     }
 
     [ClientOnly]
-    float Scale { get; set; }
-    
-    [ClientOnly]
-    Vector2 Viewport { get; }
-    
-    [ClientOnly]
     IRadicalMusic LoadMusic(string file, double tempomul);
-    
-    [ClientOnly]
-    IImage LoadImage(string file);
-    
-    [ClientOnly]
-    IImage LoadCachedImage(string file);
-    
-    [ClientOnly]
-    IImage LoadImage(ReadOnlySpan<byte> file);
     
     [ClientOnly]
     void StopAllSounds();
@@ -47,7 +32,8 @@ public interface IBackend
     [ClientOnly]
     ISoundClip GetSound(string filePath);
     
-    [ClientOnly]  IGraphics Graphics { get; }
+    [ClientOnly]
+    IGraphics Graphics { get; }
     
     [ClientOnly]
     void SetAllVolumes(float vol);

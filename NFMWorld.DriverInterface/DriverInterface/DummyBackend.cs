@@ -6,27 +6,9 @@ namespace NFMWorld.DriverInterface;
 
 public sealed class DummyBackend : IBackend
 {
-    public Vector2 Viewport => new();
-    public float Scale { get; set; } = 1;
-
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
         return new DummyMusic();
-    }
-
-    public IImage LoadImage(string file)
-    {
-        return new DummyImage();
-    }
-    
-    public IImage LoadCachedImage(string file)
-    {
-        return new DummyImage();
-    }
-
-    public IImage LoadImage(ReadOnlySpan<byte> file)
-    {
-        return new DummyImage();
     }
 
     public void StopAllSounds()
@@ -42,6 +24,19 @@ public sealed class DummyBackend : IBackend
 
     public sealed class DummyGraphics : IGraphics
     {
+        public Vector2 Viewport => new();
+        public float Scale { get; set; } = 1;
+
+        public IImage LoadImage(string file)
+        {
+            return new DummyImage();
+        }
+
+        public IImage LoadImage(ReadOnlyMemory<byte> file)
+        {
+            return new DummyImage();
+        }
+
         public void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos)
         {
         }
