@@ -191,6 +191,8 @@ internal class Reconciler
             comp.Unmount();
         _activeComponents.Clear();
         _visitedComponents.Clear();
+        _componentSlots.Clear();
+        _snapshots.Clear();
     }
 
     internal Visual? ReconcileNode(VNode vnode, Visual? existing)
@@ -283,6 +285,7 @@ internal class Reconciler
                 if (result != reuse)
                 {
                     _snapshots.Remove(reuse);
+                    UnmountComponentSubtree(reuse);
                     container.RemoveAt(oldIdx);
                     container.InsertAt(oldIdx, result);
                 }
@@ -304,6 +307,7 @@ internal class Reconciler
                 if (result != reuse)
                 {
                     _snapshots.Remove(reuse);
+                    UnmountComponentSubtree(reuse);
                     container.RemoveAt(i);
                     container.InsertAt(i, result);
                 }
@@ -324,6 +328,7 @@ internal class Reconciler
             var staleChild = existingChildren[oldIdx];
             _snapshots.Remove(staleChild);
             UnmountComponentSlot(container, oldIdx);
+            UnmountComponentSubtree(staleChild);
             container.RemoveAt(oldIdx);
         }
         oldKeyMap.Clear();
@@ -358,6 +363,7 @@ internal class Reconciler
             var excessChild = existingChildren[lastIdx];
             _snapshots.Remove(excessChild);
             UnmountComponentSlot(container, lastIdx);
+            UnmountComponentSubtree(excessChild);
             container.RemoveAt(lastIdx);
         }
     }
@@ -402,6 +408,8 @@ internal class Reconciler
     /// <summary>
     /// Unmounts the component (if any) stored in a slot and removes the slot entry.
     /// Called when a child is removed from the native tree during reconciliation.
+    /// Also recursively unmounts all descendant component instances in the
+    /// removed subtree.
     /// </summary>
     private void UnmountComponentSlot(Visual container, int childIndex)
     {
@@ -412,6 +420,22 @@ internal class Reconciler
             _activeComponents.Remove(comp);
         }
         _componentSlots.Remove(slot);
+    }
+
+    /// <summary>
+    /// Recursively unmounts all component instances stored in slots under
+    /// <paramref name="removedNode"/> and its descendants. Call when a
+    /// native subtree is detached from the visual tree.
+    /// </summary>
+    internal void UnmountComponentSubtree(Visual removedNode)
+    {
+        foreach (var child in removedNode.VisualChildren)
+            UnmountComponentSubtree(child);
+
+        // Unmount any component slots where this node is the parent container
+        var count = removedNode.VisualChildren.Count;
+        for (int i = 0; i < count; i++)
+            UnmountComponentSlot(removedNode, i);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

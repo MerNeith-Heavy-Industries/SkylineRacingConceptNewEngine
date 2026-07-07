@@ -14,6 +14,9 @@ public class ReactorDom : IDisposable
     public void Dispose()
     {
         HotReloadService.UpdateApplicationEvent -= OnHotReloadServiceOnUpdateApplicationEvent;
+        _rootNode = null;
+        _container = null;
+        Root = null;
     }
 
     private void OnHotReloadServiceOnUpdateApplicationEvent(Type[]? types)
