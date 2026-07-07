@@ -177,6 +177,8 @@ public class MainMenuView(
 
         var (loginVisible, setLoginVisible) = UseState(false);
 
+        var closeLoginModal = UseCallback(() => setLoginVisible(_ => false), []);
+
         UseEffect(() =>
         {
             setActivePage(_ => buildMainMenu());
@@ -316,7 +318,7 @@ public class MainMenuView(
                     onSignIn: signIn,
                     onSignUp: signUp,
                     onDiscordSignIn: discordSignIn,
-                    onClose: () => setLoginVisible(_ => false)
+                    onClose: closeLoginModal
                 )
             ]
         );
