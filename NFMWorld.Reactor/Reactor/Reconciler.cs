@@ -233,6 +233,10 @@ internal class Reconciler
         {
             snapshot.Previous.AssignProperties(existing);
             snapshot.Previous.ClearProperties();
+
+            // Reuse the cleared Previous as the new Current to avoid
+            // allocating a new PropertySnapshot every pass.
+            (snapshot.Previous, snapshot.Current) = (snapshot.Current, snapshot.Previous);
         }
 
         vvnode.AssignProperties(existing, ref snapshot!.Current);
@@ -436,6 +440,9 @@ internal class Reconciler
         var count = removedNode.VisualChildren.Count;
         for (int i = 0; i < count; i++)
             UnmountComponentSlot(removedNode, i);
+
+        // Clean up snapshot for this removed node
+        _snapshots.Remove(removedNode);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
