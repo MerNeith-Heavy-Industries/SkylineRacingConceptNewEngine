@@ -323,7 +323,7 @@ internal class Reconciler
         {
             var staleChild = existingChildren[oldIdx];
             _snapshots.Remove(staleChild);
-            _componentSlots.Remove((container, oldIdx));
+            UnmountComponentSlot(container, oldIdx);
             container.RemoveAt(oldIdx);
         }
         oldKeyMap.Clear();
@@ -357,7 +357,7 @@ internal class Reconciler
             var lastIdx = existingChildren.Count - 1;
             var excessChild = existingChildren[lastIdx];
             _snapshots.Remove(excessChild);
-            _componentSlots.Remove((container, lastIdx));
+            UnmountComponentSlot(container, lastIdx);
             container.RemoveAt(lastIdx);
         }
     }
@@ -381,6 +381,10 @@ internal class Reconciler
             }
             else
             {
+                // Inputs changed — the old instance is being replaced.
+                // Unmount it so effect cleanups and OnUnmounted run.
+                existingComp.Unmount();
+                _activeComponents.Remove(existingComp);
                 _componentSlots.Remove(slot);
             }
         }
@@ -393,6 +397,21 @@ internal class Reconciler
     {
         if (vnode is ComponentNode { Instance: { } instance })
             _componentSlots[(container, childIndex)] = instance;
+    }
+
+    /// <summary>
+    /// Unmounts the component (if any) stored in a slot and removes the slot entry.
+    /// Called when a child is removed from the native tree during reconciliation.
+    /// </summary>
+    private void UnmountComponentSlot(Visual container, int childIndex)
+    {
+        var slot = (container, childIndex);
+        if (_componentSlots.TryGetValue(slot, out var comp))
+        {
+            comp.Unmount();
+            _activeComponents.Remove(comp);
+        }
+        _componentSlots.Remove(slot);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -498,7 +517,17 @@ internal class Reconciler
             try
             {
                 DrainPendingUpdates();
-                FinishPass();
+                // Only swap snapshots and merge visited — do NOT run
+                // UnmountStaleComponents. Subtree updates must not unmount
+                // ancestor/sibling components that weren't visited during
+                // this update. Component cleanup for removed children is
+                // handled inline by ReconcileChildren.
+                SwapSnapshots();
+                // Merge newly-visited components into active (subtree-safe:
+                // only adds, never removes ancestors/siblings).
+                foreach (var visited in _visitedComponents)
+                    _activeComponents.Add(visited);
+                _visitedComponents.Clear();
             }
             finally
             {
