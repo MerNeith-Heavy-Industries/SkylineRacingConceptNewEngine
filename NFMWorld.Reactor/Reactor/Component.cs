@@ -636,6 +636,8 @@ public abstract class Component
                     }
                 }
 
+                // Clean up all component instances in the orphaned subtree
+                Reconciler.UnmountComponentSubtree(oldRoot);
                 Reconciler.RemoveSnapshots(oldRoot);
             }
 
