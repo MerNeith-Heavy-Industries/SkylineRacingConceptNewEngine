@@ -11,11 +11,17 @@ using KeyCode = WorldXaml.UI.Yoga.Events.Key;
 namespace NFMWorld.DriverInterface.UI;
 
 /// <summary>
-/// A single-line text input component. Extends <see cref="TextRun"/> for built-in text
-/// layout and measurement, adds a blinking cursor, selection, and keyboard/mouse navigation.
+/// A single-line text input component. Contains a <see cref="TextRun"/> child for text
+/// layout and measurement, plus a cursor overlay child rendered on top for
+/// the blinking cursor and selection highlight.
 /// </summary>
-public partial class TextInput : TextRun
+public partial class TextInput : Node
 {
+    // ── Internal children ──────────────────────────────────────────
+
+    private readonly TextRun _textRun;
+    private readonly CursorOverlay _cursorOverlay;
+
     // ── Cursor & selection state ──────────────────────────────────
 
     /// <summary>Character index where the cursor sits (0 = before first char).</summary>
@@ -65,13 +71,21 @@ public partial class TextInput : TextRun
     public int BorderBottomRightRadius { get; set; }
 
     /// <summary>
-    /// Placeholder text shown when <see cref="TextRun.Text"/> is empty and the input is not focused.
+    /// Placeholder text shown when <see cref="Text"/> is empty and the input is not focused.
     /// </summary>
     [Property]
-    public string Placeholder { get; set; } = "";
+    public string Placeholder
+    {
+        get;
+        set
+        {
+            field = value;
+            OnTextInvalidated();
+        }
+    } = "";
 
     /// <summary>
-    /// Raised when the user presses Enter. The current <see cref="TextRun.Text"/> is passed as the argument.
+    /// Raised when the user presses Enter. The current <see cref="Text"/> is passed as the argument.
     /// </summary>
     [Property]
     public Action<string>? Submitted { get; set; }
@@ -83,14 +97,122 @@ public partial class TextInput : TextRun
     [Property]
     public Action<string>? TextChanged { get; set; }
 
+    // ── Proxied TextRun properties ─────────────────────────────────
+
+    /// <inheritdoc cref="TextRun.Text"/>
+    [Property]
+    public string? Text
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.Text = value;
+            OnTextInvalidated();
+        }
+    }
+    
+    /// <inheritdoc cref="TextRun.FontFamily"/>
+    [Property]
+    public FontFamily FontFamily
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.FontFamily = value;
+            OnTextInvalidated();
+        }
+    }
+
+    /// <inheritdoc cref="TextRun.FontSize"/>
+    [Property]
+    public float FontSize
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.FontSize = value;
+            OnTextInvalidated();
+        }
+    }
+
+    /// <inheritdoc cref="TextRun.FontStyle"/>
+    [Property]
+    public FontStyle FontStyle
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.FontStyle = value;
+            OnTextInvalidated();
+        }
+    }
+
+    /// <inheritdoc cref="TextRun.Foreground"/>
+    [Property]
+    public Color Foreground
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.Foreground = value;
+        }
+    }
+
+    /// <inheritdoc cref="TextRun.HorizontalAlignment"/>
+    [Property]
+    public TextHorizontalAlignment HorizontalAlignment
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.HorizontalAlignment = value;
+        }
+    }
+
+    /// <inheritdoc cref="TextRun.VerticalAlignment"/>
+    [Property]
+    public TextVerticalAlignment VerticalAlignment
+    {
+        get;
+        set
+        {
+            field = value;
+            _textRun.VerticalAlignment = value;
+        }
+    }
+
+    // ── Constructor ───────────────────────────────────────────────
+
     public TextInput()
     {
         IsFocusable = true;
+
+        _textRun = new TextRun { IsFocusable = false };
+        _cursorOverlay = new CursorOverlay(this);
+
+        NodeInternal.InsertChild(_textRun.Contents, 0);
+        _textRun.VisualParent = this;
+
+        NodeInternal.InsertChild(_cursorOverlay.Contents, 1);
+        _cursorOverlay.VisualParent = this;
+
+        _visualChildren = [_textRun, _cursorOverlay];
     }
 
-    // ── Property change handlers ───────────────────────────────────
+    // ── Visual children (void element — no external children) ─────
 
-    protected override void OnInvalidated()
+    private readonly Visual[] _visualChildren;
+    public override IReadOnlyList<Visual> VisualChildren => _visualChildren;
+
+    // ── Text invalidation ─────────────────────────────────────────
+
+    private void OnTextInvalidated()
     {
         var len = (Text ?? "").Length;
         if (_cursorIndex > len)
@@ -102,6 +224,18 @@ public partial class TextInput : TextRun
         _cursorVisible = true;
 
         TextChanged?.Invoke(Text ?? "");
+        
+        // Draw placeholder when empty and not focused
+        if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
+        {
+            _textRun.Foreground = PlaceholderColor;
+            _textRun.Text = Placeholder;
+        }
+        else
+        {
+            _textRun.Foreground = Foreground;
+            _textRun.Text = Text;
+        }
     }
 
     // ── Selection helpers ──────────────────────────────────────────
@@ -144,12 +278,12 @@ public partial class TextInput : TextRun
 
     /// <summary>
     /// Returns the x-offset (in content space) for the given character index.
-    /// Uses <see cref="TextRun.LaidOutComplexText"/> for accurate measurement.
+    /// Uses the internal <see cref="_textRun"/> laid-out text for accurate measurement.
     /// </summary>
     [ClientOnly]
     private float GetCursorXForCharIndex(int charIndex)
     {
-        var laidOut = LaidOutComplexText;
+        var laidOut = _textRun.LaidOutComplexText;
         if (laidOut is not { } container || container.Elements.Count == 0)
             return 0;
 
@@ -193,7 +327,7 @@ public partial class TextInput : TextRun
     [ClientOnly]
     private int GetCharIndexForCursorX(float cursorX)
     {
-        var laidOut = LaidOutComplexText;
+        var laidOut = _textRun.LaidOutComplexText;
         if (laidOut is not { } container || container.Elements.Count == 0)
             return 0;
 
@@ -238,8 +372,6 @@ public partial class TextInput : TextRun
 
     protected override void OnKeyTyped(FocusManager focusManager, KeyboardTypingEvent @event)
     {
-        base.OnKeyTyped(focusManager, @event);
-
         var c = @event.KeyChar;
 
         // Backspace
@@ -251,8 +383,9 @@ public partial class TextInput : TextRun
             if (_cursorIndex > 0)
             {
                 var t = CurrentText;
-                Text = t[..(_cursorIndex - 1)] + t[_cursorIndex..];
-                _cursorIndex--;
+                var ci = Math.Min(_cursorIndex, t.Length);
+                Text = t[..(ci - 1)] + t[ci..];
+                _cursorIndex = ci - 1;
             }
             return;
         }
@@ -271,14 +404,13 @@ public partial class TextInput : TextRun
         // Replace selection or insert at cursor
         DeleteSelection();
         var t2 = CurrentText;
-        Text = t2[.._cursorIndex] + c + t2[_cursorIndex..];
-        _cursorIndex++;
+        var idx = Math.Min(_cursorIndex, t2.Length);
+        Text = t2[..idx] + c + t2[idx..];
+        _cursorIndex = idx + 1;
     }
 
     public override void OnKeyPressed(FocusManager focusManager, KeyboardEvent @event)
     {
-        base.OnKeyPressed(focusManager, @event);
-
         var shift = @event.Keys.ShiftKey;
         var ctrl = @event.Keys.ControlKey;
         var key = @event.KeyCode;
@@ -349,9 +481,10 @@ public partial class TextInput : TextRun
             return;
 
         var t = CurrentText;
-        if (_cursorIndex < t.Length)
+        var idx = Math.Min(_cursorIndex, t.Length);
+        if (idx < t.Length)
         {
-            Text = t[.._cursorIndex] + t[(_cursorIndex + 1)..];
+            Text = t[..idx] + t[(idx + 1)..];
         }
     }
 
@@ -380,8 +513,6 @@ public partial class TextInput : TextRun
     [ClientOnly]
     protected override void OnMousePressed(FocusManager focusManager, MouseEvent @event)
     {
-        base.OnMousePressed(focusManager, @event);
-
         if (@event.Button != MouseButton.Primary)
             return;
 
@@ -394,15 +525,12 @@ public partial class TextInput : TextRun
 
     protected override void OnMouseReleased(FocusManager focusManager, MouseEvent @event)
     {
-        base.OnMouseReleased(focusManager, @event);
         _isDragging = false;
     }
 
     [ClientOnly]
     protected override void OnMouseDragged(FocusManager focusManager, MouseDragEvent @event)
     {
-        base.OnMouseDragged(focusManager, @event);
-
         if (!_isDragging)
             return;
 
@@ -419,8 +547,6 @@ public partial class TextInput : TextRun
 
     protected override void GameTick()
     {
-        base.GameTick();
-
         _cursorBlinkTimer += 1000f / Physics.TargetTps; // approximate per-frame delta
         if (_cursorBlinkTimer >= CursorBlinkPeriodMs)
         {
@@ -429,7 +555,7 @@ public partial class TextInput : TextRun
         }
     }
 
-    // ── Rendering ──────────────────────────────────────────────────
+    // ── Rendering (background + border) ────────────────────────────
 
     [ClientOnly]
     protected override void RenderBackground(Vector2 position, Vector2 size)
@@ -464,53 +590,64 @@ public partial class TextInput : TextRun
         G.SetStrokeWidth();
     }
 
-    [ClientOnly]
-    protected override void RenderContent(Vector2 position, Vector2 size)
+    // ── Cursor overlay (inner class) ───────────────────────────────
+
+    /// <summary>
+    /// Absolutely-positioned child that renders the cursor line and selection highlight
+    /// on top of the text content. Rendered last in the child order so it appears above
+    /// the <see cref="TextRun"/> child's text.
+    /// </summary>
+    private sealed class CursorOverlay : Node
     {
-        // Draw placeholder when empty and not focused
-        if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
+        private readonly TextInput _owner;
+
+        public CursorOverlay(TextInput owner)
         {
-            var font = new Font(FontFamily, FontStyle, FontSize);
-            G.SetFont(font);
-            G.SetColor(PlaceholderColor);
-            G.DrawString(Placeholder, (int)position.X, (int)position.Y);
-            return;
+            _owner = owner;
+            Position = Position.Absolute;
+            Top = MeasurementMarginPosition.Point(0);
+            Left = MeasurementMarginPosition.Point(0);
+            Right = MeasurementMarginPosition.Point(0);
+            Bottom = MeasurementMarginPosition.Point(0);
+            IsFocusable = false;
         }
 
-        // Delegate text rendering to TextRun's RenderContent
-        base.RenderContent(position, size);
-
-        if (!IsFocused)
-            return;
-
-        var baseX = position.X;
-        var contentTop = position.Y;
-        var contentBottom = position.Y + size.Y;
-
-        // ── Draw selection highlight ────────────────────────────
-        var sel = GetSelectionRange();
-        if (sel is { } range)
+        [ClientOnly]
+        protected override void RenderContent(Vector2 position, Vector2 size)
         {
-            var selStartX = GetCursorXForCharIndex(range.start);
-            var selEndX = GetCursorXForCharIndex(range.end);
+            if (!_owner.IsFocused)
+                return;
 
-            G.SetColor(SelectionColor);
-            G.FillRect(
-                (int)(baseX + selStartX), (int)contentTop,
-                (int)(selEndX - selStartX), (int)(contentBottom - contentTop));
-        }
+            var baseX = position.X;
+            var contentTop = position.Y;
+            var contentBottom = position.Y + size.Y;
 
-        // ── Draw cursor ─────────────────────────────────────────
-        if (_cursorVisible)
-        {
-            var cursorX = GetCursorXForCharIndex(_cursorIndex);
+            // ── Draw selection highlight ────────────────────────
+            var sel = _owner.GetSelectionRange();
+            if (sel is { } range)
+            {
+                var selStartX = _owner.GetCursorXForCharIndex(range.start);
+                var selEndX = _owner.GetCursorXForCharIndex(range.end);
 
-            G.SetColor(CursorColor);
-            var cursorTop = contentTop + 2;
-            var cursorBottom = contentBottom - 4;
-            G.DrawLine(
-                (int)(baseX + cursorX), (int)cursorTop,
-                (int)(baseX + cursorX), (int)cursorBottom);
+                G.SetColor(_owner.SelectionColor);
+                G.FillRect(
+                    (int)(baseX + selStartX), (int)contentTop,
+                    (int)(selEndX - selStartX), (int)(contentBottom - contentTop));
+            }
+
+            // ── Draw cursor ─────────────────────────────────────
+            if (_owner._cursorVisible)
+            {
+                var cursorX = _owner.GetCursorXForCharIndex(_owner._cursorIndex);
+
+                G.SetColor(_owner.CursorColor);
+                var cursorTop = contentTop + 2;
+                var cursorBottom = contentBottom - 4;
+                G.DrawLine(
+                    (int)(baseX + cursorX), (int)cursorTop,
+                    (int)(baseX + cursorX), (int)cursorBottom);
+            }
         }
     }
 }
+
