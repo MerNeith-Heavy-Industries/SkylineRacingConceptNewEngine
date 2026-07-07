@@ -277,8 +277,9 @@ public partial class TextInput : Node
     // ── Cursor position from character index ───────────────────────
 
     /// <summary>
-    /// Returns the x-offset (in content space) for the given character index.
+    /// Returns the x-offset (in screen pixels) for the given character index.
     /// Uses the internal <see cref="_textRun"/> laid-out text for accurate measurement.
+    /// Laid-out positions are in logical pixels and are scaled by <see cref="G.Scale"/>.
     /// </summary>
     [ClientOnly]
     private float GetCursorXForCharIndex(int charIndex)
@@ -302,11 +303,11 @@ public partial class TextInput : Node
             // Cursor is within this element
             var charsBefore = targetIdx - accumIdx;
             if (charsBefore <= 0)
-                return elem.Position.X;
+                return elem.Position.X * G.Scale;
 
             var fontMetrics = G.GetFontMetrics(elem.Font);
             var measured = fontMetrics.MeasureText(elem.Text.AsSpan(..charsBefore));
-            return elem.Position.X + measured.X;
+            return (elem.Position.X + measured.X) * G.Scale;
         }
 
         // Cursor is at the very end — after the last element
@@ -315,18 +316,23 @@ public partial class TextInput : Node
             var last = container.Elements[^1];
             var fontMetrics = G.GetFontMetrics(last.Font);
             var measured = fontMetrics.MeasureText(last.Text);
-            return last.Position.X + measured.X;
+            return (last.Position.X + measured.X) * G.Scale;
         }
 
         return 0;
     }
 
     /// <summary>
-    /// Returns the character index closest to a given x-offset (in content space).
+    /// Returns the character index closest to a given x-offset (in screen pixels).
+    /// Input is divided by <see cref="G.Scale"/> to convert to logical pixels
+    /// for comparison with laid-out text positions.
     /// </summary>
     [ClientOnly]
     private int GetCharIndexForCursorX(float cursorX)
     {
+        // Convert screen-pixel input to logical pixels for comparison with laid-out positions
+        var logicalX = cursorX / G.Scale;
+
         var laidOut = _textRun.LaidOutComplexText;
         if (laidOut is not { } container || container.Elements.Count == 0)
             return 0;
@@ -339,13 +345,13 @@ public partial class TextInput : Node
             var fontMetrics = G.GetFontMetrics(elem.Font);
             var elemWidth = fontMetrics.MeasureText(elem.Text).X;
 
-            if (cursorX < elemStartX)
+            if (logicalX < elemStartX)
                 return accumIdx;
 
-            if (cursorX >= elemStartX && cursorX <= elemStartX + elemWidth)
+            if (logicalX >= elemStartX && logicalX <= elemStartX + elemWidth)
             {
                 // Clicked within this element — find closest character
-                var relX = cursorX - elemStartX;
+                var relX = logicalX - elemStartX;
                 var bestIdx = 0;
                 var bestDist = float.MaxValue;
                 for (var i = 0; i <= elem.Text.Length; i++)
