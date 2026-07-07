@@ -105,6 +105,9 @@ public class LoginModal(
                         borderTopRightRadius: 8,
                         borderBottomLeftRadius: 8,
                         borderBottomRightRadius: 8,
+                        
+                        padding: 8,
+                        gap: 4,
 
                         flexDirection: FlexDirection.Column,
 
