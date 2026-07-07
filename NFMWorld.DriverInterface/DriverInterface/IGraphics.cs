@@ -1,12 +1,18 @@
+using System.Numerics;
 using Microsoft.Xna.Framework;
 
 namespace NFMWorld.DriverInterface;
 
 public interface IGraphics
 {
+    Vector2 Viewport { get; }
+
     // Length proportional to radius of a cubic bezier handle for 90deg arcs
     private const float NVG_KAPPA90 = 0.5522847493f;
     
+    IImage LoadImage(string file);
+    IImage LoadImage(ReadOnlyMemory<byte> file);
+
     void SetLinearGradient(int x, int y, int width, int height, Color[] colors, float[]? colorPos);
     void SetColor(Color c);
 
@@ -101,13 +107,21 @@ public interface IGraphics
         Stroke();
     }
     float Alpha { set; }
+    float Scale { get; set; }
     void DrawImage(IImage image, int x, int y);
     void SetFont(Font font);
     IFontMetrics GetFontMetrics();
     IFontMetrics GetFontMetrics(Font font);
     void DrawString(ReadOnlySpan<char> text, int x, int y);
-    void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign);
-    void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign, TextVerticalAlignment vAlign, int effectAmount = 1);
+    void DrawStringAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top);
+    void DrawStringStrokeAligned(ReadOnlySpan<char> text, int x, int y, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1);
+    
+    void DrawStringAligned(ReadOnlySpan<char> text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top) 
+        => DrawStringAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign);
+
+    void DrawStringStrokeAligned(ReadOnlySpan<char> text, int areaWidth, int areaHeight, TextHorizontalAlignment hAlign = TextHorizontalAlignment.Left, TextVerticalAlignment vAlign = TextVerticalAlignment.Top, int effectAmount = 1)
+        => DrawStringStrokeAligned(text, 0, 0, areaWidth, areaHeight, hAlign, vAlign, effectAmount);
+
     void DrawStringStroke(ReadOnlySpan<char> text, int x, int y, int effectAmount = 1)
     {
     }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
+using CommunityToolkit.HighPerformance;
 using FontStashSharp;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -30,39 +31,9 @@ public class NanoVGRenderer
 
 internal sealed class WorldClientBackend(NvgContext context) : IBackend
 {
-    public float Scale { get; set; } = 1;
-    
-    private ConcurrentDictionary<string, IImage> _imageCache = new();
-
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
         return new RadicalMusic(file, tempomul);
-    }
-
-    public IImage LoadImage(string file)
-    {
-        using var stream = VFS.OpenRead(file);
-        if (VFS.Path.GetExtension(file) == ".svg")
-        {
-            return NanoSVGImage.FromStream(stream);
-        }
-        if (VFS.Path.GetExtension(file) == ".dds")
-        {
-            return new NanoVGImage(Texture2D.DDSFromStreamEXT(context.GraphicsDevice, stream));
-        }
-
-        return new NanoVGImage(Texture2D.FromStream(context.GraphicsDevice, stream));
-    }
-    
-    public IImage LoadCachedImage(string file)
-    {
-        var fullPath = VFS.Path.GetFullPath(file);
-        return _imageCache.GetOrAdd(fullPath, _ => LoadImage(fullPath));
-    }
-
-    public IImage LoadImage(ReadOnlySpan<byte> file)
-    {
-        throw new NotImplementedException();
     }
 
     public void StopAllSounds()
@@ -79,6 +50,12 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
     public sealed class NvgGraphics : IGraphics
     {
+        public Vector2 Viewport => new(_context.GraphicsDevice.Viewport.Width, _context.GraphicsDevice.Viewport.Height);
+        
+        public float Scale { get; set; } = 1;
+
+        private ConcurrentDictionary<string, IImage> _imageCache = new();
+
         private Paint _paint;
         private float layerDepth = 0.0f;
         private float characterSpacing = 0.0f;
@@ -104,6 +81,42 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             _fontSystems[FontFamily.Adventure] = LoadFont("./data/fonts/Adventure.otf");
             _fontSystems[FontFamily.RobotoMono] = LoadFont("./data/fonts/RobotoMono-Regular.ttf");
             _font = _fontSystems[FontFamily.DroidSans].GetFont(18);
+        }
+
+        public IImage LoadImage(string file)
+        {
+            var fullPath = VFS.Path.GetFullPath(file);
+            return _imageCache.GetOrAdd(fullPath, _ => LoadImageInternal());
+            
+            IImage LoadImageInternal()
+            {
+                using var stream = VFS.OpenRead(file);
+                if (VFS.Path.GetExtension(file) == ".svg")
+                {
+                    return NanoSVGImage.FromStream(stream);
+                }
+                if (VFS.Path.GetExtension(file) == ".dds")
+                {
+                    return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, stream));
+                }
+
+                return new NanoVGImage(Texture2D.FromStream(_context.GraphicsDevice, stream));
+            }
+        }
+
+        public IImage LoadImage(ReadOnlyMemory<byte> file)
+        {
+            if (file.Span is [(byte)'<', (byte)'s', (byte)'v', (byte)'g', ..] or [(byte)'<', (byte)'?', (byte)'x', (byte)'m', (byte)'l', ..])
+            {
+                return NanoSVGImage.FromStream(file.AsStream());
+            }
+            
+            if (file.Span is [(byte)'D', (byte)'D', (byte)'S', (byte)' ', ..])
+            {
+                return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, file.AsStream()));
+            }
+
+            return new NanoVGImage(Texture2D.FromStream(_context.GraphicsDevice, file.AsStream()));
         }
 
         private FontSystem LoadFont(string fontFile)
@@ -328,8 +341,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
     {
         return Key.FromScanCode(key);
     }
-
-    public Vector2 Viewport => new(context.GraphicsDevice.Viewport.Width, context.GraphicsDevice.Viewport.Height);
 }
 
 internal readonly struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetrics

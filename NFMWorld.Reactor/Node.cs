@@ -2180,7 +2180,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         if (Display != Display.None && Visibility == Visibility.Visible && Opacity > 0f)
         {
             var ownOpacity = context.InheritedOpacity * Opacity;
-            G.SetAlpha(ownOpacity);
+            G.Alpha = ownOpacity;
             RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
             RenderBorder(LayoutBorderPosition, LayoutBorderSize);
             RenderContent(LayoutContentPosition, LayoutContentSize);
@@ -2188,7 +2188,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             {
                 child.Render(new RenderContext(_root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
             }
-            G.SetAlpha(1f);
+            G.Alpha = 1f;
         }
     }
 
