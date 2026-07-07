@@ -23,8 +23,8 @@ public enum OverflowBehavior
 
 public partial class TextRun : Node
 {
-    private bool _invalidated = true;
-    protected ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
+    protected bool Invalidated { get; private set; }= true;
+    public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     public override bool DebugIsContentfulNode => true;
     
@@ -216,7 +216,7 @@ public partial class TextRun : Node
 
         LaidOutComplexText = measurements;
 
-        _invalidated = false;
+        Invalidated = false;
     }
 
     protected virtual void OnInvalidated()
@@ -230,11 +230,11 @@ public partial class TextRun : Node
         
         if (HasNewLayout && OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
         {
-            _invalidated = true;
+            Invalidated = true;
             HasNewLayout = false;
         }
         
-        if (_invalidated)
+        if (Invalidated)
         {
             OnInvalidated();
             RelayoutText(size);
@@ -286,6 +286,6 @@ public partial class TextRun : Node
 
     public void Invalidate()
     {
-        _invalidated = true;
+        Invalidated = true;
     }
 }
