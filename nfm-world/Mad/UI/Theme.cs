@@ -26,7 +26,7 @@ public class Theme
             alignItems: Align.Center,
             minWidth: 230,
             minHeight: 35,
-            padding: Node.MeasurementMultiPadding.XY(12, 8),
+            padding: MeasurementMultiPadding.XY(12, 8),
             gap: 0,
 
             backgroundColor: Color.Transparent,
@@ -67,7 +67,7 @@ public class Theme
         );
 
         public static readonly StyleSheet TabHeader = Styles(
-            padding: Node.MeasurementMultiPadding.XY(12, 10),
+            padding: MeasurementMultiPadding.XY(12, 10),
             alignItems: Align.Center,
             justifyContent: Justify.Center,
 
@@ -111,13 +111,13 @@ public class Theme
             cursorColor: Colors.Primary,
             selectionColor: new Color(100, 180, 255, 128),
             borderRadius: 4,
-            padding: Node.MeasurementMultiPadding.XY(10, 8)
+            padding: MeasurementMultiPadding.XY(10, 8)
         );
 
         public static readonly StyleSheet SmallButton = Styles(
             alignItems: Align.Center,
             justifyContent: Justify.Center,
-            padding: Node.MeasurementMultiPadding.XY(10, 8),
+            padding: MeasurementMultiPadding.XY(10, 8),
             marginTop: 4,
 
             backgroundColor: Colors.DarkBg,

@@ -152,7 +152,7 @@ public class MainMenuView(
         return View(
             flexDirection: FlexDirection.Column,
             margin: 15,
-            width: Node.MeasurementWidthHeight.Percent(100),
+            width: MeasurementWidthHeight.Percent(100),
             children:
             [
                 FlexPanel(

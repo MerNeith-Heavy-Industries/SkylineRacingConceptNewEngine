@@ -5,16 +5,16 @@ namespace NFMWorld.Reactor;
 internal static class YogaInterpolators
 {
     [ReactorInterpolator]
-    public static Node.MeasurementFlexBasis InterpolateMeasurementFlexBasis(Node.MeasurementFlexBasis from, Node.MeasurementFlexBasis to, float alpha)
+    public static MeasurementFlexBasis InterpolateMeasurementFlexBasis(MeasurementFlexBasis from, MeasurementFlexBasis to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
         {
-            return Node.MeasurementFlexBasis.Point(fromPoint + (toPoint - fromPoint) * alpha);
+            return MeasurementFlexBasis.Point(fromPoint + (toPoint - fromPoint) * alpha);
         }
 
         if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
         {
-            return Node.MeasurementFlexBasis.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+            return MeasurementFlexBasis.Percent(fromPercent + (toPercent - fromPercent) * alpha);
         }
 
         if (alpha < 0.5f) return from;
@@ -22,16 +22,16 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementMarginPosition InterpolateMeasurementMarginPosition(Node.MeasurementMarginPosition from, Node.MeasurementMarginPosition to, float alpha)
+    public static MeasurementMarginPosition InterpolateMeasurementMarginPosition(MeasurementMarginPosition from, MeasurementMarginPosition to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
         {
-            return Node.MeasurementMarginPosition.Point(fromPoint + (toPoint - fromPoint) * alpha);
+            return MeasurementMarginPosition.Point(fromPoint + (toPoint - fromPoint) * alpha);
         }
 
         if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
         {
-            return Node.MeasurementMarginPosition.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+            return MeasurementMarginPosition.Percent(fromPercent + (toPercent - fromPercent) * alpha);
         }
 
         if (alpha < 0.5f) return from;
@@ -39,9 +39,9 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementMultiMargin InterpolateMeasurementMultiMargin(Node.MeasurementMultiMargin fromAll, Node.MeasurementMultiMargin toAll, float alpha)
+    public static MeasurementMultiMargin InterpolateMeasurementMultiMargin(MeasurementMultiMargin fromAll, MeasurementMultiMargin toAll, float alpha)
     {
-        InlineArray4<Node.MeasurementMarginPosition> sides = new();
+        InlineArray4<MeasurementMarginPosition> sides = new();
 
         for (var i = 0; i < 4; i++)
         {
@@ -49,11 +49,11 @@ internal static class YogaInterpolators
             var to = toAll.Sides[i];
             if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
             {
-                sides[i] = Node.MeasurementMarginPosition.Point(fromPoint + (toPoint - fromPoint) * alpha);
+                sides[i] = MeasurementMarginPosition.Point(fromPoint + (toPoint - fromPoint) * alpha);
             }
             else if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
             {
-                sides[i] = Node.MeasurementMarginPosition.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+                sides[i] = MeasurementMarginPosition.Percent(fromPercent + (toPercent - fromPercent) * alpha);
             }
             else
             {
@@ -61,7 +61,7 @@ internal static class YogaInterpolators
             }
         }
 
-        return new Node.MeasurementMultiMargin
+        return new MeasurementMultiMargin
         {
             Top = sides[0],
             Bottom = sides[1],
@@ -71,16 +71,16 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementPadding InterpolateMeasurementPadding(Node.MeasurementPadding from, Node.MeasurementPadding to, float alpha)
+    public static MeasurementPadding InterpolateMeasurementPadding(MeasurementPadding from, MeasurementPadding to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
         {
-            return Node.MeasurementPadding.Point(fromPoint + (toPoint - fromPoint) * alpha);
+            return MeasurementPadding.Point(fromPoint + (toPoint - fromPoint) * alpha);
         }
 
         if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
         {
-            return Node.MeasurementPadding.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+            return MeasurementPadding.Percent(fromPercent + (toPercent - fromPercent) * alpha);
         }
 
         if (alpha < 0.5f) return from;
@@ -88,9 +88,9 @@ internal static class YogaInterpolators
     }
     
     [ReactorInterpolator]
-    public static Node.MeasurementMultiPadding InterpolateMeasurementMultiPadding(Node.MeasurementMultiPadding fromAll, Node.MeasurementMultiPadding toAll, float alpha)
+    public static MeasurementMultiPadding InterpolateMeasurementMultiPadding(MeasurementMultiPadding fromAll, MeasurementMultiPadding toAll, float alpha)
     {
-        InlineArray4<Node.MeasurementPadding> sides = new();
+        InlineArray4<MeasurementPadding> sides = new();
 
         for (var i = 0; i < 4; i++)
         {
@@ -98,11 +98,11 @@ internal static class YogaInterpolators
             var to = toAll.Sides[i];
             if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
             {
-                sides[i] = Node.MeasurementPadding.Point(fromPoint + (toPoint - fromPoint) * alpha);
+                sides[i] = MeasurementPadding.Point(fromPoint + (toPoint - fromPoint) * alpha);
             }
             else if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
             {
-                sides[i] = Node.MeasurementPadding.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+                sides[i] = MeasurementPadding.Percent(fromPercent + (toPercent - fromPercent) * alpha);
             }
             else
             {
@@ -110,7 +110,7 @@ internal static class YogaInterpolators
             }
         }
 
-        return new Node.MeasurementMultiPadding
+        return new MeasurementMultiPadding
         {
             Top = sides[0],
             Bottom = sides[1],
@@ -120,7 +120,7 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementMultiBorder InterpolateMeasurementMultiBorder(Node.MeasurementMultiBorder fromAll, Node.MeasurementMultiBorder toAll, float alpha)
+    public static MeasurementMultiBorder InterpolateMeasurementMultiBorder(MeasurementMultiBorder fromAll, MeasurementMultiBorder toAll, float alpha)
     {
         InlineArray4<float?> sides = new();
 
@@ -131,7 +131,7 @@ internal static class YogaInterpolators
             sides[i] = from + (to - from) * alpha;
         }
 
-        return new Node.MeasurementMultiBorder
+        return new MeasurementMultiBorder
         {
             Top = sides[0],
             Bottom = sides[1],
@@ -141,16 +141,16 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementGap InterpolateMeasurementGap(Node.MeasurementGap from, Node.MeasurementGap to, float alpha)
+    public static MeasurementGap InterpolateMeasurementGap(MeasurementGap from, MeasurementGap to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
         {
-            return Node.MeasurementGap.Point(fromPoint + (toPoint - fromPoint) * alpha);
+            return MeasurementGap.Point(fromPoint + (toPoint - fromPoint) * alpha);
         }
 
         if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
         {
-            return Node.MeasurementGap.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+            return MeasurementGap.Percent(fromPercent + (toPercent - fromPercent) * alpha);
         }
 
         if (alpha < 0.5f) return from;
@@ -158,16 +158,16 @@ internal static class YogaInterpolators
     }
 
     [ReactorInterpolator]
-    public static Node.MeasurementWidthHeight InterpolateMeasurementWidthHeight(Node.MeasurementWidthHeight from, Node.MeasurementWidthHeight to, float alpha)
+    public static MeasurementWidthHeight InterpolateMeasurementWidthHeight(MeasurementWidthHeight from, MeasurementWidthHeight to, float alpha)
     {
         if (from.PointValue is { } fromPoint && to.PointValue is { } toPoint)
         {
-            return Node.MeasurementWidthHeight.Point(fromPoint + (toPoint - fromPoint) * alpha);
+            return MeasurementWidthHeight.Point(fromPoint + (toPoint - fromPoint) * alpha);
         }
 
         if (from.PercentValue is { } fromPercent && to.PercentValue is { } toPercent)
         {
-            return Node.MeasurementWidthHeight.Percent(fromPercent + (toPercent - fromPercent) * alpha);
+            return MeasurementWidthHeight.Percent(fromPercent + (toPercent - fromPercent) * alpha);
         }
 
         if (alpha < 0.5f) return from;
