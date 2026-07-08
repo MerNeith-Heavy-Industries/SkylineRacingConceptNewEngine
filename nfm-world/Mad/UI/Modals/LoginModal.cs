@@ -89,7 +89,7 @@ public class LoginModal(
                         FlexPanel(
                             name: "tabBar",
                             flexDirection: FlexDirection.Row,
-                            gap: 0,
+                            gap: 4,
                             marginBottom: 8,
                             children: [
                                 // Sign In tab
@@ -115,7 +115,7 @@ public class LoginModal(
                                 PaintedBox(
                                     name: "signUpTab",
                                     flex: 1,
-                                    style: activeTab == 0
+                                    style: activeTab == 1
                                         ? Theme.Styles.TabHeaderActive
                                         : Theme.Styles.TabHeader,
                                     mousePressed: _ => switchToSignUp(),
@@ -123,7 +123,7 @@ public class LoginModal(
                                     children: [
                                         TextRun(
                                             name: "signUpTabText",
-                                            style: activeTab == 0
+                                            style: activeTab == 1
                                                 ? Theme.Styles.TabTextActive
                                                 : Theme.Styles.TabText,
                                             text: "SIGN UP"

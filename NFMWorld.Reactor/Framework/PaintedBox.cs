@@ -78,7 +78,7 @@ public class PaintedBox : FlexPanel
             var radTopRight = Math.Max(0, BorderTopRightRadius - ((BorderTop ?? 0) + (BorderRight ?? 0) / 2f));
             var radBottomRight = Math.Max(0, BorderBottomRightRadius - ((BorderBottom ?? 0) + (BorderRight ?? 0) / 2f));
             var radBottomLeft = Math.Max(0, BorderBottomLeftRadius - ((BorderBottom ?? 0) + (BorderLeft ?? 0) / 2f));
-            G.FillRoundedRect((int)position.X, (int)position.Y, (int)(size.X + avgBorder), (int)(size.Y + avgBorder), radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
+            G.FillRoundedRect((int)(position.X - avgBorder / 2), (int)(position.Y - avgBorder / 2), (int)(size.X + avgBorder), (int)(size.Y + avgBorder), radTopLeft * G.Scale, radTopRight * G.Scale, radBottomRight * G.Scale, radBottomLeft * G.Scale);
         }
         
     }
