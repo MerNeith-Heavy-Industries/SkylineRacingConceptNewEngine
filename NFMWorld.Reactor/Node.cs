@@ -379,22 +379,46 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             if (oldStyleSheetValue.Top is not null) _top.ClearStyleValue();
             if (oldStyleSheetValue.Right is not null) _right.ClearStyleValue();
             if (oldStyleSheetValue.Bottom is not null) _bottom.ClearStyleValue();
-            if (oldStyleSheetValue.Margin is not null) { _marginTop.ClearStyleValue(); _marginBottom.ClearStyleValue(); _marginLeft.ClearStyleValue(); _marginRight.ClearStyleValue(); }
+            if (oldStyleSheetValue.Margin is not null)
+            {
+                _marginTop.ClearStyleValue();
+                _marginBottom.ClearStyleValue();
+                _marginLeft.ClearStyleValue();
+                _marginRight.ClearStyleValue();
+            }
             if (oldStyleSheetValue.MarginTop is not null) _marginTop.ClearStyleValue();
             if (oldStyleSheetValue.MarginBottom is not null) _marginBottom.ClearStyleValue();
             if (oldStyleSheetValue.MarginLeft is not null) _marginLeft.ClearStyleValue();
             if (oldStyleSheetValue.MarginRight is not null) _marginRight.ClearStyleValue();
-            if (oldStyleSheetValue.Padding is not null) { _paddingTop.ClearStyleValue(); _paddingBottom.ClearStyleValue(); _paddingLeft.ClearStyleValue(); _paddingRight.ClearStyleValue(); }
+            if (oldStyleSheetValue.Padding is not null)
+            {
+                _paddingTop.ClearStyleValue();
+                _paddingBottom.ClearStyleValue();
+                _paddingLeft.ClearStyleValue();
+                _paddingRight.ClearStyleValue();
+            }
+
             if (oldStyleSheetValue.PaddingTop is not null) _paddingTop.ClearStyleValue();
             if (oldStyleSheetValue.PaddingBottom is not null) _paddingBottom.ClearStyleValue();
             if (oldStyleSheetValue.PaddingLeft is not null) _paddingLeft.ClearStyleValue();
             if (oldStyleSheetValue.PaddingRight is not null) _paddingRight.ClearStyleValue();
-            if (oldStyleSheetValue.Border is not null) { _borderTop.ClearStyleValue(); _borderBottom.ClearStyleValue(); _borderLeft.ClearStyleValue(); _borderRight.ClearStyleValue(); }
+            if (oldStyleSheetValue.Border is not null)
+            {
+                _borderTop.ClearStyleValue();
+                _borderBottom.ClearStyleValue();
+                _borderLeft.ClearStyleValue();
+                _borderRight.ClearStyleValue();
+            }
+
             if (oldStyleSheetValue.BorderTop is not null) _borderTop.ClearStyleValue();
             if (oldStyleSheetValue.BorderBottom is not null) _borderBottom.ClearStyleValue();
             if (oldStyleSheetValue.BorderLeft is not null) _borderLeft.ClearStyleValue();
             if (oldStyleSheetValue.BorderRight is not null) _borderRight.ClearStyleValue();
-            if (oldStyleSheetValue.Gap is not null) { _gapColumn.ClearStyleValue(); _gapRow.ClearStyleValue(); }
+            if (oldStyleSheetValue.Gap is not null)
+            {
+                _gapColumn.ClearStyleValue();
+                _gapRow.ClearStyleValue();
+            }
             if (oldStyleSheetValue.GapColumn is not null) _gapColumn.ClearStyleValue();
             if (oldStyleSheetValue.GapRow is not null) _gapRow.ClearStyleValue();
             if (oldStyleSheetValue.BoxSizing is not null) _boxSizing.ClearStyleValue();
@@ -429,22 +453,48 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             if (newStyleSheetValue.Top is { } top) _top.SetStyleValue(top);
             if (newStyleSheetValue.Right is { } right) _right.SetStyleValue(right);
             if (newStyleSheetValue.Bottom is { } bottom) _bottom.SetStyleValue(bottom);
-            if (newStyleSheetValue.Margin is { } margin) { _marginTop.SetStyleValue(margin.Top); _marginBottom.SetStyleValue(margin.Bottom); _marginLeft.SetStyleValue(margin.Left); _marginRight.SetStyleValue(margin.Right); }
+            if (newStyleSheetValue.Margin is { } margin)
+            {
+                _marginTop.SetStyleValue(margin.Top);
+                _marginBottom.SetStyleValue(margin.Bottom);
+                _marginLeft.SetStyleValue(margin.Left);
+                _marginRight.SetStyleValue(margin.Right);
+            }
+
             if (newStyleSheetValue.MarginTop is { } marginTop) _marginTop.SetStyleValue(marginTop);
             if (newStyleSheetValue.MarginBottom is { } marginBottom) _marginBottom.SetStyleValue(marginBottom);
             if (newStyleSheetValue.MarginLeft is { } marginLeft) _marginLeft.SetStyleValue(marginLeft);
             if (newStyleSheetValue.MarginRight is { } marginRight) _marginRight.SetStyleValue(marginRight);
-            if (newStyleSheetValue.Padding is { } padding) { _paddingTop.SetStyleValue(padding.Top); _paddingBottom.SetStyleValue(padding.Bottom); _paddingLeft.SetStyleValue(padding.Left); _paddingRight.SetStyleValue(padding.Right); }
+            if (newStyleSheetValue.Padding is { } padding)
+            {
+                _paddingTop.SetStyleValue(padding.Top);
+                _paddingBottom.SetStyleValue(padding.Bottom);
+                _paddingLeft.SetStyleValue(padding.Left);
+                _paddingRight.SetStyleValue(padding.Right);
+            }
+
             if (newStyleSheetValue.PaddingTop is { } paddingTop) _paddingTop.SetStyleValue(paddingTop);
             if (newStyleSheetValue.PaddingBottom is { } paddingBottom) _paddingBottom.SetStyleValue(paddingBottom);
             if (newStyleSheetValue.PaddingLeft is { } paddingLeft) _paddingLeft.SetStyleValue(paddingLeft);
             if (newStyleSheetValue.PaddingRight is { } paddingRight) _paddingRight.SetStyleValue(paddingRight);
-            if (newStyleSheetValue.Border is { } border) { _borderTop.SetStyleValue(border.Top); _borderBottom.SetStyleValue(border.Bottom); _borderLeft.SetStyleValue(border.Left); _borderRight.SetStyleValue(border.Right); }
+            if (newStyleSheetValue.Border is { } border)
+            {
+                _borderTop.SetStyleValue(border.Top);
+                _borderBottom.SetStyleValue(border.Bottom);
+                _borderLeft.SetStyleValue(border.Left);
+                _borderRight.SetStyleValue(border.Right);
+            }
+
             if (newStyleSheetValue.BorderTop is { } borderTop) _borderTop.SetStyleValue(borderTop);
             if (newStyleSheetValue.BorderBottom is { } borderBottom) _borderBottom.SetStyleValue(borderBottom);
             if (newStyleSheetValue.BorderLeft is { } borderLeft) _borderLeft.SetStyleValue(borderLeft);
             if (newStyleSheetValue.BorderRight is { } borderRight) _borderRight.SetStyleValue(borderRight);
-            if (newStyleSheetValue.Gap is { } gap) { _gapColumn.SetStyleValue(gap); _gapRow.SetStyleValue(gap); }
+            if (newStyleSheetValue.Gap is { } gap)
+            {
+                _gapColumn.SetStyleValue(gap);
+                _gapRow.SetStyleValue(gap);
+            }
+
             if (newStyleSheetValue.GapColumn is { } gapColumn) _gapColumn.SetStyleValue(gapColumn);
             if (newStyleSheetValue.GapRow is { } gapRow) _gapRow.SetStyleValue(gapRow);
             if (newStyleSheetValue.BoxSizing is { } boxSizing) _boxSizing.SetStyleValue(boxSizing);
@@ -636,424 +686,50 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         get => _flexShrink.ComputedValue;
         set => _flexShrink.SetOverrideValue(value);
     }
-    public struct MeasurementFlexBasis
-    {
-        internal YGValue InternalValue;
-        public YGUnit Unit => InternalValue.unit;
-        public float Value => InternalValue.value;
-        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
-
-        public static implicit operator MeasurementFlexBasis(float value)
-        {
-            return new MeasurementFlexBasis
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-        public static implicit operator MeasurementFlexBasis(YGValue value)
-        {
-            return new MeasurementFlexBasis
-            {
-                InternalValue = value
-            };
-        }
-        public static implicit operator YGValue(MeasurementFlexBasis value)
-        {
-            return value.InternalValue;
-        }
-
-        public static MeasurementFlexBasis Undefined = new()
-        {
-            InternalValue = new YGValue
-            {
-                unit = YGUnit.YGUnitUndefined
-            }
-        };
-
-        public static MeasurementFlexBasis Auto =>
-            new()
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitFitContent
-                }
-            };
-
-        public static MeasurementFlexBasis MaxContent =>
-            new()
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitMaxContent
-                }
-            };
-
-        public static MeasurementFlexBasis Stretch =>
-            new()
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitStretch
-                }
-            };
-
-        public static MeasurementFlexBasis Percent(float value)
-        {
-            return new MeasurementFlexBasis
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPercent,
-                    value = value
-                }
-            };
-        }
-
-        public static MeasurementFlexBasis Point(float value)
-        {
-            return new MeasurementFlexBasis
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-
-        public static MeasurementFlexBasis FitContent =>
-            new()
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitFitContent
-                }
-            };
-
-        public MeasurementFlexBasis Scale(float scale)
-        {
-            if (InternalValue.unit == YGUnit.YGUnitPoint)
-            {
-                return Point(InternalValue.value * scale);
-            }
-
-            return this;
-        }
-
-        public static implicit operator MeasurementFlexBasis(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return Undefined;
-            }
-            if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            {
-                return Auto;
-            }
-            if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
-            {
-                return MaxContent;
-            }
-            if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
-            {
-                return Stretch;
-            }
-            if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-            {
-                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                {
-                    return Percent(percentValue);
-                }
-            }
-            else if (trimmed.EndsWith("px"))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-            else
-            {
-                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementFlexBasis. Expected 'auto', 'max-content', 'stretch', '<number>px', '<number>%', or '<number>'.");
-        }
-    }
 
     /// <summary>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
     /// </summary>
-    public MeasurementFlexBasis FlexBasis    {        get => _flexBasis.ComputedValue;        set => _flexBasis.SetOverrideValue(value);    }
-    public struct MeasurementMarginPosition
+    public MeasurementFlexBasis FlexBasis
     {
-        internal YGValue InternalValue;
-        public YGUnit Unit => InternalValue.unit;
-        public float Value => InternalValue.value;
-        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
-
-        public static implicit operator MeasurementMarginPosition(float value)
-        {
-            return new MeasurementMarginPosition
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-        public static implicit operator MeasurementMarginPosition(YGValue value)
-        {
-            return new MeasurementMarginPosition
-            {
-                InternalValue = value
-            };
-        }
-        public static implicit operator YGValue(MeasurementMarginPosition value)
-        {
-            return value.InternalValue;
-        }
-
-        public static MeasurementMarginPosition Auto =>
-            new()
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitAuto
-                }
-            };
-
-        public static MeasurementMarginPosition Undefined => new()
-        {
-            InternalValue = new YGValue
-            {
-                unit = YGUnit.YGUnitUndefined
-            }
-        };
-
-        public static MeasurementMarginPosition Percent(float value)
-        {
-            return new MeasurementMarginPosition
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPercent,
-                    value = value
-                }
-            };
-        }
-        public static MeasurementMarginPosition Point(float value)
-        {
-            return new MeasurementMarginPosition
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-
-        public MeasurementMarginPosition Scale(float scale)
-        {
-            if (InternalValue.unit == YGUnit.YGUnitPoint)
-            {
-                return Point(InternalValue.value * scale);
-            }
-
-            return this;
-        }
-        
-        public static implicit operator MeasurementMarginPosition(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return Undefined;
-            }
-            if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            {
-                return Auto;
-            }
-            if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-            {
-                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                {
-                    return Percent(percentValue);
-                }
-            }
-            else if (trimmed.EndsWith("px"))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-            else
-            {
-                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementMarginPosition. Expected 'auto', '<number>px', '<number>%', or '<number>'.");
-        }
+        get => _flexBasis.ComputedValue;
+        set => _flexBasis.SetOverrideValue(value);
     }
 
     /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Left    {        get => _left.ComputedValue;        set => _left.SetOverrideValue(value);    }
+    public MeasurementMarginPosition Left
+    {
+        get => _left.ComputedValue;
+        set => _left.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: top - Specifies the top position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Top    {        get => _top.ComputedValue;        set => _top.SetOverrideValue(value);    }
+    public MeasurementMarginPosition Top
+    {
+        get => _top.ComputedValue;
+        set => _top.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: right - Specifies the right position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Right    {        get => _right.ComputedValue;        set => _right.SetOverrideValue(value);    }
+    public MeasurementMarginPosition Right
+    {
+        get => _right.ComputedValue;
+        set => _right.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: bottom - Specifies the bottom position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Bottom    {        get => _bottom.ComputedValue;        set => _bottom.SetOverrideValue(value);    }
-    public struct MeasurementMultiMargin
+    public MeasurementMarginPosition Bottom
     {
-        public InlineArray4<MeasurementMarginPosition> Sides;
-        public MeasurementMarginPosition Top
-        {
-            get => Sides[0];
-            set => Sides[0] = value;
-        }
-        public MeasurementMarginPosition Bottom
-        {
-            get => Sides[1];
-            set => Sides[1] = value;
-        }
-        public MeasurementMarginPosition Left
-        {
-            get => Sides[2];
-            set => Sides[2] = value;
-        }
-        public MeasurementMarginPosition Right
-        {
-            get => Sides[3];
-            set => Sides[3] = value;
-        }
-
-        public static MeasurementMultiMargin Auto => MeasurementMarginPosition.Auto;
-
-        public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
-
-        public static MeasurementMultiMargin All(MeasurementMarginPosition value)
-        {
-            return new MeasurementMultiMargin
-            {
-                Top = value,
-                Bottom = value,
-                Left = value,
-                Right = value
-            };
-        }
-
-        public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
-        public static implicit operator MeasurementMultiMargin(float value) => All(value);
-
-        public static MeasurementMultiMargin? XY(float x, float y)
-        {
-            return new MeasurementMultiMargin
-            {
-                Left = x,
-                Right = x,
-                Top = y,
-                Bottom = y
-            };
-        }
-
-        public static implicit operator MeasurementMultiMargin(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return All(MeasurementMarginPosition.Undefined);
-            }
-            if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            {
-                return All(MeasurementMarginPosition.Auto);
-            }
-
-            var idx = 0;
-            var sides = new InlineArray4<MeasurementMarginPosition>();
-            foreach (var elementRange in trimmed.SplitAny(',', ' '))
-            {
-                var element = trimmed[elementRange];
-
-                if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                    {
-                        sides[idx] = MeasurementMarginPosition.Percent(percentValue);
-                    }
-                }
-                else if (element.EndsWith("px"))
-                {
-                    if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = MeasurementMarginPosition.Point(pointValue);
-                    }
-                }
-                else
-                {
-                    if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = MeasurementMarginPosition.Point(pointValue);
-                    }
-                }
-
-                idx++;
-            }
-
-            if (idx == 1)
-            {
-                return All(sides[0]);
-            }
-
-            if (idx == 2)
-            {
-                return new MeasurementMultiMargin
-                {
-                    Top = sides[0],
-                    Bottom = sides[0],
-                    Left = sides[1],
-                    Right = sides[1]
-                };
-            }
-
-            if (idx == 4)
-            {
-                return new MeasurementMultiMargin
-                {
-                    Top = sides[0],
-                    Right = sides[1],
-                    Bottom = sides[2],
-                    Left = sides[3]
-                };
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected 'auto', '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
-        }
+        get => _bottom.ComputedValue;
+        set => _bottom.SetOverrideValue(value);
     }
 
     /// <summary>
@@ -1113,232 +789,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         get => _marginRight.ComputedValue;
         set => _marginRight.SetOverrideValue(value);
     }
-    public struct MeasurementPadding
-    {
-        internal YGValue InternalValue;
-        public YGUnit Unit => InternalValue.unit;
-        public float Value => InternalValue.value;
-        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
-
-        public static implicit operator MeasurementPadding(float value)
-        {
-            return new MeasurementPadding
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-        public static implicit operator MeasurementPadding(YGValue value)
-        {
-            return new MeasurementPadding
-            {
-                InternalValue = value
-            };
-        }
-        public static implicit operator YGValue(MeasurementPadding value)
-        {
-            return value.InternalValue;
-        }
-
-        public static MeasurementPadding Undefined => new()
-        {
-            InternalValue = new YGValue
-            {
-                unit = YGUnit.YGUnitUndefined
-            }
-        };
-
-        public static MeasurementPadding Percent(float value)
-        {
-            return new MeasurementPadding
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPercent,
-                    value = value
-                }
-            };
-        }
-        public static MeasurementPadding Point(float value)
-        {
-            return new MeasurementPadding
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-
-        public MeasurementPadding Scale(float scale)
-        {
-            if (InternalValue.unit == YGUnit.YGUnitPoint)
-            {
-                return Point(InternalValue.value * scale);
-            }
-
-            return this;
-        }
-
-        public static implicit operator MeasurementPadding(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return Undefined;
-            }
-            if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-            {
-                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                {
-                    return Percent(percentValue);
-                }
-            }
-            else if (trimmed.EndsWith("px"))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-            else
-            {
-                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementPadding. Expected '<number>px', '<number>%', or '<number>'.");
-        }
-    }
-
-    public struct MeasurementMultiPadding
-    {
-        public InlineArray4<MeasurementPadding> Sides;
-        public MeasurementPadding Top
-        {
-            get => Sides[0];
-            set => Sides[0] = value;
-        }
-        public MeasurementPadding Bottom
-        {
-            get => Sides[1];
-            set => Sides[1] = value;
-        }
-        public MeasurementPadding Left
-        {
-            get => Sides[2];
-            set => Sides[2] = value;
-        }
-        public MeasurementPadding Right
-        {
-            get => Sides[3];
-            set => Sides[3] = value;
-        }
-
-        public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
-
-        public static MeasurementMultiPadding All(MeasurementPadding value)
-        {
-            return new MeasurementMultiPadding
-            {
-                Top = value,
-                Bottom = value,
-                Left = value,
-                Right = value
-            };
-        }
-
-        public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
-        public static implicit operator MeasurementMultiPadding(float value) => All(value);
-
-        public static MeasurementMultiPadding? XY(float x, float y)
-        {
-            return new MeasurementMultiPadding
-            {
-                Left = MeasurementPadding.Point(x),
-                Right = MeasurementPadding.Point(x),
-                Top = MeasurementPadding.Point(y),
-                Bottom = MeasurementPadding.Point(y)
-            };
-        }
-
-        public static implicit operator MeasurementMultiPadding(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return All(MeasurementPadding.Undefined);
-            }
-
-            var idx = 0;
-            var sides = new InlineArray4<MeasurementPadding>();
-            foreach (var elementRange in trimmed.SplitAny(',', ' '))
-            {
-                var element = trimmed[elementRange];
-
-                if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                    {
-                        sides[idx] = MeasurementPadding.Percent(percentValue);
-                    }
-                }
-                else if (element.EndsWith("px"))
-                {
-                    if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = MeasurementPadding.Point(pointValue);
-                    }
-                }
-                else
-                {
-                    if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = MeasurementPadding.Point(pointValue);
-                    }
-                }
-
-                idx++;
-            }
-
-            if (idx == 1)
-            {
-                return All(sides[0]);
-            }
-
-            if (idx == 2)
-            {
-                return new MeasurementMultiPadding
-                {
-                    Top = sides[0],
-                    Bottom = sides[0],
-                    Left = sides[1],
-                    Right = sides[1]
-                };
-            }
-
-            if (idx == 4)
-            {
-                return new MeasurementMultiPadding
-                {
-                    Top = sides[0],
-                    Right = sides[1],
-                    Bottom = sides[2],
-                    Left = sides[3]
-                };
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
-
-        }
-    }
 
     /// <summary>
     /// CSS: padding - Shorthand for setting all padding values (top, right, bottom, left)
@@ -1396,117 +846,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => _paddingRight.ComputedValue;
         set => _paddingRight.SetOverrideValue(value);
-    }
-    public struct MeasurementMultiBorder
-    {
-        public InlineArray4<float?> Sides;
-        public float? Top
-        {
-            get => Sides[0];
-            set => Sides[0] = value;
-        }
-        public float? Bottom
-        {
-            get => Sides[1];
-            set => Sides[1] = value;
-        }
-        public float? Left
-        {
-            get => Sides[2];
-            set => Sides[2] = value;
-        }
-        public float? Right
-        {
-            get => Sides[3];
-            set => Sides[3] = value;
-        }
-
-        public static MeasurementMultiBorder Undefined => All(null);
-
-        public static MeasurementMultiBorder All(float? value)
-        {
-            return new MeasurementMultiBorder
-            {
-                Top = value,
-                Bottom = value,
-                Left = value,
-                Right = value
-            };
-        }
-
-        public static implicit operator MeasurementMultiBorder(float? value) => All(value);
-        public static MeasurementMultiBorder XY(float? x, float? y)
-        {
-            return new MeasurementMultiBorder
-            {
-                Left = x,
-                Right = x,
-                Top = y,
-                Bottom = y
-            };
-        }
-
-        public static implicit operator MeasurementMultiBorder(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return Undefined;
-            }
-
-            var idx = 0;
-            var sides = new InlineArray4<float>();
-            foreach (var elementRange in trimmed.SplitAny(',', ' '))
-            {
-                var element = trimmed[elementRange];
-
-                if (element.EndsWith("px"))
-                {
-                    if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = pointValue;
-                    }
-                }
-                else
-                {
-                    if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                    {
-                        sides[idx] = pointValue;
-                    }
-                }
-
-                idx++;
-            }
-
-            if (idx == 1)
-            {
-                return All(sides[0]);
-            }
-
-            if (idx == 2)
-            {
-                return new MeasurementMultiBorder
-                {
-                    Top = sides[0],
-                    Bottom = sides[0],
-                    Left = sides[1],
-                    Right = sides[1]
-                };
-            }
-
-            if (idx == 4)
-            {
-                return new MeasurementMultiBorder
-                {
-                    Top = sides[0],
-                    Right = sides[1],
-                    Bottom = sides[2],
-                    Left = sides[3]
-                };
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
-        }
     }
 
     /// <summary>
@@ -1566,114 +905,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         get => _borderRight.ComputedValue;
         set => _borderRight.SetOverrideValue(value);
     }
-    public struct MeasurementGap
-    {
-        internal YGValue InternalValue;
-        public YGUnit Unit => InternalValue.unit;
-        public float Value => InternalValue.value;
-        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
-
-        public static implicit operator MeasurementGap(float value)
-        {
-            return new MeasurementGap
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-        public static implicit operator MeasurementGap(YGValue value)
-        {
-            return new MeasurementGap
-            {
-                InternalValue = value
-            };
-        }
-        public static implicit operator YGValue(MeasurementGap value)
-        {
-            return value.InternalValue;
-        }
-
-        public static MeasurementGap Undefined => new()
-        {
-            InternalValue = new YGValue
-            {
-                unit = YGUnit.YGUnitUndefined
-            }
-        };
-
-        public static MeasurementGap Percent(float value)
-        {
-            return new MeasurementGap
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPercent,
-                    value = value
-                }
-            };
-        }
-        public static MeasurementGap Point(float value)
-        {
-            return new MeasurementGap
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-
-        public MeasurementGap Scale(float scale)
-        {
-            if (InternalValue.unit == YGUnit.YGUnitPoint)
-            {
-                return Point(InternalValue.value * scale);
-            }
-
-            return this;
-        }
-
-        public static implicit operator MeasurementGap(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return Undefined;
-            }
-            if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
-            {
-                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                {
-                    return Percent(percentValue);
-                }
-            }
-            else if (trimmed.EndsWith("px"))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-            else
-            {
-                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return Point(pointValue);
-                }
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to MeasurementGap. Expected '<number>px', '<number>%', or '<number>'.");
-        }
-        
-        // ReSharper disable once CompareOfFloatsByEqualityOperator
-        public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.Unit == right.Unit && left.Value == right.Value;
-        public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
-    }
 
     /// <summary>
     /// CSS: gap - Shorthand for setting row-gap and column-gap
@@ -1714,164 +945,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => _boxSizing.ComputedValue;
         set => _boxSizing.SetOverrideValue(value);
-    }
-    public struct MeasurementWidthHeight
-    {
-        internal YGValue InternalValue;
-        public YGUnit Unit => InternalValue.unit;
-        public float Value => InternalValue.value;
-        public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-        public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
-
-        public static implicit operator MeasurementWidthHeight(float value)
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-        public static implicit operator MeasurementWidthHeight(YGValue value)
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = value
-            };
-        }
-        public static implicit operator YGValue(MeasurementWidthHeight value)
-        {
-            return value.InternalValue;
-        }
-
-        public static MeasurementWidthHeight Undefined => new()
-        {
-            InternalValue = new YGValue
-            {
-                unit = YGUnit.YGUnitUndefined
-            }
-        };
-
-        public static MeasurementWidthHeight Auto()
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitAuto
-                }
-            };
-        }
-        public static MeasurementWidthHeight Percent(float value)
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPercent,
-                    value = value
-                }
-            };
-        }
-        public static MeasurementWidthHeight Point(float value)
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitPoint,
-                    value = value
-                }
-            };
-        }
-
-        public static MeasurementWidthHeight FitContent()
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitFitContent
-                }
-            };
-        }
-        public static MeasurementWidthHeight MaxContent()
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitMaxContent
-                }
-            };
-        }
-
-        public static MeasurementWidthHeight Stretch()
-        {
-            return new MeasurementWidthHeight
-            {
-                InternalValue = new YGValue
-                {
-                    unit = YGUnit.YGUnitStretch
-                }
-            };
-        }
-
-        public MeasurementWidthHeight Scale(float scale)
-        {
-            if (InternalValue.unit == YGUnit.YGUnitPoint)
-            {
-                return Point(InternalValue.value * scale);
-            }
-
-            return this;
-        }
-
-        public static implicit operator MeasurementWidthHeight(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-
-            if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            {
-                return Auto();
-            }
-            if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
-            {
-                return Stretch();
-            }
-            if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.Equals("fitcontent", StringComparison.OrdinalIgnoreCase))
-            {
-                return FitContent();
-            }
-            if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
-            {
-                return MaxContent();
-            }
-            if (trimmed.EndsWith('%'))
-            {
-                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
-                {
-                    return Percent(percentValue);
-                }
-            }
-            else if (trimmed.EndsWith("px", StringComparison.OrdinalIgnoreCase))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
-                {
-                    return Point(floatValue);
-                }
-            }
-            else if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
-            {
-                return Point(floatValue);
-            }
-
-            throw new FormatException($"Cannot convert {str} to MeasurementWidthHeight. Expected a number, percentage, 'auto', 'stretch', 'fit-content', or 'max-content'.");
-        }
     }
 
     /// <summary>
@@ -1935,42 +1008,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => _aspectRatio.ComputedValue;
         set => _aspectRatio.SetOverrideValue(value);
-    }
-    public readonly struct Pixels(float value)
-    {
-        public readonly float Value = value;
-        
-        public static implicit operator float(Pixels value) => value.Value;
-        public static implicit operator Pixels(float value) => new(value);
-
-        public static implicit operator Pixels(ReadOnlySpan<char> str)
-        {
-            var trimmed = str.Trim();
-            if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                return new Pixels(float.NaN);
-            }
-            if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
-            {
-                return 0;
-            }
-            if (trimmed.EndsWith("px"))
-            {
-                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return pointValue;
-                }
-            }
-            else
-            {
-                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
-                {
-                    return pointValue;
-                }
-            }
-
-            throw new FormatException($"Cannot convert '{str}' to pixels or undefined.");
-        }
     }
 
     #endregion
@@ -2358,5 +1395,1085 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
             OnKeyTyped(focusManager, @event);
         }
         base.DispatchKeyTyped(focusManager, @event);
+    }
+}
+
+public struct MeasurementMarginPosition : IEquatable<MeasurementMarginPosition>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementMarginPosition other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementMarginPosition other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementMarginPosition(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementMarginPosition(YGValue value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementMarginPosition value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementMarginPosition Auto =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitAuto
+            }
+        };
+
+    public static MeasurementMarginPosition Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementMarginPosition Percent(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementMarginPosition Point(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementMarginPosition Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+        
+    public static implicit operator MeasurementMarginPosition(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMarginPosition. Expected 'auto', '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
+{
+    public InlineArray4<MeasurementMarginPosition> Sides;
+
+    public bool Equals(MeasurementMultiMargin other) => Sides[0].Equals(other.Sides[0]) && Sides[1].Equals(other.Sides[1]) && Sides[2].Equals(other.Sides[2]) && Sides[3].Equals(other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiMargin other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public MeasurementMarginPosition Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public MeasurementMarginPosition Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public MeasurementMarginPosition Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public MeasurementMarginPosition Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiMargin Auto => MeasurementMarginPosition.Auto;
+
+    public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
+
+    public static MeasurementMultiMargin All(MeasurementMarginPosition value)
+    {
+        return new MeasurementMultiMargin
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+    public static implicit operator MeasurementMultiMargin(float value) => All(value);
+
+    public static MeasurementMultiMargin? XY(float x, float y)
+    {
+        return new MeasurementMultiMargin
+        {
+            Left = x,
+            Right = x,
+            Top = y,
+            Bottom = y
+        };
+    }
+
+    public static implicit operator MeasurementMultiMargin(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementMarginPosition.Undefined);
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementMarginPosition.Auto);
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<MeasurementMarginPosition>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+            {
+                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Percent(percentValue);
+                }
+            }
+            else if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected 'auto', '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+    }
+}
+
+public struct MeasurementPadding : IEquatable<MeasurementPadding>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementPadding other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementPadding other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementPadding(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementPadding(YGValue value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementPadding value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementPadding Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementPadding Percent(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementPadding Point(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementPadding Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementPadding(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementPadding. Expected '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementMultiPadding : IEquatable<MeasurementMultiPadding>
+{
+    public InlineArray4<MeasurementPadding> Sides;
+
+    public bool Equals(MeasurementMultiPadding other) => Sides[0].Equals(other.Sides[0]) && Sides[1].Equals(other.Sides[1]) && Sides[2].Equals(other.Sides[2]) && Sides[3].Equals(other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiPadding other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public MeasurementPadding Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public MeasurementPadding Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public MeasurementPadding Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public MeasurementPadding Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
+
+    public static MeasurementMultiPadding All(MeasurementPadding value)
+    {
+        return new MeasurementMultiPadding
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+    public static implicit operator MeasurementMultiPadding(float value) => All(value);
+
+    public static MeasurementMultiPadding? XY(float x, float y)
+    {
+        return new MeasurementMultiPadding
+        {
+            Left = MeasurementPadding.Point(x),
+            Right = MeasurementPadding.Point(x),
+            Top = MeasurementPadding.Point(y),
+            Bottom = MeasurementPadding.Point(y)
+        };
+    }
+
+    public static implicit operator MeasurementMultiPadding(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementPadding.Undefined);
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<MeasurementPadding>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+            {
+                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                {
+                    sides[idx] = MeasurementPadding.Percent(percentValue);
+                }
+            }
+            else if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementPadding.Point(pointValue);
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementPadding.Point(pointValue);
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+
+    }
+}
+
+public struct MeasurementMultiBorder : IEquatable<MeasurementMultiBorder>
+{
+    public InlineArray4<float?> Sides;
+
+    public bool Equals(MeasurementMultiBorder other) => Nullable.Equals(Sides[0], other.Sides[0]) && Nullable.Equals(Sides[1], other.Sides[1]) && Nullable.Equals(Sides[2], other.Sides[2]) && Nullable.Equals(Sides[3], other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiBorder other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public float? Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public float? Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public float? Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public float? Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiBorder Undefined => All(null);
+
+    public static MeasurementMultiBorder All(float? value)
+    {
+        return new MeasurementMultiBorder
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiBorder(float? value) => All(value);
+    public static MeasurementMultiBorder XY(float? x, float? y)
+    {
+        return new MeasurementMultiBorder
+        {
+            Left = x,
+            Right = x,
+            Top = y,
+            Bottom = y
+        };
+    }
+
+    public static implicit operator MeasurementMultiBorder(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<float>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = pointValue;
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = pointValue;
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+    }
+}
+
+public struct MeasurementGap : IEquatable<MeasurementGap>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementGap other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementGap other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementGap(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementGap(YGValue value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementGap value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementGap Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementGap Percent(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementGap Point(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementGap Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementGap(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementGap. Expected '<number>px', '<number>%', or '<number>'.");
+    }
+        
+    // ReSharper disable once CompareOfFloatsByEqualityOperator
+    public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.Unit == right.Unit && left.Value == right.Value;
+    public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
+}
+
+public readonly struct Pixels(float value) : IEquatable<Pixels>
+{
+    public readonly float Value = value;
+
+    public bool Equals(Pixels other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is Pixels other && Equals(other);
+    public override int GetHashCode() => Value.GetHashCode();
+        
+    public static implicit operator float(Pixels value) => value.Value;
+    public static implicit operator Pixels(float value) => new(value);
+
+    public static implicit operator Pixels(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return new Pixels(float.NaN);
+        }
+        if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+        if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return pointValue;
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return pointValue;
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to pixels or undefined.");
+    }
+}
+
+public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementFlexBasis other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementFlexBasis other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementFlexBasis(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementFlexBasis(YGValue value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementFlexBasis value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementFlexBasis Undefined = new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementFlexBasis Auto =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+
+    public static MeasurementFlexBasis MaxContent =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitMaxContent
+            }
+        };
+
+    public static MeasurementFlexBasis Stretch =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitStretch
+            }
+        };
+
+    public static MeasurementFlexBasis Percent(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementFlexBasis Point(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementFlexBasis FitContent =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+
+    public MeasurementFlexBasis Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementFlexBasis(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto;
+        }
+        if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return MaxContent;
+        }
+        if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+        {
+            return Stretch;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementFlexBasis. Expected 'auto', 'max-content', 'stretch', '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementWidthHeight other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementWidthHeight other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementWidthHeight(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementWidthHeight(YGValue value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementWidthHeight value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementWidthHeight Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementWidthHeight Auto()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitAuto
+            }
+        };
+    }
+    public static MeasurementWidthHeight Percent(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementWidthHeight Point(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementWidthHeight FitContent()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+    }
+    public static MeasurementWidthHeight MaxContent()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitMaxContent
+            }
+        };
+    }
+
+    public static MeasurementWidthHeight Stretch()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitStretch
+            }
+        };
+    }
+
+    public MeasurementWidthHeight Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementWidthHeight(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto();
+        }
+        if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+        {
+            return Stretch();
+        }
+        if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("fitcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return FitContent();
+        }
+        if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return MaxContent();
+        }
+        if (trimmed.EndsWith('%'))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+            {
+                return Point(floatValue);
+            }
+        }
+        else if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+        {
+            return Point(floatValue);
+        }
+
+        throw new FormatException($"Cannot convert {str} to MeasurementWidthHeight. Expected a number, percentage, 'auto', 'stretch', 'fit-content', or 'max-content'.");
     }
 }

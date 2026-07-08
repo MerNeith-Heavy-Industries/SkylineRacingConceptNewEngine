@@ -145,117 +145,117 @@ public struct StyleSheetStyles
     /// <summary>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
     /// </summary>
-    public Node.MeasurementFlexBasis? FlexBasis { get; set; }
+    public MeasurementFlexBasis? FlexBasis { get; set; }
 
     /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
     /// </summary>
-    public Node.MeasurementMarginPosition? Left { get; set; }
+    public MeasurementMarginPosition? Left { get; set; }
 
     /// <summary>
     /// CSS: top - Specifies the top position of a positioned element
     /// </summary>
-    public Node.MeasurementMarginPosition? Top { get; set; }
+    public MeasurementMarginPosition? Top { get; set; }
 
     /// <summary>
     /// CSS: right - Specifies the right position of a positioned element
     /// </summary>
-    public Node.MeasurementMarginPosition? Right { get; set; }
+    public MeasurementMarginPosition? Right { get; set; }
 
     /// <summary>
     /// CSS: bottom - Specifies the bottom position of a positioned element
     /// </summary>
-    public Node.MeasurementMarginPosition? Bottom { get; set; }
+    public MeasurementMarginPosition? Bottom { get; set; }
 
     /// <summary>
     /// CSS: margin - Shorthand for setting all margin values (top, right, bottom, left)
     /// </summary>
-    public Node.MeasurementMultiMargin? Margin { get; set; }
+    public MeasurementMultiMargin? Margin { get; set; }
 
     /// <summary>
     /// CSS: margin-top - Sets the top margin space outside the element
     /// </summary>
-    public Node.MeasurementMarginPosition? MarginTop { get; set; }
+    public MeasurementMarginPosition? MarginTop { get; set; }
 
     /// <summary>
     /// CSS: margin-bottom - Sets the bottom margin space outside the element
     /// </summary>
-    public Node.MeasurementMarginPosition? MarginBottom { get; set; }
+    public MeasurementMarginPosition? MarginBottom { get; set; }
 
     /// <summary>
     /// CSS: margin-left - Sets the left margin space outside the element
     /// </summary>
-    public Node.MeasurementMarginPosition? MarginLeft { get; set; }
+    public MeasurementMarginPosition? MarginLeft { get; set; }
     
     /// <summary>
     /// CSS: margin-right - Sets the right margin space outside the element
     /// </summary>
-    public Node.MeasurementMarginPosition? MarginRight { get; set; }
+    public MeasurementMarginPosition? MarginRight { get; set; }
 
     /// <summary>
     /// CSS: padding - Shorthand for setting all padding values (top, right, bottom, left)
     /// </summary>
-    public Node.MeasurementMultiPadding? Padding { get; set; }
+    public MeasurementMultiPadding? Padding { get; set; }
 
     /// <summary>
     /// CSS: padding-top - Sets the top padding space inside the element
     /// </summary>
-    public Node.MeasurementPadding? PaddingTop { get; set; }
+    public MeasurementPadding? PaddingTop { get; set; }
 
     /// <summary>
     /// CSS: padding-bottom - Sets the bottom padding space inside the element
     /// </summary>
-    public Node.MeasurementPadding? PaddingBottom { get; set; }
+    public MeasurementPadding? PaddingBottom { get; set; }
 
     /// <summary>
     /// CSS: padding-left - Sets the left padding space inside the element
     /// </summary>
-    public Node.MeasurementPadding? PaddingLeft { get; set; }
+    public MeasurementPadding? PaddingLeft { get; set; }
 
     /// <summary>
     /// CSS: padding-right - Sets the right padding space inside the element
     /// </summary>
-    public Node.MeasurementPadding? PaddingRight { get; set; }
+    public MeasurementPadding? PaddingRight { get; set; }
 
     /// <summary>
     /// CSS: border - Shorthand for setting all border widths
     /// </summary>
-    public Node.MeasurementMultiBorder? Border { get; set; }
+    public MeasurementMultiBorder? Border { get; set; }
 
     /// <summary>
     /// CSS: border-top-width - Sets the width of the top border
     /// </summary>
-    public Node.Pixels? BorderTop { get; set; }
+    public Pixels? BorderTop { get; set; }
 
     /// <summary>
     /// CSS: border-bottom-width - Sets the width of the bottom border
     /// </summary>
-    public Node.Pixels? BorderBottom { get; set; }
+    public Pixels? BorderBottom { get; set; }
 
     /// <summary>
     /// CSS: border-left-width - Sets the width of the left border
     /// </summary>
-    public Node.Pixels? BorderLeft { get; set; }
+    public Pixels? BorderLeft { get; set; }
 
     /// <summary>
     /// CSS: border-right-width - Sets the width of the right border
     /// </summary>
-    public Node.Pixels? BorderRight { get; set; }
+    public Pixels? BorderRight { get; set; }
 
     /// <summary>
     /// CSS: gap - Shorthand for setting row-gap and column-gap
     /// </summary>
-    public Node.MeasurementGap? Gap { get; set; }
+    public MeasurementGap? Gap { get; set; }
 
     /// <summary>
     /// CSS: column-gap - Sets the gap between columns in a flex container
     /// </summary>
-    public Node.MeasurementGap? GapColumn { get; set; }
+    public MeasurementGap? GapColumn { get; set; }
 
     /// <summary>
     /// CSS: row-gap - Sets the gap between rows in a flex container
     /// </summary>
-    public Node.MeasurementGap? GapRow { get; set; }
+    public MeasurementGap? GapRow { get; set; }
 
     /// <summary>
     /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
@@ -265,37 +265,37 @@ public struct StyleSheetStyles
     /// <summary>
     /// CSS: width - Sets the width of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? Width { get; set; }
+    public MeasurementWidthHeight? Width { get; set; }
 
     /// <summary>
     /// CSS: height - Sets the height of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? Height { get; set; }
+    public MeasurementWidthHeight? Height { get; set; }
 
     /// <summary>
     /// CSS: min-width - Sets the minimum width of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? MinWidth { get; set; }
+    public MeasurementWidthHeight? MinWidth { get; set; }
 
     /// <summary>
     /// CSS: min-height - Sets the minimum height of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? MinHeight { get; set; }
+    public MeasurementWidthHeight? MinHeight { get; set; }
 
     /// <summary>
     /// CSS: max-width - Sets the maximum width of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? MaxWidth { get; set; }
+    public MeasurementWidthHeight? MaxWidth { get; set; }
 
     /// <summary>
     /// CSS: max-height - Sets the maximum height of the element
     /// </summary>
-    public Node.MeasurementWidthHeight? MaxHeight { get; set; }
+    public MeasurementWidthHeight? MaxHeight { get; set; }
 
     /// <summary>
     /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
     /// </summary>
-    public Node.Pixels? AspectRatio { get; set; }
+    public Pixels? AspectRatio { get; set; }
     
     #endregion
 

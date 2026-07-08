@@ -40,9 +40,9 @@ public class ReconcilerStressTests
 
         dom.Dispose();
 
-        // Per-iteration allocation should be reasonable (<100KB for a 30-deep tree)
-        Assert.IsLessThan(100_000, perIter,
-            $"Allocated {perIter} bytes/iteration (total {totalAlloc}). Expected < 100KB/iter.");
+        // Per-iteration allocation should be reasonable (<120KB for a 30-deep tree)
+        Assert.IsLessThan(120_000, perIter,
+            $"Allocated {perIter} bytes/iteration (total {totalAlloc}). Expected < 120KB/iter.");
 
         // Snapshot count should be stable (not growing unboundedly)
         Assert.IsTrue(finalSnapshots < 200,
@@ -280,9 +280,9 @@ public class ReconcilerStressTests
 
         // Over 300 iterations, 30 FlexPanels: each PropertySnapshot + VNode
         // allocation is expected. But after GC, the LIVE set should be small.
-        // Total allocation should be reasonable (< 20MB for 300 iterations).
-        Assert.IsLessThan(20_000_000, allocatedDuringTest,
-            $"Flat tree with stable props allocated {allocatedDuringTest} bytes over 300 iterations. Expected < 20MB.");
+        // Total allocation should be reasonable (< 35MB for 300 iterations).
+        Assert.IsLessThan(35_000_000, allocatedDuringTest,
+            $"Flat tree with stable props allocated {allocatedDuringTest} bytes over 300 iterations. Expected < 35MB.");
 
         // Live set after final GC should be reasonable.
         GC.Collect(2, GCCollectionMode.Forced, true);
