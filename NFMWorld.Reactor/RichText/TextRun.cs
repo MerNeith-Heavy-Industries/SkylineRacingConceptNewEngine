@@ -23,16 +23,16 @@ public enum OverflowBehavior
 
 public partial class TextRun : Node
 {
-    internal Property<Color?> _background;
-    internal Property<Color> _foreground;
-    internal Property<Color?> _stroke;
-    internal Property<FontFamily> _fontFamily;
-    internal Property<float> _fontSize;
-    internal Property<FontStyle> _fontStyle;
-    internal Property<BreakType> _breakType;
-    internal Property<OverflowBehavior> _overflowBehavior;
-    internal Property<TextHorizontalAlignment> _horizontalAlignment;
-    internal Property<TextVerticalAlignment> _verticalAlignment;
+    internal StyledProperty<Color?> _background;
+    internal StyledProperty<Color> _foreground;
+    internal StyledProperty<Color?> _stroke;
+    internal StyledProperty<FontFamily> _fontFamily;
+    internal StyledProperty<float> _fontSize;
+    internal StyledProperty<FontStyle> _fontStyle;
+    internal StyledProperty<BreakType> _breakType;
+    internal StyledProperty<OverflowBehavior> _overflowBehavior;
+    internal StyledProperty<TextHorizontalAlignment> _horizontalAlignment;
+    internal StyledProperty<TextVerticalAlignment> _verticalAlignment;
 
     protected bool Invalidated { get; private set; }= true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
@@ -42,11 +42,31 @@ public partial class TextRun : Node
         _background = null;
         _foreground = new Color(255, 255, 255);
         _stroke = null;
-        _fontFamily = new(FontFamily.DroidSans, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
-        _fontSize = new(12f, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
-        _fontStyle = new(FontStyle.Plain, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
-        _breakType = new(BreakType.Word, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
-        _overflowBehavior = new(OverflowBehavior.Stretch, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _fontFamily = new(
+            FontFamily.DroidSans,
+            this,
+            static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
+        );
+        _fontSize = new(
+            12f,
+            this,
+            static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
+        );
+        _fontStyle = new(
+            FontStyle.Plain,
+            this,
+            static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
+        );
+        _breakType = new(
+            BreakType.Word,
+            this,
+            static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
+        );
+        _overflowBehavior = new(
+            OverflowBehavior.Stretch,
+            this,
+            static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
+        );
         _horizontalAlignment = TextHorizontalAlignment.Left;
         _verticalAlignment = TextVerticalAlignment.Top;
     }

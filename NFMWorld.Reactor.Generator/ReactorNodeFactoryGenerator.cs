@@ -14,7 +14,7 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
     private const string PropertyAttributeFqn = "global::NFMWorld.Reactor.PropertyAttribute";
     private const string ContentAttributeFqn = "global::NFMWorld.Reactor.ContentAttribute";
     private const string VisualFqn = "global::NFMWorld.Reactor.Visual";
-    private const string PropertyTGenericFqn = "NFMWorld.Reactor.Property<";
+    private const string PropertyTGenericFqn = "NFMWorld.Reactor.StyledProperty<";
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(spc =>

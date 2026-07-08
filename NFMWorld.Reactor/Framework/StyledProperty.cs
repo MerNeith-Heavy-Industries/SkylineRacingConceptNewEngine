@@ -9,8 +9,8 @@ namespace NFMWorld.Reactor;
 /// </summary>
 /// <typeparam name="T">The property value type.</typeparam>
 /// <param name="context">Opaque context (typically the owning <see cref="Visual"/>).</param>
-/// <param name="oldValue">The previous <see cref="Property{T}.ComputedValue"/>.</param>
-/// <param name="newValue">The new <see cref="Property{T}.ComputedValue"/>.</param>
+/// <param name="oldValue">The previous <see cref="StyledProperty{T}.ComputedValue"/>.</param>
+/// <param name="newValue">The new <see cref="StyledProperty{T}.ComputedValue"/>.</param>
 public delegate void PropertyChangedHandler<in T>(object? context, T oldValue, T newValue);
 
 /// <summary>
@@ -20,7 +20,7 @@ public delegate void PropertyChangedHandler<in T>(object? context, T oldValue, T
 /// </summary>
 /// <typeparam name="T">The property value type.</typeparam>
 [StructLayout(LayoutKind.Auto)]
-public struct Property<T>
+public struct StyledProperty<T>
 {
     [Flags]
     private enum PropertyFlags
@@ -37,7 +37,7 @@ public struct Property<T>
     private readonly PropertyChangedHandler<T>? _onChanged;
 
     /// <summary>
-    /// Creates a new <see cref="Property{T}"/> with the given default value and optional
+    /// Creates a new <see cref="StyledProperty{T}"/> with the given default value and optional
     /// change handler.
     /// </summary>
     /// <param name="defaultValue">The fallback value when neither style nor override is set.</param>
@@ -49,7 +49,7 @@ public struct Property<T>
     /// Use a static lambda to avoid per-instance allocations:
     /// <c>static (ctx, oldV, newV) => ((MyType)ctx!).OnPropChanged(oldV, newV)</c>
     /// </param>
-    public Property(T defaultValue, object? onChangedContext = null, PropertyChangedHandler<T>? onChanged = null)
+    public StyledProperty(T defaultValue, object? onChangedContext = null, PropertyChangedHandler<T>? onChanged = null)
     {
         _defaultValue = defaultValue;
         _styleValue = default!;
@@ -61,10 +61,10 @@ public struct Property<T>
     }
 
     /// <summary>
-    /// Implicit conversion from <typeparamref name="T"/> creates a <see cref="Property{T}"/>
+    /// Implicit conversion from <typeparamref name="T"/> creates a <see cref="StyledProperty{T}"/>
     /// with the given default value and no change handler.
     /// </summary>
-    public static implicit operator Property<T>(T defaultValue) => new(defaultValue);
+    public static implicit operator StyledProperty<T>(T defaultValue) => new(defaultValue);
 
     /// <summary>
     /// The fallback value used when neither <see cref="StyleValue"/> nor

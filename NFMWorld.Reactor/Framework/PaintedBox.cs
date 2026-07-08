@@ -9,12 +9,12 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class PaintedBox : FlexPanel
 {
-    internal Property<Color?> _borderColor;
-    internal Property<Color?> _backgroundColor;
-    internal Property<float> _borderTopLeftRadius;
-    internal Property<float> _borderTopRightRadius;
-    internal Property<float> _borderBottomLeftRadius;
-    internal Property<float> _borderBottomRightRadius;
+    internal StyledProperty<Color?> _borderColor;
+    internal StyledProperty<Color?> _backgroundColor;
+    internal StyledProperty<float> _borderTopLeftRadius;
+    internal StyledProperty<float> _borderTopRightRadius;
+    internal StyledProperty<float> _borderBottomLeftRadius;
+    internal StyledProperty<float> _borderBottomRightRadius;
 
     public PaintedBox()
     {
