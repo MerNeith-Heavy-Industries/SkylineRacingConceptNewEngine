@@ -52,7 +52,7 @@ public readonly struct ContO
         }
     }
 
-    public fix64 Wxz
+    public fix64 WheelXz
     {
         get => _car.TurningWheelAngle.Xz.Degrees;
         set => _car.TurningWheelAngle = _car.TurningWheelAngle with { Xz = f64AngleSingle.FromDegrees(value) };

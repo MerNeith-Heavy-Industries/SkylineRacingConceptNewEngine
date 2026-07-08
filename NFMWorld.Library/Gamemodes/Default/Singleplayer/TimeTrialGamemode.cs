@@ -287,7 +287,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
         Hud.State = Hud.State with
         {
-            DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Hitmag / carsInRace[PlayerCarIndex].Stats.Maxmag,
+            DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.DamagePoints / carsInRace[PlayerCarIndex].Stats.Maxmag,
             PowerFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f
         };
 

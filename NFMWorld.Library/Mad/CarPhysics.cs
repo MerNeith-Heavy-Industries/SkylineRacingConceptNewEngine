@@ -42,8 +42,8 @@ public class CarPhysics
     private static readonly fix64 _oneOverTickRate = 1 / _tickRate;
     public Boolean Halted = false;
 
-    public bool Btab;
-    public int Capcnt;
+    public bool BackwardsTabletop;
+    public int CapsizedCounter;
     public bool BadLanding;
     public readonly UnlimitedArray<bool> _caught = [];
     public CarStats Stat;
@@ -60,20 +60,20 @@ public class CarPhysics
     public fix64 Cxz;
     public fix64 StaticCameraXz;
     public int _dcnt;
-    public fix64 Dcomp;
+    public fix64 DownComponent;
     public bool Wasted;
     public readonly UnlimitedArray<bool> _dominate = [];
     public readonly fix64 _drag = fix64.Half;
     public int _fixes = -1;
     public fix64 _forca;
-    public bool Ftab;
-    public fix64 _fxz;
+    public bool ForwardTabletop;
+    public fix64 _turnXz;
     public bool Gtouch;
-    public int Hitmag;
+    public int DamagePoints;
     public int Im;
     public int Lastcolido;
-    public fix64 Lcomp;
-    public sbyte Loop;
+    public fix64 LeftComponent;
+    public sbyte StuntState;
     public fix64 _lxz;
     public bool Mtouch;
     public fix64 Mxz;
@@ -83,20 +83,20 @@ public class CarPhysics
     public int _nmlt = 1;
     public bool Nofocus;
     public int Outshakedam = 0;
-    public bool Pd;
-    public bool Pl;
+    public bool PressDown;
+    public bool PressLeft;
     public int _pmlt = 1;
     public int Point;
     public fix64 Power = 98;
     public fix64 Powerup;
-    public bool Pr;
-    public bool Pu;
+    public bool PressRight;
+    public bool PressUp;
     public bool Pushed;
 
     public fix64 Pxy;
     public fix64 Pzy;
-    public fix64 Rcomp;
-    public bool Rtab;
+    public fix64 RightComponent;
+    public bool RightTabletop;
     public InlineArray4<fix64> Scx;
     public InlineArray4<fix64> Scy;
     public InlineArray4<fix64> Scz;
@@ -104,15 +104,15 @@ public class CarPhysics
     public sbyte Skid;
     public fix64 Speed;
     public int Squash;
-    public int _srfcnt;
-    public bool Surfer;
+    public int _surfCount;
+    public bool Surfing;
     public fix64 _tilt;
-    public fix64 Travxy;
-    public fix64 Travxz;
-    public fix64 Travzy;
-    public int Trcnt;
+    public fix64 TotalStuntXy;
+    public fix64 TotalStuntXz;
+    public fix64 TotalStuntZy;
+    public int TabletopCounter;
     public fix64 Txz;
-    public fix64 Ucomp;
+    public fix64 UpComponent;
     public bool Wtouch;
     public int _xtpower;
 
@@ -466,9 +466,9 @@ public class CarPhysics
         DeterministicRandom random = new((ulong)(conto.X.rawValue ^ conto.Y.rawValue ^ conto.Z.rawValue));
 
         FrameTrace.AddMessage($"position: {conto.X:0.00},{conto.Y:0.00},{conto.Z:0.00}");
-        FrameTrace.AddMessage($"xz: {conto.Xz:0.00}, mxz: {Mxz:0.00}, lxz: {_lxz:0.00}, fxz: {_fxz:0.00}, cxz: {Cxz:0.00}");
+        FrameTrace.AddMessage($"xz: {conto.Xz:0.00}, mxz: {Mxz:0.00}, lxz: {_lxz:0.00}, fxz: {_turnXz:0.00}, cxz: {Cxz:0.00}");
         FrameTrace.AddMessage($"xy: {conto.Xy:0.00}, pxy: {Pxy:0.00}, zy: {conto.Zy:0.00}, pzy: {Pzy:0.00}, xz: {conto.Xz:0.00}");
-        FrameTrace.AddMessage($"Travxz: {Travxz:0.00}, Travxy: {Travxy:0.00}, Travzy: {Travzy:0.00}, Surfing: {Surfer}");
+        FrameTrace.AddMessage($"Travxz: {TotalStuntXz:0.00}, Travxy: {TotalStuntXy:0.00}, Travzy: {TotalStuntZy:0.00}, Surfing: {Surfing}");
 
         var xneg = 1;
         var zneg = 1;
@@ -547,44 +547,44 @@ public class CarPhysics
         fix64 airy = 0;
         if (Mtouch)
         {
-            Loop = 0;
+            StuntState = 0;
         }
 
-        if (Loop == 0)
+        if (StuntState == 0)
         {
             StaticCameraXz = conto.Xz * xneg;
         }
 
         if (Wtouch)
         {
-            if (Loop == 2 || Loop == -1)
+            if (StuntState == 2 || StuntState == -1)
             {
-                Loop = -1;
+                StuntState = -1;
                 if (control.Left)
                 {
-                    Pl = true;
+                    PressLeft = true;
                 }
 
                 if (control.Right)
                 {
-                    Pr = true;
+                    PressRight = true;
                 }
 
                 if (control.Up)
                 {
-                    Pu = true;
+                    PressUp = true;
                 }
 
                 if (control.Down)
                 {
-                    Pd = true;
+                    PressDown = true;
                 }
             }
 
-            Ucomp = 0;
-            Dcomp = 0;
-            Lcomp = 0;
-            Rcomp = 0;
+            UpComponent = 0;
+            DownComponent = 0;
+            LeftComponent = 0;
+            RightComponent = 0;
         } //
 
         if (control.Handb)
@@ -593,9 +593,9 @@ public class CarPhysics
             {
                 if (!Wtouch)
                 {
-                    if (Loop == 0)
+                    if (StuntState == 0)
                     {
-                        Loop = 1;
+                        StuntState = 1;
                     }
                 }
                 else if (Gtouch)
@@ -609,7 +609,7 @@ public class CarPhysics
             Pushed = false;
         }
 
-        if (Loop == 1)
+        if (StuntState == 1)
         {
             var f13 = (Scy[0] + Scy[1] + Scy[2] + Scy[3]) * fix64.Quarter;
             for (var i14 = 0; i14 < 4; i14++)
@@ -617,125 +617,125 @@ public class CarPhysics
                 Scy[i14] = f13;
             }
 
-            Loop = 2;
+            StuntState = 2;
         } //
 
         if (!Wasted)
         {
-            if (Loop == 2)
+            if (StuntState == 2)
             {
                 if (control.Up)
                 {
-                    if (Ucomp == 0)
+                    if (UpComponent == 0)
                     {
-                        Ucomp = 10 + (Scy[0] + 50) / 20;
-                        if (Ucomp < 5)
+                        UpComponent = 10 + (Scy[0] + 50) / 20;
+                        if (UpComponent < 5)
                         {
-                            Ucomp = 5;
+                            UpComponent = 5;
                         }
 
-                        if (Ucomp > 10)
+                        if (UpComponent > 10)
                         {
-                            Ucomp = 10;
+                            UpComponent = 10;
                         }
 
-                        Ucomp *= Stat.Airs;
+                        UpComponent *= Stat.Airs;
                     }
 
-                    if (Ucomp < 20)
+                    if (UpComponent < 20)
                     {
-                        Ucomp += fix64.Half * Stat.Airs * _tickRate; //
+                        UpComponent += fix64.Half * Stat.Airs * _tickRate; //
                     }
 
                     airx = -Stat.Airc * UMath.Sin(conto.Xz) * zneg * _tickRate;
                     airz = Stat.Airc * UMath.Cos(conto.Xz) * zneg * _tickRate;
                 }
-                else if (Ucomp != 0 && Ucomp > -2)
+                else if (UpComponent != 0 && UpComponent > -2)
                 {
-                    Ucomp -= fix64.Half * Stat.Airs * _tickRate; //
+                    UpComponent -= fix64.Half * Stat.Airs * _tickRate; //
                 }
 
                 if (control.Down)
                 {
-                    if (Dcomp == 0)
+                    if (DownComponent == 0)
                     {
-                        Dcomp = 10 + (Scy[0] + 50) / 20;
-                        if (Dcomp < 5)
+                        DownComponent = 10 + (Scy[0] + 50) / 20;
+                        if (DownComponent < 5)
                         {
-                            Dcomp = 5;
+                            DownComponent = 5;
                         }
 
-                        if (Dcomp > 10)
+                        if (DownComponent > 10)
                         {
-                            Dcomp = 10;
+                            DownComponent = 10;
                         }
 
-                        Dcomp *= Stat.Airs;
+                        DownComponent *= Stat.Airs;
                     }
 
-                    if (Dcomp < 20)
+                    if (DownComponent < 20)
                     {
-                        Dcomp += fix64.Half * Stat.Airs * _tickRate; //
+                        DownComponent += fix64.Half * Stat.Airs * _tickRate; //
                     }
 
                     airy = -Stat.Airc * _tickRate;
                 }
-                else if (Dcomp != 0 && Ucomp > -2)
+                else if (DownComponent != 0 && UpComponent > -2)
                 {
-                    Dcomp -= fix64.Half * Stat.Airs * _tickRate;
+                    DownComponent -= fix64.Half * Stat.Airs * _tickRate;
                 } //
 
                 if (control.Left)
                 {
-                    if (Lcomp == 0)
+                    if (LeftComponent == 0)
                     {
-                        Lcomp = 5;
+                        LeftComponent = 5;
                     }
 
-                    if (Lcomp < 20) // maxine: scale to tickrate
+                    if (LeftComponent < 20) // maxine: scale to tickrate
                     {
-                        Lcomp += 2 * Stat.Airs * _tickRate; //
+                        LeftComponent += 2 * Stat.Airs * _tickRate; //
                     }
 
                     airx = -Stat.Airc * UMath.Cos(conto.Xz) * xneg * _tickRate;
                     airz = -Stat.Airc * UMath.Sin(conto.Xz) * xneg * _tickRate;
                 }
-                else if (Lcomp > 0)
+                else if (LeftComponent > 0)
                 {
-                    Lcomp -= 2 * Stat.Airs * _tickRate; //
+                    LeftComponent -= 2 * Stat.Airs * _tickRate; //
                 }
 
                 if (control.Right) //
                 {
-                    if (Rcomp == 0)
+                    if (RightComponent == 0)
                     {
-                        Rcomp = 5;
+                        RightComponent = 5;
                     }
 
-                    if (Rcomp < 20) // maxine: scale to tickrate
+                    if (RightComponent < 20) // maxine: scale to tickrate
                     {
-                        Rcomp += 2 * Stat.Airs * _tickRate;
+                        RightComponent += 2 * Stat.Airs * _tickRate;
                     }
 
                     airx = Stat.Airc * UMath.Cos(conto.Xz) * xneg * _tickRate;
                     airz = Stat.Airc * UMath.Sin(conto.Xz) * xneg * _tickRate;
                 }
-                else if (Rcomp > 0) //
+                else if (RightComponent > 0) //
                 {
-                    Rcomp -= 2 * Stat.Airs * _tickRate;
+                    RightComponent -= 2 * Stat.Airs * _tickRate;
                 }
 
-                Pzy = UMath.QuantizeTowardsZero((Pzy + (Dcomp - Ucomp) * UMath.Cos(Pxy) * _tickRate), _tickRate); //
+                Pzy = UMath.QuantizeTowardsZero((Pzy + (DownComponent - UpComponent) * UMath.Cos(Pxy) * _tickRate), _tickRate); //
                 if (zyinv)
                 {
-                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + ((Dcomp - Ucomp) * UMath.Sin(Pxy) * _tickRate), _tickRate);
+                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + ((DownComponent - UpComponent) * UMath.Sin(Pxy) * _tickRate), _tickRate);
                 }
                 else
                 {
-                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - ((Dcomp - Ucomp) * UMath.Sin(Pxy) * _tickRate), _tickRate);
+                    conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - ((DownComponent - UpComponent) * UMath.Sin(Pxy) * _tickRate), _tickRate);
                 }
 
-                Pxy = UMath.QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
+                Pxy = UMath.QuantizeTowardsZero((Pxy + (RightComponent - LeftComponent) * _tickRate), _tickRate);
             }
             else
             {
@@ -815,119 +815,119 @@ public class CarPhysics
                     }
                 } //
 
-                if (Loop == -1 && conto.Y < 100)
+                if (StuntState == -1 && conto.Y < 100)
                 {
                     if (control.Left)
                     {
-                        if (!Pl)
+                        if (!PressLeft)
                         {
-                            if (Lcomp == 0)
+                            if (LeftComponent == 0)
                             {
-                                Lcomp = 5 * Stat.Airs * _tickRate;
+                                LeftComponent = 5 * Stat.Airs * _tickRate;
                             }
 
-                            if (Lcomp < 20)
+                            if (LeftComponent < 20)
                             {
-                                Lcomp += 2 * Stat.Airs * _tickRate;
+                                LeftComponent += 2 * Stat.Airs * _tickRate;
                             }
                         }
                     } //
                     else
                     {
-                        if (Lcomp > 0)
+                        if (LeftComponent > 0)
                         {
-                            Lcomp -= 2 * Stat.Airs * _tickRate;
+                            LeftComponent -= 2 * Stat.Airs * _tickRate;
                         }
 
-                        Pl = false;
+                        PressLeft = false;
                     } //
 
                     if (control.Right)
                     {
-                        if (!Pr)
+                        if (!PressRight)
                         {
-                            if (Rcomp == 0)
+                            if (RightComponent == 0)
                             {
-                                Rcomp = 5 * Stat.Airs * _tickRate;
+                                RightComponent = 5 * Stat.Airs * _tickRate;
                             }
 
-                            if (Rcomp < 20)
+                            if (RightComponent < 20)
                             {
-                                Rcomp += 2 * Stat.Airs * _tickRate;
+                                RightComponent += 2 * Stat.Airs * _tickRate;
                             }
                         } //
                     }
                     else
                     {
-                        if (Rcomp > 0)
+                        if (RightComponent > 0)
                         {
-                            Rcomp -= 2 * Stat.Airs * _tickRate;
+                            RightComponent -= 2 * Stat.Airs * _tickRate;
                         }
 
-                        Pr = false;
+                        PressRight = false;
                     } //
 
                     if (control.Up)
                     {
-                        if (!Pu)
+                        if (!PressUp)
                         {
-                            if (Ucomp == 0)
+                            if (UpComponent == 0)
                             {
-                                Ucomp = 5 * Stat.Airs * _tickRate;
+                                UpComponent = 5 * Stat.Airs * _tickRate;
                             }
 
-                            if (Ucomp < 20)
+                            if (UpComponent < 20)
                             {
-                                Ucomp += 2 * Stat.Airs * _tickRate;
+                                UpComponent += 2 * Stat.Airs * _tickRate;
                             }
                         } //
                     }
                     else
                     {
-                        if (Ucomp > 0)
+                        if (UpComponent > 0)
                         {
-                            Ucomp -= 2 * Stat.Airs * _tickRate;
+                            UpComponent -= 2 * Stat.Airs * _tickRate;
                         }
 
-                        Pu = false;
+                        PressUp = false;
                     }
 
                     if (control.Down)
                     {
-                        if (!Pd)
+                        if (!PressDown)
                         {
-                            if (Dcomp == 0)
+                            if (DownComponent == 0)
                             {
-                                Dcomp = 5 * Stat.Airs * _tickRate;
+                                DownComponent = 5 * Stat.Airs * _tickRate;
                             }
 
-                            if (Dcomp < 20)
+                            if (DownComponent < 20)
                             {
-                                Dcomp += 2 * Stat.Airs * _tickRate;
+                                DownComponent += 2 * Stat.Airs * _tickRate;
                             }
                         }
                     }
                     else
                     {
-                        if (Dcomp > 0)
+                        if (DownComponent > 0)
                         {
-                            Dcomp -= 2 * Stat.Airs * _tickRate;
+                            DownComponent -= 2 * Stat.Airs * _tickRate;
                         }
 
-                        Pd = false;
+                        PressDown = false;
                     }
 
-                    Pzy = UMath.QuantizeTowardsZero((Pzy + ((Dcomp - Ucomp) * UMath.Cos(Pxy)) * _tickRate), _tickRate);
+                    Pzy = UMath.QuantizeTowardsZero((Pzy + ((DownComponent - UpComponent) * UMath.Cos(Pxy)) * _tickRate), _tickRate);
                     if (zyinv)
                     {
-                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + (((Dcomp - Ucomp) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
+                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz + (((DownComponent - UpComponent) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
                     }
                     else
                     {
-                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - (((Dcomp - Ucomp) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
+                        conto.Xz = UMath.QuantizeTowardsZero(conto.Xz - (((DownComponent - UpComponent) * UMath.Sin(Pxy)) * _tickRate), _tickRate);
                     }
 
-                    Pxy = UMath.QuantizeTowardsZero((Pxy + (Rcomp - Lcomp) * _tickRate), _tickRate);
+                    Pxy = UMath.QuantizeTowardsZero((Pxy + (RightComponent - LeftComponent) * _tickRate), _tickRate);
                 }
             }
         }
@@ -950,56 +950,56 @@ public class CarPhysics
         //        }
         if (control.Right)
         {
-            conto.Wxz -= ((fix64)Stat.Turn * _tickRate);
-            if (conto.Wxz < -Stat.TurnRadius)
+            conto.WheelXz -= ((fix64)Stat.Turn * _tickRate);
+            if (conto.WheelXz < -Stat.TurnRadius)
             {
-                conto.Wxz = -Stat.TurnRadius;
+                conto.WheelXz = -Stat.TurnRadius;
             }
         }
 
         if (control.Left)
         {
-            conto.Wxz += ((fix64)Stat.Turn * _tickRate);
-            if (conto.Wxz > Stat.TurnRadius)
+            conto.WheelXz += ((fix64)Stat.Turn * _tickRate);
+            if (conto.WheelXz > Stat.TurnRadius)
             {
-                conto.Wxz = Stat.TurnRadius;
+                conto.WheelXz = Stat.TurnRadius;
             }
         } //
 
-        if (conto.Wxz != 0 && !control.Left && !control.Right)
+        if (conto.WheelXz != 0 && !control.Left && !control.Right)
         {
             if (fix64.Abs(Speed) < 10)
             {
-                if (fix64.Abs(conto.Wxz) == 1)
+                if (fix64.Abs(conto.WheelXz) == 1)
                 {
-                    conto.Wxz = 0;
+                    conto.WheelXz = 0;
                 }
 
-                if (conto.Wxz > 0)
+                if (conto.WheelXz > 0)
                 {
-                    conto.Wxz--; // tick rate for this stuff?
+                    conto.WheelXz--; // tick rate for this stuff?
                 }
 
-                if (conto.Wxz < 0)
+                if (conto.WheelXz < 0)
                 {
-                    conto.Wxz++;
+                    conto.WheelXz++;
                 }
             }
             else
             {
-                if (fix64.Abs(conto.Wxz) < Stat.Turn * 2)
+                if (fix64.Abs(conto.WheelXz) < Stat.Turn * 2)
                 {
-                    conto.Wxz = 0;
+                    conto.WheelXz = 0;
                 }
 
-                if (conto.Wxz > 0)
+                if (conto.WheelXz > 0)
                 {
-                    conto.Wxz -= ((fix64)Stat.Turn * 2 * _tickRate);
+                    conto.WheelXz -= ((fix64)Stat.Turn * 2 * _tickRate);
                 }
 
-                if (conto.Wxz < 0)
+                if (conto.WheelXz < 0)
                 {
-                    conto.Wxz += ((fix64)Stat.Turn * 2 * _tickRate);
+                    conto.WheelXz += ((fix64)Stat.Turn * 2 * _tickRate);
                 }
             }
         } //
@@ -1021,14 +1021,14 @@ public class CarPhysics
             {
                 if (!control.Handb)
                 {
-                    _fxz = conto.Wxz / (i21 * 3);
+                    _turnXz = conto.WheelXz / (i21 * 3);
                 }
                 else
                 {
-                    _fxz = conto.Wxz / i21;
+                    _turnXz = conto.WheelXz / i21;
                 }
 
-                conto.Xz += (conto.Wxz / i21 * _tickRate);
+                conto.Xz += (conto.WheelXz / i21 * _tickRate);
             }
 
             Wtouch = false;
@@ -1036,7 +1036,7 @@ public class CarPhysics
         }
         else
         {
-            conto.Xz += (_fxz * _tickRate);
+            conto.Xz += (_turnXz * _tickRate);
         } //
 
         if (Speed > 30 || Speed < -100)
@@ -1781,7 +1781,7 @@ public class CarPhysics
             conto.Xy += (int)((random.NextFixed6401() * 4 * Speed / Stat.Swits[2] - 2 * Speed / Stat.Swits[2]) *
                                           (Stat.Bounce - (fix64)0.3f));
         } // CHK15
-        if (Hitmag >= Stat.Maxmag && !Wasted)
+        if (DamagePoints >= Stat.Maxmag && !Wasted)
         {
             Distruct(this, EventArgs.Empty);
             if (Cntdest == 7)
@@ -2027,7 +2027,7 @@ public class CarPhysics
         {
             Squash = 0;
             _nbsq = 0;
-            Hitmag = 0;
+            DamagePoints = 0;
             Cntdest = 0;
             Wasted = false;
             Newcar = true;
@@ -2047,90 +2047,90 @@ public class CarPhysics
         }
         if (!Mtouch)
         {
-            if (Trcnt != 1)
+            if (TabletopCounter != 1)
             {
-                Trcnt = 1;
+                TabletopCounter = 1;
                 _lxz = conto.Xz;
             }
-            if (Loop == 2 || Loop == -1)
+            if (StuntState == 2 || StuntState == -1)
             {
-                Travxy += ((Rcomp - Lcomp) * _tickRate);
-                if (fix64.Abs(Travxy) > 135)
+                TotalStuntXy += ((RightComponent - LeftComponent) * _tickRate);
+                if (fix64.Abs(TotalStuntXy) > 135)
                 {
-                    Rtab = true;
+                    RightTabletop = true;
                 }
-                Travzy += ((Ucomp - Dcomp) * _tickRate);
-                if (Travzy > 135)
+                TotalStuntZy += ((UpComponent - DownComponent) * _tickRate);
+                if (TotalStuntZy > 135)
                 {
-                    Ftab = true;
+                    ForwardTabletop = true;
                 }
-                if (Travzy < -135)
+                if (TotalStuntZy < -135)
                 {
-                    Btab = true;
+                    BackwardsTabletop = true;
                 }
             }
             if (_lxz != conto.Xz)
             {
-                Travxz += (_lxz - conto.Xz) * _tickRate;
+                TotalStuntXz += (_lxz - conto.Xz) * _tickRate;
                 _lxz = conto.Xz;
             }
-            if (_srfcnt < (10 * (_oneOverTickRate)))
+            if (_surfCount < (10 * (_oneOverTickRate)))
             {
                 if (control.Wall != -1)
                 {
-                    Surfer = true;
+                    Surfing = true;
                 }
-                _srfcnt++;
+                _surfCount++;
             }
         }
         else if (!Wasted)
         {
             if (!BadLanding)
             {
-                if (Capcnt != 0)
+                if (CapsizedCounter != 0)
                 {
-                    Capcnt = 0;
+                    CapsizedCounter = 0;
                 }
-                if (Gtouch && Trcnt != 0)
+                if (Gtouch && TabletopCounter != 0)
                 {
-                    if (Trcnt == 9)
+                    if (TabletopCounter == 9)
                     {
                         bool JustSurfer = true;
                         Powerup = 0;
-                        if (fix64.Abs(Travxy) > 90)
+                        if (fix64.Abs(TotalStuntXy) > 90)
                         {
                             JustSurfer = false;
-                            Powerup += fix64.Abs(Travxy) / 24;
+                            Powerup += fix64.Abs(TotalStuntXy) / 24;
                         }
-                        else if (Rtab)
+                        else if (RightTabletop)
                         {
                             JustSurfer = false;
                             Powerup += 30;
                         }
-                        if (fix64.Abs(Travzy) > 90)
+                        if (fix64.Abs(TotalStuntZy) > 90)
                         {
                             JustSurfer = false;
-                            Powerup += fix64.Abs(Travzy) / 18;
+                            Powerup += fix64.Abs(TotalStuntZy) / 18;
                         }
                         else
                         {
-                            if (Ftab)
+                            if (ForwardTabletop)
                             {
                                 JustSurfer = false;
                                 Powerup += 40;
                             }
-                            if (Btab)
+                            if (BackwardsTabletop)
                             {
                                 JustSurfer = false;
                                 Powerup += 40;
                             }
                         }
-                        if (fix64.Abs(Travxz) > 90)
+                        if (fix64.Abs(TotalStuntXz) > 90)
                         {
                             JustSurfer = false;
-                            Powerup += fix64.Abs(Travxz) / 18;
+                            Powerup += fix64.Abs(TotalStuntXz) / 18;
                         }
-                        if (Surfer)
+                        if (Surfing)
                         {
                             Powerup += 30;
                         }
@@ -2165,39 +2165,39 @@ public class CarPhysics
                             }
                         }
                     } // CHK17
-                    if (Trcnt == 10)
+                    if (TabletopCounter == 10)
                     {
-                        Travxy = 0;
-                        Travzy = 0;
-                        Travxz = 0;
-                        Ftab = false;
-                        Rtab = false;
-                        Btab = false;
-                        Trcnt = 0;
-                        _srfcnt = 0;
-                        Surfer = false;
+                        TotalStuntXy = 0;
+                        TotalStuntZy = 0;
+                        TotalStuntXz = 0;
+                        ForwardTabletop = false;
+                        RightTabletop = false;
+                        BackwardsTabletop = false;
+                        TabletopCounter = 0;
+                        _surfCount = 0;
+                        Surfing = false;
                     }
                     else
                     {
-                        Trcnt++;
+                        TabletopCounter++;
                     }
                 }
             }
             else
             {
-                if (Trcnt != 0)
+                if (TabletopCounter != 0)
                 {
-                    Travxy = 0;
-                    Travzy = 0;
-                    Travxz = 0;
-                    Ftab = false;
-                    Rtab = false;
-                    Btab = false;
-                    Trcnt = 0;
-                    _srfcnt = 0;
-                    Surfer = false;
+                    TotalStuntXy = 0;
+                    TotalStuntZy = 0;
+                    TotalStuntXz = 0;
+                    ForwardTabletop = false;
+                    RightTabletop = false;
+                    BackwardsTabletop = false;
+                    TabletopCounter = 0;
+                    _surfCount = 0;
+                    Surfing = false;
                 }
-                if (Capcnt == 0)
+                if (CapsizedCounter == 0)
                 {
                     var i95 = 0;
                     for (var i96 = 0; i96 < 4; i96++)
@@ -2210,23 +2210,23 @@ public class CarPhysics
 
                     if (i95 == 4)
                     {
-                        Capcnt = 1;
+                        CapsizedCounter = 1;
                     }
                 }
                 else
                 {
-                    Capcnt++;
-                    if (Capcnt == 30)
+                    CapsizedCounter++;
+                    if (CapsizedCounter == 30)
                     {
                         Speed = 0;
                         conto.Y += Stat.Flipy;
                         Pxy += 180;
                         conto.Xy += 180;
-                        Capcnt = 0;
+                        CapsizedCounter = 0;
                     }
                 }
             }
-            if (Trcnt == 0 && Speed != 0)
+            if (TabletopCounter == 0 && Speed != 0)
             {
                 if (_xtpower == 0)
                 {
@@ -2657,7 +2657,7 @@ public class CarPhysics
                     f112 = f / 20 * random.NextFixed6401();
                     if (abool)
                     {
-                        Hitmag += (int)fix64.Abs(f112);
+                        DamagePoints += (int)fix64.Abs(f112);
                         i110 += (int)fix64.Abs(f112);
                     }
                 }
@@ -2740,7 +2740,7 @@ public class CarPhysics
                         f103 = f / 20 * random.NextFixed6401();
                         if (abool)
                         {
-                            Hitmag += (int)fix64.Abs(f103);
+                            DamagePoints += (int)fix64.Abs(f103);
                             i97 += (int)fix64.Abs(f103);
                         }
                     }
@@ -2762,7 +2762,7 @@ public class CarPhysics
                             i106++;
                             if (abool)
                             {
-                                Hitmag += (int)fix64.Abs(f108);
+                                DamagePoints += (int)fix64.Abs(f108);
                                 i97 += (int)fix64.Abs(f108);
                             }
                         }
@@ -2823,7 +2823,7 @@ public class CarPhysics
                     f116 = f / 20 * random.NextFixed6401();
                     if (abool)
                     {
-                        Hitmag += (int)fix64.Abs(f116);
+                        DamagePoints += (int)fix64.Abs(f116);
                         i114 += (int)fix64.Abs(f116);
                     }
                 }
@@ -2859,33 +2859,33 @@ public class CarPhysics
         Mtouch = false;
         Wtouch = false;
         Txz = 0;
-        _fxz = 0;
+        _turnXz = 0;
         _pmlt = 1;
         _nmlt = 1;
         _dcnt = 0;
         Skid = 0;
         Pushed = false;
         Gtouch = false;
-        Pl = false;
-        Pr = false;
-        Pd = false;
-        Pu = false;
-        Loop = 0;
-        Ucomp = 0;
-        Dcomp = 0;
-        Lcomp = 0;
-        Rcomp = 0;
+        PressLeft = false;
+        PressRight = false;
+        PressDown = false;
+        PressUp = false;
+        StuntState = 0;
+        UpComponent = 0;
+        DownComponent = 0;
+        LeftComponent = 0;
+        RightComponent = 0;
         _lxz = 0;
-        Travxy = 0;
-        Travzy = 0;
-        Travxz = 0;
-        Rtab = false;
-        Ftab = false;
-        Btab = false;
+        TotalStuntXy = 0;
+        TotalStuntZy = 0;
+        TotalStuntXz = 0;
+        RightTabletop = false;
+        ForwardTabletop = false;
+        BackwardsTabletop = false;
         Powerup = 0;
         _xtpower = 0;
-        Trcnt = 0;
-        Capcnt = 0;
+        TabletopCounter = 0;
+        CapsizedCounter = 0;
         _tilt = 0;
         for (var i2 = 0; i2 < 4; i2++)
         {
@@ -2902,7 +2902,7 @@ public class CarPhysics
         //CheckPoints.Dested[Im] = 0;
         Squash = 0;
         _nbsq = 0;
-        Hitmag = 0;
+        DamagePoints = 0;
         Cntdest = 0;
         Wasted = false;
         Newcar = false;

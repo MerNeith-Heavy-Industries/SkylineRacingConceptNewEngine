@@ -309,7 +309,7 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
             }
 
             // If high on damage, find a random FixRoadStart node and enter it as a sequence
-            var wantFix = carPhysics.Hitmag > carPhysics.Stat.Maxmag * (fix64)0.8f && random.NextFixed6401() < rubberbandingFactor;
+            var wantFix = carPhysics.DamagePoints > carPhysics.Stat.Maxmag * (fix64)0.8f && random.NextFixed6401() < rubberbandingFactor;
             if (wantFix)
             {
                 var fixRoadStartNodes = racePhase.CurrentStage.nodes
