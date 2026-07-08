@@ -46,20 +46,51 @@ public partial class TextInput : Node
 
     // ── Styled properties ──────────────────────────────────────────
 
-    [Property]
-    public Color? BorderColor { get; set; } = new(255, 255, 255, 255);
+    internal StyledProperty<Color?> _borderColor;
+    internal StyledProperty<Color?> _backgroundColor;
+    internal StyledProperty<Color> _cursorColor;
+    internal StyledProperty<Color> _selectionColor;
+    internal StyledProperty<Color> _placeholderColor;
+    internal StyledProperty<float> _borderTopLeftRadius;
+    internal StyledProperty<float> _borderTopRightRadius;
+    internal StyledProperty<float> _borderBottomLeftRadius;
+    internal StyledProperty<float> _borderBottomRightRadius;
+    internal StyledProperty<Color> _foreground;
+    internal StyledProperty<FontFamily> _fontFamily;
+    internal StyledProperty<float> _fontSize;
+    internal StyledProperty<FontStyle> _fontStyle;
+    internal StyledProperty<TextHorizontalAlignment> _horizontalAlignment;
+    internal StyledProperty<TextVerticalAlignment> _verticalAlignment;
 
-    [Property]
-    public Color? BackgroundColor { get; set; } = new(20, 20, 30, 255);
+    public Color? BorderColor
+    {
+        get => _borderColor.ComputedValue;
+        set => _borderColor.SetOverrideValue(value);
+    }
 
-    [Property]
-    public Color CursorColor { get; set; } = new(255, 255, 255, 255);
+    public Color? BackgroundColor
+    {
+        get => _backgroundColor.ComputedValue;
+        set => _backgroundColor.SetOverrideValue(value);
+    }
 
-    [Property]
-    public Color SelectionColor { get; set; } = new(100, 180, 255, 128);
+    public Color CursorColor
+    {
+        get => _cursorColor.ComputedValue;
+        set => _cursorColor.SetOverrideValue(value);
+    }
 
-    [Property]
-    public Color PlaceholderColor { get; set; } = new(128, 128, 128, 255);
+    public Color SelectionColor
+    {
+        get => _selectionColor.ComputedValue;
+        set => _selectionColor.SetOverrideValue(value);
+    }
+
+    public Color PlaceholderColor
+    {
+        get => _placeholderColor.ComputedValue;
+        set => _placeholderColor.SetOverrideValue(value);
+    }
 
     [Property]
     public float BorderRadius
@@ -69,21 +100,33 @@ public partial class TextInput : Node
             : 0;
         set
         {
-            BorderTopLeftRadius = value;
-            BorderTopRightRadius = value;
-            BorderBottomLeftRadius = value;
-            BorderBottomRightRadius = value;
+            _borderTopLeftRadius.SetOverrideValue(value);
+            _borderTopRightRadius.SetOverrideValue(value);
+            _borderBottomLeftRadius.SetOverrideValue(value);
+            _borderBottomRightRadius.SetOverrideValue(value);
         }
     }
-    
-    [Property]
-    public float BorderTopLeftRadius { get; set; }
-    [Property]
-    public float BorderTopRightRadius { get; set; }
-    [Property]
-    public float BorderBottomLeftRadius { get; set; }
-    [Property]
-    public float BorderBottomRightRadius { get; set; }
+
+    public float BorderTopLeftRadius
+    {
+        get => _borderTopLeftRadius.ComputedValue;
+        set => _borderTopLeftRadius.SetOverrideValue(value);
+    }
+    public float BorderTopRightRadius
+    {
+        get => _borderTopRightRadius.ComputedValue;
+        set => _borderTopRightRadius.SetOverrideValue(value);
+    }
+    public float BorderBottomLeftRadius
+    {
+        get => _borderBottomLeftRadius.ComputedValue;
+        set => _borderBottomLeftRadius.SetOverrideValue(value);
+    }
+    public float BorderBottomRightRadius
+    {
+        get => _borderBottomRightRadius.ComputedValue;
+        set => _borderBottomRightRadius.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Placeholder text shown when <see cref="Text"/> is empty and the input is not focused.
@@ -128,84 +171,106 @@ public partial class TextInput : Node
     }
     
     /// <inheritdoc cref="TextRun.FontFamily"/>
-    [Property]
     public FontFamily FontFamily
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.FontFamily = value;
-            OnTextInvalidated();
-        }
+        get => _fontFamily.ComputedValue;
+        set => _fontFamily.SetOverrideValue(value);
     }
 
     /// <inheritdoc cref="TextRun.FontSize"/>
-    [Property]
     public float FontSize
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.FontSize = value;
-            OnTextInvalidated();
-        }
+        get => _fontSize.ComputedValue;
+        set => _fontSize.SetOverrideValue(value);
     }
 
     /// <inheritdoc cref="TextRun.FontStyle"/>
-    [Property]
     public FontStyle FontStyle
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.FontStyle = value;
-            OnTextInvalidated();
-        }
+        get => _fontStyle.ComputedValue;
+        set => _fontStyle.SetOverrideValue(value);
     }
 
     /// <inheritdoc cref="TextRun.Foreground"/>
-    [Property]
     public Color Foreground
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.Foreground = value;
-        }
+        get => _foreground.ComputedValue;
+        set => _foreground.SetOverrideValue(value);
     }
 
     /// <inheritdoc cref="TextRun.HorizontalAlignment"/>
-    [Property]
     public TextHorizontalAlignment HorizontalAlignment
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.HorizontalAlignment = value;
-        }
+        get => _horizontalAlignment.ComputedValue;
+        set => _horizontalAlignment.SetOverrideValue(value);
     }
 
     /// <inheritdoc cref="TextRun.VerticalAlignment"/>
-    [Property]
     public TextVerticalAlignment VerticalAlignment
     {
-        get;
-        set
-        {
-            field = value;
-            _textRun.VerticalAlignment = value;
-        }
+        get => _verticalAlignment.ComputedValue;
+        set => _verticalAlignment.SetOverrideValue(value);
     }
 
     // ── Constructor ───────────────────────────────────────────────
 
     public TextInput()
     {
+        _borderColor = new Color(255, 255, 255, 255);
+        _backgroundColor = new Color(20, 20, 30, 255);
+        _cursorColor = new Color(255, 255, 255, 255);
+        _selectionColor = new Color(100, 180, 255, 128);
+        _placeholderColor = new Color(128, 128, 128, 255);
+        _borderTopLeftRadius = 0f;
+        _borderTopRightRadius = 0f;
+        _borderBottomLeftRadius = 0f;
+        _borderBottomRightRadius = 0f;
+        _foreground = new(
+            new Color(255, 255, 255),
+            this,
+            static (ctx, o, n) => ((TextInput)ctx!)._textRun.Foreground = n
+        );
+        _fontFamily = new(
+            FontFamily.DroidSans,
+            this,
+            static (ctx, o, n) =>
+            {
+                var t = (TextInput)ctx!;
+                t._textRun.FontFamily = n;
+                t.OnTextInvalidated();
+            }
+        );
+        _fontSize = new(
+            12f,
+            this,
+            static (ctx, o, n) =>
+            {
+                var t = (TextInput)ctx!;
+                t._textRun.FontSize = n;
+                t.OnTextInvalidated();
+            }
+        );
+        _fontStyle = new(
+            FontStyle.Plain,
+            this,
+            static (ctx, o, n) =>
+            {
+                var t = (TextInput)ctx!;
+                t._textRun.FontStyle = n;
+                t.OnTextInvalidated();
+            }
+        );
+        _horizontalAlignment = new(
+            TextHorizontalAlignment.Left,
+            this,
+            static (ctx, o, n) => ((TextInput)ctx!)._textRun.HorizontalAlignment = n
+        );
+        _verticalAlignment = new(
+            TextVerticalAlignment.Top,
+            this,
+            static (ctx, o, n) => ((TextInput)ctx!)._textRun.VerticalAlignment = n
+        );
+
         IsFocusable = true;
 
         _textRun = new TextRun { IsFocusable = false };
@@ -226,47 +291,47 @@ public partial class TextInput : Node
         
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.BorderColor is not null) BorderColor = null;
-            if (oldStyleSheetValue.BackgroundColor is not null) BackgroundColor = null;
-            if (oldStyleSheetValue.BorderRadius is not null) BorderRadius = 0;
-            if (oldStyleSheetValue.BorderTopLeftRadius is not null) BorderTopLeftRadius = 0;
-            if (oldStyleSheetValue.BorderTopRightRadius is not null) BorderTopRightRadius = 0;
-            if (oldStyleSheetValue.BorderBottomLeftRadius is not null) BorderBottomLeftRadius = 0;
-            if (oldStyleSheetValue.BorderBottomRightRadius is not null) BorderBottomRightRadius = 0;
+            if (oldStyleSheetValue.BorderColor is not null) _borderColor.ClearStyleValue();
+            if (oldStyleSheetValue.BackgroundColor is not null) _backgroundColor.ClearStyleValue();
+            if (oldStyleSheetValue.BorderRadius is not null) { _borderTopLeftRadius.ClearStyleValue(); _borderTopRightRadius.ClearStyleValue(); _borderBottomLeftRadius.ClearStyleValue(); _borderBottomRightRadius.ClearStyleValue(); }
+            if (oldStyleSheetValue.BorderTopLeftRadius is not null) _borderTopLeftRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderTopRightRadius is not null) _borderTopRightRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderBottomLeftRadius is not null) _borderBottomLeftRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderBottomRightRadius is not null) _borderBottomRightRadius.ClearStyleValue();
             
-            if (oldStyleSheetValue.CursorColor is not null) CursorColor = new(255, 255, 255, 255);;
-            if (oldStyleSheetValue.SelectionColor is not null) SelectionColor = new(100, 180, 255, 128);;
-            if (oldStyleSheetValue.PlaceholderColor is not null) PlaceholderColor = new(128, 128, 128, 255);;
+            if (oldStyleSheetValue.CursorColor is not null) _cursorColor.ClearStyleValue();
+            if (oldStyleSheetValue.SelectionColor is not null) _selectionColor.ClearStyleValue();
+            if (oldStyleSheetValue.PlaceholderColor is not null) _placeholderColor.ClearStyleValue();
             
-            if (oldStyleSheetValue.Foreground is not null) Foreground = new Color(255, 255, 255);
-            if (oldStyleSheetValue.FontFamily is not null) FontFamily = FontFamily.DroidSans;
-            if (oldStyleSheetValue.FontSize is not null) FontSize = 12;
-            if (oldStyleSheetValue.FontStyle is not null) FontStyle = FontStyle.Plain;
-            if (oldStyleSheetValue.HorizontalAlignment is not null) HorizontalAlignment = TextHorizontalAlignment.Left;
-            if (oldStyleSheetValue.VerticalAlignment is not null) VerticalAlignment = TextVerticalAlignment.Top;
+            if (oldStyleSheetValue.Foreground is not null) _foreground.ClearStyleValue();
+            if (oldStyleSheetValue.FontFamily is not null) _fontFamily.ClearStyleValue();
+            if (oldStyleSheetValue.FontSize is not null) _fontSize.ClearStyleValue();
+            if (oldStyleSheetValue.FontStyle is not null) _fontStyle.ClearStyleValue();
+            if (oldStyleSheetValue.HorizontalAlignment is not null) _horizontalAlignment.ClearStyleValue();
+            if (oldStyleSheetValue.VerticalAlignment is not null) _verticalAlignment.ClearStyleValue();
 
         }
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.BorderColor is {} borderColor) BorderColor = borderColor;
-            if (newStyleSheetValue.BackgroundColor is {} backgroundColor) BackgroundColor = backgroundColor;
-            if (newStyleSheetValue.BorderRadius is {} borderRadius) BorderRadius = borderRadius;
-            if (newStyleSheetValue.BorderTopLeftRadius is {} borderTopLeftRadius) BorderTopLeftRadius = borderTopLeftRadius;
-            if (newStyleSheetValue.BorderTopRightRadius is {} borderTopRightRadius) BorderTopRightRadius = borderTopRightRadius;
-            if (newStyleSheetValue.BorderBottomLeftRadius is {} borderBottomLeftRadius) BorderBottomLeftRadius = borderBottomLeftRadius;
-            if (newStyleSheetValue.BorderBottomRightRadius is {} borderBottomRightRadius) BorderBottomRightRadius = borderBottomRightRadius;
+            if (newStyleSheetValue.BorderColor is {} borderColor) _borderColor.SetStyleValue(borderColor);
+            if (newStyleSheetValue.BackgroundColor is {} backgroundColor) _backgroundColor.SetStyleValue(backgroundColor);
+            if (newStyleSheetValue.BorderRadius is {} borderRadius) { _borderTopLeftRadius.SetStyleValue(borderRadius); _borderTopRightRadius.SetStyleValue(borderRadius); _borderBottomLeftRadius.SetStyleValue(borderRadius); _borderBottomRightRadius.SetStyleValue(borderRadius); }
+            if (newStyleSheetValue.BorderTopLeftRadius is {} borderTopLeftRadius) _borderTopLeftRadius.SetStyleValue(borderTopLeftRadius);
+            if (newStyleSheetValue.BorderTopRightRadius is {} borderTopRightRadius) _borderTopRightRadius.SetStyleValue(borderTopRightRadius);
+            if (newStyleSheetValue.BorderBottomLeftRadius is {} borderBottomLeftRadius) _borderBottomLeftRadius.SetStyleValue(borderBottomLeftRadius);
+            if (newStyleSheetValue.BorderBottomRightRadius is {} borderBottomRightRadius) _borderBottomRightRadius.SetStyleValue(borderBottomRightRadius);
 
-            if (newStyleSheetValue.CursorColor is {} cursorColor) CursorColor = cursorColor;
-            if (newStyleSheetValue.SelectionColor is {} selectionColor) SelectionColor = selectionColor;
-            if (newStyleSheetValue.PlaceholderColor is {} placeholderColor) PlaceholderColor = placeholderColor;
+            if (newStyleSheetValue.CursorColor is {} cursorColor) _cursorColor.SetStyleValue(cursorColor);
+            if (newStyleSheetValue.SelectionColor is {} selectionColor) _selectionColor.SetStyleValue(selectionColor);
+            if (newStyleSheetValue.PlaceholderColor is {} placeholderColor) _placeholderColor.SetStyleValue(placeholderColor);
             
-            if (newStyleSheetValue.Foreground is {} foreground) Foreground = foreground;
-            if (newStyleSheetValue.FontFamily is {} fontFamily) FontFamily = fontFamily;
-            if (newStyleSheetValue.FontSize is {} fontSize) FontSize = fontSize;
-            if (newStyleSheetValue.FontStyle is {} fontStyle) FontStyle = fontStyle;
-            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) HorizontalAlignment = horizontalAlignment;
-            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) VerticalAlignment = verticalAlignment;
+            if (newStyleSheetValue.Foreground is {} foreground) _foreground.SetStyleValue(foreground);
+            if (newStyleSheetValue.FontFamily is {} fontFamily) _fontFamily.SetStyleValue(fontFamily);
+            if (newStyleSheetValue.FontSize is {} fontSize) _fontSize.SetStyleValue(fontSize);
+            if (newStyleSheetValue.FontStyle is {} fontStyle) _fontStyle.SetStyleValue(fontStyle);
+            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) _horizontalAlignment.SetStyleValue(horizontalAlignment);
+            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) _verticalAlignment.SetStyleValue(verticalAlignment);
 
         }
     }

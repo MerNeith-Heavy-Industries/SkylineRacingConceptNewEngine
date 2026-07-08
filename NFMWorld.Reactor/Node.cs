@@ -52,13 +52,21 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     public Node()
     {
+        _visibility = new(Visibility.Visible, this, static (ctx, o, n) =>
+        {
+            Node node = (Node)ctx!;
+            if (n is Visibility.Visible && o is Visibility.Hidden && node.Opacity > 0.0f)
+                node.Shown?.Invoke();
+            else if (n is Visibility.Hidden && o is Visibility.Visible && node.Opacity > 0.0f)
+                node.Hidden?.Invoke();
+        });
         _opacity = new(1.0f, this, static (ctx, o, n) =>
         {
-            Node tempQualifier = (Node)ctx!;
-            if (n <= 0.0f && o > 0.0f && tempQualifier.Visibility is Visibility.Visible)
-                tempQualifier.Hidden?.Invoke();
-            else if (n > 0.0f && o <= 0.0f && tempQualifier.Visibility is Visibility.Visible)
-                tempQualifier.Shown?.Invoke();
+            Node node = (Node)ctx!;
+            if (n <= 0.0f && o > 0.0f && node.Visibility is Visibility.Visible)
+                node.Hidden?.Invoke();
+            else if (n > 0.0f && o <= 0.0f && node.Visibility is Visibility.Visible)
+                node.Shown?.Invoke();
         });
         _direction = new(NodeInternal.Direction.ToNfmDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Direction = n.ToYogaDirection());
         _flexDirection = new(NodeInternal.FlexDirection.ToNfmFlexDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexDirection = n.ToYogaFlexDirection());
@@ -351,7 +359,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.Visibility is not null) Visibility = Visibility.Visible;
+            if (oldStyleSheetValue.Visibility is not null) _visibility.ClearStyleValue();
             if (oldStyleSheetValue.Opacity is not null) _opacity.ClearStyleValue();
             if (oldStyleSheetValue.Direction is not null) _direction.ClearStyleValue();
             if (oldStyleSheetValue.FlexDirection is not null) _flexDirection.ClearStyleValue();
@@ -401,7 +409,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.Visibility is { } visibility) Visibility = visibility;
+            if (newStyleSheetValue.Visibility is { } visibility) _visibility.SetStyleValue(visibility);
             if (newStyleSheetValue.Opacity is { } opacity) _opacity.SetStyleValue(opacity);
             if (newStyleSheetValue.Direction is { } direction) _direction.SetStyleValue(direction);
             if (newStyleSheetValue.FlexDirection is { } flexDirection) _flexDirection.SetStyleValue(flexDirection);
@@ -450,65 +458,57 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         }
     }
 
+    internal StyledProperty<Visibility> _visibility;
+    internal StyledProperty<float> _opacity;
+    internal StyledProperty<Direction> _direction;
+    internal StyledProperty<FlexDirection> _flexDirection;
+    internal StyledProperty<Justify> _justifyContent;
+    internal StyledProperty<Align> _alignItems;
+    internal StyledProperty<Align> _alignSelf;
+    internal StyledProperty<Align> _alignContent;
+    internal StyledProperty<Position> _position;
+    internal StyledProperty<Wrap> _flexWrap;
+    internal StyledProperty<Overflow> _overflow;
+    internal StyledProperty<Display> _display;
+    internal StyledProperty<BoxSizing> _boxSizing;
+    internal StyledProperty<float?> _flex;
+    internal StyledProperty<float?> _flexGrow;
+    internal StyledProperty<float?> _flexShrink;
+    internal StyledProperty<MeasurementFlexBasis> _flexBasis;
+    internal StyledProperty<MeasurementMarginPosition> _left;
+    internal StyledProperty<MeasurementMarginPosition> _top;
+    internal StyledProperty<MeasurementMarginPosition> _right;
+    internal StyledProperty<MeasurementMarginPosition> _bottom;
+    internal StyledProperty<MeasurementMarginPosition> _marginTop;
+    internal StyledProperty<MeasurementMarginPosition> _marginBottom;
+    internal StyledProperty<MeasurementMarginPosition> _marginLeft;
+    internal StyledProperty<MeasurementMarginPosition> _marginRight;
+    internal StyledProperty<MeasurementPadding> _paddingTop;
+    internal StyledProperty<MeasurementPadding> _paddingBottom;
+    internal StyledProperty<MeasurementPadding> _paddingLeft;
+    internal StyledProperty<MeasurementPadding> _paddingRight;
+    internal StyledProperty<Pixels?> _borderTop;
+    internal StyledProperty<Pixels?> _borderBottom;
+    internal StyledProperty<Pixels?> _borderLeft;
+    internal StyledProperty<Pixels?> _borderRight;
+    internal StyledProperty<MeasurementGap> _gapColumn;
+    internal StyledProperty<MeasurementGap> _gapRow;
+    internal StyledProperty<MeasurementWidthHeight> _width;
+    internal StyledProperty<MeasurementWidthHeight> _height;
+    internal StyledProperty<MeasurementWidthHeight> _minWidth;
+    internal StyledProperty<MeasurementWidthHeight> _minHeight;
+    internal StyledProperty<MeasurementWidthHeight> _maxWidth;
+    internal StyledProperty<MeasurementWidthHeight> _maxHeight;
+    internal StyledProperty<Pixels?> _aspectRatio;
+
     /// <summary>
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
     /// </summary>
-    [Property]
     public Visibility Visibility
     {
-        get;
-        set
-        {
-            var oldValue = field;
-            field = value;
-            if (value is Visibility.Visible && oldValue is Visibility.Hidden && Opacity > 0.0f)
-                Shown?.Invoke();
-            else if (value is Visibility.Hidden && oldValue is Visibility.Visible && Opacity > 0.0f)
-                Hidden?.Invoke();
-        }
-    } = Visibility.Visible;
-
-    internal Property<float> _opacity;
-    internal Property<Direction> _direction;
-    internal Property<FlexDirection> _flexDirection;
-    internal Property<Justify> _justifyContent;
-    internal Property<Align> _alignItems;
-    internal Property<Align> _alignSelf;
-    internal Property<Align> _alignContent;
-    internal Property<Position> _position;
-    internal Property<Wrap> _flexWrap;
-    internal Property<Overflow> _overflow;
-    internal Property<Display> _display;
-    internal Property<BoxSizing> _boxSizing;
-    internal Property<float?> _flex;
-    internal Property<float?> _flexGrow;
-    internal Property<float?> _flexShrink;
-    internal Property<MeasurementFlexBasis> _flexBasis;
-    internal Property<MeasurementMarginPosition> _left;
-    internal Property<MeasurementMarginPosition> _top;
-    internal Property<MeasurementMarginPosition> _right;
-    internal Property<MeasurementMarginPosition> _bottom;
-    internal Property<MeasurementMarginPosition> _marginTop;
-    internal Property<MeasurementMarginPosition> _marginBottom;
-    internal Property<MeasurementMarginPosition> _marginLeft;
-    internal Property<MeasurementMarginPosition> _marginRight;
-    internal Property<MeasurementPadding> _paddingTop;
-    internal Property<MeasurementPadding> _paddingBottom;
-    internal Property<MeasurementPadding> _paddingLeft;
-    internal Property<MeasurementPadding> _paddingRight;
-    internal Property<Pixels?> _borderTop;
-    internal Property<Pixels?> _borderBottom;
-    internal Property<Pixels?> _borderLeft;
-    internal Property<Pixels?> _borderRight;
-    internal Property<MeasurementGap> _gapColumn;
-    internal Property<MeasurementGap> _gapRow;
-    internal Property<MeasurementWidthHeight> _width;
-    internal Property<MeasurementWidthHeight> _height;
-    internal Property<MeasurementWidthHeight> _minWidth;
-    internal Property<MeasurementWidthHeight> _minHeight;
-    internal Property<MeasurementWidthHeight> _maxWidth;
-    internal Property<MeasurementWidthHeight> _maxHeight;
-    internal Property<Pixels?> _aspectRatio;
+        get => _visibility.ComputedValue;
+        set => _visibility.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
@@ -1081,19 +1081,38 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: margin-top - Sets the top margin space outside the element
     /// </summary>
-    public MeasurementMarginPosition MarginTop    {        get => _marginTop.ComputedValue;        set => _marginTop.SetOverrideValue(value);    }
+    public MeasurementMarginPosition MarginTop
+    {
+        get => _marginTop.ComputedValue;
+        set => _marginTop.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: margin-bottom - Sets the bottom margin space outside the element
     /// </summary>
-    public MeasurementMarginPosition MarginBottom    {        get => _marginBottom.ComputedValue;        set => _marginBottom.SetOverrideValue(value);    }
+    public MeasurementMarginPosition MarginBottom
+    {
+        get => _marginBottom.ComputedValue;
+        set => _marginBottom.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: margin-left - Sets the left margin space outside the element
     /// </summary>
-    public MeasurementMarginPosition MarginLeft    {        get => _marginLeft.ComputedValue;        set => _marginLeft.SetOverrideValue(value);    }
+    public MeasurementMarginPosition MarginLeft
+    {
+        get => _marginLeft.ComputedValue;
+        set => _marginLeft.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: margin-right - Sets the right margin space outside the element
     /// </summary>
-    public MeasurementMarginPosition MarginRight    {        get => _marginRight.ComputedValue;        set => _marginRight.SetOverrideValue(value);    }
+    public MeasurementMarginPosition MarginRight
+    {
+        get => _marginRight.ComputedValue;
+        set => _marginRight.SetOverrideValue(value);
+    }
     public struct MeasurementPadding
     {
         internal YGValue InternalValue;
@@ -1346,19 +1365,38 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: padding-top - Sets the top padding space inside the element
     /// </summary>
-    public MeasurementPadding PaddingTop    {        get => _paddingTop.ComputedValue;        set => _paddingTop.SetOverrideValue(value);    }
+    public MeasurementPadding PaddingTop
+    {
+        get => _paddingTop.ComputedValue;
+        set => _paddingTop.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: padding-bottom - Sets the bottom padding space inside the element
     /// </summary>
-    public MeasurementPadding PaddingBottom    {        get => _paddingBottom.ComputedValue;        set => _paddingBottom.SetOverrideValue(value);    }
+    public MeasurementPadding PaddingBottom
+    {
+        get => _paddingBottom.ComputedValue;
+        set => _paddingBottom.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: padding-left - Sets the left padding space inside the element
     /// </summary>
-    public MeasurementPadding PaddingLeft    {        get => _paddingLeft.ComputedValue;        set => _paddingLeft.SetOverrideValue(value);    }
+    public MeasurementPadding PaddingLeft
+    {
+        get => _paddingLeft.ComputedValue;
+        set => _paddingLeft.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: padding-right - Sets the right padding space inside the element
     /// </summary>
-    public MeasurementPadding PaddingRight    {        get => _paddingRight.ComputedValue;        set => _paddingRight.SetOverrideValue(value);    }
+    public MeasurementPadding PaddingRight
+    {
+        get => _paddingRight.ComputedValue;
+        set => _paddingRight.SetOverrideValue(value);
+    }
     public struct MeasurementMultiBorder
     {
         public InlineArray4<float?> Sides;
@@ -1496,19 +1534,38 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: border-top-width - Sets the width of the top border
     /// </summary>
-    public Pixels? BorderTop    {        get => _borderTop.ComputedValue;        set => _borderTop.SetOverrideValue(value);    }
+    public Pixels? BorderTop
+    {
+        get => _borderTop.ComputedValue;
+        set => _borderTop.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: border-bottom-width - Sets the width of the bottom border
     /// </summary>
-    public Pixels? BorderBottom    {        get => _borderBottom.ComputedValue;        set => _borderBottom.SetOverrideValue(value);    }
+    public Pixels? BorderBottom
+    {
+        get => _borderBottom.ComputedValue;
+        set => _borderBottom.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: border-left-width - Sets the width of the left border
     /// </summary>
-    public Pixels? BorderLeft    {        get => _borderLeft.ComputedValue;        set => _borderLeft.SetOverrideValue(value);    }
+    public Pixels? BorderLeft
+    {
+        get => _borderLeft.ComputedValue;
+        set => _borderLeft.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: border-right-width - Sets the width of the right border
     /// </summary>
-    public Pixels? BorderRight    {        get => _borderRight.ComputedValue;        set => _borderRight.SetOverrideValue(value);    }
+    public Pixels? BorderRight
+    {
+        get => _borderRight.ComputedValue;
+        set => _borderRight.SetOverrideValue(value);
+    }
     public struct MeasurementGap
     {
         internal YGValue InternalValue;
@@ -1635,15 +1692,29 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: column-gap - Sets the gap between columns in a flex container
     /// </summary>
-    public MeasurementGap GapColumn    {        get => _gapColumn.ComputedValue;        set => _gapColumn.SetOverrideValue(value);    }
+    public MeasurementGap GapColumn
+    {
+        get => _gapColumn.ComputedValue;
+        set => _gapColumn.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: row-gap - Sets the gap between rows in a flex container
     /// </summary>
-    public MeasurementGap GapRow    {        get => _gapRow.ComputedValue;        set => _gapRow.SetOverrideValue(value);    }
+    public MeasurementGap GapRow
+    {
+        get => _gapRow.ComputedValue;
+        set => _gapRow.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
     /// </summary>
-    public BoxSizing BoxSizing    {        get => _boxSizing.ComputedValue;        set => _boxSizing.SetOverrideValue(value);    }
+    public BoxSizing BoxSizing
+    {
+        get => _boxSizing.ComputedValue;
+        set => _boxSizing.SetOverrideValue(value);
+    }
     public struct MeasurementWidthHeight
     {
         internal YGValue InternalValue;
@@ -1806,31 +1877,65 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: width - Sets the width of the element
     /// </summary>
-    public MeasurementWidthHeight Width    {        get => _width.ComputedValue;        set => _width.SetOverrideValue(value);    }
+    public MeasurementWidthHeight Width
+    {
+        get => _width.ComputedValue;
+        set => _width.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: height - Sets the height of the element
     /// </summary>
-    public MeasurementWidthHeight Height    {        get => _height.ComputedValue;        set => _height.SetOverrideValue(value);    }
+    public MeasurementWidthHeight Height
+    {
+        get => _height.ComputedValue;
+        set => _height.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: min-width - Sets the minimum width of the element
     /// </summary>
-    public MeasurementWidthHeight MinWidth    {        get => _minWidth.ComputedValue;        set => _minWidth.SetOverrideValue(value);    }
+    public MeasurementWidthHeight MinWidth
+    {
+        get => _minWidth.ComputedValue;
+        set => _minWidth.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: min-height - Sets the minimum height of the element
     /// </summary>
-    public MeasurementWidthHeight MinHeight    {        get => _minHeight.ComputedValue;        set => _minHeight.SetOverrideValue(value);    }
+    public MeasurementWidthHeight MinHeight
+    {
+        get => _minHeight.ComputedValue;
+        set => _minHeight.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: max-width - Sets the maximum width of the element
     /// </summary>
-    public MeasurementWidthHeight MaxWidth    {        get => _maxWidth.ComputedValue;        set => _maxWidth.SetOverrideValue(value);    }
+    public MeasurementWidthHeight MaxWidth
+    {
+        get => _maxWidth.ComputedValue;
+        set => _maxWidth.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: max-height - Sets the maximum height of the element
     /// </summary>
-    public MeasurementWidthHeight MaxHeight    {        get => _maxHeight.ComputedValue;        set => _maxHeight.SetOverrideValue(value);    }
+    public MeasurementWidthHeight MaxHeight
+    {
+        get => _maxHeight.ComputedValue;
+        set => _maxHeight.SetOverrideValue(value);
+    }
+
     /// <summary>
     /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
     /// </summary>
-    public Pixels? AspectRatio    {        get => _aspectRatio.ComputedValue;        set => _aspectRatio.SetOverrideValue(value);    }
+    public Pixels? AspectRatio
+    {
+        get => _aspectRatio.ComputedValue;
+        set => _aspectRatio.SetOverrideValue(value);
+    }
     public readonly struct Pixels(float value)
     {
         public readonly float Value = value;
