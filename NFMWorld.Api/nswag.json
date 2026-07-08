@@ -3,7 +3,7 @@
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
-      "url": "https://nfmwapi.jacher.io/api-docs/openapi.json",
+      "url": "https://api.nfmw.net/api-docs/openapi.json",
       "output": null,
       "newLineBehavior": "Auto"
     }
