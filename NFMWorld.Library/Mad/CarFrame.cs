@@ -69,18 +69,18 @@ public partial struct CarFrame
             entry.WheelVelocities.Scz[i] = car.CarPhysics.Scz[i];
         }
         entry.Power = car.CarPhysics.Power;
-        entry.Damage = car.CarPhysics.Hitmag;
-        entry.AngularVelocities.Ucomp = car.CarPhysics.Ucomp;
-        entry.AngularVelocities.Dcomp = car.CarPhysics.Dcomp;
-        entry.AngularVelocities.Lcomp = car.CarPhysics.Lcomp;
-        entry.AngularVelocities.Rcomp = car.CarPhysics.Rcomp;
+        entry.Damage = car.CarPhysics.DamagePoints;
+        entry.AngularVelocities.Ucomp = car.CarPhysics.UpComponent;
+        entry.AngularVelocities.Dcomp = car.CarPhysics.DownComponent;
+        entry.AngularVelocities.Lcomp = car.CarPhysics.LeftComponent;
+        entry.AngularVelocities.Rcomp = car.CarPhysics.RightComponent;
         entry.RacePosition.CheckpointInlap = car.currentCheckpoint;
         entry.RacePosition.Lap = car.currentLap;
-        entry.StuntState.StuntType = car.CarPhysics.Loop;
-        entry.StuntState.Travxz = car.CarPhysics.Travxz;
-        entry.StuntState.Travxy = car.CarPhysics.Travxy;
-        entry.StuntState.Travzy = car.CarPhysics.Travzy;
-        entry.TheBitFlags.Surfer = car.CarPhysics.Surfer;
+        entry.StuntState.StuntType = car.CarPhysics.StuntState;
+        entry.StuntState.Travxz = car.CarPhysics.TotalStuntXz;
+        entry.StuntState.Travxy = car.CarPhysics.TotalStuntXy;
+        entry.StuntState.Travzy = car.CarPhysics.TotalStuntZy;
+        entry.TheBitFlags.Surfer = car.CarPhysics.Surfing;
         entry.Powerup = car.CarPhysics.Powerup;
         entry.TheBitFlags.BadLanding = car.CarPhysics.BadLanding;
         entry.TheBitFlags.Wasted = car.CarPhysics.Wasted;
@@ -88,10 +88,10 @@ public partial struct CarFrame
         entry.TheBitFlags.Mtouch = car.CarPhysics.Mtouch;
         entry.TheBitFlags.Wtouch = car.CarPhysics.Wtouch;
         entry.TheBitFlags.Gtouch = car.CarPhysics.Gtouch;
-        entry.TheBitFlags.Pu = car.CarPhysics.Pu;
-        entry.TheBitFlags.Pd = car.CarPhysics.Pd;
-        entry.TheBitFlags.Pl = car.CarPhysics.Pl;
-        entry.TheBitFlags.Pr = car.CarPhysics.Pr;
+        entry.TheBitFlags.Pu = car.CarPhysics.PressUp;
+        entry.TheBitFlags.Pd = car.CarPhysics.PressDown;
+        entry.TheBitFlags.Pl = car.CarPhysics.PressLeft;
+        entry.TheBitFlags.Pr = car.CarPhysics.PressRight;
         entry.TheBitFlags.Pushed = car.CarPhysics.Pushed;
         entry.TheBitFlags.Newcar = car.CarPhysics.Newcar;
         entry.XzReadings.Mxz = car.CarPhysics.Mxz;
@@ -125,17 +125,17 @@ public partial struct CarFrame
         }
 
         car.CarPhysics.Power = Power;
-        car.CarPhysics.Hitmag = Damage;
-        car.CarPhysics.Ucomp = AngularVelocities.Ucomp;
-        car.CarPhysics.Dcomp = AngularVelocities.Dcomp;
-        car.CarPhysics.Lcomp = AngularVelocities.Lcomp;
-        car.CarPhysics.Rcomp = AngularVelocities.Rcomp;
+        car.CarPhysics.DamagePoints = Damage;
+        car.CarPhysics.UpComponent = AngularVelocities.Ucomp;
+        car.CarPhysics.DownComponent = AngularVelocities.Dcomp;
+        car.CarPhysics.LeftComponent = AngularVelocities.Lcomp;
+        car.CarPhysics.RightComponent = AngularVelocities.Rcomp;
 
-        car.CarPhysics.Loop = StuntState.StuntType;
-        car.CarPhysics.Travxz = StuntState.Travxz;
-        car.CarPhysics.Travxy = StuntState.Travxy;
-        car.CarPhysics.Travzy = StuntState.Travzy;
-        car.CarPhysics.Surfer = TheBitFlags.Surfer;
+        car.CarPhysics.StuntState = StuntState.StuntType;
+        car.CarPhysics.TotalStuntXz = StuntState.Travxz;
+        car.CarPhysics.TotalStuntXy = StuntState.Travxy;
+        car.CarPhysics.TotalStuntZy = StuntState.Travzy;
+        car.CarPhysics.Surfing = TheBitFlags.Surfer;
 
         car.CarPhysics.Powerup = Powerup;
         car.CarPhysics.BadLanding = TheBitFlags.BadLanding;
@@ -148,10 +148,10 @@ public partial struct CarFrame
         car.CarPhysics.Wtouch = TheBitFlags.Wtouch;
         car.CarPhysics.Gtouch = TheBitFlags.Gtouch;
 
-        car.CarPhysics.Pu = TheBitFlags.Pu;
-        car.CarPhysics.Pd = TheBitFlags.Pd;
-        car.CarPhysics.Pl = TheBitFlags.Pl;
-        car.CarPhysics.Pr = TheBitFlags.Pr;
+        car.CarPhysics.PressUp = TheBitFlags.Pu;
+        car.CarPhysics.PressDown = TheBitFlags.Pd;
+        car.CarPhysics.PressLeft = TheBitFlags.Pl;
+        car.CarPhysics.PressRight = TheBitFlags.Pr;
 
         car.CarPhysics.Mxz = XzReadings.Mxz;
         car.CarPhysics.Txz = XzReadings.Txz;

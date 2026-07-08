@@ -240,7 +240,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         Hud.State = Hud.State with
         {
             CurrentLap = carsInRace[_playerCarIndex].currentLap + 1,
-            DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag,
+            DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag,
             PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f
         };
 

@@ -78,7 +78,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     {
         Hud.State = Hud.State with
         {
-            DamageFillAmount = (float)carsInRace[0].CarPhysics.Hitmag / carsInRace[0].Stats.Maxmag,
+            DamageFillAmount = (float)carsInRace[0].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag,
             PowerFillAmount = (float)carsInRace[0].CarPhysics.Power / 100f
         };
     }
