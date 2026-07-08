@@ -19,8 +19,9 @@ public abstract partial class Visual : INamed
         get;
         set
         {
+            var oldStyle = field;
             field = value;
-            UpdateStyleSheet(field, Style);
+            UpdateStyleSheet(oldStyle, Style);
         }
     }
 
@@ -39,7 +40,7 @@ public abstract partial class Visual : INamed
     private void UpdateStyleSheet(StyleSheet? oldStyleSheet, StyleSheet? newStyleSheet)
     {
         var newState = GetSheetState();
-        if (newState != _oldStyleState)
+        if (newState != _oldStyleState || !Equals(oldStyleSheet, newStyleSheet))
         {
             UpdateStyles(_oldStyleState is {} oldStyleState ? oldStyleSheet?.GetStylesForState(oldStyleState) : null, newStyleSheet?.GetStylesForState(newState));
             _oldStyleState = newState;
