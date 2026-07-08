@@ -69,6 +69,9 @@ public static partial class Nodes
         OverflowBehavior? overflowBehavior = null,
         TextHorizontalAlignment? horizontalAlignment = null,
         TextVerticalAlignment? verticalAlignment = null,
+        Color? cursorColor = null,
+        Color? selectionColor = null,
+        Color? placeholderColor = null,
         
         // sub-sheets
         StyleSheet? hover = null,
@@ -141,6 +144,9 @@ public static partial class Nodes
             OverflowBehavior = overflowBehavior,
             HorizontalAlignment = horizontalAlignment,
             VerticalAlignment = verticalAlignment,
+            CursorColor = cursorColor,
+            SelectionColor = selectionColor,
+            PlaceholderColor = placeholderColor,
         };
         
         return new StyleSheet

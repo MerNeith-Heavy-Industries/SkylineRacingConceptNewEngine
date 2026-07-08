@@ -47,10 +47,10 @@ public partial class TextInput : Node
     // ── Styled properties ──────────────────────────────────────────
 
     [Property]
-    public Color BorderColor { get; set; } = new(255, 255, 255, 255);
+    public Color? BorderColor { get; set; } = new(255, 255, 255, 255);
 
     [Property]
-    public Color BackgroundColor { get; set; } = new(20, 20, 30, 255);
+    public Color? BackgroundColor { get; set; } = new(20, 20, 30, 255);
 
     [Property]
     public Color CursorColor { get; set; } = new(255, 255, 255, 255);
@@ -62,13 +62,28 @@ public partial class TextInput : Node
     public Color PlaceholderColor { get; set; } = new(128, 128, 128, 255);
 
     [Property]
-    public int BorderTopLeftRadius { get; set; }
+    public float BorderRadius
+    {
+        get => BorderTopLeftRadius == BorderTopRightRadius && BorderTopLeftRadius == BorderBottomLeftRadius && BorderTopLeftRadius == BorderBottomRightRadius
+            ? BorderTopLeftRadius
+            : 0;
+        set
+        {
+            BorderTopLeftRadius = value;
+            BorderTopRightRadius = value;
+            BorderBottomLeftRadius = value;
+            BorderBottomRightRadius = value;
+        }
+    }
+    
     [Property]
-    public int BorderTopRightRadius { get; set; }
+    public float BorderTopLeftRadius { get; set; }
     [Property]
-    public int BorderBottomLeftRadius { get; set; }
+    public float BorderTopRightRadius { get; set; }
     [Property]
-    public int BorderBottomRightRadius { get; set; }
+    public float BorderBottomLeftRadius { get; set; }
+    [Property]
+    public float BorderBottomRightRadius { get; set; }
 
     /// <summary>
     /// Placeholder text shown when <see cref="Text"/> is empty and the input is not focused.
@@ -203,6 +218,57 @@ public partial class TextInput : Node
         _cursorOverlay.VisualParent = this;
 
         _visualChildren = [_textRun, _cursorOverlay];
+    }
+
+    protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
+    {
+        base.UpdateStyles(oldStyleSheet, newStyleSheet);
+        
+        if (oldStyleSheet is { } oldStyleSheetValue)
+        {
+            if (oldStyleSheetValue.BorderColor is not null) BorderColor = null;
+            if (oldStyleSheetValue.BackgroundColor is not null) BackgroundColor = null;
+            if (oldStyleSheetValue.BorderRadius is not null) BorderRadius = 0;
+            if (oldStyleSheetValue.BorderTopLeftRadius is not null) BorderTopLeftRadius = 0;
+            if (oldStyleSheetValue.BorderTopRightRadius is not null) BorderTopRightRadius = 0;
+            if (oldStyleSheetValue.BorderBottomLeftRadius is not null) BorderBottomLeftRadius = 0;
+            if (oldStyleSheetValue.BorderBottomRightRadius is not null) BorderBottomRightRadius = 0;
+            
+            if (oldStyleSheetValue.CursorColor is not null) CursorColor = new(255, 255, 255, 255);;
+            if (oldStyleSheetValue.SelectionColor is not null) SelectionColor = new(100, 180, 255, 128);;
+            if (oldStyleSheetValue.PlaceholderColor is not null) PlaceholderColor = new(128, 128, 128, 255);;
+            
+            if (oldStyleSheetValue.Foreground is not null) Foreground = new Color(255, 255, 255);
+            if (oldStyleSheetValue.FontFamily is not null) FontFamily = FontFamily.DroidSans;
+            if (oldStyleSheetValue.FontSize is not null) FontSize = 12;
+            if (oldStyleSheetValue.FontStyle is not null) FontStyle = FontStyle.Plain;
+            if (oldStyleSheetValue.HorizontalAlignment is not null) HorizontalAlignment = TextHorizontalAlignment.Left;
+            if (oldStyleSheetValue.VerticalAlignment is not null) VerticalAlignment = TextVerticalAlignment.Top;
+
+        }
+        
+        if (newStyleSheet is { } newStyleSheetValue)
+        {
+            if (newStyleSheetValue.BorderColor is {} borderColor) BorderColor = borderColor;
+            if (newStyleSheetValue.BackgroundColor is {} backgroundColor) BackgroundColor = backgroundColor;
+            if (newStyleSheetValue.BorderRadius is {} borderRadius) BorderRadius = borderRadius;
+            if (newStyleSheetValue.BorderTopLeftRadius is {} borderTopLeftRadius) BorderTopLeftRadius = borderTopLeftRadius;
+            if (newStyleSheetValue.BorderTopRightRadius is {} borderTopRightRadius) BorderTopRightRadius = borderTopRightRadius;
+            if (newStyleSheetValue.BorderBottomLeftRadius is {} borderBottomLeftRadius) BorderBottomLeftRadius = borderBottomLeftRadius;
+            if (newStyleSheetValue.BorderBottomRightRadius is {} borderBottomRightRadius) BorderBottomRightRadius = borderBottomRightRadius;
+
+            if (newStyleSheetValue.CursorColor is {} cursorColor) CursorColor = cursorColor;
+            if (newStyleSheetValue.SelectionColor is {} selectionColor) SelectionColor = selectionColor;
+            if (newStyleSheetValue.PlaceholderColor is {} placeholderColor) PlaceholderColor = placeholderColor;
+            
+            if (newStyleSheetValue.Foreground is {} foreground) Foreground = foreground;
+            if (newStyleSheetValue.FontFamily is {} fontFamily) FontFamily = fontFamily;
+            if (newStyleSheetValue.FontSize is {} fontSize) FontSize = fontSize;
+            if (newStyleSheetValue.FontStyle is {} fontStyle) FontStyle = fontStyle;
+            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) HorizontalAlignment = horizontalAlignment;
+            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) VerticalAlignment = verticalAlignment;
+
+        }
     }
 
     // ── Visual children (void element — no external children) ─────
@@ -566,34 +632,42 @@ public partial class TextInput : Node
     [ClientOnly]
     protected override void RenderBackground(Vector2 position, Vector2 size)
     {
-        G.SetColor(BackgroundColor);
-        var radTopLeft = Math.Max(0, BorderTopLeftRadius - ((BorderTop ?? 0) + (BorderLeft ?? 0) / 2f));
-        var radTopRight = Math.Max(0, BorderTopRightRadius - ((BorderTop ?? 0) + (BorderRight ?? 0) / 2f));
-        var radBottomRight = Math.Max(0, BorderBottomRightRadius - ((BorderBottom ?? 0) + (BorderRight ?? 0) / 2f));
-        var radBottomLeft = Math.Max(0, BorderBottomLeftRadius - ((BorderBottom ?? 0) + (BorderLeft ?? 0) / 2f));
-        G.FillRoundedRect(
-            (int)position.X, (int)position.Y,
-            (int)size.X, (int)size.Y,
-            radTopLeft * G.Scale, radTopRight * G.Scale,
-            radBottomRight * G.Scale, radBottomLeft * G.Scale);
+        if (BackgroundColor is { } backgroundColor && backgroundColor != Color.Transparent)
+        {
+            G.SetColor(backgroundColor);
+            var radTopLeft = Math.Max(0, BorderTopLeftRadius - ((BorderTop ?? 0) + (BorderLeft ?? 0) / 2f));
+            var radTopRight = Math.Max(0, BorderTopRightRadius - ((BorderTop ?? 0) + (BorderRight ?? 0) / 2f));
+            var radBottomRight = Math.Max(0, BorderBottomRightRadius - ((BorderBottom ?? 0) + (BorderRight ?? 0) / 2f));
+            var radBottomLeft = Math.Max(0, BorderBottomLeftRadius - ((BorderBottom ?? 0) + (BorderLeft ?? 0) / 2f));
+            G.FillRoundedRect(
+                (int)position.X, (int)position.Y,
+                (int)size.X, (int)size.Y,
+                radTopLeft * G.Scale, radTopRight * G.Scale,
+                radBottomRight * G.Scale, radBottomLeft * G.Scale);
+        }
     }
 
     [ClientOnly]
     protected override void RenderBorder(Vector2 position, Vector2 size)
     {
-        G.SetColor(IsFocused ? new Color(100, 180, 255, 255) : BorderColor);
-        var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;
-        G.SetStrokeWidth(avgBorder > 0 ? avgBorder : 2f * G.Scale);
-        var radTopLeft = BorderTopLeftRadius;
-        var radTopRight = BorderTopRightRadius;
-        var radBottomRight = BorderBottomRightRadius;
-        var radBottomLeft = BorderBottomLeftRadius;
-        G.DrawRoundedRect(
-            (int)(position.X + avgBorder / 2), (int)(position.Y + avgBorder / 2),
-            (int)size.X, (int)size.Y,
-            radTopLeft * G.Scale, radTopRight * G.Scale,
-            radBottomRight * G.Scale, radBottomLeft * G.Scale);
-        G.SetStrokeWidth();
+        var theBorderColor = IsFocused ? new Color(100, 180, 255, 255) : BorderColor;
+
+        if (theBorderColor is { } borderColor && borderColor != Color.Transparent)
+        {
+            G.SetColor(borderColor);
+            var avgBorder = (BorderTop ?? 0) + (BorderLeft ?? 0) + (BorderBottom ?? 0) + (BorderRight ?? 0) / 4f;
+            G.SetStrokeWidth(avgBorder > 0 ? avgBorder : 2f * G.Scale);
+            var radTopLeft = BorderTopLeftRadius;
+            var radTopRight = BorderTopRightRadius;
+            var radBottomRight = BorderBottomRightRadius;
+            var radBottomLeft = BorderBottomLeftRadius;
+            G.DrawRoundedRect(
+                (int)position.X, (int)position.Y,
+                (int)size.X, (int)size.Y,
+                radTopLeft * G.Scale, radTopRight * G.Scale,
+                radBottomRight * G.Scale, radBottomLeft * G.Scale);
+            G.SetStrokeWidth();
+        }
     }
 
     // ── Cursor overlay (inner class) ───────────────────────────────

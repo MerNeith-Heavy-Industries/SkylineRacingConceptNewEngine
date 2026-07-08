@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections;
+using System.Runtime.CompilerServices;
+using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
 
 namespace NFMWorld.Reactor;
@@ -12,7 +14,8 @@ public enum StyleSheetState
     Focus = 4
 }
 
-public class StyleSheet
+[CollectionBuilder(typeof(StyleSheet), nameof(Merge))]
+public class StyleSheet : IEnumerable<StyleSheet>
 {
     public StyleSheetStyles Default { get; set; }
     public StyleSheetStyles Hover { get; set; }
@@ -46,6 +49,16 @@ public class StyleSheet
         if (state.HasFlag(StyleSheetState.Focus))
             style = StyleSheetStyles.Merge(style, Focus);
         return style;
+    }
+
+    public IEnumerator<StyleSheet> GetEnumerator()
+    {
+        yield return this;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
 
@@ -346,6 +359,16 @@ public struct StyleSheetStyles
     public TextVerticalAlignment? VerticalAlignment { get; set; }
     
     #endregion
+
+    #region TextInput
+
+    public Color? CursorColor { get; set; }
+
+    public Color? SelectionColor { get; set; }
+
+    public Color? PlaceholderColor { get; set; }
+    
+    #endregion
     
     /*
     Visibility? Visibility
@@ -411,7 +434,9 @@ public struct StyleSheetStyles
     OverflowBehavior? OverflowBehavior
     TextHorizontalAlignment? HorizontalAlignment
     TextVerticalAlignment? VerticalAlignment
-    
+    Color? CursorColor
+    Color? SelectionColor
+    Color? PlaceholderColor
      */
 
     public static implicit operator StyleSheetStyles(ReadOnlySpan<StyleSheetStyles> styleSheets) => StyleSheetStyles.Merge(styleSheets);
@@ -497,6 +522,14 @@ public struct StyleSheetStyles
             if (sheet.OverflowBehavior is {} overflowBehavior) styleSheet.OverflowBehavior = overflowBehavior;
             if (sheet.HorizontalAlignment is {} horizontalAlignment) styleSheet.HorizontalAlignment = horizontalAlignment;
             if (sheet.VerticalAlignment is {} verticalAlignment) styleSheet.VerticalAlignment = verticalAlignment;
+
+            #endregion
+
+            #region TextInput
+
+            if (sheet.CursorColor is {} cursorColor) styleSheet.CursorColor = cursorColor;
+            if (sheet.SelectionColor is {} selectionColor) styleSheet.SelectionColor = selectionColor;
+            if (sheet.PlaceholderColor is {} placeholderColor) styleSheet.PlaceholderColor = placeholderColor;
 
             #endregion
         }
