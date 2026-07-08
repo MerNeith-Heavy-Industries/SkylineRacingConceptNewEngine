@@ -210,8 +210,8 @@ public partial class TextRun : Node
 
         if (OverflowBehavior is OverflowBehavior.Stretch)
         {
-            Width = measurements.Size.X;
-            Height = measurements.Size.Y;
+            _width.SetOverrideValue(measurements.Size.X);
+            _height.SetOverrideValue(measurements.Size.Y);
         }
 
         LaidOutComplexText = measurements;
