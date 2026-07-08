@@ -49,7 +49,12 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         NodeInternal.Dispose();
     }
-    
+
+    public Node()
+    {
+        _opacity = Prop(1.0f, static (ctx, o, n) => ((Node)ctx!).OnOpacityChanged(o, n));
+    }
+
     [Property]
     public Action? AnimationFrameBegan { get; set; }
 
@@ -300,7 +305,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
             if (oldStyleSheetValue.Visibility is not null) Visibility = Visibility.Visible;
-            if (oldStyleSheetValue.Opacity is not null) Opacity = 1.0f;
+            if (oldStyleSheetValue.Opacity is not null) _opacity.ClearStyleValue();
             if (oldStyleSheetValue.Direction is not null) Direction = default;
             if (oldStyleSheetValue.FlexDirection is not null) FlexDirection = default;
             if (oldStyleSheetValue.JustifyContent is not null) JustifyContent = default;
@@ -350,7 +355,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         if (newStyleSheet is { } newStyleSheetValue)
         {
             if (newStyleSheetValue.Visibility is { } visibility) Visibility = visibility;
-            if (newStyleSheetValue.Opacity is { } opacity) Opacity = opacity;
+            if (newStyleSheetValue.Opacity is { } opacity) _opacity.SetStyleValue(opacity);
             if (newStyleSheetValue.Direction is { } direction) Direction = direction;
             if (newStyleSheetValue.FlexDirection is { } flexDirection) FlexDirection = flexDirection;
             if (newStyleSheetValue.JustifyContent is { } justifyContent) JustifyContent = justifyContent;
@@ -419,20 +424,20 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
     /// </summary>
-    [Property]
-    public float Opacity
+    internal Property<float> _opacity;
+
+    /// <summary>
+    /// Gets the resolved opacity value from the priority chain.
+    /// </summary>
+    public float Opacity => _opacity.ComputedValue;
+
+    private void OnOpacityChanged(float oldValue, float newValue)
     {
-        get;
-        set
-        {
-            var oldValue = field;
-            field = value;
-            if (value <= 0.0f && oldValue > 0.0f && Visibility is Visibility.Visible)
-                Hidden?.Invoke();
-            else if (value > 0.0f && oldValue <= 0.0f && Visibility is Visibility.Visible)
-                Shown?.Invoke();
-        }
-    } = 1.0f;
+        if (newValue <= 0.0f && oldValue > 0.0f && Visibility is Visibility.Visible)
+            Hidden?.Invoke();
+        else if (newValue > 0.0f && oldValue <= 0.0f && Visibility is Visibility.Visible)
+            Shown?.Invoke();
+    }
 
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     /// <summary>
