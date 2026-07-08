@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NFMWorld.Reactor;
 
@@ -11,7 +11,7 @@ namespace NFMWorld.Reactor;
 /// <param name="context">Opaque context (typically the owning <see cref="Visual"/>).</param>
 /// <param name="oldValue">The previous <see cref="Property{T}.ComputedValue"/>.</param>
 /// <param name="newValue">The new <see cref="Property{T}.ComputedValue"/>.</param>
-public delegate void PropertyChangedHandler<T>(object? context, T oldValue, T newValue);
+public delegate void PropertyChangedHandler<in T>(object? context, T oldValue, T newValue);
 
 /// <summary>
 /// A reactive property with a three-tier priority chain: Override &gt; Style &gt; Default.
@@ -19,15 +19,22 @@ public delegate void PropertyChangedHandler<T>(object? context, T oldValue, T ne
 /// is invoked with the owning context, old value, and new value.
 /// </summary>
 /// <typeparam name="T">The property value type.</typeparam>
+[StructLayout(LayoutKind.Auto)]
 public struct Property<T>
 {
+    [Flags]
+    private enum PropertyFlags
+    {
+        HasStyle = 1 << 0,
+        HasOverride = 1 << 1,
+    }
+    
     private T _defaultValue;
     private T _styleValue;
     private T _overrideValue;
-    private bool _hasStyleValue;
-    private bool _hasOverrideValue;
-    private object? _onChangedContext;
-    private PropertyChangedHandler<T>? _onChanged;
+    private PropertyFlags _flags;
+    private readonly object? _onChangedContext;
+    private readonly PropertyChangedHandler<T>? _onChanged;
 
     /// <summary>
     /// Creates a new <see cref="Property{T}"/> with the given default value and optional
@@ -47,8 +54,8 @@ public struct Property<T>
         _defaultValue = defaultValue;
         _styleValue = default!;
         _overrideValue = default!;
-        _hasStyleValue = false;
-        _hasOverrideValue = false;
+        HasStyle = false;
+        HasOverride = false;
         _onChangedContext = onChangedContext;
         _onChanged = onChanged;
     }
@@ -83,7 +90,7 @@ public struct Property<T>
     public T StyleValue
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _hasStyleValue ? _styleValue : default!;
+        get => HasStyle ? _styleValue : default!;
     }
 
     /// <summary>
@@ -91,11 +98,11 @@ public struct Property<T>
     /// </summary>
     public void SetStyleValue(T value)
     {
-        if (_hasStyleValue && EqualityComparer<T>.Default.Equals(_styleValue, value))
+        if (HasStyle && EqualityComparer<T>.Default.Equals(_styleValue, value))
             return;
         var oldComputed = ComputedValue;
         _styleValue = value;
-        _hasStyleValue = true;
+        HasStyle = true;
         NotifyIfChanged(oldComputed);
     }
 
@@ -104,9 +111,9 @@ public struct Property<T>
     /// </summary>
     public void ClearStyleValue()
     {
-        if (!_hasStyleValue) return;
+        if (!HasStyle) return;
         var oldComputed = ComputedValue;
-        _hasStyleValue = false;
+        HasStyle = false;
         _styleValue = default!;
         NotifyIfChanged(oldComputed);
     }
@@ -117,7 +124,7 @@ public struct Property<T>
     public T OverrideValue
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _hasOverrideValue ? _overrideValue : default!;
+        get => HasOverride ? _overrideValue : default!;
     }
 
     /// <summary>
@@ -125,11 +132,11 @@ public struct Property<T>
     /// </summary>
     public void SetOverrideValue(T value)
     {
-        if (_hasOverrideValue && EqualityComparer<T>.Default.Equals(_overrideValue, value))
+        if (HasOverride && EqualityComparer<T>.Default.Equals(_overrideValue, value))
             return;
         var oldComputed = ComputedValue;
         _overrideValue = value;
-        _hasOverrideValue = true;
+        HasOverride = true;
         NotifyIfChanged(oldComputed);
     }
 
@@ -138,9 +145,9 @@ public struct Property<T>
     /// </summary>
     public void ClearOverrideValue()
     {
-        if (!_hasOverrideValue) return;
+        if (!HasOverride) return;
         var oldComputed = ComputedValue;
-        _hasOverrideValue = false;
+        HasOverride = false;
         _overrideValue = default!;
         NotifyIfChanged(oldComputed);
     }
@@ -151,8 +158,8 @@ public struct Property<T>
     public T ComputedValue
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _hasOverrideValue ? _overrideValue
-             : _hasStyleValue ? _styleValue
+        get => HasOverride ? _overrideValue
+             : HasStyle ? _styleValue
              : _defaultValue;
     }
 
@@ -162,7 +169,15 @@ public struct Property<T>
     public bool HasOverride
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _hasOverrideValue;
+        get => _flags.HasFlag(PropertyFlags.HasOverride);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set
+        {
+            if (value)
+                _flags |= PropertyFlags.HasOverride;
+            else
+                _flags &= ~PropertyFlags.HasOverride;
+        }
     }
 
     /// <summary>
@@ -171,7 +186,15 @@ public struct Property<T>
     public bool HasStyle
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _hasStyleValue;
+        get => _flags.HasFlag(PropertyFlags.HasStyle);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private set
+        {
+            if (value)
+                _flags |= PropertyFlags.HasStyle;
+            else
+                _flags &= ~PropertyFlags.HasStyle;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -183,5 +206,5 @@ public struct Property<T>
     }
 
     public override string ToString()
-        => $"Property<{typeof(T).Name}>(Computed={ComputedValue}, Override={(_hasOverrideValue ? _overrideValue?.ToString() ?? "null" : "unset")}, Style={(_hasStyleValue ? _styleValue?.ToString() ?? "null" : "unset")}, Default={_defaultValue})";
+        => $"Property<{typeof(T).Name}>(Computed={ComputedValue}, Override={(HasOverride ? _overrideValue?.ToString() ?? "null" : "unset")}, Style={(HasStyle ? _styleValue?.ToString() ?? "null" : "unset")}, Default={_defaultValue})";
 }
