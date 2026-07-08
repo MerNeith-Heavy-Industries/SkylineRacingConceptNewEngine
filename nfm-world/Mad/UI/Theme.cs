@@ -31,14 +31,8 @@ public class Theme
 
             backgroundColor: Color.Transparent,
             borderColor: Color.Transparent,
-            borderTop: 1,
-            borderLeft: 1,
-            borderRight: 1,
-            borderBottom: 1,
-            borderTopLeftRadius: 5,
-            borderTopRightRadius: 5,
-            borderBottomRightRadius: 5,
-            borderBottomLeftRadius: 5,
+            border: 2,
+            borderRadius: 8,
         
             hover: Styles(
                 backgroundColor: Colors.Background,
@@ -66,17 +60,14 @@ public class Theme
             backgroundColor: Colors.DarkBg with { A = 180 },
             borderColor: Colors.Primary with { A = 180 },
             border: 2,
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            borderBottomLeftRadius: 8,
-            borderBottomRightRadius: 8,
+            borderRadius: 8,
                     
             padding: 8,
             gap: 4
         );
 
         public static readonly StyleSheet TabHeader = Styles(
-            padding: "12,10",
+            padding: Node.MeasurementMultiPadding.XY(12, 10),
             alignItems: Align.Center,
             justifyContent: Justify.Center,
 
@@ -90,7 +81,7 @@ public class Theme
         [
             TabHeader,
             Styles(
-                background: Colors.ActiveTabBg
+                backgroundColor: Colors.ActiveTabBg
             )
         ];
 
@@ -119,25 +110,19 @@ public class Theme
             borderColor: Colors.Primary,
             cursorColor: Colors.Primary,
             selectionColor: new Color(100, 180, 255, 128),
-            borderTopLeftRadius: 4,
-            borderTopRightRadius: 4,
-            borderBottomLeftRadius: 4,
-            borderBottomRightRadius: 4,
+            borderRadius: 4,
             padding: Node.MeasurementMultiPadding.XY(10, 8)
         );
 
         public static readonly StyleSheet SmallButton = Styles(
             alignItems: Align.Center,
             justifyContent: Justify.Center,
-            padding: "10,8",
+            padding: Node.MeasurementMultiPadding.XY(10, 8),
             marginTop: 4,
 
             backgroundColor: Colors.DarkBg,
             borderColor: Colors.Primary,
-            borderTopLeftRadius: 4,
-            borderTopRightRadius: 4,
-            borderBottomLeftRadius: 4,
-            borderBottomRightRadius: 4
+            borderRadius: 4
         );
 
         public static readonly StyleSheet DiscordButton =

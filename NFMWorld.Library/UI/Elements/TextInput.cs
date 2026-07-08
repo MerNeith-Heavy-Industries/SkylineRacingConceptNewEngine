@@ -698,9 +698,12 @@ public partial class TextInput : Node
             if (!_owner.IsFocused)
                 return;
 
-            var baseX = position.X;
-            var contentTop = position.Y;
-            var contentBottom = position.Y + size.Y;
+            // The overlay is absolutely positioned at the padding box edge,
+            // but text starts at the content box edge (after padding).
+            // Offset by the owner's padding to align with the text content.
+            var baseX = position.X + _owner.LayoutPaddingLeft;
+            var contentTop = position.Y + _owner.LayoutPaddingTop;
+            var contentBottom = position.Y + size.Y - _owner.LayoutPaddingBottom;
 
             // ── Draw selection highlight ────────────────────────
             var sel = _owner.GetSelectionRange();
