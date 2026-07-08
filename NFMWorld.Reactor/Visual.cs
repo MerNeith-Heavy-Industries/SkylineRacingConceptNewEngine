@@ -93,6 +93,19 @@ public abstract partial class Visual : INamed
         }
     }
 
+    /// <summary>
+    /// Helper to create a <see cref="Property{T}"/> with a static change handler.
+    /// Eliminates per-instance delegate allocation by using a static lambda with
+    /// <c>this</c> passed as the context parameter.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// _opacity = Prop(1.0f, static (ctx, o, n) => ((Node)ctx!).OnOpacityChanged(o, n));
+    /// </code>
+    /// </example>
+    protected Property<T> Prop<T>(T defaultValue, PropertyChangedHandler<T> onChange)
+        => new(defaultValue, this, onChange);
+
     private void OnDetachedFromVisualTreeCore(VisualTreeAttachmentEventArgs args)
     {
         if (_root != null)
