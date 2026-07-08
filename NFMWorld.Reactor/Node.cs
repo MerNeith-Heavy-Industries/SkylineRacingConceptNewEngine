@@ -52,47 +52,54 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     public Node()
     {
-        _opacity = Prop(1.0f, static (ctx, o, n) => ((Node)ctx!).OnOpacityChanged(o, n));
-        _direction = Prop(NodeInternal.Direction.ToNfmDirection(), static (ctx, o, n) => ((Node)ctx!).OnDirectionChanged(o, n));
-        _flexDirection = Prop(NodeInternal.FlexDirection.ToNfmFlexDirection(), static (ctx, o, n) => ((Node)ctx!).OnFlexDirectionChanged(o, n));
-        _justifyContent = Prop(NodeInternal.JustifyContent.ToNfmJustify(), static (ctx, o, n) => ((Node)ctx!).OnJustifyContentChanged(o, n));
-        _alignItems = Prop(NodeInternal.AlignItems.ToNfmAlign(), static (ctx, o, n) => ((Node)ctx!).OnAlignItemsChanged(o, n));
-        _alignSelf = Prop(NodeInternal.AlignSelf.ToNfmAlign(), static (ctx, o, n) => ((Node)ctx!).OnAlignSelfChanged(o, n));
-        _alignContent = Prop(NodeInternal.AlignContent.ToNfmAlign(), static (ctx, o, n) => ((Node)ctx!).OnAlignContentChanged(o, n));
-        _position = Prop(NodeInternal.PositionType.ToNfmPositionType(), static (ctx, o, n) => ((Node)ctx!).OnPositionChanged(o, n));
-        _flexWrap = Prop(NodeInternal.FlexWrap.ToNfmWrap(), static (ctx, o, n) => ((Node)ctx!).OnFlexWrapChanged(o, n));
-        _overflow = Prop(NodeInternal.Overflow.ToNfmOverflow(), static (ctx, o, n) => ((Node)ctx!).OnOverflowChanged(o, n));
-        _display = Prop(NodeInternal.Display.ToNfmDisplay(), static (ctx, o, n) => ((Node)ctx!).OnDisplayChanged(o, n));
-        _boxSizing = Prop(NodeInternal.BoxSizing.ToNfmBoxSizing(), static (ctx, o, n) => ((Node)ctx!).OnBoxSizingChanged(o, n));
-        _flex = Prop<float?>(null, static (ctx, o, n) => ((Node)ctx!).OnFlexChanged(o, n));
-        _flexGrow = Prop<float?>(null, static (ctx, o, n) => ((Node)ctx!).OnFlexGrowChanged(o, n));
-        _flexShrink = Prop<float?>(null, static (ctx, o, n) => ((Node)ctx!).OnFlexShrinkChanged(o, n));
-        _flexBasis = Prop(MeasurementFlexBasis.Undefined, static (ctx, o, n) => ((Node)ctx!).OnFlexBasisChanged(o, n));
-        _left = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnLeftChanged(o, n));
-        _top = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnTopChanged(o, n));
-        _right = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnRightChanged(o, n));
-        _bottom = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnBottomChanged(o, n));
-        _marginTop = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMarginTopChanged(o, n));
-        _marginBottom = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMarginBottomChanged(o, n));
-        _marginLeft = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMarginLeftChanged(o, n));
-        _marginRight = Prop(MeasurementMarginPosition.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMarginRightChanged(o, n));
-        _paddingTop = Prop(MeasurementPadding.Undefined, static (ctx, o, n) => ((Node)ctx!).OnPaddingTopChanged(o, n));
-        _paddingBottom = Prop(MeasurementPadding.Undefined, static (ctx, o, n) => ((Node)ctx!).OnPaddingBottomChanged(o, n));
-        _paddingLeft = Prop(MeasurementPadding.Undefined, static (ctx, o, n) => ((Node)ctx!).OnPaddingLeftChanged(o, n));
-        _paddingRight = Prop(MeasurementPadding.Undefined, static (ctx, o, n) => ((Node)ctx!).OnPaddingRightChanged(o, n));
-        _borderTop = Prop<Pixels?>(null, static (ctx, o, n) => ((Node)ctx!).OnBorderTopChanged(o, n));
-        _borderBottom = Prop<Pixels?>(null, static (ctx, o, n) => ((Node)ctx!).OnBorderBottomChanged(o, n));
-        _borderLeft = Prop<Pixels?>(null, static (ctx, o, n) => ((Node)ctx!).OnBorderLeftChanged(o, n));
-        _borderRight = Prop<Pixels?>(null, static (ctx, o, n) => ((Node)ctx!).OnBorderRightChanged(o, n));
-        _gapColumn = Prop(MeasurementGap.Undefined, static (ctx, o, n) => ((Node)ctx!).OnGapColumnChanged(o, n));
-        _gapRow = Prop(MeasurementGap.Undefined, static (ctx, o, n) => ((Node)ctx!).OnGapRowChanged(o, n));
-        _width = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnWidthChanged(o, n));
-        _height = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnHeightChanged(o, n));
-        _minWidth = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMinWidthChanged(o, n));
-        _minHeight = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMinHeightChanged(o, n));
-        _maxWidth = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMaxWidthChanged(o, n));
-        _maxHeight = Prop(MeasurementWidthHeight.Undefined, static (ctx, o, n) => ((Node)ctx!).OnMaxHeightChanged(o, n));
-        _aspectRatio = Prop<Pixels?>(null, static (ctx, o, n) => ((Node)ctx!).OnAspectRatioChanged(o, n));
+        _opacity = new(1.0f, this, static (ctx, o, n) =>
+        {
+            Node tempQualifier = (Node)ctx!;
+            if (n <= 0.0f && o > 0.0f && tempQualifier.Visibility is Visibility.Visible)
+                tempQualifier.Hidden?.Invoke();
+            else if (n > 0.0f && o <= 0.0f && tempQualifier.Visibility is Visibility.Visible)
+                tempQualifier.Shown?.Invoke();
+        });
+        _direction = new(NodeInternal.Direction.ToNfmDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Direction = n.ToYogaDirection());
+        _flexDirection = new(NodeInternal.FlexDirection.ToNfmFlexDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexDirection = n.ToYogaFlexDirection());
+        _justifyContent = new(NodeInternal.JustifyContent.ToNfmJustify(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.JustifyContent = n.ToYogaJustify());
+        _alignItems = new(NodeInternal.AlignItems.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignItems = n.ToYogaAlign());
+        _alignSelf = new(NodeInternal.AlignSelf.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignSelf = n.ToYogaAlign());
+        _alignContent = new(NodeInternal.AlignContent.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignContent = n.ToYogaAlign());
+        _position = new(NodeInternal.PositionType.ToNfmPositionType(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PositionType = n.ToYogaPositionType());
+        _flexWrap = new(NodeInternal.FlexWrap.ToNfmWrap(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexWrap = n.ToYogaWrap());
+        _overflow = new(NodeInternal.Overflow.ToNfmOverflow(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Overflow = n.ToYogaOverflow());
+        _display = new(NodeInternal.Display.ToNfmDisplay(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Display = n.ToYogaDisplay());
+        _boxSizing = new(NodeInternal.BoxSizing.ToNfmBoxSizing(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BoxSizing = n.ToYogaBoxSizing());
+        _flex = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Flex = n ?? float.NaN);
+        _flexGrow = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexGrow = n ?? float.NaN);
+        _flexShrink = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexShrink = n ?? float.NaN);
+        _flexBasis = new(MeasurementFlexBasis.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexBasis = n.Scale(G.Scale));
+        _left = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Left = n.Scale(G.Scale));
+        _top = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Top = n.Scale(G.Scale));
+        _right = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Right = n.Scale(G.Scale));
+        _bottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Bottom = n.Scale(G.Scale));
+        _marginTop = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginTop = n.Scale(G.Scale));
+        _marginBottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginBottom = n.Scale(G.Scale));
+        _marginLeft = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginLeft = n.Scale(G.Scale));
+        _marginRight = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginRight = n.Scale(G.Scale));
+        _paddingTop = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingTop = n.Scale(G.Scale));
+        _paddingBottom = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingBottom = n.Scale(G.Scale));
+        _paddingLeft = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingLeft = n.Scale(G.Scale));
+        _paddingRight = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingRight = n.Scale(G.Scale));
+        _borderTop = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderTop = n?.Value * G.Scale ?? YG.YGUndefined);
+        _borderBottom = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderBottom = n?.Value * G.Scale ?? YG.YGUndefined);
+        _borderLeft = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderLeft = n?.Value * G.Scale ?? YG.YGUndefined);
+        _borderRight = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderRight = n?.Value * G.Scale ?? YG.YGUndefined);
+        _gapColumn = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapColumn = n);
+        _gapRow = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapRow = n);
+        _width = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Width = n.Scale(G.Scale));
+        _height = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Height = n.Scale(G.Scale));
+        _minWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinWidth = n.Scale(G.Scale));
+        _minHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinHeight = n.Scale(G.Scale));
+        _maxWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxWidth = n.Scale(G.Scale));
+        _maxHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxHeight = n.Scale(G.Scale));
+        _aspectRatio = new(null, this, (PropertyChangedHandler<Pixels?>)(static (ctx, o, n) => ((Node)ctx!).NodeInternal.AspectRatio = n?.Value ?? float.NaN));
     }
 
     [Property]
@@ -511,57 +518,6 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         get => _opacity.ComputedValue;
         set => _opacity.SetOverrideValue(value);
     }
-
-    private void OnOpacityChanged(float oldValue, float newValue)
-    {
-        if (newValue <= 0.0f && oldValue > 0.0f && Visibility is Visibility.Visible)
-            Hidden?.Invoke();
-        else if (newValue > 0.0f && oldValue <= 0.0f && Visibility is Visibility.Visible)
-            Shown?.Invoke();
-    }
-
-    private void OnDirectionChanged(Direction oldValue, Direction newValue) { NodeInternal.Direction = newValue.ToYogaDirection(); }
-    private void OnFlexDirectionChanged(FlexDirection oldValue, FlexDirection newValue) { NodeInternal.FlexDirection = newValue.ToYogaFlexDirection(); }
-    private void OnJustifyContentChanged(Justify oldValue, Justify newValue) { NodeInternal.JustifyContent = newValue.ToYogaJustify(); }
-    private void OnAlignItemsChanged(Align oldValue, Align newValue) { NodeInternal.AlignItems = newValue.ToYogaAlign(); }
-    private void OnAlignSelfChanged(Align oldValue, Align newValue) { NodeInternal.AlignSelf = newValue.ToYogaAlign(); }
-    private void OnAlignContentChanged(Align oldValue, Align newValue) { NodeInternal.AlignContent = newValue.ToYogaAlign(); }
-    private void OnPositionChanged(Position oldValue, Position newValue) { NodeInternal.PositionType = newValue.ToYogaPositionType(); }
-    private void OnFlexWrapChanged(Wrap oldValue, Wrap newValue) { NodeInternal.FlexWrap = newValue.ToYogaWrap(); }
-    private void OnOverflowChanged(Overflow oldValue, Overflow newValue) { NodeInternal.Overflow = newValue.ToYogaOverflow(); }
-    private void OnDisplayChanged(Display oldValue, Display newValue) { NodeInternal.Display = newValue.ToYogaDisplay(); }
-    private void OnBoxSizingChanged(BoxSizing oldValue, BoxSizing newValue) { NodeInternal.BoxSizing = newValue.ToYogaBoxSizing(); }
-
-    private void OnFlexChanged(float? oldValue, float? newValue) { NodeInternal.Flex = newValue ?? float.NaN; }
-    private void OnFlexGrowChanged(float? oldValue, float? newValue) { NodeInternal.FlexGrow = newValue ?? float.NaN; }
-    private void OnFlexShrinkChanged(float? oldValue, float? newValue) { NodeInternal.FlexShrink = newValue ?? float.NaN; }
-
-    private void OnFlexBasisChanged(MeasurementFlexBasis o, MeasurementFlexBasis n) { NodeInternal.FlexBasis = n.Scale(G.Scale); }
-    private void OnLeftChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.Left = n.Scale(G.Scale); }
-    private void OnTopChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.Top = n.Scale(G.Scale); }
-    private void OnRightChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.Right = n.Scale(G.Scale); }
-    private void OnBottomChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.Bottom = n.Scale(G.Scale); }
-    private void OnMarginTopChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.MarginTop = n.Scale(G.Scale); }
-    private void OnMarginBottomChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.MarginBottom = n.Scale(G.Scale); }
-    private void OnMarginLeftChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.MarginLeft = n.Scale(G.Scale); }
-    private void OnMarginRightChanged(MeasurementMarginPosition o, MeasurementMarginPosition n) { NodeInternal.MarginRight = n.Scale(G.Scale); }
-    private void OnPaddingTopChanged(MeasurementPadding o, MeasurementPadding n) { NodeInternal.PaddingTop = n.Scale(G.Scale); }
-    private void OnPaddingBottomChanged(MeasurementPadding o, MeasurementPadding n) { NodeInternal.PaddingBottom = n.Scale(G.Scale); }
-    private void OnPaddingLeftChanged(MeasurementPadding o, MeasurementPadding n) { NodeInternal.PaddingLeft = n.Scale(G.Scale); }
-    private void OnPaddingRightChanged(MeasurementPadding o, MeasurementPadding n) { NodeInternal.PaddingRight = n.Scale(G.Scale); }
-    private void OnBorderTopChanged(Pixels? o, Pixels? n) { NodeInternal.BorderTop = (n?.Value * G.Scale) ?? YG.YGUndefined; }
-    private void OnBorderBottomChanged(Pixels? o, Pixels? n) { NodeInternal.BorderBottom = (n?.Value * G.Scale) ?? YG.YGUndefined; }
-    private void OnBorderLeftChanged(Pixels? o, Pixels? n) { NodeInternal.BorderLeft = (n?.Value * G.Scale) ?? YG.YGUndefined; }
-    private void OnBorderRightChanged(Pixels? o, Pixels? n) { NodeInternal.BorderRight = (n?.Value * G.Scale) ?? YG.YGUndefined; }
-    private void OnGapColumnChanged(MeasurementGap o, MeasurementGap n) { NodeInternal.GapColumn = n; }
-    private void OnGapRowChanged(MeasurementGap o, MeasurementGap n) { NodeInternal.GapRow = n; }
-    private void OnWidthChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.Width = n.Scale(G.Scale); }
-    private void OnHeightChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.Height = n.Scale(G.Scale); }
-    private void OnMinWidthChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.MinWidth = n.Scale(G.Scale); }
-    private void OnMinHeightChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.MinHeight = n.Scale(G.Scale); }
-    private void OnMaxWidthChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.MaxWidth = n.Scale(G.Scale); }
-    private void OnMaxHeightChanged(MeasurementWidthHeight o, MeasurementWidthHeight n) { NodeInternal.MaxHeight = n.Scale(G.Scale); }
-    private void OnAspectRatioChanged(Pixels? o, Pixels? n) { NodeInternal.AspectRatio = n?.Value ?? float.NaN; }
 
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     /// <summary>
@@ -1963,31 +1919,31 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             // Re-trigger all size-related onChanged handlers so they re-scale with new G.Scale
 #pragma warning disable CA2245
-            OnWidthChanged(_width.ComputedValue, _width.ComputedValue);
-            OnHeightChanged(_height.ComputedValue, _height.ComputedValue);
-            OnMinWidthChanged(_minWidth.ComputedValue, _minWidth.ComputedValue);
-            OnMinHeightChanged(_minHeight.ComputedValue, _minHeight.ComputedValue);
-            OnMaxWidthChanged(_maxWidth.ComputedValue, _maxWidth.ComputedValue);
-            OnMaxHeightChanged(_maxHeight.ComputedValue, _maxHeight.ComputedValue);
-            OnMarginTopChanged(_marginTop.ComputedValue, _marginTop.ComputedValue);
-            OnMarginBottomChanged(_marginBottom.ComputedValue, _marginBottom.ComputedValue);
-            OnMarginLeftChanged(_marginLeft.ComputedValue, _marginLeft.ComputedValue);
-            OnMarginRightChanged(_marginRight.ComputedValue, _marginRight.ComputedValue);
-            OnPaddingTopChanged(_paddingTop.ComputedValue, _paddingTop.ComputedValue);
-            OnPaddingBottomChanged(_paddingBottom.ComputedValue, _paddingBottom.ComputedValue);
-            OnPaddingLeftChanged(_paddingLeft.ComputedValue, _paddingLeft.ComputedValue);
-            OnPaddingRightChanged(_paddingRight.ComputedValue, _paddingRight.ComputedValue);
-            OnBorderTopChanged(_borderTop.ComputedValue, _borderTop.ComputedValue);
-            OnBorderBottomChanged(_borderBottom.ComputedValue, _borderBottom.ComputedValue);
-            OnBorderLeftChanged(_borderLeft.ComputedValue, _borderLeft.ComputedValue);
-            OnBorderRightChanged(_borderRight.ComputedValue, _borderRight.ComputedValue);
-            OnGapColumnChanged(_gapColumn.ComputedValue, _gapColumn.ComputedValue);
-            OnGapRowChanged(_gapRow.ComputedValue, _gapRow.ComputedValue);
-            OnFlexBasisChanged(_flexBasis.ComputedValue, _flexBasis.ComputedValue);
-            OnLeftChanged(_left.ComputedValue, _left.ComputedValue);
-            OnTopChanged(_top.ComputedValue, _top.ComputedValue);
-            OnRightChanged(_right.ComputedValue, _right.ComputedValue);
-            OnBottomChanged(_bottom.ComputedValue, _bottom.ComputedValue);
+            NodeInternal.Width = _width.ComputedValue.Scale(G.Scale);
+            NodeInternal.Height = _height.ComputedValue.Scale(G.Scale);
+            NodeInternal.MinWidth = _minWidth.ComputedValue.Scale(G.Scale);
+            NodeInternal.MinHeight = _minHeight.ComputedValue.Scale(G.Scale);
+            NodeInternal.MaxWidth = _maxWidth.ComputedValue.Scale(G.Scale);
+            NodeInternal.MaxHeight = _maxHeight.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginTop = _marginTop.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginBottom = _marginBottom.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginLeft = _marginLeft.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginRight = _marginRight.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingTop = _paddingTop.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingBottom = _paddingBottom.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingLeft = _paddingLeft.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingRight = _paddingRight.ComputedValue.Scale(G.Scale);
+            NodeInternal.BorderTop = _borderTop.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = _borderBottom.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = _borderLeft.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderRight = _borderRight.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.GapColumn = _gapColumn.ComputedValue;
+            NodeInternal.GapRow = _gapRow.ComputedValue;
+            NodeInternal.FlexBasis = _flexBasis.ComputedValue.Scale(G.Scale);
+            NodeInternal.Left = _left.ComputedValue.Scale(G.Scale);
+            NodeInternal.Top = _top.ComputedValue.Scale(G.Scale);
+            NodeInternal.Right = _right.ComputedValue.Scale(G.Scale);
+            NodeInternal.Bottom = _bottom.ComputedValue.Scale(G.Scale);
 #pragma warning restore CA2245
 
             _lastScale = G.Scale;

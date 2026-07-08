@@ -23,97 +23,106 @@ public enum OverflowBehavior
 
 public partial class TextRun : Node
 {
+    internal Property<Color?> _background;
+    internal Property<Color> _foreground;
+    internal Property<Color?> _stroke;
+    internal Property<FontFamily> _fontFamily;
+    internal Property<float> _fontSize;
+    internal Property<FontStyle> _fontStyle;
+    internal Property<BreakType> _breakType;
+    internal Property<OverflowBehavior> _overflowBehavior;
+    internal Property<TextHorizontalAlignment> _horizontalAlignment;
+    internal Property<TextVerticalAlignment> _verticalAlignment;
+
     protected bool Invalidated { get; private set; }= true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
+
+    public TextRun()
+    {
+        _background = null;
+        _foreground = new Color(255, 255, 255);
+        _stroke = null;
+        _fontFamily = new(FontFamily.DroidSans, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _fontSize = new(12f, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _fontStyle = new(FontStyle.Plain, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _breakType = new(BreakType.Word, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _overflowBehavior = new(OverflowBehavior.Stretch, this, static (ctx, o, n) => ((TextRun)ctx!).Invalidate());
+        _horizontalAlignment = TextHorizontalAlignment.Left;
+        _verticalAlignment = TextVerticalAlignment.Top;
+    }
 
     public override bool DebugIsContentfulNode => true;
     
     /// <summary>
     /// Sets the background color of the text.
     /// </summary>
-    [Property]
-    public Color? Background { get; set; }
+    public Color? Background
+    {
+        get => _background.ComputedValue;
+        set => _background.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Sets the fill color of the text. The default value is white.
     /// </summary>
-    [Property]
-    public Color Foreground { get; set; } = new(255, 255, 255);
+    public Color Foreground
+    {
+        get => _foreground.ComputedValue;
+        set => _foreground.SetOverrideValue(value);
+    }
     
     /// <summary>
     /// Sets the stroke color of the text. Or set to null to disable the stroke.
     /// </summary>
-    [Property]
-    public Color? Stroke { get; set; }
+    public Color? Stroke
+    {
+        get => _stroke.ComputedValue;
+        set => _stroke.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Gets or sets the font family.
     /// </summary>
-    [Property]
     public FontFamily FontFamily
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = FontFamily.DroidSans;
+        get => _fontFamily.ComputedValue;
+        set => _fontFamily.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Gets or sets the font size.
     /// </summary>
-    [Property]
     public float FontSize
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = 12;
+        get => _fontSize.ComputedValue;
+        set => _fontSize.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Gets or sets the font style.
     /// </summary>
-    [Property]
     public FontStyle FontStyle
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = FontStyle.Plain;
+        get => _fontStyle.ComputedValue;
+        set => _fontStyle.SetOverrideValue(value);
+    }
 
     [Property]
     public TextElement[] Elements { get; set; } = [];
 
     public bool HasComplexContent => Elements.Length > 0;
 
-    [Property]
     public BreakType BreakType
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = BreakType.Word;
+        get => _breakType.ComputedValue;
+        set => _breakType.SetOverrideValue(value);
+    }
 
-    [Property]
     public OverflowBehavior OverflowBehavior
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = OverflowBehavior.Stretch;
+        get => _overflowBehavior.ComputedValue;
+        set => _overflowBehavior.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Sets the text.
@@ -138,14 +147,20 @@ public partial class TextRun : Node
     /// <summary>
     /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
     /// </summary>
-    [Property]
-    public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
+    public TextHorizontalAlignment HorizontalAlignment
+    {
+        get => _horizontalAlignment.ComputedValue;
+        set => _horizontalAlignment.SetOverrideValue(value);
+    }
 
     /// <summary>
     /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
     /// </summary>
-    [Property]
-    public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
+    public TextVerticalAlignment VerticalAlignment
+    {
+        get => _verticalAlignment.ComputedValue;
+        set => _verticalAlignment.SetOverrideValue(value);
+    }
 
     protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
     {
@@ -153,30 +168,30 @@ public partial class TextRun : Node
         
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.Background is not null) Background = null;
-            if (oldStyleSheetValue.Foreground is not null) Foreground = new Color(255, 255, 255);
-            if (oldStyleSheetValue.Stroke is not null) Stroke = null;
-            if (oldStyleSheetValue.FontFamily is not null) FontFamily = FontFamily.DroidSans;
-            if (oldStyleSheetValue.FontSize is not null) FontSize = 12;
-            if (oldStyleSheetValue.FontStyle is not null) FontStyle = FontStyle.Plain;
-            if (oldStyleSheetValue.BreakType is not null) BreakType = BreakType.Word;
-            if (oldStyleSheetValue.OverflowBehavior is not null) OverflowBehavior = OverflowBehavior.Stretch;
-            if (oldStyleSheetValue.HorizontalAlignment is not null) HorizontalAlignment = TextHorizontalAlignment.Left;
-            if (oldStyleSheetValue.VerticalAlignment is not null) VerticalAlignment = TextVerticalAlignment.Top;
+            if (oldStyleSheetValue.Background is not null) _background.ClearStyleValue();
+            if (oldStyleSheetValue.Foreground is not null) _foreground.ClearStyleValue();
+            if (oldStyleSheetValue.Stroke is not null) _stroke.ClearStyleValue();
+            if (oldStyleSheetValue.FontFamily is not null) _fontFamily.ClearStyleValue();
+            if (oldStyleSheetValue.FontSize is not null) _fontSize.ClearStyleValue();
+            if (oldStyleSheetValue.FontStyle is not null) _fontStyle.ClearStyleValue();
+            if (oldStyleSheetValue.BreakType is not null) _breakType.ClearStyleValue();
+            if (oldStyleSheetValue.OverflowBehavior is not null) _overflowBehavior.ClearStyleValue();
+            if (oldStyleSheetValue.HorizontalAlignment is not null) _horizontalAlignment.ClearStyleValue();
+            if (oldStyleSheetValue.VerticalAlignment is not null) _verticalAlignment.ClearStyleValue();
         }
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.Background is {} background) Background = background;
-            if (newStyleSheetValue.Foreground is {} foreground) Foreground = foreground;
-            if (newStyleSheetValue.Stroke is {} stroke) Stroke = stroke;
-            if (newStyleSheetValue.FontFamily is {} fontFamily) FontFamily = fontFamily;
-            if (newStyleSheetValue.FontSize is {} fontSize) FontSize = fontSize;
-            if (newStyleSheetValue.FontStyle is {} fontStyle) FontStyle = fontStyle;
-            if (newStyleSheetValue.BreakType is {} breakType) BreakType = breakType;
-            if (newStyleSheetValue.OverflowBehavior is {} overflowBehavior) OverflowBehavior = overflowBehavior;
-            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) HorizontalAlignment = horizontalAlignment;
-            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) VerticalAlignment = verticalAlignment;
+            if (newStyleSheetValue.Background is {} background) _background.SetStyleValue(background);
+            if (newStyleSheetValue.Foreground is {} foreground) _foreground.SetStyleValue(foreground);
+            if (newStyleSheetValue.Stroke is {} stroke) _stroke.SetStyleValue(stroke);
+            if (newStyleSheetValue.FontFamily is {} fontFamily) _fontFamily.SetStyleValue(fontFamily);
+            if (newStyleSheetValue.FontSize is {} fontSize) _fontSize.SetStyleValue(fontSize);
+            if (newStyleSheetValue.FontStyle is {} fontStyle) _fontStyle.SetStyleValue(fontStyle);
+            if (newStyleSheetValue.BreakType is {} breakType) _breakType.SetStyleValue(breakType);
+            if (newStyleSheetValue.OverflowBehavior is {} overflowBehavior) _overflowBehavior.SetStyleValue(overflowBehavior);
+            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) _horizontalAlignment.SetStyleValue(horizontalAlignment);
+            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) _verticalAlignment.SetStyleValue(verticalAlignment);
         }
     }
 

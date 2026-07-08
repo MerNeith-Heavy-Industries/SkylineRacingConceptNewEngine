@@ -9,12 +9,35 @@ namespace NFMWorld.Reactor;
 /// </summary>
 public class PaintedBox : FlexPanel
 {
+    internal Property<Color?> _borderColor;
+    internal Property<Color?> _backgroundColor;
+    internal Property<float> _borderTopLeftRadius;
+    internal Property<float> _borderTopRightRadius;
+    internal Property<float> _borderBottomLeftRadius;
+    internal Property<float> _borderBottomRightRadius;
+
+    public PaintedBox()
+    {
+        _borderColor = null;
+        _backgroundColor = null;
+        _borderTopLeftRadius = 0f;
+        _borderTopRightRadius = 0f;
+        _borderBottomLeftRadius = 0f;
+        _borderBottomRightRadius = 0f;
+    }
+
     public override bool DebugIsContentfulNode => BackgroundColor != null || BorderColor != null;
 
-    [Property]
-    public Color? BorderColor { get; set; }
-    [Property]
-    public Color? BackgroundColor { get; set; }
+    public Color? BorderColor
+    {
+        get => _borderColor.ComputedValue;
+        set => _borderColor.SetOverrideValue(value);
+    }
+    public Color? BackgroundColor
+    {
+        get => _backgroundColor.ComputedValue;
+        set => _backgroundColor.SetOverrideValue(value);
+    }
 
     [Property]
     public float BorderRadius
@@ -24,21 +47,33 @@ public class PaintedBox : FlexPanel
             : 0;
         set
         {
-            BorderTopLeftRadius = value;
-            BorderTopRightRadius = value;
-            BorderBottomLeftRadius = value;
-            BorderBottomRightRadius = value;
+            _borderTopLeftRadius.SetOverrideValue(value);
+            _borderTopRightRadius.SetOverrideValue(value);
+            _borderBottomLeftRadius.SetOverrideValue(value);
+            _borderBottomRightRadius.SetOverrideValue(value);
         }
     }
 
-    [Property]
-    public float BorderTopLeftRadius { get; set; }
-    [Property]
-    public float BorderTopRightRadius { get; set; }
-    [Property]
-    public float BorderBottomLeftRadius { get; set; }
-    [Property]
-    public float BorderBottomRightRadius { get; set; }
+    public float BorderTopLeftRadius
+    {
+        get => _borderTopLeftRadius.ComputedValue;
+        set => _borderTopLeftRadius.SetOverrideValue(value);
+    }
+    public float BorderTopRightRadius
+    {
+        get => _borderTopRightRadius.ComputedValue;
+        set => _borderTopRightRadius.SetOverrideValue(value);
+    }
+    public float BorderBottomLeftRadius
+    {
+        get => _borderBottomLeftRadius.ComputedValue;
+        set => _borderBottomLeftRadius.SetOverrideValue(value);
+    }
+    public float BorderBottomRightRadius
+    {
+        get => _borderBottomRightRadius.ComputedValue;
+        set => _borderBottomRightRadius.SetOverrideValue(value);
+    }
 
     protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
     {
@@ -46,24 +81,24 @@ public class PaintedBox : FlexPanel
 
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.BorderColor is not null) BorderColor = null;
-            if (oldStyleSheetValue.BackgroundColor is not null) BackgroundColor = null;
-            if (oldStyleSheetValue.BorderRadius is not null) BorderRadius = 0;
-            if (oldStyleSheetValue.BorderTopLeftRadius is not null) BorderTopLeftRadius = 0;
-            if (oldStyleSheetValue.BorderTopRightRadius is not null) BorderTopRightRadius = 0;
-            if (oldStyleSheetValue.BorderBottomLeftRadius is not null) BorderBottomLeftRadius = 0;
-            if (oldStyleSheetValue.BorderBottomRightRadius is not null) BorderBottomRightRadius = 0;
+            if (oldStyleSheetValue.BorderColor is not null) _borderColor.ClearStyleValue();
+            if (oldStyleSheetValue.BackgroundColor is not null) _backgroundColor.ClearStyleValue();
+            if (oldStyleSheetValue.BorderRadius is not null) { _borderTopLeftRadius.ClearStyleValue(); _borderTopRightRadius.ClearStyleValue(); _borderBottomLeftRadius.ClearStyleValue(); _borderBottomRightRadius.ClearStyleValue(); }
+            if (oldStyleSheetValue.BorderTopLeftRadius is not null) _borderTopLeftRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderTopRightRadius is not null) _borderTopRightRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderBottomLeftRadius is not null) _borderBottomLeftRadius.ClearStyleValue();
+            if (oldStyleSheetValue.BorderBottomRightRadius is not null) _borderBottomRightRadius.ClearStyleValue();
         }
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.BorderColor is {} borderColor) BorderColor = borderColor;
-            if (newStyleSheetValue.BackgroundColor is {} backgroundColor) BackgroundColor = backgroundColor;
-            if (newStyleSheetValue.BorderRadius is {} borderRadius) BorderRadius = borderRadius;
-            if (newStyleSheetValue.BorderTopLeftRadius is {} borderTopLeftRadius) BorderTopLeftRadius = borderTopLeftRadius;
-            if (newStyleSheetValue.BorderTopRightRadius is {} borderTopRightRadius) BorderTopRightRadius = borderTopRightRadius;
-            if (newStyleSheetValue.BorderBottomLeftRadius is {} borderBottomLeftRadius) BorderBottomLeftRadius = borderBottomLeftRadius;
-            if (newStyleSheetValue.BorderBottomRightRadius is {} borderBottomRightRadius) BorderBottomRightRadius = borderBottomRightRadius;
+            if (newStyleSheetValue.BorderColor is {} borderColor) _borderColor.SetStyleValue(borderColor);
+            if (newStyleSheetValue.BackgroundColor is {} backgroundColor) _backgroundColor.SetStyleValue(backgroundColor);
+            if (newStyleSheetValue.BorderRadius is {} borderRadius) { _borderTopLeftRadius.SetStyleValue(borderRadius); _borderTopRightRadius.SetStyleValue(borderRadius); _borderBottomLeftRadius.SetStyleValue(borderRadius); _borderBottomRightRadius.SetStyleValue(borderRadius); }
+            if (newStyleSheetValue.BorderTopLeftRadius is {} borderTopLeftRadius) _borderTopLeftRadius.SetStyleValue(borderTopLeftRadius);
+            if (newStyleSheetValue.BorderTopRightRadius is {} borderTopRightRadius) _borderTopRightRadius.SetStyleValue(borderTopRightRadius);
+            if (newStyleSheetValue.BorderBottomLeftRadius is {} borderBottomLeftRadius) _borderBottomLeftRadius.SetStyleValue(borderBottomLeftRadius);
+            if (newStyleSheetValue.BorderBottomRightRadius is {} borderBottomRightRadius) _borderBottomRightRadius.SetStyleValue(borderBottomRightRadius);
         }
     }
 
