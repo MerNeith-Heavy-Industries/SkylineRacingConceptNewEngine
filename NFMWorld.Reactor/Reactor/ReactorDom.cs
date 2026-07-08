@@ -29,6 +29,11 @@ public class ReactorDom : IDisposable
     public void Mount(Visual container, VNode? vnode)
     {
         _container = container;
+        Update(vnode);
+    }
+
+    public void Update(VNode? vnode)
+    {
         _rootNode = vnode;
         Update();
     }
