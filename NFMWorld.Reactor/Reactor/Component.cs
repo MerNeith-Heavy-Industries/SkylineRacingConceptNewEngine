@@ -281,15 +281,15 @@ public abstract class Component
     /// Subscribes to an <see cref="IObservable{T}"/> source and re-renders
     /// when its value changes. Returns the value.
     /// </summary>
-    protected T UseObservable<T>(IObservable<T> source)
+    protected T UseObservable<T>(IObservable<T>? source)
     {
         VerifyReconciler();
 
         var (value, setValue) = UseState(default(T)!);
         UseEffect(() =>
         {
-            var subscription = source.Subscribe(new ReactiveObserver<T>(setValue));
-            return subscription.Dispose;
+            var subscription = source?.Subscribe(new ReactiveObserver<T>(setValue));
+            return subscription != null ? subscription.Dispose : null;
         }, source);
         return value;
     }
