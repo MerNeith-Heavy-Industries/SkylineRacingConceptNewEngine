@@ -209,6 +209,7 @@ public class CarVisual : MeshedGameObject, IDisposable
                     _fixTimer = 0;
                     _fixing = false;
                     FixFlare.DeleteFixFx();
+                    MeshDamage.NewCar(_car, this);
                 }
                 else
                 {

@@ -7,6 +7,18 @@ namespace NFMWorld;
 
 public static class MeshDamage
 {
+    public static void NewCar(IInGameCar car, CarVisual visual)
+    {
+        visual.Mesh.Polys = Array.ConvertAll(visual.Mesh.OriginalPolys, static poly => poly.SafeClone());
+        
+        for (var i = 0; i < visual.Mesh.Polys.Length; i++)
+        {
+            visual.Bfase[i] = 0.0f;
+        }
+        
+        visual.Mesh.RebuildMesh();
+    }
+    
     public static void DamageX(
         CarStats stat,
         IInGameCar car,

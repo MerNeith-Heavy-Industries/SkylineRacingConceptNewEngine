@@ -8,6 +8,7 @@ namespace NFMWorld;
 
 public class Mesh : IDisposable
 {
+    public Rad3dPoly[] OriginalPolys;
     public Rad3dPoly[] Polys;
 
     public readonly GraphicsDevice GraphicsDevice;
@@ -32,6 +33,7 @@ public class Mesh : IDisposable
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         // make a copy of points for damageable meshes
+        OriginalPolys = rad.Polys;
         Polys = Array.ConvertAll(rad.Polys, static poly => poly.SafeClone());
         GroundAt = rad.Wheels.FirstOrDefault().Ground;
 
