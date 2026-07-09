@@ -225,7 +225,11 @@ public class FixFlare : IDisposable, IImmediateRenderElement
             return;
         }
         
-        Effects.Dust.World = Matrix.CreateFromEuler((Euler)_visual.Rotation) * Matrix.CreateTranslation((Vector3)_visual.Position);
+        Effects.Dust.World = Matrix.CreateBillboard(
+            (Vector3)_visual.Position,
+            camera.Position,
+            Vector3.Up,
+            null);
         Effects.Dust.View = camera.ViewMatrix;
         Effects.Dust.Projection = camera.ProjectionMatrix;
         
