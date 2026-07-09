@@ -121,57 +121,65 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
             i++;
         }
 
-        // 2. Draw instanced batches, sorted by RenderOrder (SortedDictionary key)
+        // 2. Draw instanced batches interleaved with PostOpaque:
+        //    renderOrder 0 (stage) → PostOpaque (FixFlare) → renderOrder 1+ (cars, glass)
+        var firstRenderOrder = true;
         foreach (var (_, innerCache) in _instancedCache)
-        foreach (var (renderElement, cachedGroup) in innerCache)
         {
-            var instances = cachedGroup.Instances;
-            if (instances.Count == 0)
-                continue;
-
-            var oldInstances = cachedGroup.OldInstances;
-            var currentHashCode = GetInstanceDataHashCode(CollectionsMarshal.AsSpan(instances));
-
-            if (cachedGroup.VertexBuffer == null ||
-                currentHashCode != cachedGroup.HashCode ||
-                !AreInstanceDataListsEqual(
-                    CollectionsMarshal.AsSpan(instances),
-                    CollectionsMarshal.AsSpan(oldInstances)))
+            foreach (var (renderElement, cachedGroup) in innerCache)
             {
-                var instanceSpan = CollectionsMarshal.AsSpan(instances);
+                var instances = cachedGroup.Instances;
+                if (instances.Count == 0)
+                    continue;
+
+                var oldInstances = cachedGroup.OldInstances;
+                var currentHashCode = GetInstanceDataHashCode(CollectionsMarshal.AsSpan(instances));
 
                 if (cachedGroup.VertexBuffer == null ||
-                    cachedGroup.VertexBuffer.VertexCount < instances.Count)
+                    currentHashCode != cachedGroup.HashCode ||
+                    !AreInstanceDataListsEqual(
+                        CollectionsMarshal.AsSpan(instances),
+                        CollectionsMarshal.AsSpan(oldInstances)))
                 {
-                    cachedGroup.VertexBuffer?.Dispose();
-                    cachedGroup.VertexBuffer = new DynamicVertexBuffer(
-                        graphicsDevice, InstanceData.InstanceDeclaration,
-                        instances.Count, BufferUsage.WriteOnly)
+                    var instanceSpan = CollectionsMarshal.AsSpan(instances);
+
+                    if (cachedGroup.VertexBuffer == null ||
+                        cachedGroup.VertexBuffer.VertexCount < instances.Count)
                     {
-                        Name = "Instance Data Vertex Buffer",
-                        Tag = this
-                    };
+                        cachedGroup.VertexBuffer?.Dispose();
+                        cachedGroup.VertexBuffer = new DynamicVertexBuffer(
+                            graphicsDevice, InstanceData.InstanceDeclaration,
+                            instances.Count, BufferUsage.WriteOnly)
+                        {
+                            Name = "Instance Data Vertex Buffer",
+                            Tag = this
+                        };
+                    }
+
+                    cachedGroup.VertexBuffer.SetDataEXT(instanceSpan, SetDataOptions.Discard);
+                    cachedGroup.HashCode = currentHashCode;
+
+                    CollectionsMarshal.SetCount(oldInstances, instances.Count);
+                    instanceSpan.CopyTo(CollectionsMarshal.AsSpan(oldInstances));
                 }
 
-                cachedGroup.VertexBuffer.SetDataEXT(instanceSpan, SetDataOptions.Discard);
-                cachedGroup.HashCode = currentHashCode;
-
-                // Swap old and new instance lists for next frame's diff
-                CollectionsMarshal.SetCount(oldInstances, instances.Count);
-                instanceSpan.CopyTo(CollectionsMarshal.AsSpan(oldInstances));
+                renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
             }
 
-            renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
+            // After the first (lowest) renderOrder, flush PostOpaque immediate draws
+            // so they sit on top of stage pieces but below cars
+            if (firstRenderOrder)
+            {
+                firstRenderOrder = false;
+                while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.PostOpaque)
+                {
+                    _immediateDraws[i].Element.Render(camera, lighting);
+                    i++;
+                }
+            }
         }
 
-        // 3. Draw postOpaque immediate draws (FixFlare — depth-read-only, on stage, below car)
-        while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.PostOpaque)
-        {
-            _immediateDraws[i].Element.Render(camera, lighting);
-            i++;
-        }
-
-        // 4. Draw transparent immediate draws (effects: Flames, Dust, Chips, Sparks)
+        // 3. Draw transparent immediate draws (effects: Flames, Dust, Chips, Sparks)
         while (i < _immediateDraws.Count)
         {
             _immediateDraws[i].Element.Render(camera, lighting);
