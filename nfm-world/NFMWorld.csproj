@@ -53,6 +53,7 @@
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+        <PackageReference Include="System.Reactive" Version="7.0.0-rc.1" />
         <PackageReference Include="Yoga-CS" Version="1.0.0" />
     </ItemGroup>
     <ItemGroup>
@@ -68,7 +69,6 @@
         <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
         <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
-        <ProjectReference Include="..\NFMWorld.XamlX\XamlX\src\XamlX.Runtime\XamlX.Runtime.csproj" />
         <!-- Reference NFMWorld.ShaderSourceGen for XAML source generation -->
         <ProjectReference Include="..\NFMWorld.ShaderSourceGen\NFMWorld.ShaderSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen\Maxine.Extensions.UnionGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
