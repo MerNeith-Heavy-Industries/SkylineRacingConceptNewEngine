@@ -5,7 +5,7 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorld;
 
-public class FixHoop : StageObjectGameObject
+public class FixHoop : StageObjectGameObject, IImmediateRenderElement
 {
     private readonly GraphicsDevice _graphicsDevice;
     
@@ -44,7 +44,7 @@ public class FixHoop : StageObjectGameObject
 
     public bool IsSpecial { get; set; }
 
-    private void RenderFixHoop(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         Effects.FixHoop.World = Matrix.CreateRotationY((float)Rotation.Xz.Radians) *
                                Matrix.CreateTranslation((Vector3)Position);
@@ -188,7 +188,7 @@ public class FixHoop : StageObjectGameObject
 
         if (!pass.IsShadow)
         {
-            queue.AddImmediate(SortKey.ForOpaque(materialHash: 10), (cam, _) => RenderFixHoop(cam));
+            queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.FixHoopElectricity), this);
         }
     }
 

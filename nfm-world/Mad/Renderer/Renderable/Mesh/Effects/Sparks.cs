@@ -4,7 +4,7 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorld;
 
-public class Sparks : IDisposable
+public class Sparks : IDisposable, IImmediateRenderElement
 {
     private readonly CarVisual _visual;
     private readonly GraphicsDevice _graphicsDevice;
@@ -252,7 +252,7 @@ public class Sparks : IDisposable
         Sprk = 0;
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_vertexCount == 0 || _triangleCount == 0) return;
         

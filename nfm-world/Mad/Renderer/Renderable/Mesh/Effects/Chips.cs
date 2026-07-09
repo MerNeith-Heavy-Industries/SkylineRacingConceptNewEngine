@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Chips : IDisposable
+public class Chips : IDisposable, IImmediateRenderElement
 {
     private struct Chip
     {
@@ -143,7 +143,7 @@ public class Chips : IDisposable
         }
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_triangleCount == 0) return;
 

@@ -4,7 +4,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Flames : IDisposable
+public class Flames : IDisposable, IImmediateRenderElement
 {
     private int _embos;
     private readonly CarVisual _car;
@@ -291,11 +291,10 @@ public class Flames : IDisposable
         }
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_embos >= 16)
         {
-            
             Effects.Flame.World = _car.MatrixWorld;
             Effects.Flame.View = camera.ViewMatrix;
             Effects.Flame.Projection = camera.ProjectionMatrix;

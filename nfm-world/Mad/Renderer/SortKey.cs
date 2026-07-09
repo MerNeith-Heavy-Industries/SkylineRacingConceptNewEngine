@@ -3,12 +3,30 @@ using System.Runtime.CompilerServices;
 namespace NFMWorld;
 
 /// <summary>
-/// Render bucket for draw ordering. Opaque draws come before transparent draws.
+/// Render bucket for draw ordering.
 /// </summary>
 public enum RenderBucket : byte
 {
+    /// <summary>Behind geometry — Sky, Ground, environment.</summary>
     Opaque = 0,
-    Transparent = 1
+
+    /// <summary>After instanced geometry but before transparent effects.
+    /// Used for depth-read-only draws like FixFlare that should sit on the stage
+    /// but below the car they belong to.</summary>
+    PostOpaque = 1,
+
+    /// <summary>In front of everything — alpha-blended effects.</summary>
+    Transparent = 2
+}
+
+public enum RenderMaterial
+{
+    Sky,
+    Ground,
+    GroundPolys,
+    Mountains,
+    FixHoopElectricity,
+    CollisionDebugMesh
 }
 
 /// <summary>
@@ -36,10 +54,10 @@ public readonly struct SortKey(uint value) : IComparable<SortKey>
     /// then by render order within the same material.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SortKey ForOpaque(int materialHash, int renderOrder = 0)
+    public static SortKey ForOpaque(RenderMaterial material, int renderOrder = 0)
     {
         // materialHash in top bits, renderOrder in low 2 bits
-        uint sortValue = ((uint)materialHash << 2) | ((uint)renderOrder & 0x3);
+        uint sortValue = ((uint)material << 2) | ((uint)renderOrder & 0x3);
         return Create(RenderBucket.Opaque, sortValue);
     }
 

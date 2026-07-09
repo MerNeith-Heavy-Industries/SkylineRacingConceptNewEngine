@@ -4,7 +4,7 @@ using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
 
-public class Mountains : Transform, IRenderable
+public class Mountains : Transform, IRenderable, IImmediateRenderElement
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -69,33 +69,30 @@ public class Mountains : Transform, IRenderable
     {
         if (pass.IsShadow) return;
 
-        var gd = _graphicsDevice;
-        var vb = _vertexBuffer;
-        var ib = _indexBuffer;
-        var triCount = _triangleCount;
-        var vertCount = _vertexCount;
+        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.Mountains), this);
+    }
 
-        queue.AddImmediate(SortKey.ForOpaque(materialHash: 3), (cam, lt) =>
+    public void Render(Camera cam, Lighting? lt)
+    {
+        _graphicsDevice.SetVertexBuffer(_vertexBuffer);
+        _graphicsDevice.Indices = _indexBuffer;
+        _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+        Effects.Mountains.WorldView?.SetValue(cam.ViewMatrix);
+        Effects.Mountains.WorldViewProj?.SetValue(cam.ViewMatrix * cam.ProjectionMatrix);
+
+        Effects.Mountains.DepthBias?.SetValue(0.00005f);
+        Effects.Mountains.FogColor?.SetValue(World.Fog.Snap(World.Snap));
+        Effects.Mountains.FogDistance?.SetValue(World.FadeFrom);
+        Effects.Mountains.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1f));
+
+        lt?.SetShadowMapParameters(Effects.Mountains.UnderlyingEffect);
+
+        foreach (var pass in Effects.Mountains.CurrentTechnique.Passes)
         {
-            gd.SetVertexBuffer(vb);
-            gd.Indices = ib;
-            gd.DepthStencilState = DepthStencilState.DepthRead;
-            Effects.Mountains.Parameters["WorldView"]?.SetValue(cam.ViewMatrix);
-            Effects.Mountains.Parameters["WorldViewProj"]?.SetValue(cam.ViewMatrix * cam.ProjectionMatrix);
+            pass.Apply();
+            _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _vertexCount, 0, _triangleCount);
+        }
 
-            Effects.Mountains.Parameters["DepthBias"]?.SetValue(0.00005f);
-            Effects.Mountains.Parameters["FogColor"]?.SetValue((Vector3)World.Fog.Snap(World.Snap));
-            Effects.Mountains.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
-            Effects.Mountains.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
-
-            lt?.SetShadowMapParameters(Effects.Mountains.UnderlyingEffect);
-
-            foreach (var pass in Effects.Mountains.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertCount, 0, triCount);
-            }
-            gd.DepthStencilState = DepthStencilState.Default;
-        });
+        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
     }
 }
