@@ -50,6 +50,12 @@ public class CarVisual : MeshedGameObject, IDisposable
         _wheels = car.Wheels
             .Select(wheel => new WheelMeshBuilder(wheel, car.Rad.Rims).BuildGameObject(graphicsDevice, this))
             .ToArray();
+
+        // Cars (body + wheels) render after stage pieces so FixFlare sits between them
+        RenderOrderOffset = 1;
+        foreach (var w in _wheels)
+            w.RenderOrderOffset = 1;
+
         Flames = new Flames(this, graphicsDevice);
         Dust = new Dust(this, graphicsDevice);
         Chips = new Chips(this, graphicsDevice);
