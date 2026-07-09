@@ -41,42 +41,25 @@ public class EditorObject : StaticMeshObject
         Rotation = rotation;
     }
 
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
-    {
-        foreach (var renderData in base.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
-        
-        for (var i = 0; i < _wheels.Length; i++)
-        {
-            var wheel = _wheels[i];
-            wheel.Parent = this;
-
-            foreach (var renderData in wheel.GetRenderData(lighting))
-            {
-                yield return renderData;
-            }
-        }
-    }
-
     public override void OnBeforeRender(float alpha)
     {
         base.OnBeforeRender(alpha);
-        foreach (var wheel in _wheels)
+        for (var i = 0; i < _wheels.Length; i++)
         {
-            wheel.OnBeforeRender(alpha);
+            _wheels[i].Parent = this;
+            _wheels[i].OnBeforeRender(alpha);
         }
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        base.Render(camera, lighting);
+        base.SubmitDraws(queue, camera, lighting, pass);
 
         foreach (var wheel in _wheels)
         {
-            wheel.Render(camera, lighting);
+            wheel.SubmitDraws(queue, camera, lighting, pass);
         }
-        _collisionDebugMesh?.Render(camera, lighting);
+
+        _collisionDebugMesh?.SubmitDraws(queue, camera, lighting, pass);
     }
 }

@@ -182,12 +182,13 @@ public class FixHoop : StageObjectGameObject
         }
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        base.Render(camera, lighting);
-        if (lighting?.IsCreateShadowMap != true)
+        base.SubmitDraws(queue, camera, lighting, pass);
+
+        if (!pass.IsShadow)
         {
-            RenderFixHoop(camera);
+            queue.AddImmediate(SortKey.ForOpaque(materialHash: 10), (cam, _) => RenderFixHoop(cam));
         }
     }
 

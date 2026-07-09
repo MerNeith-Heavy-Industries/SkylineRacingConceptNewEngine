@@ -2,31 +2,20 @@
 
 namespace NFMWorld;
 
-public class GameObject : Transform, IImmediateRenderable
+public class GameObject : Transform, IRenderable
 {
     public IReadOnlyList<GameObject> Children { get; set; } = [];
 
     public override IReadOnlyList<ITransform> ChildTransforms => Children;
 
     /// <summary>
-    /// Gets mesh render data for instanced rendering.
+    /// Submit draws to the unified render queue. Default implementation recurses into children.
     /// </summary>
-    /// <param name="lighting">The lighting</param>
-    /// <returns>Meshes and matrices to render</returns>
-    public virtual IEnumerable<RenderData> GetRenderData(Lighting? lighting)
-    {
-        foreach (var child in Children)
-        foreach (var renderData in child.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
-    }
-
-    public virtual void Render(Camera camera, Lighting? lighting)
+    public virtual void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
         foreach (var child in Children)
         {
-            child.Render(camera, lighting);
+            child.SubmitDraws(queue, camera, lighting, pass);
         }
     }
 

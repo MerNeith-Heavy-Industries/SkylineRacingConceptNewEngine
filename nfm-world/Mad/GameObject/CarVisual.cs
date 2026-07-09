@@ -132,8 +132,18 @@ public class CarVisual : MeshedGameObject, IDisposable
         Position = _car.Position;
         Rotation = _car.Rotation;
 
-        foreach (var wheel in _wheels)
+        // Per-tick visual overrides from gamemode (moved from GetRenderData)
+        CastsShadow = Visuals.CastsShadow;
+        GetsShadowed = Visuals.GetsShadowed ?? GetsShadowed;
+        AlphaOverride = Visuals.AlphaOverride ?? AlphaOverride;
+        Glow = Visuals.Glow ?? Glow;
+        Finish = Visuals.Finish ?? Finish;
+
+        for (var i = 0; i < _wheels.Length; i++)
         {
+            var wheel = _wheels[i];
+            wheel.Parent = this;
+            wheel.Rotation = _car.Wheels[i].Rotates == 11 ? _car.TurningWheelAngle : _car.WheelAngle;
             wheel.GameTick(stage);
         }
         Flames.GameTick();
@@ -202,51 +212,25 @@ public class CarVisual : MeshedGameObject, IDisposable
         }
     }
 
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        if (lighting?.IsCreateShadowMap == true && !(Visuals.CastsShadow || Position.Y < World.Ground)) yield break;
-
-        for (var i = 0; i < _wheels.Length; i++)
-        {
-            var wheel = _wheels[i];
-            wheel.Parent = this;
-            wheel.Rotation = _car.Wheels[i].Rotates == 11 ? _car.TurningWheelAngle : _car.WheelAngle;
-
-            foreach (var renderData in wheel.GetRenderData(lighting))
-            {
-                yield return renderData;
-            }
-        }
-
-        // Override mesh visual properties from Visuals
-        CastsShadow = Visuals.CastsShadow;
-        GetsShadowed = Visuals.GetsShadowed ?? GetsShadowed;
-        AlphaOverride = Visuals.AlphaOverride ?? AlphaOverride;
-        Glow = Visuals.Glow ?? Glow;
-        Finish = Visuals.Finish ?? Finish;
-
-        foreach (var renderData in base.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
-    }
-
-    public override void Render(Camera camera, Lighting? lighting)
-    {
-        base.Render(camera, lighting);
-
+        // Wheels — parent/rotation already set in GameTick
         foreach (var wheel in _wheels)
         {
-            wheel.Render(camera, lighting);
+            wheel.SubmitDraws(queue, camera, lighting, pass);
         }
 
-        if (lighting?.IsCreateShadowMap != true)
+        // Body mesh (Visuals overrides already applied in GameTick)
+        base.SubmitDraws(queue, camera, lighting, pass);
+
+        // Effects — only during main pass
+        if (!pass.IsShadow)
         {
-            Flames.Render(camera);
-            Dust.Render(camera);
-            Chips.Render(camera);
-            Sparks.Render(camera);
-            FixFlare.Render(camera);
+            queue.AddImmediate(SortKey.ForTransparent(0.95f), (cam, _) => Flames.Render(cam));
+            queue.AddImmediate(SortKey.ForTransparent(0.9f), (cam, _) => Dust.Render(cam));
+            queue.AddImmediate(SortKey.ForTransparent(0.85f), (cam, _) => Chips.Render(cam));
+            queue.AddImmediate(SortKey.ForTransparent(0.5f), (cam, _) => Sparks.Render(cam));
+            queue.AddImmediate(SortKey.ForTransparent(0.8f), (cam, _) => FixFlare.Render(cam));
         }
     }
 

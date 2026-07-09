@@ -164,17 +164,19 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Dispose(false);
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    /// <summary>
+    /// Legacy immediate render path for editor usage.
+    /// </summary>
+    public void Render(Camera camera, Lighting? lighting)
     {
         if (lighting?.IsCreateShadowMap == true || !GameSparker.devRenderTrackers) return;
         if (lineInstanceBuffer == null || lineVertexBuffer == null || lineIndexBuffer == null) return;
-        
+
         lineInstanceBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(MatrixWorld)]);
 
         GameSparker.GraphicsDevice.SetVertexBuffers(lineVertexBuffer, new VertexBufferBinding(lineInstanceBuffer, 0, 1));
         GameSparker.GraphicsDevice.Indices = lineIndexBuffer;
 
-        // If a parameter is null that means the HLSL compiler optimized it out.
         Effects.Line.SnapColor?.SetValue((Vector3)new Color3(100, 100, 100));
         Effects.Line.IsFullbright?.SetValue(true);
         Effects.Line.UseBaseColor?.SetValue(false);
@@ -200,15 +202,69 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Effects.Line.Expand?.SetValue(false);
         Effects.Line.Darken?.SetValue(1.0f);
         Effects.Line.RandomFloat?.SetValue(URandom.Single());
-        
+
         GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
         foreach (var pass in Effects.Line.CurrentTechnique.Passes)
         {
             pass.Apply();
-    
             GameSparker.GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, lineVertexCount, 0, lineTriangleCount, 1);
         }
         GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
+    {
+        if (pass.IsShadow || !GameSparker.devRenderTrackers) return;
+
+        var worldMatrix = MatrixWorld;
+        var vb = lineVertexBuffer;
+        var ib = lineIndexBuffer;
+        var instBuf = lineInstanceBuffer;
+        var triCount = lineTriangleCount;
+        var vertCount = lineVertexCount;
+
+        if (vb == null || ib == null || instBuf == null) return;
+
+        queue.AddImmediate(SortKey.ForOpaque(materialHash: 20), (cam, _) =>
+        {
+            instBuf.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(worldMatrix)]);
+            GameSparker.GraphicsDevice.SetVertexBuffers(vb, new VertexBufferBinding(instBuf, 0, 1));
+            GameSparker.GraphicsDevice.Indices = ib;
+
+            Effects.Line.SnapColor?.SetValue((Vector3)new Color3(100, 100, 100));
+            Effects.Line.IsFullbright?.SetValue(true);
+            Effects.Line.UseBaseColor?.SetValue(false);
+            Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
+            Effects.Line.ChargedBlinkAmount?.SetValue(0.0f);
+            Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
+
+            Effects.Line.LightDirection?.SetValue(World.LightDirection);
+            Effects.Line.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
+            Effects.Line.FogDistance?.SetValue(World.FadeFrom);
+            Effects.Line.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
+            Effects.Line.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
+            Effects.Line.DepthBias?.SetValue(0.00005f);
+            Effects.Line.Alpha?.SetValue(1f);
+
+            Effects.Line.View?.SetValue(cam.ViewMatrix);
+            Effects.Line.Projection?.SetValue(cam.ProjectionMatrix);
+            Effects.Line.ViewProj?.SetValue(cam.ViewMatrix * cam.ProjectionMatrix);
+            Effects.Line.CameraPosition?.SetValue(cam.Position);
+
+            Effects.Line.CurrentTechnique = Effects.Line.Techniques["Basic"];
+
+            Effects.Line.Expand?.SetValue(false);
+            Effects.Line.Darken?.SetValue(1.0f);
+            Effects.Line.RandomFloat?.SetValue(URandom.Single());
+
+            GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            foreach (var pass in Effects.Line.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GameSparker.GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, vertCount, 0, triCount, 1);
+            }
+            GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+        });
     }
 
     private void ReleaseUnmanagedResources()

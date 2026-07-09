@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Ground : Transform, IImmediateRenderable
+public class Ground : Transform, IRenderable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -41,28 +41,34 @@ public class Ground : Transform, IImmediateRenderable
         _vertexBuffer.Dispose();
     }
 
-    public void Render(Camera camera, Lighting? lighting = null)
+    public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        if (lighting?.IsCreateShadowMap == true) return;
+        if (pass.IsShadow) return;
 
-        _graphicsDevice.SetVertexBuffer(_vertexBuffer);
-        _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
-        Effects.Ground.Parameters["WorldView"]?.SetValue(camera.ViewMatrix);
-        Effects.Ground.Parameters["WorldViewProj"]?.SetValue(camera.ViewMatrix * camera.ProjectionMatrix);
-        
-        Effects.Ground.Parameters["DepthBias"]?.SetValue(0.00005f);
-        Effects.Ground.Parameters["FogColor"]?.SetValue((Vector3)World.Fog.Snap(World.Snap));
-        Effects.Ground.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
-        Effects.Ground.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
-        
-        lighting?.SetShadowMapParameters(Effects.Ground.UnderlyingEffect);
-        
-        foreach (var pass in Effects.Ground.CurrentTechnique.Passes)
+        var gd = _graphicsDevice;
+        var vb = _vertexBuffer;
+        var triCount = _triangleCount;
+
+        queue.AddImmediate(SortKey.ForOpaque(materialHash: 1), (cam, lt) =>
         {
-            pass.Apply();
-    
-            _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _triangleCount);
-        }
-        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            gd.SetVertexBuffer(vb);
+            gd.DepthStencilState = DepthStencilState.DepthRead;
+            Effects.Ground.Parameters["WorldView"]?.SetValue(cam.ViewMatrix);
+            Effects.Ground.Parameters["WorldViewProj"]?.SetValue(cam.ViewMatrix * cam.ProjectionMatrix);
+
+            Effects.Ground.Parameters["DepthBias"]?.SetValue(0.00005f);
+            Effects.Ground.Parameters["FogColor"]?.SetValue((Vector3)World.Fog.Snap(World.Snap));
+            Effects.Ground.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
+            Effects.Ground.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
+
+            lt?.SetShadowMapParameters(Effects.Ground.UnderlyingEffect);
+
+            foreach (var pass in Effects.Ground.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                gd.DrawPrimitives(PrimitiveType.TriangleList, 0, triCount);
+            }
+            gd.DepthStencilState = DepthStencilState.Default;
+        });
     }
 }
