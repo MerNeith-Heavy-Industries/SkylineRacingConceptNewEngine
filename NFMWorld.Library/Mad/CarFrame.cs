@@ -74,8 +74,8 @@ public partial struct CarFrame
         entry.AngularVelocities.Dcomp = car.CarPhysics.DownComponent;
         entry.AngularVelocities.Lcomp = car.CarPhysics.LeftComponent;
         entry.AngularVelocities.Rcomp = car.CarPhysics.RightComponent;
-        entry.RacePosition.CheckpointInlap = car.currentCheckpoint;
-        entry.RacePosition.Lap = car.currentLap;
+        entry.RacePosition.CheckpointInlap = car.CurrentCheckpoint;
+        entry.RacePosition.Lap = car.CurrentLap;
         entry.StuntState.StuntType = car.CarPhysics.StuntState;
         entry.StuntState.Travxz = car.CarPhysics.TotalStuntXz;
         entry.StuntState.Travxy = car.CarPhysics.TotalStuntXy;

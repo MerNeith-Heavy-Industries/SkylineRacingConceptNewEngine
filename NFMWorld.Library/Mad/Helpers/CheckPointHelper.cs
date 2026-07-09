@@ -13,7 +13,7 @@ public class CheckPointHelper
     {
         foreach (var car in carsInRace)
         {
-            car.placement = 0;
+            car.Placement = 0;
         }
 
         for (int i = 0; i < carsInRace.Count; i++)
@@ -22,20 +22,20 @@ public class CheckPointHelper
             for (int j = i + 1; j < carsInRace.Count; j++)
             {
                 var car2 = carsInRace[j];
-                if (car1.totalCheckpoint != car2.totalCheckpoint)
+                if (car1.TotalCheckpoint != car2.TotalCheckpoint)
                 {
-                    if (car1.totalCheckpoint < car2.totalCheckpoint)
+                    if (car1.TotalCheckpoint < car2.TotalCheckpoint)
                     {
-                        carsInRace[i].placement++;
+                        carsInRace[i].Placement++;
                     }
                     else
                     {
-                        carsInRace[j].placement++;
+                        carsInRace[j].Placement++;
                     }
                 }
                 else
                 {
-                    int c = carsInRace[i].currentCheckpoint + 1;
+                    int c = carsInRace[i].CurrentCheckpoint + 1;
                     if (c >= currentStage.checkpoints.Count)
                     {
                         c = 0;
@@ -55,11 +55,11 @@ public class CheckPointHelper
                         )
                        )
                     {
-                        carsInRace[i].placement++;
+                        carsInRace[i].Placement++;
                     }
                     else
                     {
-                        carsInRace[j].placement++;
+                        carsInRace[j].Placement++;
                     }
                 }
             }
@@ -70,10 +70,10 @@ public class CheckPointHelper
         IStage currentStage,
         IInGameCar car)
     {
-        if (car.currentCheckpoint >= currentStage.checkpoints.Count)
+        if (car.CurrentCheckpoint >= currentStage.checkpoints.Count)
             return false;
 
-        var nextCheckpoint = currentStage.checkpoints[car.currentCheckpoint];
+        var nextCheckpoint = currentStage.checkpoints[car.CurrentCheckpoint];
         f64Vector3 carPos = car.Position;
         var mad = car.CarPhysics;
         f64Vector3 velocity = new f64Vector3(
@@ -88,19 +88,19 @@ public class CheckPointHelper
 
         if (box.ResolveCollision(carPos) is not null)
         {
-            car.currentCheckpoint++;
-            if (car.currentCheckpoint >= currentStage.checkpoints.Count)
+            car.CurrentCheckpoint++;
+            if (car.CurrentCheckpoint >= currentStage.checkpoints.Count)
             {
-                car.lastCheckpointNode = -1;
-                car.currentCheckpoint = 0;
-                car.currentLap++;
+                car.LastCheckpointNode = -1;
+                car.CurrentCheckpoint = 0;
+                car.CurrentLap++;
             }
             else
             {
-                car.lastCheckpointNode = currentStage.nodes.IndexOf(nextCheckpoint);
+                car.LastCheckpointNode = currentStage.nodes.IndexOf(nextCheckpoint);
             }
 
-            car.totalCheckpoint = car.currentCheckpoint + car.currentLap * currentStage.checkpoints.Count;
+            car.TotalCheckpoint = car.CurrentCheckpoint + car.CurrentLap * currentStage.checkpoints.Count;
             return true;
         }
 

@@ -77,7 +77,7 @@ public class CarPhysics
     public fix64 _lxz;
     public bool Mtouch;
     public fix64 Mxz;
-    public int _nbsq;
+    public int _numRoofDamage;
     public bool Newcar;
     public int Newedcar;
     public int _nmlt = 1;
@@ -103,7 +103,7 @@ public class CarPhysics
     public int Shakedam;
     public sbyte Skid;
     public fix64 Speed;
-    public int Squash;
+    public int RoofDamage;
     public int _surfCount;
     public bool Surfing;
     public fix64 _tilt;
@@ -398,7 +398,7 @@ public class CarPhysics
         }
         else
         {
-            wheelGround = carPhysics.BadLanding ? carPhysics.Stat.Flipy + carPhysics.Squash : -conto.Grat;
+            wheelGround = carPhysics.BadLanding ? carPhysics.Stat.Flipy + carPhysics.RoofDamage : -conto.Grat;
         }
 
         return wheelGround;
@@ -411,7 +411,7 @@ public class CarPhysics
         {
             if (carPhysics.BadLanding)
             {
-                bottomy = (carPhysics.Stat.Flipy + carPhysics.Squash) * _tickRate;
+                bottomy = (carPhysics.Stat.Flipy + carPhysics.RoofDamage) * _tickRate;
             }
             else
             {
@@ -2023,20 +2023,6 @@ public class CarPhysics
                 }
             }
         }*/ // CHK16
-        if (conto.Fcnt is 7 or 8)
-        {
-            Squash = 0;
-            _nbsq = 0;
-            DamagePoints = 0;
-            Cntdest = 0;
-            Wasted = false;
-            Newcar = true;
-            conto.Fcnt = 9;
-            if (_fixes > 0)
-            {
-                _fixes--;
-            }
-        }
         if (Newedcar != 0)
         {
             Newedcar--;
@@ -2615,7 +2601,7 @@ public class CarPhysics
 
     private int Regx(int i, fix64 f, ContO conto, DeterministicRandom random)
     {
-        conto.DamageX(Stat, i, f);
+        conto.DamageX(i, f);
 
         var i110 = 0;
         var abool = true;
@@ -2668,7 +2654,7 @@ public class CarPhysics
 
     private int Regy(int i, fix64 f, ContO conto, DeterministicRandom random)
     {
-        conto.DamageY(Stat, i, f, Mtouch, _nbsq, Squash);
+        conto.DamageY(i, f, Mtouch, _numRoofDamage, RoofDamage);
         var i97 = 0;
         var abool = true;
         /*if (XTGraphics.Multion == 1 && XTGraphics.Im != Im)
@@ -2748,18 +2734,18 @@ public class CarPhysics
             }
             if (i99 * i98 == -1)
             {
-                if (_nbsq > 0)
+                if (_numRoofDamage > 0)
                 {
-                    var i105 = 0;
-                    var i106 = 1;
+                    var dividend = 0;
+                    var divisor = 1;
                     for (var i107 = 0; i107 < 40; i107++)
                     {
                         fix64 f108 = 0;
                         for (var i109 = 0; i109 < 4; i109++)
                         {
                             f108 = f / 15 * random.NextFixed6401();
-                            i105 += (int)f108;
-                            i106++;
+                            dividend += (int)f108;
+                            divisor++;
                             if (abool)
                             {
                                 DamagePoints += (int)fix64.Abs(f108);
@@ -2767,12 +2753,12 @@ public class CarPhysics
                             }
                         }
                     }
-                    Squash += i105 / i106;
-                    _nbsq = 0;
+                    RoofDamage += dividend / divisor;
+                    _numRoofDamage = 0;
                 }
                 else
                 {
-                    _nbsq++;
+                    _numRoofDamage++;
                 }
             }
         }
@@ -2781,7 +2767,7 @@ public class CarPhysics
 
     private int Regz(int i, fix64 f, ContO conto, DeterministicRandom random)
     {
-        conto.DamageZ(Stat, i, f);
+        conto.DamageZ(i, f);
         var i114 = 0;
         var abool = true;
         /*if (XTGraphics.Multion == 1 && XTGraphics.Im != Im)
@@ -2900,8 +2886,8 @@ public class CarPhysics
         Power = 98;
         Lastcolido = 0;
         //CheckPoints.Dested[Im] = 0;
-        Squash = 0;
-        _nbsq = 0;
+        RoofDamage = 0;
+        _numRoofDamage = 0;
         DamagePoints = 0;
         Cntdest = 0;
         Wasted = false;
@@ -2929,5 +2915,19 @@ public class CarPhysics
         {
             _fixes = 1;
         }*/
+    }
+
+    public void FinishedFix()
+    {
+        RoofDamage = 0;
+        _numRoofDamage = 0;
+        DamagePoints = 0;
+        Cntdest = 0;
+        Wasted = false;
+        Newcar = true;
+        if (_fixes > 0)
+        {
+            _fixes--;
+        }
     }
 }

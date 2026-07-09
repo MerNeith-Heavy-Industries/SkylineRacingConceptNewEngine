@@ -27,6 +27,8 @@ public class Mesh : IDisposable
     public bool Expand;
     public float Darken = 1.0f;
 
+    public byte PolyFixState = 0;
+
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         // make a copy of points for damageable meshes

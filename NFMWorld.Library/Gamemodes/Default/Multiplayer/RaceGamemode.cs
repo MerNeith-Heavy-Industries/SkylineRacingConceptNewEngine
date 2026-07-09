@@ -61,8 +61,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         foreach (var (idx, player) in players.WithIndex())
         {
             carsInRace[idx] = new BackendCar(player, idx, -500 + (400 * idx), 0);
-            carsInRace[idx].currentCheckpoint = 0;
-            carsInRace[idx].currentLap = 0;
+            carsInRace[idx].CurrentCheckpoint = 0;
+            carsInRace[idx].CurrentLap = 0;
             if (player.IsBot)
             {
                 carsInRace[idx].Bot = new ElStupido(this, gamemodeData);
@@ -145,7 +145,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
 
         for (var i = 0; i < carsInRace.Count; i++)
         {
-            if (carsInRace[i].currentLap >= currentStage.nlaps)
+            if (carsInRace[i].CurrentLap >= currentStage.nlaps)
             {
                 _currentState = InnerRaceState.Finished;
                 _winner = i;
@@ -178,7 +178,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
                 for (byte i = 0; i < carsInRace.Count; i++)
                 {
                     if (i == _winner) continue;
-                    if (carsInRace[i].placement == pos)
+                    if (carsInRace[i].Placement == pos)
                     {
                         positions[i] = currentPosition;
                         currentPosition++;
@@ -242,20 +242,20 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         Hud.State = Hud.State with
         {
-            CurrentLap = carsInRace[_playerCarIndex].currentLap + 1,
+            CurrentLap = carsInRace[_playerCarIndex].CurrentLap + 1,
             DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag,
             PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f
         };
 
-        if (carsInRace[_playerCarIndex].currentCheckpoint != _lastClientCheckpoint)
+        if (carsInRace[_playerCarIndex].CurrentCheckpoint != _lastClientCheckpoint)
         {
-            _lastClientCheckpoint = carsInRace[_playerCarIndex].currentCheckpoint;
+            _lastClientCheckpoint = carsInRace[_playerCarIndex].CurrentCheckpoint;
             SfxLibrary.checkpoint?.Play();
         }
 
         gamemodeData.ClientCallbacks.UpdateCheckpointGlow(
-            carsInRace[_playerCarIndex].currentCheckpoint,
-            carsInRace[_playerCarIndex].currentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[_playerCarIndex].currentLap == currentStage.nlaps - 1
+            carsInRace[_playerCarIndex].CurrentCheckpoint,
+            carsInRace[_playerCarIndex].CurrentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[_playerCarIndex].CurrentLap == currentStage.nlaps - 1
         );
     }
 

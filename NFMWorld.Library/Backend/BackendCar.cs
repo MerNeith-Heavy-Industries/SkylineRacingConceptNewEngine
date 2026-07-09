@@ -16,11 +16,11 @@ public class BackendCar : BackendGameObject, IInGameCar
 
     public CarPhysics CarPhysics { get; }
     public Control Control { get; }
-    public ushort currentCheckpoint { get; set; }
-    public byte currentLap { get; set; } // mad.nlaps
-    public int totalCheckpoint { get; set; } // mad.clear
-    public int lastCheckpointNode { get; set; } = -1; // resets on new lap
-    public int placement { get; set; } // cp.pos
+    public ushort CurrentCheckpoint { get; set; }
+    public byte CurrentLap { get; set; } // mad.nlaps
+    public int TotalCheckpoint { get; set; } // mad.clear
+    public int LastCheckpointNode { get; set; } = -1; // resets on new lap
+    public int Placement { get; set; } // cp.pos
     public Rad3d Rad { get; }
     public CarStats Stats { get; }
     public bool Wasted => CarPhysics.Wasted;
@@ -32,8 +32,13 @@ public class BackendCar : BackendGameObject, IInGameCar
     public event DamageFunc? DamagedZ;
     public event SparkFunc? Sparked;
     public event DustFunc? Dusted;
-    
+    public event Action? Fixed;
+
     public PlayerParameters Player { get; }
+    
+    private bool _fixing;
+    private byte _fixTimer;
+    private int _fixTick = 0;
 
     public BackendCar(
         IInGameCar other,
@@ -85,8 +90,32 @@ public class BackendCar : BackendGameObject, IInGameCar
         var transaction = SentrySdk.StartTransaction("BackendCar.Drive", "drive-car");
         CarPhysics.Drive(Control, this, stage);
         transaction.Finish();
+
+        IterateFix();
     }
-    
+
+    private void IterateFix()
+    {
+        if (_fixing)
+        {
+            if (++_fixTick == Physics.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
+            {
+                _fixTick = 0;
+
+                if (_fixTimer > 7)
+                {
+                    _fixTimer = 0;
+                    _fixing = false;
+                    CarPhysics.FinishedFix();
+                }
+                else
+                {
+                    _fixTimer++;
+                }
+            }
+        }
+    }
+
     public void Collide(IInGameCar otherCar)
     {
         var transaction = SentrySdk.StartTransaction("BackendCar.Collide", "car-collide");
@@ -101,30 +130,36 @@ public class BackendCar : BackendGameObject, IInGameCar
         Rotation = f64Euler.Identity;
     }
 
-    public void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt,
+    public void Fix()
+    {
+        _fixing = true;
+        Fixed?.Invoke();
+    }
+
+    public void AddDust(int wheelidx, float x, float y, float z, int scx, int scz, float simag, int tilt,
         bool onRoof, int wheelGround)
     {
-        Dusted?.Invoke(wheelidx, wheelx, wheely, wheelz, scx, scz, simag, tilt, onRoof, wheelGround);
+        Dusted?.Invoke(wheelidx, x, y, z, scx, scz, simag, tilt, onRoof, wheelGround);
     }
 
-    public void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround)
+    public void Spark(float x, float y, float z, float scx, float scy, float scz, int type, int wheelGround)
     {
-        Sparked?.Invoke(wheelx, wheely, wheelz, scx, scy, scz, type, wheelGround);
+        Sparked?.Invoke(x, y, z, scx, scy, scz, type, wheelGround);
     }
 
-    public void DamageX(CarStats stat, int wheelnum, fix64 amount)
+    public void DamageX(int wheelnum, fix64 amount)
     {
-        DamagedX?.Invoke(stat, wheelnum, amount);
+        DamagedX?.Invoke(Stats, wheelnum, amount);
     }
 
-    public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
+    public void DamageY(int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
     {
-        DamagedY?.Invoke(stat, wheelnum, amount, mtouch, nbsq, squash);
+        DamagedY?.Invoke(Stats, wheelnum, amount, mtouch, nbsq, squash);
     }
 
-    public void DamageZ(CarStats stat, int wheelnum, fix64 amount)
+    public void DamageZ(int wheelnum, fix64 amount)
     {
-        DamagedZ?.Invoke(stat, wheelnum, amount);
+        DamagedZ?.Invoke(Stats, wheelnum, amount);
     }
     
     public static implicit operator ContO(BackendCar car) => new(car);
