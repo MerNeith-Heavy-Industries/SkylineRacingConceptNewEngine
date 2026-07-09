@@ -94,7 +94,11 @@ VertexShaderOutput MainVS(
     float2 screenA = Resolution * clipA.xy / clipA.w;
     float2 screenB = Resolution * clipB.xy / clipB.w;
 
-    float2 dir = normalize(screenB - screenA);
+    // Guard against NaN from normalize((0,0)) when endpoints project to the
+    // same screen pixel (near-degenerate lines). Fallback to horizontal.
+    float2 delta = screenB - screenA;
+    float deltaLenSq = dot(delta, delta);
+    float2 dir = deltaLenSq < 0.0001 ? float2(1, 0) : normalize(delta);
     float2 normal = float2(-dir.y, dir.x);
 
     // Screen-space offset for line thickness
