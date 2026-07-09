@@ -27,9 +27,7 @@ public class MainMenuView(
     Action? timeTrials = null,
     Action? challenges = null,
     Action? gameInstructions = null,
-    Action<string, string>? signIn = null,
-    Action<string, string, string>? signUp = null,
-    Action? discordSignIn = null
+    AccountManager? accountManager = null
 ) : Component
 {
     public record MainMenuPage(string Title, ImmutableArray<MainMenuItem> Items);
@@ -39,7 +37,6 @@ public class MainMenuView(
     protected override VNode Render()
     {
         var (activePage, setActivePage) = UseState<MainMenuPage?>(null);
-        var (account, setAccount) = UseState<Account?>(null);
         var pageHistory = UseRef(new Stack<MainMenuPage>());
 
         var pushPage = UseCallback<Func<MainMenuPage>>(pageBuilder =>
@@ -120,10 +117,6 @@ public class MainMenuView(
             ]);
         }, [garage, settings, credits, quit, buildPlayMenu, buildWorkshopMenu]);
 
-        var (loginVisible, setLoginVisible) = UseState(false);
-
-        var closeLoginModal = UseCallback(() => setLoginVisible(_ => false), []);
-
         UseEffect(() =>
         {
             setActivePage(_ => buildMainMenu());
@@ -147,6 +140,9 @@ public class MainMenuView(
         {
             return activePage?.Items.FirstOrDefault(item => item.Hovered);
         }
+
+        var (loginModalOpen, setLoginModalOpen) = UseState(false);
+        var account = UseObservable(accountManager?.ActiveAccountObservable);
         
         // Top row: title + login button
         return View(
@@ -191,7 +187,7 @@ public class MainMenuView(
                                     foreground: account is null ? Theme.Colors.Primary : Theme.Colors.Unimportant,
                                     stroke: Color.Black,
                                     text: account is null ? "Login" : "Logout",
-                                    mousePressed: account is null ? _ => setLoginVisible(_ => true) : _ => logout?.Invoke()
+                                    mousePressed: account is null ? _ => setLoginModalOpen(_ => true) : _ => logout?.Invoke()
                                 )
                             ]
                         )
@@ -259,11 +255,8 @@ public class MainMenuView(
                 ),
                 
                 LoginModal(
-                    isVisible: loginVisible,
-                    onSignIn: signIn,
-                    onSignUp: signUp,
-                    onDiscordSignIn: discordSignIn,
-                    onClose: closeLoginModal
+                    isVisible: loginModalOpen,
+                    onClose: () => setLoginModalOpen(_ => false)
                 )
             ]
         );

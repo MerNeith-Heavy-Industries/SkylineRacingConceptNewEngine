@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Net;
+using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using NFMWorld.Api;
 
 namespace NFMWorld.Accounts;
@@ -7,9 +10,31 @@ public class AccountManager
 {
     public static NfmwClient Client { get; } = new("https://nfmwapi.jacher.io", new HttpClient());
     
-    public Account? ActiveAccount;
+    public Account? ActiveAccount
+    {
+        get;
+        set
+        {
+            field = value;
+            ActiveAccountChanged?.Invoke(value);
+        }
+    }
 
-    public bool LoggedIn { get { return ActiveAccount is not null; } }
+    public IObservable<Account?> ActiveAccountObservable;
+
+    public event Action<Account?>? ActiveAccountChanged;
+
+    private bool _signingIn;
+
+    public AccountManager()
+    {
+        ActiveAccountObservable = Observable.FromEventPattern<Action<Account?>, Account?>(
+                h => ActiveAccountChanged += h,
+                h => ActiveAccountChanged -= h)
+            .Select(e => e.EventArgs);
+    }
+
+    public bool LoggedIn => ActiveAccount is not null;
 
     // TODO: Logout properly by querying API to invalidate token?
     public void LogOut()
@@ -27,7 +52,7 @@ public class AccountManager
     /// <param name="username">The username</param>
     /// <param name="password">The password</param>
     /// <returns>The result of account creation. Throws an exception where there is a server error or input validation error.</returns>
-    public async Task<CreateLocalAccountResult> CreateLocalAccount(string username, string password)
+    public async Task<RequestResult> CreateLocalAccount(string username, string password)
     {
         try
         {
@@ -37,11 +62,11 @@ public class AccountManager
                 Password = password
             });
 
-            return new CreateLocalAccountResult(res.Username, "Success", HttpStatusCode.OK);
+            return new RequestResult("Success", true);
         }
         catch (ApiException<ErrorResponse> ex)
         {
-            return new CreateLocalAccountResult(null, ex.Result.Error, (HttpStatusCode)ex.StatusCode);
+            return new RequestResult(ex.Result.Error, false);
         }
     }
 
@@ -61,7 +86,7 @@ public class AccountManager
     /// <param name="username">The username</param>
     /// <param name="password">The password</param>
     /// <returns>The log in result. Throws an exception on serious failure.</returns>
-    public async Task<LocalLogInResult> LogInToLocalAccount(string username, string password)
+    public async Task<RequestResult> LogInToLocalAccount(string username, string password)
     {
         try
         {
@@ -73,11 +98,11 @@ public class AccountManager
 
             ActiveAccount = new Account(res.SessionToken, res.Username);
             
-            return new LocalLogInResult("Success", HttpStatusCode.OK);
+            return new RequestResult("Success", true);
         }
         catch (ApiException<ErrorResponse> ex)
         {
-            return new LocalLogInResult(ex.Result.Error, (HttpStatusCode)ex.StatusCode);
+            return new RequestResult(ex.Result.Error, false);
         }
     }
 
@@ -91,5 +116,76 @@ public class AccountManager
     public async Task ChangeLocalAccountPassword(string current, string updated)
     {
         throw new NotImplementedException();
+    }
+
+    private static void OpenUrl(string url)
+    {
+        // hack because of this: https://github.com/dotnet/corefx/issues/10361
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            url = url.Replace("&", "^&");
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Process.Start("xdg-open", url);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Process.Start("open", url);
+        }
+        else
+        {
+            throw new PlatformNotSupportedException(RuntimeInformation.OSDescription);
+        }
+    }
+    
+    public async Task<RequestResult> LogInWithDiscord()
+    {
+        if (_signingIn)
+        {
+            return new RequestResult("Already started signing in, please finish on that window first.", false);
+        }
+
+        try
+        {
+            _signingIn = true;
+
+            var response = await Client.InitDiscordOauthAsync();
+
+            var uri = new Uri(response.Url);
+            if (uri.Scheme != "https")
+            {
+                throw new Exception("Invalid URL scheme for Discord OAuth: " + uri.Scheme);
+            }
+        
+            OpenUrl(uri.AbsoluteUri);
+
+            var pollCount = 0;
+            const int maxPollCount = 120;
+
+            while (pollCount < maxPollCount)
+            {
+                var oauth = await Client.PollOauthAsync(response.PollId);
+                if (oauth.Status == "login")
+                {
+                    ActiveAccount = new Account(oauth.Payload!, ""); // TODO...
+                    return new RequestResult("Success", true);
+                }
+                else if (oauth.Status == "error")
+                {
+                    return new RequestResult(oauth.Payload ?? "Unknown error", false);
+                }
+            
+                await Task.Delay(1000);
+                pollCount++;
+            }
+
+            return new RequestResult("Timed out", false);
+        }
+        finally
+        {
+            _signingIn = false;
+        }
     }
 }

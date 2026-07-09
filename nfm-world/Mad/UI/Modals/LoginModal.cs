@@ -1,12 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using NFMWorld.DriverInterface;
-using NFMWorld.DriverInterface.UI;
+﻿using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
-using NFMWorld.Reactor.Events;
-using WorldXaml.UI.Yoga;
-using static NFMWorld.Reactor.Nodes;
-using static NFMWorld.DriverInterface.UI.Nodes;
-using static NFMWorld.UI.Nodes;
 
 namespace NFMWorld.UI;
 
@@ -28,6 +21,7 @@ public class LoginModal(
         var (signUpPassword, setSignUpPassword) = UseState("");
         var (errorMessage, setErrorMessage) = UseState("");
 
+        
         var switchToSignIn = UseCallback(() =>
         {
             setActiveTab(_ => 0);
@@ -72,7 +66,7 @@ public class LoginModal(
         {
             onClose?.Invoke();
         }, []);
-
+        
         return Modal(
             isVisible: isVisible,
             modal:

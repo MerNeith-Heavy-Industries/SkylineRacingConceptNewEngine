@@ -1,10 +1,12 @@
 ﻿﻿using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Reactor;
+ using NFMWorld.Accounts;
+ using NFMWorld.Reactor;
 using NFMWorld.UI;
 using NFMWorld.UI.Menu;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
+using NFMWorldLibrary.Util;
 using WorldXaml.UI.Yoga.Events;
 using static NFMWorld.UI.Menu.Nodes;
 
@@ -14,7 +16,7 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
-    private ComponentNode _mainMenuViewNode;
+    private MainMenuViewNode _mainMenuViewNode;
     private ReactorDom _dom;
     private UIManager _uiManager;
 
@@ -43,7 +45,8 @@ public class MainMenuPhase : BaseStageRenderingPhase
             campaignEditor: OnClickUnavailable,
             timeTrials: OnTTClicked,
             challenges: OnClickUnavailable,
-            gameInstructions: OnClickUnavailable
+            gameInstructions: OnClickUnavailable,
+            accountManager: GameSparker.AccountManager
         );
         _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
         Uis.Add(_uiManager);
