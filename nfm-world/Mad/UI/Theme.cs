@@ -10,11 +10,9 @@ public class Theme
         public static readonly Color Primary = new(255, 140, 0);
         public static readonly Color Unimportant = new(180, 180, 180);
         public static readonly Color Background = new(20, 15, 35);
-        
-        public static readonly Color DarkBg = new(20, 15, 35);
+
         public static readonly Color ActiveTabBg = new(30, 20, 50);
         public static readonly Color InactiveTabBg = new(15, 5, 30);
-        public static readonly Color InputBg = new(30, 25, 50);
         public static readonly Color DiscordBlue = new(88, 101, 242);
         public static readonly Color ErrorRed = new(255, 80, 80);
     }
@@ -57,7 +55,7 @@ public class Theme
         );
 
         public static readonly StyleSheet CardBg = Styles(
-            backgroundColor: Colors.DarkBg with { A = 180 },
+            backgroundColor: Colors.Background with { A = 180 },
             borderColor: Colors.Primary with { A = 180 },
             border: 2,
             borderRadius: 8,
@@ -106,7 +104,7 @@ public class Theme
             fontFamily: FontFamily.DroidSans,
             foreground: Color.White,
             placeholderColor: Colors.Unimportant,
-            backgroundColor: Colors.InputBg,
+            backgroundColor: Colors.Background,
             borderColor: Colors.Primary,
             cursorColor: Colors.Primary,
             selectionColor: new Color(100, 180, 255, 128),
@@ -120,7 +118,7 @@ public class Theme
             padding: MeasurementMultiPadding.XY(10, 8),
             marginTop: 4,
 
-            backgroundColor: Colors.DarkBg,
+            backgroundColor: Colors.Background,
             borderColor: Colors.Primary,
             borderRadius: 4
         );
