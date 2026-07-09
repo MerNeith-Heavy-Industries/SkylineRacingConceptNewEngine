@@ -5,7 +5,7 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorld;
 
-public class Dust : IDisposable
+public class Dust : IDisposable, IImmediateRenderElement
 {
     private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
@@ -311,7 +311,7 @@ public class Dust : IDisposable
         }
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_vertexCount == 0 || _indexCount == 0)
         {

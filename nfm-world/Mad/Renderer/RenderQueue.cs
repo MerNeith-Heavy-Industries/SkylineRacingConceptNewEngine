@@ -15,8 +15,8 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
 
     private sealed class CachedInstancedGroup(List<InstanceData> instances)
     {
-        public List<InstanceData> Instances = instances;
-        public List<InstanceData> OldInstances = [];
+        public readonly List<InstanceData> Instances = instances;
+        public readonly List<InstanceData> OldInstances = [];
         public DynamicVertexBuffer? VertexBuffer;
         public int HashCode;
     }
@@ -28,7 +28,7 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
 
     // ── Immediate queue ──
 
-    private readonly List<(SortKey Key, Action<Camera, Lighting?> Draw)> _immediateDraws = [];
+    private readonly List<(SortKey Key, IImmediateRenderElement Element)> _immediateDraws = [];
 
     // ── Public API ──
 
@@ -93,36 +93,32 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     /// Queue an immediate (non-instanced) draw. Deferred draws are sorted by
     /// <paramref name="sortKey"/> before execution in <see cref="Flush"/>.
     /// </summary>
-    public void AddImmediate(SortKey sortKey, Action<Camera, Lighting?> draw)
+    public void AddImmediate(SortKey sortKey, IImmediateRenderElement element)
     {
-        _immediateDraws.Add((sortKey, draw));
+        _immediateDraws.Add((sortKey, element));
     }
 
     /// <summary>
     /// Execute all queued draws in the correct order:
     /// 1. Opaque immediate draws (environment — behind geometry)
     /// 2. Instanced batches (sorted by render order)
-    /// 3. Transparent immediate draws (effects — in front of geometry)
+    /// 3. PostOpaque immediate draws (depth-read-only — on top of stage, below cars)
+    /// 4. Transparent immediate draws (effects — in front of everything)
     /// </summary>
     public void Flush(Camera camera, Lighting? lighting)
     {
-        // Sort immediate draws by SortKey (opaque before transparent, then by material/depth)
+        // Sort immediate draws by SortKey (opaque < postOpaque < transparent, then by material/depth)
         if (_immediateDraws.Count > 0)
         {
             _immediateDraws.Sort(static (a, b) => a.Key.CompareTo(b.Key));
         }
 
         // 1. Draw opaque immediate draws (environment: Sky, Ground, GroundPolys, Mountains)
-        var opaqueEnd = 0;
-        while (opaqueEnd < _immediateDraws.Count &&
-               _immediateDraws[opaqueEnd].Key.Bucket == RenderBucket.Opaque)
+        var i = 0;
+        while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.Opaque)
         {
-            opaqueEnd++;
-        }
-
-        for (var i = 0; i < opaqueEnd; i++)
-        {
-            _immediateDraws[i].Draw(camera, lighting);
+            _immediateDraws[i].Element.Render(camera, lighting);
+            i++;
         }
 
         // 2. Draw instanced batches, sorted by RenderOrder (SortedDictionary key)
@@ -168,10 +164,18 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
             renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
         }
 
-        // 3. Draw transparent immediate draws (effects: Flames, Dust, Sparks, FixFlare, etc.)
-        for (var i = opaqueEnd; i < _immediateDraws.Count; i++)
+        // 3. Draw postOpaque immediate draws (FixFlare — depth-read-only, on stage, below car)
+        while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.PostOpaque)
         {
-            _immediateDraws[i].Draw(camera, lighting);
+            _immediateDraws[i].Element.Render(camera, lighting);
+            i++;
+        }
+
+        // 4. Draw transparent immediate draws (effects: Flames, Dust, Chips, Sparks)
+        while (i < _immediateDraws.Count)
+        {
+            _immediateDraws[i].Element.Render(camera, lighting);
+            i++;
         }
     }
 

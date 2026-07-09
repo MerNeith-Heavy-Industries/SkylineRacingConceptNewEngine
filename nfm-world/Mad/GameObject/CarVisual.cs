@@ -226,11 +226,11 @@ public class CarVisual : MeshedGameObject, IDisposable
         // Effects — only during main pass
         if (!pass.IsShadow)
         {
-            queue.AddImmediate(SortKey.ForTransparent(0.95f), (cam, _) => Flames.Render(cam));
-            queue.AddImmediate(SortKey.ForTransparent(0.9f), (cam, _) => Dust.Render(cam));
-            queue.AddImmediate(SortKey.ForTransparent(0.85f), (cam, _) => Chips.Render(cam));
-            queue.AddImmediate(SortKey.ForTransparent(0.5f), (cam, _) => Sparks.Render(cam));
-            queue.AddImmediate(SortKey.ForTransparent(0.8f), (cam, _) => FixFlare.Render(cam));
+            queue.AddImmediate(SortKey.ForTransparent(0.95f), Flames);
+            queue.AddImmediate(SortKey.ForTransparent(0.9f), Dust);
+            queue.AddImmediate(SortKey.ForTransparent(0.85f), Chips);
+            queue.AddImmediate(SortKey.ForTransparent(0.5f), Sparks);
+            queue.AddImmediate(SortKey.Create(RenderBucket.PostOpaque, 0), FixFlare);
         }
     }
 

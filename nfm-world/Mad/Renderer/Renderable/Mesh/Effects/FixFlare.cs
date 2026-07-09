@@ -8,7 +8,7 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorld;
 
-public class FixFlare : IDisposable
+public class FixFlare : IDisposable, IImmediateRenderElement
 {
     private readonly IInGameCar _car;
     private readonly CarVisual _visual;
@@ -218,7 +218,7 @@ public class FixFlare : IDisposable
         pt.Y = dx * sin + dy * cos;
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_vertexCount == 0 || _indexCount == 0)
         {
@@ -230,7 +230,7 @@ public class FixFlare : IDisposable
         Effects.Dust.Projection = camera.ProjectionMatrix;
         
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
-        _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+        _graphicsDevice.DepthStencilState = DepthStencilState.None;
         _graphicsDevice.BlendState = BlendState.NonPremultiplied;
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.Indices = _indexBuffer;
