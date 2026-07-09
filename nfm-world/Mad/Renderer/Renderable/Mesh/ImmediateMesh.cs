@@ -6,7 +6,7 @@ namespace NFMWorld;
 /// <summary>
 /// DO NOT USE THIS EXCEPT FOR EDITOR STUFF!! IT IS SLOW AS FUCK!!!!!!!!!!
 /// </summary>
-public class ImmediateMesh : Mesh, IImmediateRenderable
+public class ImmediateMesh : Mesh, IRenderable
 {
     public ImmediateMesh(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
@@ -22,9 +22,16 @@ public class ImmediateMesh : Mesh, IImmediateRenderable
 
         foreach (var (element, renderOrder) in GetRenderables(lighting, false).OrderBy(x => x.RenderOrder))
         {
-            var renderData = new RenderData(element, Matrix.Identity);
-            vertexBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[renderData.ToInstanceData()], SetDataOptions.Discard);
+            vertexBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(Matrix.Identity)], SetDataOptions.Discard);
             element.Render(camera, lighting, vertexBuffer, 1);
+        }
+    }
+
+    public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
+    {
+        foreach (var (element, renderOrder) in GetRenderables(lighting, false).OrderBy(x => x.RenderOrder))
+        {
+            queue.AddInstanced(element, new InstanceData(Matrix.Identity), renderOrder);
         }
     }
 }

@@ -8,13 +8,42 @@ public class Lighting
 {
     public IReadOnlyList<Camera> LightCameras;
     public RenderTarget2D?[] ShadowMaps;
-    
+
+    /// <summary>
+    /// Describes the current render pass (shadow cascade or main colour pass).
+    /// Replaces the boolean <see cref="IsCreateShadowMap"/> plus cascade-index pattern.
+    /// </summary>
+    public RenderPass RenderPass { get; }
+
     [MemberNotNullWhen(true, nameof(CascadeLightCamera))]
-    public bool IsCreateShadowMap { get; }
-    public int NumCascade;
+    public bool IsCreateShadowMap => RenderPass.IsShadow;
 
-    public int TotalCascades;
+    public int NumCascade => RenderPass.CascadeIndex;
 
+    public int TotalCascades => RenderPass.TotalCascades;
+
+    /// <summary>
+    /// New-style constructor using <see cref="RenderPass"/>.
+    /// </summary>
+    public Lighting(
+        IReadOnlyList<Camera> lightCameras,
+        RenderTarget2D?[] shadowMaps,
+        RenderPass renderPass
+    )
+    {
+        LightCameras = lightCameras;
+        ShadowMaps = shadowMaps;
+        RenderPass = renderPass;
+
+        if (renderPass.IsShadow && renderPass.CascadeIndex >= 0)
+        {
+            CascadeLightCamera = LightCameras[renderPass.CascadeIndex];
+        }
+    }
+
+    /// <summary>
+    /// Legacy constructor. Prefer the <see cref="RenderPass"/>-based overload.
+    /// </summary>
     public Lighting(
         IReadOnlyList<Camera> lightCameras,
         RenderTarget2D?[] shadowMaps,
@@ -22,20 +51,13 @@ public class Lighting
         int numCascade = -1,
         int totalCascades = 3
     )
+        : this(
+            lightCameras,
+            shadowMaps,
+            isCreateShadowMap
+                ? NFMWorld.RenderPass.Shadow(numCascade, totalCascades)
+                : NFMWorld.RenderPass.Main(totalCascades))
     {
-        LightCameras = lightCameras;
-        ShadowMaps = shadowMaps;
-        IsCreateShadowMap = isCreateShadowMap;
-        TotalCascades = totalCascades;
-        NumCascade = numCascade;
-        if (numCascade != -1)
-        {
-            CascadeLightCamera = LightCameras[numCascade];
-        }
-        else if (isCreateShadowMap)
-        {
-            throw new InvalidOperationException($"{nameof(numCascade)} must be set if {nameof(isCreateShadowMap)} is set to true");
-        }
     }
 
     public Camera? CascadeLightCamera;

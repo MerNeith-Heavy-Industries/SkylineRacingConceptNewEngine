@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Sky : Transform, IImmediateRenderable
+public class Sky : Transform, IRenderable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -72,42 +72,48 @@ public class Sky : Transform, IImmediateRenderable
         _vertexBuffer.Dispose();
     }
     
-    public void Render(Camera camera, Lighting? lighting = null)
+    public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        if (lighting?.IsCreateShadowMap == true) return;
+        if (pass.IsShadow) return;
 
-        _graphicsDevice.SetVertexBuffer(_vertexBuffer);
-        _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+        // Cache locals for the deferred draw lambda
+        var gd = _graphicsDevice;
+        var vb = _vertexBuffer;
+        var triCount = _triangleCount;
 
-        _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        
-        Vector3 col = World.Sky.Snap(World.Snap);
-        for (var i = 1; i < 20; ++i) {
-            col = new Vector3(0.991f, 0.991f, 0.998f) * col;
-        }
-        _graphicsDevice.Clear(new Color(col));
-        
-        // Extract camera rotation from view direction
-        var viewDirection = Vector3.Normalize(camera.LookAt - camera.Position);
-        
-        // Calculate yaw from view direction
-        var yaw = (float)Math.Atan2(viewDirection.X, viewDirection.Z);
-        
-        // Create rotation: first rotate by negative yaw, then apply full camera rotation
-        var yawRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -yaw);
-        var fullRotation = Quaternion.CreateFromYawPitchRoll(yaw, 0, 0);
-        var combinedRotation = yawRotation * fullRotation;
-        combinedRotation = Quaternion.Inverse(combinedRotation);
-        
-        var viewMatrix = Matrix.CreateFromQuaternion(combinedRotation);
-        
-        Effects.Sky.Parameters["WorldViewProj"]?.SetValue(viewMatrix * camera.ProjectionMatrix);
-        foreach (var pass in Effects.Sky.CurrentTechnique.Passes)
+        queue.AddImmediate(SortKey.ForOpaque(materialHash: 0), (cam, _) =>
         {
-            pass.Apply();
-    
-            _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _triangleCount);
-        }
-        _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            gd.SetVertexBuffer(vb);
+            gd.RasterizerState = RasterizerState.CullNone;
+            gd.DepthStencilState = DepthStencilState.None;
+
+            Vector3 col = World.Sky.Snap(World.Snap);
+            for (var i = 1; i < 20; ++i)
+            {
+                col = new Vector3(0.991f, 0.991f, 0.998f) * col;
+            }
+            gd.Clear(new Color(col));
+
+            // Extract camera rotation from view direction
+            var viewDirection = Vector3.Normalize(cam.LookAt - cam.Position);
+
+            // Calculate yaw from view direction
+            var yaw = (float)Math.Atan2(viewDirection.X, viewDirection.Z);
+
+            var yawRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -yaw);
+            var fullRotation = Quaternion.CreateFromYawPitchRoll(yaw, 0, 0);
+            var combinedRotation = yawRotation * fullRotation;
+            combinedRotation = Quaternion.Inverse(combinedRotation);
+
+            var viewMatrix = Matrix.CreateFromQuaternion(combinedRotation);
+
+            Effects.Sky.Parameters["WorldViewProj"]?.SetValue(viewMatrix * cam.ProjectionMatrix);
+            foreach (var pass in Effects.Sky.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                gd.DrawPrimitives(PrimitiveType.TriangleList, 0, triCount);
+            }
+            gd.DepthStencilState = DepthStencilState.Default;
+        });
     }
 }

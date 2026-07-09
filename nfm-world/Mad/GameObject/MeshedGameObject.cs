@@ -39,19 +39,22 @@ public class MeshedGameObject(Mesh mesh) : GameObject
         set;
     }
 
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        if (lighting?.IsCreateShadowMap == true && !(CastsShadow || Position.Y < World.Ground)) yield break;
-        
-        foreach (var (element, renderOrder) in Mesh.GetRenderables(lighting, Finish ?? false))
+        if (pass.IsShadow && !(CastsShadow || Position.Y < World.Ground))
         {
-            var actualRenderOrder = AlphaOverride is {} alphaOverride and < 1.0f ? 1 : renderOrder;
-            yield return new RenderData(element, MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false, actualRenderOrder);
+            base.SubmitDraws(queue, camera, lighting, pass);
+            return;
         }
 
-        foreach (var renderData in base.GetRenderData(lighting))
+        foreach (var (element, renderOrder) in Mesh.GetRenderables(lighting, Finish ?? false))
         {
-            yield return renderData;
+            var actualRenderOrder = AlphaOverride is {} alpha and < 1.0f ? 1 : renderOrder;
+            queue.AddInstanced(element,
+                new InstanceData(MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false),
+                actualRenderOrder);
         }
+
+        base.SubmitDraws(queue, camera, lighting, pass);
     }
 }

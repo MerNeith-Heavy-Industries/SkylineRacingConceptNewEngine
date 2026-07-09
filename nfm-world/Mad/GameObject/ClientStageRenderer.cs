@@ -348,14 +348,15 @@ public class ClientStageRenderer : GameObject
         }
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        sky?.Render(camera, lighting);
-        ground?.Render(camera, lighting);
-        polys?.Render(camera, lighting);
-        clouds?.Render(camera, lighting);
-        mountains?.Render(camera, lighting);
-        base.Render(camera, lighting);
+        sky?.SubmitDraws(queue, camera, lighting, pass);
+        ground?.SubmitDraws(queue, camera, lighting, pass);
+        polys?.SubmitDraws(queue, camera, lighting, pass);
+        clouds?.SubmitDraws(queue, camera, lighting, pass);
+        mountains?.SubmitDraws(queue, camera, lighting, pass);
+
+        base.SubmitDraws(queue, camera, lighting, pass);
     }
 
     public void ResetCheckpointGlow()
