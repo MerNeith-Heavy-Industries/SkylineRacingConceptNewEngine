@@ -23,7 +23,7 @@ public class FixFlare : IDisposable, IImmediateRenderElement
         // Inner octagon (verts 8-15)
         8,9,10, 8,10,11, 8,11,12, 8,12,13, 8,13,14, 8,14,15
     ];
-    private int _indexCount = 24;
+    private int _indexCount = 36;
     private readonly DynamicVertexBuffer _vertexBuffer;
     private readonly IndexBuffer _indexBuffer;
 
@@ -34,7 +34,7 @@ public class FixFlare : IDisposable, IImmediateRenderElement
         _graphicsDevice = graphicsDevice;
         
         _vertexBuffer = new DynamicVertexBuffer(graphicsDevice, VertexPositionColor.VertexDeclaration, 16, BufferUsage.WriteOnly);
-        _indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, 24, BufferUsage.WriteOnly);
+        _indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, 36, BufferUsage.WriteOnly);
         _vertexBuffer.SetDataEXT(_verts);
         _indexBuffer.SetDataEXT(Indices);
     }
