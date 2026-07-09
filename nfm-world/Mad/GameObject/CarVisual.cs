@@ -28,6 +28,7 @@ public class CarVisual : MeshedGameObject, IDisposable
     internal readonly Dust Dust;
     internal readonly Chips Chips;
     internal readonly Sparks Sparks;
+    internal readonly FixFlare FixFlare;
     private readonly MeshedGameObject[] _wheels;
 
     public string FileName => Mesh.FileName;
@@ -35,6 +36,10 @@ public class CarVisual : MeshedGameObject, IDisposable
     public bool VisuallyWasted { get; set; }
 
     public MadSfx? Sfx;
+
+    private bool _fixing;
+    private byte _fixTimer;
+    private int _fixTick = 0;
 
     public CarVisual(GraphicsDevice graphicsDevice, IInGameCar car)
         : base(new CarMesh(graphicsDevice, car.Rad))
@@ -49,6 +54,7 @@ public class CarVisual : MeshedGameObject, IDisposable
         Dust = new Dust(this, graphicsDevice);
         Chips = new Chips(this, graphicsDevice);
         Sparks = new Sparks(car, this, graphicsDevice);
+        FixFlare = new FixFlare(car, this, graphicsDevice);
 
         Visuals.ApplyDefaultsFrom(this);
 
@@ -62,6 +68,7 @@ public class CarVisual : MeshedGameObject, IDisposable
         car.Sparked += OnSparked;
         car.Dusted += OnDusted;
         car.CarPhysics.Distruct += OnDistruct;
+        car.Fixed += OnFixed;
 
         Sfx = new MadSfx(car.CarPhysics);
     }
@@ -98,6 +105,11 @@ public class CarVisual : MeshedGameObject, IDisposable
         VisuallyWasted = true;
     }
 
+    private void OnFixed()
+    {
+        _fixing = true;
+    }
+
     #endregion
 
     public void Chip(int polyIdx, float breakFactor)
@@ -129,6 +141,65 @@ public class CarVisual : MeshedGameObject, IDisposable
         Chips.GameTick();
         Sparks.GameTick();
         Sfx?.Tick(_car.Control, _car.CarPhysics, _car.Stats);
+
+        IterateFix();
+    }
+
+    private void IterateFix()
+    {
+        if (_fixing)
+        {
+            if (++_fixTick == Physics.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
+            {
+                _fixTick = 0;
+                
+                if (Mesh.PolyFixState == 1)
+                {
+                    Mesh.PolyFixState = 2;
+                }
+
+                if (Mesh.PolyFixState == 3)
+                {
+                    Mesh.PolyFixState = 2;
+                }
+
+                if (_fixTimer == 1)
+                {
+                    Mesh.PolyFixState = 1;
+                }
+
+                if (_fixTimer == 2)
+                {
+                    Mesh.PolyFixState = 1;
+                }
+
+                if (_fixTimer == 4)
+                {
+                    Mesh.PolyFixState = 3;
+                }
+
+                if ((_fixTimer == 1 || _fixTimer > 2) && _fixTimer != 9)
+                {
+                    FixFlare.SetFixFx(_fixTimer);
+                }
+                else
+                {
+                    FixFlare.DeleteFixFx();
+                }
+
+                if (_fixTimer > 7)
+                {
+                    Mesh.PolyFixState = 0;
+                    _fixTimer = 0;
+                    _fixing = false;
+                    FixFlare.DeleteFixFx();
+                }
+                else
+                {
+                    _fixTimer++;
+                }
+            }
+        }
     }
 
     public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
@@ -175,6 +246,7 @@ public class CarVisual : MeshedGameObject, IDisposable
             Dust.Render(camera);
             Chips.Render(camera);
             Sparks.Render(camera);
+            FixFlare.Render(camera);
         }
     }
 

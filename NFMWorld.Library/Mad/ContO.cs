@@ -62,11 +62,6 @@ public readonly struct ContO
     public readonly InlineArray4<int> Keyx;
     public readonly InlineArray4<int> Keyz;
 
-    public int Fcnt
-    {
-        get => 0;
-        set { }
-    } // TODO car fixed ticks
     public int MaxR => _car.MaxRadius;
 
     public ContO(IInGameCar car)
@@ -80,17 +75,17 @@ public readonly struct ContO
         }
     }
 
-    public void DamageX(CarStats stat, int wheelnum, fix64 amount)
+    public void DamageX(int wheelnum, fix64 amount)
     {
-        _car.DamageX(stat, wheelnum, amount);
+        _car.DamageX(wheelnum, amount);
     }
-    public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
+    public void DamageY(int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash)
     {
-        _car.DamageY(stat, wheelnum, amount, mtouch, nbsq, squash);
+        _car.DamageY(wheelnum, amount, mtouch, nbsq, squash);
     }
-    public void DamageZ(CarStats stat, int wheelnum, fix64 amount)
+    public void DamageZ(int wheelnum, fix64 amount)
     {
-        _car.DamageZ(stat, wheelnum, amount);
+        _car.DamageZ(wheelnum, amount);
     }
 
     public void Dust(int wheelidx, fix64 wheelx, fix64 wheely, fix64 wheelz, int scx, int scz, fix64 simag, int tilt, bool onRoof, int wheelGround)

@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿﻿﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Rad;
 
@@ -55,20 +55,20 @@ public class Submesh : IInstancedRenderElement, IDisposable
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
         
         // If a parameter is null that means the HLSL compiler optimized it out.
-        Effects.Poly.SnapColor?.SetValue((Vector3)World.Snap);
+        Effects.Poly.SnapColor?.SetValue(World.Snap);
         Effects.Poly.IsFullbright?.SetValue((PolyType is PolyType.BrakeLight or PolyType.Light or PolyType.ReverseLight && World.LightsOn));
         Effects.Poly.UseBaseColor?.SetValue(PolyType is PolyType.Glass or PolyType.CGround);
         if (PolyType is PolyType.CGround) // SRC extension
         {
-            Effects.Poly.BaseColor?.SetValue((Vector3)World.GroundColor);
+            Effects.Poly.BaseColor?.SetValue(World.GroundColor);
         }
         else
         {
-            Effects.Poly.BaseColor?.SetValue((Vector3)World.Sky);
+            Effects.Poly.BaseColor?.SetValue(World.Sky);
         }
 
         Effects.Poly.LightDirection?.SetValue(World.LightDirection);
-        Effects.Poly.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
+        Effects.Poly.FogColor?.SetValue(World.Fog.Snap(World.Snap));
         Effects.Poly.FogDistance?.SetValue(World.FadeFrom);
         Effects.Poly.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1f));
         Effects.Poly.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
@@ -90,6 +90,25 @@ public class Submesh : IInstancedRenderElement, IDisposable
             Effects.Poly.Projection?.SetValue(camera.ProjectionMatrix);
             Effects.Poly.CameraPosition?.SetValue(camera.Position);
             Effects.Poly.ViewProj?.SetValue(camera.ViewMatrix * camera.ProjectionMatrix);
+        }
+
+        if (_supermesh.PolyFixState > 0)
+        {
+            const float hsb0 = 0.57F;
+            const float hsb2 = 0.8F;
+            const float hsb1 = 0.8F;
+            var color = Color3.FromHSB(hsb0, hsb1, hsb2);
+            var r = (short) (color.R + color.R * (World.Snap[0] / 100.0F));
+            if (r > 255) r = 255;
+            if (r < 0) r = 0;
+            var g = (short) (color.G + color.G * (World.Snap[1] / 100.0F));
+            if (g > 255) g = 255;
+            if (g < 0) g = 0;
+            var b = (short) (color.B + color.B * (World.Snap[2] / 100.0F));
+            if (b > 255) b = 255;
+            if (b < 0) b = 0;
+            Effects.Poly.UseBaseColor?.SetValue(true);
+            Effects.Poly.BaseColor?.SetValue(new Color3(r, g, b));
         }
 
         Effects.Poly.CurrentTechnique = lighting?.IsCreateShadowMap == true ? Effects.Poly.Techniques["CreateShadowMap"] : Effects.Poly.Techniques["Basic"];

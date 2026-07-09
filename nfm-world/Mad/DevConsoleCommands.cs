@@ -117,6 +117,14 @@ public static class DevConsoleCommands
         console.RegisterCommand("music_remastered", RemasteredMusic);
 
 #if DEBUG
+        console.RegisterCommand("fix", (c, args) =>
+        {
+            if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
+            {
+                var car = inRacePhase.CarsInRace[0];
+                car.Fix();
+            }
+        });
         console.RegisterCommand("xaml_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
         console.RegisterCommand("debugui", (console, args) =>
         {
@@ -305,7 +313,7 @@ public static class DevConsoleCommands
             var visual = inRacePhase.GetCarVisual(0);
             var stats = car.Stats;
             var nbsq = 0;
-            var squash = inRacePhase.CarsInRace[0].CarPhysics.Squash;
+            var squash = inRacePhase.CarsInRace[0].CarPhysics.RoofDamage;
             var mtouch = inRacePhase.CarsInRace[0].CarPhysics.Mtouch;
             MeshDamage.DamageY(stats, car, visual, 0, amount, mtouch, ref nbsq, ref squash);
             MeshDamage.DamageY(stats, car, visual, 1, amount, mtouch, ref nbsq, ref squash);

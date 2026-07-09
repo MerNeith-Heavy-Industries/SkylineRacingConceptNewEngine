@@ -37,13 +37,14 @@ class SimCar : IInGameCar
     // IInGameCar
     public CarPhysics CarPhysics { get; }
     public Control Control { get; } = new Control();
-    public ushort currentCheckpoint { get; set; }
-    public byte currentLap { get; set; }
-    public int totalCheckpoint { get; set; }
-    public int lastCheckpointNode { get; set; } = -1;
-    public int placement { get; set; }
+    public ushort CurrentCheckpoint { get; set; }
+    public byte CurrentLap { get; set; }
+    public int TotalCheckpoint { get; set; }
+    public int LastCheckpointNode { get; set; } = -1;
+    public int Placement { get; set; }
     public bool Wasted => false;
     public BaseAi? Bot { get; set; }
+    public bool FinishedFix => false;
 
     public PlayerParameters Player { get; } = new PlayerParameters()
     {
@@ -59,15 +60,17 @@ class SimCar : IInGameCar
     public event DamageFunc? DamagedZ;
     public event SparkFunc? Sparked;
     public event DustFunc? Dusted;
+    public event Action? Fixed;
 
-    public void AddDust(int wheelidx, float wheelx, float wheely, float wheelz, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround) { }
-    public void Spark(float wheelx, float wheely, float wheelz, float scx, float scy, float scz, int type, int wheelGround) { }
-    public void DamageX(CarStats stat, int wheelnum, fix64 amount) { }
-    public void DamageY(CarStats stat, int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash) { }
-    public void DamageZ(CarStats stat, int wheelnum, fix64 amount) { }
+    public void AddDust(int wheelidx, float x, float y, float z, int scx, int scz, float simag, int tilt, bool onRoof, int wheelGround) { }
+    public void Spark(float x, float y, float z, float scx, float scy, float scz, int type, int wheelGround) { }
+    public void DamageX(int wheelnum, fix64 amount) { }
+    public void DamageY(int wheelnum, fix64 amount, bool mtouch, int nbsq, int squash) { }
+    public void DamageZ(int wheelnum, fix64 amount) { }
     public void Drive(IStage stage) { }
     public void Collide(IInGameCar otherCar) { }
     public void ResetPosition() { }
+    public void Fix() { }
 
     public SimCar()
     {
