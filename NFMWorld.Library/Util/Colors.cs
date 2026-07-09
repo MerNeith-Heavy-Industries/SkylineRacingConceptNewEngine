@@ -71,8 +71,8 @@ public class Colors
         }
         else
         {
-            var h = (hue - (float) Math.Floor(hue)) * 6.0f;
-            var f = h - (float) Math.Floor(h);
+            var h = (hue - MathF.Floor(hue)) * 6.0f;
+            var f = h - MathF.Floor(h);
             var p = brightness * (1.0f - saturation);
             var q = brightness * (1.0f - saturation * f);
             var t = brightness * (1.0f - (saturation * (1.0f - f)));
