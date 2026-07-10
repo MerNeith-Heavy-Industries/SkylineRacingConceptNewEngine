@@ -81,10 +81,7 @@ public static class GameSparker
     /// </summary>
     public static bool UseRemasteredMusic = false;
 
-    public static MainMenuPhase MainMenu = null!;
     public static MessageWindow MessageWindow = new();
-    public static ModelEditorPhase ModelEditor = null!;
-    public static StageEditorPhase StageEditor = null!;
 
     public static Dictionary<Rad3d, Mesh> stage_part_meshes = new(Rad3d.VisualEqualityComparer.Instance);
     public static Mesh error_mesh = null!;
@@ -98,6 +95,7 @@ public static class GameSparker
     /////////////////////////////////
 
     public static Dictionary<Key, bool> DebugKeyStates = new();
+    public static MainMenuPhase MainMenuPhase;
 
     public static void KeyPressed(Key key)
     {
@@ -194,17 +192,12 @@ public static class GameSparker
 
         // init menu
         SettingsMenu = new SettingsMenu(game);
-        MainMenu = new MainMenuPhase(GraphicsDevice);
+        MainMenuPhase = new MainMenuPhase(GraphicsDevice);
 
         PhaseSharedState.SelectedStageName = "nfm2/16_4dv";
-        MainMenu.LoadStage(PhaseSharedState.SelectedStageName);
+        MainMenuPhase.LoadStage(PhaseSharedState.SelectedStageName);
         
-        SetPhase(MainMenu);
-
-        // Initialize ModelEditor after cars are loaded
-        ModelEditor = new ModelEditorPhase(GraphicsDevice);
-        
-        StageEditor = new StageEditorPhase(GraphicsDevice);
+        SetPhase(MainMenuPhase);
     }
     
     public static Mesh GetStagePartMesh(Rad3d stagePart)
@@ -220,23 +213,23 @@ public static class GameSparker
 
     public static void StartModelViewer()
     {
-        SetPhase(ModelEditor);
+        SetPhase(new ModelEditorPhase(GraphicsDevice));
     }
     
     public static void ExitEditor()
     {
-        SetPhase(MainMenu);
+        SetPhase(MainMenuPhase);
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        SetPhase(StageEditor);
+        SetPhase(new StageEditorPhase(GraphicsDevice));
     }
-    
+
     public static void ReturnToMainMenu()
     {
-        SetPhase(MainMenu);
+        SetPhase(MainMenuPhase);
     }
 
     public static void GameTick()

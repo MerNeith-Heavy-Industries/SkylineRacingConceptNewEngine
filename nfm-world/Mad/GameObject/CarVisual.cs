@@ -259,6 +259,14 @@ public class CarVisual : MeshedGameObject, IDisposable
         Dust.Dispose();
         Flames.Dispose();
         Sparks.Dispose();
+        FixFlare.Dispose();
+
+        foreach (var wheel in _wheels)
+        {
+            wheel.Mesh.Dispose();
+        }
+
+        Mesh.Dispose();
     }
 
     private void Dispose(bool disposing)

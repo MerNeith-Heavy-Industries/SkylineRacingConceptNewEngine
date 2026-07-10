@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
@@ -12,9 +13,10 @@ namespace NFMWorld;
 Represents a stage. Holds all information relating to track pices, scenery, etc.
 But does NOT hold any information relating to the actual game being played, unless such game affects the layout or scenery of the stage.
 */
-public class ClientStageRenderer : GameObject
+public class ClientStageRenderer : GameObject, IDisposable
 {
     private GraphicsDevice _graphicsDevice;
+    private bool _disposed;
 
     private UnlimitedArray<StageObjectGameObject> checkpoints = [];
     private UnlimitedArray<StageObjectGameObject> fixhoops = [];
@@ -397,4 +399,32 @@ public class ClientStageRenderer : GameObject
             }
         }
     }
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        // Null out environment references so their finalizers can release GPU resources.
+        // These objects (Sky, Ground, GroundPolys, Mountains) only have finalizers,
+        // not public Dispose methods. Letting them go out of scope allows GC to collect them.
+        sky = null;
+        ground = null;
+        polys = null;
+        clouds = null;
+        mountains = null;
+
+        _cachedObjects.Clear();
+        _mutableChildren.Clear();
+        checkpoints.Clear();
+        fixhoops.Clear();
+
+        GC.SuppressFinalize(this);
+    }
+
+    #endregion
 }

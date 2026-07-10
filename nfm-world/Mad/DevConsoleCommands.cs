@@ -619,8 +619,7 @@ public static class DevConsoleCommands
             return;
         }
 
-        //GameSparker.MainMenu = new MainMenuPhase();
-        GameSparker.SetPhase(GameSparker.MainMenu);
+        GameSparker.SetPhase(GameSparker.MainMenuPhase);
         IBackend.Backend.StopAllSounds();
             
         Logging.Info("Returned to main menu.");

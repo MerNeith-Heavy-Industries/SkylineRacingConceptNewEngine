@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Specialized;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -11,12 +12,13 @@ namespace NFMWorld;
 /// and adds rendering (stage geometry, cars, scene management). Owns camera and light setup.
 /// Fully self-contained — constructed once per phase; car visuals are synced lazily each tick.
 /// </summary>
-public class ClientStage
+public class ClientStage : IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly Dictionary<IInGameCar, CarVisual> _carVisuals = new();
     private ObservableUnlimitedArray<IInGameCar> _cars;
     private Scene _scene;
+    private bool _disposed;
 
     public BackendStage Backend { get; }
     public ClientStageRenderer Renderer { get; }
@@ -200,4 +202,27 @@ public class ClientStage
         _scene.ActiveCamera = Camera;
         _scene.Render(alpha, useShadowMapping, clearRenderBuffer);
     }
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        _cars.CollectionChanged -= CarsOnCollectionChanged;
+
+        foreach (var visual in _carVisuals.Values)
+            visual.Dispose();
+        _carVisuals.Clear();
+
+        _scene.Dispose();
+        Renderer.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
+    #endregion
 }

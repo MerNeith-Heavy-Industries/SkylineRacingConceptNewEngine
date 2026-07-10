@@ -7,8 +7,10 @@ using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
-public abstract class BasePhase
+public abstract class BasePhase : IDisposable
 {
+    public virtual bool IsSingleton => false;
+    
     protected List<UIManager> Uis = [];
     
     public FocusManager FocusManager { get; } = new();
@@ -81,6 +83,10 @@ public abstract class BasePhase
     {
         FocusManager.ClearHover();
         FocusManager.ClearFocus();
+        if (!IsSingleton)
+        {
+            Dispose();
+        }
     }
 
     /// <summary>
@@ -214,5 +220,28 @@ public abstract class BasePhase
 
     public virtual void WindowSizeChanged(int width, int height)
     {
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~BasePhase()
+    {
+        Dispose(false);
     }
 }
