@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using HoleyDiver;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary.Rad;
 
@@ -202,37 +203,36 @@ public class Mesh : IDisposable
         BuildMesh(GraphicsDevice);
     }
 
-    public IEnumerable<(IInstancedRenderElement Element, ushort RenderOrder)> GetRenderables(Lighting? lighting, bool finish)
+    public void SubmitRenderables(RenderQueue queue, Lighting? lighting, bool finish, BoundingSphere boundingSphere, RenderBucket renderBucket, Matrix matrixWorld, bool getsShadowed = false, float alphaOverride = 1.0f, bool isFullbright = false, bool glow = false)
     {
+        var instanceData = new InstanceData(matrixWorld, getsShadowed, alphaOverride, isFullbright, glow);
+
         foreach (var submesh in Submeshes)
         {
             // we care about the order of drawn submeshes only if we dont have an alpha override
-            if (submesh != null &&
-                submesh.PolyType != PolyType.Glass &&
-                (submesh.PolyType != PolyType.Finish || finish))
+            if (submesh != null && (submesh.PolyType != PolyType.Finish || finish))
             {
-                yield return (submesh, 0);
+                queue.AddInstanced(
+                    submesh,
+                    instanceData,
+                    SortKey.Create(renderBucket, (ushort)(alphaOverride < 1f || submesh.PolyType == PolyType.Glass ? 1 : 0)),
+                    boundingSphere);
             }
         }
 
-        if (lighting?.IsCreateShadowMap != true)
+        if (lighting?.IsCreateShadowMap != true && LineMeshes != null)
         {
-            if (LineMeshes != null)
+            foreach (var lineMesh in LineMeshes)
             {
-                foreach (var lineMesh in LineMeshes)
+                if (lineMesh != null)
                 {
-                    if (lineMesh != null)
-                    {
-                        yield return (lineMesh, 0);
-                    }
+                    queue.AddInstanced(
+                        lineMesh,
+                        instanceData,
+                        SortKey.Create(renderBucket, (ushort)(alphaOverride < 1f ? 1 : 0)),
+                        boundingSphere);
                 }
             }
-        }
-        
-        // Render glass (translucency) last if it is the only translucent thing
-        if (Submeshes[(int)PolyType.Glass] is {} glassSubmesh)
-        {
-            yield return (glassSubmesh, 1);
         }
     }
 

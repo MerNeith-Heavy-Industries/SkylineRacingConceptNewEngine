@@ -203,10 +203,9 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     }
 
     [MemberNotNull(nameof(_camera))]
-    [MemberNotNull(nameof(_lighting))]
     private void CheckBegin()
     {
-        if (_camera is null || _lighting is null)
+        if (_camera is null)
         {
             ThrowNotBeganYet();
         }
@@ -279,7 +278,7 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
         return true;
     }
 
-    public void Begin(Camera camera, Lighting lighting)
+    public void Begin(Camera camera, Lighting? lighting)
     {
         _camera = camera;
         _lighting = lighting;
