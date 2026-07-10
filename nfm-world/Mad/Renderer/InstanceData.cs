@@ -24,4 +24,8 @@ public struct InstanceData(Matrix world, bool getsShadowed = false, float alphaO
     public override bool Equals(object? obj) => obj is InstanceData other && Equals(other);
 
     public override int GetHashCode() => HashCode.Combine(World, AdditionalData);
+
+    public static bool operator ==(InstanceData left, InstanceData right) => left.Equals(right);
+
+    public static bool operator !=(InstanceData left, InstanceData right) => !(left == right);
 }
