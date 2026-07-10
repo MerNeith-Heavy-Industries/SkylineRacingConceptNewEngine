@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Ground : Transform, IRenderable, IImmediateRenderElement
+public class Ground : Transform, IRenderable, IImmediateRenderElement, IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -38,7 +38,7 @@ public class Ground : Transform, IRenderable, IImmediateRenderElement
     
     ~Ground()
     {
-        _vertexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
@@ -69,5 +69,24 @@ public class Ground : Transform, IRenderable, IImmediateRenderElement
         }
 
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _vertexBuffer.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Sky : Transform, IRenderable, IImmediateRenderElement
+public class Sky : Transform, IRenderable, IImmediateRenderElement, IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -69,9 +69,9 @@ public class Sky : Transform, IRenderable, IImmediateRenderElement
 
     ~Sky()
     {
-        _vertexBuffer.Dispose();
+        Dispose(false);
     }
-    
+
     public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
         if (pass.IsShadow) return;
@@ -114,5 +114,24 @@ public class Sky : Transform, IRenderable, IImmediateRenderElement
         }
 
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _vertexBuffer.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

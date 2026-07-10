@@ -4,7 +4,7 @@ using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
 
-public class GroundPolys : Transform, IRenderable, IImmediateRenderElement
+public class GroundPolys : Transform, IRenderable, IImmediateRenderElement, IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -61,8 +61,7 @@ public class GroundPolys : Transform, IRenderable, IImmediateRenderElement
     
     ~GroundPolys()
     {
-        _vertexBuffer.Dispose();
-        _indexBuffer.Dispose();
+        Dispose(false);
     }
 
     public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
@@ -94,5 +93,25 @@ public class GroundPolys : Transform, IRenderable, IImmediateRenderElement
         }
 
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _vertexBuffer.Dispose();
+            _indexBuffer.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

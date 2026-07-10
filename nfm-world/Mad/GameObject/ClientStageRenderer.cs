@@ -18,9 +18,6 @@ public class ClientStageRenderer : GameObject, IDisposable
     private GraphicsDevice _graphicsDevice;
     private bool _disposed;
 
-    private UnlimitedArray<StageObjectGameObject> checkpoints = [];
-    private UnlimitedArray<StageObjectGameObject> fixhoops = [];
-    
     public Sky? sky;
     public Ground? ground;
     public GroundPolys? polys;
@@ -73,6 +70,7 @@ public class ClientStageRenderer : GameObject, IDisposable
 
             if (stageLoader.DrawPolys)
             {
+                polys?.Dispose();
                 polys = Environment.MakePolys(backendStage, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount, graphicsDevice);
                 _polysKey = (stageLoader.DrawPolys, stageLoader.maxl, stageLoader.maxr - stageLoader.maxl, stageLoader.maxb, stageLoader.maxt - stageLoader.maxb, backendStage.stagePartCount);
             }
@@ -83,6 +81,7 @@ public class ClientStageRenderer : GameObject, IDisposable
 
             if (stageLoader.DrawClouds)
             {
+                clouds?.Dispose();
                 clouds = Environment.MakeClouds(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, graphicsDevice);
                 _cloudsKey = (stageLoader.DrawClouds, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
             }
@@ -93,6 +92,7 @@ public class ClientStageRenderer : GameObject, IDisposable
 
             if (stageLoader.DrawMountains)
             {
+                mountains?.Dispose();
                 mountains = Environment.MakeMountains(stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt, graphicsDevice);
                 _mountainsKey = (stageLoader.DrawMountains, stageLoader.maxl, stageLoader.maxr, stageLoader.maxb, stageLoader.maxt);
             }
@@ -115,8 +115,6 @@ public class ClientStageRenderer : GameObject, IDisposable
                             Parent = this
                         };
                         _mutableChildren.Add(clientObj);
-
-                        checkpoints.Add(clientObj);
                         
                         _cachedObjects[obj] = clientObj;
                     }
@@ -127,8 +125,6 @@ public class ClientStageRenderer : GameObject, IDisposable
                             Parent = this
                         };
                         _mutableChildren.Add(clientObj);
-
-                        fixhoops.Add(clientObj);
                         
                         _cachedObjects[obj] = clientObj;
                     }
@@ -226,8 +222,6 @@ public class ClientStageRenderer : GameObject, IDisposable
                     };
                     _mutableChildren.Add(clientObj);
 
-                    checkpoints.Add(clientObj);
-                    
                     _cachedObjects[obj] = clientObj;
                 }
                 else if (obj.Kind == AiNodeKind.FixHoop)
@@ -238,8 +232,6 @@ public class ClientStageRenderer : GameObject, IDisposable
                     };
                     _mutableChildren.Add(clientObj);
 
-                    fixhoops.Add(clientObj);
-                    
                     _cachedObjects[obj] = clientObj;
                 }
                 else
@@ -262,8 +254,6 @@ public class ClientStageRenderer : GameObject, IDisposable
             if (!seenObjects.Contains(obj))
             {
                 _mutableChildren.Remove(clientObj);
-                checkpoints.Remove(clientObj);
-                fixhoops.Remove(clientObj);
                 objsToRemove.Add(obj);
             }
         }
@@ -364,39 +354,30 @@ public class ClientStageRenderer : GameObject, IDisposable
 
     public void ResetCheckpointGlow()
     {
-        foreach (var checkpoint in checkpoints)
+        foreach (var checkpoint in _mutableChildren)
         {
-            checkpoint.Glow = false;
-            checkpoint.Finish = false;
+            if (checkpoint is StageObjectGameObject stageObjectGameObject)
+            {
+                stageObjectGameObject.Glow = false;
+                stageObjectGameObject.Finish = false;
+            }
         }
     }
 
     public void UpdateCheckpointGlow(ushort currentCheckpoint, bool isFinish)
     {
-        if (checkpoints.Count > 0)
+        var checkpointStageObject = backendStage.checkpoints[currentCheckpoint];
+        
+        ResetCheckpointGlow();
+
+        if (_cachedObjects.TryGetValue(checkpointStageObject, out var gameObject))
         {
             if (isFinish)
             {
-                checkpoints[^1].Finish = true;
+                gameObject.Finish = true;
             }
-            else
-            {
-                checkpoints[^1].Finish = false;
-            }
-
-            if (currentCheckpoint > 0)
-            {
-                checkpoints[currentCheckpoint - 1].Glow = false;
-            }
-            else
-            {
-                checkpoints[^1].Glow = false;
-            }
-
-            if (currentCheckpoint < checkpoints.Count)
-            {
-                checkpoints[currentCheckpoint].Glow = true;
-            }
+            
+            gameObject.Glow = true;
         }
     }
 
@@ -412,16 +393,14 @@ public class ClientStageRenderer : GameObject, IDisposable
         // Null out environment references so their finalizers can release GPU resources.
         // These objects (Sky, Ground, GroundPolys, Mountains) only have finalizers,
         // not public Dispose methods. Letting them go out of scope allows GC to collect them.
-        sky = null;
-        ground = null;
-        polys = null;
-        clouds = null;
-        mountains = null;
+        sky?.Dispose();
+        ground?.Dispose();
+        polys?.Dispose();
+        clouds?.Dispose();
+        mountains?.Dispose();
 
         _cachedObjects.Clear();
         _mutableChildren.Clear();
-        checkpoints.Clear();
-        fixhoops.Clear();
 
         GC.SuppressFinalize(this);
     }
