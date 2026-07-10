@@ -31,7 +31,7 @@ public class ImmediateMesh : Mesh, IRenderable
     {
         foreach (var (element, renderOrder) in GetRenderables(lighting, false).OrderBy(x => x.RenderOrder))
         {
-            queue.AddInstanced(element, new InstanceData(Matrix.Identity), renderOrder);
+            queue.AddInstanced(element, new InstanceData(Matrix.Identity), SortKey.Create(RenderBucket.StagePieces, renderOrder));
         }
     }
 }

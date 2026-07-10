@@ -188,7 +188,7 @@ public class FixHoop : StageObjectGameObject, IImmediateRenderElement
 
         if (!pass.IsShadow)
         {
-            queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.FixHoopElectricity), this);
+            queue.AddImmediate(SortKey.Create(RenderBucket.FixHoopElectricity), this);
         }
     }
 

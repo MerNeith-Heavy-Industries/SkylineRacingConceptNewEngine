@@ -202,7 +202,7 @@ public class Mesh : IDisposable
         BuildMesh(GraphicsDevice);
     }
 
-    public IEnumerable<(IInstancedRenderElement Element, int RenderOrder)> GetRenderables(Lighting? lighting, bool finish)
+    public IEnumerable<(IInstancedRenderElement Element, ushort RenderOrder)> GetRenderables(Lighting? lighting, bool finish)
     {
         foreach (var submesh in Submeshes)
         {

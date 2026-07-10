@@ -21,14 +21,16 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
         public int HashCode;
     }
 
-    /// <summary>Outer key = RenderOrder, inner key = IInstancedRenderElement.</summary>
-    private readonly SortedDictionary<int, Dictionary<IInstancedRenderElement, CachedInstancedGroup>> _instancedCache = new();
+    private class DrawCallList
+    {
+        public List<IImmediateRenderElement>? ImmediateDraws;
+        public Dictionary<IInstancedRenderElement, CachedInstancedGroup>? InstancedDraws;
+    }
+
+    private readonly Dictionary<SortKey, DrawCallList> _draws = new();
+    private List<SortKey> _sortKeys = [];
 
     private readonly List<IInstancedRenderElement> _elementsToPrune = [];
-
-    // ── Immediate queue ──
-
-    private readonly List<(SortKey Key, IImmediateRenderElement Element)> _immediateDraws = [];
 
     // ── Public API ──
 
@@ -38,48 +40,53 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     /// </summary>
     public void Clear()
     {
-        foreach (var (_, innerCache) in _instancedCache)
+        foreach (var (_, drawCall) in _draws)
         {
-            _elementsToPrune.Clear();
-            foreach (var (element, group) in innerCache)
+            if (drawCall.InstancedDraws is {} instancedDraws)
             {
-                if (group.Instances.Count == 0)
+                _elementsToPrune.Clear();
+                foreach (var (element, group) in instancedDraws)
                 {
-                    _elementsToPrune.Add(element);
+                    if (group.Instances.Count == 0)
+                    {
+                        _elementsToPrune.Add(element);
+                    }
+                    else
+                    {
+                        CollectionsMarshal.SetCount(group.Instances, 0);
+                    }
                 }
-                else
-                {
-                    CollectionsMarshal.SetCount(group.Instances, 0);
-                }
-            }
 
-            foreach (var element in _elementsToPrune)
-            {
-                if (innerCache.TryGetValue(element, out var group))
+                foreach (var element in _elementsToPrune)
                 {
-                    group.VertexBuffer?.Dispose();
-                    innerCache.Remove(element);
+                    if (drawCall.InstancedDraws.TryGetValue(element, out var group))
+                    {
+                        group.VertexBuffer?.Dispose();
+                        drawCall.InstancedDraws.Remove(element);
+                    }
                 }
             }
+            
+            drawCall.ImmediateDraws?.Clear();
         }
-
-        _immediateDraws.Clear();
     }
 
     /// <summary>
     /// Queue an instanced draw. Draws with the same <paramref name="element"/> and
-    /// <paramref name="renderOrder"/> are batched into a single GPU instanced draw call.
+    /// <paramref name="key"/> are batched into a single GPU instanced draw call.
     /// </summary>
-    public void AddInstanced(IInstancedRenderElement element, in InstanceData data, int renderOrder = 0)
+    public void AddInstanced(IInstancedRenderElement element, in InstanceData data, SortKey key)
     {
-        if (!_instancedCache.TryGetValue(renderOrder, out var innerCache))
+        ref var innerCache = ref CollectionsMarshal.GetValueRefOrAddDefault(_draws, key, out var exists);
+        if (!exists)
         {
-            _instancedCache[renderOrder] = innerCache =
-                new Dictionary<IInstancedRenderElement, CachedInstancedGroup>();
+            innerCache = new DrawCallList();
         }
 
-        ref var entry = ref CollectionsMarshal.GetValueRefOrAddDefault(innerCache, element, out var exists);
-        if (!exists)
+        var instancedDraws = innerCache!.InstancedDraws ??= [];
+
+        ref var entry = ref CollectionsMarshal.GetValueRefOrAddDefault(instancedDraws, element, out var exists1);
+        if (!exists1)
         {
             entry = new CachedInstancedGroup([data]);
         }
@@ -95,95 +102,81 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     /// </summary>
     public void AddImmediate(SortKey sortKey, IImmediateRenderElement element)
     {
-        _immediateDraws.Add((sortKey, element));
+        ref var values = ref CollectionsMarshal.GetValueRefOrAddDefault(_draws, sortKey, out var exists);
+        if (!exists)
+        {
+            values = new DrawCallList();
+        }
+        
+        var immediateDraws = values!.ImmediateDraws ??= [];
+        immediateDraws.Add(element);
     }
 
     /// <summary>
-    /// Execute all queued draws in the correct order:
-    /// 1. Opaque immediate draws (environment — behind geometry)
-    /// 2. Instanced batches (sorted by render order)
-    /// 3. PostOpaque immediate draws (depth-read-only — on top of stage, below cars)
-    /// 4. Transparent immediate draws (effects — in front of everything)
+    /// Execute all queued draws in the correct order
     /// </summary>
     public void Flush(Camera camera, Lighting? lighting)
     {
-        // Sort immediate draws by SortKey (opaque < postOpaque < transparent, then by material/depth)
-        if (_immediateDraws.Count > 0)
+        _sortKeys.Clear();
+        _sortKeys.AddRange(_draws.Keys);
+        _sortKeys.Sort();
+        
+        foreach (var sortKey in _sortKeys)
         {
-            _immediateDraws.Sort(static (a, b) => a.Key.CompareTo(b.Key));
-        }
-
-        // 1. Draw opaque immediate draws (environment: Sky, Ground, GroundPolys, Mountains)
-        var i = 0;
-        while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.Opaque)
-        {
-            _immediateDraws[i].Element.Render(camera, lighting);
-            i++;
-        }
-
-        // 2. Draw instanced batches interleaved with PostOpaque:
-        //    renderOrder 0 (stage) → PostOpaque (FixFlare) → renderOrder 1+ (cars, glass)
-        var firstRenderOrder = true;
-        foreach (var (_, innerCache) in _instancedCache)
-        {
-            foreach (var (renderElement, cachedGroup) in innerCache)
+            var draw = _draws[sortKey];
+            
+            // draw immediates
+            if (draw.ImmediateDraws is { } immediateDraws)
             {
-                var instances = cachedGroup.Instances;
-                if (instances.Count == 0)
-                    continue;
-
-                var oldInstances = cachedGroup.OldInstances;
-                var currentHashCode = GetInstanceDataHashCode(CollectionsMarshal.AsSpan(instances));
-
-                if (cachedGroup.VertexBuffer == null ||
-                    currentHashCode != cachedGroup.HashCode ||
-                    !AreInstanceDataListsEqual(
-                        CollectionsMarshal.AsSpan(instances),
-                        CollectionsMarshal.AsSpan(oldInstances)))
+                foreach (var element in immediateDraws)
                 {
-                    var instanceSpan = CollectionsMarshal.AsSpan(instances);
+                    element.Render(camera, lighting);
+                }
+            }
+            
+            // draw instanced batches
+            if (draw.InstancedDraws is { } instancedDraws)
+            {
+                foreach (var (renderElement, cachedGroup) in instancedDraws)
+                {
+                    var instances = cachedGroup.Instances;
+                    if (instances.Count == 0)
+                        continue;
+
+                    var oldInstances = cachedGroup.OldInstances;
+                    var currentHashCode = GetInstanceDataHashCode(CollectionsMarshal.AsSpan(instances));
 
                     if (cachedGroup.VertexBuffer == null ||
-                        cachedGroup.VertexBuffer.VertexCount < instances.Count)
+                        currentHashCode != cachedGroup.HashCode ||
+                        !AreInstanceDataListsEqual(
+                            CollectionsMarshal.AsSpan(instances),
+                            CollectionsMarshal.AsSpan(oldInstances)))
                     {
-                        cachedGroup.VertexBuffer?.Dispose();
-                        cachedGroup.VertexBuffer = new DynamicVertexBuffer(
-                            graphicsDevice, InstanceData.InstanceDeclaration,
-                            instances.Count, BufferUsage.WriteOnly)
+                        var instanceSpan = CollectionsMarshal.AsSpan(instances);
+
+                        if (cachedGroup.VertexBuffer == null ||
+                            cachedGroup.VertexBuffer.VertexCount < instances.Count)
                         {
-                            Name = "Instance Data Vertex Buffer",
-                            Tag = this
-                        };
+                            cachedGroup.VertexBuffer?.Dispose();
+                            cachedGroup.VertexBuffer = new DynamicVertexBuffer(
+                                graphicsDevice, InstanceData.InstanceDeclaration,
+                                instances.Count, BufferUsage.WriteOnly)
+                            {
+                                Name = "Instance Data Vertex Buffer",
+                                Tag = this
+                            };
+                        }
+
+                        cachedGroup.VertexBuffer.SetDataEXT(instanceSpan, SetDataOptions.Discard);
+                        cachedGroup.HashCode = currentHashCode;
+
+                        CollectionsMarshal.SetCount(oldInstances, instances.Count);
+                        instanceSpan.CopyTo(CollectionsMarshal.AsSpan(oldInstances));
                     }
 
-                    cachedGroup.VertexBuffer.SetDataEXT(instanceSpan, SetDataOptions.Discard);
-                    cachedGroup.HashCode = currentHashCode;
-
-                    CollectionsMarshal.SetCount(oldInstances, instances.Count);
-                    instanceSpan.CopyTo(CollectionsMarshal.AsSpan(oldInstances));
-                }
-
-                renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
-            }
-
-            // After the first (lowest) renderOrder, flush PostOpaque immediate draws
-            // so they sit on top of stage pieces but below cars
-            if (firstRenderOrder)
-            {
-                firstRenderOrder = false;
-                while (i < _immediateDraws.Count && _immediateDraws[i].Key.Bucket == RenderBucket.PostOpaque)
-                {
-                    _immediateDraws[i].Element.Render(camera, lighting);
-                    i++;
+                    renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
                 }
             }
-        }
-
-        // 3. Draw transparent immediate draws (effects: Flames, Dust, Chips, Sparks)
-        while (i < _immediateDraws.Count)
-        {
-            _immediateDraws[i].Element.Render(camera, lighting);
-            i++;
         }
     }
 
@@ -202,19 +195,27 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
 
     private void Dispose(bool disposing)
     {
-        foreach (var (_, innerCache) in _instancedCache)
-        foreach (var (_, group) in innerCache)
+        foreach (var (_, innerCache) in _draws)
         {
-            group.VertexBuffer?.Dispose();
+            if (innerCache.InstancedDraws is { } instances)
+            {
+                foreach (var (_, group) in instances)
+                {
+                    group.VertexBuffer?.Dispose();
+                }
+            }
         }
 
-        _instancedCache.Clear();
-        _immediateDraws.Clear();
+        if (disposing)
+        {
+            _draws.Clear();
+            _sortKeys.Clear();
+        }
     }
 
     // ── Hash / equality helpers ──
 
-    private static int GetInstanceDataHashCode(ReadOnlySpan<InstanceData> data)
+    private static int GetInstanceDataHashCode<T>(ReadOnlySpan<T> data) where T : notnull
     {
         var hc = data.Length;
         foreach (ref readonly var val in data)
@@ -225,7 +226,7 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
         return hc;
     }
 
-    private static bool AreInstanceDataListsEqual(ReadOnlySpan<InstanceData> a, ReadOnlySpan<InstanceData> b)
+    private static bool AreInstanceDataListsEqual<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull
     {
         if (a.Length != b.Length)
             return false;

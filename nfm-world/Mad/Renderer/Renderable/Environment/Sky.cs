@@ -76,7 +76,7 @@ public class Sky : Transform, IRenderable, IImmediateRenderElement
     {
         if (pass.IsShadow) return;
 
-        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.Sky), this);
+        queue.AddImmediate(SortKey.Create(RenderBucket.Sky), this);
     }
 
     public void Render(Camera cam, Lighting? _)
