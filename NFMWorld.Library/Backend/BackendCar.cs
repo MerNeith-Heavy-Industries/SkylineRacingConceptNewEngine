@@ -3,6 +3,7 @@ using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Rad;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary.Backend;
 

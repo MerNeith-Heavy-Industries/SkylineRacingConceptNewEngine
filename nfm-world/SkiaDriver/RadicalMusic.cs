@@ -3,6 +3,7 @@ using ManagedBass;
 using ManagedBass.Fx;
 using NFMWorld.DriverInterface;
 using NFMWorldLibrary;
+using NFMWorld.Sentry;
 
 namespace NFMWorld.SkiaDriver;
 

@@ -27,7 +27,6 @@ public static class Logging
                 options.FormatterName = RayLogConsoleFormatter.FormatterName;
             })
             .AddConsoleFormatter<RayLogConsoleFormatter, ConsoleFormatterOptions>()
-            .AddSentry(o => o.Dsn = SentryDsn)
             .AddZLoggerRollingFile((dt, index) => $"{dt:yyyy-MM-dd}_{index}.log", 1024 * 1024)
             .AddProvider(new NfmwLoggerProvider())
             .SetMinimumLevel(

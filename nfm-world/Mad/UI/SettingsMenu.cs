@@ -9,6 +9,7 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
 using SDL3;
 using WorldXaml.UI.Yoga.Events;
+using NFMWorld.Sentry;
 
 namespace NFMWorld.UI;
 

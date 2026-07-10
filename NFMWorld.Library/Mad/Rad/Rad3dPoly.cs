@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using HoleyDiver;
 using MemoryPack;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary.Rad;
 

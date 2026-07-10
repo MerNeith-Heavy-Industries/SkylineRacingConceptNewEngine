@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using NFMWorld.CrashReporter;
+using NFMWorld.Sentry;
 
 var dsn = args[0];
 var release = args[1];
@@ -12,9 +13,7 @@ SentrySdk.Init(options =>
 {
     options.Dsn = dsn;
     options.Debug = true;
-    options.AutoSessionTracking = false;
     options.TracesSampleRate = 0;
-    options.EnableLogs = false;
     options.Release = release;
 });
 
@@ -30,11 +29,13 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 
     if (report.Submitted)
     {
-        SentrySdk.CaptureFeedback(
-            report.Description,
-            report.Email,
-            report.UserName,
-            associatedEventId: SentryId.Parse(eventId));
+        SentrySdk.CaptureFeedback(new SentryFeedback
+        {
+            Comments = report.Description,
+            Email = report.Email,
+            Name = report.UserName,
+            EventId = SentryEventId.Parse(eventId)
+        });
     }
 }
 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -46,11 +47,13 @@ else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 
     if (report.Submitted)
     {
-        SentrySdk.CaptureFeedback(
-            report.Description,
-            report.Email,
-            report.UserName,
-            associatedEventId: SentryId.Parse(eventId));
+        SentrySdk.CaptureFeedback(new SentryFeedback
+        {
+            Comments = report.Description,
+            Email = report.Email,
+            Name = report.UserName,
+            EventId = SentryEventId.Parse(eventId)
+        });
     }
 }
 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -62,11 +65,13 @@ else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 
     if (report.Submitted)
     {
-        SentrySdk.CaptureFeedback(
-            report.Description,
-            report.Email,
-            report.UserName,
-            associatedEventId: SentryId.Parse(eventId));
+        SentrySdk.CaptureFeedback(new SentryFeedback
+        {
+            Comments = report.Description,
+            Email = report.Email,
+            Name = report.UserName,
+            EventId = SentryEventId.Parse(eventId)
+        });
     }
 }
 
