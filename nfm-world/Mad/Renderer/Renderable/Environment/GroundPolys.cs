@@ -69,7 +69,7 @@ public class GroundPolys : Transform, IRenderable, IImmediateRenderElement
     {
         if (pass.IsShadow) return;
 
-        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.GroundPolys), this);
+        queue.AddImmediate(SortKey.Create(RenderBucket.GroundPolys), this);
     }
 
     public void Render(Camera cam, Lighting? lt)

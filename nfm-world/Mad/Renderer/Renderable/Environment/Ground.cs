@@ -45,7 +45,7 @@ public class Ground : Transform, IRenderable, IImmediateRenderElement
     {
         if (pass.IsShadow) return;
 
-        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.Ground), this);
+        queue.AddImmediate(SortKey.Create(RenderBucket.Ground), this);
     }
 
     public void Render(Camera cam, Lighting? lt)

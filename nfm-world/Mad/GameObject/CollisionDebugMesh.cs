@@ -218,7 +218,7 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable, IImmediateRend
 
         if (lineVertexBuffer == null || lineIndexBuffer == null || lineInstanceBuffer == null) return;
 
-        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.CollisionDebugMesh), this);
+        queue.AddImmediate(SortKey.Create(RenderBucket.CollisionDebugMesh), this);
     }
 
     private void ReleaseUnmanagedResources()

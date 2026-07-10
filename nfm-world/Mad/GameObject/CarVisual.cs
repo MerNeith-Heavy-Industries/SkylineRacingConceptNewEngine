@@ -52,9 +52,9 @@ public class CarVisual : MeshedGameObject, IDisposable
             .ToArray();
 
         // Cars (body + wheels) render after stage pieces so FixFlare sits between them
-        RenderOrderOffset = 1;
+        RenderBucket = RenderBucket.Cars;
         foreach (var w in _wheels)
-            w.RenderOrderOffset = 1;
+            w.RenderBucket = RenderBucket.Cars;
 
         Flames = new Flames(this, graphicsDevice);
         Dust = new Dust(this, graphicsDevice);
@@ -233,11 +233,11 @@ public class CarVisual : MeshedGameObject, IDisposable
         // Effects — only during main pass
         if (!pass.IsShadow)
         {
-            queue.AddImmediate(SortKey.ForTransparent(0.95f), Flames);
-            queue.AddImmediate(SortKey.ForTransparent(0.9f), Dust);
-            queue.AddImmediate(SortKey.ForTransparent(0.85f), Chips);
-            queue.AddImmediate(SortKey.ForTransparent(0.5f), Sparks);
-            queue.AddImmediate(SortKey.Create(RenderBucket.PostOpaque, 0), FixFlare);
+            queue.AddImmediate(SortKey.Create(RenderBucket.Flames), Flames);
+            queue.AddImmediate(SortKey.Create(RenderBucket.Dust), Dust);
+            queue.AddImmediate(SortKey.Create(RenderBucket.Chips), Chips);
+            queue.AddImmediate(SortKey.Create(RenderBucket.Sparks), Sparks);
+            queue.AddImmediate(SortKey.Create(RenderBucket.FixFlare), FixFlare);
         }
     }
 

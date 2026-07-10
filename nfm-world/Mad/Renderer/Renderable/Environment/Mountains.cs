@@ -69,7 +69,7 @@ public class Mountains : Transform, IRenderable, IImmediateRenderElement
     {
         if (pass.IsShadow) return;
 
-        queue.AddImmediate(SortKey.ForOpaque(RenderMaterial.Mountains), this);
+        queue.AddImmediate(SortKey.Create(RenderBucket.Mountains), this);
     }
 
     public void Render(Camera cam, Lighting? lt)
