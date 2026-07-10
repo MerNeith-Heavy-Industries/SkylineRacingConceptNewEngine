@@ -71,6 +71,9 @@ public class SettingsMenu(WorldGame game)
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
     private bool _lowLatency = false;
+    private static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
+    private static readonly float[] RenderDistances = [22500, 45000, 90000, 180000, 360000, int.MaxValue];
+    private int _renderDistance = 5; // default to max distance
 
     // Audio settings
     private float _masterVolume = 1.0f;
@@ -288,6 +291,9 @@ public class SettingsMenu(WorldGame game)
         ImGui.Text("Shadow Resolution");
         ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutions, ShadowResolutions.Length);
         
+        ImGui.Text("Render Distance");
+        ImGui.Combo("##RenderDistance", ref _renderDistance, RenderDistanceNames, RenderDistanceNames.Length);
+        
         ImGui.Checkbox("Low Latency (Disable interpolation)", ref _lowLatency);
 
         ImGui.Spacing();
@@ -487,6 +493,7 @@ public class SettingsMenu(WorldGame game)
         CameraSettings.SmoothFov = _smoothFov;
         FollowCamera.FollowYOffset = _followY;
         FollowCamera.FollowZOffset = _followZ;
+        CameraSettings.RenderDistanceSqr = RenderDistances[_renderDistance] * RenderDistances[_renderDistance];
 
         WorldGame.LowLatency = _lowLatency;
 
@@ -629,6 +636,7 @@ public class SettingsMenu(WorldGame game)
                 cfgWriter.WriteLine($"video_shadow_cascade {_shadowCascadeLevel}");
                 cfgWriter.WriteLine($"video_shadow_res {_shadowResolution}");
                 cfgWriter.WriteLine($"video_low_latency {(_lowLatency ? 1 : 0)}");
+                cfgWriter.WriteLine($"video_render_distance {_renderDistance}");
                 cfgWriter.WriteLine();
                 
                 // Audio settings
@@ -816,6 +824,9 @@ public class SettingsMenu(WorldGame game)
                             break;
                         case "video_low_latency":
                             _lowLatency = int.Parse(value) != 0;
+                            break;
+                        case "video_render_distance":
+                            _renderDistance = int.Parse(value, CultureInfo.InvariantCulture);
                             break;
                         
                         // Audio settings

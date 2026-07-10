@@ -1,5 +1,7 @@
-﻿using NFMWorldLibrary;
+﻿using Maxine.Extensions.Mathematics;
+using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
+using BoundingSphere = Microsoft.Xna.Framework.BoundingSphere;
 
 namespace NFMWorld;
 
@@ -57,7 +59,8 @@ public class MeshedGameObject(Mesh mesh) : GameObject
                 actualRenderOrder = 2;
             queue.AddInstanced(element,
                 new InstanceData(MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false),
-                SortKey.Create(RenderBucket, actualRenderOrder));
+                SortKey.Create(RenderBucket, actualRenderOrder),
+                new BoundingSphere(MatrixWorld.Translation, Mesh.MaxRadius));
         }
 
         base.SubmitDraws(queue, camera, lighting, pass);

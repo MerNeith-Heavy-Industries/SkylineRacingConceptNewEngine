@@ -1,6 +1,10 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Maxine.Extensions.Mathematics;
 using Microsoft.Xna.Framework.Graphics;
+using NFMWorldLibrary;
+using BoundingSphere = Microsoft.Xna.Framework.BoundingSphere;
 
 namespace NFMWorld;
 
@@ -31,6 +35,9 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     private List<SortKey> _sortKeys = [];
 
     private readonly List<IInstancedRenderElement> _elementsToPrune = [];
+
+    private Camera? _camera;
+    private Lighting? _lighting;
 
     // ── Public API ──
 
@@ -75,8 +82,21 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     /// Queue an instanced draw. Draws with the same <paramref name="element"/> and
     /// <paramref name="key"/> are batched into a single GPU instanced draw call.
     /// </summary>
-    public void AddInstanced(IInstancedRenderElement element, in InstanceData data, SortKey key)
+    public void AddInstanced(IInstancedRenderElement element, in InstanceData data, SortKey key, BoundingSphere? bsphere = null)
     {
+        CheckBegin();
+        
+        if (bsphere is { } bsphereValue)
+        {
+            // Apply frustum culling
+            if (!_camera.Frustum.Intersects(bsphereValue))
+                return;
+            
+            // Apply distance culling
+            if (Vector3.DistanceSquared(_camera.Position, bsphereValue.Center) > CameraSettings.RenderDistanceSqr + (bsphereValue.Radius * bsphereValue.Radius))
+                return;
+        }
+        
         ref var innerCache = ref CollectionsMarshal.GetValueRefOrAddDefault(_draws, key, out var exists);
         if (!exists)
         {
@@ -115,8 +135,10 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
     /// <summary>
     /// Execute all queued draws in the correct order
     /// </summary>
-    public void Flush(Camera camera, Lighting? lighting)
+    public void Flush()
     {
+        CheckBegin();
+
         _sortKeys.Clear();
         _sortKeys.AddRange(_draws.Keys);
         _sortKeys.Sort();
@@ -130,7 +152,7 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
             {
                 foreach (var element in immediateDraws)
                 {
-                    element.Render(camera, lighting);
+                    element.Render(_camera, _lighting);
                 }
             }
             
@@ -174,9 +196,26 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
                         instanceSpan.CopyTo(CollectionsMarshal.AsSpan(oldInstances));
                     }
 
-                    renderElement.Render(camera, lighting, cachedGroup.VertexBuffer, instances.Count);
+                    renderElement.Render(_camera, _lighting, cachedGroup.VertexBuffer, instances.Count);
                 }
             }
+        }
+    }
+
+    [MemberNotNull(nameof(_camera))]
+    [MemberNotNull(nameof(_lighting))]
+    private void CheckBegin()
+    {
+        if (_camera is null || _lighting is null)
+        {
+            ThrowNotBeganYet();
+        }
+        return;
+        
+        [DoesNotReturn]
+        static void ThrowNotBeganYet()
+        {
+            throw new InvalidOperationException($"Did not call {nameof(RenderQueue)}.{nameof(Begin)} yet");
         }
     }
 
@@ -238,5 +277,11 @@ public class RenderQueue(GraphicsDevice graphicsDevice) : IDisposable
         }
 
         return true;
+    }
+
+    public void Begin(Camera camera, Lighting lighting)
+    {
+        _camera = camera;
+        _lighting = lighting;
     }
 }
