@@ -20,7 +20,7 @@ public delegate void PropertyChangedHandler<in T>(object? context, T oldValue, T
 /// </summary>
 /// <typeparam name="T">The property value type.</typeparam>
 [StructLayout(LayoutKind.Auto)]
-public struct StyledProperty<T>
+public struct StyledProperty<T> : IEquatable<StyledProperty<T>>
 {
     [Flags]
     private enum PropertyFlags
@@ -61,12 +61,6 @@ public struct StyledProperty<T>
     }
 
     /// <summary>
-    /// Implicit conversion from <typeparamref name="T"/> creates a <see cref="StyledProperty{T}"/>
-    /// with the given default value and no change handler.
-    /// </summary>
-    public static implicit operator StyledProperty<T>(T defaultValue) => new(defaultValue);
-
-    /// <summary>
     /// The fallback value used when neither <see cref="StyleValue"/> nor
     /// <see cref="OverrideValue"/> is set.
     /// </summary>
@@ -91,19 +85,15 @@ public struct StyledProperty<T>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => HasStyle ? _styleValue : default!;
-    }
-
-    /// <summary>
-    /// Sets the style-sourced value. Call <see cref="ClearStyleValue"/> to clear.
-    /// </summary>
-    public void SetStyleValue(T value)
-    {
-        if (HasStyle && EqualityComparer<T>.Default.Equals(_styleValue, value))
-            return;
-        var oldComputed = ComputedValue;
-        _styleValue = value;
-        HasStyle = true;
-        NotifyIfChanged(oldComputed);
+        set
+        {
+            if (HasStyle && EqualityComparer<T>.Default.Equals(_styleValue, value))
+                return;
+            var oldComputed = ComputedValue;
+            _styleValue = value;
+            HasStyle = true;
+            NotifyIfChanged(oldComputed);
+        }
     }
 
     /// <summary>
@@ -125,19 +115,15 @@ public struct StyledProperty<T>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => HasOverride ? _overrideValue : default!;
-    }
-
-    /// <summary>
-    /// Sets the explicit override value. Call <see cref="ClearOverrideValue"/> to clear.
-    /// </summary>
-    public void SetOverrideValue(T value)
-    {
-        if (HasOverride && EqualityComparer<T>.Default.Equals(_overrideValue, value))
-            return;
-        var oldComputed = ComputedValue;
-        _overrideValue = value;
-        HasOverride = true;
-        NotifyIfChanged(oldComputed);
+        set
+        {
+            if (HasOverride && EqualityComparer<T>.Default.Equals(_overrideValue, value))
+                return;
+            var oldComputed = ComputedValue;
+            _overrideValue = value;
+            HasOverride = true;
+            NotifyIfChanged(oldComputed);
+        }
     }
 
     /// <summary>
@@ -207,4 +193,36 @@ public struct StyledProperty<T>
 
     public override string ToString()
         => $"Property<{typeof(T).Name}>(Computed={ComputedValue}, Override={(HasOverride ? _overrideValue?.ToString() ?? "null" : "unset")}, Style={(HasStyle ? _styleValue?.ToString() ?? "null" : "unset")}, Default={_defaultValue})";
+
+    public bool Equals(StyledProperty<T> other)
+    {
+        return EqualityComparer<T>.Default.Equals(_defaultValue, other._defaultValue) &&
+               EqualityComparer<T>.Default.Equals(_styleValue, other._styleValue) &&
+               EqualityComparer<T>.Default.Equals(_overrideValue, other._overrideValue) &&
+               _flags == other._flags &&
+               Equals(_onChangedContext, other._onChangedContext) &&
+               Equals(_onChanged, other._onChanged);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is StyledProperty<T> other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = _defaultValue != null ? EqualityComparer<T>.Default.GetHashCode(_defaultValue) : 0;
+            hashCode = (hashCode * 397) ^ (_styleValue != null ? EqualityComparer<T>.Default.GetHashCode(_styleValue) : 0);
+            hashCode = (hashCode * 397) ^ (_overrideValue != null ? EqualityComparer<T>.Default.GetHashCode(_overrideValue) : 0);
+            hashCode = (hashCode * 397) ^ (int)_flags;
+            hashCode = (hashCode * 397) ^ (_onChangedContext != null ? _onChangedContext.GetHashCode() : 0);
+            hashCode = (hashCode * 397) ^ (_onChanged != null ? _onChanged.GetHashCode() : 0);
+            return hashCode;
+        }
+    }
+
+    public static bool operator ==(StyledProperty<T> left, StyledProperty<T> right) => left.Equals(right);
+    public static bool operator !=(StyledProperty<T> left, StyledProperty<T> right) => !left.Equals(right);
 }

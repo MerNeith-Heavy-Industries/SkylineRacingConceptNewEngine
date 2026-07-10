@@ -17,8 +17,8 @@ public partial class Image : Node
         set
         {
             field = value;
-            _width.DefaultValue = Scale * value?.Width ?? 0;
-            _height.DefaultValue = Scale * value?.Height ?? 0;
+            Width.DefaultValue = Scale * value?.Width ?? 0;
+            Height.DefaultValue = Scale * value?.Height ?? 0;
         }
     }
 
@@ -32,8 +32,8 @@ public partial class Image : Node
             field = value;
             if (ImageData is { } imageData)
             {
-                _width.DefaultValue = value * imageData.Width;
-                _height.DefaultValue = value * imageData.Height;
+                Width.DefaultValue = value * imageData.Width;
+                Height.DefaultValue = value * imageData.Height;
             }
         }
     } = 1f;

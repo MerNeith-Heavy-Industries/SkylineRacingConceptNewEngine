@@ -113,20 +113,23 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                         var hasPropAttr = prop.GetAttributes().Any(a =>
                             a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == PropertyAttributeFqn);
 
-                        if (!hasPropAttr) continue;
+                        if (hasPropAttr)
+                        {
+                            if (isFirstType) declaredNames.Add(prop.Name);
 
-                        if (isFirstType) declaredNames.Add(prop.Name);
-
-                        properties.Add(new PropInfo(
-                            Name: prop.Name,
-                            TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + (prop is { NullableAnnotation: NullableAnnotation.Annotated, Type.IsValueType: false } ? "?" : ""),
-                            IsValueType: prop.Type.IsValueType,
-                            HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
-                            DefaultValue: defaultVal,
-                            IsDeclared: isFirstType,
-                            IsPropertyT: false,
-                            BackingFieldName: null
-                        ));
+                            properties.Add(new PropInfo(
+                                Name: prop.Name,
+                                TypeFqn: prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + (prop is { NullableAnnotation: NullableAnnotation.Annotated, Type.IsValueType: false }
+                                    ? "?"
+                                    : ""),
+                                IsValueType: prop.Type.IsValueType,
+                                HasDefaultValue: TryGetDefaultValue(prop, out var defaultVal),
+                                DefaultValue: defaultVal,
+                                IsDeclared: isFirstType,
+                                IsPropertyT: false,
+                                BackingFieldName: null
+                            ));
+                        }
                     }
                     else if (member is IFieldSymbol field && !field.IsStatic)
                     {
@@ -138,16 +141,13 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                         var tType = (field.Type as INamedTypeSymbol)?.TypeArguments.FirstOrDefault();
                         if (tType is null) continue;
 
-                        var propName = PascalCase(field.Name.TrimStart('_'));
-                        if (!seen.Add(propName)) continue;
-
                         var tTypeFqn = tType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                             + (tType is { NullableAnnotation: NullableAnnotation.Annotated, IsValueType: false } ? "?" : "");
 
-                        if (isFirstType) declaredNames.Add(propName);
+                        if (isFirstType) declaredNames.Add(field.Name);
 
                         properties.Add(new PropInfo(
-                            Name: propName,
+                            Name: field.Name,
                             TypeFqn: tTypeFqn,
                             IsValueType: tType.IsValueType,
                             HasDefaultValue: false,
@@ -443,14 +443,14 @@ public class ReactorNodeFactoryGenerator : IIncrementalGenerator
                         if (prop.IsValueType)
                         {
                             sb.AppendLine($"if (_{camelName}.HasValue)");
-                            sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.SetOverrideValue(_{camelName}.Value);");
+                            sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.OverrideValue = _{camelName}.Value;");
                             sb.AppendLine($"else");
                             sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.ClearOverrideValue();");
                         }
                         else
                         {
                             sb.AppendLine($"if (_{camelName} is not null)");
-                            sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.SetOverrideValue(_{camelName});");
+                            sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.OverrideValue = _{camelName};");
                             sb.AppendLine($"else");
                             sb.AppendLine($"    typedVisual.{prop.BackingFieldName}.ClearOverrideValue();");
                         }

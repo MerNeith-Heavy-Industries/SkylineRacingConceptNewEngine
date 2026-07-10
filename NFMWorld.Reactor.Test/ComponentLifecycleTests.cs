@@ -136,12 +136,12 @@ public class ComponentLifecycleTests
     public void Update_StalePropertyResetsAfterUpdate()
     {
         var (comp, _, ctx) = TestHelpers.MountComponent<ToggleVisibilityComponent>(Visibility.Hidden);
-        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
 
         comp.Visible = null;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility,
+        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue,
             "Stale property should reset after Update via FinishPass snapshot rotation");
     }
 
@@ -153,12 +153,12 @@ public class ComponentLifecycleTests
         comp.Visible = Visibility.Visible;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
 
         comp.Visible = Visibility.Visible;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility,
+        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue,
             "Property should persist across multiple updates");
     }
 
@@ -166,22 +166,22 @@ public class ComponentLifecycleTests
     public void Update_AlternatingProperties_ResetCorrectly()
     {
         var (comp, _, ctx) = TestHelpers.MountComponent<ToggleVisibilityComponent>(Visibility.Hidden);
-        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
 
         comp.Visible = null;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
 
         comp.Visible = Visibility.Hidden;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Hidden, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
 
         comp.Visible = null;
         comp.Update();
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility);
+        Assert.AreEqual(Visibility.Visible, ((FlexPanel)comp.NativeRoot!).Visibility.ComputedValue);
     }
 
     // ════════════════════════════════════════════════════════════════════

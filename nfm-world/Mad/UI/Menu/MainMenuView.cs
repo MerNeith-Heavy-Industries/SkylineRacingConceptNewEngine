@@ -144,6 +144,8 @@ public class MainMenuView(
         var (loginModalOpen, setLoginModalOpen) = UseState(false);
         var account = UseObservable(accountManager?.ActiveAccountObservable);
         
+        var closeLoginModal = UseCallback(() => setLoginModalOpen(_ => false));
+
         // Top row: title + login button
         return View(
             flexDirection: FlexDirection.Column,
@@ -256,7 +258,7 @@ public class MainMenuView(
                 
                 LoginModal(
                     isVisible: loginModalOpen,
-                    onClose: () => setLoginModalOpen(_ => false)
+                    onClose: closeLoginModal
                 )
             ]
         );

@@ -52,62 +52,62 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
     public Node()
     {
-        _visibility = new(Visibility.Visible, this, static (ctx, o, n) =>
+        Visibility = new(Reactor.Visibility.Visible, this, static (ctx, o, n) =>
         {
             Node node = (Node)ctx!;
-            if (n is Visibility.Visible && o is Visibility.Hidden && node.Opacity > 0.0f)
+            if (n is Reactor.Visibility.Visible && o is Reactor.Visibility.Hidden && node.Opacity.ComputedValue > 0.0f)
                 node.Shown?.Invoke();
-            else if (n is Visibility.Hidden && o is Visibility.Visible && node.Opacity > 0.0f)
+            else if (n is Reactor.Visibility.Hidden && o is Reactor.Visibility.Visible && node.Opacity.ComputedValue > 0.0f)
                 node.Hidden?.Invoke();
         });
-        _opacity = new(1.0f, this, static (ctx, o, n) =>
+        Opacity = new(1.0f, this, static (ctx, o, n) =>
         {
             Node node = (Node)ctx!;
-            if (n <= 0.0f && o > 0.0f && node.Visibility is Visibility.Visible)
+            if (n <= 0.0f && o > 0.0f && node.Visibility.ComputedValue is Reactor.Visibility.Visible)
                 node.Hidden?.Invoke();
-            else if (n > 0.0f && o <= 0.0f && node.Visibility is Visibility.Visible)
+            else if (n > 0.0f && o <= 0.0f && node.Visibility.ComputedValue is Reactor.Visibility.Visible)
                 node.Shown?.Invoke();
         });
-        _direction = new(NodeInternal.Direction.ToNfmDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Direction = n.ToYogaDirection());
-        _flexDirection = new(NodeInternal.FlexDirection.ToNfmFlexDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexDirection = n.ToYogaFlexDirection());
-        _justifyContent = new(NodeInternal.JustifyContent.ToNfmJustify(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.JustifyContent = n.ToYogaJustify());
-        _alignItems = new(NodeInternal.AlignItems.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignItems = n.ToYogaAlign());
-        _alignSelf = new(NodeInternal.AlignSelf.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignSelf = n.ToYogaAlign());
-        _alignContent = new(NodeInternal.AlignContent.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignContent = n.ToYogaAlign());
-        _position = new(NodeInternal.PositionType.ToNfmPositionType(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PositionType = n.ToYogaPositionType());
-        _flexWrap = new(NodeInternal.FlexWrap.ToNfmWrap(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexWrap = n.ToYogaWrap());
-        _overflow = new(NodeInternal.Overflow.ToNfmOverflow(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Overflow = n.ToYogaOverflow());
-        _display = new(NodeInternal.Display.ToNfmDisplay(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Display = n.ToYogaDisplay());
-        _boxSizing = new(NodeInternal.BoxSizing.ToNfmBoxSizing(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BoxSizing = n.ToYogaBoxSizing());
-        _flex = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Flex = n ?? float.NaN);
-        _flexGrow = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexGrow = n ?? float.NaN);
-        _flexShrink = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexShrink = n ?? float.NaN);
-        _flexBasis = new(MeasurementFlexBasis.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexBasis = n.Scale(G.Scale));
-        _left = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Left = n.Scale(G.Scale));
-        _top = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Top = n.Scale(G.Scale));
-        _right = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Right = n.Scale(G.Scale));
-        _bottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Bottom = n.Scale(G.Scale));
-        _marginTop = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginTop = n.Scale(G.Scale));
-        _marginBottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginBottom = n.Scale(G.Scale));
-        _marginLeft = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginLeft = n.Scale(G.Scale));
-        _marginRight = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginRight = n.Scale(G.Scale));
-        _paddingTop = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingTop = n.Scale(G.Scale));
-        _paddingBottom = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingBottom = n.Scale(G.Scale));
-        _paddingLeft = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingLeft = n.Scale(G.Scale));
-        _paddingRight = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingRight = n.Scale(G.Scale));
-        _borderTop = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderTop = n?.Value * G.Scale ?? YG.YGUndefined);
-        _borderBottom = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderBottom = n?.Value * G.Scale ?? YG.YGUndefined);
-        _borderLeft = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderLeft = n?.Value * G.Scale ?? YG.YGUndefined);
-        _borderRight = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderRight = n?.Value * G.Scale ?? YG.YGUndefined);
-        _gapColumn = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapColumn = n);
-        _gapRow = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapRow = n);
-        _width = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Width = n.Scale(G.Scale));
-        _height = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Height = n.Scale(G.Scale));
-        _minWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinWidth = n.Scale(G.Scale));
-        _minHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinHeight = n.Scale(G.Scale));
-        _maxWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxWidth = n.Scale(G.Scale));
-        _maxHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxHeight = n.Scale(G.Scale));
-        _aspectRatio = new(null, this, (PropertyChangedHandler<Pixels?>)(static (ctx, o, n) => ((Node)ctx!).NodeInternal.AspectRatio = n?.Value ?? float.NaN));
+        Direction = new(NodeInternal.Direction.ToNfmDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Direction = n.ToYogaDirection());
+        FlexDirection = new(NodeInternal.FlexDirection.ToNfmFlexDirection(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexDirection = n.ToYogaFlexDirection());
+        JustifyContent = new(NodeInternal.JustifyContent.ToNfmJustify(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.JustifyContent = n.ToYogaJustify());
+        AlignItems = new(NodeInternal.AlignItems.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignItems = n.ToYogaAlign());
+        AlignSelf = new(NodeInternal.AlignSelf.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignSelf = n.ToYogaAlign());
+        AlignContent = new(NodeInternal.AlignContent.ToNfmAlign(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.AlignContent = n.ToYogaAlign());
+        Position = new(NodeInternal.PositionType.ToNfmPositionType(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PositionType = n.ToYogaPositionType());
+        FlexWrap = new(NodeInternal.FlexWrap.ToNfmWrap(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexWrap = n.ToYogaWrap());
+        Overflow = new(NodeInternal.Overflow.ToNfmOverflow(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Overflow = n.ToYogaOverflow());
+        Display = new(NodeInternal.Display.ToNfmDisplay(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Display = n.ToYogaDisplay());
+        BoxSizing = new(NodeInternal.BoxSizing.ToNfmBoxSizing(), this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BoxSizing = n.ToYogaBoxSizing());
+        Flex = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Flex = n ?? float.NaN);
+        FlexGrow = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexGrow = n ?? float.NaN);
+        FlexShrink = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexShrink = n ?? float.NaN);
+        FlexBasis = new(MeasurementFlexBasis.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.FlexBasis = n.Scale(G.Scale));
+        Left = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Left = n.Scale(G.Scale));
+        Top = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Top = n.Scale(G.Scale));
+        Right = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Right = n.Scale(G.Scale));
+        Bottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Bottom = n.Scale(G.Scale));
+        MarginTop = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginTop = n.Scale(G.Scale));
+        MarginBottom = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginBottom = n.Scale(G.Scale));
+        MarginLeft = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginLeft = n.Scale(G.Scale));
+        MarginRight = new(MeasurementMarginPosition.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MarginRight = n.Scale(G.Scale));
+        PaddingTop = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingTop = n.Scale(G.Scale));
+        PaddingBottom = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingBottom = n.Scale(G.Scale));
+        PaddingLeft = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingLeft = n.Scale(G.Scale));
+        PaddingRight = new(MeasurementPadding.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.PaddingRight = n.Scale(G.Scale));
+        BorderTop = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderTop = n?.Value * G.Scale ?? YG.YGUndefined);
+        BorderBottom = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderBottom = n?.Value * G.Scale ?? YG.YGUndefined);
+        BorderLeft = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderLeft = n?.Value * G.Scale ?? YG.YGUndefined);
+        BorderRight = new(null, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.BorderRight = n?.Value * G.Scale ?? YG.YGUndefined);
+        GapColumn = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapColumn = n);
+        GapRow = new(MeasurementGap.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.GapRow = n);
+        Width = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Width = n.Scale(G.Scale));
+        Height = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.Height = n.Scale(G.Scale));
+        MinWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinWidth = n.Scale(G.Scale));
+        MinHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MinHeight = n.Scale(G.Scale));
+        MaxWidth = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxWidth = n.Scale(G.Scale));
+        MaxHeight = new(MeasurementWidthHeight.Undefined, this, static (ctx, o, n) => ((Node)ctx!).NodeInternal.MaxHeight = n.Scale(G.Scale));
+        AspectRatio = new(null, this, (PropertyChangedHandler<Pixels?>)(static (ctx, o, n) => ((Node)ctx!).NodeInternal.AspectRatio = n?.Value ?? float.NaN));
     }
 
     [Property]
@@ -122,12 +122,12 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     #region Animations
 
     /// <summary>
-    /// Triggered when <see cref="Visibility"/> is set to <see cref="Visibility.Visible"/>
+    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Visible"/>
     /// </summary>
     public Action? Shown { get; set; }
     
     /// <summary>
-    /// Triggered when <see cref="Visibility"/> is set to <see cref="Visibility.Hidden"/>
+    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Hidden"/>
     /// </summary>
     public Action? Hidden { get; set; }
 
@@ -136,12 +136,12 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     #region Layout
 
     // https://www.w3schools.com/css/css_boxmodel.asp
-    private protected Vector2 _root;
+    private protected Vector2 Root;
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the margin box.
     /// </summary>
-    public Vector2 LayoutMarginPosition => _root + new Vector2(LayoutX, LayoutY);
+    public Vector2 LayoutMarginPosition => Root + new Vector2(LayoutX, LayoutY);
     
     /// <summary>
     /// In the CSS box model, gets the size of the margin box, from the top-left to the bottom-right.
@@ -151,7 +151,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// In the CSS box model, gets the top-left position of the border box.
     /// </summary>
-    public Vector2 LayoutBorderPosition => _root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
+    public Vector2 LayoutBorderPosition => Root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the border box, from the top-left to the bottom-right.
@@ -161,7 +161,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// In the CSS box model, gets the top-left position of the padding box.
     /// </summary>
-    public Vector2 LayoutPaddingPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
+    public Vector2 LayoutPaddingPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the padding box, from the top-left to the bottom-right.
@@ -171,7 +171,7 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     /// <summary>
     /// In the CSS box model, gets the top-left position of the content box.
     /// </summary>
-    public Vector2 LayoutContentPosition => _root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
+    public Vector2 LayoutContentPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the content box, from the top-left to the bottom-right.
@@ -359,378 +359,366 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
 
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.Visibility is not null) _visibility.ClearStyleValue();
-            if (oldStyleSheetValue.Opacity is not null) _opacity.ClearStyleValue();
-            if (oldStyleSheetValue.Direction is not null) _direction.ClearStyleValue();
-            if (oldStyleSheetValue.FlexDirection is not null) _flexDirection.ClearStyleValue();
-            if (oldStyleSheetValue.JustifyContent is not null) _justifyContent.ClearStyleValue();
-            if (oldStyleSheetValue.AlignItems is not null) _alignItems.ClearStyleValue();
-            if (oldStyleSheetValue.AlignSelf is not null) _alignSelf.ClearStyleValue();
-            if (oldStyleSheetValue.AlignContent is not null) _alignContent.ClearStyleValue();
-            if (oldStyleSheetValue.Position is not null) _position.ClearStyleValue();
-            if (oldStyleSheetValue.FlexWrap is not null) _flexWrap.ClearStyleValue();
-            if (oldStyleSheetValue.Overflow is not null) _overflow.ClearStyleValue();
-            if (oldStyleSheetValue.Display is not null) _display.ClearStyleValue();
-            if (oldStyleSheetValue.Flex is not null) _flex.ClearStyleValue();
-            if (oldStyleSheetValue.FlexGrow is not null) _flexGrow.ClearStyleValue();
-            if (oldStyleSheetValue.FlexShrink is not null) _flexShrink.ClearStyleValue();
-            if (oldStyleSheetValue.FlexBasis is not null) _flexBasis.ClearStyleValue();
-            if (oldStyleSheetValue.Left is not null) _left.ClearStyleValue();
-            if (oldStyleSheetValue.Top is not null) _top.ClearStyleValue();
-            if (oldStyleSheetValue.Right is not null) _right.ClearStyleValue();
-            if (oldStyleSheetValue.Bottom is not null) _bottom.ClearStyleValue();
+            if (oldStyleSheetValue.Visibility is not null) Visibility.ClearStyleValue();
+            if (oldStyleSheetValue.Opacity is not null) Opacity.ClearStyleValue();
+            if (oldStyleSheetValue.Direction is not null) Direction.ClearStyleValue();
+            if (oldStyleSheetValue.FlexDirection is not null) FlexDirection.ClearStyleValue();
+            if (oldStyleSheetValue.JustifyContent is not null) JustifyContent.ClearStyleValue();
+            if (oldStyleSheetValue.AlignItems is not null) AlignItems.ClearStyleValue();
+            if (oldStyleSheetValue.AlignSelf is not null) AlignSelf.ClearStyleValue();
+            if (oldStyleSheetValue.AlignContent is not null) AlignContent.ClearStyleValue();
+            if (oldStyleSheetValue.Position is not null) Position.ClearStyleValue();
+            if (oldStyleSheetValue.FlexWrap is not null) FlexWrap.ClearStyleValue();
+            if (oldStyleSheetValue.Overflow is not null) Overflow.ClearStyleValue();
+            if (oldStyleSheetValue.Display is not null) Display.ClearStyleValue();
+            if (oldStyleSheetValue.Flex is not null) Flex.ClearStyleValue();
+            if (oldStyleSheetValue.FlexGrow is not null) FlexGrow.ClearStyleValue();
+            if (oldStyleSheetValue.FlexShrink is not null) FlexShrink.ClearStyleValue();
+            if (oldStyleSheetValue.FlexBasis is not null) FlexBasis.ClearStyleValue();
+            if (oldStyleSheetValue.Left is not null) Left.ClearStyleValue();
+            if (oldStyleSheetValue.Top is not null) Top.ClearStyleValue();
+            if (oldStyleSheetValue.Right is not null) Right.ClearStyleValue();
+            if (oldStyleSheetValue.Bottom is not null) Bottom.ClearStyleValue();
             if (oldStyleSheetValue.Margin is not null)
             {
-                _marginTop.ClearStyleValue();
-                _marginBottom.ClearStyleValue();
-                _marginLeft.ClearStyleValue();
-                _marginRight.ClearStyleValue();
+                MarginTop.ClearStyleValue();
+                MarginBottom.ClearStyleValue();
+                MarginLeft.ClearStyleValue();
+                MarginRight.ClearStyleValue();
             }
-            if (oldStyleSheetValue.MarginTop is not null) _marginTop.ClearStyleValue();
-            if (oldStyleSheetValue.MarginBottom is not null) _marginBottom.ClearStyleValue();
-            if (oldStyleSheetValue.MarginLeft is not null) _marginLeft.ClearStyleValue();
-            if (oldStyleSheetValue.MarginRight is not null) _marginRight.ClearStyleValue();
+            if (oldStyleSheetValue.MarginTop is not null) MarginTop.ClearStyleValue();
+            if (oldStyleSheetValue.MarginBottom is not null) MarginBottom.ClearStyleValue();
+            if (oldStyleSheetValue.MarginLeft is not null) MarginLeft.ClearStyleValue();
+            if (oldStyleSheetValue.MarginRight is not null) MarginRight.ClearStyleValue();
             if (oldStyleSheetValue.Padding is not null)
             {
-                _paddingTop.ClearStyleValue();
-                _paddingBottom.ClearStyleValue();
-                _paddingLeft.ClearStyleValue();
-                _paddingRight.ClearStyleValue();
+                PaddingTop.ClearStyleValue();
+                PaddingBottom.ClearStyleValue();
+                PaddingLeft.ClearStyleValue();
+                PaddingRight.ClearStyleValue();
             }
 
-            if (oldStyleSheetValue.PaddingTop is not null) _paddingTop.ClearStyleValue();
-            if (oldStyleSheetValue.PaddingBottom is not null) _paddingBottom.ClearStyleValue();
-            if (oldStyleSheetValue.PaddingLeft is not null) _paddingLeft.ClearStyleValue();
-            if (oldStyleSheetValue.PaddingRight is not null) _paddingRight.ClearStyleValue();
+            if (oldStyleSheetValue.PaddingTop is not null) PaddingTop.ClearStyleValue();
+            if (oldStyleSheetValue.PaddingBottom is not null) PaddingBottom.ClearStyleValue();
+            if (oldStyleSheetValue.PaddingLeft is not null) PaddingLeft.ClearStyleValue();
+            if (oldStyleSheetValue.PaddingRight is not null) PaddingRight.ClearStyleValue();
             if (oldStyleSheetValue.Border is not null)
             {
-                _borderTop.ClearStyleValue();
-                _borderBottom.ClearStyleValue();
-                _borderLeft.ClearStyleValue();
-                _borderRight.ClearStyleValue();
+                BorderTop.ClearStyleValue();
+                BorderBottom.ClearStyleValue();
+                BorderLeft.ClearStyleValue();
+                BorderRight.ClearStyleValue();
             }
 
-            if (oldStyleSheetValue.BorderTop is not null) _borderTop.ClearStyleValue();
-            if (oldStyleSheetValue.BorderBottom is not null) _borderBottom.ClearStyleValue();
-            if (oldStyleSheetValue.BorderLeft is not null) _borderLeft.ClearStyleValue();
-            if (oldStyleSheetValue.BorderRight is not null) _borderRight.ClearStyleValue();
+            if (oldStyleSheetValue.BorderTop is not null) BorderTop.ClearStyleValue();
+            if (oldStyleSheetValue.BorderBottom is not null) BorderBottom.ClearStyleValue();
+            if (oldStyleSheetValue.BorderLeft is not null) BorderLeft.ClearStyleValue();
+            if (oldStyleSheetValue.BorderRight is not null) BorderRight.ClearStyleValue();
             if (oldStyleSheetValue.Gap is not null)
             {
-                _gapColumn.ClearStyleValue();
-                _gapRow.ClearStyleValue();
+                GapColumn.ClearStyleValue();
+                GapRow.ClearStyleValue();
             }
-            if (oldStyleSheetValue.GapColumn is not null) _gapColumn.ClearStyleValue();
-            if (oldStyleSheetValue.GapRow is not null) _gapRow.ClearStyleValue();
-            if (oldStyleSheetValue.BoxSizing is not null) _boxSizing.ClearStyleValue();
-            if (oldStyleSheetValue.Width is not null) _width.ClearStyleValue();
-            if (oldStyleSheetValue.Height is not null) _height.ClearStyleValue();
-            if (oldStyleSheetValue.MinWidth is not null) _minWidth.ClearStyleValue();
-            if (oldStyleSheetValue.MinHeight is not null) _minHeight.ClearStyleValue();
-            if (oldStyleSheetValue.MaxWidth is not null) _maxWidth.ClearStyleValue();
-            if (oldStyleSheetValue.MaxHeight is not null) _maxHeight.ClearStyleValue();
-            if (oldStyleSheetValue.AspectRatio is not null) _aspectRatio.ClearStyleValue();
+            if (oldStyleSheetValue.GapColumn is not null) GapColumn.ClearStyleValue();
+            if (oldStyleSheetValue.GapRow is not null) GapRow.ClearStyleValue();
+            if (oldStyleSheetValue.BoxSizing is not null) BoxSizing.ClearStyleValue();
+            if (oldStyleSheetValue.Width is not null) Width.ClearStyleValue();
+            if (oldStyleSheetValue.Height is not null) Height.ClearStyleValue();
+            if (oldStyleSheetValue.MinWidth is not null) MinWidth.ClearStyleValue();
+            if (oldStyleSheetValue.MinHeight is not null) MinHeight.ClearStyleValue();
+            if (oldStyleSheetValue.MaxWidth is not null) MaxWidth.ClearStyleValue();
+            if (oldStyleSheetValue.MaxHeight is not null) MaxHeight.ClearStyleValue();
+            if (oldStyleSheetValue.AspectRatio is not null) AspectRatio.ClearStyleValue();
         }
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.Visibility is { } visibility) _visibility.SetStyleValue(visibility);
-            if (newStyleSheetValue.Opacity is { } opacity) _opacity.SetStyleValue(opacity);
-            if (newStyleSheetValue.Direction is { } direction) _direction.SetStyleValue(direction);
-            if (newStyleSheetValue.FlexDirection is { } flexDirection) _flexDirection.SetStyleValue(flexDirection);
-            if (newStyleSheetValue.JustifyContent is { } justifyContent) _justifyContent.SetStyleValue(justifyContent);
-            if (newStyleSheetValue.AlignItems is { } alignItems) _alignItems.SetStyleValue(alignItems);
-            if (newStyleSheetValue.AlignSelf is { } alignSelf) _alignSelf.SetStyleValue(alignSelf);
-            if (newStyleSheetValue.AlignContent is { } alignContent) _alignContent.SetStyleValue(alignContent);
-            if (newStyleSheetValue.Position is { } position) _position.SetStyleValue(position);
-            if (newStyleSheetValue.FlexWrap is { } flexWrap) _flexWrap.SetStyleValue(flexWrap);
-            if (newStyleSheetValue.Overflow is { } overflow) _overflow.SetStyleValue(overflow);
-            if (newStyleSheetValue.Display is { } display) _display.SetStyleValue(display);
-            if (newStyleSheetValue.Flex is { } flex) _flex.SetStyleValue(flex);
-            if (newStyleSheetValue.FlexGrow is { } flexGrow) _flexGrow.SetStyleValue(flexGrow);
-            if (newStyleSheetValue.FlexShrink is { } flexShrink) _flexShrink.SetStyleValue(flexShrink);
-            if (newStyleSheetValue.FlexBasis is { } flexBasis) _flexBasis.SetStyleValue(flexBasis);
-            if (newStyleSheetValue.Left is { } left) _left.SetStyleValue(left);
-            if (newStyleSheetValue.Top is { } top) _top.SetStyleValue(top);
-            if (newStyleSheetValue.Right is { } right) _right.SetStyleValue(right);
-            if (newStyleSheetValue.Bottom is { } bottom) _bottom.SetStyleValue(bottom);
+            if (newStyleSheetValue.Visibility is { } visibility) Visibility.StyleValue = visibility;
+            if (newStyleSheetValue.Opacity is { } opacity) Opacity.StyleValue = opacity;
+            if (newStyleSheetValue.Direction is { } direction) Direction.StyleValue = direction;
+            if (newStyleSheetValue.FlexDirection is { } flexDirection) FlexDirection.StyleValue = flexDirection;
+            if (newStyleSheetValue.JustifyContent is { } justifyContent) JustifyContent.StyleValue = justifyContent;
+            if (newStyleSheetValue.AlignItems is { } alignItems) AlignItems.StyleValue = alignItems;
+            if (newStyleSheetValue.AlignSelf is { } alignSelf) AlignSelf.StyleValue = alignSelf;
+            if (newStyleSheetValue.AlignContent is { } alignContent) AlignContent.StyleValue = alignContent;
+            if (newStyleSheetValue.Position is { } position) Position.StyleValue = position;
+            if (newStyleSheetValue.FlexWrap is { } flexWrap) FlexWrap.StyleValue = flexWrap;
+            if (newStyleSheetValue.Overflow is { } overflow) Overflow.StyleValue = overflow;
+            if (newStyleSheetValue.Display is { } display) Display.StyleValue = display;
+            if (newStyleSheetValue.Flex is { } flex) Flex.StyleValue = flex;
+            if (newStyleSheetValue.FlexGrow is { } flexGrow) FlexGrow.StyleValue = flexGrow;
+            if (newStyleSheetValue.FlexShrink is { } flexShrink) FlexShrink.StyleValue = flexShrink;
+            if (newStyleSheetValue.FlexBasis is { } flexBasis) FlexBasis.StyleValue = flexBasis;
+            if (newStyleSheetValue.Left is { } left) Left.StyleValue = left;
+            if (newStyleSheetValue.Top is { } top) Top.StyleValue = top;
+            if (newStyleSheetValue.Right is { } right) Right.StyleValue = right;
+            if (newStyleSheetValue.Bottom is { } bottom) Bottom.StyleValue = bottom;
             if (newStyleSheetValue.Margin is { } margin)
             {
-                _marginTop.SetStyleValue(margin.Top);
-                _marginBottom.SetStyleValue(margin.Bottom);
-                _marginLeft.SetStyleValue(margin.Left);
-                _marginRight.SetStyleValue(margin.Right);
+                MarginTop.StyleValue = margin.Top;
+                MarginBottom.StyleValue = margin.Bottom;
+                MarginLeft.StyleValue = margin.Left;
+                MarginRight.StyleValue = margin.Right;
             }
 
-            if (newStyleSheetValue.MarginTop is { } marginTop) _marginTop.SetStyleValue(marginTop);
-            if (newStyleSheetValue.MarginBottom is { } marginBottom) _marginBottom.SetStyleValue(marginBottom);
-            if (newStyleSheetValue.MarginLeft is { } marginLeft) _marginLeft.SetStyleValue(marginLeft);
-            if (newStyleSheetValue.MarginRight is { } marginRight) _marginRight.SetStyleValue(marginRight);
+            if (newStyleSheetValue.MarginTop is { } marginTop) MarginTop.StyleValue = marginTop;
+            if (newStyleSheetValue.MarginBottom is { } marginBottom) MarginBottom.StyleValue = marginBottom;
+            if (newStyleSheetValue.MarginLeft is { } marginLeft) MarginLeft.StyleValue = marginLeft;
+            if (newStyleSheetValue.MarginRight is { } marginRight) MarginRight.StyleValue = marginRight;
             if (newStyleSheetValue.Padding is { } padding)
             {
-                _paddingTop.SetStyleValue(padding.Top);
-                _paddingBottom.SetStyleValue(padding.Bottom);
-                _paddingLeft.SetStyleValue(padding.Left);
-                _paddingRight.SetStyleValue(padding.Right);
+                PaddingTop.StyleValue = padding.Top;
+                PaddingBottom.StyleValue = padding.Bottom;
+                PaddingLeft.StyleValue = padding.Left;
+                PaddingRight.StyleValue = padding.Right;
             }
 
-            if (newStyleSheetValue.PaddingTop is { } paddingTop) _paddingTop.SetStyleValue(paddingTop);
-            if (newStyleSheetValue.PaddingBottom is { } paddingBottom) _paddingBottom.SetStyleValue(paddingBottom);
-            if (newStyleSheetValue.PaddingLeft is { } paddingLeft) _paddingLeft.SetStyleValue(paddingLeft);
-            if (newStyleSheetValue.PaddingRight is { } paddingRight) _paddingRight.SetStyleValue(paddingRight);
+            if (newStyleSheetValue.PaddingTop is { } paddingTop) PaddingTop.StyleValue = paddingTop;
+            if (newStyleSheetValue.PaddingBottom is { } paddingBottom) PaddingBottom.StyleValue = paddingBottom;
+            if (newStyleSheetValue.PaddingLeft is { } paddingLeft) PaddingLeft.StyleValue = paddingLeft;
+            if (newStyleSheetValue.PaddingRight is { } paddingRight) PaddingRight.StyleValue = paddingRight;
             if (newStyleSheetValue.Border is { } border)
             {
-                _borderTop.SetStyleValue(border.Top);
-                _borderBottom.SetStyleValue(border.Bottom);
-                _borderLeft.SetStyleValue(border.Left);
-                _borderRight.SetStyleValue(border.Right);
+                BorderTop.StyleValue = border.Top;
+                BorderBottom.StyleValue = border.Bottom;
+                BorderLeft.StyleValue = border.Left;
+                BorderRight.StyleValue = border.Right;
             }
 
-            if (newStyleSheetValue.BorderTop is { } borderTop) _borderTop.SetStyleValue(borderTop);
-            if (newStyleSheetValue.BorderBottom is { } borderBottom) _borderBottom.SetStyleValue(borderBottom);
-            if (newStyleSheetValue.BorderLeft is { } borderLeft) _borderLeft.SetStyleValue(borderLeft);
-            if (newStyleSheetValue.BorderRight is { } borderRight) _borderRight.SetStyleValue(borderRight);
+            if (newStyleSheetValue.BorderTop is { } borderTop) BorderTop.StyleValue = borderTop;
+            if (newStyleSheetValue.BorderBottom is { } borderBottom) BorderBottom.StyleValue = borderBottom;
+            if (newStyleSheetValue.BorderLeft is { } borderLeft) BorderLeft.StyleValue = borderLeft;
+            if (newStyleSheetValue.BorderRight is { } borderRight) BorderRight.StyleValue = borderRight;
             if (newStyleSheetValue.Gap is { } gap)
             {
-                _gapColumn.SetStyleValue(gap);
-                _gapRow.SetStyleValue(gap);
+                GapColumn.StyleValue = gap;
+                GapRow.StyleValue = gap;
             }
 
-            if (newStyleSheetValue.GapColumn is { } gapColumn) _gapColumn.SetStyleValue(gapColumn);
-            if (newStyleSheetValue.GapRow is { } gapRow) _gapRow.SetStyleValue(gapRow);
-            if (newStyleSheetValue.BoxSizing is { } boxSizing) _boxSizing.SetStyleValue(boxSizing);
-            if (newStyleSheetValue.Width is { } width) _width.SetStyleValue(width);
-            if (newStyleSheetValue.Height is { } height) _height.SetStyleValue(height);
-            if (newStyleSheetValue.MinWidth is { } minWidth) _minWidth.SetStyleValue(minWidth);
-            if (newStyleSheetValue.MinHeight is { } minHeight) _minHeight.SetStyleValue(minHeight);
-            if (newStyleSheetValue.MaxWidth is { } maxWidth) _maxWidth.SetStyleValue(maxWidth);
-            if (newStyleSheetValue.MaxHeight is { } maxHeight) _maxHeight.SetStyleValue(maxHeight);
-            if (newStyleSheetValue.AspectRatio is { } aspectRatio) _aspectRatio.SetStyleValue(aspectRatio);
+            if (newStyleSheetValue.GapColumn is { } gapColumn) GapColumn.StyleValue = gapColumn;
+            if (newStyleSheetValue.GapRow is { } gapRow) GapRow.StyleValue = gapRow;
+            if (newStyleSheetValue.BoxSizing is { } boxSizing) BoxSizing.StyleValue = boxSizing;
+            if (newStyleSheetValue.Width is { } width) Width.StyleValue = width;
+            if (newStyleSheetValue.Height is { } height) Height.StyleValue = height;
+            if (newStyleSheetValue.MinWidth is { } minWidth) MinWidth.StyleValue = minWidth;
+            if (newStyleSheetValue.MinHeight is { } minHeight) MinHeight.StyleValue = minHeight;
+            if (newStyleSheetValue.MaxWidth is { } maxWidth) MaxWidth.StyleValue = maxWidth;
+            if (newStyleSheetValue.MaxHeight is { } maxHeight) MaxHeight.StyleValue = maxHeight;
+            if (newStyleSheetValue.AspectRatio is { } aspectRatio) AspectRatio.StyleValue = aspectRatio;
         }
     }
-
-    protected internal StyledProperty<Visibility> _visibility;
-    protected internal StyledProperty<float> _opacity;
-    protected internal StyledProperty<Direction> _direction;
-    protected internal StyledProperty<FlexDirection> _flexDirection;
-    protected internal StyledProperty<Justify> _justifyContent;
-    protected internal StyledProperty<Align> _alignItems;
-    protected internal StyledProperty<Align> _alignSelf;
-    protected internal StyledProperty<Align> _alignContent;
-    protected internal StyledProperty<Position> _position;
-    protected internal StyledProperty<Wrap> _flexWrap;
-    protected internal StyledProperty<Overflow> _overflow;
-    protected internal StyledProperty<Display> _display;
-    protected internal StyledProperty<BoxSizing> _boxSizing;
-    protected internal StyledProperty<float?> _flex;
-    protected internal StyledProperty<float?> _flexGrow;
-    protected internal StyledProperty<float?> _flexShrink;
-    protected internal StyledProperty<MeasurementFlexBasis> _flexBasis;
-    protected internal StyledProperty<MeasurementMarginPosition> _left;
-    protected internal StyledProperty<MeasurementMarginPosition> _top;
-    protected internal StyledProperty<MeasurementMarginPosition> _right;
-    protected internal StyledProperty<MeasurementMarginPosition> _bottom;
-    protected internal StyledProperty<MeasurementMarginPosition> _marginTop;
-    protected internal StyledProperty<MeasurementMarginPosition> _marginBottom;
-    protected internal StyledProperty<MeasurementMarginPosition> _marginLeft;
-    protected internal StyledProperty<MeasurementMarginPosition> _marginRight;
-    protected internal StyledProperty<MeasurementPadding> _paddingTop;
-    protected internal StyledProperty<MeasurementPadding> _paddingBottom;
-    protected internal StyledProperty<MeasurementPadding> _paddingLeft;
-    protected internal StyledProperty<MeasurementPadding> _paddingRight;
-    protected internal StyledProperty<Pixels?> _borderTop;
-    protected internal StyledProperty<Pixels?> _borderBottom;
-    protected internal StyledProperty<Pixels?> _borderLeft;
-    protected internal StyledProperty<Pixels?> _borderRight;
-    protected internal StyledProperty<MeasurementGap> _gapColumn;
-    protected internal StyledProperty<MeasurementGap> _gapRow;
-    protected internal StyledProperty<MeasurementWidthHeight> _width;
-    protected internal StyledProperty<MeasurementWidthHeight> _height;
-    protected internal StyledProperty<MeasurementWidthHeight> _minWidth;
-    protected internal StyledProperty<MeasurementWidthHeight> _minHeight;
-    protected internal StyledProperty<MeasurementWidthHeight> _maxWidth;
-    protected internal StyledProperty<MeasurementWidthHeight> _maxHeight;
-    protected internal StyledProperty<Pixels?> _aspectRatio;
 
     /// <summary>
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
     /// </summary>
-    public Visibility Visibility
-    {
-        get => _visibility.ComputedValue;
-        set => _visibility.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Visibility> Visibility;
+    
     /// <summary>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
     /// </summary>
-    public float Opacity
-    {
-        get => _opacity.ComputedValue;
-        set => _opacity.SetOverrideValue(value);
-    }
-
+    public StyledProperty<float> Opacity;
+    
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     /// <summary>
     /// CSS: direction - Establishes the main-axis (ltr/rtl/inherit)
     /// </summary>
-    public Direction Direction
-    {
-        get => _direction.ComputedValue;
-        set => _direction.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Direction> Direction;
+    
     /// <summary>
     /// CSS: flex-direction - Establishes the main-axis (row/column/row-reverse/column-reverse)
     /// </summary>
-    public FlexDirection FlexDirection
-    {
-        get => _flexDirection.ComputedValue;
-        set => _flexDirection.SetOverrideValue(value);
-    }
-
+    public StyledProperty<FlexDirection> FlexDirection;
+    
     /// <summary>
     /// CSS: justify-content - Defines alignment along the main axis
     /// </summary>
-    public Justify JustifyContent
-    {
-        get => _justifyContent.ComputedValue;
-        set => _justifyContent.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Justify> JustifyContent;
+    
     /// <summary>
     /// CSS: align-items - Defines default alignment for all children along the cross axis
     /// </summary>
-    public Align AlignItems
-    {
-        get => _alignItems.ComputedValue;
-        set => _alignItems.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Align> AlignItems;
+    
     /// <summary>
     /// CSS: align-self - Allows a child to override the default cross-axis alignment
     /// </summary>
-    public Align AlignSelf
-    {
-        get => _alignSelf.ComputedValue;
-        set => _alignSelf.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Align> AlignSelf;
+    
     /// <summary>
     /// CSS: align-content - Aligns flex container's lines when there is extra space in the cross-axis
     /// </summary>
-    public Align AlignContent
-    {
-        get => _alignContent.ComputedValue;
-        set => _alignContent.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Align> AlignContent;
+    
     /// <summary>
     /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)
     /// </summary>
-    public Position Position
-    {
-        get => _position.ComputedValue;
-        set => _position.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Position> Position;
+    
     /// <summary>
     /// CSS: flex-wrap - Controls whether flex items wrap onto multiple lines (nowrap/wrap/wrap-reverse)
     /// </summary>
-    public Wrap FlexWrap
-    {
-        get => _flexWrap.ComputedValue;
-        set => _flexWrap.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Wrap> FlexWrap;
+    
     /// <summary>
     /// CSS: overflow - Controls what happens to content that is too big to fit (visible/hidden/scroll)
     /// </summary>
-    public Overflow Overflow
-    {
-        get => _overflow.ComputedValue;
-        set => _overflow.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Overflow> Overflow;
+    
     /// <summary>
     /// CSS: display - Defines the display type of the element (flex/none/block)
     /// </summary>
-    public Display Display
-    {
-        get => _display.ComputedValue;
-        set => _display.SetOverrideValue(value);
-    }
-
+    public StyledProperty<Display> Display;
+    
+    /// <summary>
+    /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
+    /// </summary>
+    public StyledProperty<BoxSizing> BoxSizing;
+    
     /// <summary>
     /// CSS: flex - Shorthand for flex-grow, flex-shrink, and flex-basis combined
     /// </summary>
-    public float? Flex
-    {
-        get => _flex.ComputedValue;
-        set => _flex.SetOverrideValue(value);
-    }
-
+    public StyledProperty<float?> Flex;
+    
     /// <summary>
     /// CSS: flex-grow - Defines the ability for a flex item to grow if necessary
     /// </summary>
-    public float? FlexGrow
-    {
-        get => _flexGrow.ComputedValue;
-        set => _flexGrow.SetOverrideValue(value);
-    }
-
+    public StyledProperty<float?> FlexGrow;
+    
     /// <summary>
     /// CSS: flex-shrink - Defines the ability for a flex item to shrink if necessary
     /// </summary>
-    public float? FlexShrink
-    {
-        get => _flexShrink.ComputedValue;
-        set => _flexShrink.SetOverrideValue(value);
-    }
-
+    public StyledProperty<float?> FlexShrink;
+    
     /// <summary>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
     /// </summary>
-    public MeasurementFlexBasis FlexBasis
-    {
-        get => _flexBasis.ComputedValue;
-        set => _flexBasis.SetOverrideValue(value);
-    }
-
+    public StyledProperty<MeasurementFlexBasis> FlexBasis;
+    
     /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Left
-    {
-        get => _left.ComputedValue;
-        set => _left.SetOverrideValue(value);
-    }
+    public StyledProperty<MeasurementMarginPosition> Left;
 
     /// <summary>
     /// CSS: top - Specifies the top position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Top
-    {
-        get => _top.ComputedValue;
-        set => _top.SetOverrideValue(value);
-    }
+    public StyledProperty<MeasurementMarginPosition> Top;
 
     /// <summary>
     /// CSS: right - Specifies the right position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Right
-    {
-        get => _right.ComputedValue;
-        set => _right.SetOverrideValue(value);
-    }
+    public StyledProperty<MeasurementMarginPosition> Right;
 
     /// <summary>
     /// CSS: bottom - Specifies the bottom position of a positioned element
     /// </summary>
-    public MeasurementMarginPosition Bottom
-    {
-        get => _bottom.ComputedValue;
-        set => _bottom.SetOverrideValue(value);
-    }
+    public StyledProperty<MeasurementMarginPosition> Bottom;
+
+    /// <summary>
+    /// CSS: margin-top - Sets the top margin space outside the element
+    /// </summary>
+    public StyledProperty<MeasurementMarginPosition> MarginTop;
+
+    /// <summary>
+    /// CSS: margin-bottom - Sets the bottom margin space outside the element
+    /// </summary>
+    public StyledProperty<MeasurementMarginPosition> MarginBottom;
+
+    /// <summary>
+    /// CSS: margin-left - Sets the left margin space outside the element
+    /// </summary>
+    public StyledProperty<MeasurementMarginPosition> MarginLeft;
+
+    /// <summary>
+    /// CSS: margin-right - Sets the right margin space outside the element
+    /// </summary>
+    public StyledProperty<MeasurementMarginPosition> MarginRight;
+
+    /// <summary>
+    /// CSS: padding-top - Sets the top padding space inside the element
+    /// </summary>
+    public StyledProperty<MeasurementPadding> PaddingTop;
+
+    /// <summary>
+    /// CSS: padding-bottom - Sets the bottom padding space inside the element
+    /// </summary>
+    public StyledProperty<MeasurementPadding> PaddingBottom;
+
+    /// <summary>
+    /// CSS: padding-left - Sets the left padding space inside the element
+    /// </summary>
+    public StyledProperty<MeasurementPadding> PaddingLeft;
+
+    /// <summary>
+    /// CSS: padding-right - Sets the right padding space inside the element
+    /// </summary>
+    public StyledProperty<MeasurementPadding> PaddingRight;
+
+    /// <summary>
+    /// CSS: border-top-width - Sets the width of the top border
+    /// </summary>
+    public StyledProperty<Pixels?> BorderTop;
+
+    /// <summary>
+    /// CSS: border-bottom-width - Sets the width of the bottom border
+    /// </summary>
+    public StyledProperty<Pixels?> BorderBottom;
+
+    /// <summary>
+    /// CSS: border-left-width - Sets the width of the left border
+    /// </summary>
+    public StyledProperty<Pixels?> BorderLeft;
+
+    /// <summary>
+    /// CSS: border-right-width - Sets the width of the right border
+    /// </summary>
+    public StyledProperty<Pixels?> BorderRight;
+    
+    /// <summary>
+    /// CSS: column-gap - Sets the gap between columns in a flex container
+    /// </summary>
+    public StyledProperty<MeasurementGap> GapColumn;
+
+    /// <summary>
+    /// CSS: row-gap - Sets the gap between rows in a flex container
+    /// </summary>
+    public StyledProperty<MeasurementGap> GapRow;
+    
+    /// <summary>
+    /// CSS: width - Sets the width of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> Width;
+
+    /// <summary>
+    /// CSS: height - Sets the height of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> Height;
+
+    /// <summary>
+    /// CSS: min-width - Sets the minimum width of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> MinWidth;
+
+    /// <summary>
+    /// CSS: min-height - Sets the minimum height of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> MinHeight;
+
+    /// <summary>
+    /// CSS: max-width - Sets the maximum width of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> MaxWidth;
+
+    /// <summary>
+    /// CSS: max-height - Sets the maximum height of the element
+    /// </summary>
+    public StyledProperty<MeasurementWidthHeight> MaxHeight;
+
+    /// <summary>
+    /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
+    /// </summary>
+    public StyledProperty<Pixels?> AspectRatio;
+
 
     /// <summary>
     /// CSS: margin - Shorthand for setting all margin values (top, right, bottom, left)
@@ -740,54 +728,18 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => new()
         {
-            Top = MarginTop,
-            Bottom = MarginBottom,
-            Left = MarginLeft,
-            Right = MarginRight
+            Top = MarginTop.OverrideValue,
+            Bottom = MarginBottom.OverrideValue,
+            Left = MarginLeft.OverrideValue,
+            Right = MarginRight.OverrideValue
         };
         set
         {
-            _marginLeft.SetOverrideValue(value.Left);
-            _marginRight.SetOverrideValue(value.Right);
-            _marginTop.SetOverrideValue(value.Top);
-            _marginBottom.SetOverrideValue(value.Bottom);
+            MarginLeft.OverrideValue = value.Left;
+            MarginRight.OverrideValue = value.Right;
+            MarginTop.OverrideValue = value.Top;
+            MarginBottom.OverrideValue = value.Bottom;
         }
-    }
-
-    /// <summary>
-    /// CSS: margin-top - Sets the top margin space outside the element
-    /// </summary>
-    public MeasurementMarginPosition MarginTop
-    {
-        get => _marginTop.ComputedValue;
-        set => _marginTop.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: margin-bottom - Sets the bottom margin space outside the element
-    /// </summary>
-    public MeasurementMarginPosition MarginBottom
-    {
-        get => _marginBottom.ComputedValue;
-        set => _marginBottom.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: margin-left - Sets the left margin space outside the element
-    /// </summary>
-    public MeasurementMarginPosition MarginLeft
-    {
-        get => _marginLeft.ComputedValue;
-        set => _marginLeft.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: margin-right - Sets the right margin space outside the element
-    /// </summary>
-    public MeasurementMarginPosition MarginRight
-    {
-        get => _marginRight.ComputedValue;
-        set => _marginRight.SetOverrideValue(value);
     }
 
     /// <summary>
@@ -798,56 +750,20 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => new()
         {
-            Left = PaddingLeft,
-            Right = PaddingRight,
-            Top = PaddingTop,
-            Bottom = PaddingBottom
+            Left = PaddingLeft.OverrideValue,
+            Right = PaddingRight.OverrideValue,
+            Top = PaddingTop.OverrideValue,
+            Bottom = PaddingBottom.OverrideValue
         };
         set
         {
-            _paddingLeft.SetOverrideValue(value.Left);
-            _paddingRight.SetOverrideValue(value.Right);
-            _paddingTop.SetOverrideValue(value.Top);
-            _paddingBottom.SetOverrideValue(value.Bottom);
+            PaddingLeft.OverrideValue = value.Left;
+            PaddingRight.OverrideValue = value.Right;
+            PaddingTop.OverrideValue = value.Top;
+            PaddingBottom.OverrideValue = value.Bottom;
         }
     }
-
-    /// <summary>
-    /// CSS: padding-top - Sets the top padding space inside the element
-    /// </summary>
-    public MeasurementPadding PaddingTop
-    {
-        get => _paddingTop.ComputedValue;
-        set => _paddingTop.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: padding-bottom - Sets the bottom padding space inside the element
-    /// </summary>
-    public MeasurementPadding PaddingBottom
-    {
-        get => _paddingBottom.ComputedValue;
-        set => _paddingBottom.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: padding-left - Sets the left padding space inside the element
-    /// </summary>
-    public MeasurementPadding PaddingLeft
-    {
-        get => _paddingLeft.ComputedValue;
-        set => _paddingLeft.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: padding-right - Sets the right padding space inside the element
-    /// </summary>
-    public MeasurementPadding PaddingRight
-    {
-        get => _paddingRight.ComputedValue;
-        set => _paddingRight.SetOverrideValue(value);
-    }
-
+    
     /// <summary>
     /// CSS: border - Shorthand for setting all border widths
     /// </summary>
@@ -856,54 +772,18 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     {
         get => new()
         {
-            Left = BorderLeft,
-            Right = BorderRight,
-            Top = BorderTop,
-            Bottom = BorderBottom
+            Left = BorderLeft.OverrideValue,
+            Right = BorderRight.OverrideValue,
+            Top = BorderTop.OverrideValue,
+            Bottom = BorderBottom.OverrideValue
         };
         set
         {
-            _borderLeft.SetOverrideValue(value.Left);
-            _borderRight.SetOverrideValue(value.Right);
-            _borderTop.SetOverrideValue(value.Top);
-            _borderBottom.SetOverrideValue(value.Bottom);
+            BorderLeft.OverrideValue = value.Left;
+            BorderRight.OverrideValue = value.Right;
+            BorderTop.OverrideValue = value.Top;
+            BorderBottom.OverrideValue = value.Bottom;
         }
-    }
-
-    /// <summary>
-    /// CSS: border-top-width - Sets the width of the top border
-    /// </summary>
-    public Pixels? BorderTop
-    {
-        get => _borderTop.ComputedValue;
-        set => _borderTop.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: border-bottom-width - Sets the width of the bottom border
-    /// </summary>
-    public Pixels? BorderBottom
-    {
-        get => _borderBottom.ComputedValue;
-        set => _borderBottom.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: border-left-width - Sets the width of the left border
-    /// </summary>
-    public Pixels? BorderLeft
-    {
-        get => _borderLeft.ComputedValue;
-        set => _borderLeft.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: border-right-width - Sets the width of the right border
-    /// </summary>
-    public Pixels? BorderRight
-    {
-        get => _borderRight.ComputedValue;
-        set => _borderRight.SetOverrideValue(value);
     }
 
     /// <summary>
@@ -912,102 +792,12 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     [Property]
     public MeasurementGap Gap
     {
-        get => GapColumn == GapRow ? GapColumn : MeasurementGap.Undefined;
+        get => GapColumn.OverrideValue == GapRow.OverrideValue ? GapColumn.OverrideValue : MeasurementGap.Undefined;
         set
         {
-            _gapColumn.SetOverrideValue(value);
-            _gapRow.SetOverrideValue(value);
+            GapColumn.OverrideValue = value;
+            GapRow.OverrideValue = value;
         }
-    }
-
-    /// <summary>
-    /// CSS: column-gap - Sets the gap between columns in a flex container
-    /// </summary>
-    public MeasurementGap GapColumn
-    {
-        get => _gapColumn.ComputedValue;
-        set => _gapColumn.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: row-gap - Sets the gap between rows in a flex container
-    /// </summary>
-    public MeasurementGap GapRow
-    {
-        get => _gapRow.ComputedValue;
-        set => _gapRow.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: box-sizing - Defines how width/height calculations include padding/border (content-box/border-box)
-    /// </summary>
-    public BoxSizing BoxSizing
-    {
-        get => _boxSizing.ComputedValue;
-        set => _boxSizing.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: width - Sets the width of the element
-    /// </summary>
-    public MeasurementWidthHeight Width
-    {
-        get => _width.ComputedValue;
-        set => _width.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: height - Sets the height of the element
-    /// </summary>
-    public MeasurementWidthHeight Height
-    {
-        get => _height.ComputedValue;
-        set => _height.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: min-width - Sets the minimum width of the element
-    /// </summary>
-    public MeasurementWidthHeight MinWidth
-    {
-        get => _minWidth.ComputedValue;
-        set => _minWidth.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: min-height - Sets the minimum height of the element
-    /// </summary>
-    public MeasurementWidthHeight MinHeight
-    {
-        get => _minHeight.ComputedValue;
-        set => _minHeight.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: max-width - Sets the maximum width of the element
-    /// </summary>
-    public MeasurementWidthHeight MaxWidth
-    {
-        get => _maxWidth.ComputedValue;
-        set => _maxWidth.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: max-height - Sets the maximum height of the element
-    /// </summary>
-    public MeasurementWidthHeight MaxHeight
-    {
-        get => _maxHeight.ComputedValue;
-        set => _maxHeight.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
-    /// </summary>
-    public Pixels? AspectRatio
-    {
-        get => _aspectRatio.ComputedValue;
-        set => _aspectRatio.SetOverrideValue(value);
     }
 
     #endregion
@@ -1061,31 +851,31 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
         {
             // Re-trigger all size-related onChanged handlers so they re-scale with new G.Scale
 #pragma warning disable CA2245
-            NodeInternal.Width = _width.ComputedValue.Scale(G.Scale);
-            NodeInternal.Height = _height.ComputedValue.Scale(G.Scale);
-            NodeInternal.MinWidth = _minWidth.ComputedValue.Scale(G.Scale);
-            NodeInternal.MinHeight = _minHeight.ComputedValue.Scale(G.Scale);
-            NodeInternal.MaxWidth = _maxWidth.ComputedValue.Scale(G.Scale);
-            NodeInternal.MaxHeight = _maxHeight.ComputedValue.Scale(G.Scale);
-            NodeInternal.MarginTop = _marginTop.ComputedValue.Scale(G.Scale);
-            NodeInternal.MarginBottom = _marginBottom.ComputedValue.Scale(G.Scale);
-            NodeInternal.MarginLeft = _marginLeft.ComputedValue.Scale(G.Scale);
-            NodeInternal.MarginRight = _marginRight.ComputedValue.Scale(G.Scale);
-            NodeInternal.PaddingTop = _paddingTop.ComputedValue.Scale(G.Scale);
-            NodeInternal.PaddingBottom = _paddingBottom.ComputedValue.Scale(G.Scale);
-            NodeInternal.PaddingLeft = _paddingLeft.ComputedValue.Scale(G.Scale);
-            NodeInternal.PaddingRight = _paddingRight.ComputedValue.Scale(G.Scale);
-            NodeInternal.BorderTop = _borderTop.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderBottom = _borderBottom.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderLeft = _borderLeft.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderRight = _borderRight.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.GapColumn = _gapColumn.ComputedValue;
-            NodeInternal.GapRow = _gapRow.ComputedValue;
-            NodeInternal.FlexBasis = _flexBasis.ComputedValue.Scale(G.Scale);
-            NodeInternal.Left = _left.ComputedValue.Scale(G.Scale);
-            NodeInternal.Top = _top.ComputedValue.Scale(G.Scale);
-            NodeInternal.Right = _right.ComputedValue.Scale(G.Scale);
-            NodeInternal.Bottom = _bottom.ComputedValue.Scale(G.Scale);
+            NodeInternal.Width = Width.ComputedValue.Scale(G.Scale);
+            NodeInternal.Height = Height.ComputedValue.Scale(G.Scale);
+            NodeInternal.MinWidth = MinWidth.ComputedValue.Scale(G.Scale);
+            NodeInternal.MinHeight = MinHeight.ComputedValue.Scale(G.Scale);
+            NodeInternal.MaxWidth = MaxWidth.ComputedValue.Scale(G.Scale);
+            NodeInternal.MaxHeight = MaxHeight.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginTop = MarginTop.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginBottom = MarginBottom.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginLeft = MarginLeft.ComputedValue.Scale(G.Scale);
+            NodeInternal.MarginRight = MarginRight.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingTop = PaddingTop.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingBottom = PaddingBottom.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingLeft = PaddingLeft.ComputedValue.Scale(G.Scale);
+            NodeInternal.PaddingRight = PaddingRight.ComputedValue.Scale(G.Scale);
+            NodeInternal.BorderTop = BorderTop.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = BorderBottom.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = BorderLeft.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderRight = BorderRight.ComputedValue?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.GapColumn = GapColumn.ComputedValue;
+            NodeInternal.GapRow = GapRow.ComputedValue;
+            NodeInternal.FlexBasis = FlexBasis.ComputedValue.Scale(G.Scale);
+            NodeInternal.Left = Left.ComputedValue.Scale(G.Scale);
+            NodeInternal.Top = Top.ComputedValue.Scale(G.Scale);
+            NodeInternal.Right = Right.ComputedValue.Scale(G.Scale);
+            NodeInternal.Bottom = Bottom.ComputedValue.Scale(G.Scale);
 #pragma warning restore CA2245
 
             _lastScale = G.Scale;
@@ -1127,17 +917,17 @@ public partial class Node : Visual, IAnimationCallback, IDisposable
     public sealed override void Render(RenderContext context)
     {
         OnAnimationFrameBegan();
-        _root = context.TopLeft;
-        if (Display != Display.None && Visibility == Visibility.Visible && Opacity > 0f)
+        Root = context.TopLeft;
+        if (Display.ComputedValue != Reactor.Display.None && Visibility.ComputedValue == Reactor.Visibility.Visible && Opacity.ComputedValue > 0f)
         {
-            var ownOpacity = context.InheritedOpacity * Opacity;
+            var ownOpacity = context.InheritedOpacity * Opacity.ComputedValue;
             G.Alpha = ownOpacity;
             RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
             RenderBorder(LayoutBorderPosition, LayoutBorderSize);
             RenderContent(LayoutContentPosition, LayoutContentSize);
             foreach (var child in GetChildSnapshot())
             {
-                child.Render(new RenderContext(_root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
+                child.Render(new RenderContext(Root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
             }
             G.Alpha = 1f;
         }
