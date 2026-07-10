@@ -60,4 +60,10 @@ public class SentryOptions
     /// HTTP request timeout. Default 30 seconds.
     /// </summary>
     public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Maximum number of breadcrumbs to keep in the ring buffer. Default 100.
+    /// Set to 0 to disable breadcrumbs entirely.
+    /// </summary>
+    public int MaxBreadcrumbs { get; set; } = 100;
 }

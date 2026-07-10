@@ -13,6 +13,11 @@ public static class SentrySdk
     private static readonly Lock InitLock = new();
     private static bool _initialized;
 
+    // Breadcrumb ring buffer
+    private static Breadcrumb[]? _breadcrumbs;
+    private static int _breadcrumbIndex;
+    private static int _breadcrumbCount;
+
     /// <summary>
     /// Initialize the Sentry SDK with the given configuration.
     /// Must be called once before any other methods.
@@ -32,6 +37,9 @@ public static class SentrySdk
 
             _options = options;
             _uploader = new SentryUploader(options);
+            _breadcrumbs = options.MaxBreadcrumbs > 0 ? new Breadcrumb[options.MaxBreadcrumbs] : null;
+            _breadcrumbIndex = 0;
+            _breadcrumbCount = 0;
             _initialized = true;
 
             if (options.Debug)
@@ -55,15 +63,20 @@ public static class SentrySdk
 
     /// <summary>
     /// Capture an exception and send it to Sentry.
+    /// Also records the exception as a breadcrumb.
     /// </summary>
     public static SentryEventId CaptureException(Exception ex, SentryLevel level = SentryLevel.Error)
     {
         EnsureInitialized();
 
+        // Record breadcrumb first
+        AddBreadcrumb(Breadcrumb.FromException(ex, level));
+
         var evt = new SentryEvent(ex)
         {
             Level = level,
-            Release = _options!.Release
+            Release = _options!.Release,
+            Breadcrumbs = SnapshotBreadcrumbs()
         };
 
         _uploader!.Enqueue(new EventItem(evt));
@@ -72,16 +85,21 @@ public static class SentrySdk
 
     /// <summary>
     /// Capture a message and send it to Sentry.
+    /// Also records the message as a breadcrumb.
     /// </summary>
     public static SentryEventId CaptureMessage(string message, SentryLevel level = SentryLevel.Info)
     {
         EnsureInitialized();
 
+        // Record breadcrumb first
+        AddBreadcrumb(Breadcrumb.FromMessage(message, level));
+
         var evt = new SentryEvent
         {
             Message = message,
             Level = level,
-            Release = _options!.Release
+            Release = _options!.Release,
+            Breadcrumbs = SnapshotBreadcrumbs()
         };
 
         _uploader!.Enqueue(new EventItem(evt));
@@ -90,14 +108,63 @@ public static class SentrySdk
 
     /// <summary>
     /// Capture a manually constructed event and send it to Sentry.
+    /// Automatically attaches current breadcrumbs if none are set.
     /// </summary>
     public static SentryEventId CaptureEvent(SentryEvent evt)
     {
         EnsureInitialized();
 
         evt.Release ??= _options!.Release;
+        evt.Breadcrumbs ??= SnapshotBreadcrumbs();
         _uploader!.Enqueue(new EventItem(evt));
         return evt.EventId;
+    }
+
+    /// <summary>
+    /// Add a breadcrumb to the global breadcrumb ring buffer.
+    /// Breadcrumbs are automatically attached to subsequent events.
+    /// Thread-safe.
+    /// </summary>
+    public static void AddBreadcrumb(Breadcrumb breadcrumb)
+    {
+        var buffer = _breadcrumbs;
+        if (buffer is null || buffer.Length == 0)
+            return;
+
+        var index = Interlocked.Increment(ref _breadcrumbIndex) - 1;
+        var wrappedIndex = index % buffer.Length;
+
+        buffer[wrappedIndex] = breadcrumb;
+
+        // Track count up to buffer size
+        if (_breadcrumbCount < buffer.Length)
+            Interlocked.Increment(ref _breadcrumbCount);
+    }
+
+    /// <summary>
+    /// Take a snapshot of the current breadcrumb ring buffer.
+    /// Returns null if breadcrumbs are disabled or empty.
+    /// </summary>
+    internal static IReadOnlyList<Breadcrumb>? SnapshotBreadcrumbs()
+    {
+        var buffer = _breadcrumbs;
+        if (buffer is null || buffer.Length == 0)
+            return null;
+
+        var count = _breadcrumbCount;
+        if (count == 0)
+            return null;
+
+        // Read the ring buffer in insertion order
+        var startIndex = _breadcrumbIndex - count;
+        var snapshot = new Breadcrumb[count];
+        for (var i = 0; i < count; i++)
+        {
+            var srcIndex = ((startIndex + i) % buffer.Length + buffer.Length) % buffer.Length;
+            snapshot[i] = buffer[srcIndex];
+        }
+
+        return snapshot;
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using NFMWorld.Sentry;
 using RayTech.RayLog.MEL;
 using ZLogger;
 
@@ -29,6 +30,7 @@ public static class Logging
             .AddConsoleFormatter<RayLogConsoleFormatter, ConsoleFormatterOptions>()
             .AddZLoggerRollingFile((dt, index) => $"{dt:yyyy-MM-dd}_{index}.log", 1024 * 1024)
             .AddProvider(new NfmwLoggerProvider())
+            .AddProvider(new NfmwSentryBreadcrumbLogger())
             .SetMinimumLevel(
 #if DEBUG
                 LogLevel.Trace
@@ -334,6 +336,52 @@ public static class Logging
 
 
     #endregion
+}
+
+public class NfmwSentryBreadcrumbLogger : ILoggerProvider
+{
+    public void Dispose()
+    {
+    }
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new NfmwSentryBreadcrumbLoggerImpl(categoryName);
+    }
+
+    public class NfmwSentryBreadcrumbLoggerImpl(string categoryName) : ILogger
+    {
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            var message = formatter(state, exception);
+            SentrySdk.AddBreadcrumb(new Breadcrumb
+            {
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = message,
+                Category = categoryName,
+                Type = "default",
+                Level = logLevel switch
+                {
+                    LogLevel.Trace or LogLevel.Debug => BreadcrumbLevel.Debug,
+                    LogLevel.Information => BreadcrumbLevel.Info,
+                    LogLevel.Warning => BreadcrumbLevel.Warning,
+                    LogLevel.Error => BreadcrumbLevel.Error,
+                    LogLevel.Critical => BreadcrumbLevel.Critical,
+                    _ => BreadcrumbLevel.Debug
+                }
+            });
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
 
 public class NfmwLoggerProvider : ILoggerProvider
