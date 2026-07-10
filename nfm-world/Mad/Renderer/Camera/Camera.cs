@@ -1,4 +1,6 @@
-﻿namespace NFMWorld;
+﻿using Microsoft.Xna.Framework;
+
+namespace NFMWorld;
 
 public abstract class Camera
 {
@@ -46,7 +48,17 @@ public abstract class Camera
 
     public Matrix ProjectionMatrix { get; protected set; }
 
-    public Matrix ViewProjectionMatrix { get; protected set; }
+    public Matrix ViewProjectionMatrix
+    {
+        get;
+        protected set
+        {
+            field = value;
+            Frustum = new BoundingFrustum(value);
+        }
+    }
+
+    public BoundingFrustum Frustum { get; private set; }
 
     public virtual void OnBeforeGameTick()
     {

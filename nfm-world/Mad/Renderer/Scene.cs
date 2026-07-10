@@ -73,12 +73,14 @@ public class Scene
         var lighting = new Lighting(_lightCameras, WorldGame.ShadowRenderTargets, pass);
 
         _renderQueue.Clear();
+        
+        _renderQueue.Begin(_camera, lighting);
         foreach (var obj in Objects)
         {
             obj.SubmitDraws(_renderQueue, _camera, lighting, pass);
         }
 
-        _renderQueue.Flush(_camera, lighting);
+        _renderQueue.Flush();
     }
 
     public void OnBeforeUpdate()
