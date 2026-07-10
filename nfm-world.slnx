@@ -38,7 +38,6 @@
     <Project Path="Maxine.Extensions/Maxine.Extensions.UnionGen.Base/Maxine.Extensions.UnionGen.Base.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions.UnionGen/Maxine.Extensions.UnionGen.csproj" />
     <Project Path="Maxine.Extensions/Maxine.Extensions/Maxine.Extensions.csproj" />
-    <Project Path="Maxine.Extensions/Maxine.VFS/Maxine.VFS.csproj" />
     <Project Path="Maxine.Extensions/RayTech.RayLog.MEL/RayTech.RayLog.MEL.csproj">
       <BuildType Solution="*|x64" Project="?" />
       <BuildType Solution="*|x86" Project="?" />
@@ -71,6 +70,7 @@
   <Project Path="NFMWorld.Multiplayer.Orchestrator/NFMWorld.Multiplayer.Orchestrator.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
+  <Project Path="NFMWorld.PhysicsFS/NFMWorld.PhysicsFS.csproj" />
   <Project Path="NFMWorld.Reactor.Generator/NFMWorld.Reactor.Generator.csproj" />
   <Project Path="NFMWorld.Reactor.ObservableCollections/NFMWorld.Reactor.ObservableCollections.csproj" />
   <Project Path="NFMWorld.Reactor.Test/NFMWorld.Reactor.Test.csproj" />

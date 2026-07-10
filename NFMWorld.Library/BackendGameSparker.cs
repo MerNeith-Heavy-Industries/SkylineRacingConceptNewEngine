@@ -1,17 +1,9 @@
-﻿﻿﻿﻿using System.Diagnostics;
+﻿﻿﻿﻿
  using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Maxine.Extensions;
-using Maxine.VFS;
-using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
 using NFMWorld.Sentry;
-using NFMWorldLibrary.Backend;
-using NFMWorldLibrary.Backend.Gamemodes;
-using NFMWorldLibrary.Files;
-using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 
@@ -64,22 +56,19 @@ public static class BackendGameSparker
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
 
 #if !DEBUG
-            if (!isHeadless && !Debugger.IsAttached)
-            {
-                CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
-            }
-    #endif
+                if (!isHeadless && !Debugger.IsAttached)
+                {
+                    CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
+                }
+        #endif
         
-        var realFs = new RelativeFileSystem(AppDomain.CurrentDomain.BaseDirectory);
-        var realFs2 = new RelativeFileSystem(Directory.GetCurrentDirectory());
-        VFS.MountNewFileTarget(realFs2);
+        VFS.MountDirectory(AppDomain.CurrentDomain.BaseDirectory);
+        VFS.MountDirectory(Directory.GetCurrentDirectory());
+        VFS.MountWriteDestination(Directory.GetCurrentDirectory());
         
-        // VFS.MountFileSystem(new HttpFileSystem());
-        VFS.MountFileSystem(realFs);
-        VFS.MountFileSystem(realFs2);
         var modsFolder = Path.Combine(Directory.GetCurrentDirectory(), "mods");
         if (Directory.Exists(modsFolder))
-            VFS.MountFileSystem(new RelativeFileSystem(modsFolder));
+            VFS.MountDirectory(modsFolder);
 
         cars.Add(Collection.NFMM, []);
         FileUtil.LoadFiles(
@@ -314,7 +303,7 @@ public static class BackendGameSparker
             return dynRad;
         }
 
-        var relativePath = VFS.Path.Combine("data", "models", name + ".rad");
+        var relativePath = $"data/models/{name}.rad";
         if (VFS.FileExists(relativePath))
         {
             try
@@ -356,7 +345,7 @@ public static class BackendGameSparker
             }
         }
 
-        var relativePath = VFS.Path.Combine("data", "models", name + ".rad");
+        var relativePath = $"data/models/{name}.rad";
         if (VFS.FileExists(relativePath))
         {
             try

@@ -88,18 +88,15 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         }
         else
         {
-            string[] stages = Directory.GetFiles("data/stages", "*.*", SearchOption.AllDirectories);
+            var stages = VFS.EnumerateFiles("data/stages", "*.txt", SearchOption.AllDirectories).ToArray();
             string stagePath = "";
             while (string.IsNullOrEmpty(stagePath) || stagePath.Contains("rar2"))
             {
                 stagePath = stages[(int)(URandom.Double() * stages.Length)];
             }
-
-            string dir = new FileInfo(stagePath).Directory?.Name ?? "";
-            if (dir == "stages") dir = "";
-            else dir += "/";
-
-            LoadStage(dir + Path.GetFileNameWithoutExtension(stagePath), false);
+            stagePath = stagePath.Replace("data/stages/", "").Replace(".txt", "");
+            
+            LoadStage(stagePath, false);
         }
 
         _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
