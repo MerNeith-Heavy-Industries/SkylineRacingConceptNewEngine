@@ -1,8 +1,8 @@
-﻿using Maxine.VFS;
+﻿using NFMWorld.PhysicsFS;
 
 namespace NFMWorldLibrary;
 
 public class TheVFS
 {
-    public static readonly MountingFileSystem VFS = new();
+    public static readonly VirtualFS VFS = new();
 }

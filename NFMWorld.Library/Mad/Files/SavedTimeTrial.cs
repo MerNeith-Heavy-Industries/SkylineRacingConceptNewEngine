@@ -40,7 +40,7 @@ public partial class SavedTimeTrial
 
     public static IEnumerable<(string stageName, string carName, string fileName)> GetTimeTrials()
     {
-        foreach (var file in VFS.GetFiles("data/tts", "*.timetrial", SearchOption.AllDirectories))
+        foreach (var file in VFS.EnumerateFiles("data/tts", "*.timetrial", SearchOption.AllDirectories))
         {
             var tt = Load(file);
             if (tt != null)

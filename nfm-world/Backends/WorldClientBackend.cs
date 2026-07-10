@@ -85,17 +85,16 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public IImage LoadImage(string file)
         {
-            var fullPath = VFS.Path.GetFullPath(file);
-            return _imageCache.GetOrAdd(fullPath, _ => LoadImageInternal());
+            return _imageCache.GetOrAdd(file, _ => LoadImageInternal());
             
             IImage LoadImageInternal()
             {
                 using var stream = VFS.OpenRead(file);
-                if (VFS.Path.GetExtension(file) == ".svg")
+                if (Path.GetExtension(file) == ".svg")
                 {
                     return NanoSVGImage.FromStream(stream);
                 }
-                if (VFS.Path.GetExtension(file) == ".dds")
+                if (Path.GetExtension(file) == ".dds")
                 {
                     return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, stream));
                 }

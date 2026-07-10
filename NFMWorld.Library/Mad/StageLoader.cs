@@ -134,7 +134,7 @@ public partial class StageLoader
         currentGroup = ungrouped;
 
         Path = stageName;
-        var customStagePath = VFS.Path.Combine("data", "stages", stageName + ".txt");
+        var customStagePath = $"data/stages/{stageName}.txt";
         var line = "";
         int lineNumber = 0;
 
