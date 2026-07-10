@@ -1,7 +1,8 @@
-﻿﻿﻿﻿
- using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
 using NFMWorld.Sentry;
 using NFMWorldLibrary.Rad;
