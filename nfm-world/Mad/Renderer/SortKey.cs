@@ -41,19 +41,6 @@ public readonly struct SortKey(uint value) : IEquatable<SortKey>, IComparable<So
         return new SortKey(((uint)bucket << 16) | ((uint)sortValue & 0xFFFF));
     }
 
-    /// <summary>
-    /// Sort key for transparent draws. Sorts back-to-front by depth for correct alpha blending.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SortKey Create(RenderBucket bucket, float depth)
-    {
-        // Invert depth for back-to-front: near objects get higher sort values.
-        // Clamp depth to [0, 1], convert to 16-bit, then invert.
-        var clamped = Math.Clamp(depth, 0f, 1f);
-        var depthBits = (ushort)((1f - clamped) * 0xFFFF);
-        return Create(bucket, depthBits);
-    }
-
     public int CompareTo(SortKey other) => Value.CompareTo(other.Value);
 
     public static bool operator <(SortKey a, SortKey b) => a.Value < b.Value;

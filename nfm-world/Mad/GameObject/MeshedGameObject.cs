@@ -51,17 +51,8 @@ public class MeshedGameObject(Mesh mesh) : GameObject
             return;
         }
 
-        foreach (var (element, renderOrder) in Mesh.GetRenderables(lighting, Finish ?? false))
-        {
-            var actualRenderOrder = renderOrder;
-            // Alpha-overridden objects always go to the highest (transparent) bucket
-            if (AlphaOverride is < 1.0f)
-                actualRenderOrder = 2;
-            queue.AddInstanced(element,
-                new InstanceData(MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false),
-                SortKey.Create(RenderBucket, actualRenderOrder),
-                new BoundingSphere(MatrixWorld.Translation, Mesh.MaxRadius));
-        }
+        var boundingSphere = new BoundingSphere(MatrixWorld.Translation, Mesh.MaxRadius);
+        Mesh.SubmitRenderables(queue, lighting, Finish ?? false, boundingSphere, RenderBucket, MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false);
 
         base.SubmitDraws(queue, camera, lighting, pass);
     }

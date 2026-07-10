@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
@@ -18,20 +19,15 @@ public class ImmediateMesh : Mesh, IRenderable
 
     public void Render(Camera camera, Lighting? lighting)
     {
-        var vertexBuffer = new DynamicVertexBuffer(GraphicsDevice, InstanceData.InstanceDeclaration, 1, BufferUsage.WriteOnly);
-
-        foreach (var (element, renderOrder) in GetRenderables(lighting, false).OrderBy(x => x.RenderOrder))
-        {
-            vertexBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(Matrix.Identity)], SetDataOptions.Discard);
-            element.Render(camera, lighting, vertexBuffer, 1);
-        }
+        var renderQueue = new RenderQueue(GraphicsDevice);
+        renderQueue.Begin(camera, lighting);
+        SubmitDraws(renderQueue, camera, lighting, RenderPass.Main());
+        renderQueue.Flush();
     }
 
     public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        foreach (var (element, renderOrder) in GetRenderables(lighting, false).OrderBy(x => x.RenderOrder))
-        {
-            queue.AddInstanced(element, new InstanceData(Matrix.Identity), SortKey.Create(RenderBucket.StagePieces, renderOrder));
-        }
+        var boundingSphere = new BoundingSphere(new Vector3(0, 0, 0), MaxRadius);
+        SubmitRenderables(queue, lighting, false, boundingSphere, RenderBucket.StagePieces, Matrix.Identity, true, 1.0f, false, false);
     }
 }
