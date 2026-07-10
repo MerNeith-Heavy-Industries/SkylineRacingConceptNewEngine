@@ -78,6 +78,7 @@
   <Project Path="NFMWorld.Reactor/NFMWorld.Reactor.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />
+  <Project Path="NFMWorld.Sentry/NFMWorld.Sentry.csproj" />
   <Project Path="NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.csproj" />
   <Project Path="Sokol/Sokol.csproj" />
   <Project Path="TestSvgPreprocess/TestSvgPreprocess.csproj" />
