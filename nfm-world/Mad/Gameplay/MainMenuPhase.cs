@@ -16,6 +16,8 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
+    public override bool IsSingleton => true;
+
     private MainMenuViewNode _mainMenuViewNode;
     private ReactorDom _dom;
     private UIManager _uiManager;
@@ -88,7 +90,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
             gp.CarSelectionCancelled += (sender, _) =>
             {
-                GameSparker.SetPhase(GameSparker.MainMenu);
+                GameSparker.SetPhase(this);
             };
 
             GameSparker.SetPhase(gp);
@@ -100,7 +102,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
     private void OnGarageClicked()
     {
         GaragePhase gp = new GaragePhase(GraphicsDevice);
-        gp.Enter();
+        
         gp.CarSelected += (sender, c) =>
         {
             GameSparker.SetPhase(this);

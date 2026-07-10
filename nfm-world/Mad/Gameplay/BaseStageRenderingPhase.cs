@@ -44,6 +44,18 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
         GameSparker.CurrentMusic = null;
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        if (disposing)
+        {
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            CurrentStage?.Dispose();
+            CurrentStage = null!;
+        }
+    }
+
     private IRadicalMusic? _stageMusic;
 
     /// <summary>
@@ -52,6 +64,7 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     /// </summary>
     public virtual void LoadStage(string stageName, bool loadMusic = true, bool reloadIfLoaded = false)
     {
+        CurrentStage?.Dispose();
         CurrentStage = new ClientStage(GraphicsDevice, stageName, CarsInRace, Camera, LightCameras);
 
         if (loadMusic && !string.IsNullOrEmpty(CurrentStage.MusicPath))
@@ -111,12 +124,15 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
     public override void GameTick()
     {
         base.GameTick();
-        CurrentStage.GameTick();
+        CurrentStage?.GameTick();
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
+
+        if (CurrentStage == null)
+            return;
 
         foreach (var lightCamera in LightCameras)
         {

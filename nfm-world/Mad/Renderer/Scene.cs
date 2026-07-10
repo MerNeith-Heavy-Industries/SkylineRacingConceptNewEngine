@@ -1,15 +1,17 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Scene
+public class Scene : IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private Camera _camera;
     private readonly IReadOnlyList<Camera> _lightCameras;
     public readonly List<GameObject> Objects;
     private readonly RenderQueue _renderQueue;
+    private bool _disposed;
 
     public Camera ActiveCamera
     {
@@ -99,4 +101,18 @@ public class Scene
             obj.GameTick(currentStage);
         }
     }
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _renderQueue.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    #endregion
 }
