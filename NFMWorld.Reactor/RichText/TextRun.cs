@@ -128,7 +128,15 @@ public partial class TextRun : Node
     }
 
     [Property]
-    public TextElement[] Elements { get; set; } = [];
+    public TextElement[] Elements
+    {
+        get;
+        set
+        {
+            field = value;
+            Invalidate();
+        }
+    } = [];
 
     public bool HasComplexContent => Elements.Length > 0;
 
