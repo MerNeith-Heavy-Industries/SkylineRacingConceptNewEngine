@@ -1,11 +1,12 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 
 // This duplicates some code from CollisionObject, no workaround
 namespace NFMWorld;
 
-public class EditorObject : StaticMeshObject
+public class EditorObject : StaticMeshObject, IDisposable
 {
     public Rad3dBoxDef[] Boxes { get; }
 
@@ -61,5 +62,15 @@ public class EditorObject : StaticMeshObject
         }
 
         _collisionDebugMesh?.SubmitDraws(queue, camera, lighting, pass);
+    }
+
+    public void Dispose()
+    {
+        _collisionDebugMesh?.Dispose();
+        foreach (var wheel in _wheels)
+        {
+            wheel.Mesh.Dispose();
+        }
+        GC.SuppressFinalize(this);
     }
 }

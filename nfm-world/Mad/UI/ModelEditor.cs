@@ -2972,7 +2972,7 @@ public class ModelEditorPhase : BasePhase
         };
         
         var highlightBoxes = new[] { highlightedBox };
-        var highlightMesh = new CollisionDebugMesh(highlightBoxes);
+        using var highlightMesh = new CollisionDebugMesh(highlightBoxes);
         
         // Match the main model's transform
         highlightMesh.Position = tab.Object.Position;
