@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.Xna.Framework;
+﻿﻿﻿﻿using Microsoft.Xna.Framework;
  using NFMWorld.Reactor;
  using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
@@ -20,7 +20,7 @@ public partial class GarageDynamicStatBar : Node
         set
         {
             field = value;
-            Width = value;
+            Width.DefaultValue = value;
         }
     } = 100;
 
@@ -31,7 +31,7 @@ public partial class GarageDynamicStatBar : Node
         set
         {
             field = value;
-            Height = value + 28;
+            Height.DefaultValue = value + 28;
         }
     } = 10;
 
@@ -75,8 +75,8 @@ public partial class GarageDynamicStatBar : Node
 
     public GarageDynamicStatBar()
     {
-        Width = BarMaxWidth;
-        Height = BarHeight + 28;
+        Width.DefaultValue = BarMaxWidth;
+        Height.DefaultValue = BarHeight + 28;
     }
 
     protected override void GameTick()

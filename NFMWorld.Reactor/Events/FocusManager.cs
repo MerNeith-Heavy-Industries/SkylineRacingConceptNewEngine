@@ -74,7 +74,7 @@ public class FocusManager
     
         foreach (var visual in children)
         {
-            if (visual is Node child && (child.Visibility == Visibility.Hidden || child.Display == Display.None || child.Opacity == 0.0f))
+            if (visual is Node child && (child.Visibility.ComputedValue == Visibility.Hidden || child.Display.ComputedValue == Display.None || child.Opacity.ComputedValue == 0.0f))
                 continue;
 
             var result = HitTestRecursive(visual, pos);
@@ -105,7 +105,7 @@ public class FocusManager
     {
         foreach (var child in root.VisualChildren)
         {
-            if (child is Node node && (node.Visibility == Visibility.Hidden || node.Display == Display.None || node.Opacity == 0.0f))
+            if (child is Node node && (node.Visibility.ComputedValue == Visibility.Hidden || node.Display.ComputedValue == Display.None || node.Opacity.ComputedValue == 0.0f))
                 continue;
 
             if (child.IsFocusable)
@@ -173,8 +173,8 @@ public class FocusManager
 
         foreach (var visual in children)
         {
-            if (visual is Node child && (child.Visibility == Visibility.Hidden
-                || child.Display == Display.None || child.Opacity == 0.0f))
+            if (visual is Node child && (child.Visibility.ComputedValue == Visibility.Hidden
+                || child.Display.ComputedValue == Display.None || child.Opacity.ComputedValue == 0.0f))
                 continue;
 
             if (HitTestChainRecursive(visual, pos, chain))

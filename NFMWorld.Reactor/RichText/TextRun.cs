@@ -23,110 +23,87 @@ public enum OverflowBehavior
 
 public partial class TextRun : Node
 {
-    internal StyledProperty<Color?> _background;
-    internal StyledProperty<Color> _foreground;
-    internal StyledProperty<Color?> _stroke;
-    internal StyledProperty<FontFamily> _fontFamily;
-    internal StyledProperty<float> _fontSize;
-    internal StyledProperty<FontStyle> _fontStyle;
-    internal StyledProperty<BreakType> _breakType;
-    internal StyledProperty<OverflowBehavior> _overflowBehavior;
-    internal StyledProperty<TextHorizontalAlignment> _horizontalAlignment;
-    internal StyledProperty<TextVerticalAlignment> _verticalAlignment;
+    /// <summary>
+    /// Sets the background color of the text.
+    /// </summary>
+    public StyledProperty<Color?> Background;
+    
+    /// <summary>
+    /// Sets the fill color of the text. The default value is white.
+    /// </summary>
+    public StyledProperty<Color> Foreground;
+    
+    /// <summary>
+    /// Sets the stroke color of the text. Or set to null to disable the stroke.
+    /// </summary>
+    public StyledProperty<Color?> Stroke;
+    
+    /// <summary>
+    /// Gets or sets the font family.
+    /// </summary>
+    public StyledProperty<FontFamily> FontFamily;
+    
+    /// <summary>
+    /// Gets or sets the font size.
+    /// </summary>
+    public StyledProperty<float> FontSize;
+    
+    /// <summary>
+    /// Gets or sets the font style.
+    /// </summary>
+    public StyledProperty<FontStyle> FontStyle;
+    public StyledProperty<BreakType> BreakType;
+    public StyledProperty<OverflowBehavior> OverflowBehavior;
+    
+    /// <summary>
+    /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
+    /// </summary>
+    public StyledProperty<TextHorizontalAlignment> HorizontalAlignment;
+    
+    /// <summary>
+    /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
+    /// </summary>
+    public StyledProperty<TextVerticalAlignment> VerticalAlignment;
 
     protected bool Invalidated { get; private set; }= true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     public TextRun()
     {
-        _background = null;
-        _foreground = new Color(255, 255, 255);
-        _stroke = null;
-        _fontFamily = new(
-            FontFamily.DroidSans,
+        Background = new(null);
+        Foreground = new(new Color(255, 255, 255));
+        Stroke = new(null);
+        FontFamily = new(
+            DriverInterface.FontFamily.DroidSans,
             this,
             static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
         );
-        _fontSize = new(
+        FontSize = new(
             12f,
             this,
             static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
         );
-        _fontStyle = new(
-            FontStyle.Plain,
+        FontStyle = new(
+            DriverInterface.FontStyle.Plain,
             this,
             static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
         );
-        _breakType = new(
-            BreakType.Word,
+        BreakType = new(
+            Reactor.BreakType.Word,
             this,
             static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
         );
-        _overflowBehavior = new(
-            OverflowBehavior.Stretch,
+        OverflowBehavior = new(
+            Reactor.OverflowBehavior.Stretch,
             this,
             static (ctx, o, n) => ((TextRun)ctx!).Invalidate()
         );
-        _horizontalAlignment = TextHorizontalAlignment.Left;
-        _verticalAlignment = TextVerticalAlignment.Top;
+        HorizontalAlignment = new(TextHorizontalAlignment.Left);
+        VerticalAlignment = new(TextVerticalAlignment.Top);
     }
 
     public override bool DebugIsContentfulNode => true;
     
-    /// <summary>
-    /// Sets the background color of the text.
-    /// </summary>
-    public Color? Background
-    {
-        get => _background.ComputedValue;
-        set => _background.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// Sets the fill color of the text. The default value is white.
-    /// </summary>
-    public Color Foreground
-    {
-        get => _foreground.ComputedValue;
-        set => _foreground.SetOverrideValue(value);
-    }
-    
-    /// <summary>
-    /// Sets the stroke color of the text. Or set to null to disable the stroke.
-    /// </summary>
-    public Color? Stroke
-    {
-        get => _stroke.ComputedValue;
-        set => _stroke.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// Gets or sets the font family.
-    /// </summary>
-    public FontFamily FontFamily
-    {
-        get => _fontFamily.ComputedValue;
-        set => _fontFamily.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// Gets or sets the font size.
-    /// </summary>
-    public float FontSize
-    {
-        get => _fontSize.ComputedValue;
-        set => _fontSize.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// Gets or sets the font style.
-    /// </summary>
-    public FontStyle FontStyle
-    {
-        get => _fontStyle.ComputedValue;
-        set => _fontStyle.SetOverrideValue(value);
-    }
-
     [Property]
     public TextElement[] Elements
     {
@@ -139,18 +116,6 @@ public partial class TextRun : Node
     } = [];
 
     public bool HasComplexContent => Elements.Length > 0;
-
-    public BreakType BreakType
-    {
-        get => _breakType.ComputedValue;
-        set => _breakType.SetOverrideValue(value);
-    }
-
-    public OverflowBehavior OverflowBehavior
-    {
-        get => _overflowBehavior.ComputedValue;
-        set => _overflowBehavior.SetOverrideValue(value);
-    }
 
     /// <summary>
     /// Sets the text.
@@ -172,54 +137,36 @@ public partial class TextRun : Node
         }
     } = "";
 
-    /// <summary>
-    /// Sets the horizontal alignment of the text. The default value is <see cref="TextHorizontalAlignment.Left"/>.
-    /// </summary>
-    public TextHorizontalAlignment HorizontalAlignment
-    {
-        get => _horizontalAlignment.ComputedValue;
-        set => _horizontalAlignment.SetOverrideValue(value);
-    }
-
-    /// <summary>
-    /// Sets the vertical alignment of the text. The default value is <see cref="TextVerticalAlignment.Top"/>.
-    /// </summary>
-    public TextVerticalAlignment VerticalAlignment
-    {
-        get => _verticalAlignment.ComputedValue;
-        set => _verticalAlignment.SetOverrideValue(value);
-    }
-
     protected override void UpdateStyles(StyleSheetStyles? oldStyleSheet, StyleSheetStyles? newStyleSheet)
     {
         base.UpdateStyles(oldStyleSheet, newStyleSheet);
         
         if (oldStyleSheet is { } oldStyleSheetValue)
         {
-            if (oldStyleSheetValue.Background is not null) _background.ClearStyleValue();
-            if (oldStyleSheetValue.Foreground is not null) _foreground.ClearStyleValue();
-            if (oldStyleSheetValue.Stroke is not null) _stroke.ClearStyleValue();
-            if (oldStyleSheetValue.FontFamily is not null) _fontFamily.ClearStyleValue();
-            if (oldStyleSheetValue.FontSize is not null) _fontSize.ClearStyleValue();
-            if (oldStyleSheetValue.FontStyle is not null) _fontStyle.ClearStyleValue();
-            if (oldStyleSheetValue.BreakType is not null) _breakType.ClearStyleValue();
-            if (oldStyleSheetValue.OverflowBehavior is not null) _overflowBehavior.ClearStyleValue();
-            if (oldStyleSheetValue.HorizontalAlignment is not null) _horizontalAlignment.ClearStyleValue();
-            if (oldStyleSheetValue.VerticalAlignment is not null) _verticalAlignment.ClearStyleValue();
+            if (oldStyleSheetValue.Background is not null) Background.ClearStyleValue();
+            if (oldStyleSheetValue.Foreground is not null) Foreground.ClearStyleValue();
+            if (oldStyleSheetValue.Stroke is not null) Stroke.ClearStyleValue();
+            if (oldStyleSheetValue.FontFamily is not null) FontFamily.ClearStyleValue();
+            if (oldStyleSheetValue.FontSize is not null) FontSize.ClearStyleValue();
+            if (oldStyleSheetValue.FontStyle is not null) FontStyle.ClearStyleValue();
+            if (oldStyleSheetValue.BreakType is not null) BreakType.ClearStyleValue();
+            if (oldStyleSheetValue.OverflowBehavior is not null) OverflowBehavior.ClearStyleValue();
+            if (oldStyleSheetValue.HorizontalAlignment is not null) HorizontalAlignment.ClearStyleValue();
+            if (oldStyleSheetValue.VerticalAlignment is not null) VerticalAlignment.ClearStyleValue();
         }
         
         if (newStyleSheet is { } newStyleSheetValue)
         {
-            if (newStyleSheetValue.Background is {} background) _background.SetStyleValue(background);
-            if (newStyleSheetValue.Foreground is {} foreground) _foreground.SetStyleValue(foreground);
-            if (newStyleSheetValue.Stroke is {} stroke) _stroke.SetStyleValue(stroke);
-            if (newStyleSheetValue.FontFamily is {} fontFamily) _fontFamily.SetStyleValue(fontFamily);
-            if (newStyleSheetValue.FontSize is {} fontSize) _fontSize.SetStyleValue(fontSize);
-            if (newStyleSheetValue.FontStyle is {} fontStyle) _fontStyle.SetStyleValue(fontStyle);
-            if (newStyleSheetValue.BreakType is {} breakType) _breakType.SetStyleValue(breakType);
-            if (newStyleSheetValue.OverflowBehavior is {} overflowBehavior) _overflowBehavior.SetStyleValue(overflowBehavior);
-            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) _horizontalAlignment.SetStyleValue(horizontalAlignment);
-            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) _verticalAlignment.SetStyleValue(verticalAlignment);
+            if (newStyleSheetValue.Background is {} background) Background.StyleValue = background;
+            if (newStyleSheetValue.Foreground is {} foreground) Foreground.StyleValue = foreground;
+            if (newStyleSheetValue.Stroke is {} stroke) Stroke.StyleValue = stroke;
+            if (newStyleSheetValue.FontFamily is {} fontFamily) FontFamily.StyleValue = fontFamily;
+            if (newStyleSheetValue.FontSize is {} fontSize) FontSize.StyleValue = fontSize;
+            if (newStyleSheetValue.FontStyle is {} fontStyle) FontStyle.StyleValue = fontStyle;
+            if (newStyleSheetValue.BreakType is {} breakType) BreakType.StyleValue = breakType;
+            if (newStyleSheetValue.OverflowBehavior is {} overflowBehavior) OverflowBehavior.StyleValue = overflowBehavior;
+            if (newStyleSheetValue.HorizontalAlignment is {} horizontalAlignment) HorizontalAlignment.StyleValue = horizontalAlignment;
+            if (newStyleSheetValue.VerticalAlignment is {} verticalAlignment) VerticalAlignment.StyleValue = verticalAlignment;
         }
     }
 
@@ -244,17 +191,17 @@ public partial class TextRun : Node
             flattened = ComplexTextMetrics.FlattenText(Elements.OfType<IRichTextElement>());
         }
         
-        var font = new Font(FontFamily, FontStyle, FontSize);
-        if (OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+        var font = new Font(FontFamily.ComputedValue, FontStyle.ComputedValue, FontSize.ComputedValue);
+        if (OverflowBehavior.ComputedValue is not Reactor.OverflowBehavior.Stretch and not Reactor.OverflowBehavior.None && BreakType.ComputedValue is not Reactor.BreakType.None)
         {
-            flattened = ComplexTextMetrics.LayoutText(font, flattened, new Vector2(size.X, size.Y), BreakType, OverflowBehavior);
+            flattened = ComplexTextMetrics.LayoutText(font, flattened, new Vector2(size.X, size.Y), BreakType.ComputedValue, OverflowBehavior.ComputedValue);
         }
         var measurements = ComplexTextMetrics.MeasureRichText(flattened, font);
 
-        if (OverflowBehavior is OverflowBehavior.Stretch)
+        if (OverflowBehavior.ComputedValue is Reactor.OverflowBehavior.Stretch)
         {
-            _width.SetOverrideValue(measurements.Size.X);
-            _height.SetOverrideValue(measurements.Size.Y);
+            Width.OverrideValue = measurements.Size.X;
+            Height.OverrideValue = measurements.Size.Y;
         }
 
         LaidOutComplexText = measurements;
@@ -271,7 +218,7 @@ public partial class TextRun : Node
     {
         base.RenderContent(position, size);
         
-        if (HasNewLayout && OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && BreakType is not BreakType.None)
+        if (HasNewLayout && OverflowBehavior.ComputedValue is not Reactor.OverflowBehavior.Stretch and not Reactor.OverflowBehavior.None && BreakType.ComputedValue is not Reactor.BreakType.None)
         {
             Invalidated = true;
             HasNewLayout = false;
@@ -291,23 +238,23 @@ public partial class TextRun : Node
         }
 
         var basePosition = position;
-        ComplexTextMetrics.AlignBounds(LaidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment, VerticalAlignment, ref basePosition.X, ref basePosition.Y);
+        ComplexTextMetrics.AlignBounds(LaidOutComplexText.Value.Size, (int)size.X, (int)size.Y, HorizontalAlignment.ComputedValue, VerticalAlignment.ComputedValue, ref basePosition.X, ref basePosition.Y);
 
         foreach (var element in LaidOutComplexText.Value.Elements)
         {
-            G.SetFont(element.Font with { Size = (element.FontSize ?? FontSize) * G.Scale });
-            if ((element.Background ?? Background) is { } background)
+            G.SetFont(element.Font with { Size = (element.FontSize ?? FontSize.ComputedValue) * G.Scale });
+            if ((element.Background ?? Background.ComputedValue) is { } background)
             {
                 G.SetColor(background);
                 G.FillRect((int)basePosition.X, (int)basePosition.Y, (int)element.Size.X, (int)element.Size.Y);
             }
 
             float yOff = 0;
-            if (VerticalAlignment == TextVerticalAlignment.Center)
+            if (VerticalAlignment.ComputedValue == TextVerticalAlignment.Center)
             {
                 yOff = (G.GetFontMetrics().LineHeight / 2.0f);
             }
-            else if (VerticalAlignment == TextVerticalAlignment.Top)
+            else if (VerticalAlignment.ComputedValue == TextVerticalAlignment.Top)
             {
                 yOff = G.GetFontMetrics().LineHeight;
             }
@@ -315,13 +262,13 @@ public partial class TextRun : Node
             int x = (int)(basePosition.X + (element.Position.X * G.Scale));
             int y = (int)(basePosition.Y + (element.Position.Y * G.Scale) + yOff);
 
-            if ((element.Stroke ?? Stroke) is { } stroke)
+            if ((element.Stroke ?? Stroke.ComputedValue) is { } stroke)
             {
                 G.SetColor(stroke);
                 G.DrawStringStroke(element.Text, x, y);
             }
             
-            G.SetColor(element.Foreground ?? Foreground);
+            G.SetColor(element.Foreground ?? Foreground.ComputedValue);
             G.DrawString(element.Text, x, y);
         }
     }

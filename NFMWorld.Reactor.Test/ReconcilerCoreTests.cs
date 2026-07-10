@@ -245,13 +245,13 @@ public class ReconcilerCoreTests
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
 
         // Second render: Visibility NOT set → should reset to default
         var vnode2 = FlexPanel();
         dom.Mount(container, vnode2);
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, root.Visibility,
+        Assert.AreEqual(Visibility.Visible, root.Visibility.ComputedValue,
             "Stale property should reset to default (Visible) when omitted");
     }
 
@@ -269,16 +269,16 @@ public class ReconcilerCoreTests
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
-        Assert.AreEqual(0.3f, root.Opacity, 0.001f);
-        Assert.AreEqual(FlexDirection.Column, root.FlexDirection);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
+        Assert.AreEqual(0.3f, root.Opacity.ComputedValue, 0.001f);
+        Assert.AreEqual(FlexDirection.Column, root.FlexDirection.ComputedValue);
 
         var vnode2 = FlexPanel();
         dom.Mount(container, vnode2);
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, root.Visibility);
-        Assert.AreEqual(1.0f, root.Opacity, 0.001f, "Stale Opacity should reset to 1.0");
-        Assert.AreEqual(FlexDirection.Row, root.FlexDirection, "Stale FlexDirection should reset to Row");
+        Assert.AreEqual(Visibility.Visible, root.Visibility.ComputedValue);
+        Assert.AreEqual(1.0f, root.Opacity.ComputedValue, 0.001f, "Stale Opacity should reset to 1.0");
+        Assert.AreEqual(FlexDirection.Row, root.FlexDirection.ComputedValue, "Stale FlexDirection should reset to Row");
     }
 
     [TestMethod]
@@ -300,9 +300,9 @@ public class ReconcilerCoreTests
         dom.Mount(container, vnode2);
         ctx.Drain();
 
-        Assert.AreEqual(Visibility.Visible, root.Visibility,
+        Assert.AreEqual(Visibility.Visible, root.Visibility.ComputedValue,
             "Stale Visibility should reset to Visible");
-        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection,
+        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection.ComputedValue,
             "Fresh FlexDirection should update");
     }
 
@@ -319,7 +319,7 @@ public class ReconcilerCoreTests
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
         var child = (FlexPanel)root.Children[0];
-        Assert.AreEqual(Visibility.Hidden, child.Visibility);
+        Assert.AreEqual(Visibility.Hidden, child.Visibility.ComputedValue);
 
         var vnode2 = FlexPanel(children:
             FlexPanel(name: "Replacement")
@@ -340,12 +340,12 @@ public class ReconcilerCoreTests
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
 
         var vnode2 = FlexPanel(visibility: Visibility.Hidden);
         dom.Mount(container, vnode2);
         ctx.Drain();
-        Assert.AreEqual(Visibility.Hidden, root.Visibility,
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue,
             "Property should persist when set in both renders");
     }
 
@@ -508,10 +508,10 @@ public class ReconcilerCoreTests
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
 
-        Assert.AreEqual(0.5f, root.Opacity, 0.001f);
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
-        Assert.AreEqual(FlexDirection.Column, root.FlexDirection);
-        Assert.AreEqual(Align.Center, root.AlignItems);
+        Assert.AreEqual(0.5f, root.Opacity.ComputedValue, 0.001f);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
+        Assert.AreEqual(FlexDirection.Column, root.FlexDirection.ComputedValue);
+        Assert.AreEqual(Align.Center, root.AlignItems.ComputedValue);
     }
 
     [TestMethod]
@@ -586,7 +586,7 @@ public class ReconcilerCoreTests
         var view = (View)root;
         Assert.AreEqual("ShadowedView", view.Name);
         Assert.AreEqual("sv", view.Key);
-        Assert.AreEqual(FlexDirection.Row, view.FlexDirection);
+        Assert.AreEqual(FlexDirection.Row, view.FlexDirection.ComputedValue);
     }
 
     [TestMethod]
@@ -748,13 +748,13 @@ public class ReconcilerCoreTests
         dom.Mount(container, vnode1);
         ctx.Drain();
         var root = (FlexPanel)dom.Root!;
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
 
         // Now change to Visible — property should update
         var vnode2 = FlexPanel(visibility: Visibility.Visible);
         dom.Mount(container, vnode2);
         ctx.Drain();
-        Assert.AreEqual(Visibility.Visible, root.Visibility);
+        Assert.AreEqual(Visibility.Visible, root.Visibility.ComputedValue);
     }
 
     [TestMethod]
@@ -776,9 +776,9 @@ public class ReconcilerCoreTests
         var root = (View)dom.Root!;
 
         Assert.AreEqual("V", root.Name);
-        Assert.AreEqual(0.75f, root.Opacity, 0.001f);
-        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection);
-        Assert.AreEqual(Visibility.Hidden, root.Visibility);
+        Assert.AreEqual(0.75f, root.Opacity.ComputedValue, 0.001f);
+        Assert.AreEqual(FlexDirection.ColumnReverse, root.FlexDirection.ComputedValue);
+        Assert.AreEqual(Visibility.Hidden, root.Visibility.ComputedValue);
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -881,12 +881,12 @@ public class ReconcilerCoreTests
         var wrapper = (FlexPanel)hostOutput.Children[0];
         var lapPanel = (FlexPanel)wrapper.Children[0];
 
-        Assert.AreEqual(Position.Absolute, wrapper.Position);
-        Assert.AreEqual(0f, wrapper.Top.Value, "Wrapper Top should be 0");
-        Assert.AreEqual(0f, wrapper.Bottom.Value, "Wrapper Bottom should be 0");
-        Assert.AreEqual(Position.Absolute, lapPanel.Position);
-        Assert.AreEqual(0f, lapPanel.Top.Value, "Lap panel Top should be 0");
-        Assert.AreEqual(0f, lapPanel.Left.Value, "Lap panel Left should be 0");
+        Assert.AreEqual(Position.Absolute, wrapper.Position.ComputedValue);
+        Assert.AreEqual(0f, wrapper.Top.ComputedValue.Value, "Wrapper Top should be 0");
+        Assert.AreEqual(0f, wrapper.Bottom.ComputedValue.Value, "Wrapper Bottom should be 0");
+        Assert.AreEqual(Position.Absolute, lapPanel.Position.ComputedValue);
+        Assert.AreEqual(0f, lapPanel.Top.ComputedValue.Value, "Lap panel Top should be 0");
+        Assert.AreEqual(0f, lapPanel.Left.ComputedValue.Value, "Lap panel Left should be 0");
     }
 
     /// <summary>
@@ -972,11 +972,11 @@ public class ReconcilerCoreTests
         var wrapper = (FlexPanel)rootFlex.Children[0];
         var lapPanel = (FlexPanel)wrapper.Children[0];
 
-        Assert.AreEqual(Position.Absolute, lapPanel.Position,
+        Assert.AreEqual(Position.Absolute, lapPanel.Position.ComputedValue,
             "Lap panel should remain Absolute after state update");
-        Assert.AreEqual(0f, lapPanel.Top.Value,
+        Assert.AreEqual(0f, lapPanel.Top.ComputedValue.Value,
             "Lap panel Top should be 0 after state update");
-        Assert.AreEqual(0f, lapPanel.Left.Value,
+        Assert.AreEqual(0f, lapPanel.Left.ComputedValue.Value,
             "Lap panel Left should be 0 after state update");
         Assert.AreEqual("lap:1/3", lapPanel.Name,
             "Lap panel should show updated lap count");
