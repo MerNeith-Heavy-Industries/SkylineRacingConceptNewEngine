@@ -159,9 +159,7 @@ public partial record struct Color3(
             (short) Math.Min((int) (b / Factor), 255)
         );
     }
-    
-    public static implicit operator Vector4(Color3 color3)
-        => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
+
     public static implicit operator System.Numerics.Vector4(Color3 color3)
         => new(color3.R / 255.0f, color3.G / 255.0f, color3.B / 255.0f, 1.0f);
 
