@@ -46,6 +46,12 @@ public struct SentryEvent()
     public Dictionary<string, string>? Tags { get; set; }
 
     /// <summary>
+    /// Breadcrumbs captured at the time this event was created.
+    /// A snapshot of the global breadcrumb ring buffer.
+    /// </summary>
+    public IReadOnlyList<Breadcrumb>? Breadcrumbs { get; set; }
+
+    /// <summary>
     /// Create a Sentry event from an exception.
     /// </summary>
     public SentryEvent(Exception exception) : this()

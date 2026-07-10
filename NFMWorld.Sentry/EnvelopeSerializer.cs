@@ -150,6 +150,20 @@ public static class EnvelopeSerializer
             sb.Append('}');
         }
 
+        // Breadcrumbs
+        if (evt.Breadcrumbs is { Count: > 0 })
+        {
+            sb.Append(",\"breadcrumbs\":{\"values\":[");
+            var first = true;
+            foreach (var bc in evt.Breadcrumbs)
+            {
+                if (!first) sb.Append(',');
+                first = false;
+                SerializeBreadcrumb(sb, bc);
+            }
+            sb.Append("]}");
+        }
+
         sb.Append('}');
         return Utf8.GetBytes(sb.ToString());
     }
@@ -254,6 +268,39 @@ public static class EnvelopeSerializer
 
             current = current.InnerException;
         }
+    }
+
+    private static void SerializeBreadcrumb(StringBuilder sb, Breadcrumb bc)
+    {
+        sb.Append('{');
+
+        AppendJsonString(sb, "timestamp", bc.Timestamp.ToString("o", CultureInfo.InvariantCulture));
+        sb.Append(',');
+
+        AppendJsonString(sb, "level", bc.Level.ToString().ToLowerInvariant());
+        sb.Append(',');
+
+        AppendJsonString(sb, "category", bc.Category);
+        sb.Append(',');
+
+        AppendJsonString(sb, "type", string.IsNullOrEmpty(bc.Type) ? "default" : bc.Type);
+        sb.Append(",\"message\":");
+        AppendJsonString(sb, bc.Message);
+
+        if (bc.Data is { Count: > 0 })
+        {
+            sb.Append(",\"data\":{");
+            var first = true;
+            foreach (var (key, value) in bc.Data)
+            {
+                if (!first) sb.Append(',');
+                first = false;
+                AppendJsonString(sb, key, value);
+            }
+            sb.Append('}');
+        }
+
+        sb.Append('}');
     }
 
     private static void SerializeStackTrace(StringBuilder sb, string stackTrace)
