@@ -4,6 +4,7 @@ using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary.Backend;
 

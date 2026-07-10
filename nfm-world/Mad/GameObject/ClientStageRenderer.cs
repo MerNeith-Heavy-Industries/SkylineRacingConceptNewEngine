@@ -4,6 +4,7 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Util;
 using Environment = NFMWorld.Environment;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 

@@ -7,6 +7,7 @@ using FixedMathSharp;
 using HoleyDiver;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary.Rad;
 

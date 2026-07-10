@@ -28,6 +28,7 @@ using WorldXaml.UI.Yoga.Events;
 using Keys = WorldXaml.UI.Yoga.Events.Keys;
 using Logging = NFMWorldLibrary.Logging;
 using LogLevel = NFMWorld.Reactor.LogLevel;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 

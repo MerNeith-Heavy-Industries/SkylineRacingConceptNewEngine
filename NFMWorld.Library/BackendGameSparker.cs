@@ -1,4 +1,4 @@
-﻿﻿using System.Diagnostics;
+﻿﻿﻿﻿using System.Diagnostics;
  using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,6 +7,7 @@ using Maxine.Extensions;
 using Maxine.VFS;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
+using NFMWorld.Sentry;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Files;
@@ -55,47 +56,19 @@ public static class BackendGameSparker
         
         SentrySdk.Init(options =>
         {
-            // A Sentry Data Source Name (DSN) is required.
-            // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
-            // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
             options.Dsn = Logging.SentryDsn;
-
-            // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
-            // This might be helpful, or might interfere with the normal operation of your application.
-            // We enable it here for demonstration purposes when first trying Sentry.
-            // You shouldn't do this in your applications unless you're troubleshooting issues with Sentry.
             options.Debug = false;
-
-            // This option is recommended. It enables Sentry's "Release Health" feature.
-            options.AutoSessionTracking = true;
-
-            // Set TracesSampleRate to 1.0 to capture 100%
-            // of transactions for tracing.
-            // We recommend adjusting this value in production.
             options.TracesSampleRate = 0.05;
-            
-            // Enable logs to be sent to Sentry
-            options.EnableLogs = true;
-            
-            // Try get NFMWorld assembly version first
             options.Release = Logging.Release;
-            
-#if !DEBUG
-            if (!isHeadless && !Debugger.IsAttached)
-            {
-                options.DisableAppDomainUnhandledExceptionCapture();
-                options.DisableUnobservedTaskExceptionCapture();
-            }
-#endif
         });
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
 
 #if !DEBUG
-        if (!isHeadless && !Debugger.IsAttached)
-        {
-            CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
-        }
-#endif
+            if (!isHeadless && !Debugger.IsAttached)
+            {
+                CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
+            }
+    #endif
         
         var realFs = new RelativeFileSystem(AppDomain.CurrentDomain.BaseDirectory);
         var realFs2 = new RelativeFileSystem(Directory.GetCurrentDirectory());

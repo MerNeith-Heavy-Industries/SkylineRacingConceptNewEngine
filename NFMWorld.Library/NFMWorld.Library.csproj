@@ -26,8 +26,6 @@
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.5.26302.115" />
-        <PackageReference Include="Sentry" Version="6.1.0-alpha.2" />
-        <PackageReference Include="Sentry.Extensions.Logging" Version="6.1.0-alpha.2" />
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
@@ -40,6 +38,7 @@
         <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.Reactor\NFMWorld.Reactor.csproj" />
+        <ProjectReference Include="..\NFMWorld.Sentry\NFMWorld.Sentry.csproj" />
     </ItemGroup>
 
     <ItemGroup>

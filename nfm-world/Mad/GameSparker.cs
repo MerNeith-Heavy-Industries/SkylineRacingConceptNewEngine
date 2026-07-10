@@ -12,6 +12,7 @@ using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Yoga.Events;
 using Path = System.IO.Path;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
