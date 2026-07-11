@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
+using MemoryPack;
 using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
 

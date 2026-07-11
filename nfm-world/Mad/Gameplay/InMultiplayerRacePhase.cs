@@ -16,7 +16,7 @@ namespace NFMWorld.Gameplay;
 public class InMultiplayerRacePhase(
     GraphicsDevice graphicsDevice,
     IMultiplayerClientTransport transport,
-    S2C_RaceStarted.GameSession session,
+    MatchGameplayInfo session,
     uint playerClientId
 )
     : BaseRacePhase(graphicsDevice)
@@ -32,7 +32,10 @@ public class InMultiplayerRacePhase(
 
         LoadStage(session.StageName);
 
-        transport.SendPacketToServer(new C2S_RaceLoaded());
+        transport.SendPacketToServer(new C2S_RaceLoaded
+        {
+            JoinToken = default // TODO
+        });
     }
 
     protected override IGamemode ReloadGamemode()

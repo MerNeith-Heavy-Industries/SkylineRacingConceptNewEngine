@@ -1,4 +1,5 @@
-﻿using NFMWorldLibrary.Multiplayer.Packets.C2S;
+﻿using MemoryPack;
+using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 namespace NFMWorldLibrary.Multiplayer;

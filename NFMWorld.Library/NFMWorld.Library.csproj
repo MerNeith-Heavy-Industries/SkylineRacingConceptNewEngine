@@ -58,5 +58,6 @@
     <ItemGroup>
       <Folder Include="data\" />
       <Folder Include="Gamemodes\Default\" />
+      <Folder Include="Mad\Multiplayer\Packets\Lobby\" />
     </ItemGroup>
 </Project>

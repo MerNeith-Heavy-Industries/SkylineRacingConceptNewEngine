@@ -67,7 +67,6 @@
   <Project Path="NFMWorld.Library.Test/NFMWorld.Library.Test.csproj" />
   <Project Path="NFMWorld.Library/NFMWorld.Library.csproj" />
   <Project Path="NFMWorld.Multiplayer.Base/NFMWorld.Multiplayer.Base.csproj" />
-  <Project Path="NFMWorld.Multiplayer.Orchestrator/NFMWorld.Multiplayer.Orchestrator.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
   <Project Path="NFMWorld.PhysicsFS/NFMWorld.PhysicsFS.csproj" />
@@ -77,9 +76,12 @@
   <Project Path="NFMWorld.Reactor.TestFixtures/NFMWorld.Reactor.TestFixtures.csproj" />
   <Project Path="NFMWorld.Reactor/NFMWorld.Reactor.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
+  <Project Path="NFMWorld.Server.Game.Slave/NFMWorld.Server.Game.Slave.csproj" />
+  <Project Path="NFMWorld.Server.Game/NFMWorld.Server.Game.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />
   <Project Path="NFMWorld.Sentry/NFMWorld.Sentry.csproj" />
   <Project Path="NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.csproj" />
   <Project Path="Sokol/Sokol.csproj" />
   <Project Path="TestSvgPreprocess/TestSvgPreprocess.csproj" />
+  <Project Path="websocket-sharp/websocket-sharp/websocket-sharp.csproj" />
 </Solution>

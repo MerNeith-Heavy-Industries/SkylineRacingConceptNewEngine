@@ -21,7 +21,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
     }
 
     // Dummy data
-    private List<S2C_LobbyState.PlayerInfo> _players = [];
+    private List<PlayerInfo> _players = [];
 
     private List<S2C_LobbyState.GameSession> _activeSessions = [];
 
@@ -56,7 +56,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                         PlayerName = chatMessage.Sender, 
                         Message = chatMessage.Message,
                         Color = _players
-                            .Select(e => (S2C_LobbyState.PlayerInfo?)e)
+                            .Select(e => (PlayerInfo?)e)
                             .FirstOrDefault(p => p!.Value.Id == chatMessage.SenderClientId, null)
                             ?.Color ?? new Color3(255, 255, 255)
                     });
@@ -72,7 +72,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                 case S2C_RaceStarted raceStarted:
                 {
                     // Transition to race phase
-                    var phase = new InMultiplayerRacePhase(graphicsDevice, transport, raceStarted.Session, _player.ClientId);
+                    var phase = new InMultiplayerRacePhase(graphicsDevice, transport, raceStarted.MatchGameplayInfo, _player.ClientId);
                     phase.RaceStateChanged += (sender, state) =>
                     {
                         if (state is RaceState.Finished or RaceState.FailedToStart)
