@@ -80,12 +80,12 @@ public class GameOrchestrator
 
     private S2C_LobbyState GetLobbyState(uint playerClientId)
     {
-        var players = new List<S2C_LobbyState.PlayerInfo>();
+        var players = new List<PlayerInfo>();
         var sessions = new List<S2C_LobbyState.GameSession>();
             
         foreach (var (id, client) in _connectedClients)
         {
-            players.Add(new S2C_LobbyState.PlayerInfo
+            players.Add(new PlayerInfo
             {
                 Id = id,
                 Name = client.Name,
@@ -183,21 +183,31 @@ public class GameOrchestrator
                     
                     _transport.SendPacketToClients(session.PlayerClientIds.Values.ToArray(), new S2C_RaceStarted
                     {
-                        Session = new S2C_RaceStarted.GameSession
+                        MatchGameplayInfo = new MatchGameplayInfo
                         {
                             StageName = session.StageName,
-                            State = session.State,
                             Gamemode = session.Gamemode,
                             Players = session.PlayerClientIds.ToDictionary(
                                 e1 => e1.Key,
-                                e1 => new S2C_RaceStarted.PlayerInfo
+                                e1 => new PlayerInfo
                                 {
                                     Id = e1.Value,
-                                    Name = _connectedClients.TryGetValue(e1.Value, out var ci) ? ci.Name : "Unknown",
-                                    Vehicle = _connectedClients.TryGetValue(e1.Value, out ci) ? ci.Vehicle : "nfmm/radicalone",
-                                    Color = _connectedClients.TryGetValue(e1.Value, out ci) ? ci.Color : new Color3()
+                                    Name = _connectedClients.TryGetValue(e1.Value,
+                                        out var ci)
+                                        ? ci.Name
+                                        : "Unknown",
+                                    Vehicle = _connectedClients.TryGetValue(e1.Value,
+                                        out ci)
+                                        ? ci.Vehicle
+                                        : "nfmm/radicalone",
+                                    Color = _connectedClients.TryGetValue(e1.Value,
+                                        out ci)
+                                        ? ci.Color
+                                        : new Color3()
                                 })
-                        }
+                        },
+                        State = session.State,
+                        JoinInfo = default // TODO
                     });
                 }
                 break;

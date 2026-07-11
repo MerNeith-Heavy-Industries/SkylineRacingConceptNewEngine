@@ -34,3 +34,6 @@
 [submodule "LibTessDotNet"]
 	path = LibTessDotNet
 	url = https://github.com/uwx/LibTessDotNet
+[submodule "websocket-sharp"]
+	path = websocket-sharp
+	url = https://github.com/uwx/websocket-sharp
