@@ -17,6 +17,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
+using NFMWorld.UI.Cef;
 using NFMWorld.UI.Hud;
 using NFMWorld.Util;
 using NFMWorldLibrary;
@@ -42,6 +43,9 @@ public class WorldGame : Game
     public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
     private ImGuiRenderer _imguiRenderer;
     public static ImGuiRenderer ImguiRenderer { get; private set; }
+    private CefRenderer _cefRenderer;
+    private float _cefElapsed;
+    private int _cefFrameCount;
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
@@ -113,6 +117,7 @@ public class WorldGame : Game
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             G.Scale = Window.ClientBounds.Height / 720f;
+            _cefRenderer?.Resize(Window.ClientBounds.Width, Window.ClientBounds.Height);
         };
 
         TextInputEXT.TextInput += character =>
@@ -128,6 +133,14 @@ public class WorldGame : Game
         
         UpdateInput();
         UpdateMouse();
+
+        _cefRenderer.Update(gameTime);
+
+        // Per-frame push: send sample values to JS for performance testing
+        _cefElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
+        _cefFrameCount++;
+        var sampleSpeed = 100f + (float)Math.Sin(_cefElapsed * 2.0) * 80f; // oscillates 20-180 km/h
+        GameBridge.PushUpdate(_cefRenderer.GetBrowser(), sampleSpeed, $"Player #{_cefFrameCount % 100}", _cefFrameCount);
 
         if (!_loaded)
         {
@@ -169,6 +182,14 @@ public class WorldGame : Game
         _imguiRenderer = new ImGuiRenderer(this);
         ImguiRenderer = _imguiRenderer;
 
+        // Initialize CEF renderer after GraphicsDevice is ready
+        // CEF needs a proper file:/// URL to detect the .html MIME type
+        var htmlPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "poc.html");
+        var pocUrl = !File.Exists(htmlPath) ? "about:blank"
+            : new Uri(htmlPath).AbsoluteUri;
+        _cefRenderer = new CefRenderer(this, pocUrl);
+        _cefRenderer.Initialize();
+
 #if USE_BASS
         Bass.Init();
 #endif
@@ -198,6 +219,7 @@ public class WorldGame : Game
 
         if (disposing)
         {
+            _cefRenderer?.Dispose();
             foreach (var shadowRenderTarget in ShadowRenderTargets)
             {
                 shadowRenderTarget?.Dispose();
@@ -492,6 +514,9 @@ public class WorldGame : Game
         FPSCounter.Render();
         _nvg.Render();
 
+        // Render CEF browser overlay (between NanoVG and ImGui)
+        _cefRenderer.Render();
+
         GameSparker.Render3DOverlays();
         
         // // Render ImGui
@@ -508,6 +533,9 @@ public class WorldGame : Game
     public static void Main(string[] args)
     {
         ClientServer.IsRunningOnClient = true;
+
+        // Handle CEF subprocess — if this is a CEF renderer/GPU/etc. process, exit early.
+        CefRenderer.TryHandleSubprocess(args);
         
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
