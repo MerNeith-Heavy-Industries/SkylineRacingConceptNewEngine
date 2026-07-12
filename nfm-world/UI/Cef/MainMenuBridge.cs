@@ -7,7 +7,7 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class MainMenuBridge : PhaseBridge
 {
-    public override string? PageUrl => CefRenderer.ResolvePageUrl("main-menu");
+    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/main-menu";
     public override bool EnableInput => true;
 
     public MainMenuBridge() : base("main-menu") { }

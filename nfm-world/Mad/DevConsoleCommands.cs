@@ -126,6 +126,11 @@ public static class DevConsoleCommands
             }
         });
         console.RegisterCommand("xaml_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
+        console.RegisterCommand("cef_devtools", (console, args) =>
+        {
+            GameSparker.CefRenderer?.ShowDevTools();
+            Logging.Info("CEF DevTools opened.");
+        });
         console.RegisterCommand("debugui", (console, args) =>
         {
             if (args.Length < 1)

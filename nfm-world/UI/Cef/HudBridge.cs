@@ -8,7 +8,7 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class HudBridge : PhaseBridge
 {
-    public override string? PageUrl => CefRenderer.ResolvePageUrl("race");
+    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/race";
     public override bool EnableInput => false;
 
     public HudBridge() : base("race") { }

@@ -7,7 +7,7 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class GarageBridge : PhaseBridge
 {
-    public override string? PageUrl => CefRenderer.ResolvePageUrl("garage");
+    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/garage";
     public override bool EnableInput => true;
 
     public GarageBridge() : base("garage") { }

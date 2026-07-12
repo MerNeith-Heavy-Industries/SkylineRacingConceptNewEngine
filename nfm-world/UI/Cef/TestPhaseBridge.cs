@@ -7,7 +7,7 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class TestPhaseBridge : PhaseBridge
 {
-    public override string? PageUrl => CefRenderer.ResolvePageUrl("test");
+    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/test";
     public override bool EnableInput => true;
 
     public TestPhaseBridge() : base("test") { }

@@ -181,12 +181,11 @@ public class WorldGame : Game
         _imguiRenderer = new ImGuiRenderer(this);
         ImguiRenderer = _imguiRenderer;
 
-        // Initialize CEF renderer after GraphicsDevice is ready
-        // CEF needs a proper file:/// URL to detect the .html MIME type
-        var htmlPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "poc.html");
-        var pocUrl = !File.Exists(htmlPath) ? "about:blank"
-            : new Uri(htmlPath).AbsoluteUri;
-        _cefRenderer = new CefRenderer(this, pocUrl);
+        // Initialize CEF renderer after GraphicsDevice is ready.
+        // Load the single-page app (hash router) as the initial URL.
+        // Phase bridges use ExecuteJavaScript to change the hash on enter.
+        var baseUrl = CefRenderer.ResolveBasePageUrl();
+        _cefRenderer = new CefRenderer(this, baseUrl);
         _cefRenderer.Initialize();
         GameSparker.CefRenderer = _cefRenderer;
 
