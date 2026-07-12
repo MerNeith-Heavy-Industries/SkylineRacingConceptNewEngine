@@ -533,9 +533,6 @@ public class WorldGame : Game
     {
         ClientServer.IsRunningOnClient = true;
 
-        // Handle CEF subprocess — if this is a CEF renderer/GPU/etc. process, exit early.
-        CefRenderer.TryHandleSubprocess(args);
-        
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
