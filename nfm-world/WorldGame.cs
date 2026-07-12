@@ -40,12 +40,8 @@ namespace NFMWorld;
 public class WorldGame : Game
 {
     public GraphicsDeviceManager Graphics;
-    public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
     private ImGuiRenderer _imguiRenderer;
-    public static ImGuiRenderer ImguiRenderer { get; private set; }
     private CefRenderer _cefRenderer;
-    private float _cefElapsed;
-    private int _cefFrameCount;
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
@@ -67,6 +63,10 @@ public class WorldGame : Game
 
     private static bool _yogaInspectorEnabled = false;
     private static int _yogaInspectorPage = 0;
+
+    private static readonly MouseButtons[] MouseButtonsArray = Enum.GetValues<MouseButtons>();
+    public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
+    public static ImGuiRenderer ImguiRenderer { get; private set; }
 
 #if DEBUG
     internal static string? DebugUiClass;
@@ -136,11 +136,12 @@ public class WorldGame : Game
 
         _cefRenderer.Update(gameTime);
 
-        // Per-frame push: send sample values to JS for performance testing
-        _cefElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
-        _cefFrameCount++;
-        var sampleSpeed = 100f + (float)Math.Sin(_cefElapsed * 2.0) * 80f; // oscillates 20-180 km/h
-        GameBridge.PushUpdate(_cefRenderer.GetBrowser(), sampleSpeed, $"Player #{_cefFrameCount % 100}", _cefFrameCount);
+        // Per-frame CEF state push: let the current phase push its state to JS.
+        // This replaces the old hardcoded GameBridge.PushUpdate() POC.
+        if (GameSparker.CurrentPhase is { CefBridge: not null } phase)
+        {
+            phase.PushCefState();
+        }
 
         if (!_loaded)
         {
@@ -189,6 +190,7 @@ public class WorldGame : Game
             : new Uri(htmlPath).AbsoluteUri;
         _cefRenderer = new CefRenderer(this, pocUrl);
         _cefRenderer.Initialize();
+        GameSparker.CefRenderer = _cefRenderer;
 
 #if USE_BASS
         Bass.Init();
@@ -416,8 +418,6 @@ public class WorldGame : Game
         // Update saved state.
         _oldKeyState = keys;
     }
-
-    private static readonly MouseButtons[] MouseButtonsArray = Enum.GetValues<MouseButtons>();
     private void UpdateMouse()
     {
         var newState = Mouse.GetState();

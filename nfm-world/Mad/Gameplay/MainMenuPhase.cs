@@ -1,14 +1,12 @@
 ﻿﻿﻿using Microsoft.Xna.Framework.Graphics;
  using NFMWorld.Accounts;
- using NFMWorld.Reactor;
 using NFMWorld.UI;
-using NFMWorld.UI.Menu;
+using NFMWorld.UI.Cef;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Util;
 using WorldXaml.UI.Yoga.Events;
-using static NFMWorld.UI.Menu.Nodes;
 
 namespace NFMWorld.Gameplay;
 
@@ -18,40 +16,66 @@ public class MainMenuPhase : BaseStageRenderingPhase
 {
     public override bool IsSingleton => true;
 
-    private MainMenuViewNode _mainMenuViewNode;
-    private ReactorDom _dom;
-    private UIManager _uiManager;
+    private readonly MainMenuBridge _bridge = new();
 
     public MainMenuPhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
     {
-        _uiManager = new UIManager
-        {
-            FocusManager = FocusManager
-        };
+        CefBridge = _bridge;
 
-        _dom = new ReactorDom();
-        _mainMenuViewNode = MainMenuView(
-            garage: OnGarageClicked,
-            settings: OnSettingsClicked,
-            credits: OnClickUnavailable,
-            quit: OnQuitClicked,
-            logout: OnLogoutClicked,
-            playNfm1: OnClickUnavailable,
-            playNfm2: OnClickUnavailable,
-            playCommunity: OnClickUnavailable,
-            playFreePlay: OnFreePlayClicked,
-            playCompetitive: OnClickUnavailable,
-            playCasual: OnClickUnavailable,
-            modelEditor: OnModelEditorClicked,
-            stageEditor: OnStageEditorClicked,
-            campaignEditor: OnClickUnavailable,
-            timeTrials: OnTTClicked,
-            challenges: OnClickUnavailable,
-            gameInstructions: OnClickUnavailable,
-            accountManager: GameSparker.AccountManager
-        );
-        _dom.Mount(_uiManager.RootPanel, _mainMenuViewNode);
-        Uis.Add(_uiManager);
+        _bridge.NavigateRequested += OnNavigateRequested;
+        _bridge.LogoutRequested += OnLogoutClicked;
+
+        // Push initial account state if available
+        var account = GameSparker.AccountManager.LoggedIn
+            ? GameSparker.AccountManager.ActiveAccount
+            : null;
+        _bridge.PushAccount(account?.Username, account != null);
+
+        // Subscribe to account changes via the CLR event directly
+        GameSparker.AccountManager.ActiveAccountChanged += OnActiveAccountChanged;
+    }
+
+    private void OnActiveAccountChanged(Account? account)
+    {
+        _bridge.PushAccount(account?.Username, account != null);
+    }
+
+    private void OnNavigateRequested(string page)
+    {
+        switch (page)
+        {
+            case "play":
+            case "singleplayer":
+                OnFreePlayClicked();
+                break;
+            case "multiplayer":
+                OnClickUnavailable();
+                break;
+            case "training":
+                OnClickUnavailable();
+                break;
+            case "garage":
+                OnGarageClicked();
+                break;
+            case "settings":
+                OnSettingsClicked();
+                break;
+            case "credits":
+                OnClickUnavailable();
+                break;
+            case "quit":
+                OnQuitClicked();
+                break;
+            case "modelEditor":
+                OnModelEditorClicked();
+                break;
+            case "stageEditor":
+                OnStageEditorClicked();
+                break;
+            case "timeTrials":
+                OnTTClicked();
+                break;
+        }
     }
 
     private void OnFreePlayClicked()

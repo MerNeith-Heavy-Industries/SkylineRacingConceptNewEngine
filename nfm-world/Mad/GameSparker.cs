@@ -6,6 +6,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.Gameplay;
 using NFMWorld.Sfx;
 using NFMWorld.UI;
+using NFMWorld.UI.Cef;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Rad;
@@ -22,6 +23,12 @@ public static class GameSparker
     public static GraphicsDevice GraphicsDevice = null!;
     public static readonly string version = GetVersionString();
     public static AccountManager AccountManager = new AccountManager();
+
+    /// <summary>
+    /// The shared CEF renderer. Set by WorldGame.Initialize(). Phases access
+    /// this to register/unregister their <see cref="PhaseBridge"/> instances.
+    /// </summary>
+    public static CefRenderer? CefRenderer { get; set; }
 
     private static string GetVersionString()
     {

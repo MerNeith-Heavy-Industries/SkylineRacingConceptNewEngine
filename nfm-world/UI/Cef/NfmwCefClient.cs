@@ -3,25 +3,40 @@ using Xilium.CefGlue;
 namespace NFMWorld.UI.Cef;
 
 /// <summary>
-/// Minimal CefClient providing the off-screen render handler and load handler.
+/// Minimal CefClient providing the off-screen render handler, load handler,
+/// and process message routing through the owning CefRenderer's GameBridge.
 /// </summary>
-internal sealed class NfmwCefClient(NfmwCefRenderHandler renderHandler) : CefClient
+internal sealed class NfmwCefClient : CefClient
 {
-    protected override CefRenderHandler GetRenderHandler() => renderHandler;
+    private readonly NfmwCefRenderHandler _renderHandler;
+    private readonly CefRenderer _cefRenderer;
+
+    public NfmwCefClient(NfmwCefRenderHandler renderHandler, CefRenderer cefRenderer)
+    {
+        _renderHandler = renderHandler;
+        _cefRenderer = cefRenderer;
+    }
+
+    protected override CefRenderHandler GetRenderHandler() => _renderHandler;
 
     protected override CefLoadHandler GetLoadHandler() => new NfmwLoadHandler();
 
     protected override bool OnProcessMessageReceived(CefBrowser browser, CefFrame frame,
         CefProcessId sourceProcess, CefProcessMessage message)
     {
-        // Forward process messages from the render process to GameBridge
-        GameBridge.HandleProcessMessage(browser, message);
+        // Diagnostic: log every received process message.
+        // Remove once JS→C# messaging is confirmed working.
+        System.Console.WriteLine($"[CEF] OnProcessMessageReceived: {message.Name} (args: {message.Arguments.Count})");
+
+        // Forward process messages from the render process to the renderer's GameBridge
+        _cefRenderer.Bridge.HandleProcessMessage(browser, message);
         return true;
     }
 }
 
 /// <summary>
-/// Tracks load state for the browser.
+/// Tracks load state for the browser. Injects the nfmwEvents event emitter
+/// and the __nfmwDispatch bridge for C# → JS push communication on page load.
 /// </summary>
 internal sealed class NfmwLoadHandler : CefLoadHandler
 {
@@ -29,9 +44,9 @@ internal sealed class NfmwLoadHandler : CefLoadHandler
     {
         if (frame.IsMain)
         {
-            // Inject nfmwEvents bridge for C#→JS push communication,
-            // but only if the page hasn't already defined it (preserve page-defined listeners).
-            const string script = 
+            // Inject nfmwEvents bridge + __nfmwDispatch for C#→JS push communication.
+            // Preserves page-defined listeners if they already exist.
+            const string script =
                 """
                 if (!window.nfmwEvents) {
                     window.nfmwEvents = {
@@ -46,6 +61,20 @@ internal sealed class NfmwLoadHandler : CefLoadHandler
                         }
                     };
                 }
+
+                // __nfmwDispatch is the primary C#→JS push channel.
+                // Events are named "{phaseId}:{eventType}" — JS can listen with:
+                //   window.__nfmwDispatch = function(event, data) { ... }
+                // or via nfmwEvents:
+                //   window.nfmwEvents.on(event, function(data) { ... })
+                if (!window.__nfmwDispatch) {
+                    window.__nfmwDispatch = function(event, data) {
+                        if (window.nfmwEvents) {
+                            window.nfmwEvents.emit(event, data);
+                        }
+                    };
+                }
+
                 window.nfmwEvents.emit('ready', {});
 
                 """;

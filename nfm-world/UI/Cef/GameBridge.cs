@@ -1,58 +1,123 @@
+using System.Text.Json;
 using Xilium.CefGlue;
 
 namespace NFMWorld.UI.Cef;
 
 /// <summary>
-/// Handles CefProcessMessage calls from the JavaScript bridge.
-/// JS → C# calls arrive as process messages dispatched from NfmwV8Handler.
-/// This is a stub for the POC — extend with actual game state queries.
+/// Bridges JS ↔ C# communication for the CEF browser. Owned by <see cref="CefRenderer"/>.
+///
+/// Message protocol:
+///   JS → C#:  window.nfmw.call(methodName, ...args)
+///             → CefProcessMessage "nfmw.call" → dispatched to registered handler
+///   C# → JS:  window.__nfmwDispatch("{phaseId}:{eventType}", data)
+///             (injected by NfmwLoadHandler on page load)
 /// </summary>
-public static class GameBridge
+public sealed class GameBridge
 {
+    /// <summary>
+    /// Delegate for handling JS → C# messages. The string is a JSON-serialized
+    /// payload (or null if no args were passed).
+    /// </summary>
+    public delegate void MessageHandler(string type, string? rawJson);
+
+    private readonly Dictionary<string, MessageHandler> _handlers = new();
+
+    /// <summary>
+    /// Register a per-phase message handler. Only one handler per phase ID is allowed.
+    /// </summary>
+    public void Register(string phaseId, MessageHandler handler)
+    {
+        _handlers[phaseId] = handler;
+    }
+
+    /// <summary>
+    /// Unregister a per-phase message handler.
+    /// </summary>
+    public void Unregister(string phaseId)
+    {
+        _handlers.Remove(phaseId);
+    }
+
     /// <summary>
     /// Called from NfmwCefClient.OnProcessMessageReceived when the render
     /// process sends a message from JS.
     /// </summary>
-    public static void HandleProcessMessage(CefBrowser browser, CefProcessMessage message)
+    public void HandleProcessMessage(CefBrowser browser, CefProcessMessage message)
     {
         switch (message.Name)
         {
+            case "nfmwCall":
+                HandleNfmwCall(browser, message);
+                break;
             case "getPlayerName":
-                HandleGetPlayerName(browser);
+                // Legacy POC handler — keep for backward compatibility
+                HandleLegacyGetPlayerName(browser);
                 break;
             case "getSpeed":
-                HandleGetSpeed(browser);
+                // Legacy POC handler — keep for backward compatibility
+                HandleLegacyGetSpeed(browser);
                 break;
             case "__nfmwRegisterEventSink":
-                // Event sink registration — JS is ready to receive push events
+                // Event sink registration — JS is ready to receive push events.
                 break;
         }
     }
 
-    private static void HandleGetPlayerName(CefBrowser browser)
+    /// <summary>
+    /// Handle the unified nfmw.call(methodName, ...args) message.
+    /// Dispatches to the currently-registered handler for the active phase.
+    /// </summary>
+    private void HandleNfmwCall(CefBrowser browser, CefProcessMessage message)
     {
-        var name = "NFMW Player"; // TODO: wire to actual game state
+        var args = message.Arguments;
+        if (args.Count < 1) return;
+
+        var methodName = args.GetString(0);
+
+        // Extract payload from second argument (if present)
+        string? rawJson = null;
+        if (args.Count >= 2)
+        {
+            rawJson = args.GetString(1);
+        }
+
+        // Dispatch to the first registered handler.
+        // In the single-browser model, only one phase is active at a time,
+        // so we dispatch to whichever handler is registered.
+        foreach (var handler in _handlers.Values)
+        {
+            handler(methodName, rawJson);
+            break;
+        }
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS. The JS side should listen via
+    /// window.__nfmwDispatch("{phaseId}:{eventType}", callback).
+    /// </summary>
+    public void PushToJs(CefBrowser? browser, string phaseId, string eventType, object? data)
+    {
+        if (browser == null) return;
+
+        var fullEvent = $"{phaseId}:{eventType}";
+        var json = data != null ? JsonSerializer.Serialize(data) : "null";
+        var script = $@"if(window.__nfmwDispatch) window.__nfmwDispatch('{fullEvent}', {json});";
+        browser.GetMainFrame().ExecuteJavaScript(script, null, 0);
+    }
+
+    // ── Legacy POC handlers (for backward compatibility) ──────────────
+
+    private static void HandleLegacyGetPlayerName(CefBrowser browser)
+    {
+        var name = "NFMW Player";
         var response = $"if(window.nfmwEvents) window.nfmwEvents.emit('getPlayerName', {{value:'{name}'}});";
         browser.GetMainFrame().ExecuteJavaScript(response, null, 0);
     }
 
-    private static void HandleGetSpeed(CefBrowser browser)
+    private static void HandleLegacyGetSpeed(CefBrowser browser)
     {
-        var speed = 0.0f; // TODO: wire to actual game state
+        var speed = 0.0f;
         var response = $"if(window.nfmwEvents) window.nfmwEvents.emit('getSpeed', {{value:{speed}}});";
         browser.GetMainFrame().ExecuteJavaScript(response, null, 0);
-    }
-
-    /// <summary>
-    /// Push live data from C# to JS. Call from the game loop each frame.
-    /// </summary>
-    public static void PushUpdate(CefBrowser? browser, float speed, string playerName, int frameCount)
-    {
-        if (browser == null) return;
-        var script = $@"
-if(window.nfmwEvents) {{
-    window.nfmwEvents.emit('frameUpdate', {{speed:{speed},player:'{playerName}',frame:{frameCount}}});
-}}";
-        browser.GetMainFrame().ExecuteJavaScript(script, null, 0);
     }
 }

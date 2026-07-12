@@ -1,17 +1,13 @@
 using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
-using NFMWorld.Reactor;
-using NFMWorld.Reactor.Events;
-using NFMWorld.UI.Menu;
+using NFMWorld.UI.Cef;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga;
 using WorldXaml.UI.Yoga.Events;
-using static NFMWorld.UI.Menu.Nodes;
 
 namespace NFMWorld.Gameplay;
 
@@ -35,10 +31,7 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     private UnlimitedArray<Rad3d> _cars = BackendGameSparker.cars[Collection.NFMM];
     private BackendCar? _backendCar;
 
-    private FocusManager _focusManager = new();
-    private ComponentNode _garageUiViewNode;
-    private ReactorDom _garageDom;
-    private FlexPanel _garageUiContainer = new();
+    private readonly GarageBridge _bridge = new();
 
     private int _statsBarBaseX = 120;
     private int _statsBarBaseY = 200;
@@ -78,6 +71,20 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         {
             _collections.Add(dir);
         }
+
+        // Wire bridge events
+        CefBridge = _bridge;
+        _bridge.CarSelected += (collection, carName) =>
+        {
+            // Find and select the car by name
+            var idx = _cars.ToList().FindIndex(c => c.Stats.Name == carName);
+            if (idx >= 0)
+            {
+                _selectedCarIdx = idx;
+                SetupCurrentCar();
+            }
+        };
+        _bridge.BackRequested += SelectionCancelled;
     }
 
     private void SetupCurrentCar()
@@ -129,19 +136,22 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
         float hglide = ((Math.Abs(_backendCar.Stats.Flipy) + Math.Abs(_backendCar.GroundAt)) / 2f / 70f) + (float)_backendCar.Stats.Airs / 230f;
 
         float ab = _backendCar.Stats.Airc / 75f;
-        
-        _garageUiViewNode = GarageUiView(
-            switsLevel,
-            accel,
-            (float)_backendCar.Stats.Dishandle,
-            powerloss,
-            strength,
-            health,
-            airs,
-            hglide,
-            ab
-        );
-        UpdateUi();
+
+        // Push car stats to the CEF garage page
+        _bridge.PushCurrentCar(new CarStatsData
+        {
+            Name = _cars[_selectedCarIdx].Stats.Name,
+            Collection = _currentCollection.ToString(),
+            TopSpeed = switsLevel,
+            Acceleration = accel,
+            Handling = (float)_backendCar.Stats.Dishandle,
+            PowerSave = powerloss,
+            Strength = strength,
+            MaxHealth = health,
+            Stunting = airs,
+            Hypergliding = hglide,
+            Abing = ab,
+        });
     }
 
 
@@ -149,14 +159,13 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     public override void GameTick()
     {
         base.GameTick();
-        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
-        _garageUiContainer.Update(FocusManager);
+        // CEF handles UI rendering; no Reactor mount needed
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
-        _garageUiContainer.LayoutAndRender(G.Viewport);
+        // CEF handles UI rendering; no LayoutAndRender needed
     }
 
     public override void RenderImgui()
@@ -282,27 +291,13 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
     private void DrawCarStats()
     {
-        // MVU: Mount once on Enter, Update in GameTick — no LayoutAndRender needed
+        // Stats are rendered by the CEF garage page
     }
 
     public override void Enter()
     {
-        _garageDom = new ReactorDom();
-        _garageUiViewNode = GarageUiView(0, 0, 0, 0, 0, 0, 0, 0, 0);
-        
-        UpdateUi();
+        base.Enter();
         SetupCurrentCar();
-    }
-
-    private void UpdateUi()
-    {
-        _garageDom.Mount(_garageUiContainer, _garageUiViewNode);
-    }
-
-    public override void Exit()
-    {
-        _garageDom?.Unmount();
-        base.Exit();
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)

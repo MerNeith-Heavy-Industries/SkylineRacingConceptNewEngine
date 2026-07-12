@@ -1,5 +1,6 @@
 ﻿using NFMWorld.DriverInterface;
 using NFMWorld.Reactor.Events;
+using NFMWorld.UI.Cef;
 using NFMWorld.Util;
 using NFMWorldLibrary.Backend.Gamemodes;
 using WorldXaml.UI.Yoga;
@@ -16,9 +17,30 @@ public abstract class BasePhase : IDisposable
     public FocusManager FocusManager { get; } = new();
 
     /// <summary>
+    /// Whether CEF input should be forwarded while this phase is active.
+    /// Defaults to the bridge's preference (<see cref="PhaseBridge.EnableInput"/>)
+    /// if a bridge is set, otherwise false. Override for custom logic.
+    /// </summary>
+    public virtual bool EnableCefInput => CefBridge?.EnableInput ?? false;
+
+    /// <summary>
+    /// The phase's CEF bridge, if any. Subclasses set this in their constructor
+    /// or Enter(). The bridge is registered during Enter() and unregistered during Exit().
+    /// </summary>
+    public PhaseBridge? CefBridge { get; protected set; }
+
+    /// <summary>
     /// Whether the mouse was pressed this game tick. Reset at the end of a game tick.
     /// </summary>
     protected bool MouseDownThisFrame { get; private set; }
+
+    /// <summary>
+    /// Invoked each frame by WorldGame.Update() when this phase has an active CefBridge.
+    /// Override to push per-frame state (e.g., HUD data) to JS.
+    /// </summary>
+    public virtual void PushCefState()
+    {
+    }
 
     /// <summary>
     /// Invoked at the beginning of a game tick.
@@ -73,6 +95,17 @@ public abstract class BasePhase : IDisposable
     /// </summary>
     public virtual void Enter()
     {
+        // Register the phase's CEF bridge if one is set
+        if (CefBridge != null && GameSparker.CefRenderer != null)
+        {
+            CefBridge.Register(GameSparker.CefRenderer);
+        }
+
+        // Enable/disable CEF input based on phase preference
+        if (GameSparker.CefRenderer != null)
+        {
+            GameSparker.CefRenderer.SetInputEnabled(EnableCefInput);
+        }
     }
 
     /// <summary>
@@ -81,6 +114,9 @@ public abstract class BasePhase : IDisposable
     /// </summary>
     public virtual void Exit()
     {
+        // Unregister the phase's CEF bridge
+        CefBridge?.Unregister();
+
         FocusManager.ClearHover();
         FocusManager.ClearFocus();
         if (!IsSingleton)

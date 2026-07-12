@@ -1,33 +1,25 @@
 ﻿using NFMWorld.DriverInterface;
-using NFMWorld.Reactor;
-using NFMWorld.UI.Test;
-using WorldXaml.UI.Yoga;
-using static NFMWorld.UI.Test.Nodes;
+using NFMWorld.UI.Cef;
 
 namespace NFMWorld.Gameplay;
 
 public class XamlTestPhase : BasePhase
 {
-    private ReactorDom _dom;
-    private FlexPanel _container = new();
+    private readonly TestPhaseBridge _bridge = new();
     private int _counter;
 
-    public override void Enter()
+    public XamlTestPhase()
     {
-        base.Enter();
-        _dom = new ReactorDom();
-        _dom.Mount(_container, XamlTestView(_counter));
-    }
-
-    public override void Render(float alpha)
-    {
-        base.Render(alpha);
-        _container.LayoutAndRender(G.Viewport);
+        CefBridge = _bridge;
+        _bridge.IncrementRequested += () => _counter++;
+        _bridge.BackRequested += () => GameSparker.ReturnToMainMenu();
     }
 
     public override void GameTick()
     {
         base.GameTick();
-        _dom.Mount(_container, XamlTestView(++_counter));
+        // Counter is incremented by the JS button via IncrementRequested.
+        // Push the current value each tick so the test page stays in sync.
+        _bridge.PushCounter(_counter);
     }
 }

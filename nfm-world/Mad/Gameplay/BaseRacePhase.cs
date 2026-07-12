@@ -2,6 +2,7 @@
 using NFMWorld.DriverInterface;
 using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
+using NFMWorld.UI.Cef;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -16,6 +17,18 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
 {
     protected IGamemode? gamemodeInstance { get; set; }
     BackendStage IGamemodeData.CurrentStage => CurrentStage.Backend;
+
+    /// <summary>
+    /// HUD bridge for in-race overlay. Set in constructor so base.Enter()
+    /// registers it and navigates to the race HUD page.
+    /// </summary>
+    protected HudBridge HudBridge { get; } = new();
+
+    // Wire the HUD CEF bridge — registered/unregistered by base.Enter/Exit
+    protected BaseRacePhase() : this(default!)
+    {
+        CefBridge = HudBridge;
+    }
 
     public RaceState raceState
     {
@@ -47,6 +60,36 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
         Watch
     }
     protected ViewMode currentViewMode = ViewMode.Follow;
+
+    /// <summary>
+    /// Push HUD state to the CEF race overlay each frame.
+    /// Called by WorldGame.Update() when CefBridge is active.
+    /// </summary>
+    public override void PushCefState()
+    {
+        base.PushCefState();
+
+        if (gamemodeInstance is not BaseGamemode { Hud: { } hud })
+            return;
+
+        var state = hud.State;
+        HudBridge.PushHudState(new HudStateData
+        {
+            Speed = 0, // TODO: wire actual speed from gamemode
+            Power = (double)state.PowerFillAmount,
+            Damage = (double)state.DamageFillAmount,
+            MaxPower = 1.0,
+            Lap = state.CurrentLap,
+            TotalLaps = state.TotalLaps,
+            LapTime = 0, // TODO: parse from state.TimeText or LapTimeText
+            BestLapTime = 0,
+            Splits = [],
+            Position = 1,
+            TotalRacers = ((IGamemodeData)this).CarsInRace.Count(c => c != null),
+            StateText = state.CenterText,
+            StateTextDuration = state.CenterTextOpacity > 0 ? 2.0 : null,
+        });
+    }
 
     public override void Enter()
     {
