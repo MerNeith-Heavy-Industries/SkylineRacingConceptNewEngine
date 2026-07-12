@@ -11,12 +11,12 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
     protected override void OnContextCreated(CefBrowser browser, CefFrame frame, CefV8Context context)
     {
         base.OnContextCreated(browser, frame, context);
-        
+
         context.Enter();
         try
         {
             var global = context.GetGlobal();
-            var attrs = CefV8PropertyAttribute.ReadOnly | CefV8PropertyAttribute.DontDelete;
+            const CefV8PropertyAttribute attrs = CefV8PropertyAttribute.ReadOnly | CefV8PropertyAttribute.DontDelete;
 
             // Register nfmw.call directly on window (flat naming, matches CefMessageRouter pattern).
             // The JS bridge will call window.__nfmwCall(methodName, jsonPayload).
@@ -54,14 +54,14 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             if (ctx == null)
             {
                 exception = "No current V8 context";
-                return false;
+                return true;
             }
 
             var browser = ctx.GetBrowser();
             if (browser == null)
             {
                 exception = "No browser in current V8 context";
-                return false;
+                return true;
             }
 
             var frameId = ctx.GetFrame().Identifier;
@@ -69,7 +69,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             if (frame == null || !frame.IsValid)
             {
                 exception = "Frame is not valid";
-                return false;
+                return true;
             }
 
             // Build the process message
@@ -77,7 +77,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             if (msg == null)
             {
                 exception = $"Failed to create process message '{functionName}'";
-                return false;
+                return true;
             }
 
             var msgArgs = msg.Arguments;
@@ -90,12 +90,24 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
                     msgArgs.SetDouble(i, arguments[i].GetDoubleValue());
                 else if (arguments[i].IsBool)
                     msgArgs.SetBool(i, arguments[i].GetBoolValue());
-                else if (arguments[i].IsNull)
+                else if (arguments[i].IsNull || arguments[i].IsUndefined)
                     msgArgs.SetNull(i);
+                else if (arguments[i].IsObject)
+                {
+                    var dict = CefDictionaryValue.Create();
+                    CefV8JsonObject2DictionaryValue(arguments[i], dict);
+                    msgArgs.SetDictionary(i, dict);
+                }
+                else if (arguments[i].IsArray)
+                {
+                    var list = CefListValue.Create();
+                    CefV8Array2ListValue(arguments[i], list);
+                    msgArgs.SetList(i, list);
+                }
                 else
                 {
                     exception = "Invalid argument type";
-                    return false;
+                    return true;
                 }
             }
 
@@ -107,6 +119,214 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
         {
             exception = ex.ToString();
             return false;
+        }
+    }
+
+    private static void CefV8Array2ListValue(CefV8Value source, CefListValue target)
+    {
+        System.Diagnostics.Debug.Assert(source.IsArray);
+
+        int arg_length = source.GetArrayLength();
+        if (arg_length == 0)
+            return;
+
+        // Start with null types in all spaces.
+        target.SetSize(arg_length);
+
+        for (int i = 0; i < arg_length; ++i)
+        {
+            CefV8Value value = source.GetValue(i);
+            if (value.IsBool)
+            {
+                target.SetBool(i, value.GetBoolValue());
+            }
+            else if (value.IsInt || value.IsUInt)
+            {
+                target.SetInt(i, value.GetIntValue());
+            }
+            else if (value.IsDouble)
+            {
+                target.SetDouble(i, value.GetDoubleValue());
+            }
+            else if (value.IsNull)
+            {
+                target.SetNull(i);
+            }
+            else if (value.IsString || value.IsDate)
+            {
+                target.SetString(i, value.GetStringValue());
+            }
+            else if (value.IsArray)
+            {
+                CefListValue new_list = CefListValue.Create();
+                CefV8Array2ListValue(value, new_list);
+                target.SetList(i, new_list);
+            }
+            else if (value.IsObject)
+            {
+                CefDictionaryValue new_dictionary = CefDictionaryValue.Create();
+                CefV8JsonObject2DictionaryValue(value, new_dictionary);
+                target.SetDictionary(i, new_dictionary);
+            }
+        }
+    }
+
+    private static void CefListValue2V8Array(ICefListValue source, CefV8Value target)
+    {
+        System.Diagnostics.Debug.Assert(target.IsArray);
+
+        int arg_length = source.Count;
+        if (arg_length == 0)
+            return;
+
+        for (int i = 0; i < arg_length; ++i)
+        {
+            CefV8Value? new_value = null;
+
+            CefValueType type = source.GetValueType(i);
+            switch (type)
+            {
+                case CefValueType.Bool:
+                    new_value = CefV8Value.CreateBool(source.GetBool(i));
+                    break;
+                case CefValueType.Double:
+                    new_value = CefV8Value.CreateDouble(source.GetDouble(i));
+                    break;
+                case CefValueType.Int:
+                    new_value = CefV8Value.CreateInt(source.GetInt(i));
+                    break;
+                case CefValueType.String:
+                    new_value = CefV8Value.CreateString(source.GetString(i));
+                    break;
+                case CefValueType.Null:
+                    new_value = CefV8Value.CreateNull();
+                    break;
+                case CefValueType.List:
+                {
+                    var list = source.GetList(i);
+                    new_value = CefV8Value.CreateArray(list.Count);
+                    CefListValue2V8Array(list, new_value);
+                }
+                    break;
+                case CefValueType.Dictionary:
+                {
+                    var dictionary = source.GetDictionary(i);
+                    new_value = CefV8Value.CreateObject();
+                    CefDictionaryValue2V8JsonObject(dictionary, new_value);
+                }
+                    break;
+                default:
+                    break;
+            }
+
+            if (new_value != null)
+            {
+                target.SetValue(i, new_value);
+            }
+            else
+            {
+                target.SetValue(i, CefV8Value.CreateNull());
+            }
+        }
+    }
+
+    private static void CefV8JsonObject2DictionaryValue(CefV8Value source, CefDictionaryValue target)
+    {
+        System.Diagnostics.Debug.Assert(source.IsObject);
+
+        var keys = source.GetKeys();
+        foreach (var key in keys)
+        {
+            CefV8Value value = source.GetValue(key);
+
+            if (value.IsBool)
+            {
+                target.SetBool(key, value.GetBoolValue());
+            }
+            else if (value.IsDouble)
+            {
+                target.SetDouble(key, value.GetDoubleValue());
+            }
+            else if (value.IsInt || value.IsUInt)
+            {
+                target.SetInt(key, value.GetIntValue());
+            }
+            else if (value.IsNull)
+            {
+                target.SetNull(key);
+            }
+            else if (value.IsString || value.IsDate)
+            {
+                target.SetString(key, value.GetStringValue());
+            }
+            else if (value.IsArray)
+            {
+                CefListValue listValue = CefListValue.Create();
+                CefV8Array2ListValue(value, listValue);
+                target.SetList(key, listValue);
+            }
+            else if (value.IsObject)
+            {
+                CefDictionaryValue dictionaryValue = CefDictionaryValue.Create();
+                CefV8JsonObject2DictionaryValue(value, dictionaryValue);
+                target.SetDictionary(key, dictionaryValue);
+            }
+        }
+    }
+
+    private static void CefDictionaryValue2V8JsonObject(ICefDictionaryValue source, CefV8Value target)
+    {
+        System.Diagnostics.Debug.Assert(target.IsObject);
+
+        var keys = source.GetKeys();
+        foreach (var key in keys)
+        {
+            CefV8Value? new_value = null;
+            CefValueType type = source.GetValueType(key);
+
+            switch (type)
+            {
+                case CefValueType.Bool:
+                    new_value = CefV8Value.CreateBool(source.GetBool(key));
+                    break;
+                case CefValueType.Double:
+                    new_value = CefV8Value.CreateDouble(source.GetDouble(key));
+                    break;
+                case CefValueType.Int:
+                    new_value = CefV8Value.CreateInt(source.GetInt(key));
+                    break;
+                case CefValueType.String:
+                    new_value = CefV8Value.CreateString(source.GetString(key));
+                    break;
+                case CefValueType.Null:
+                    new_value = CefV8Value.CreateNull();
+                    break;
+                case CefValueType.List:
+                {
+                    var list = source.GetList(key);
+                    new_value = CefV8Value.CreateArray(list.Count);
+                    CefListValue2V8Array(list, new_value);
+                }
+                    break;
+                case CefValueType.Dictionary:
+                {
+                    var dictionary = source.GetDictionary(key);
+                    new_value = CefV8Value.CreateObject();
+                    CefDictionaryValue2V8JsonObject(dictionary, new_value);
+                }
+                    break;
+                default:
+                    break;
+            }
+
+            if (new_value != null)
+            {
+                target.SetValue(key, new_value);
+            }
+            else
+            {
+                target.SetValue(key, CefV8Value.CreateNull());
+            }
         }
     }
 }
