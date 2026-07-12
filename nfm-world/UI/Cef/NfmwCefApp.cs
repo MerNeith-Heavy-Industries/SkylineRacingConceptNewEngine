@@ -6,18 +6,11 @@ namespace NFMWorld.UI.Cef;
 /// Minimal CefApp implementation. Handles subprocess detection and provides
 /// the render process handler for V8 JavaScript context setup.
 /// </summary>
-internal sealed class NfmwCefApp : CefApp
+internal sealed class NfmwCefApp(CefRenderProcessHandler renderProcessHandler) : CefApp
 {
-    private readonly CefRenderProcessHandler _renderProcessHandler;
-
-    public NfmwCefApp(CefRenderProcessHandler renderProcessHandler)
-    {
-        _renderProcessHandler = renderProcessHandler;
-    }
-
     protected override CefRenderProcessHandler GetRenderProcessHandler()
     {
-        return _renderProcessHandler;
+        return renderProcessHandler;
     }
 
     protected override void OnBeforeCommandLineProcessing(string processType, CefCommandLine commandLine)
