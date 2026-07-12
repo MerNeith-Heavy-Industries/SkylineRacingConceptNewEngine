@@ -49,17 +49,6 @@ public sealed class GameBridge
             case "nfmwCall":
                 HandleNfmwCall(browser, message);
                 break;
-            case "getPlayerName":
-                // Legacy POC handler — keep for backward compatibility
-                HandleLegacyGetPlayerName(browser);
-                break;
-            case "getSpeed":
-                // Legacy POC handler — keep for backward compatibility
-                HandleLegacyGetSpeed(browser);
-                break;
-            case "__nfmwRegisterEventSink":
-                // Event sink registration — JS is ready to receive push events.
-                break;
         }
     }
 
@@ -101,23 +90,7 @@ public sealed class GameBridge
 
         var fullEvent = $"{phaseId}:{eventType}";
         var json = data != null ? JsonSerializer.Serialize(data) : "null";
-        var script = $@"if(window.__nfmwDispatch) window.__nfmwDispatch('{fullEvent}', {json});";
+        var script = $"window.__nfmwDispatch('{fullEvent}', {json});";
         browser.GetMainFrame().ExecuteJavaScript(script, null, 0);
-    }
-
-    // ── Legacy POC handlers (for backward compatibility) ──────────────
-
-    private static void HandleLegacyGetPlayerName(CefBrowser browser)
-    {
-        var name = "NFMW Player";
-        var response = $"if(window.nfmwEvents) window.nfmwEvents.emit('getPlayerName', {{value:'{name}'}});";
-        browser.GetMainFrame().ExecuteJavaScript(response, null, 0);
-    }
-
-    private static void HandleLegacyGetSpeed(CefBrowser browser)
-    {
-        var speed = 0.0f;
-        var response = $"if(window.nfmwEvents) window.nfmwEvents.emit('getSpeed', {{value:{speed}}});";
-        browser.GetMainFrame().ExecuteJavaScript(response, null, 0);
     }
 }
