@@ -473,37 +473,6 @@ public sealed class CefRenderer : IDisposable
 
     #endregion
 
-    #region Subprocess
-
-    /// <summary>
-    /// Must be called at the very start of Main(), before any CEF initialization.
-    /// Returns true if this is a CEF subprocess that should exit immediately.
-    /// </summary>
-    public static bool TryHandleSubprocess(string[] args)
-    {
-        try
-        {
-            // CefRuntime.ExecuteProcess returns >= 0 for subprocesses.
-            // The subprocess needs an app that provides GetRenderProcessHandler()
-            // so V8 context bindings (OnContextCreated) are set up.
-            var app = new NfmwCefApp(new NfmwRenderProcessHandler());
-            var exitCode = CefRuntime.ExecuteProcess(new CefMainArgs(args), app, IntPtr.Zero);
-            if (exitCode >= 0)
-            {
-                System.Environment.Exit(exitCode);
-                return true;
-            }
-        }
-        catch (DllNotFoundException)
-        {
-            // CEF native binaries not found — not a subprocess scenario
-        }
-
-        return false;
-    }
-
-    #endregion
-
     #region Shutdown
 
     public void Shutdown()
