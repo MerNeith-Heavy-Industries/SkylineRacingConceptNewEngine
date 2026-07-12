@@ -210,7 +210,7 @@ public sealed class CefRenderer : IDisposable
         {
             var wi = CefWindowInfo.Create();
             wi.SetAsPopup(IntPtr.Zero, "DevTools");
-            _browserHost.ShowDevTools(wi, null!, new CefBrowserSettings(), new CefPoint(0, 0));
+            _browserHost.ShowDevTools(wi, _cefClient!, new CefBrowserSettings(), new CefPoint(0, 0));
         }
     }
 
