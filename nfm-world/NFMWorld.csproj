@@ -51,6 +51,8 @@
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
+        <None Remove="data\html\node_modules\**" CopyToOutputDirectory="Never" />
+        <None Remove="data\html\dist\**" CopyToOutputDirectory="Never" />
         <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
         <PackageReference Include="System.Reactive" Version="7.0.0-rc.1" />
@@ -162,6 +164,29 @@
     <ItemGroup>
         <CompileShader Include="data/shaders/*.fx" />
     </ItemGroup>
+
+    <!-- ── Web UI (Vite + Preact) Build ────────────────────────────── -->
+    <!-- On Release builds, run pnpm install + pnpm run build to produce -->
+    <!-- the production bundles. On Debug, use the Vite dev server instead -->
+    <!-- (run `pnpm run dev` in data/html/ alongside `dotnet run`).       -->
+
+    <Target Name="BuildWebUi" BeforeTargets="BeforeBuild"
+            Condition="'$(Configuration)' == 'Release'">
+        <Message Text="Building web UI (pnpm install + pnpm run build)..." Importance="High" />
+        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="data\html" />
+        <Exec Command="pnpm run build" WorkingDirectory="data\html" />
+    </Target>
+
+    <Target Name="IncludeWebUi" BeforeTargets="GetCopyToOutputDirectoryItems"
+            Condition="Exists('data\html\dist')">
+        <ItemGroup>
+            <WebUiFiles Include="data\html\dist\**\*" />
+            <Content Include="@(WebUiFiles)">
+                <Link>data\html\dist\%(RecursiveDir)%(FileName)%(Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </Content>
+        </ItemGroup>
+    </Target>
 
 
     <ItemGroup>

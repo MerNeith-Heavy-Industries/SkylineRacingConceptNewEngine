@@ -28,6 +28,13 @@ public sealed class CefRenderer : IDisposable
     private CefBrowser? _browser;
     private bool _isInitialized;
 
+    /// <summary>
+    /// The JS ↔ C# message bridge. Exposed internally for NfmwCefClient
+    /// to route process messages. Phases register handlers via
+    /// <see cref="RegisterMessageHandler"/> / <see cref="UnregisterMessageHandler"/>.
+    /// </summary>
+    internal GameBridge Bridge { get; } = new();
+
     // Rendering
     private SpriteBatch? _spriteBatch;
     private BasicEffect? _effect;
@@ -86,7 +93,7 @@ public sealed class CefRenderer : IDisposable
 
         var renderProcessHandler = new NfmwRenderProcessHandler();
         var app = new NfmwCefApp(renderProcessHandler);
-        _cefClient = new NfmwCefClient(_renderHandler);
+        _cefClient = new NfmwCefClient(_renderHandler, this);
 
         // 4. Initialize CEF
         var mainArgs = new CefMainArgs([]);
@@ -193,6 +200,66 @@ public sealed class CefRenderer : IDisposable
     }
 
     public CefBrowser? GetBrowser() => _browser;
+
+    /// <summary>
+    /// Resolve a page URL for a given phase. In dev mode (when the Vite
+    /// dev server is running), returns http://localhost:5173/{page}/.
+    /// In production, returns a file:/// URL pointing to the built dist/.
+    /// </summary>
+    public static string ResolvePageUrl(string page)
+    {
+        // Check for dev mode: NFMW_VITE_DEV env var or .vite-dev marker file
+        var isDev = System.Environment.GetEnvironmentVariable("NFMW_VITE_DEV") == "1"
+                    || File.Exists(Path.Combine(AppContext.BaseDirectory, "data", "html", ".vite-dev"));
+
+        if (isDev)
+        {
+            return $"http://localhost:5173/{page}/";
+        }
+
+        // Production: load from built dist/
+        var distDir = Path.Combine(AppContext.BaseDirectory, "data", "html", "dist", page);
+        var indexPath = Path.Combine(distDir, "index.html");
+
+        if (File.Exists(indexPath))
+        {
+            return new Uri(indexPath).AbsoluteUri;
+        }
+
+        // Fallback: try loading from source for debug convenience
+        var srcPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "src", page, "index.html");
+        if (File.Exists(srcPath))
+        {
+            return new Uri(srcPath).AbsoluteUri;
+        }
+
+        return "about:blank";
+    }
+
+    /// <summary>
+    /// Register a per-phase message handler. Called by <see cref="PhaseBridge.Register"/>.
+    /// </summary>
+    public void RegisterMessageHandler(string phaseId, GameBridge.MessageHandler handler)
+    {
+        Bridge.Register(phaseId, handler);
+    }
+
+    /// <summary>
+    /// Unregister a per-phase message handler. Called by <see cref="PhaseBridge.Unregister"/>.
+    /// </summary>
+    public void UnregisterMessageHandler(string phaseId)
+    {
+        Bridge.Unregister(phaseId);
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS for a specific phase.
+    /// The JS side receives this via window.__nfmwDispatch("{phaseId}:{eventType}", data).
+    /// </summary>
+    public void PushToJs(string phaseId, string eventType, object? data = null)
+    {
+        Bridge.PushToJs(_browser, phaseId, eventType, data);
+    }
 
     #region Input Forwarding
 
@@ -397,8 +464,11 @@ public sealed class CefRenderer : IDisposable
     {
         try
         {
-            // CefRuntime.ExecuteProcess returns >= 0 for subprocesses
-            var exitCode = CefRuntime.ExecuteProcess(new CefMainArgs(args), null, IntPtr.Zero);
+            // CefRuntime.ExecuteProcess returns >= 0 for subprocesses.
+            // The subprocess needs an app that provides GetRenderProcessHandler()
+            // so V8 context bindings (OnContextCreated) are set up.
+            var app = new NfmwCefApp(new NfmwRenderProcessHandler());
+            var exitCode = CefRuntime.ExecuteProcess(new CefMainArgs(args), app, IntPtr.Zero);
             if (exitCode >= 0)
             {
                 System.Environment.Exit(exitCode);

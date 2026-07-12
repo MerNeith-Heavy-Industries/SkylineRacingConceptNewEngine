@@ -12,27 +12,33 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
     {
         base.OnContextCreated(browser, frame, context);
 
+        // Diagnostic trace
+        try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfmw_v8_trace.txt"), $"[{DateTime.UtcNow:O}] OnContextCreated: url={frame.Url}\n"); } catch { }
+
         context.Enter();
         try
         {
             var global = context.GetGlobal();
+            var attrs = CefV8PropertyAttribute.ReadOnly | CefV8PropertyAttribute.DontDelete;
 
-            // Create the nfmw bridge object
-            var bridge = CefV8Value.CreateObject();
-            bridge.SetValue("getPlayerName",
-                CefV8Value.CreateFunction("getPlayerName", new NfmwV8Handler(browser, "getPlayerName")),
-                CefV8PropertyAttribute.None);
-            bridge.SetValue("getSpeed",
-                CefV8Value.CreateFunction("getSpeed", new NfmwV8Handler(browser, "getSpeed")),
-                CefV8PropertyAttribute.None);
+            // Register nfmw.call directly on window (flat naming, matches CefMessageRouter pattern).
+            // The JS bridge will call window.__nfmwCall(methodName, jsonPayload).
+            using (var func = CefV8Value.CreateFunction("__nfmwCall", new NfmwV8Handler("nfmwCall")))
+            {
+                global.SetValue("__nfmwCall", func, attrs);
+            }
 
-            global.SetValue("nfmw", bridge, CefV8PropertyAttribute.None);
+            // Legacy POC functions — kept for backward compatibility
+            using (var getPlayerName = CefV8Value.CreateFunction("getPlayerName", new NfmwV8Handler("getPlayerName")))
+            {
+                global.SetValue("__nfmwGetPlayerName", getPlayerName, attrs);
+            }
+            using (var getSpeed = CefV8Value.CreateFunction("getSpeed", new NfmwV8Handler("getSpeed")))
+            {
+                global.SetValue("__nfmwGetSpeed", getSpeed, attrs);
+            }
 
-            // Inject a helper that JS can call to subscribe to push events
-            global.SetValue("__nfmwRegisterEventSink",
-                CefV8Value.CreateFunction("__nfmwRegisterEventSink",
-                    new NfmwV8Handler(browser, "__nfmwRegisterEventSink")),
-                CefV8PropertyAttribute.None);
+            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfmw_v8_trace.txt"), $"[{DateTime.UtcNow:O}] OnContextCreated: registered __nfmwCall on window\n"); } catch { }
         }
         finally
         {
@@ -52,12 +58,10 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
 /// </summary>
 internal sealed class NfmwV8Handler : CefV8Handler
 {
-    private readonly CefBrowser _browser;
     private readonly string _functionName;
 
-    public NfmwV8Handler(CefBrowser browser, string functionName)
+    public NfmwV8Handler(string functionName)
     {
-        _browser = browser;
         _functionName = functionName;
     }
 
@@ -67,32 +71,86 @@ internal sealed class NfmwV8Handler : CefV8Handler
         returnValue = CefV8Value.CreateNull();
         exception = string.Empty;
 
-        // For event sink registration, store callback reference
-        if (_functionName == "__nfmwRegisterEventSink" && arguments.Length > 0 && arguments[0].IsObject)
+        try
         {
-            // TODO: Store the event sink object for pushing C#→JS events
-            returnValue = CefV8Value.CreateBool(true);
+            // Diagnostic: write to a temp file to confirm V8 handler is invoked.
+            // The render process stdout doesn't always surface to the browser
+            // process console, so we use a file trace instead.
+            try
+            {
+                System.IO.File.AppendAllText(
+                    System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfmw_v8_trace.txt"),
+                    $"[{DateTime.UtcNow:O}] Execute: func={_functionName}, name={name}, args={arguments.Length}\n");
+            }
+            catch { /* best-effort */ }
+
+            // For event sink registration, store callback reference
+            if (_functionName == "__nfmwRegisterEventSink" && arguments.Length > 0 && arguments[0].IsObject)
+            {
+                returnValue = CefV8Value.CreateBool(true);
+                return true;
+            }
+
+            // Get browser and frame from the current V8 context.
+            // Use browser.GetFrame(frameId) pattern from CefMessageRouter —
+            // this is the reliable way to get a frame that can send process
+            // messages from the render process.
+            var ctx = CefV8Context.GetCurrentContext();
+            if (ctx == null)
+            {
+                exception = "No current V8 context";
+                return false;
+            }
+
+            var browser = ctx.GetBrowser();
+            if (browser == null)
+            {
+                exception = "No browser in current V8 context";
+                return false;
+            }
+
+            var frameId = ctx.GetFrame().Identifier;
+            var frame = browser.GetFrame(frameId);
+            if (frame == null || !frame.IsValid)
+            {
+                exception = "Frame is not valid";
+                return false;
+            }
+
+            // Build the process message
+            var msg = CefProcessMessage.Create(_functionName);
+            if (msg == null)
+            {
+                exception = $"Failed to create process message '{_functionName}'";
+                return false;
+            }
+
+            var msgArgs = msg.Arguments;
+            msgArgs.SetSize(arguments.Length);
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (arguments[i].IsString)
+                    msgArgs.SetString(i, arguments[i].GetStringValue());
+                else if (arguments[i].IsDouble || arguments[i].IsInt || arguments[i].IsUInt)
+                    msgArgs.SetDouble(i, arguments[i].GetDoubleValue());
+                else if (arguments[i].IsBool)
+                    msgArgs.SetBool(i, arguments[i].GetBoolValue());
+                else
+                    msgArgs.SetNull(i);
+            }
+
+            frame.SendProcessMessage(CefProcessId.Browser, msg);
+
+            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfmw_v8_trace.txt"), $"[{DateTime.UtcNow:O}] Sent: {_functionName} via frameId={frameId}\n"); } catch { }
+
             return true;
         }
-
-        // For other calls, send a process message to the browser process
-        var msg = CefProcessMessage.Create(_functionName);
-        var args = msg.Arguments;
-        args.SetSize(arguments.Length);
-        for (int i = 0; i < arguments.Length; i++)
+        catch (Exception ex)
         {
-            if (arguments[i].IsString)
-                args.SetString(i, arguments[i].GetStringValue());
-            else if (arguments[i].IsDouble || arguments[i].IsInt || arguments[i].IsUInt)
-                args.SetDouble(i, arguments[i].GetDoubleValue());
-            else if (arguments[i].IsBool)
-                args.SetBool(i, arguments[i].GetBoolValue());
-            else
-                args.SetNull(i);
+            exception = ex.ToString();
+            try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nfmw_v8_trace.txt"), $"[{DateTime.UtcNow:O}] ERROR: {ex}\n"); } catch { }
+            return false;
+            return false;
         }
-
-        _browser.GetMainFrame().SendProcessMessage(CefProcessId.Browser, msg);
-        returnValue = CefV8Value.CreateNull(); // async — result comes via event sink
-        return true;
     }
 }

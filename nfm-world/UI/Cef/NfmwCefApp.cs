@@ -28,6 +28,11 @@ internal sealed class NfmwCefApp : CefApp
         commandLine.AppendSwitch("--disable-extensions");
         commandLine.AppendSwitch("--disable-plugins");
 
+        // Disable site isolation to ensure process messages work reliably.
+        // Site isolation can cause V8 contexts to run in separate processes,
+        // breaking CefFrame.SendProcessMessage from the render process.
+        commandLine.AppendSwitch("--disable-site-isolation-trials");
+
         base.OnBeforeCommandLineProcessing(processType, commandLine);
     }
 }

@@ -14,7 +14,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
     public int NumPlayers => players.Count;
 
     [ClientOnly]
-    protected DefaultHudManager Hud = new()
+    public DefaultHudManager Hud = new()
     {
         FocusManager = gamemodeData.FocusManager
     };
