@@ -13,7 +13,7 @@ using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
-public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageRenderingPhase(_graphicsDevice), IGamemodeData, IClientCallbacks
+public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IClientCallbacks
 {
     protected IGamemode? gamemodeInstance { get; set; }
     BackendStage IGamemodeData.CurrentStage => CurrentStage.Backend;
@@ -24,8 +24,7 @@ public abstract class BaseRacePhase(GraphicsDevice _graphicsDevice) : BaseStageR
     /// </summary>
     protected HudBridge HudBridge { get; } = new();
 
-    // Wire the HUD CEF bridge — registered/unregistered by base.Enter/Exit
-    protected BaseRacePhase() : this(default!)
+    protected BaseRacePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
     {
         CefBridge = HudBridge;
     }

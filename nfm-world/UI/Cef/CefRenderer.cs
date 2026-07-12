@@ -202,11 +202,31 @@ public sealed class CefRenderer : IDisposable
     public CefBrowser? GetBrowser() => _browser;
 
     /// <summary>
-    /// Resolve a page URL for a given phase. In dev mode (when the Vite
-    /// dev server is running), returns http://localhost:5173/{page}/.
-    /// In production, returns a file:/// URL pointing to the built dist/.
+    /// Open the Chromium DevTools window for debugging the webview.
     /// </summary>
-    public static string ResolvePageUrl(string page)
+    public void ShowDevTools()
+    {
+        if (_browserHost != null)
+        {
+            var wi = CefWindowInfo.Create();
+            wi.SetAsPopup(IntPtr.Zero, "DevTools");
+            _browserHost.ShowDevTools(wi, null!, new CefBrowserSettings(), new CefPoint(0, 0));
+        }
+    }
+
+    /// <summary>
+    /// Close the Chromium DevTools window.
+    /// </summary>
+    public void CloseDevTools()
+    {
+        _browserHost?.CloseDevTools();
+    }
+
+    /// <summary>
+    /// Resolve the base page URL for the single-page app. All phases share
+    /// one index.html; navigation uses hash fragments (#/main-menu, etc.).
+    /// </summary>
+    public static string ResolveBasePageUrl()
     {
         // Check for dev mode: NFMW_VITE_DEV env var or .vite-dev marker file
         var isDev = System.Environment.GetEnvironmentVariable("NFMW_VITE_DEV") == "1"
@@ -214,20 +234,19 @@ public sealed class CefRenderer : IDisposable
 
         if (isDev)
         {
-            return $"http://localhost:5173/{page}/";
+            return "http://localhost:5173/";
         }
 
         // Production: load from built dist/
-        var distDir = Path.Combine(AppContext.BaseDirectory, "data", "html", "dist", page);
-        var indexPath = Path.Combine(distDir, "index.html");
+        var indexPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "dist", "index.html");
 
         if (File.Exists(indexPath))
         {
             return new Uri(indexPath).AbsoluteUri;
         }
 
-        // Fallback: try loading from source for debug convenience
-        var srcPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "src", page, "index.html");
+        // Fallback: source index.html for debug convenience
+        var srcPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "src", "index.html");
         if (File.Exists(srcPath))
         {
             return new Uri(srcPath).AbsoluteUri;

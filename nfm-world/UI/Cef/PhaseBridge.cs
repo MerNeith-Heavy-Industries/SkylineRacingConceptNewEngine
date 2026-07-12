@@ -58,7 +58,8 @@ public abstract class PhaseBridge : IDisposable
 
     /// <summary>
     /// Register this bridge with the given CefRenderer. Called from Phase.Enter().
-    /// Navigates to <see cref="PageUrl"/> if non-null.
+    /// Navigates to <see cref="PageUrl"/> if non-null. Uses ExecuteJavaScript
+    /// for hash-only changes to avoid full page reloads.
     /// </summary>
     public void Register(CefRenderer renderer)
     {
@@ -67,7 +68,19 @@ public abstract class PhaseBridge : IDisposable
 
         if (PageUrl is { } url)
         {
-            Renderer.Navigate(url);
+            // For hash-based navigation in the single-page app, use JS
+            // to change location.hash instead of full LoadUrl. This keeps
+            // the V8 context alive and avoids render-process teardown.
+            var hashIndex = url.IndexOf("#/", StringComparison.Ordinal);
+            if (hashIndex > 0)
+            {
+                var hash = url[hashIndex..];
+                Renderer.ExecuteJavaScript($"window.location.hash = '{hash}';");
+            }
+            else
+            {
+                Renderer.Navigate(url);
+            }
         }
 
         OnRegistered();

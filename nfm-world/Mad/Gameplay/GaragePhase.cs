@@ -11,7 +11,7 @@ using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
-public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
+public class GaragePhase : BaseStageRenderingPhase
 {
     /// <summary>
     /// This should be hooked onto by the calling phase, so that the calling phase can be restored upon car selection.
@@ -52,9 +52,15 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
     /// <summary>
     /// Creates a GaragePhase that loads the specified stage as background.
     /// </summary>
+    public GaragePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
+    {
+        InitBridge();
+    }
+
     public GaragePhase(GraphicsDevice graphicsDevice, string? stageName) : this(graphicsDevice)
     {
         _stageName = stageName;
+        InitBridge();
     }
 
     public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar) : this(graphicsDevice)
@@ -72,11 +78,19 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
             _collections.Add(dir);
         }
 
-        // Wire bridge events
+        InitBridge();
+    }
+
+    /// <summary>
+    /// Auto-called from all constructors to wire the CEF bridge events.
+    /// </summary>
+    private void InitBridge()
+    {
+        if (CefBridge != null) return; // already wired
+
         CefBridge = _bridge;
         _bridge.CarSelected += (collection, carName) =>
         {
-            // Find and select the car by name
             var idx = _cars.ToList().FindIndex(c => c.Stats.Name == carName);
             if (idx >= 0)
             {
@@ -237,9 +251,9 @@ public class GaragePhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhas
 
         G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 48));
         G.SetColor(new Color(0, 0, 0));
-        G.DrawStringStrokeAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringStrokeAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
-        G.DrawStringAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringAligned(_cars[_selectedCarIdx].Stats.Name, 0, 60, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
 
         DrawCarStats();
     }
