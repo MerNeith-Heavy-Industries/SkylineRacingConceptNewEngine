@@ -1,7 +1,8 @@
+using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
-using NFMWorldLibrary;
 using Xilium.CefGlue;
+using Xilium.CefGlue.BrowserProcess.Handlers;
 
 namespace NFMWorld.UI.Cef;
 
@@ -9,27 +10,34 @@ namespace NFMWorld.UI.Cef;
 /// Render process handler that sets up the V8 JavaScript context.
 /// Injects the nfmw bridge object into the global scope when a JS context is created.
 /// </summary>
-internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
+internal sealed class NfmwRenderProcessHandler : RenderProcessHandler
 {
     protected override void OnContextCreated(CefBrowser browser, CefFrame frame, CefV8Context context)
     {
         base.OnContextCreated(browser, frame, context);
 
-        context.Enter();
-        try
+        WithErrorHandling(() =>
         {
-            var global = context.GetGlobal();
-            const CefV8PropertyAttribute attrs = CefV8PropertyAttribute.ReadOnly | CefV8PropertyAttribute.DontDelete;
+            using var _ = CefObjectTracker.StartTracking();
+            if (context.Enter())
+            {
+                try
+                {
+                    var global = context.GetGlobal();
+                    const CefV8PropertyAttribute attrs = CefV8PropertyAttribute.ReadOnly |
+                                                         CefV8PropertyAttribute.DontDelete;
 
-            // Register nfmw.call directly on window (flat naming, matches CefMessageRouter pattern).
-            // The JS bridge will call window.__nfmwCall(methodName, jsonPayload).
-            using var func = CefV8Value.CreateFunction("__nfmwCall", new NfmwV8Handler("nfmwCall"));
-            global.SetValue("__nfmwCall", func, attrs);
-        }
-        finally
-        {
-            context.Exit();
-        }
+                    // Register nfmw.call directly on window (flat naming, matches CefMessageRouter pattern).
+                    // The JS bridge will call window.__nfmwCall(methodName, jsonPayload).
+                    using var func = CefV8Value.CreateFunction("__nfmwCall", new NfmwV8Handler("nfmwCall"));
+                    global.SetValue("__nfmwCall", func, attrs);
+                }
+                finally
+                {
+                    context.Exit();
+                }
+            }
+        }, frame);
     }
 
     protected override void OnContextReleased(CefBrowser browser, CefFrame frame, CefV8Context context)
@@ -45,21 +53,33 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
         CefProcessId sourceProcess, CefProcessMessage message)
     {
         if (message.Name != "nfmwPush")
-            return false;
+            return base.OnProcessMessageReceived(browser, frame, sourceProcess, message);
 
         var args = message.Arguments;
-        if (args == null || args.Count < 1) return true;
+        if (args == null || args.Count < 1)
+        {
+            Console.WriteLine($"Invalid nfmwPush message received from browser process: {message.Name}");
+            return true;
+        }
 
         var eventName = args.GetString(0);
         var ctx = frame.V8Context;
-        if (ctx is not { IsValid: true }) return true;
+        if (ctx is not { IsValid: true })
+        {
+            Console.WriteLine($"V8 context is not valid for frame {frame.Identifier} when dispatching event '{eventName}'");
+            return true;
+        }
 
         ctx.Enter();
         try
         {
             var global = ctx.GetGlobal();
             var dispatch = global.GetValue("__nfmwDispatch");
-            if (dispatch is not { IsFunction: true }) return true;
+            if (dispatch is not { IsFunction: true })
+            {
+                Console.WriteLine($"window.__nfmwDispatch is not a function in frame {frame.Identifier} when dispatching event '{eventName}'");
+                return true;
+            }
 
             // Build JS arguments: [eventName, payload]
             CefV8Value payload;
@@ -107,7 +127,7 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
             }
             else
             {
-                Logging.Warning("Attempted to release a buffer that was not allocated or not a byte array.");
+                Console.WriteLine("Attempted to release a buffer that was not allocated or not a byte array.");
             }
         }
     }
@@ -160,7 +180,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
 
             var msgArgs = msg.Arguments;
             msgArgs.SetSize(arguments.Length);
-            for (int i = 0; i < arguments.Length; i++)
+            for (var i = 0; i < arguments.Length; i++)
             {
                 if (arguments[i].IsString)
                     msgArgs.SetString(i, arguments[i].GetStringValue());
@@ -204,16 +224,16 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
     {
         System.Diagnostics.Debug.Assert(source.IsArray);
 
-        int arg_length = source.GetArrayLength();
+        var arg_length = source.GetArrayLength();
         if (arg_length == 0)
             return;
 
         // Start with null types in all spaces.
         target.SetSize(arg_length);
 
-        for (int i = 0; i < arg_length; ++i)
+        for (var i = 0; i < arg_length; ++i)
         {
-            CefV8Value value = source.GetValue(i);
+            var value = source.GetValue(i);
             if (value.IsBool)
             {
                 target.SetBool(i, value.GetBoolValue());
@@ -236,13 +256,13 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             }
             else if (value.IsArray)
             {
-                CefListValue new_list = CefListValue.Create();
+                var new_list = CefListValue.Create();
                 CefV8Array2ListValue(value, new_list);
                 target.SetList(i, new_list);
             }
             else if (value.IsObject)
             {
-                CefDictionaryValue new_dictionary = CefDictionaryValue.Create();
+                var new_dictionary = CefDictionaryValue.Create();
                 CefV8JsonObject2DictionaryValue(value, new_dictionary);
                 target.SetDictionary(i, new_dictionary);
             }
@@ -253,15 +273,15 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
     {
         System.Diagnostics.Debug.Assert(target.IsArray);
 
-        int arg_length = source.Count;
+        var arg_length = source.Count;
         if (arg_length == 0)
             return;
 
-        for (int i = 0; i < arg_length; ++i)
+        for (var i = 0; i < arg_length; ++i)
         {
             CefV8Value? new_value = null;
 
-            CefValueType type = source.GetValueType(i);
+            var type = source.GetValueType(i);
             switch (type)
             {
                 case CefValueType.Bool:
@@ -315,7 +335,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
         var keys = source.GetKeys();
         foreach (var key in keys)
         {
-            CefV8Value value = source.GetValue(key);
+            var value = source.GetValue(key);
 
             if (value.IsBool)
             {
@@ -339,13 +359,13 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             }
             else if (value.IsArray)
             {
-                CefListValue listValue = CefListValue.Create();
+                var listValue = CefListValue.Create();
                 CefV8Array2ListValue(value, listValue);
                 target.SetList(key, listValue);
             }
             else if (value.IsObject)
             {
-                CefDictionaryValue dictionaryValue = CefDictionaryValue.Create();
+                var dictionaryValue = CefDictionaryValue.Create();
                 CefV8JsonObject2DictionaryValue(value, dictionaryValue);
                 target.SetDictionary(key, dictionaryValue);
             }
@@ -360,7 +380,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
         foreach (var key in keys)
         {
             CefV8Value? new_value = null;
-            CefValueType type = source.GetValueType(key);
+            var type = source.GetValueType(key);
 
             switch (type)
             {
