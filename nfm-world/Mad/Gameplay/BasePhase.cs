@@ -62,6 +62,12 @@ public abstract class BasePhase : IDisposable
     public virtual void EndGameTick()
     {
         MouseDownThisFrame = false;
+
+        // Per-frame CEF state push: let the current phase push its state to JS.
+        if (CefBridge != null)
+        {
+            PushCefState();
+        }
     }
 
     /// <summary>
