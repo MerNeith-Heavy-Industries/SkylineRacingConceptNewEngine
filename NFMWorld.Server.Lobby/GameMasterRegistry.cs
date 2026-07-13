@@ -137,22 +137,66 @@ public class GameMasterRegistry : IDisposable
 
     private static ResolvedGameMaster? ResolveDomain(string domain)
     {
+        // Dev mode: host:udpPort+httpPort (e.g. localhost:7000+7002)
+        var plusIdx = domain.IndexOf('+');
+        if (plusIdx > 0)
+        {
+            return ResolveDevEntry(domain, plusIdx);
+        }
+
+        // Production: SRV lookup via _nfmw-game._udp.{domain}
+        return ResolveSrvDomain(domain);
+    }
+
+    private static ResolvedGameMaster? ResolveDevEntry(string entry, int plusIdx)
+    {
         try
         {
-            // Query SRV record: _nfmw-game._udp.{domain}
-            var srvQuery = $"_nfmw-game._udp.{domain}";
+            var httpPortStr = entry[(plusIdx + 1)..];
+            var hostAndUdp = entry[..plusIdx];
 
-            // System.Net.Dns does not support SRV queries directly on all platforms.
-            // Use a simple A/AAAA lookup + default port as fallback, or the DnsClient
-            // NuGet package for full SRV support.
-            // For now: resolve the domain to an IP, use a default UDP port.
+            var colonIdx = hostAndUdp.LastIndexOf(':');
+            var host = colonIdx > 0 ? hostAndUdp[..colonIdx] : hostAndUdp;
+            var udpPort = colonIdx > 0 ? ushort.Parse(hostAndUdp[(colonIdx + 1)..]) : (ushort)7000;
+            var httpPort = ushort.Parse(httpPortStr);
+
+            var addresses = host == "localhost"
+                ? [IPAddress.Loopback]
+                : Dns.GetHostAddresses(host);
+
+            if (addresses.Length == 0) return null;
+            var ip = addresses[0];
+
+            Console.WriteLine(
+                $"[GameMasterRegistry] Dev GM: {host} UDP:{udpPort} HTTP:{httpPort}");
+
+            return new ResolvedGameMaster
+            {
+                // Use hostname, not resolved IP — HttpListener matches by host prefix
+                HttpEndpoint = new Uri($"http://{host}:{httpPort}"),
+                GameAddress = new IpAndPort(
+                    new CompactIpAddress(ip.GetAddressBytes()),
+                    udpPort),
+                Domain = entry
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameMasterRegistry] Failed to parse '{entry}': {ex.Message}");
+            return null;
+        }
+    }
+
+    private static ResolvedGameMaster? ResolveSrvDomain(string domain)
+    {
+        try
+        {
             var addresses = Dns.GetHostAddresses(domain);
             if (addresses.Length == 0) return null;
 
-            var ip = addresses[0]; // Prefer first resolved address
-            var port = 7000;       // TODO: use actual SRV port when DnsClient is added
+            var ip = addresses[0];
+            var port = 7000; // TODO: use actual SRV port when DnsClient is added
 
-            // SRV target host may differ from the queried domain; use the resolved address
             return new ResolvedGameMaster
             {
                 HttpEndpoint = new Uri($"http://{ip}:80"),

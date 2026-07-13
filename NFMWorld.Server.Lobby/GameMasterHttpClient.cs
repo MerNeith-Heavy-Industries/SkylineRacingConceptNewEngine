@@ -28,9 +28,10 @@ public class GameMasterHttpClient
         var body = MemoryPackSerializer.Serialize(request);
         var authHeader = HmacAuth.Sign("POST", "/create-race", body, _keyId, _secretKey);
 
-        using var httpRequest = new HttpRequestMessage(
-            HttpMethod.Post,
-            new Uri(master.HttpEndpoint, "/create-race"))
+        var requestUri = new Uri(master.HttpEndpoint, "/create-race");
+        Console.WriteLine($"[Lobby→GM] POST {requestUri}");
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
             Content = new ByteArrayContent(body)
         };

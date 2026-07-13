@@ -39,9 +39,7 @@ public static class DevConsoleCommands
         console.RegisterCommand("breaky", BreakY);
         console.RegisterCommand("breakz", BreakZ);
         console.RegisterCommand("waste", WastePlayer);
-        console.RegisterCommand("startserver", StartServer);
         console.RegisterCommand("connect", Connect);
-        console.RegisterCommand("startserversteam", StartServerSteam);
         console.RegisterCommand("connectsteam", ConnectSteam);
         
         console.RegisterCommand("replay_trial", (c, args) =>
@@ -218,11 +216,10 @@ public static class DevConsoleCommands
         }
             
         if (args.Length < 2 || !ushort.TryParse(args[1], out ushort port))
-        {
             port = 7000;
-        }
 
-        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new ENetMultiplayerClientTransport(args[0], port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice,
+            new WebSocketMultiplayerClientTransport(args[0], port)));
     }
     private static void ConnectSteam(DevConsole console, string[] args)
     {
@@ -240,32 +237,6 @@ public static class DevConsoleCommands
         }
 
         GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
-    }
-
-    private static void StartServerSteam(DevConsole console, string[] args)
-    {
-        SteamMultiplayer.Init();
-            
-        if (args.Length < 1 || !int.TryParse(args[0], out int port))
-        {
-            port = 0;
-        }
-            
-        SteamMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port)));
-    }
-
-    private static void StartServer(DevConsole console, string[] args)
-    {
-        ENetMultiplayer.Init();
-            
-        if (args.Length < 1 || !ushort.TryParse(args[0], out ushort port))
-        {
-            port = 7000;
-        }
-            
-        ENetMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new ENetMultiplayerClientTransport("localhost", port)));
     }
 
     private static void BreakX(DevConsole console, string[] args)

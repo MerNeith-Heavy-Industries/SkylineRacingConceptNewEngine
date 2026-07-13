@@ -7,15 +7,15 @@ using WebSocketSharp.Server;
 Console.WriteLine("NFMWorld Lobby Server starting...");
 
 var endpoint = Environment.GetEnvironmentVariable("LOBBY_HTTP_ENDPOINT") ?? "http://localhost:7001/";
-var lobbyPort = ushort.Parse(Environment.GetEnvironmentVariable("LOBBY_PORT") ?? "7000");
 
 ENet.Library.Initialize();
 
-var orchestrator = new GameOrchestrator(new ENetMultiplayerServerTransport(lobbyPort));
-orchestrator.Start();
-
 // HTTP endpoint for Game Masters to report race results
 var httpServer = new HttpServer(endpoint);
+
+var orchestrator = new GameOrchestrator(new WebSocketMultiplayerServerTransport(httpServer));
+orchestrator.Start();
+
 httpServer.OnPost += (sender, e) =>
 {
     var req = e.Request;
@@ -44,7 +44,7 @@ httpServer.OnPost += (sender, e) =>
 };
 httpServer.Start();
 
-Console.WriteLine($"[Lobby] Listening on port {lobbyPort}, HTTP on {endpoint}");
+Console.WriteLine($"[Lobby] Listening on {endpoint}");
 Console.WriteLine("[Lobby] Press Ctrl+C to stop.");
 
 Console.CancelKeyPress += (_, _) =>

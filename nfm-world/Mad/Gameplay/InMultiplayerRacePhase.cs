@@ -18,7 +18,8 @@ public class InMultiplayerRacePhase(
     GraphicsDevice graphicsDevice,
     IMultiplayerClientTransport transport,
     MatchGameplayInfo session,
-    uint playerClientId
+    uint playerClientId,
+    Guid joinToken
 )
     : BaseRacePhase(graphicsDevice)
 {
@@ -35,7 +36,7 @@ public class InMultiplayerRacePhase(
 
         transport.SendPacketToServer(new C2S_RaceLoaded
         {
-            JoinToken = default // TODO
+            JoinToken = joinToken
         });
     }
 
