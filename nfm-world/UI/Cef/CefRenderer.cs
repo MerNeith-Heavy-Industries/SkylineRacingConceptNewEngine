@@ -101,6 +101,8 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         _browser = CefBrowserHost.CreateBrowserSync(windowInfo, _cefClient, browserSettings, initialUrl);
         _browserHost = _browser?.GetHost();
 
+        TextInputEXT.TextInput += ForwardTextInput;
+
         _isInitialized = true;
     }
 
@@ -267,6 +269,31 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
 
     #region Input Forwarding
 
+    private void ForwardTextInput(char c)
+    {
+        var host = _browserHost!;
+
+        var keyboard = Keyboard.GetState();
+        var isShiftDown = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
+        var isCtrlDown = keyboard.IsKeyDown(Keys.LeftControl) || keyboard.IsKeyDown(Keys.RightControl);
+        var isAltDown = keyboard.IsKeyDown(Keys.LeftAlt) || keyboard.IsKeyDown(Keys.RightAlt);
+
+        var mods = CefEventFlags.None;
+        if (isShiftDown) mods |= CefEventFlags.ShiftDown;
+        if (isCtrlDown) mods |= CefEventFlags.ControlDown;
+        if (isAltDown) mods |= CefEventFlags.AltDown;
+
+        var charEvent = new CefKeyEvent
+        {
+            WindowsKeyCode = c,
+            NativeKeyCode = c,
+            Modifiers = mods,
+            IsSystemKey = false,
+            EventType = CefKeyEventType.Char,
+        };
+        host.SendKeyEvent(charEvent);
+    }
+
     private void ForwardInput()
     {
         if (!_inputEnabled || _browserHost == null || !_game.IsActive)
@@ -346,24 +373,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
                     };
                     host.SendKeyEvent(keyEvent);
                 }
-
-                // Send char event for printable keys on press
-                if (isDown)
-                {
-                    var charCode = MapKeyToChar(key, keyboard);
-                    if (charCode != 0)
-                    {
-                        var charEvent = new CefKeyEvent
-                        {
-                            WindowsKeyCode = charCode,
-                            NativeKeyCode = (int)key,
-                            Modifiers = modifiers,
-                            IsSystemKey = false,
-                            EventType = CefKeyEventType.Char,
-                        };
-                        host.SendKeyEvent(charEvent);
-                    }
-                }
             }
         }
 
@@ -426,44 +435,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         };
     }
 
-    /// <summary>
-    /// Map FNA Keys to printable character codes (for Char events).
-    /// </summary>
-    private static int MapKeyToChar(Keys key, KeyboardState keyboard)
-    {
-        var shift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
-
-        return key switch
-        {
-            Keys.Space => 0x20,
-            Keys.Enter => 0x0D,
-            Keys.Back => 0x08,
-            Keys.Tab => 0x09,
-            >= Keys.D0 and <= Keys.D9 => shift
-                ? new[] { ')', '!', '@', '#', '$', '%', '^', '&', '*', '(' }[(int)(key - Keys.D0)]
-                : (int)('0' + (key - Keys.D0)),
-            >= Keys.A and <= Keys.Z => shift ? (int)('A' + (key - Keys.A)) : (int)('a' + (key - Keys.A)),
-            >= Keys.NumPad0 and <= Keys.NumPad9 => (int)('0' + (key - Keys.NumPad0)),
-            Keys.OemSemicolon => shift ? ':' : ';',
-            Keys.OemPlus => shift ? '+' : '=',
-            Keys.OemComma => shift ? '<' : ',',
-            Keys.OemMinus => shift ? '_' : '-',
-            Keys.OemPeriod => shift ? '>' : '.',
-            Keys.OemQuestion => shift ? '?' : '/',
-            Keys.OemTilde => shift ? '~' : '`',
-            Keys.OemOpenBrackets => shift ? '{' : '[',
-            Keys.OemCloseBrackets => shift ? '}' : ']',
-            Keys.OemPipe => shift ? '|' : '\\',
-            Keys.OemQuotes => shift ? '"' : '\'',
-            Keys.Decimal => '.',
-            Keys.Add => '+',
-            Keys.Subtract => '-',
-            Keys.Multiply => '*',
-            Keys.Divide => '/',
-            _ => 0,
-        };
-    }
-
     #endregion
 
     #region Shutdown
@@ -485,6 +456,8 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         // CefRuntime.Shutdown must be called on the same thread as Initialize
         CefRuntime.Shutdown();
         _isInitialized = false;
+
+        TextInputEXT.TextInput -= ForwardTextInput;
     }
 
     public void Dispose()
