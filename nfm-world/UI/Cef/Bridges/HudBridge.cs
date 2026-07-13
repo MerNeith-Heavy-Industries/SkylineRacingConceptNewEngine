@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MemoryPack;
+using NFMWorld.DriverInterface;
 
 namespace NFMWorld.UI.Cef;
 
@@ -24,26 +25,4 @@ public sealed class HudBridge() : PhaseBridge("race")
     {
         PushMemoryPack("hudState", state);
     }
-}
-
-/// <summary>
-/// Per-frame HUD state sent to the race JS page.
-/// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
-public sealed partial class HudStateData
-{
-    public double Speed { get; set; }
-    public double Power { get; set; }
-    public double Damage { get; set; }
-    public double MaxPower { get; set; }
-    public int Lap { get; set; }
-    public int TotalLaps { get; set; }
-    public double LapTime { get; set; }
-    public double BestLapTime { get; set; }
-    public double[] Splits { get; set; } = [];
-    public int Position { get; set; }
-    public int TotalRacers { get; set; }
-    public string? StateText { get; set; }
-    public double? StateTextDuration { get; set; }
 }

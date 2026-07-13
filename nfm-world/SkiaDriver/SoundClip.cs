@@ -1,5 +1,6 @@
 using ManagedBass;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 
 namespace NFMWorld.SkiaDriver;
 

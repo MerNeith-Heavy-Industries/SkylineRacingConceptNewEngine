@@ -1,10 +1,6 @@
-﻿using NFMWorld.DriverInterface;
-using NFMWorld.Reactor.Events;
+using NFMWorld.DriverInterface;
 using NFMWorld.UI.Cef;
-using NFMWorld.Util;
 using NFMWorldLibrary.Backend.Gamemodes;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -12,10 +8,6 @@ public abstract class BasePhase : IDisposable
 {
     public virtual bool IsSingleton => false;
     
-    protected List<UIManager> Uis = [];
-    
-    public FocusManager FocusManager { get; } = new();
-
     /// <summary>
     /// Whether CEF input should be forwarded while this phase is active.
     /// Defaults to the bridge's preference (<see cref="PhaseBridge.EnableInput"/>)
@@ -76,10 +68,7 @@ public abstract class BasePhase : IDisposable
     /// </summary>
     public virtual void Render(float alpha)
     {
-        foreach (var ui in Uis)
-        {
-            ui.LayoutAndRender(G.Viewport);
-        }
+        // UI rendering handled by CEF overlay
     }
 
     /// <summary>
@@ -123,8 +112,6 @@ public abstract class BasePhase : IDisposable
         // Unregister the phase's CEF bridge
         CefBridge?.Unregister();
 
-        FocusManager.ClearHover();
-        FocusManager.ClearFocus();
         if (!IsSingleton)
         {
             Dispose();
@@ -139,24 +126,12 @@ public abstract class BasePhase : IDisposable
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        if (!imguiWantsKeyboard)
-        {
-            foreach (var ui in Uis)
-            {
-                ui.HandleKeyPressed(key, keys);
-            }
-        }
+        // CEF handles input
     }
 
     public virtual void KeyTyped(char character, bool imguiWantsKeyboard)
     {
-        if (!imguiWantsKeyboard)
-        {
-            foreach (var ui in Uis)
-            {
-                ui.HandleKeyTyped(character);
-            }
-        }
+        // CEF handles input
     }
 
     /// <summary>
@@ -166,11 +141,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="imguiWantsKeyboard">If Imgui wants the keyboard.</param>
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
-    {
-        foreach (var ui in Uis)
-        {
-            ui.HandleKeyReleased(key, keys);
-        }
+    { // CEF handles input
     }
 
     /// <summary>
@@ -185,11 +156,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
-    {
-        foreach (var ui in Uis)
-        {
-            ui.HandleMouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
-        }
+    { // CEF handles input
     }
 
     /// <summary>
@@ -205,17 +172,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        // Reset focus. Implementors can take over focus.
-        FocusManager.FocusedElement = null;
-
-        if (!imguiWantsMouse)
-        {
-            MouseDownThisFrame = true;
-            foreach (var ui in Uis)
-            {
-                ui.HandleMousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
-            }
-        }
+        if (!imguiWantsMouse) { MouseDownThisFrame = true; }
     }
 
     /// <summary>
@@ -230,11 +187,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="shiftKey">Whether the Shift key is being held.</param>
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
-    {
-        foreach (var ui in Uis)
-        {
-            ui.HandleMouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
-        }
+    { // CEF handles input
     }
 
     /// <summary>
@@ -251,13 +204,7 @@ public abstract class BasePhase : IDisposable
     public virtual void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
     {
-        if (!imguiWantsMouse)
-        {
-            foreach (var ui in Uis)
-            {
-                ui.HandleMouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
-            }
-        }
+        // CEF handles scroll input
     }
 
     public virtual void WindowSizeChanged(int width, int height)

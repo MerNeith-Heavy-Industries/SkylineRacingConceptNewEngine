@@ -1,4 +1,4 @@
-namespace NFMWorld.Reactor.Events;
+﻿namespace NFMWorld.DriverInterface;
 
 public enum MouseButton
 {

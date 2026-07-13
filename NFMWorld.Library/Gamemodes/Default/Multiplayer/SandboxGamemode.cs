@@ -1,7 +1,6 @@
 using Maxine.Extensions;
 using NFMWorld.DriverInterface;
 using NFMWorld.UI.Hud;
-using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -70,17 +69,14 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
     [ClientOnly]
     protected void ClientReset()
     {
-        carsInRace[0].CarPhysics.PowerUp += Hud.EventPowerUp;
+        // PowerUp event no longer needed — CEF HUD reads HudState each frame.
     }
 
     [ClientOnly]
     protected void ClientGameTick()
     {
-        Hud.State = Hud.State with
-        {
-            DamageFillAmount = (float)carsInRace[0].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag,
-            PowerFillAmount = (float)carsInRace[0].CarPhysics.Power / 100f
-        };
+        HudState.Damage = (float)carsInRace[0].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag;
+        HudState.Power = (float)carsInRace[0].CarPhysics.Power / 100f;
     }
 
     public override void KeyPressed(Key key, in Keys keys)

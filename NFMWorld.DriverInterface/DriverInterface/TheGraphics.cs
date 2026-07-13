@@ -1,4 +1,4 @@
-﻿namespace NFMWorld.DriverInterface;
+﻿namespace NFMWorld.DriverInterface.DriverInterface;
 
 public static class TheGraphics
 {

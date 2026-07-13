@@ -1,4 +1,4 @@
-namespace NFMWorld.Reactor.Events;
+﻿namespace NFMWorld.DriverInterface;
 
 [Flags]
 public enum MouseButtons

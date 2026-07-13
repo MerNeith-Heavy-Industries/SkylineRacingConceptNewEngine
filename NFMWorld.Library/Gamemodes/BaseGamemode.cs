@@ -1,8 +1,6 @@
 using NFMWorld.DriverInterface;
-using NFMWorld.Reactor.Events;
 using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -13,11 +11,8 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
     public BackendStage currentStage => gamemodeData.CurrentStage;
     public int NumPlayers => players.Count;
 
-    [ClientOnly]
-    public DefaultHudManager Hud = new()
-    {
-        FocusManager = gamemodeData.FocusManager
-    };
+    /// <summary>Per-frame HUD state pushed to the CEF overlay.</summary>
+    public HudStateData HudState { get; protected set; } = new();
 
     /// <summary>
     /// Arguments: byte[] player standings indexed by player index
@@ -36,7 +31,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
 
     public virtual void GameTick()
     {
-        ClientServer.RunIfOnClient(Hud.GameTick);
+        // HUD rendering moved to CEF — no per-tick HUD updates needed.
     }
 
     public virtual void Reset()
@@ -46,41 +41,35 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
 
     public virtual void KeyPressed(Key key, in Keys keys)
     {
-        Hud.HandleKeyPressed(key, keys);
+        // Input routed to CEF via BasePhase — no HUD forwarding needed.
     }
 
     public virtual void KeyReleased(Key key, in Keys keys)
     {
-        Hud.HandleKeyReleased(key, keys);
     }
 
     public virtual void KeyTyped(char character)
     {
-        Hud.HandleKeyTyped(character);
     }
 
     public virtual void MousePressed(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        Hud.HandleMousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public virtual void MouseReleased(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        Hud.HandleMouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public virtual void MouseScrolled(int x, int y, int delta, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        Hud.HandleMouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public virtual void MouseMoved(int x, int y, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        Hud.HandleMouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public virtual void Render()
     {
-        Hud.LayoutAndRender(G.Viewport);
+        // CEF handles UI rendering — no HUD LayoutAndRender needed.
     }
 }

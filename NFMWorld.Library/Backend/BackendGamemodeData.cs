@@ -1,7 +1,5 @@
-﻿using NFMWorld.Reactor.Events;
-using NFMWorldLibrary.Backend.Gamemodes;
+﻿using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -11,7 +9,6 @@ public class BackendGamemodeData : IGamemodeData
     public required BackendStage CurrentStage { get; init; }
     public required RaceState raceState { get; init; }
     public IClientCallbacks ClientCallbacks => ClientServer.AccidentallyCalledClientMethodOnServer<IClientCallbacks>();
-    public FocusManager FocusManager => ClientServer.AccidentallyCalledClientMethodOnServer<FocusManager>();
 
     public static BackendGamemodeData Create(string stage)
     {

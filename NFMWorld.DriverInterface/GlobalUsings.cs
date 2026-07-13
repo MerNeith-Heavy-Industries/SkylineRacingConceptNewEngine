@@ -1,1 +1,1 @@
-﻿global using static NFMWorld.DriverInterface.TheGraphics;
+﻿global using static NFMWorld.DriverInterface.DriverInterface.TheGraphics;

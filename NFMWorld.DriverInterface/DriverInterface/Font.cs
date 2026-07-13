@@ -1,7 +1,6 @@
-using System.ComponentModel;
 using System.Globalization;
 
-namespace NFMWorld.DriverInterface;
+namespace NFMWorld.DriverInterface.DriverInterface;
 
 public readonly record struct Font(FontFamily FontFamily, FontStyle Style, float Size)
 {
