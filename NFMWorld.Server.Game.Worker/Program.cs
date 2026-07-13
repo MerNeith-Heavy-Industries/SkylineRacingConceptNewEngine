@@ -5,6 +5,8 @@ using NFMWorldLibrary.Multiplayer;
 
 // ── Parse CLI arguments ──────────────────────────────────────────
 
+BackendGameSparker.Load();
+
 var shmName = GetArg(args, "--shm-name");
 var stageName = GetArg(args, "--stage") ?? "unknown";
 var gamemode = int.TryParse(GetArg(args, "--gamemode"), out var gm)

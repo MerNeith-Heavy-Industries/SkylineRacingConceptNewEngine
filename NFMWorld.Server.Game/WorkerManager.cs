@@ -14,20 +14,14 @@ namespace NFMWorldLibrary.Multiplayer;
 /// The Worker owns its own 63 TPS simulation loop. This manager just relays
 /// inputs to the right Worker and broadcasts state back to clients.
 /// </summary>
-public class WorkerManager : IDisposable
+public class WorkerManager(IMultiplayerServerTransport transport) : IDisposable
 {
     private readonly ConcurrentDictionary<uint, WorkerProcess> _sessions = new();
-    private readonly IMultiplayerServerTransport _transport;
-    private readonly string _workerBinaryPath;
+
+    private readonly string _workerBinaryPath = Environment.GetEnvironmentVariable("WORKER_BINARY_PATH")
+                                                ?? "dotnet";
     private Thread? _healthThread;
     private bool _running;
-
-    public WorkerManager(IMultiplayerServerTransport transport)
-    {
-        _transport = transport;
-        _workerBinaryPath = Environment.GetEnvironmentVariable("WORKER_BINARY_PATH")
-                           ?? "dotnet";
-    }
 
     public WorkerProcess CreateWorker(
         uint sessionId, string matchKey,
@@ -61,7 +55,8 @@ public class WorkerManager : IDisposable
             {
                 FileName = _workerBinaryPath == "dotnet" ? "dotnet" : _workerBinaryPath,
                 Arguments = _workerBinaryPath == "dotnet"
-                    ? string.Join(" ", args.Skip(1)) : string.Join(" ", args),
+                    ? string.Join(" ", args)
+                    : string.Join(" ", args.Skip(1)),
                 RedirectStandardOutput = true, RedirectStandardError = true,
                 UseShellExecute = false, CreateNoWindow = true
             },
@@ -69,9 +64,15 @@ public class WorkerManager : IDisposable
         };
 
         process.OutputDataReceived += (_, e) =>
-        { if (e.Data is not null) Console.WriteLine($"[Worker:{matchKey[..6]}] {e.Data}"); };
+        {
+            if (e.Data is not null)
+                Console.WriteLine($"[Worker:{matchKey[..6]}] {e.Data}");
+        };
         process.ErrorDataReceived += (_, e) =>
-        { if (e.Data is not null) Console.Error.WriteLine($"[Worker:{matchKey[..6]}] ERR: {e.Data}"); };
+        {
+            if (e.Data is not null)
+                Console.Error.WriteLine($"[Worker:{matchKey[..6]}] ERR: {e.Data}");
+        };
 
         process.Start();
         process.BeginOutputReadLine();
@@ -98,7 +99,10 @@ public class WorkerManager : IDisposable
     {
         _running = true;
         _healthThread = new Thread(() => HealthLoop(intervalMs))
-        { IsBackground = true, Name = "WorkerManager-Health" };
+        {
+            IsBackground = true,
+            Name = "WorkerManager-Health"
+        };
         _healthThread.Start();
     }
 
@@ -165,7 +169,9 @@ public class WorkerManager : IDisposable
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             session.RpcBridge.Send(
                 new RpcMessage { Type = RpcMessageType.Shutdown },
-                timeoutMs: 3000, cancellationToken: cts.Token);
+                timeoutMs: 3000,
+                cancellationToken: cts.Token
+            );
         }
         catch { }
 
@@ -205,18 +211,26 @@ public class WorkerManager : IDisposable
         {
             uint? targetClientId = null;
             foreach (var (_, (idx, cid)) in session.JoinTokens)
-                if (idx == playerIndex) { targetClientId = cid; break; }
+            {
+                if (idx == playerIndex)
+                {
+                    targetClientId = cid;
+                    break;
+                }
+            }
+
             if (targetClientId is null) continue;
 
             var others = session.JoinTokens.Values
-                .Where(e => e.ClientId != targetClientId.Value && e.ClientId != 0)
+                .Where(e => e.ClientId != targetClientId.Value)
                 .Select(e => e.ClientId).ToArray();
 
             if (others.Length > 0)
             {
-                _transport.SendPacketToClients(others, new S2C_PlayerState
+                transport.SendPacketToClients(others, new S2C_PlayerState
                 {
-                    PlayerClientId = targetClientId.Value, State = state,
+                    PlayerClientId = targetClientId.Value,
+                    State = state,
                     CurrentServerTime = snapshot.ServerTime
                 }, false);
             }
@@ -231,13 +245,18 @@ public class WorkerManager : IDisposable
         Console.WriteLine($"[WorkerManager] Race complete: {session.MatchKey}");
 
         var clientIds = session.JoinTokens.Values
-            .Where(e => e.ClientId != 0).Select(e => e.ClientId).ToArray();
+            .Select(e => e.ClientId)
+            .ToArray();
 
         if (clientIds.Length > 0)
         {
-            _transport.SendPacketToClients(clientIds,
+            transport.SendPacketToClients(
+                clientIds,
                 new S2C_GameFinished
-                { PlayerResults = new Dictionary<byte, PlayerResult>() });
+                {
+                    PlayerResults = new Dictionary<byte, PlayerResult>()
+                }
+            );
         }
 
         TerminateWorker(session.SessionId);
@@ -254,7 +273,10 @@ public class WorkerManager : IDisposable
             foreach (var (_, s) in _sessions)
             {
                 if (s.RpcBridge != null)
-                { OnGameStateReceived(s, state); break; } // TODO: map bridge→session
+                {
+                    OnGameStateReceived(s, state);
+                    break;
+                } // TODO: map bridge→session
             }
         }
         return new RpcMessage { Type = RpcMessageType.GameState };
