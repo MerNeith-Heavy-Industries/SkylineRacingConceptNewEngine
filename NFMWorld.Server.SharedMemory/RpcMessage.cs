@@ -3,7 +3,7 @@ using MemoryPack;
 namespace NFMWorld.Server.SharedMemory;
 
 /// <summary>
-/// Top-level message envelope for Master↔Slave RPC communication.
+/// Top-level message envelope for Controller↔Worker RPC communication.
 /// The <see cref="Payload"/> contains a MemoryPack-serialized inner message
 /// whose type depends on <see cref="Type"/>.
 /// </summary>
@@ -34,7 +34,7 @@ public partial struct RpcMessage
 }
 
 /// <summary>
-/// Message types for Master↔Slave RPC communication.
+/// Message types for Controller↔Worker RPC communication.
 /// </summary>
 public enum RpcMessageType : byte
 {
@@ -42,26 +42,26 @@ public enum RpcMessageType : byte
     Ping = 0,
 
     /// <summary>
-    /// Master → Slave: batched player inputs for one simulation tick.
+    /// Controller → Worker: batched player inputs for one simulation tick.
     /// Payload: <see cref="PlayerInputBatch"/>.
     /// Response: <see cref="RpcMessageType.GameState"/> with current game state.
     /// </summary>
     PlayerInputs = 1,
 
     /// <summary>
-    /// Slave → Master (response): game state after processing inputs.
+    /// Worker → Controller (response): game state after processing inputs.
     /// Payload: <see cref="GameStateSnapshot"/>.
     /// </summary>
     GameState = 2,
 
     /// <summary>
-    /// Slave → Master (or response to PlayerInputs when race is finished): race is complete.
+    /// Worker → Controller (or response to PlayerInputs when race is finished): race is complete.
     /// Payload: <see cref="RaceCompleteReport"/>.
     /// </summary>
     RaceComplete = 3,
 
     /// <summary>
-    /// Master → Slave: terminate the simulation gracefully.
+    /// Controller → Worker: terminate the simulation gracefully.
     /// Response: Shutdown acknowledgement.
     /// </summary>
     Shutdown = 4,

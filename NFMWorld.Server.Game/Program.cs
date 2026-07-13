@@ -1,50 +1,78 @@
-﻿using System.Net;
-using System.Text;
-using Maxine.Extensions;
+﻿using System.Text;
 using MemoryPack;
-using Microsoft.Extensions.Logging;
-using NFMWorldLibrary;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Multiplayer.HttpMessages;
 using WebSocketSharp.Server;
 
-Console.WriteLine("Hello, World!");
+Console.WriteLine("NFMWorld Game Master starting...");
 
-var endpoint = Environment.GetEnvironmentVariable("SERVER_ENDPOINT") ?? $"http://localhost:7000/";
-var secretKey = Environment.GetEnvironmentVariable("SERVER_SECRET_KEY");
+var endpoint = Environment.GetEnvironmentVariable("GM_HTTP_ENDPOINT") ?? "http://localhost:7002/";
+var gamePort = ushort.Parse(Environment.GetEnvironmentVariable("GM_GAME_PORT") ?? "7000");
 
-var orchestrator = new RaceOrchestrator(new ENetMultiplayerServerTransport());
+// HMAC key configuration: "keyId=base64secret,..." (e.g. "primary=c2VjcmV0a2V5")
+var keysConfig = Environment.GetEnvironmentVariable("GM_HMAC_KEYS") ?? "";
+var knownKeys = HmacAuth.ParseKnownKeys(keysConfig);
+
+if (knownKeys.Count == 0)
+    Console.WriteLine("[GameMaster] WARNING: no HMAC keys configured. All requests will be rejected.");
+
+ENet.Library.Initialize();
+var transport = new ENetMultiplayerServerTransport(gamePort);
+var orchestrator = new RaceOrchestrator(transport);
 orchestrator.Start();
 
-var server = new HttpServer(endpoint);
-server.OnPost += (sender, e) =>
+var httpServer = new HttpServer(endpoint);
+httpServer.OnPost += (sender, e) =>
 {
     var req = e.Request;
     var res = e.Response;
-    var path = req.RawUrl;
 
-    if (req.Headers["Authorization"] != "Bearer " + secretKey)
+    // Read body for HMAC verification
+    using var ms = new MemoryStream();
+    req.InputStream.CopyTo(ms);
+    var bodyArray = ms.ToArray();
+
+    var method = req.HttpMethod;
+    var path = req.RawUrl ?? "/";
+
+    var authHeader = req.Headers["Authorization"];
+    var error = HmacAuth.Verify(method, path, bodyArray, authHeader, knownKeys);
+
+    if (error is not null)
     {
+        Console.WriteLine($"[GameMaster] Auth failed: {error}");
         res.StatusCode = 401;
-        res.Close();
+        res.Close(Encoding.UTF8.GetBytes(error), false);
         return;
     }
 
     if (path == "/create-race")
     {
-        using var seq = req.InputStream.AsPooledReadOnlySequence();
-        var raceParams = MemoryPackSerializer.Deserialize<Lobby2RaceServer_CreateRace>(seq.Sequence);
-        
+        var raceParams = MemoryPackSerializer.Deserialize<Lobby2RaceServer_CreateRace>(bodyArray);
         var response = orchestrator.CreateRace(raceParams);
-        
+
         res.ContentType = "application/octet-stream";
         res.Close(MemoryPackSerializer.Serialize(response), false);
     }
+    else
+    {
+        res.StatusCode = 404;
+        res.Close();
+    }
 };
-server.Start();
+httpServer.Start();
 
-Console.CancelKeyPress += (sender, eventArgs) =>
+Console.WriteLine($"[GameMaster] Game port {gamePort}, HTTP on {endpoint}");
+Console.WriteLine("[GameMaster] Press Ctrl+C to stop.");
+
+var tcs = new TaskCompletionSource();
+Console.CancelKeyPress += (_, _) =>
 {
-    server.Stop();
+    Console.WriteLine("[GameMaster] Shutting down...");
+    httpServer.Stop();
     orchestrator.Stop();
+    ENet.Library.Deinitialize();
+    tcs.SetResult();
 };
+
+await tcs.Task;

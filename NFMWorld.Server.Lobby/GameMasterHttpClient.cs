@@ -1,47 +1,42 @@
+using System.Net.Http.Headers;
 using MemoryPack;
 using NFMWorldLibrary.Multiplayer.HttpMessages;
 
 namespace NFMWorldLibrary.Multiplayer;
 
 /// <summary>
-/// Sends HTTP requests from the Lobby to a Game Master instance.
-/// 
-/// Endpoints:
-/// - POST /create-race   → Create a new race, returns join tokens + game address
-/// - POST /race-ended     → Notify GM that a race has been cleaned up (future)
+/// Sends authenticated HTTP requests from the Lobby to a Game Master instance.
+/// Uses HMAC-SHA256 request signing — both sides share a secret key.
 /// </summary>
 public class GameMasterHttpClient
 {
     private readonly HttpClient _httpClient;
-    private readonly string _secretKey;
+    private readonly string _keyId;
+    private readonly byte[] _secretKey;
 
-    public GameMasterHttpClient(string secretKey)
+    public GameMasterHttpClient(string keyId, string secretKeyBase64)
     {
-        _secretKey = secretKey;
-        _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(15)
-        };
+        _keyId = keyId;
+        _secretKey = Convert.FromBase64String(secretKeyBase64);
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
     }
 
-    /// <summary>
-    /// Creates a race on the specified Game Master.
-    /// Returns the response with per-player join tokens and the game server address.
-    /// </summary>
     public async Task<Lobby2RaceServer_CreateRaceResponse> CreateRaceAsync(
         ResolvedGameMaster master,
         Lobby2RaceServer_CreateRace request)
     {
-        var url = new Uri(master.HttpEndpoint, "/create-race");
         var body = MemoryPackSerializer.Serialize(request);
+        var authHeader = HmacAuth.Sign("POST", "/create-race", body, _keyId, _secretKey);
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url)
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            new Uri(master.HttpEndpoint, "/create-race"))
         {
             Content = new ByteArrayContent(body)
         };
-        httpRequest.Headers.Add("Authorization", $"Bearer {_secretKey}");
+        httpRequest.Headers.Add("Authorization", authHeader);
         httpRequest.Content.Headers.ContentType =
-            new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            new MediaTypeHeaderValue("application/octet-stream");
 
         using var response = await _httpClient.SendAsync(httpRequest);
         response.EnsureSuccessStatusCode();
@@ -50,23 +45,22 @@ public class GameMasterHttpClient
         return MemoryPackSerializer.Deserialize<Lobby2RaceServer_CreateRaceResponse>(responseBytes);
     }
 
-    /// <summary>
-    /// Notifies the Game Master that a race has ended (cleanup callback from Lobby).
-    /// </summary>
     public async Task NotifyRaceEndedAsync(
         ResolvedGameMaster master,
         RaceServer2Lobby_RaceResults results)
     {
-        var url = new Uri(master.HttpEndpoint, "/race-ended");
         var body = MemoryPackSerializer.Serialize(results);
+        var authHeader = HmacAuth.Sign("POST", "/race-ended", body, _keyId, _secretKey);
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url)
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            new Uri(master.HttpEndpoint, "/race-ended"))
         {
             Content = new ByteArrayContent(body)
         };
-        httpRequest.Headers.Add("Authorization", $"Bearer {_secretKey}");
+        httpRequest.Headers.Add("Authorization", authHeader);
         httpRequest.Content.Headers.ContentType =
-            new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            new MediaTypeHeaderValue("application/octet-stream");
 
         using var response = await _httpClient.SendAsync(httpRequest);
         response.EnsureSuccessStatusCode();

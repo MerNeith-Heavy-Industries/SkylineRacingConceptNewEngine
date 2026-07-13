@@ -73,7 +73,7 @@
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
   <Project Path="NFMWorld.PhysicsFS/NFMWorld.PhysicsFS.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
-  <Project Path="NFMWorld.Server.Game.Slave/NFMWorld.Server.Game.Slave.csproj" />
+  <Project Path="NFMWorld.Server.Game.Worker/NFMWorld.Server.Game.Worker.csproj" />
   <Project Path="NFMWorld.Server.Game/NFMWorld.Server.Game.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />
   <Project Path="NFMWorld.Sentry/NFMWorld.Sentry.csproj" />

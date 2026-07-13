@@ -32,7 +32,8 @@ public class GameOrchestrator
 
         _gmRegistry = GameMasterRegistry.FromEnvironment();
         _gmClient = new GameMasterHttpClient(
-            Environment.GetEnvironmentVariable("GAME_MASTER_SECRET_KEY") ?? "");
+            Environment.GetEnvironmentVariable("HMAC_KEY_ID") ?? "primary",
+            Environment.GetEnvironmentVariable("HMAC_SECRET_KEY") ?? "");
 
         transport.PacketReceived += TransportOnPacketReceived;
         transport.ClientConnected += TransportOnClientConnected;
