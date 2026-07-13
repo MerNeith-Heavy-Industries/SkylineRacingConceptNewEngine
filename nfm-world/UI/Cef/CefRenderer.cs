@@ -16,10 +16,11 @@ namespace NFMWorld.UI.Cef;
 ///   _cefRenderer.Render();            // each frame in Draw(), between 3D and ImGui
 ///   _cefRenderer.Shutdown();          // once, in Dispose/UnloadContent
 /// </summary>
-public sealed class CefRenderer : IDisposable
+public sealed class CefRenderer(Game game, string initialUrl, int browserWidth = 1280, int browserHeight = 720)
+    : IDisposable
 {
-    private readonly Game _game;
-    private readonly GraphicsDevice _graphicsDevice;
+    private readonly Game _game = game ?? throw new ArgumentNullException(nameof(game));
+    private readonly GraphicsDevice _graphicsDevice = game.GraphicsDevice;
 
     // CEF components
     private NfmwCefRenderHandler? _renderHandler;
@@ -47,21 +48,9 @@ public sealed class CefRenderer : IDisposable
     private static readonly Keys[] AllKeys = Enum.GetValues<Keys>();
 
     // Settings
-    private readonly string _initialUrl;
-    private readonly int _browserWidth;
-    private readonly int _browserHeight;
     private bool _inputEnabled = true;
 
     public bool IsInitialized => _isInitialized;
-
-    public CefRenderer(Game game, string initialUrl, int browserWidth = 1280, int browserHeight = 720)
-    {
-        _game = game ?? throw new ArgumentNullException(nameof(game));
-        _graphicsDevice = game.GraphicsDevice;
-        _initialUrl = initialUrl;
-        _browserWidth = browserWidth;
-        _browserHeight = browserHeight;
-    }
 
     /// <summary>
     /// Initialize CEF and create the off-screen browser. Must be called after
@@ -88,7 +77,7 @@ public sealed class CefRenderer : IDisposable
 
         // 3. Create handlers
         _renderHandler = new NfmwCefRenderHandler(_graphicsDevice);
-        _renderHandler.SetViewSize(_browserWidth, _browserHeight);
+        _renderHandler.SetViewSize(browserWidth, browserHeight);
         _renderHandler.OnBrowserPainted += () => _textureNeedsUpdate = true;
 
         var renderProcessHandler = new NfmwRenderProcessHandler();
@@ -109,7 +98,7 @@ public sealed class CefRenderer : IDisposable
             BackgroundColor = new CefColor(0, 0, 0, 0),
         };
 
-        _browser = CefBrowserHost.CreateBrowserSync(windowInfo, _cefClient, browserSettings, _initialUrl);
+        _browser = CefBrowserHost.CreateBrowserSync(windowInfo, _cefClient, browserSettings, initialUrl);
         _browserHost = _browser?.GetHost();
 
         _isInitialized = true;
@@ -165,10 +154,7 @@ public sealed class CefRenderer : IDisposable
     /// </summary>
     public void Navigate(string url)
     {
-        if (_browser != null)
-        {
-            _browser.GetMainFrame().LoadUrl(url);
-        }
+        _browser?.GetMainFrame().LoadUrl(url);
     }
 
     /// <summary>
@@ -176,10 +162,7 @@ public sealed class CefRenderer : IDisposable
     /// </summary>
     public void ExecuteJavaScript(string code)
     {
-        if (_browser != null)
-        {
-            _browser.GetMainFrame().ExecuteJavaScript(code, null, 0);
-        }
+        _browser?.GetMainFrame().ExecuteJavaScript(code, null, 0);
     }
 
     /// <summary>
@@ -245,13 +228,6 @@ public sealed class CefRenderer : IDisposable
             return new Uri(indexPath).AbsoluteUri;
         }
 
-        // Fallback: source index.html for debug convenience
-        var srcPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "src", "index.html");
-        if (File.Exists(srcPath))
-        {
-            return new Uri(srcPath).AbsoluteUri;
-        }
-
         return "about:blank";
     }
 
@@ -275,9 +251,18 @@ public sealed class CefRenderer : IDisposable
     /// Push an event from C# to JS for a specific phase.
     /// The JS side receives this via window.__nfmwDispatch("{phaseId}:{eventType}", data).
     /// </summary>
-    public void PushToJs(string phaseId, string eventType, object? data = null)
+    public void PushToJs(string phaseId, string eventType, object? data)
     {
-        Bridge.PushToJs(_browser, phaseId, eventType, data);
+        GameBridge.PushToJs(_browser, phaseId, eventType, data);
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS for a specific phase.
+    /// The JS side receives this via window.__nfmwDispatch("{phaseId}:{eventType}", data).
+    /// </summary>
+    public void PushToJs(string phaseId, string eventType, byte[] binary)
+    {
+        GameBridge.PushToJs(_browser, phaseId, eventType, binary);
     }
 
     #region Input Forwarding
@@ -336,6 +321,10 @@ public sealed class CefRenderer : IDisposable
     {
         var keyboard = Keyboard.GetState();
         var host = _browserHost!;
+        
+        var isShiftDown = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
+        var isCtrlDown = keyboard.IsKeyDown(Keys.LeftControl) || keyboard.IsKeyDown(Keys.RightControl);
+        var isAltDown = keyboard.IsKeyDown(Keys.LeftAlt) || keyboard.IsKeyDown(Keys.RightAlt);
 
         foreach (var key in AllKeys)
         {
@@ -344,7 +333,7 @@ public sealed class CefRenderer : IDisposable
 
             if (isDown != wasDown)
             {
-                var (windowsKeyCode, modifiers) = MapKeyToCef(key);
+                var (windowsKeyCode, modifiers) = MapKeyToCef(key, isShiftDown, isCtrlDown, isAltDown);
                 if (windowsKeyCode != 0)
                 {
                     var keyEvent = new CefKeyEvent
@@ -384,9 +373,13 @@ public sealed class CefRenderer : IDisposable
     /// <summary>
     /// Map FNA Keys to CEF Windows virtual key codes and modifier flags.
     /// </summary>
-    private static (int KeyCode, CefEventFlags Modifiers) MapKeyToCef(Keys key)
+    private static (int KeyCode, CefEventFlags Modifiers) MapKeyToCef(Keys key, bool isShiftDown, bool isCtrlDown, bool isAltDown)
     {
         var mods = CefEventFlags.None;
+        if (isShiftDown) mods |= CefEventFlags.ShiftDown;
+        if (isCtrlDown) mods |= CefEventFlags.ControlDown;
+        if (isAltDown) mods |= CefEventFlags.AltDown;
+        
         return key switch
         {
             Keys.Back => (0x08, mods),              // VK_BACK
@@ -404,15 +397,15 @@ public sealed class CefRenderer : IDisposable
             Keys.Down => (0x28, mods),              // VK_DOWN
             Keys.Delete => (0x2E, mods),            // VK_DELETE
             Keys.Insert => (0x2D, mods),            // VK_INSERT
-            >= Keys.D0 and <= Keys.D9 => ((int)(0x30 + (key - Keys.D0)), mods),
-            >= Keys.A and <= Keys.Z => ((int)(0x41 + (key - Keys.A)), mods),
-            >= Keys.NumPad0 and <= Keys.NumPad9 => ((int)(0x60 + (key - Keys.NumPad0)), mods),
+            >= Keys.D0 and <= Keys.D9 => (0x30 + (key - Keys.D0), mods),
+            >= Keys.A and <= Keys.Z => (0x41 + (key - Keys.A), mods),
+            >= Keys.NumPad0 and <= Keys.NumPad9 => (0x60 + (key - Keys.NumPad0), mods),
             Keys.Multiply => (0x6A, mods),          // VK_MULTIPLY
             Keys.Add => (0x6B, mods),               // VK_ADD
             Keys.Subtract => (0x6D, mods),          // VK_SUBTRACT
             Keys.Decimal => (0x6E, mods),           // VK_DECIMAL
             Keys.Divide => (0x6F, mods),            // VK_DIVIDE
-            >= Keys.F1 and <= Keys.F12 => ((int)(0x70 + (key - Keys.F1)), mods),
+            >= Keys.F1 and <= Keys.F12 => (0x70 + (key - Keys.F1), mods),
             Keys.NumLock => (0x90, mods),           // VK_NUMLOCK
             Keys.Scroll => (0x91, mods),            // VK_SCROLL
             Keys.LeftShift or Keys.RightShift => (0x10, mods),  // VK_SHIFT
