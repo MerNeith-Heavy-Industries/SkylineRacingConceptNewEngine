@@ -92,6 +92,17 @@ public class RaceOrchestrator
             MatchKey = raceParams.MatchKey
         };
         
-        var joinTokens = raceParams.MatchGameplayInfo
+        var joinTokens = new Dictionary<byte, Guid>();
+        foreach (var (playerIndex, _) in raceParams.MatchGameplayInfo.Players)
+            joinTokens[playerIndex] = Guid.NewGuid();
+
+        _activeSessions.TryAdd(sessionId, session);
+
+        // TODO Phase 3: spawn Slave process via SlaveManager
+
+        return new Lobby2RaceServer_CreateRaceResponse
+        {
+            PlayerSecretIds = joinTokens
+        };
     }
 }
