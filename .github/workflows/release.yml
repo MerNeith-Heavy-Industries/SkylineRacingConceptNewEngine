@@ -76,6 +76,11 @@ jobs:
           submodules: 'recursive'
           token: ${{ secrets.SRC_TOKEN }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -140,6 +145,11 @@ jobs:
         with:
           submodules: 'recursive'
           token: ${{ secrets.SRC_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
 
       - name: Install wine and dependencies
         run: |
