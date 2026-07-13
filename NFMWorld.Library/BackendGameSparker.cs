@@ -285,6 +285,10 @@ public static class BackendGameSparker
         VFS.MountDirectory(Directory.GetCurrentDirectory());
         VFS.MountWriteDestination(Directory.GetCurrentDirectory());
         
+        // src dirs
+        VFS.MountDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "src"));
+        VFS.MountDirectory(Path.Combine(Directory.GetCurrentDirectory(), "src"));
+
         var modsFolder = Path.Combine(Directory.GetCurrentDirectory(), "mods");
         if (Directory.Exists(modsFolder))
             VFS.MountDirectory(modsFolder);

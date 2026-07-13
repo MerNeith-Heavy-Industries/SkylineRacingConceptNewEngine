@@ -29,6 +29,9 @@
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="data\.git" CopyToOutputDirectory="Never" />
+        <None Include="src\**\*" CopyToOutputDirectory="Always" />
+        <None Remove="src\data\.git\**" CopyToOutputDirectory="Never" />
+        <None Remove="src\data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack\MemoryPack.csproj" />

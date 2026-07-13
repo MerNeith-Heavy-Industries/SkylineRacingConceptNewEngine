@@ -49,10 +49,11 @@
         <PackageReference Include="ManagedBass" Version="4.0.1" />
         <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
-        <None Remove="data\.git\**" CopyToOutputDirectory="Never" />
-        <None Remove="data\.git" CopyToOutputDirectory="Never" />
         <None Remove="data\html\node_modules\**" CopyToOutputDirectory="Never" />
         <None Remove="data\html\dist\**" CopyToOutputDirectory="Never" />
+        <None Include="src\**\*" CopyToOutputDirectory="Always" />
+        <None Remove="src\data\.git\**" CopyToOutputDirectory="Never" />
+        <None Remove="src\data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
         <PackageReference Include="System.Reactive" Version="7.0.0-rc.1" />
