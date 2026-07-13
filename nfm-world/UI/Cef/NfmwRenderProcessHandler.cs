@@ -1,3 +1,6 @@
+using System.Buffers;
+using System.Runtime.InteropServices;
+using NFMWorldLibrary;
 using Xilium.CefGlue;
 
 namespace NFMWorld.UI.Cef;
@@ -32,6 +35,81 @@ internal sealed class NfmwRenderProcessHandler : CefRenderProcessHandler
     protected override void OnContextReleased(CefBrowser browser, CefFrame frame, CefV8Context context)
     {
         base.OnContextReleased(browser, frame, context);
+    }
+
+    /// <summary>
+    /// Handle C# → JS push messages sent via CefProcessMessage from the browser process.
+    /// Dispatches to window.__nfmwDispatch(event, data) using V8 interop for binary payloads.
+    /// </summary>
+    protected override bool OnProcessMessageReceived(CefBrowser browser, CefFrame frame,
+        CefProcessId sourceProcess, CefProcessMessage message)
+    {
+        if (message.Name != "nfmwPush")
+            return false;
+
+        var args = message.Arguments;
+        if (args == null || args.Count < 1) return true;
+
+        var eventName = args.GetString(0);
+        var ctx = frame.V8Context;
+        if (ctx is not { IsValid: true }) return true;
+
+        ctx.Enter();
+        try
+        {
+            var global = ctx.GetGlobal();
+            var dispatch = global.GetValue("__nfmwDispatch");
+            if (dispatch is not { IsFunction: true }) return true;
+
+            // Build JS arguments: [eventName, payload]
+            CefV8Value payload;
+            if (args.Count >= 2 && args.GetValueType(1) == CefValueType.Binary)
+            {
+                // Binary payload → convert to Uint8Array in JS
+                
+                // Allocate a pooled array to be freed later
+                var raw = args.GetBinary(1);
+                var pooled = ArrayPool<byte>.Shared.Rent((int)raw.Size);
+                raw.GetData(pooled, raw.Size, 0);
+                payload = CefV8Value.CreateArrayBuffer(GCHandle.Alloc(pooled, GCHandleType.Pinned).AddrOfPinnedObject(), (ulong)raw.Size, new PooledArrayReleaseCallback());
+            }
+            else if (args.Count >= 2)
+            {
+                // JSON string payload
+                var json = args.GetString(1);
+                payload = CefV8Value.CreateString(json);
+            }
+            else
+            {
+                payload = CefV8Value.CreateNull();
+            }
+
+            dispatch.ExecuteFunction(global, [CefV8Value.CreateString(eventName), payload]);
+        }
+        finally
+        {
+            ctx.Exit();
+        }
+
+        return true;
+    }
+
+    private class PooledArrayReleaseCallback : CefV8ArrayBufferReleaseCallback
+    {
+        protected override void ReleaseBuffer(IntPtr buffer)
+        {
+            // Release the pinned array back to the pool
+            var handle = GCHandle.FromIntPtr(buffer);
+            if (handle is { IsAllocated: true, Target: byte[] array })
+            {
+                ArrayPool<byte>.Shared.Return(array);
+                handle.Free();
+            }
+            else
+            {
+                Logging.Warning("Attempted to release a buffer that was not allocated or not a byte array.");
+            }
+        }
     }
 }
 

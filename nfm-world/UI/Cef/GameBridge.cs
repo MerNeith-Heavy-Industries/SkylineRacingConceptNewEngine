@@ -7,10 +7,11 @@ namespace NFMWorld.UI.Cef;
 /// Bridges JS ↔ C# communication for the CEF browser. Owned by <see cref="CefRenderer"/>.
 ///
 /// Message protocol:
-///   JS → C#:  window.nfmw.call(methodName, ...args)
-///             → CefProcessMessage "nfmw.call" → dispatched to registered handler
-///   C# → JS:  window.__nfmwDispatch("{phaseId}:{eventType}", data)
-///             (injected by NfmwLoadHandler on page load)
+///   JS → C#:  window.__nfmwCall(methodName, ...args)
+///             → CefProcessMessage "nfmwCall" → dispatched to registered handler
+///   C# → JS:  CefProcessMessage "nfmwPush" → NfmwRenderProcessHandler
+///             → dispatches to window.__nfmwDispatch("{phaseId}:{eventType}", data)
+///             Binary payloads use SetBinary on the process message args natively.
 /// </summary>
 public sealed class GameBridge
 {
@@ -81,16 +82,44 @@ public sealed class GameBridge
     }
 
     /// <summary>
-    /// Push an event from C# to JS. The JS side should listen via
-    /// window.__nfmwDispatch("{phaseId}:{eventType}", callback).
+    /// Push an event from C# to JS via CefProcessMessage (avoids string
+    /// escaping issues and supports binary payloads natively).
+    /// The JS side receives this via window.__nfmwDispatch(event, data).
     /// </summary>
-    public void PushToJs(CefBrowser? browser, string phaseId, string eventType, object? data)
+    public static void PushToJs(CefBrowser? browser, string phaseId, string eventType, object? data)
     {
         if (browser == null) return;
 
-        var fullEvent = $"{phaseId}:{eventType}";
-        var json = data != null ? JsonSerializer.Serialize(data) : "null";
-        var script = $"window.__nfmwDispatch('{fullEvent}', {json});";
-        browser.GetMainFrame().ExecuteJavaScript(script, null, 0);
+        var msg = CefProcessMessage.Create("nfmwPush");
+        var args = msg.Arguments;
+
+        // [0] = full event name ("phaseId:eventType")
+        args.SetString(0, $"{phaseId}:{eventType}");
+
+        // [1] = JSON payload (string on JS side)
+        args.SetString(1, data != null ? JsonSerializer.Serialize(data) : "null");
+
+        browser.GetMainFrame().SendProcessMessage(CefProcessId.Renderer, msg);
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS via CefProcessMessage (avoids string
+    /// escaping issues and supports binary payloads natively).
+    /// The JS side receives this via window.__nfmwDispatch(event, data).
+    /// </summary>
+    public static void PushToJs(CefBrowser? browser, string phaseId, string eventType, byte[] binary)
+    {
+        if (browser == null) return;
+
+        var msg = CefProcessMessage.Create("nfmwPush");
+        var args = msg.Arguments;
+
+        // [0] = full event name ("phaseId:eventType")
+        args.SetString(0, $"{phaseId}:{eventType}");
+
+        // [1] = binary payload (uint8array on JS side)
+        args.SetBinary(1, CefBinaryValue.Create(binary));
+
+        browser.GetMainFrame().SendProcessMessage(CefProcessId.Renderer, msg);
     }
 }

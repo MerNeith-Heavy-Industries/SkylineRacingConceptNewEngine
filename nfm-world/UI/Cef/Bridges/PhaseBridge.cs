@@ -26,13 +26,13 @@ namespace NFMWorld.UI.Cef;
 ///   _bridge.Register(_cefRenderer);
 ///   _bridge.Push("account", new { Name = "Player", ... });
 /// </summary>
-public abstract class PhaseBridge : IDisposable
+public abstract class PhaseBridge(string phaseId) : IDisposable
 {
     /// <summary>
     /// Unique identifier for this phase's bridge. Used as the dispatch key
     /// in CefRenderer's message registry.
     /// </summary>
-    public string PhaseId { get; }
+    public string PhaseId { get; } = phaseId ?? throw new ArgumentNullException(nameof(phaseId));
 
     /// <summary>
     /// The CefRenderer this bridge is registered with. Set by <see cref="Register"/>.
@@ -50,11 +50,6 @@ public abstract class PhaseBridge : IDisposable
     /// Menu phases typically return true; race phases return false.
     /// </summary>
     public virtual bool EnableInput => true;
-
-    protected PhaseBridge(string phaseId)
-    {
-        PhaseId = phaseId ?? throw new ArgumentNullException(nameof(phaseId));
-    }
 
     /// <summary>
     /// Register this bridge with the given CefRenderer. Called from Phase.Enter().
@@ -101,12 +96,22 @@ public abstract class PhaseBridge : IDisposable
     }
 
     /// <summary>
-    /// Push an event from C# to JS. The JS side receives this via
-    /// window.__nfmwDispatch("{PhaseId}:{eventType}", data).
+    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
+    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
     /// </summary>
-    protected void Push(string eventType, object? data = null)
+    protected void Push(string eventType, object? data)
     {
         Renderer?.PushToJs(PhaseId, eventType, data);
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
+    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
+    /// Supports binary payloads (uint8array) natively through the process message.
+    /// </summary>
+    protected void Push(string eventType, byte[] binary)
+    {
+        Renderer?.PushToJs(PhaseId, eventType, binary);
     }
 
     /// <summary>
