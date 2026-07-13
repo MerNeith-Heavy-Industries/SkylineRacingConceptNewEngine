@@ -81,6 +81,12 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
     [ClientOnly]
     private int _lastCountdownTime = 0;
 
+    [ClientOnly]
+    private fix64 _lcarx;
+    
+    [ClientOnly]
+    private fix64 _lcarz;
+
     protected virtual void ClientReset()
     {
         gamemodeData.ClientCallbacks.ResetCheckpointGlow();
@@ -91,6 +97,12 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
 
     protected virtual void UpdateHudAndSounds(IInGameCar car)
     {
+        var diffx = (float)(car.Position.X - _lcarx);
+        var diffz  = (float)(car.Position.Z - _lcarz);
+        _lcarx = car.Position.X;
+        _lcarz = car.Position.Z;
+        
+        HudState.Speed = MathF.Sqrt(diffx * diffx + diffz * diffz);
         HudState.Lap = car.CurrentLap + 1;
         HudState.Damage = (float)car.CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag;
         HudState.Power = (float)car.CarPhysics.Power / 100f;
