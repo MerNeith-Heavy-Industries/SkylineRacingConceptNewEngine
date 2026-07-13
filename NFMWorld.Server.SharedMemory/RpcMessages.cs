@@ -6,7 +6,7 @@ using NFMWorldLibrary.Multiplayer.Packets.S2C;
 namespace NFMWorld.Server.SharedMemory;
 
 /// <summary>
-/// Master → Slave: batched player inputs for one simulation tick.
+/// Controller → Worker: batched player inputs for one simulation tick.
 /// </summary>
 [MemoryPackable]
 public partial struct PlayerInputBatch
@@ -27,7 +27,7 @@ public partial struct PlayerInputBatch
 }
 
 /// <summary>
-/// Slave → Master: game state snapshot after processing one tick of inputs.
+/// Worker → Controller: game state snapshot after processing one tick of inputs.
 /// </summary>
 [MemoryPackable]
 public partial struct GameStateSnapshot
