@@ -70,6 +70,7 @@ public static class DevConsoleCommands
         console.RegisterCommand("r_frametrace", SetFrameTrace);
         console.RegisterCommand("r_blackpoint", SetBlackPoint);
         console.RegisterCommand("r_whitepoint", SetWhitePoint);
+        console.RegisterCommand("r_outline_mode", SetOutlineMode);
         console.RegisterCommand("r_displaytrackers", (c, args) => GameSparker.devRenderTrackers = !GameSparker.devRenderTrackers);
         console.RegisterCommand("r_debugdisplay", (c, _) => {
             BaseStageRenderingPhase.DebugDisplay = !BaseStageRenderingPhase.DebugDisplay;
@@ -176,6 +177,11 @@ public static class DevConsoleCommands
         // map command: only autocomplete first argument (position 0)
         console.RegisterArgumentAutocompleter("map", (args, position) => 
             position == 0 ? GameSparker.GetAvailableStages() : []);
+
+        console.RegisterArgumentAutocompleter("r_outline_mode", (args, position) =>
+            position == 0
+                ? ["next", "prev", "distance", "distance_cutoff", "classic", "always", "hide"]
+                : []);
         
         console.RegisterArgumentAutocompleter("replay_trial", (args, position) =>
         {
@@ -197,6 +203,86 @@ public static class DevConsoleCommands
     }
 
     private static (string stageName, string carName, string fileName)[]? _tts;
+
+    private static void SetOutlineMode(DevConsole console, string[] args)
+    {
+        if (args.Length == 0)
+        {
+            LogOutlineMode();
+            Logging.Info("Usage: r_outline_mode <next|prev|distance|distance_cutoff|classic|always|hide|0-4>");
+            return;
+        }
+
+        if (!TryParseOutlineMode(args[0], out var behavior))
+        {
+            Logging.Info("Usage: r_outline_mode <next|prev|distance|distance_cutoff|classic|always|hide|0-4>");
+            return;
+        }
+
+        World.DistantOutlineBehavior = behavior;
+        LogOutlineMode();
+    }
+
+    private static void LogOutlineMode()
+    {
+        Logging.Info(
+            $"Distant outline mode={World.DistantOutlineBehavior} value={(int)World.DistantOutlineBehavior} " +
+            $"half={World.OutlineThickness:0.###} cutoff={World.EffectiveOutlineCullDistance:0.###} " +
+            $"falloffRef={World.OutlineFalloffReferenceDistance:0.###} min={World.OutlineMinimumVisibleThickness:0.###}");
+    }
+
+    private static bool TryParseOutlineMode(string value, out DistantOutlineBehavior behavior)
+    {
+        if (value.Equals("next", StringComparison.OrdinalIgnoreCase))
+        {
+            var next = ((int)World.DistantOutlineBehavior + 1) % Enum.GetValues<DistantOutlineBehavior>().Length;
+            behavior = (DistantOutlineBehavior)next;
+            return true;
+        }
+
+        if (value.Equals("prev", StringComparison.OrdinalIgnoreCase))
+        {
+            var values = Enum.GetValues<DistantOutlineBehavior>();
+            var next = ((int)World.DistantOutlineBehavior - 1 + values.Length) % values.Length;
+            behavior = (DistantOutlineBehavior)next;
+            return true;
+        }
+
+        if (int.TryParse(value, out var numeric) && Enum.IsDefined(typeof(DistantOutlineBehavior), numeric))
+        {
+            behavior = (DistantOutlineBehavior)numeric;
+            return true;
+        }
+
+        switch (value.ToLowerInvariant())
+        {
+            case "distance":
+            case "distance_falloff":
+                behavior = DistantOutlineBehavior.DistanceFalloff;
+                return true;
+            case "distance_cutoff":
+            case "distance_falloff_with_cutoff":
+                behavior = DistantOutlineBehavior.DistanceFalloffWithCutoff;
+                return true;
+            case "classic":
+            case "classic_cutoff":
+            case "nfm":
+                behavior = DistantOutlineBehavior.ClassicCutoff;
+                return true;
+            case "always":
+            case "always_render":
+                behavior = DistantOutlineBehavior.AlwaysRender;
+                return true;
+            case "hide":
+            case "hide_outlines":
+            case "off":
+                behavior = DistantOutlineBehavior.HideOutlines;
+                return true;
+            default:
+                behavior = default;
+                return false;
+        }
+    }
 
     private static void RemasteredMusic(DevConsole console, string[] args)
     {

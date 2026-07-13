@@ -71,6 +71,8 @@ public class SettingsMenu(WorldGame game)
     private static readonly string[] ShadowResolutions = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
+    private static readonly string[] DistantOutlineBehaviorNames = ["Distance Falloff", "Distance Falloff (With Cutoff)", "Classic Cutoff (NFM)", "Always Render", "Hide Outlines"];
+    private int _distantOutlineBehavior = (int)DistantOutlineBehavior.ClassicCutoff;
     private bool _lowLatency = false;
     private static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
     private static readonly float[] RenderDistances = [22500, 45000, 90000, 180000, 360000, int.MaxValue];
@@ -126,6 +128,8 @@ public class SettingsMenu(WorldGame game)
         _followY = FollowCamera.FollowYOffset;
         _followZ = FollowCamera.FollowZOffset;
         _smoothFov = CameraSettings.SmoothFov;
+        _lineWidth = World.OutlineThickness;
+        _distantOutlineBehavior = (int)World.DistantOutlineBehavior;
     }
 
     public void Close()
@@ -301,6 +305,9 @@ public class SettingsMenu(WorldGame game)
         ImGui.Text("Outline Width");
         ImGui.SetNextItemWidth(sliderWidth);
         ImGui.SliderFloat("##LineWidth", ref _lineWidth, 0.5f, 4f, "%.1f");
+
+        ImGui.Text("Distant Outline Behavior");
+        ImGui.Combo("##DistantOutlineBehavior", ref _distantOutlineBehavior, DistantOutlineBehaviorNames, DistantOutlineBehaviorNames.Length);
         // ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f), 
         //     "Note: changing some video options will cause the game to exit and restart.");
     }
@@ -610,6 +617,7 @@ public class SettingsMenu(WorldGame game)
         }
 
         World.OutlineThickness = _lineWidth;
+        World.DistantOutlineBehavior = GetDistantOutlineBehavior();
     }
 
     private void SaveConfig()
@@ -634,6 +642,7 @@ public class SettingsMenu(WorldGame game)
                 cfgWriter.WriteLine($"video_antialias {_antialias}");
                 cfgWriter.WriteLine($"video_fps {_fpsLimit}");
                 cfgWriter.WriteLine($"video_linewidth2 {_lineWidth.ToString("F4", CultureInfo.InvariantCulture)}");
+                cfgWriter.WriteLine($"video_distant_outline_behavior {GetDistantOutlineBehaviorConfigValue()}");
                 cfgWriter.WriteLine($"video_shadow_cascade {_shadowCascadeLevel}");
                 cfgWriter.WriteLine($"video_shadow_res {_shadowResolution}");
                 cfgWriter.WriteLine($"video_low_latency {(_lowLatency ? 1 : 0)}");
@@ -763,6 +772,37 @@ public class SettingsMenu(WorldGame game)
             _ => "Auto"
         };
     }
+
+    private string GetDistantOutlineBehaviorConfigValue()
+    {
+        return GetDistantOutlineBehavior() switch
+        {
+            DistantOutlineBehavior.DistanceFalloff => "distance_falloff",
+            DistantOutlineBehavior.DistanceFalloffWithCutoff => "distance_falloff_with_cutoff",
+            DistantOutlineBehavior.ClassicCutoff => "classic_cutoff",
+            DistantOutlineBehavior.AlwaysRender => "always_render",
+            DistantOutlineBehavior.HideOutlines => "hide_outlines",
+            _ => "distance_falloff"
+        };
+    }
+
+    private DistantOutlineBehavior GetDistantOutlineBehavior()
+    {
+        return (DistantOutlineBehavior)Math.Clamp(_distantOutlineBehavior, 0, DistantOutlineBehaviorNames.Length - 1);
+    }
+
+    private static int ParseDistantOutlineBehavior(string value, int fallback)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "distance_falloff" => (int)DistantOutlineBehavior.DistanceFalloff,
+            "distance_falloff_with_cutoff" => (int)DistantOutlineBehavior.DistanceFalloffWithCutoff,
+            "classic_cutoff" => (int)DistantOutlineBehavior.ClassicCutoff,
+            "always_render" => (int)DistantOutlineBehavior.AlwaysRender,
+            "hide_outlines" => (int)DistantOutlineBehavior.HideOutlines,
+            _ => fallback
+        };
+    }
     
     public void LoadConfig()
     {
@@ -816,6 +856,9 @@ public class SettingsMenu(WorldGame game)
                             break;
                         case "video_linewidth2":
                             _lineWidth = float.Parse(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "video_distant_outline_behavior":
+                            _distantOutlineBehavior = ParseDistantOutlineBehavior(value, _distantOutlineBehavior);
                             break;
                         case "video_shadow_cascade":
                             _shadowCascadeLevel = int.Parse(value, CultureInfo.InvariantCulture);

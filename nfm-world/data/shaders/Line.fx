@@ -34,6 +34,13 @@ float ChargedBlinkAmount;
 
 float HalfThickness;
 float2 Resolution;
+float DistantOutlineDistanceFalloffWithCutoff;
+float DistantOutlineClassicCutoff;
+float DistantOutlineHideOutlines;
+float DistantOutlineDistanceFalloff;
+float OutlineCullDistance;
+float OutlineFalloffReferenceDistance;
+float OutlineMinimumVisibleThickness;
 
 struct VertexShaderInput
 {
@@ -68,7 +75,29 @@ VertexShaderOutput MainVS(
     bool glow;
     VS_UnpackParameters(parameters, getsShadowed, alphaOverride, isFullbright, glow);
 
-	VertexShaderOutput output = (VertexShaderOutput)0;
+    VertexShaderOutput output = (VertexShaderOutput)0;
+    float thicknessScale = 1.0;
+    float hideLine = 0.0;
+    float3 worldCentroid = mul(float4(input.Centroid, 1), world).xyz;
+    float viewDepth = abs(mul(float4(worldCentroid, 1), View).z);
+    float outlineDistanceEnabled = saturate(sign(OutlineCullDistance));
+    float falloffMode = saturate(DistantOutlineDistanceFalloff + DistantOutlineDistanceFalloffWithCutoff);
+    float cutoffMode = DistantOutlineClassicCutoff * outlineDistanceEnabled;
+    float cullPastDistance = saturate(sign(viewDepth - OutlineCullDistance));
+    float minVisibleThickness = max(OutlineMinimumVisibleThickness, 0.0);
+    float referenceDepth = max(OutlineFalloffReferenceDistance, 0.0001);
+    float actualThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
+    float safeHalfThickness = max(HalfThickness, 0.0001);
+
+    thicknessScale = lerp(1.0, actualThickness / safeHalfThickness, falloffMode * outlineDistanceEnabled);
+
+    float halfThicknessNotPositive = saturate(sign(0.0001 - HalfThickness));
+    float halfThicknessBelowMin = saturate(sign(minVisibleThickness - HalfThickness));
+    float actualThicknessBelowMin = saturate(sign(minVisibleThickness - actualThickness));
+    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoff * max(halfThicknessNotPositive, max(halfThicknessBelowMin, actualThicknessBelowMin));
+    float distanceHidden = DistantOutlineDistanceFalloff * halfThicknessNotPositive;
+    float classicHidden = cutoffMode * cullPastDistance;
+    hideLine = saturate(max(DistantOutlineHideOutlines, max(classicHidden, max(distanceCutoffHidden, distanceHidden))));
 
     // Decode Side: abs > 1.5 means endpoint B, sign gives offset direction
     float3 position = (abs(input.Side) > 1.5) ? input.PositionB : input.PositionA;
@@ -103,7 +132,7 @@ VertexShaderOutput MainVS(
 
     // Screen-space offset for line thickness
     float4 clipPos = mul(viewPos, Projection);
-    float2 offset = normal * HalfThickness * sideSign / Resolution * 2.0;
+    float2 offset = normal * HalfThickness * thicknessScale * sideSign / Resolution * 2.0;
 
 	float3 color = input.Color;
 
@@ -117,6 +146,8 @@ VertexShaderOutput MainVS(
 
     // Nudge outlines toward the camera so they render on top of the geometry they outline
     output.Position.z -= 0.1;
+    // Collapse hidden line quads outside clip space without dynamic shader returns.
+    output.Position = lerp(output.Position, float4(2.0, 2.0, 0.0, 1.0), hideLine);
 
     if (Darken < 1.0f)
     {
@@ -135,7 +166,7 @@ VertexShaderOutput MainVS(
     {
         VS_ApplyPolygonDiffuse(
             color,
-            mul(float4(input.Centroid, 1), world).xyz,
+            worldCentroid,
             normalize(mul(float4(input.Normal, 0), world).xyz),
             LightDirection,
             CameraPosition,

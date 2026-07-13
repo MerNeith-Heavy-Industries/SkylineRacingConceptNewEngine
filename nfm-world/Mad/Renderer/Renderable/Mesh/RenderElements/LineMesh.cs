@@ -83,6 +83,9 @@ public class LineMesh : IInstancedRenderElement, IDisposable
 
     public void Render(Camera camera, Lighting? lighting, VertexBuffer instanceBuffer, int instanceCount)
     {
+        if (World.DistantOutlineBehavior == DistantOutlineBehavior.HideOutlines)
+            return;
+
         _graphicsDevice.SetVertexBuffers(_lineVertexBuffer, new VertexBufferBinding(instanceBuffer, 0, 1));
         _graphicsDevice.Indices = _lineIndexBuffer;
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
@@ -94,6 +97,10 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
         Effects.Line.ChargedBlinkAmount?.SetValue(_lineType is LineType.Charged && World.ChargedPolyBlink ? World.ChargeAmount : 0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
+        LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
+        Effects.Line.OutlineCullDistance?.SetValue(World.EffectiveOutlineCullDistance);
+        Effects.Line.OutlineFalloffReferenceDistance?.SetValue(World.OutlineFalloffReferenceDistance);
+        Effects.Line.OutlineMinimumVisibleThickness?.SetValue(World.OutlineMinimumVisibleThickness);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);
         Effects.Line.FogColor?.SetValue(World.Fog.Snap(World.Snap));
@@ -207,5 +214,16 @@ public class LineMesh : IInstancedRenderElement, IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
+    }
+}
+
+internal static class LineEffectDistantOutlineSettings
+{
+    public static void Apply(DistantOutlineBehavior behavior)
+    {
+        Effects.Line.DistantOutlineDistanceFalloffWithCutoff?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineClassicCutoff?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineHideOutlines?.SetValue(behavior == DistantOutlineBehavior.HideOutlines ? 1f : 0f);
+        Effects.Line.DistantOutlineDistanceFalloff?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
     }
 }

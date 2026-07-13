@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using HoleyDiver;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using NFMWorldLibrary;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
@@ -220,7 +221,10 @@ public class Mesh : IDisposable
             }
         }
 
-        if (lighting?.IsCreateShadowMap != true && LineMeshes != null)
+        // Skip at submission time so hidden outlines avoid render-queue batching and instance-buffer uploads.
+        if (lighting?.IsCreateShadowMap != true &&
+            World.DistantOutlineBehavior != DistantOutlineBehavior.HideOutlines &&
+            LineMeshes != null)
         {
             foreach (var lineMesh in LineMeshes)
             {
