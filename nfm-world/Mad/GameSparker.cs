@@ -127,10 +127,10 @@ public static class GameSparker
         var stages = new List<string>();
         var stagesPath = "data/stages";
         
-        if (Directory.Exists(stagesPath))
+        if (VFS.DirectoryExists(stagesPath))
         {
             // recursive search
-            foreach (var file in Directory.GetFiles(stagesPath, "*.txt", SearchOption.AllDirectories))
+            foreach (var file in VFS.EnumerateFiles(stagesPath, "*.txt", SearchOption.AllDirectories))
             {
                 var relativePath = Path.GetRelativePath(stagesPath, file);
                 var pathWithoutExtension = Path.ChangeExtension(relativePath, null);
