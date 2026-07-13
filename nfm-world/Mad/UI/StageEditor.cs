@@ -488,6 +488,8 @@ public class StageEditorPhase : BasePhase
     
     public override void Enter()
     {
+        base.Enter();
+
         _isOpen = true;
 
         // Clear stale shadow maps left over from any previous gameplay session.
