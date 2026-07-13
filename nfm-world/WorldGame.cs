@@ -136,13 +136,6 @@ public class WorldGame : Game
 
         _cefRenderer.Update(gameTime);
 
-        // Per-frame CEF state push: let the current phase push its state to JS.
-        // This replaces the old hardcoded GameBridge.PushUpdate() POC.
-        if (GameSparker.CurrentPhase is { CefBridge: not null } phase)
-        {
-            phase.PushCefState();
-        }
-
         if (!_loaded)
         {
             _loaded = true;
