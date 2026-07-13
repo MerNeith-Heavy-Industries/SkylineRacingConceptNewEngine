@@ -71,9 +71,18 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                 }
                 case S2C_RaceStarted raceStarted:
                 {
-                    // Transition to race phase
-                    var phase = new InMultiplayerRacePhase(graphicsDevice, transport, raceStarted.MatchGameplayInfo, _player.ClientId);
-                    phase.RaceStateChanged += (sender, state) =>
+                    // Create a NEW transport to the Game Master for in-game traffic.
+                    // Keep the lobby transport alive — we return to THIS lobby instance after the race.
+                    var gameAddr = raceStarted.JoinInfo.RaceServerIpAddress;
+                    var ipString = ((System.Net.IPAddress)gameAddr.Address).ToString();
+                    var gameTransport = new ENetMultiplayerClientTransport(ipString, gameAddr.Port);
+
+                    var phase = new InMultiplayerRacePhase(
+                        graphicsDevice, gameTransport,
+                        raceStarted.MatchGameplayInfo, _player.ClientId,
+                        raceStarted.JoinInfo.JoinToken);
+
+                    phase.RaceStateChanged += (_, state) =>
                     {
                         if (state is RaceState.Finished or RaceState.FailedToStart)
                         {

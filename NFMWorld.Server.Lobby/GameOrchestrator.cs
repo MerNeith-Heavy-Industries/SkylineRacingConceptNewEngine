@@ -303,7 +303,7 @@ public class GameOrchestrator
             }
 
             _chat.BroadcastSystem(
-                $"Failed to start race on {session.StageName}: {ex.Message}");
+                $"Failed to start race on {session.StageName}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 }

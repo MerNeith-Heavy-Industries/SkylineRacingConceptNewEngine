@@ -6,8 +6,8 @@ using WebSocketSharp.Server;
 
 Console.WriteLine("NFMWorld Game Master starting...");
 
-var endpoint = Environment.GetEnvironmentVariable("GM_HTTP_ENDPOINT") ?? "http://localhost:7002/";
-var gamePort = ushort.Parse(Environment.GetEnvironmentVariable("GM_GAME_PORT") ?? "7000");
+var endpoint = Environment.GetEnvironmentVariable("GM_HTTP_ENDPOINT") ?? "http://localhost:7003/";
+var gamePort = ushort.Parse(Environment.GetEnvironmentVariable("GM_GAME_PORT") ?? "7002");
 
 // HMAC key configuration: "keyId=base64secret,..." (e.g. "primary=c2VjcmV0a2V5")
 var keysConfig = Environment.GetEnvironmentVariable("GM_HMAC_KEYS") ?? "";
@@ -26,6 +26,7 @@ httpServer.OnPost += (sender, e) =>
 {
     var req = e.Request;
     var res = e.Response;
+    Console.WriteLine($"[GameMaster] HTTP {req.HttpMethod} {req.RawUrl} from {req.RemoteEndPoint}");
 
     // Read body for HMAC verification
     using var ms = new MemoryStream();

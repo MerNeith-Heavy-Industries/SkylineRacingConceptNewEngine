@@ -14,7 +14,7 @@ public class WebSocketMultiplayerServerTransport : BaseMultiplayerServerTranspor
     private uint _lastId = 0;
     
     private readonly ConcurrentDictionary<uint, WebSocketSession> _connectedClients = [];
-    private readonly WebSocketServer _server;
+    private readonly HttpServer _server;
     private readonly ConcurrentQueue<(uint Peer, Packet Packet)> _sendPacketQueue = [];
 
     public override IReadOnlyCollection<uint> Connections { get; }
@@ -113,11 +113,11 @@ public class WebSocketMultiplayerServerTransport : BaseMultiplayerServerTranspor
         _connectedClients.TryAdd(session.ClientId, session);
     }
 
-    public WebSocketMultiplayerServerTransport(IPAddress? ipAddress = null, ushort port = 80)
+    public WebSocketMultiplayerServerTransport(HttpServer httpServer)
     {
         Connections = new ConnectionsList(this);
         
-        _server = new WebSocketServer(ipAddress ?? IPAddress.Parse("127.0.0.1"), port);
+        _server = httpServer;
         _server.AddWebSocketService<WebSocketSession>("/game", behavior => behavior.Transport = this);
         _server.KeepClean = true;
     }
@@ -136,11 +136,9 @@ public class WebSocketMultiplayerServerTransport : BaseMultiplayerServerTranspor
 
     public override void Stop()
     {
-        _server.Stop();
     }
 
     public override void Start()
     {
-        _server.Start();
     }
 }
