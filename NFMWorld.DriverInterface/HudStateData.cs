@@ -1,9 +1,13 @@
+using MemoryPack;
+
 namespace NFMWorld.DriverInterface;
 
 /// <summary>
 /// Per-frame HUD state sent from the gamemode to the CEF race overlay.
 /// </summary>
-public class HudStateData
+[MemoryPackable]
+[GenerateTypeScript]
+public partial class HudStateData
 {
     public double Speed { get; set; }
     public double Power { get; set; }
