@@ -9,17 +9,19 @@ namespace NFMWorld.DriverInterface;
 [GenerateTypeScript]
 public partial class HudStateData
 {
-    public double Speed { get; set; }
-    public double Power { get; set; }
-    public double Damage { get; set; }
-    public double MaxPower { get; set; }
+    public float Speed { get; set; }
+    public float Power { get; set; }
+    public float Damage { get; set; }
     public int Lap { get; set; }
     public int TotalLaps { get; set; }
-    public double LapTime { get; set; }
-    public double BestLapTime { get; set; }
-    public double[] Splits { get; set; } = [];
+    public int LapTime { get; set; }
     public int Position { get; set; }
     public int TotalRacers { get; set; }
     public string? StateText { get; set; }
-    public double? StateTextDuration { get; set; }
+    public DateTime? StateTextEndsAt { get; set; }
+    public int? LapDiffMs { get; set; }
+    public int? LastLapDiffMs { get; set; }
+    public int? ChkDiffMs { get; set; }
+    public int? LastChkDiffMs { get; set; }
+    public int CountdownTimer { get; set; }
 }

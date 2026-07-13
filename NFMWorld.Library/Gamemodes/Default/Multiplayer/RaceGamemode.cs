@@ -208,12 +208,6 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     #region Client
 
     [ClientOnly]
-    private int _lastClientCheckpoint = 0;
-    
-    [ClientOnly]
-    private int _lastCountdownTime = 0;
-
-    [ClientOnly]
     private int _playerCarIndex;
 
     [ClientOnly]
@@ -223,70 +217,33 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     }
 
     [ClientOnly]
-    protected void ClientReset()
+    protected override void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
-        // PowerUp event handled by gamemode directly; CEF HUD reads HudState each frame.
-        
-        gamemodeData.ClientCallbacks.ResetCheckpointGlow();
-
-        HudState = new HudStateData { Lap = 1, TotalLaps = currentStage.nlaps };
-        IBackend.Backend.StopAllSounds();
+        base.ClientReset();
     }
 
     [ClientOnly]
     protected void InRaceClient()
     {
-        HudState.Lap = carsInRace[_playerCarIndex].CurrentLap + 1;
-        HudState.Damage = (float)carsInRace[_playerCarIndex].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag;
-        HudState.Power = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f;
-
-        if (carsInRace[_playerCarIndex].CurrentCheckpoint != _lastClientCheckpoint)
-        {
-            _lastClientCheckpoint = carsInRace[_playerCarIndex].CurrentCheckpoint;
-            SfxLibrary.checkpoint?.Play();
-        }
-
-        gamemodeData.ClientCallbacks.UpdateCheckpointGlow(
-            carsInRace[_playerCarIndex].CurrentCheckpoint,
-            carsInRace[_playerCarIndex].CurrentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[_playerCarIndex].CurrentLap == currentStage.nlaps - 1
-        );
+        UpdateHudAndSounds(carsInRace[_playerCarIndex]);
     }
 
     public override void Render()
     {
         base.Render();
         
-        if (_currentState == InnerRaceState.Countdown)
-        {
-            HudState.StateText = $"Starting in {_countdownTime}";
-            HudState.StateTextDuration = 1.5;
-        }
-        else if (_currentState == InnerRaceState.Finished)
+        if (_currentState == InnerRaceState.Finished)
         {
             HudState.StateText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
-            HudState.StateTextDuration = 5;
-        }
-        else
-        {
-            HudState.StateText = null;
-            HudState.StateTextDuration = null;
+            HudState.StateTextEndsAt = DateTime.Now + TimeSpan.FromSeconds(5);
         }
     }
 
     [ClientOnly]
     protected void ClientCountdownTick()
     {
-        if (_countdownTime != _lastCountdownTime)
-        {
-            _lastCountdownTime = _countdownTime;
-            SfxLibrary.countdown[_countdownTime].Play();
-            if (_countdownTime <= 0)
-            {
-                HudState.StateText = null;
-                HudState.StateTextDuration = null;
-            }
-        }
+        UpdateCountdown(_countdownTime);
     }
     
     #endregion
