@@ -25,15 +25,9 @@
 [submodule "Maxine.RustBindGen"]
 	path = Maxine.RustBindGen
 	url = https://github.com/uwx/Maxine.RustBindGen
-[submodule "nfm-world/data"]
-	path = nfm-world/data
-	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineData
 [submodule "FixedMathSharp"]
 	path = FixedMathSharp
 	url = https://github.com/uwx/FixedMathSharp
-[submodule "NFMWorld.Library/data"]
-	path = NFMWorld.Library/data
-	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineServerData
 [submodule "MemoryPack"]
 	path = MemoryPack
 	url = https://github.com/uwx/MemoryPack
@@ -43,3 +37,9 @@
 [submodule "websocket-sharp"]
 	path = websocket-sharp
 	url = https://github.com/uwx/websocket-sharp
+[submodule "NFMWorld.Library/src/data"]
+	path = NFMWorld.Library/src/data
+	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineServerData
+[submodule "nfm-world/src/data"]
+	path = nfm-world/src/data
+	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineClientData
