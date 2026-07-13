@@ -116,12 +116,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
     protected virtual void CountdownTick()
     {
-        var digitChanged = false;
-        
         _innerCountdownTicks--;
         if (_innerCountdownTicks <= 0)
         {
-            digitChanged = true;
             _countdownTime--;
             _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
             if (_countdownTime <= 0)
@@ -130,7 +127,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             }
         }
 
-        ClientServer.RunIfOnClient(ClientCountdownTick, digitChanged);
+        ClientServer.RunIfOnClient(ClientCountdownTick);
     }
 
     #region Client
@@ -152,20 +149,13 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     private byte _lastLap;
 
     [ClientOnly]
-    public void SetLapText(int currentLap)
-    {
-        HudState.Lap = currentLap + 1;
-        HudState.TotalLaps = currentStage.nlaps;
-    }
-
-    [ClientOnly]
     public void SetTimeText()
     {
-        HudState.LapTime = _raceTimer.Elapsed.TotalSeconds;
+        HudState.LapTime = (int)_raceTimer.Elapsed.TotalMilliseconds;
     }
 
     [ClientOnly]
-    protected void ClientReset()
+    protected override void ClientReset()
     {
         _raceTimer.Reset();
         _writtenData = false;
@@ -195,11 +185,11 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         HudState = new HudStateData();
         IBackend.Backend.StopAllSounds();
 
-        SetLapText(0);
-
         _lastLapSplitDiff = 0;
         _lastCheckpointSplitDiff = 0;
         _lastLapTime = 0;
+        
+        base.ClientReset();
     }
 
     [ClientOnly]
@@ -209,14 +199,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         
         if (_currentState == TimeTrialState.InProgress)
         {
+            HudState.CountdownTimer = 0;
+            
             RenderInfo();
         }
         else if (_currentState == TimeTrialState.Countdown)
         {
             RenderInfo();
             
-            HudState.StateText = $"Starting in {_countdownTime}";
-            HudState.StateTextDuration = 1;
+            HudState.CountdownTimer = _countdownTime;
         }
         else if (_currentState == TimeTrialState.Finished)
         {
@@ -246,18 +237,16 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
             centerText += "\nPress R to restart";
             HudState.StateText = centerText;
-            HudState.StateTextDuration = null; // stays visible until reset
+            HudState.StateTextEndsAt = null; // show until phase resets
         }
     }
 
     [ClientOnly]
     protected void ClientTimeTrialInRacePre()
     {
-        SetLapText(carsInRace[PlayerCarIndex].CurrentLap);
         SetTimeText();
-
-        HudState.Damage = (double)carsInRace[PlayerCarIndex].CarPhysics.DamagePoints / carsInRace[PlayerCarIndex].Stats.Maxmag;
-        HudState.Power = (double)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f;
+        
+        base.UpdateHudAndSounds(carsInRace[PlayerCarIndex]);
 
         if (_bestTimeTrial != null)
         {
@@ -277,7 +266,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     {
         if (carsInRace[PlayerCarIndex].CurrentCheckpoint != _lastCurrentCheckpoint)
         {
-            if (_bestTimeTrial != null && currentTimeTrial != null && currentTimeTrial.Splits.SplitTimes.Count > PlayerCarIndex)
+            if (_bestTimeTrial != null && currentTimeTrial is { Splits.SplitTimes.Count: > PlayerCarIndex })
             {
                 _lastCheckpointSplitDiff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
             }
@@ -296,14 +285,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
                 _lastLapSplitDiff = currentLapSplitDiff;
                 _lastLapTime = currentTimeTrial?.GetLapTime(currentStage.checkpoints.Count, _lastLap) ?? 0;
             }
-
-            SfxLibrary.checkpoint?.Play();
         }
-
-        gamemodeData.ClientCallbacks.UpdateCheckpointGlow(
-            carsInRace[PlayerCarIndex].CurrentCheckpoint,
-            carsInRace[PlayerCarIndex].CurrentCheckpoint == currentStage.checkpoints.Count - 1 && carsInRace[PlayerCarIndex].CurrentLap == currentStage.nlaps - 1
-        );
 
         if (carsInRace[PlayerCarIndex].CurrentLap >= currentStage.nlaps)
         {
@@ -327,15 +309,12 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     }
 
     [ClientOnly]
-    protected void ClientCountdownTick(bool digitChanged)
+    protected void ClientCountdownTick()
     {
-        if (digitChanged)
+        base.UpdateCountdown(_countdownTime);
+        if (_countdownTime <= 0)
         {
-            SfxLibrary.countdown[_countdownTime].Play();
-            if (_countdownTime <= 0)
-            { // HUD state: wire to HudStateData
-                _raceTimer.Start();
-            }
+            _raceTimer.Start();
         }
     }
 
@@ -363,16 +342,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         if ((carsInRace[PlayerCarIndex].CurrentCheckpoint != 0 || carsInRace[PlayerCarIndex].CurrentLap != 0) && _bestTimeTrial != null && currentTimeTrial != null)
         {
             long diff = currentTimeTrial.GetSplitDiff(_bestTimeTrial, currentTimeTrial.Splits.SplitTimes.Count - 1);
-            var checkpointSplitsTextColor = diff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
-
             long lastSplitChange = diff - _lastCheckpointSplitDiff;
-            string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
 
-            string thisDiffFmt = FormatTimeMs(diff, true);
-            // HUD splits: wire to HudStateData when checkpoint data fields are added
+            HudState.ChkDiffMs = (int)diff;
+            HudState.LastChkDiffMs = (int)lastSplitChange;
         }
         else
-        { // HUD state: wire to HudStateData
+        {
+            HudState.ChkDiffMs = null;
+            HudState.LastChkDiffMs = null;
         }
 
         if (carsInRace[PlayerCarIndex].CurrentLap > 0 && _bestTimeTrial != null && currentTimeTrial != null)
@@ -380,20 +358,15 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             long lapTime = currentTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[PlayerCarIndex].CurrentLap - 1);
             long bestLapTime = _bestTimeTrial.GetLapTime(currentStage.checkpoints.Count, carsInRace[PlayerCarIndex].CurrentLap - 1);
             long lapDiff = lapTime - bestLapTime;
-            var lapSplitsColor = lapDiff > 0 ? new Color(255, 128, 128) : new Color(128, 255, 128);
-
             long lastSplitChange = lapDiff - _lastLapSplitDiff;
-            string lastLapSplitFmt = FormatTimeMs(lastSplitChange, true);
 
-            string lapDiffFmt = FormatTimeMs(lapDiff, true);
-            // HUD lap splits: wire to HudStateData when lap data fields are added
+            HudState.LapDiffMs = (int)lapDiff;
+            HudState.LastLapDiffMs = (int)lastSplitChange;
         }
         else
-        { // HUD state: wire to HudStateData
-        }
-
-        if(_lastLapTime > 0)
-        { // HUD state: wire to HudStateData
+        {
+            HudState.LapDiffMs = null;
+            HudState.LastLapDiffMs = null;
         }
     }
 

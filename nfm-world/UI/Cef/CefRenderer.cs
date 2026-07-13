@@ -264,6 +264,14 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
     }
 
     /// <summary>
+    /// Reload the current CEF page.
+    /// </summary>
+    public void Reload()
+    {
+        _browser?.Reload();
+    }
+
+    /// <summary>
     /// Resolve the base page URL for the single-page app. All phases share
     /// one index.html; navigation uses hash fragments (#/main-menu, etc.).
     /// </summary>

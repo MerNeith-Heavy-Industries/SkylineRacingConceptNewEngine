@@ -130,6 +130,11 @@ public static class DevConsoleCommands
             GameSparker.CefRenderer?.ShowDevTools();
             Logging.Info("CEF DevTools opened.");
         });
+        console.RegisterCommand("cef_reload", (console, args) =>
+        {
+            GameSparker.CefRenderer?.Reload();
+            Logging.Info("CEF page reloaded.");
+        });
 #endif
 
         //cheats
