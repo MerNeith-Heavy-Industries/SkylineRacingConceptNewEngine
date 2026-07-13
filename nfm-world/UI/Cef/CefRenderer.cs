@@ -1,7 +1,11 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Xilium.CefGlue;
+using Xilium.CefGlue.Common;
+using Xilium.CefGlue.Common.Shared;
 
 namespace NFMWorld.UI.Cef;
 
@@ -78,14 +82,10 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         _renderHandler = new NfmwCefRenderHandler(_graphicsDevice);
         _renderHandler.SetViewSize(browserWidth, browserHeight);
         _renderHandler.OnBrowserPainted += () => _textureNeedsUpdate = true;
-
-        var renderProcessHandler = new NfmwRenderProcessHandler();
-        var app = new NfmwCefApp(renderProcessHandler);
         _cefClient = new NfmwCefClient(_renderHandler, this);
 
         // 4. Initialize CEF
-        var mainArgs = new CefMainArgs([]);
-        CefRuntime.Initialize(mainArgs, settings, app, IntPtr.Zero);
+        InitializeCef(settings);
 
         // 5. Create browser
         var windowInfo = CefWindowInfo.Create();
@@ -96,6 +96,8 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
             WindowlessFrameRate = 60,
             BackgroundColor = new CefColor(0, 0, 0, 0),
         };
+        
+        CefRuntimeLoader.Initialize();
 
         _browser = CefBrowserHost.CreateBrowserSync(windowInfo, _cefClient, browserSettings, initialUrl);
         _browserHost = _browser?.GetHost();
@@ -103,6 +105,61 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         TextInputEXT.TextInput += ForwardTextInput;
 
         _isInitialized = true;
+    }
+
+    // Mostly copied from CefRuntimeLoader
+    private static void InitializeCef(CefSettings? settings = null, KeyValuePair<string, string>[]? flags = null)
+    {
+        if (settings == null)
+        {
+            settings = new CefSettings();
+        }
+        
+        var basePath = AppContext.BaseDirectory;
+        
+        settings.UncaughtExceptionStackSize = 100; // for uncaught exception event work properly
+
+        settings.BrowserSubprocessPath = Path.Combine(AppContext.BaseDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "NFMWorld.BrowserProcess.exe" : "NFMWorld.BrowserProcess");
+
+        switch (CefRuntime.Platform)
+        {
+            case CefRuntimePlatform.Windows:
+                // settings.MultiThreadedMessageLoop = true;
+                break;
+
+            case CefRuntimePlatform.MacOS:
+                var resourcesPath = Path.Combine(basePath, "Resources");
+                if (!Directory.Exists(resourcesPath))
+                {
+                    throw new FileNotFoundException("Unable to find Resources folder");
+                }
+
+                settings.NoSandbox = true;
+                settings.MultiThreadedMessageLoop = false;
+                settings.ExternalMessagePump = true;
+                settings.MainBundlePath = basePath;
+                settings.FrameworkDirPath = basePath;
+                settings.ResourcesDirPath = resourcesPath;
+                break;
+                
+            case CefRuntimePlatform.Linux:
+                settings.NoSandbox = true;
+                settings.MultiThreadedMessageLoop = true;
+                break;
+        }
+
+        AppDomain.CurrentDomain.ProcessExit += delegate { CefRuntime.Shutdown(); };
+        
+        // Fix crash with youtube https://github.com/chromiumembedded/cef/issues/3643
+        flags = (flags ?? []).Append(KeyValuePair.Create("disable-features", "FirstPartySets")).ToArray();
+
+        CustomScheme[] customSchemes = [];
+        CefRuntime.Initialize(new CefMainArgs([System.Environment.ProcessPath]), settings, new BrowserCefApp(customSchemes, flags), IntPtr.Zero);
+
+        foreach (var scheme in customSchemes)
+        {
+            CefRuntime.RegisterSchemeHandlerFactory(scheme.SchemeName, scheme.DomainName, scheme.SchemeHandlerFactory);
+        }
     }
 
     /// <summary>
@@ -465,4 +522,126 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
     }
 
     #endregion
+}
+
+file abstract class CommonCefApp : CefApp
+{
+    private readonly CustomScheme[]? _customSchemes;
+
+    internal CommonCefApp(CustomScheme[]? customSchemes = null) => this._customSchemes = customSchemes;
+
+    protected override void OnRegisterCustomSchemes(CefSchemeRegistrar registrar)
+    {
+        if (this._customSchemes == null)
+            return;
+        foreach (CustomScheme customScheme in this._customSchemes)
+            registrar.AddCustomScheme(customScheme.SchemeName, customScheme.Options);
+    }
+}
+
+file class BrowserCefApp : CommonCefApp
+{
+    private readonly CefBrowserProcessHandler _browserProcessHandler;
+    private readonly KeyValuePair<string, string>[]? _flags;
+
+    internal BrowserCefApp(CustomScheme[]? customSchemes = null, KeyValuePair<string, string>[]? flags = null, BrowserProcessHandler? browserProcessHandler = null) :
+        base(customSchemes)
+    {
+        _browserProcessHandler = new CommonBrowserProcessHandler(browserProcessHandler, customSchemes);
+        _flags = flags;
+    }
+
+    protected override void OnBeforeCommandLineProcessing(string processType, CefCommandLine commandLine)
+    {
+        if (string.IsNullOrEmpty(processType))
+        {
+            if (CefRuntime.Platform == CefRuntimePlatform.Linux) 
+            {
+                commandLine.AppendSwitch("no-zygote");
+            }
+
+            // if (CefRuntimeLoader.IsOSREnabled)
+            {
+                commandLine.AppendSwitch("disable-gpu", "1");
+                commandLine.AppendSwitch("disable-gpu-compositing", "1");
+                commandLine.AppendSwitch("enable-begin-frame-scheduling", "1");
+                commandLine.AppendSwitch("disable-smooth-scrolling", "1");
+            }
+
+            if (_flags != null)
+            {
+                foreach (var flag in _flags)
+                {     
+                    commandLine.AppendSwitch(flag.Key, flag.Value);
+                }
+            }
+        }
+    }
+
+    protected override CefBrowserProcessHandler GetBrowserProcessHandler()
+    {
+        return _browserProcessHandler;
+    }
+}
+
+file static class CommandLineArgs
+{
+    public const string CustomScheme = "--custom-scheme";
+    public const string ParentProcessId = "--parent-pid";
+}
+
+file class CommonBrowserProcessHandler(BrowserProcessHandler? handler, CustomScheme[]? customSchemes)
+    : CefBrowserProcessHandler
+{
+    private readonly string _currentProcessId = System.Environment.ProcessId.ToString();
+
+    protected override void OnBeforeChildProcessLaunch(CefCommandLine commandLine)
+    {
+        handler?.HandleBeforeChildProcessLaunch(commandLine);
+        if (customSchemes?.Length > 0)
+        {
+            commandLine.AppendSwitch(CommandLineArgs.CustomScheme, ToCommandLineValue(customSchemes));
+        }
+
+        commandLine.AppendSwitch(CommandLineArgs.ParentProcessId, _currentProcessId);
+    }
+
+    protected override void OnContextInitialized()
+    {
+        handler?.HandleContextInitialized();
+    }
+
+    protected override void OnScheduleMessagePumpWork(long delayMs)
+    {
+        handler?.HandleScheduleMessagePumpWork(delayMs);
+    }
+    
+    private static string SerializeToCommandLineValue(CustomScheme scheme)
+    {
+        return $"{scheme.SchemeName}|{scheme.DomainName}|{((int) scheme.Options).ToString()}";
+    }
+
+    internal static string ToCommandLineValue(CustomScheme[] schemes)
+    {
+        return string.Join(";", schemes.Select(SerializeToCommandLineValue));
+    }
+
+}
+
+file class BrowserProcessHandler : CefBrowserProcessHandler
+{
+    internal void HandleBeforeChildProcessLaunch(CefCommandLine commandLine)
+    {
+        OnBeforeChildProcessLaunch(commandLine);
+    }
+
+    internal void HandleContextInitialized()
+    {
+        OnContextInitialized();
+    }
+
+    internal void HandleScheduleMessagePumpWork(long delayMs)
+    {
+        OnScheduleMessagePumpWork(delayMs);
+    }
 }

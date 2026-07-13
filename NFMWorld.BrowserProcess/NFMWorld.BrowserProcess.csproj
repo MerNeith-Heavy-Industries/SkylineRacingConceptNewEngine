@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NFMWorld.BrowserProcess</AssemblyName>
+    <RootNamespace>NFMWorld.BrowserProcess</RootNamespace>
+    <RuntimeIdentifiers>osx-x64;osx-arm64;win-x64;win-arm64;linux-x64;linux-arm64</RuntimeIdentifiers>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PublishCommonConfig>Configuration=$(Configuration);Platform=$(Platform);TargetFramework=$(TargetFramework);IsPublishing=True;PublishTrimmed=True;SelfContained=True;RuntimeIdentifier=</PublishCommonConfig>
+    <IsEditbinEnabled>True</IsEditbinEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ObjectBinding\CefGlueGlobalScript.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CefGlue.Common" Version="120.6099.211" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CefGlue.BrowserProcess\CefGlue.BrowserProcess.csproj" />
+  </ItemGroup>
+
+<!--  <Target Name="Editbin" AfterTargets="Compile" Condition="$(IsEditbinEnabled) == True And $(VcvarsFile) != '' And $([MSBuild]::IsOSPlatform('Windows'))">-->
+<!--    &lt;!&ndash;-->
+<!--      Quick explanation: This target runs after compile, and currently 3 more times for each MSBuild command executed in the next target "PublishApp".-->
+<!--      We just want this target to be executed for windows specs and when passed the VcvarsFile location.-->
+<!--      Using VS Studio: VcvarsFile="$(DevEnvDir)..\..\VC\Auxiliary\Build\vcvars64.bat"-->
+<!--      Using VS Studio tools: VcvarsFile="C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"-->
+<!--    &ndash;&gt;-->
+
+<!--    <PropertyGroup>-->
+<!--      <ApphostLocation>$(ProjectDir)$(BaseIntermediateOutputPath)$(Platform)\$(Configuration)\$(TargetFramework)\</ApphostLocation>-->
+<!--      <ApphostLocation Condition="'$(IsPublishing)' == 'True'">$(ApphostLocation)$(RuntimeIdentifier)\</ApphostLocation> &lt;!&ndash; When publishing, we also use the runtime identifiers (check the next target "PublishApp") &ndash;&gt;-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash;-->
+<!--      This command aims at increasing the stack size of Xilium.CefGlue.BrowserProcess.exe to 8 MiBs, using the visual studio tool "editbin".-->
+<!--      Since we are reaching the .exe at the compile time, the file name is "apphost.exe" instead and located at /obj folder-->
+<!--    &ndash;&gt;-->
+<!--    <Exec Command="call &quot;$(VcvarsFile)&quot;&#xD;&#xA; editbin /STACK:0x800000 &quot;$(ApphostLocation)\apphost.exe&quot;&#xD;&#xA;" />-->
+<!--  </Target>-->
+
+<!--  <Target Name="PublishApp" AfterTargets="AfterBuild" Condition="'$(_AssemblyTimestampBeforeCompile)' != '$(_AssemblyTimestampAfterCompile)' and '$(IsPublishing)' != 'True'">-->
+<!--    &lt;!&ndash; WINDOWS &ndash;&gt;-->
+<!--    <Message Text="Publishing CefGlue.BrowserProcess on Windows ($(Platform))..." Importance="High" />-->
+<!--    <MSBuild Projects="CefGlue.BrowserProcess.csproj" Targets="Publish" Properties="$(PublishCommonConfig)win-$(ArchitectureConfig);IsEditbinEnabled=True;" />-->
+
+<!--    &lt;!&ndash; LINUX &ndash;&gt;-->
+<!--    <Message Text="Publishing CefGlue.BrowserProcess on Linux ($(Platform))..." Importance="High" />-->
+<!--    <MSBuild Projects="CefGlue.BrowserProcess.csproj" Targets="Publish" Properties="$(PublishCommonConfig)linux-$(ArchitectureConfig);IsEditbinEnabled=False;" />-->
+
+<!--    &lt;!&ndash; OSX &ndash;&gt;-->
+<!--    <Message Text="Publishing CefGlue.BrowserProcess on MacOS ($(Platform))..." Importance="High" />-->
+<!--    <MSBuild Projects="CefGlue.BrowserProcess.csproj" Targets="Publish" Properties="$(PublishCommonConfig)osx-$(ArchitectureConfig);IsEditbinEnabled=False;" />-->
+<!--  </Target>-->
+</Project>
