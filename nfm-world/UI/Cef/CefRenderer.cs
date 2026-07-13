@@ -38,7 +38,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
 
     // Rendering
     private SpriteBatch? _spriteBatch;
-    private BasicEffect? _effect;
     private bool _textureNeedsUpdate;
 
     // Input
