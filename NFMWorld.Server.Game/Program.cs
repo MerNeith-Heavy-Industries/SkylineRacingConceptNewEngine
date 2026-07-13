@@ -42,18 +42,35 @@ httpServer.OnPost += (sender, e) =>
     if (error is not null)
     {
         Console.WriteLine($"[GameMaster] Auth failed: {error}");
+        var errBytes = Encoding.UTF8.GetBytes(error);
         res.StatusCode = 401;
-        res.Close(Encoding.UTF8.GetBytes(error), false);
+        res.ContentLength64 = errBytes.Length;
+        res.OutputStream.Write(errBytes, 0, errBytes.Length);
+        res.Close();
         return;
     }
 
     if (path == "/create-race")
     {
-        var raceParams = MemoryPackSerializer.Deserialize<Lobby2RaceServer_CreateRace>(bodyArray);
-        var response = orchestrator.CreateRace(raceParams);
+        try
+        {
+            var raceParams = MemoryPackSerializer.Deserialize<Lobby2RaceServer_CreateRace>(bodyArray);
+            var responseBytes = MemoryPackSerializer.Serialize(orchestrator.CreateRace(raceParams));
 
-        res.ContentType = "application/octet-stream";
-        res.Close(MemoryPackSerializer.Serialize(response), false);
+            res.ContentType = "application/octet-stream";
+            res.ContentLength64 = responseBytes.Length;
+            res.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+            res.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GameMaster] CreateRace failed: {ex}");
+            var errBytes = Encoding.UTF8.GetBytes(ex.Message);
+            res.StatusCode = 500;
+            res.ContentLength64 = errBytes.Length;
+            res.OutputStream.Write(errBytes, 0, errBytes.Length);
+            res.Close();
+        }
     }
     else
     {

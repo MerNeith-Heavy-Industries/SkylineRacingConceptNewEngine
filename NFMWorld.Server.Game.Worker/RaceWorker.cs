@@ -122,8 +122,7 @@ public class RaceWorker
         {
             if (carIndex < cars.Count)
             {
-                states[playerIndex] = PlayerState.CreateFrom(
-                    (uint)batch.TickNumber, cars[carIndex]);
+                states[playerIndex] = PlayerState.CreateFrom(batch.TickNumber, cars[carIndex]);
             }
         }
 
