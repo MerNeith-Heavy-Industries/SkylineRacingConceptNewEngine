@@ -77,6 +77,7 @@
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Sokol\Sokol.csproj" />
+        <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
@@ -169,6 +170,18 @@
     <!-- the production bundles. On Debug, use the Vite dev server instead -->
     <!-- (run `pnpm run dev` in data/html/ alongside `dotnet run`).       -->
 
+    <!-- output memorypack TypeScript code to directory -->
+    <ItemGroup>
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptImportExtension" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptConvertPropertyName" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptEnableNullableTypes" />
+    </ItemGroup>
+    <PropertyGroup>
+        <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\data\html\src\shared\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+        <MemoryPackGenerator_TypeScriptEnableNullableTypes>true</MemoryPackGenerator_TypeScriptEnableNullableTypes>
+    </PropertyGroup>
+
     <Target Name="BuildWebUi" BeforeTargets="BeforeBuild"
             Condition="'$(Configuration)' == 'Release'">
         <Message Text="Building web UI (pnpm install + pnpm run build)..." Importance="High" />
@@ -189,6 +202,7 @@
 
 
     <ItemGroup>
+      <Folder Include="data\html\src\shared\memorypack\" />
       <Folder Include="Mad\Renderer\Renderable\" />
     </ItemGroup>
     

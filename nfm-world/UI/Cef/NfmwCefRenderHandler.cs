@@ -9,13 +9,12 @@ namespace NFMWorld.UI.Cef;
 /// and uploads changed pixel regions to a Texture2D for compositing in the
 /// FNA draw pipeline.
 /// </summary>
-internal sealed class NfmwCefRenderHandler : CefRenderHandler
+internal sealed class NfmwCefRenderHandler(GraphicsDevice graphicsDevice) : CefRenderHandler
 {
-    private readonly GraphicsDevice _graphicsDevice;
     private Texture2D? _browserTexture;
     private int _textureWidth;
     private int _textureHeight;
-    private bool _needsFullUpload;
+    private bool _needsFullUpload = true;
 
     // Pre-allocated buffer for copying dirty rect pixel data
     private byte[]? _copyBuffer;
@@ -25,12 +24,6 @@ internal sealed class NfmwCefRenderHandler : CefRenderHandler
     public int ViewHeight { get; private set; }
 
     public event Action? OnBrowserPainted;
-
-    public NfmwCefRenderHandler(GraphicsDevice graphicsDevice)
-    {
-        _graphicsDevice = graphicsDevice;
-        _needsFullUpload = true;
-    }
 
     public void SetViewSize(int width, int height)
     {
@@ -160,7 +153,7 @@ internal sealed class NfmwCefRenderHandler : CefRenderHandler
         if (_browserTexture == null || _textureWidth != width || _textureHeight != height)
         {
             _browserTexture?.Dispose();
-            _browserTexture = new Texture2D(_graphicsDevice, width, height, false, SurfaceFormat.Color);
+            _browserTexture = new Texture2D(graphicsDevice, width, height, false, SurfaceFormat.Color);
             _textureWidth = width;
             _textureHeight = height;
             _needsFullUpload = true;
