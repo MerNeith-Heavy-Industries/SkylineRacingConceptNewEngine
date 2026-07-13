@@ -134,7 +134,6 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     }
 
     #region Client
-
     
     private Stopwatch _raceTimer = new();
 
@@ -245,7 +244,9 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
                 centerText += $"\nBest time: {time}";
             }
 
-            centerText += "\nPress R to restart"; // HUD state: wire to HudStateData
+            centerText += "\nPress R to restart";
+            HudState.StateText = centerText;
+            HudState.StateTextDuration = null; // stays visible until reset
         }
     }
 
@@ -253,7 +254,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     protected void ClientTimeTrialInRacePre()
     {
         SetLapText(carsInRace[PlayerCarIndex].CurrentLap);
-        SetTimeText(); // HUD state: wire to HudStateData
+        SetTimeText();
+
+        HudState.Damage = (double)carsInRace[PlayerCarIndex].CarPhysics.DamagePoints / carsInRace[PlayerCarIndex].Stats.Maxmag;
+        HudState.Power = (double)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f;
 
         if (_bestTimeTrial != null)
         {
