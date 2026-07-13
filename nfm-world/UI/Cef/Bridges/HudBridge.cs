@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MemoryPack;
 
 namespace NFMWorld.UI.Cef;
 
@@ -8,7 +9,6 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class HudBridge() : PhaseBridge("race")
 {
-    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/race";
     public override bool EnableInput => false;
 
     protected override void OnMessage(string type, JsonElement? args)
@@ -22,14 +22,16 @@ public sealed class HudBridge() : PhaseBridge("race")
     /// </summary>
     public void PushHudState(HudStateData state)
     {
-        Push("hudState", state);
+        PushMemoryPack("hudState", state);
     }
 }
 
 /// <summary>
 /// Per-frame HUD state sent to the race JS page.
 /// </summary>
-public sealed class HudStateData
+[MemoryPackable]
+[GenerateTypeScript]
+public sealed partial class HudStateData
 {
     public double Speed { get; set; }
     public double Power { get; set; }

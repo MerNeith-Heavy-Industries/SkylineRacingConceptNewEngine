@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MemoryPack;
 
 namespace NFMWorld.UI.Cef;
 
@@ -7,7 +8,6 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class TestPhaseBridge() : PhaseBridge("test")
 {
-    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/test";
     public override bool EnableInput => true;
 
     protected override void OnMessage(string type, JsonElement? args)
@@ -28,9 +28,16 @@ public sealed class TestPhaseBridge() : PhaseBridge("test")
     /// </summary>
     public void PushCounter(int value)
     {
-        Push("counter", new { value });
+        PushMemoryPack("counter", new CounterData { Value = value });
     }
 
     public event Action? IncrementRequested;
     public event Action? BackRequested;
+}
+
+[MemoryPackable]
+[GenerateTypeScript]
+public sealed partial class CounterData
+{
+    public int Value { get; set; }
 }

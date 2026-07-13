@@ -1,16 +1,14 @@
 using System.Text.Json;
+using MemoryPack;
 
 namespace NFMWorld.UI.Cef;
 
 /// <summary>
 /// Bridge for MainMenuPhase — handles navigation and account state.
 /// </summary>
-public sealed class MainMenuBridge : PhaseBridge
+public sealed class MainMenuBridge() : PhaseBridge("main-menu")
 {
-    public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/main-menu";
     public override bool EnableInput => true;
-
-    public MainMenuBridge() : base("main-menu") { }
 
     protected override void OnMessage(string type, JsonElement? args)
     {
@@ -33,14 +31,13 @@ public sealed class MainMenuBridge : PhaseBridge
     /// </summary>
     public void PushAccount(string? name, bool isLoggedIn)
     {
-        Push("account", new
-        {
-            name = name ?? "",
-            isLoggedIn,
-            avatarUrl = (string?)null,
-        });
+        Push("account", new AccountData(name ?? "", isLoggedIn, (string?)null));
     }
 
     public event Action<string>? NavigateRequested;
     public event Action? LogoutRequested;
 }
+
+[MemoryPackable]
+[GenerateTypeScript]
+public partial record AccountData(string Name, bool IsLoggedIn, string? AvatarUrl);

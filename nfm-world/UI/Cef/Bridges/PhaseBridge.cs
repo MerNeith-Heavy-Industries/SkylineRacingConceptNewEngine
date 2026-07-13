@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MemoryPack;
 
 namespace NFMWorld.UI.Cef;
 
@@ -43,7 +44,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// The URL to load when this phase becomes active. Subclasses override this
     /// to return the phase-specific HTML page.
     /// </summary>
-    public virtual string? PageUrl => null;
+    public virtual string? PageUrl { get; } = $"#/{phaseId}";
 
     /// <summary>
     /// Whether CEF input should be forwarded while this phase is active.
@@ -63,19 +64,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
 
         if (PageUrl is { } url)
         {
-            // For hash-based navigation in the single-page app, use JS
-            // to change location.hash instead of full LoadUrl. This keeps
-            // the V8 context alive and avoids render-process teardown.
-            var hashIndex = url.IndexOf("#/", StringComparison.Ordinal);
-            if (hashIndex > 0)
-            {
-                var hash = url[hashIndex..];
-                Renderer.ExecuteJavaScript($"window.location.hash = '{hash}';");
-            }
-            else
-            {
-                Renderer.Navigate(url);
-            }
+            Renderer.ExecuteJavaScript($"window.location.href = '{url}';");
         }
 
         OnRegistered();
@@ -86,10 +75,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// </summary>
     public void Unregister()
     {
-        if (Renderer != null)
-        {
-            Renderer.UnregisterMessageHandler(PhaseId);
-        }
+        Renderer?.UnregisterMessageHandler(PhaseId);
 
         OnUnregistered();
         Renderer = null;
@@ -99,6 +85,21 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// Push an event from C# to JS via CefProcessMessage. The JS side receives
     /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
     /// </summary>
+    /// <remarks>
+    /// This method pushes the value via MemoryPack serialization.
+    /// </remarks>
+    protected void PushMemoryPack<T>(string eventType, T? data)
+    {
+        Renderer?.PushToJs(PhaseId, eventType, MemoryPackSerializer.Serialize(data));
+    }
+
+    /// <summary>
+    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
+    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
+    /// </summary>
+    /// <remarks>
+    /// This method pushes the value via JSON serialization.
+    /// </remarks>
     protected void Push(string eventType, object? data)
     {
         Renderer?.PushToJs(PhaseId, eventType, data);
