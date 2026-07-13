@@ -59,7 +59,7 @@ public sealed class GameBridge
     private void HandleNfmwCall(CefBrowser browser, CefProcessMessage message)
     {
         var args = message.Arguments;
-        if (args.Count < 1) return;
+        if (args == null || args.Count < 1) return;
 
         var methodName = args.GetString(0);
 

@@ -5,12 +5,10 @@ namespace NFMWorld.UI.Cef;
 /// <summary>
 /// Bridge for XamlTestPhase — dev-only test page with a counter.
 /// </summary>
-public sealed class TestPhaseBridge : PhaseBridge
+public sealed class TestPhaseBridge() : PhaseBridge("test")
 {
     public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/test";
     public override bool EnableInput => true;
-
-    public TestPhaseBridge() : base("test") { }
 
     protected override void OnMessage(string type, JsonElement? args)
     {

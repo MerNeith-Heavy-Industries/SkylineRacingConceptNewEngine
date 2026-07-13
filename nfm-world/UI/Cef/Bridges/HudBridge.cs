@@ -6,12 +6,10 @@ namespace NFMWorld.UI.Cef;
 /// Bridge for in-race HUD. Pushes HudState records each frame (60 fps).
 /// Does NOT enable CEF input — clicks pass through to the game.
 /// </summary>
-public sealed class HudBridge : PhaseBridge
+public sealed class HudBridge() : PhaseBridge("race")
 {
     public override string? PageUrl => CefRenderer.ResolveBasePageUrl() + "#/race";
     public override bool EnableInput => false;
-
-    public HudBridge() : base("race") { }
 
     protected override void OnMessage(string type, JsonElement? args)
     {
