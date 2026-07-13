@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
-using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
 using NFMWorld.UI.Cef;
 using NFMWorld.Util;
@@ -8,8 +7,6 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Events;
 
 namespace NFMWorld.Gameplay;
 
@@ -68,26 +65,10 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         base.PushCefState();
 
-        if (gamemodeInstance is not BaseGamemode { Hud: { } hud })
+        if (gamemodeInstance is not BaseGamemode gm)
             return;
 
-        var state = hud.State;
-        HudBridge.PushHudState(new HudStateData
-        {
-            Speed = 0, // TODO: wire actual speed from gamemode
-            Power = (double)state.PowerFillAmount,
-            Damage = (double)state.DamageFillAmount,
-            MaxPower = 1.0,
-            Lap = state.CurrentLap,
-            TotalLaps = state.TotalLaps,
-            LapTime = 0, // TODO: parse from state.TimeText or LapTimeText
-            BestLapTime = 0,
-            Splits = [],
-            Position = 1,
-            TotalRacers = ((IGamemodeData)this).CarsInRace.Count(c => c != null),
-            StateText = state.CenterText,
-            StateTextDuration = state.CenterTextOpacity > 0 ? 2.0 : null,
-        });
+        HudBridge.PushHudState(gm.HudState);
     }
 
     public override void Enter()

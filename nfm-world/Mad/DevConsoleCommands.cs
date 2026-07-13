@@ -1,8 +1,8 @@
 using System.Reflection;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Gameplay;
 using NFMWorld.Gameplay.Gamemodes;
-using NFMWorld.Reactor;
 using NFMWorld.UI;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -12,7 +12,6 @@ using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using Steamworks;
-using WorldXaml.UI.Yoga;
 using Logging = NFMWorldLibrary.Logging;
 
 namespace NFMWorld;
@@ -125,34 +124,12 @@ public static class DevConsoleCommands
                 car.Fix();
             }
         });
-        console.RegisterCommand("xaml_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
+        console.RegisterCommand("html_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
         console.RegisterCommand("cef_devtools", (console, args) =>
         {
             GameSparker.CefRenderer?.ShowDevTools();
             Logging.Info("CEF DevTools opened.");
         });
-        console.RegisterCommand("debugui", (console, args) =>
-        {
-            if (args.Length < 1)
-            {
-                Logging.Info("Usage: debugui <classname>");
-                return;
-            }
-
-            WorldGame.DebugUiClass = args[0];
-            WorldGame.DebugUiRoot = null;
-        });
-        console.RegisterArgumentAutocompleter("debugui", (args, position) =>
-#pragma warning disable IL2026 // Never run during AOT
-            position == 0
-                ? Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .Where(e => e.IsAssignableTo(typeof(View)))
-                    .Select(e => e.Name)
-                    .ToList()
-                : []
-        );
-#pragma warning restore IL2026
 #endif
 
         //cheats

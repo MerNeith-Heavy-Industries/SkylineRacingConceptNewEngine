@@ -72,11 +72,6 @@
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
   <Project Path="NFMWorld.PhysicsFS/NFMWorld.PhysicsFS.csproj" />
-  <Project Path="NFMWorld.Reactor.Generator/NFMWorld.Reactor.Generator.csproj" />
-  <Project Path="NFMWorld.Reactor.ObservableCollections/NFMWorld.Reactor.ObservableCollections.csproj" />
-  <Project Path="NFMWorld.Reactor.Test/NFMWorld.Reactor.Test.csproj" />
-  <Project Path="NFMWorld.Reactor.TestFixtures/NFMWorld.Reactor.TestFixtures.csproj" />
-  <Project Path="NFMWorld.Reactor/NFMWorld.Reactor.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
   <Project Path="NFMWorld.Server.Game.Slave/NFMWorld.Server.Game.Slave.csproj" />
   <Project Path="NFMWorld.Server.Game/NFMWorld.Server.Game.csproj" />

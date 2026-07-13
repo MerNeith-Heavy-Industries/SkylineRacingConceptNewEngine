@@ -2,13 +2,12 @@ using System.Diagnostics;
 using Maxine.Extensions;
 using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Sfx;
-using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Util;
-using static NFMWorldLibrary.DriverInterface.UI.Elements.Nodes;
-using static NFMWorld.UI.Hud.Nodes;
+
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -227,25 +226,20 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     protected void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
-        carsInRace[_playerCarIndex].CarPhysics.PowerUp += Hud.EventPowerUp;
+        // PowerUp event handled by gamemode directly; CEF HUD reads HudState each frame.
         
         gamemodeData.ClientCallbacks.ResetCheckpointGlow();
 
-        Hud.State = new HudState(CurrentLap: 1, TotalLaps: currentStage.nlaps);
+        HudState = new HudStateData { Lap = 1, TotalLaps = currentStage.nlaps };
         IBackend.Backend.StopAllSounds();
-
-        Hud.SetElements(LapTimerSplitsView(), CentralTextView(), PowerDamageBars());
     }
 
     [ClientOnly]
     protected void InRaceClient()
     {
-        Hud.State = Hud.State with
-        {
-            CurrentLap = carsInRace[_playerCarIndex].CurrentLap + 1,
-            DamageFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag,
-            PowerFillAmount = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f
-        };
+        HudState.Lap = carsInRace[_playerCarIndex].CurrentLap + 1;
+        HudState.Damage = (float)carsInRace[_playerCarIndex].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag;
+        HudState.Power = (float)carsInRace[_playerCarIndex].CarPhysics.Power / 100f;
 
         if (carsInRace[_playerCarIndex].CurrentCheckpoint != _lastClientCheckpoint)
         {
@@ -265,36 +259,18 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         
         if (_currentState == InnerRaceState.Countdown)
         {
-            Hud.State = Hud.State with
-            {
-                CenterTextOpacity = 1,
-                CenterText = $"Starting in {_countdownTime}",
-                CenterTextFontFamily = FontFamily.Adventure,
-                CenterTextFontStyle = FontStyle.Bold,
-                CenterTextFontSize = 24,
-                CenterTextColor = new Color(255, 255, 255),
-                CenterTextStrokeColor = new Color(0, 0, 0)
-            };
+            HudState.StateText = $"Starting in {_countdownTime}";
+            HudState.StateTextDuration = 1.5;
         }
         else if (_currentState == InnerRaceState.Finished)
         {
-            Hud.State = Hud.State with
-            {
-                CenterTextOpacity = 1,
-                CenterText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}\nPress R to restart",
-                CenterTextFontFamily = FontFamily.DroidSans,
-                CenterTextFontStyle = FontStyle.Bold,
-                CenterTextFontSize = 24,
-                CenterTextColor = new Color(128, 255, 128),
-                CenterTextStrokeColor = new Color(0, 0, 0)
-            };
+            HudState.StateText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";
+            HudState.StateTextDuration = 5;
         }
         else
         {
-            Hud.State = Hud.State with
-            {
-                CenterTextOpacity = 0
-            };
+            HudState.StateText = null;
+            HudState.StateTextDuration = null;
         }
     }
 
@@ -307,10 +283,8 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
             {
-                Hud.State = Hud.State with
-                {
-                    CenterTextOpacity = 0
-                };
+                HudState.StateText = null;
+                HudState.StateTextDuration = null;
             }
         }
     }

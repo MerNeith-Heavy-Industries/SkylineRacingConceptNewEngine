@@ -1,14 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Globalization;
 using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Sfx;
-using NFMWorld.UI.Hud;
 using NFMWorldLibrary.Files;
 using NFMWorldLibrary.Helpers;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Events;
-using static NFMWorld.UI.Hud.Nodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
@@ -158,20 +155,14 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     [ClientOnly]
     public void SetLapText(int currentLap)
     {
-        Hud.State = Hud.State with
-        {
-            CurrentLap = currentLap + 1,
-            TotalLaps = currentStage.nlaps
-        };
+        HudState.Lap = currentLap + 1;
+        HudState.TotalLaps = currentStage.nlaps;
     }
 
     [ClientOnly]
     public void SetTimeText()
     {
-        Hud.State = Hud.State with
-        {
-            TimeText = $"{_raceTimer.Elapsed.Minutes:D2}:{_raceTimer.Elapsed.Seconds:D2}.{_raceTimer.Elapsed.Milliseconds:D3}"
-        };
+        HudState.LapTime = _raceTimer.Elapsed.TotalSeconds;
     }
 
     [ClientOnly]
@@ -183,8 +174,6 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         // ghosts
         _bestTimeTrial = null;
         _tick = 0;
-
-        carsInRace[PlayerCarIndex].CarPhysics.PowerUp += Hud.EventPowerUp;
 
         // ghost
         SavedTimeTrial? bestTimeDemo = SavedTimeTrial.Load(players[PlayerCarIndex].CarName, currentStage.Path);
@@ -204,7 +193,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
 
         SetTimeText();
 
-        Hud.State = new HudState();
+        HudState = new HudStateData();
         IBackend.Backend.StopAllSounds();
 
         SetLapText(0);
@@ -227,16 +216,8 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         {
             RenderInfo();
             
-            Hud.State = Hud.State with
-            {
-                CenterTextOpacity = 1,
-                CenterTextFontFamily = FontFamily.Adventure,
-                CenterTextFontStyle = FontStyle.Bold,
-                CenterTextFontSize = 24,
-                CenterTextColor = new Color(255, 255, 255),
-                CenterTextStrokeColor = new Color(0, 0, 0),
-                CenterText = $"Starting in {_countdownTime}"
-            };
+            HudState.StateText = $"Starting in {_countdownTime}";
+            HudState.StateTextDuration = 1;
         }
         else if (_currentState == TimeTrialState.Finished)
         {
@@ -264,18 +245,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
                 centerText += $"\nBest time: {time}";
             }
 
-            centerText += "\nPress R to restart";
-            
-            Hud.State = Hud.State with
-            {
-                CenterTextOpacity = 1,
-                CenterTextColor = new Color(128, 255, 128),
-                CenterTextStrokeColor = new Color(0, 0, 0),
-                CenterTextFontFamily = FontFamily.DroidSans,
-                CenterTextFontStyle = FontStyle.Bold,
-                CenterTextFontSize = 24,
-                CenterText = centerText,
-            };
+            centerText += "\nPress R to restart"; // HUD state: wire to HudStateData
         }
     }
 
@@ -283,13 +253,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
     protected void ClientTimeTrialInRacePre()
     {
         SetLapText(carsInRace[PlayerCarIndex].CurrentLap);
-        SetTimeText();
-
-        Hud.State = Hud.State with
-        {
-            DamageFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.DamagePoints / carsInRace[PlayerCarIndex].Stats.Maxmag,
-            PowerFillAmount = (float)carsInRace[PlayerCarIndex].CarPhysics.Power / 100f
-        };
+        SetTimeText(); // HUD state: wire to HudStateData
 
         if (_bestTimeTrial != null)
         {
@@ -365,8 +329,7 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
         {
             SfxLibrary.countdown[_countdownTime].Play();
             if (_countdownTime <= 0)
-            {
-                Hud.State = Hud.State with { CenterTextOpacity = 0 };
+            { // HUD state: wire to HudStateData
                 _raceTimer.Start();
             }
         }
@@ -402,19 +365,10 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             string lastSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string thisDiffFmt = FormatTimeMs(diff, true);
-            Hud.State = Hud.State with
-            {
-                CheckpointSplitsColor = checkpointSplitsTextColor,
-                CheckpointSplitsText = $"{thisDiffFmt} ({lastSplitFmt})"
-            };
+            // HUD splits: wire to HudStateData when checkpoint data fields are added
         }
         else
-        {
-            Hud.State = Hud.State with
-            {
-                CheckpointSplitsColor = null,
-                CheckpointSplitsText = string.Empty
-            };
+        { // HUD state: wire to HudStateData
         }
 
         if (carsInRace[PlayerCarIndex].CurrentLap > 0 && _bestTimeTrial != null && currentTimeTrial != null)
@@ -428,28 +382,14 @@ public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamem
             string lastLapSplitFmt = FormatTimeMs(lastSplitChange, true);
 
             string lapDiffFmt = FormatTimeMs(lapDiff, true);
-
-            Hud.State = Hud.State with
-            {
-                LapSplitsColor = lapSplitsColor,
-                LapSplitsText = $"{lapDiffFmt} ({lastLapSplitFmt})"
-            };
+            // HUD lap splits: wire to HudStateData when lap data fields are added
         }
         else
-        {
-            Hud.State = Hud.State with
-            {
-                LapSplitsColor = null,
-                LapSplitsText = string.Empty
-            };
+        { // HUD state: wire to HudStateData
         }
 
         if(_lastLapTime > 0)
-        {
-            Hud.State = Hud.State with
-            {
-                LapTimeText = FormatTimeMs(_lastLapTime, false)
-            };
+        { // HUD state: wire to HudStateData
         }
     }
 

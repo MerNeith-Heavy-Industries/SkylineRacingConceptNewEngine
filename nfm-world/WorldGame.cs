@@ -14,8 +14,6 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
-using NFMWorld.Reactor;
-using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
 using NFMWorld.UI.Cef;
 using NFMWorld.UI.Hud;
@@ -24,11 +22,8 @@ using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
 using Sokol;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Events;
-using Keys = WorldXaml.UI.Yoga.Events.Keys;
+using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
-using LogLevel = NFMWorld.Reactor.LogLevel;
 using NFMWorld.Sentry;
 
 namespace NFMWorld;
@@ -66,32 +61,10 @@ public class WorldGame : Game
     private static bool _yogaInspectorEnabled = false;
     private static int _yogaInspectorPage = 0;
 
-#if DEBUG
-    internal static string? DebugUiClass;
-    internal static Node? DebugUiRoot;
-#endif
-
     private WorldGame()
     {
         GameThreadContext.Install();
 
-        var xamlLogger = Logging.LoggerFactory.CreateLogger("WorldXaml");
-        ReactorConfig.LogMessage = (level, message) =>
-        {
-#pragma warning disable CA2254
-            if (level == LogLevel.Info)
-                xamlLogger.LogInformation(message);
-            else if (level == LogLevel.Warning)
-                xamlLogger.LogWarning(message);
-            else if (level == LogLevel.Error)
-                xamlLogger.LogError(message);
-            else if (level == LogLevel.Debug)
-                xamlLogger.LogDebug(message);
-            else
-                throw new ArgumentOutOfRangeException(nameof(level), level, null);
-#pragma warning restore CA2254
-        };
-        
         Graphics = new GraphicsDeviceManager(this);
         Graphics.GraphicsProfile = GraphicsProfile.Reach;
         Graphics.PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8;
@@ -390,12 +363,6 @@ public class WorldGame : Game
                     _yogaInspectorEnabled = !_yogaInspectorEnabled;
                 }
 
-                if (nfmKey == Key.F10)
-                {
-                    _yogaInspectorPage++;
-                    if (_yogaInspectorPage > YogaDebugger.MaxPages)
-                        _yogaInspectorPage = 0;
-                }
 #endif
             }
             else if (!keys[nfmKey] && _oldKeyState[nfmKey])
@@ -436,11 +403,6 @@ public class WorldGame : Game
 
         if (mousePosition.X != _oldMousePosition.X || mousePosition.Y != _oldMousePosition.Y)
         {
-#if DEBUG
-            if (_yogaInspectorEnabled)
-                YogaDebugger.MouseMove(mousePosition.X, mousePosition.Y);
-#endif
-
             GameSparker.CurrentPhase.MouseMoved(mousePosition.X, mousePosition.Y, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
         }
 
@@ -465,44 +427,11 @@ public class WorldGame : Game
 
         var t = Stopwatch.StartNew();
         
-#if DEBUG
-        NodeDebugger.NewFrame();
-#endif
-        
         GameSparker.Render();
         
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
         
-#if DEBUG
-        if (DebugUiClass != null)
-        {
-            if (DebugUiRoot == null)
-            {
-#pragma warning disable IL2057 // Never run during AOT compilation
-#pragma warning disable IL2026 // Never run during AOT compilation
-                var type = Type.GetType(DebugUiClass) ?? Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .FirstOrDefault(e => e.Name == DebugUiClass);
-#pragma warning restore IL2026
-#pragma warning restore IL2057
-                if (type != null!)
-                {
-#pragma warning disable IL2072 // Never run during AOT compilation
-                    DebugUiRoot = Activator.CreateInstance(type) as Node;
-#pragma warning restore IL2072
-                }
-            }
-
-            G.SetColor(Color.CornflowerBlue);
-            G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
-            DebugUiRoot?.LayoutAndRender(G.Viewport);
-        }
-
-        if (_yogaInspectorEnabled)
-            YogaDebugger.Render(_yogaInspectorPage);
-#endif
-
         FPSCounter.Render();
         _nvg.Render();
 
@@ -554,14 +483,6 @@ public class WorldGame : Game
         {
             fnaLogger.LogWarning(message);
         };
-        
-#if DEBUG
-        if (args.IndexOf("-debugui", StringComparer.OrdinalIgnoreCase) is var index and >= 0)
-        {
-            DebugUiClass = args.Length > index + 1 ? args[index + 1] : typeof(CentralTextView).FullName;
-            _yogaInspectorEnabled = true;
-        }
-#endif
         
         BackendGameSparker.Load(isHeadless: false);
 
@@ -722,119 +643,5 @@ public class WorldGame : Game
         };
         
         return NativeLibrary.Load($"libs/{dir}/{newLibraryName}");
-    }
-}
-
-internal static class NfmwInterpolators
-{
-    [ReactorInterpolator]
-    public static Color InterpolateColor(Color from, Color to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var fromA = from.A;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var toA = to.A;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        var a = (byte)(fromA + (toA - fromA) * alpha);
-        return new Color(r, g, b, a);
-    }
-
-    [ReactorInterpolator]
-    public static Color? InterpolateColorOrNull(Color? from, Color? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Color3 InterpolateColor(Color3 from, Color3 to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        return new Color3(r, g, b);
-    }
-
-    [ReactorInterpolator]
-    public static Color3? InterpolateColorOrNull(Color3? from, Color3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector2 InterpolateVector2(Vector2 from, Vector2 to, float alpha)
-    {
-        return new Vector2(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector3 InterpolateVector3(Vector3 from, Vector3 to, float alpha)
-    {
-        return new Vector3(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector4 InterpolateVector4(Vector4 from, Vector4 to, float alpha)
-    {
-        return new Vector4(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha, from.W + (to.W - from.W) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector2? InterpolateVector2OrNull(Vector2? from, Vector2? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector2(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector3? InterpolateVector3OrNull(Vector3? from, Vector3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector3(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector4? InterpolateVector4OrNull(Vector4? from, Vector4? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector4(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
     }
 }
