@@ -20,6 +20,7 @@ const routes: Record<string, FunctionComponent> = {
   "#/garage": Garage,
   "#/race": RaceHud,
   "#/test": TestPage,
+  '#/empty': () => <div style={{ width: "100%", height: "100%" }}></div>
 };
 
 const defaultRoute = "#/main-menu";

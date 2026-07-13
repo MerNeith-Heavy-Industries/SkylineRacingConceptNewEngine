@@ -1,5 +1,6 @@
 using NFMWorld.DriverInterface;
 using NFMWorld.UI.Cef;
+using NFMWorld.UI.Cef.Bridges;
 using NFMWorldLibrary.Backend.Gamemodes;
 
 namespace NFMWorld.Gameplay;
@@ -19,7 +20,7 @@ public abstract class BasePhase : IDisposable
     /// The phase's CEF bridge, if any. Subclasses set this in their constructor
     /// or Enter(). The bridge is registered during Enter() and unregistered during Exit().
     /// </summary>
-    public PhaseBridge? CefBridge { get; protected set; }
+    public PhaseBridge? CefBridge { get; protected set; } = new DummyBridge();
 
     /// <summary>
     /// Whether the mouse was pressed this game tick. Reset at the end of a game tick.
