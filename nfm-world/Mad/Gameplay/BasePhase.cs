@@ -7,6 +7,12 @@ namespace NFMWorld.Gameplay;
 
 public abstract class BasePhase : IDisposable
 {
+    /// <summary>
+    /// Whether this phase is a singleton that should never be disposed during normal navigation.
+    /// Deprecated: with the <see cref="PhaseManager"/> stack, the root phase is inherently never popped.
+    /// This property is retained for backward compatibility only.
+    /// </summary>
+    [Obsolete("PhaseManager prevents popping the root phase. IsSingleton is no longer needed.")]
     public virtual bool IsSingleton => false;
     
     /// <summary>
@@ -113,10 +119,8 @@ public abstract class BasePhase : IDisposable
         // Unregister the phase's CEF bridge
         CefBridge?.Unregister();
 
-        if (!IsSingleton)
-        {
-            Dispose();
-        }
+        // Disposal is now handled by PhaseManager.FlushDisposals() at end-of-frame.
+        // Phases on the stack are kept alive; popped phases are queued for deferred disposal.
     }
 
     /// <summary>

@@ -55,16 +55,50 @@ public static class GameSparker
 
     public static BasePhase CurrentPhase
     {
-        get;
-        private set;
-    } = null!;
+        get => Phases.Current;
+    }
 
+    /// <summary>
+    /// The phase stack manager. Handles navigation (Push, Pop, Replace)
+    /// and deferred disposal of popped phases.
+    /// </summary>
+    public static PhaseManager Phases { get; } = new();
+
+    /// <summary>
+    /// Replaces the current phase with a new one. The old phase is disposed
+    /// at end-of-frame via <see cref="PhaseManager.FlushDisposals"/>.
+    /// For navigation with back-support, use <see cref="PushPhase"/> instead.
+    /// </summary>
     public static void SetPhase(BasePhase phase)
     {
-        // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
-        CurrentPhase?.Exit();
-        CurrentPhase = phase;
-        CurrentPhase.Enter();
+        Phases.Replace(phase);
+    }
+
+    /// <summary>
+    /// Pushes a new phase onto the stack, keeping the current phase alive.
+    /// Use <see cref="PopPhase"/> to return to the previous phase.
+    /// </summary>
+    public static void PushPhase(BasePhase phase)
+    {
+        Phases.Push(phase);
+    }
+
+    /// <summary>
+    /// Pops the current phase and returns to the previous phase on the stack.
+    /// The popped phase is disposed at end-of-frame.
+    /// </summary>
+    public static void PopPhase()
+    {
+        Phases.Pop();
+    }
+
+    /// <summary>
+    /// Pops all phases above the root, returning to the root phase (typically MainMenu).
+    /// All intermediate phases are disposed at end-of-frame.
+    /// </summary>
+    public static void PopToRoot()
+    {
+        Phases.PopToRoot();
     }
 
     public static IRadicalMusic? CurrentMusic
@@ -202,7 +236,7 @@ public static class GameSparker
         PhaseSharedState.SelectedStageName = "nfm2/16_4dv";
         MainMenuPhase = new MainMenuPhase(GraphicsDevice, PhaseSharedState.SelectedStageName);
 
-        SetPhase(MainMenuPhase);
+        Phases.SetRoot(MainMenuPhase);
     }
     
     public static Mesh GetStagePartMesh(Rad3d stagePart)
@@ -262,5 +296,6 @@ public static class GameSparker
 
     public static void WindowSizeChanged(int width, int height)
     {
+        SettingsMenu.RegisterResolution(width, height);
     }
 }
