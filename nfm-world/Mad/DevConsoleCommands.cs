@@ -40,7 +40,6 @@ public static class DevConsoleCommands
         console.RegisterCommand("breakz", BreakZ);
         console.RegisterCommand("waste", WastePlayer);
         console.RegisterCommand("connect", Connect);
-        console.RegisterCommand("connectsteam", ConnectSteam);
         
         console.RegisterCommand("replay_trial", (c, args) =>
         {
@@ -220,23 +219,6 @@ public static class DevConsoleCommands
 
         GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice,
             new WebSocketMultiplayerClientTransport(args[0], port)));
-    }
-    private static void ConnectSteam(DevConsole console, string[] args)
-    {
-        SteamMultiplayer.Init();
-
-        if (args.Length < 1 || !ulong.TryParse(args[0], out ulong steamid))
-        {
-            Logging.Info("Usage: connectsteam <steamid> <port>");
-            return;
-        }
-            
-        if (args.Length < 2 || !int.TryParse(args[1], out int port))
-        {
-            port = 0;
-        }
-
-        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
     }
 
     private static void BreakX(DevConsole console, string[] args)
@@ -571,7 +553,7 @@ public static class DevConsoleCommands
 
     private static void Disconnect(DevConsole console)
     {
-        if (GameSparker.CurrentPhase is not InRacePhase)
+        if (GameSparker.CurrentPhase is not InRacePhase or InMultiplayerRacePhase)
         {
             Logging.Info("Not in game.");
             return;

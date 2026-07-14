@@ -67,7 +67,6 @@
         <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
         <ProjectReference Include="..\NFMWorld.Multiplayer.Base\NFMWorld.Multiplayer.Base.csproj" />
         <ProjectReference Include="..\NFMWorld.NativeLibs\NFMWorld.NativeLibs.csproj" />
-        <ProjectReference Include="..\NFMWorld.Server.Lobby\NFMWorld.Server.Lobby.csproj" />
         <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
         <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
 

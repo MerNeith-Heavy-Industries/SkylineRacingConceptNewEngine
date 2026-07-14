@@ -14,8 +14,8 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
     
     private struct ChatMessage
     {
-        public required uint PlayerId { get; set; }
-        public required string PlayerName { get; set; }
+        public required Guid SenderId { get; set; }
+        public required string Sender { get; set; }
         public required string Message { get; set; }
         public Color3 Color { get; set; }
     }
@@ -52,19 +52,19 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                 {
                     _chatMessages.Add(new ChatMessage 
                     {
-                        PlayerId = chatMessage.SenderClientId,
-                        PlayerName = chatMessage.Sender, 
+                        SenderId = chatMessage.SenderId,
+                        Sender = chatMessage.Sender, 
                         Message = chatMessage.Message,
                         Color = _players
                             .Select(e => (PlayerInfo?)e)
-                            .FirstOrDefault(p => p!.Value.Id == chatMessage.SenderClientId, null)
+                            .FirstOrDefault(p => p!.Value.Id == chatMessage.SenderId, null)
                             ?.Color ?? new Color3(255, 255, 255)
                     });
                     break;
                 }
                 case S2C_LobbyState lobbyState:
                 {
-                    _player.ClientId = lobbyState.PlayerClientId;
+                    _player.Id = lobbyState.ClientId;
                     _players = lobbyState.Players.ToList();
                     _activeSessions = lobbyState.ActiveSessions.ToList();
                     break;
@@ -79,7 +79,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
 
                     var phase = new InMultiplayerRacePhase(
                         graphicsDevice, gameTransport,
-                        raceStarted.MatchGameplayInfo, _player.ClientId,
+                        raceStarted.MatchGameplayInfo, _player.Id,
                         raceStarted.JoinInfo.JoinToken);
 
                     phase.RaceStateChanged += (_, state) =>
@@ -176,7 +176,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
             // TODO: Toggle ready status
         }
         
-        if (_activeSessions.FirstOrDefault(e => e.PlayerClientIds.Any(e1 => e1.Value == _player.ClientId)) is {} session)
+        if (_activeSessions.FirstOrDefault(e => e.Players.Any(e1 => e1.Value == _player.Id)) is {} session)
         {
             if (ImGui.Button("Start Race", new Vector2(-1, 0)))
             {
@@ -288,7 +288,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
                     // TODO: Spectate game session
                 }
             }
-            else if (session.PlayerClientIds.Any(e => e.Value == _player.ClientId))
+            else if (session.Players.Any(e => e.Value == _player.Id))
             {
                 if (ImGui.Button($"Leave##{i}"))
                 {
@@ -394,7 +394,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
         foreach (var msg in _chatMessages)
         {
             ImGui.PushStyleColor(ImGuiCol.Text, msg.Color);
-            ImGui.Text($"{msg.PlayerName}:");
+            ImGui.Text($"{msg.Sender}:");
             ImGui.PopStyleColor();
             
             ImGui.SameLine();
@@ -444,7 +444,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
 
 internal class Player
 {
-    public uint ClientId { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; } = System.Environment.UserName;
     public string Vehicle { get; set; } = "nfmm/radicalone";
     public Color3 Color { get; set; } = new(0, 128, 255);

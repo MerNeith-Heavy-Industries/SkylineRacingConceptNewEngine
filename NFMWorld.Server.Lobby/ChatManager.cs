@@ -5,26 +5,17 @@ namespace NFMWorldLibrary.Multiplayer;
 /// <summary>
 /// Handles chat messages and system announcements.
 /// </summary>
-public class ChatManager
+public class ChatManager(IMultiplayerServerTransport transport, PlayerRegistry players)
 {
-    private readonly IMultiplayerServerTransport _transport;
-    private readonly PlayerRegistry _players;
-
-    public ChatManager(IMultiplayerServerTransport transport, PlayerRegistry players)
-    {
-        _transport = transport;
-        _players = players;
-    }
-
     /// <summary>Sends a chat message from a client to all lobby clients.</summary>
-    public void SendChatMessage(uint senderClientId, string message)
+    public void SendChatMessage(Guid senderId, string message)
     {
-        var sender = _players.Get(senderClientId);
+        var sender = players.Get(senderId);
         if (sender is null) return;
 
-        _transport.BroadcastPacket(new S2C_LobbyChatMessage
+        transport.BroadcastPacket(new S2C_LobbyChatMessage
         {
-            SenderClientId = senderClientId,
+            SenderId = senderId,
             Sender = sender.Name,
             Message = message
         });
@@ -33,11 +24,11 @@ public class ChatManager
     /// <summary>Broadcasts a system message (e.g., join/leave announcements).</summary>
     public void BroadcastSystem(string message)
     {
-        _transport.BroadcastPacket(new S2C_LobbyChatMessage
+        transport.BroadcastPacket(new S2C_LobbyChatMessage
         {
+            SenderId = Guid.Empty,
             Message = message,
-            Sender = "<System>",
-            SenderClientId = uint.MaxValue
+            Sender = "<System>"
         });
     }
 }

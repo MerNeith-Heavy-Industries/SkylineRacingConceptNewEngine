@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using NFMWorldLibrary.Multiplayer.HttpMessages;
 using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
@@ -6,55 +7,46 @@ using NFMWorldLibrary.Multiplayer.Packets.S2C;
 namespace NFMWorldLibrary.Multiplayer;
 
 /// <summary>
-/// Game Master orchestrator — manages race sessions, validates join tokens,
-/// routes player inputs to Worker processes, and broadcasts game state to clients.
+/// Game Master — dumb UDP relay for v1.
+/// Validates join tokens, relays PlayerState between clients, handles race finish.
+/// 
+/// v2: <see cref="WorkerManager"/> and the Worker project will handle replay-based
+/// validation. For now, the relay is direct.
 /// </summary>
 public class RaceOrchestrator : IDisposable
 {
     private readonly ConcurrentDictionary<uint, ClientInfo> _clients = new();
     private readonly IMultiplayerServerTransport _transport;
-    private readonly WorkerManager _workerManager;
+
+    // join token → (session, player index)
+    private readonly ConcurrentDictionary<Guid, (RaceSession Session, byte PlayerIndex, Guid ClientId)> _joinTokens = new();
+    private readonly ConcurrentDictionary<uint, RaceSession> _sessions = new();
 
     public RaceOrchestrator(IMultiplayerServerTransport transport)
     {
         _transport = transport;
-        _workerManager = new WorkerManager(transport);
-
         transport.PacketReceived += TransportOnPacketReceived;
         transport.ClientConnected += TransportOnClientConnected;
         transport.ClientDisconnected += TransportOnClientDisconnected;
         transport.ClientConnecting += TransportOnClientConnecting;
     }
 
-    public void Start()
-    {
-        _transport.Start();
-        _workerManager.StartHealthCheck();
-    }
-
-    public void Stop()
-    {
-        _workerManager.StopHealthCheck();
-        _transport.Stop();
-    }
+    public void Start() => _transport.Start();
+    public void Stop() => _transport.Stop();
 
     // ── Transport events ─────────────────────────────────────────────
 
     private void TransportOnClientConnecting(object? sender, uint clientIndex)
-    {
-        _clients.TryAdd(clientIndex, new ClientInfo { State = ClientState.Connecting });
-    }
+        => _clients.TryAdd(clientIndex, new ClientInfo { State = ClientState.Connecting });
 
     private void TransportOnClientConnected(object? sender, uint clientIndex)
     {
-        if (_clients.TryGetValue(clientIndex, out var client))
-            client.State = ClientState.Connected;
+        if (_clients.TryGetValue(clientIndex, out var c))
+            c.State = ClientState.Connected;
     }
 
     private void TransportOnClientDisconnected(object? sender, uint clientIndex)
-    {
-        _clients.TryRemove(clientIndex, out _);
-    }
+        => _clients.TryRemove(clientIndex, out _);
 
     // ── Packet dispatch ──────────────────────────────────────────────
 
@@ -66,11 +58,9 @@ public class RaceOrchestrator : IDisposable
             case C2S_RaceLoaded raceLoaded:
                 HandleRaceLoaded(e.ClientIndex, raceLoaded);
                 break;
-
             case C2S_PlayerState playerState:
                 HandlePlayerState(e.ClientIndex, playerState);
                 break;
-
             case C2S_GameFinished gameFinished:
                 HandleGameFinished(e.ClientIndex, gameFinished);
                 break;
@@ -79,50 +69,67 @@ public class RaceOrchestrator : IDisposable
 
     // ── Packet handlers ──────────────────────────────────────────────
 
-    private void HandleRaceLoaded(uint clientId, C2S_RaceLoaded raceLoaded)
+    private void HandleRaceLoaded(uint clientIndex, C2S_RaceLoaded raceLoaded)
     {
-        var session = _workerManager.ValidateJoinToken(clientId, raceLoaded.JoinToken);
-        if (session is null)
+        if (!_joinTokens.TryGetValue(raceLoaded.JoinToken, out var entry))
         {
-            Console.WriteLine(
-                $"[RaceOrchestrator] Invalid join token from client {clientId}");
+            Logging.Warning($"[GM] Invalid join token from client {clientIndex}");
             return;
         }
 
-        Console.WriteLine(
-            $"[RaceOrchestrator] Client {clientId} loaded for match {session.MatchKey}");
+        var clientId = entry.ClientId;
 
-        // Check if all players have loaded
-        var allLoaded = session.JoinTokens.Values.All(e => e.ClientId != 0);
+        entry.Session.Clients.TryAdd(clientIndex, clientId);
+        entry.Session.LoadedCount++;
 
-        if (allLoaded)
+        Logging.Info(
+            $"[GM] Client {clientId} loaded ({entry.Session.LoadedCount}/{entry.Session.PlayerCount})");
+
+        if (entry.Session.LoadedCount >= entry.Session.PlayerCount)
         {
-            var clientIds = session.JoinTokens.Values
-                .Select(e => e.ClientId)
-                .ToArray();
-
-            _transport.SendPacketToClients(clientIds, new S2C_RaceCanStart());
-            Console.WriteLine(
-                $"[RaceOrchestrator] Race can start: {session.MatchKey}");
+            _transport.SendPacketToClients(entry.Session.Clients.Keys.ToArray(), new S2C_RaceCanStart());
+            Logging.Info($"[GM] Race starting: {entry.Session.PlayerCount} players");
         }
     }
 
-    private void HandlePlayerState(uint clientId, C2S_PlayerState playerState)
+    private void HandlePlayerState(uint clientIndex, C2S_PlayerState playerState)
     {
-        _workerManager.ForwardPlayerInput(clientId, playerState.State);
+        if (!TryFindSession(clientIndex, out var session, out var clientId)) return;
+
+        var others = session.Clients.Keys.Where(idx => idx != clientIndex).ToArray();
+        if (others.Length > 0)
+        {
+            _transport.SendPacketToClients(others, new S2C_PlayerState
+            {
+                PlayerId = clientId,
+                State = playerState.State,
+                CurrentServerTime = DateTimeOffset.UtcNow
+            }, false);
+        }
     }
 
-    private void HandleGameFinished(uint clientId, C2S_GameFinished gameFinished)
+    private void HandleGameFinished(uint clientIndex, C2S_GameFinished gameFinished)
     {
-        var session = _workerManager.GetSessionForClient(clientId);
-        if (session is null) return;
+        if (!TryFindSession(clientIndex, out var session, out var clientId)) return;
 
-        Console.WriteLine(
-            $"[RaceOrchestrator] Client {clientId} reports race finished: " +
-            $"{gameFinished.RaceTime.TotalSeconds:F1}s");
+        Logging.Info($"[GM] Client {clientId} finished in {gameFinished.RaceTime.TotalSeconds:F1}s");
+
+        // v1: first-come first-served
+        _transport.SendPacketToClients(session.Clients.Keys.ToArray(), new S2C_GameFinished
+        {
+            PlayerResults = new Dictionary<byte, PlayerResult>
+            {
+                [0] = new()
+                {
+                    FinishPosition = 1,
+                    Finished = true,
+                    RaceTime = gameFinished.RaceTime
+                }
+            }
+        });
     }
 
-    // ── HTTP handler (called from Program.cs) ────────────────────────
+    // ── HTTP handler ─────────────────────────────────────────────────
 
     public Lobby2RaceServer_CreateRaceResponse CreateRace(
         Lobby2RaceServer_CreateRace raceParams)
@@ -130,23 +137,48 @@ public class RaceOrchestrator : IDisposable
         var sessionId = (uint)Interlocked.Increment(ref _sessionIdCounter);
         var joinTokens = new Dictionary<byte, Guid>();
 
-        foreach (var (playerIndex, _) in raceParams.MatchGameplayInfo.Players)
-            joinTokens[playerIndex] = Guid.NewGuid();
+        var session = new RaceSession
+        {
+            Id = sessionId,
+            PlayerCount = raceParams.MatchGameplayInfo.Players.Count,
+            Clients = []
+        };
 
-        _workerManager.CreateWorker(
-            sessionId,
-            raceParams.MatchKey,
-            raceParams.MatchGameplayInfo,
-            joinTokens);
+        foreach (var (playerIndex, playerInfo) in raceParams.MatchGameplayInfo.Players)
+        {
+            var token = Guid.NewGuid();
+            joinTokens[playerIndex] = token;
+            _joinTokens.TryAdd(token, (session, playerIndex, playerInfo.Id));
+        }
 
-        Console.WriteLine(
-            $"[RaceOrchestrator] Race created: {raceParams.MatchKey}, " +
-            $"{joinTokens.Count} players");
+        _sessions.TryAdd(sessionId, session);
+
+        Logging.Info(
+            $"[GM] Race created: {raceParams.MatchKey}, {joinTokens.Count} players");
 
         return new Lobby2RaceServer_CreateRaceResponse
         {
             PlayerSecretIds = joinTokens
         };
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    private bool TryFindSession(uint clientIndex, [NotNullWhen(true)] out RaceSession? session, out Guid clientId)
+    {
+        foreach (var (_, s) in _sessions)
+        {
+            if (s.Clients.TryGetValue(clientIndex, out var id))
+            {
+                session = s;
+                clientId = id;
+                return true;
+            }
+        }
+
+        session = null;
+        clientId = Guid.Empty;
+        return false;
     }
 
     public void Dispose()
@@ -155,12 +187,19 @@ public class RaceOrchestrator : IDisposable
         _transport.ClientConnected -= TransportOnClientConnected;
         _transport.ClientDisconnected -= TransportOnClientDisconnected;
         _transport.ClientConnecting -= TransportOnClientConnecting;
-        _workerManager.Dispose();
     }
 
     private class ClientInfo
     {
         public ClientState State { get; set; }
+    }
+
+    private class RaceSession
+    {
+        public uint Id { get; set; }
+        public int PlayerCount { get; set; }
+        public int LoadedCount { get; set; }
+        public ConcurrentDictionary<uint, Guid> Clients { get; set; } = [];
     }
 
     private static int _sessionIdCounter;
