@@ -67,7 +67,6 @@
   <Project Path="NFMWorld.CrashReporter/NFMWorld.CrashReporter.csproj" />
   <Project Path="NFMWorld.DriverInterface/NFMWorld.DriverInterface.csproj" />
   <Project Path="NFMWorld.GenerateHmacKey/NFMWorld.GenerateHmacKey.csproj" />
-  <Project Path="NFMWorld.Library.Test/NFMWorld.Library.Test.csproj" />
   <Project Path="NFMWorld.Library/NFMWorld.Library.csproj" />
   <Project Path="NFMWorld.Multiplayer.Base/NFMWorld.Multiplayer.Base.csproj" />
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
