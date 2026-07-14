@@ -14,29 +14,41 @@ using S2C_PlayerState = NFMWorldLibrary.Multiplayer.Packets.S2C.S2C_PlayerState;
 
 namespace NFMWorld.Gameplay;
 
-public class InMultiplayerRacePhase(
-    GraphicsDevice graphicsDevice,
-    IMultiplayerClientTransport transport,
-    MatchGameplayInfo session,
-    Guid clientPlayerId,
-    Guid joinToken
-)
-    : BaseRacePhase(
-        graphicsDevice,
-        session.StageName,
-        GetGameModeFactory(session),
-        session.Players
-            .Select(c => new PlayerParameters
-            {
-                CarName = c.Value.Vehicle,
-                Color = c.Value.Color,
-                PlayerName = c.Value.Name,
-                IsBot = false,
-                IsClientPlayer = c.Value.Id == clientPlayerId
-            })
-            .ToArray()
-    )
+public class InMultiplayerRacePhase : BaseRacePhase
 {
+    private readonly IMultiplayerClientTransport _transport;
+    private readonly Guid _joinToken;
+    private readonly MatchGameplayInfo _session;
+
+    public InMultiplayerRacePhase(
+        GraphicsDevice graphicsDevice,
+        IMultiplayerClientTransport transport,
+        MatchGameplayInfo session,
+        Guid clientPlayerId,
+        Guid joinToken
+    )
+        : base(
+            graphicsDevice,
+            session.StageName,
+            GetGameModeFactory(session),
+            session.Players
+                .Select(c => new PlayerParameters
+                {
+                    CarName = c.Value.Vehicle,
+                    Color = c.Value.Color,
+                    PlayerName = c.Value.Name,
+                    IsBot = false,
+                    IsClientPlayer = c.Value.Id == clientPlayerId
+                })
+                .ToArray()
+        )
+    {
+        _transport = transport;
+        _joinToken = joinToken;
+        _session = session;
+        // Set initial race state once at construction; Enter() no longer resets it.
+        RaceState = RaceState.WaitingToStart;
+    }
     private static BaseGamemodeFactory GetGameModeFactory(MatchGameplayInfo matchGameplayInfo)
     {
         switch (matchGameplayInfo.Gamemode)
@@ -62,14 +74,25 @@ public class InMultiplayerRacePhase(
 
     public override void Enter()
     {
-        RaceState = RaceState.WaitingToStart;
+        // RaceState initialized in constructor; gamemode created by BaseRacePhase constructor.
+        // Enter only handles display activation (CEF bridge, camera, music).
         base.Enter();
     }
 
     public override void Exit()
     {
+        // Transport teardown moved to Dispose(). Exit only handles display deactivation.
         base.Exit();
-        transport.Stop();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _transport.Stop();
+        }
+
+        base.Dispose(disposing);
     }
 
     public override void GameTick()
@@ -77,13 +100,13 @@ public class InMultiplayerRacePhase(
         FrameTrace.AddMessage($"race state: {RaceState}");
 
         // Send C2S_RaceLoaded once transport is connected
-        if (!_sentRaceLoaded && transport.State == ClientState.Connected)
+        if (!_sentRaceLoaded && _transport.State == ClientState.Connected)
         {
             _sentRaceLoaded = true;
-            transport.SendPacketToServer(new C2S_RaceLoaded { JoinToken = joinToken });
+            _transport.SendPacketToServer(new C2S_RaceLoaded { JoinToken = _joinToken });
         }
 
-        foreach (var packet in transport.GetNewPackets())
+        foreach (var packet in _transport.GetNewPackets())
         {
             switch (packet)
             {
@@ -95,8 +118,8 @@ public class InMultiplayerRacePhase(
                     break;
                 case S2C_PlayerState playerState:
                     Console.WriteLine($"[Client] Received player state for {playerState.PlayerId} at tick {playerState.State.Ticks}");
-                    Console.WriteLine(string.Join(", ", session.Players.Select(e => $"{e.Value.Name} ({e.Value.Id})")));
-                    var carIndex = session.Players
+                    Console.WriteLine(string.Join(", ", _session.Players.Select(e => $"{e.Value.Name} ({e.Value.Id})")));
+                    var carIndex = _session.Players
                         .First(e => e.Value.Id == playerState.PlayerId)
                         .Key;
                     var car = CarsInRace[carIndex];
@@ -115,7 +138,7 @@ public class InMultiplayerRacePhase(
             var myCar = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer);
             if (myCar is not null)
             {
-                transport.SendPacketToServer(new C2S_PlayerState()
+                _transport.SendPacketToServer(new C2S_PlayerState()
                 {
                     State = PlayerState.CreateFrom(_ticks++, myCar)
                 }, false);
