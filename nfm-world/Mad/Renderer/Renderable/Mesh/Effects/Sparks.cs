@@ -328,6 +328,8 @@ public class Sparks : IDisposable, IImmediateRenderElement
         Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
         Effects.Line.ChargedBlinkAmount?.SetValue(0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
+
+        // Spark segments are transient effects, not mesh outlines, so distant-outline settings should not hide them.
         LineEffectDistantOutlineSettings.Apply(DistantOutlineBehavior.AlwaysRender);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);

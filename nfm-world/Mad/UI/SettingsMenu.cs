@@ -71,6 +71,7 @@ public class SettingsMenu(WorldGame game)
     private static readonly string[] ShadowResolutions = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
+    // Keep this order aligned with DistantOutlineBehavior values; settings store the selected index while config stores names.
     private static readonly string[] DistantOutlineBehaviorNames = ["Distance Falloff", "Distance Falloff (With Cutoff)", "Classic Cutoff (NFM)", "Always Render", "Hide Outlines"];
     private int _distantOutlineBehavior = (int)DistantOutlineBehavior.ClassicCutoff;
     private bool _lowLatency = false;

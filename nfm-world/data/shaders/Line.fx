@@ -34,12 +34,17 @@ float ChargedBlinkAmount;
 
 float HalfThickness;
 float2 Resolution;
+// These mode values are sent as explicit 0/1 flags instead of a single enum
+// On the FNA/Metal shader path, branchless masks are more reliable than dynamic enum branches
 float DistantOutlineDistanceFalloffWithCutoff;
 float DistantOutlineClassicCutoff;
 float DistantOutlineHideOutlines;
 float DistantOutlineDistanceFalloff;
+// Classic cutoff is a fixed world-space depth 
 float OutlineClassicCutoffDistance;
+// Falloff start is the distance where perspective-like shrinking begins
 float OutlineFalloffStartDistance;
+// Falloff with cutoff hides lines once their computed screen-space width drops below this value.
 float OutlineMinimumVisibleThickness;
 
 struct VertexShaderInput
@@ -78,20 +83,31 @@ VertexShaderOutput MainVS(
     VertexShaderOutput output = (VertexShaderOutput)0;
     float thicknessScale = 1.0;
     float hideLine = 0.0;
+
+    // Distance behavior is based on the line's centroid not the endpoints
+    // Using camera-space depth matches how the line actually appears on screen better than radial distance
     float3 worldCentroid = mul(float4(input.Centroid, 1), world).xyz;
     float viewDepth = abs(mul(float4(worldCentroid, 1), View).z);
+
+    // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently,
+    // masks also let us collapse hidden quads without using pixel-shader discard
     float classicCutoffEnabled = saturate(sign(OutlineClassicCutoffDistance));
     float falloffEnabled = saturate(sign(OutlineFalloffStartDistance));
     float falloffMode = saturate(DistantOutlineDistanceFalloff + DistantOutlineDistanceFalloffWithCutoff);
     float cutoffMode = DistantOutlineClassicCutoff * classicCutoffEnabled;
     float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
     float minVisibleThickness = max(OutlineMinimumVisibleThickness, 0.0);
+
+    // Falloff uses the user's specified width up to FalloffStartDistance, then follows
+    // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
     float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
     float actualThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
     float safeHalfThickness = max(HalfThickness, 0.0001);
 
     thicknessScale = lerp(1.0, actualThickness / safeHalfThickness, falloffMode * falloffEnabled);
 
+    // DistanceFalloffWithCutoff is the only mode where user width affects the final cutoff distance:
+    // thicker lines take longer to shrink below the minimum visible thickness.
     float halfThicknessNotPositive = saturate(sign(0.0001 - HalfThickness));
     float halfThicknessBelowMin = saturate(sign(minVisibleThickness - HalfThickness));
     float actualThicknessBelowMin = saturate(sign(minVisibleThickness - actualThickness));

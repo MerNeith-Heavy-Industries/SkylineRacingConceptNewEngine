@@ -221,7 +221,8 @@ public class Mesh : IDisposable
             }
         }
 
-        // Skip at submission time so hidden outlines avoid render-queue batching and instance-buffer uploads.
+        // HideOutlines cpu side by simply not adding to the render queue
+        // Other distant line behaviors live in the shader because they depend on the line centroid inside a shared line batch.
         if (lighting?.IsCreateShadowMap != true &&
             World.DistantOutlineBehavior != DistantOutlineBehavior.HideOutlines &&
             LineMeshes != null)

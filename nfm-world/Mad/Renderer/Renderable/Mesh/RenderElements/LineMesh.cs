@@ -97,6 +97,9 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
         Effects.Line.ChargedBlinkAmount?.SetValue(_lineType is LineType.Charged && World.ChargedPolyBlink ? World.ChargeAmount : 0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
+
+        // Line meshes are batched, so exact cutoff/falloff happens in the shader per line centroid.
+        // Keep the distances explicit: classic cutoff is fixed, falloff start controls perspective-like shrinking.
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
@@ -221,6 +224,8 @@ internal static class LineEffectDistantOutlineSettings
 {
     public static void Apply(DistantOutlineBehavior behavior)
     {
+        // Send mode switches as independent numeric masks. Line.fx combines these with branchless math so
+        // the compiled effect behaves consistently across the FNA/Metal shader translation path.
         Effects.Line.DistantOutlineDistanceFalloffWithCutoff?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
         Effects.Line.DistantOutlineClassicCutoff?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
         Effects.Line.DistantOutlineHideOutlines?.SetValue(behavior == DistantOutlineBehavior.HideOutlines ? 1f : 0f);
