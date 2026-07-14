@@ -3,7 +3,7 @@ using NFMWorld.DriverInterface;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class FootballGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;

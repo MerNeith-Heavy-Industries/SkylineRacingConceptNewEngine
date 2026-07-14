@@ -6,11 +6,13 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData) : IGamemode
+public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData) : IGamemode
 {
+    protected readonly IGamemodeData GamemodeData = gamemodeData;
+
     public IReadOnlyList<PlayerParameters> players => gamemodeParameters.Players;
-    public UnlimitedArray<IInGameCar> carsInRace => gamemodeData.CarsInRace;
-    public BackendStage currentStage => gamemodeData.CurrentStage;
+    public UnlimitedArray<IInGameCar> carsInRace => GamemodeData.CarsInRace;
+    public BackendStage currentStage => GamemodeData.CurrentStage;
     public int NumPlayers => players.Count;
 
     /// <summary>Per-frame HUD state pushed to the CEF overlay.</summary>
@@ -89,7 +91,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
 
     protected virtual void ClientReset()
     {
-        gamemodeData.ClientCallbacks.ResetCheckpointGlow();
+        GamemodeData.ClientCallbacks.ResetCheckpointGlow();
             
         HudState = new HudStateData { Lap = 1, TotalLaps = currentStage.nlaps };
         IBackend.Backend.StopAllSounds();
@@ -113,7 +115,7 @@ public abstract class BaseGamemode(BaseGamemodeParameters gamemodeParameters, IG
             SfxLibrary.checkpoint?.Play();
         }
 
-        gamemodeData.ClientCallbacks.UpdateCheckpointGlow(
+        GamemodeData.ClientCallbacks.UpdateCheckpointGlow(
             car.CurrentCheckpoint,
             car.CurrentCheckpoint == currentStage.checkpoints.Count - 1 && car.CurrentLap == currentStage.nlaps - 1
         );

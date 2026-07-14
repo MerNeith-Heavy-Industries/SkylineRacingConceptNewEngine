@@ -6,12 +6,13 @@ using NFMWorld.Sfx;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Helpers;
+using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Util;
 
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, PvpConstraint constraint)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;
@@ -64,7 +65,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
             carsInRace[idx].CurrentLap = 0;
             if (player.IsBot)
             {
-                carsInRace[idx].Bot = new ElStupido(this, gamemodeData);
+                carsInRace[idx].Bot = new ElStupido(this, GamemodeData);
             }
         }
 
@@ -77,7 +78,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
     {
         ClientServer.RunIfOnClient(ClientGameTick);
 
-        if (gamemodeData.raceState != RaceState.InProgress)
+        if (GamemodeData.RaceState != RaceState.InProgress)
         {
             return;
         }
@@ -160,7 +161,7 @@ public class RaceGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeDa
         foreach (var inGameCar in carsInRace)
         {
             inGameCar.CarPhysics.Halted = true;
-            inGameCar.Drive(gamemodeData.CurrentStage);
+            inGameCar.Drive(GamemodeData.CurrentStage);
         }
 
         _finishTicks++;

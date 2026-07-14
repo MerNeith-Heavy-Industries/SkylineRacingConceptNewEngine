@@ -6,13 +6,18 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Gamemodes;
+using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Gameplay;
 
 public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IClientCallbacks
 {
-    protected IGamemode? gamemodeInstance { get; set; }
+    public readonly BaseGamemodeFactory Gamemode;
+    public readonly IReadOnlyList<PlayerParameters> Players;
+    protected IGamemode? GamemodeInstance;
+
     BackendStage IGamemodeData.CurrentStage => CurrentStage.Backend;
 
     /// <summary>
@@ -21,12 +26,14 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     /// </summary>
     protected HudBridge HudBridge { get; } = new();
 
-    protected BaseRacePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
+    protected BaseRacePhase(GraphicsDevice graphicsDevice, string stageName, BaseGamemodeFactory gamemode, IReadOnlyList<PlayerParameters> players) : base(graphicsDevice, stageName)
     {
+        Gamemode = gamemode;
+        Players = players;
         CefBridge = HudBridge;
     }
 
-    public RaceState raceState
+    public RaceState RaceState
     {
         get;
         set
@@ -65,7 +72,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         base.PushCefState();
 
-        if (gamemodeInstance is not BaseGamemode gm)
+        if (GamemodeInstance is not BaseGamemode gm)
             return;
 
         HudBridge.PushHudState(gm.HudState);
@@ -74,28 +81,28 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     public override void Enter()
     {
         base.Enter();
-        ForceReloadGamemode();
+        GamemodeInstance = ReloadGamemode();
+        GamemodeInstance.Enter();
     }
-
-    internal void ForceReloadGamemode()
+    
+    protected virtual IGamemode ReloadGamemode()
     {
-        gamemodeInstance = ReloadGamemode();
-        gamemodeInstance.Enter();
+        return CreateGameMode(new GamemodeParameters
+        {
+            Players = Players
+        });
     }
 
-    internal void OverrideGamemode(IGamemode gamemode)
+    protected IGamemode CreateGameMode(GamemodeParameters parameters)
     {
-        gamemodeInstance = gamemode;
-        gamemodeInstance.Enter();
+        return Gamemode.CreateGameMode(parameters, this);
     }
-
-    protected abstract IGamemode ReloadGamemode();
 
     public override void Exit()
     {
         base.Exit();
         GameSparker.CurrentMusic?.Unload();
-        gamemodeInstance?.Exit();
+        GamemodeInstance?.Exit();
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
@@ -113,7 +120,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         UpdateControlState();
 
         // Handle non-movement keys
-        if (gamemodeInstance != null)
+        if (GamemodeInstance != null)
         {
             var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
 
@@ -166,7 +173,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
             }
         }
 
-        gamemodeInstance?.KeyPressed(key, in keys);
+        GamemodeInstance?.KeyPressed(key, in keys);
     }
 
     public override void KeyTyped(char character, bool imguiWantsKeyboard)
@@ -175,14 +182,14 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
 
         if (imguiWantsKeyboard) return;
         
-        gamemodeInstance?.KeyTyped(character);
+        GamemodeInstance?.KeyTyped(character);
     }
 
     private void UpdateControlState()
     {
         var bindings = SettingsMenu.Bindings;
 
-        if (gamemodeInstance != null)
+        if (GamemodeInstance != null)
         {
             var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
 
@@ -226,7 +233,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         UpdateControlState();
 
         // handle special cases
-        if (gamemodeInstance != null)
+        if (GamemodeInstance != null)
         {
             var control = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer)?.Control;
 
@@ -245,7 +252,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
             }
         }
 
-        gamemodeInstance?.KeyReleased(key, keys);
+        GamemodeInstance?.KeyReleased(key, keys);
     }
 
     public override void MousePressed(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey,
@@ -253,7 +260,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
         
-        gamemodeInstance?.MousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+        GamemodeInstance?.MousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey,
@@ -261,7 +268,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         base.MouseReleased(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
         
-        gamemodeInstance?.MouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
+        GamemodeInstance?.MouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons,
@@ -269,14 +276,14 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
         
-        gamemodeInstance?.MouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
+        GamemodeInstance?.MouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
         
-        gamemodeInstance?.MouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
+        GamemodeInstance?.MouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void WindowSizeChanged(int width, int height)
@@ -301,7 +308,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
             G.DrawString($"Ticks executed last frame: {WorldGame.LastTickCount}", 100, 160);
         }
         
-        gamemodeInstance?.Render();
+        GamemodeInstance?.Render();
     }
 
     private static void RenderMessages()
@@ -318,9 +325,12 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
 
     public override void GameTick()
     {
-        gamemodeInstance?.GameTick();
+        if (RaceState is RaceState.InProgress or RaceState.Finished)
+        {
+            GamemodeInstance?.GameTick();
+        }
 
-        if (gamemodeInstance != null)
+        if (GamemodeInstance != null)
         {
             var car = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer);
             if (car != null)

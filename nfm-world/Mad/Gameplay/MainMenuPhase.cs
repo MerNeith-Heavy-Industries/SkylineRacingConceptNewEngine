@@ -5,6 +5,7 @@
 using NFMWorld.UI.Cef;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Util;
 
@@ -18,7 +19,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private readonly MainMenuBridge _bridge = new();
 
-    public MainMenuPhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
+    public MainMenuPhase(GraphicsDevice graphicsDevice, string stageName) : base(graphicsDevice, stageName)
     {
         CefBridge = _bridge;
 
@@ -80,9 +81,24 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnFreePlayClicked()
     {
-        var inRace = new InRacePhase(GraphicsDevice, "nfmm/radicalone");
-        
-        inRace.LoadStage("nfm2/15_dwm");
+        var inRace = new InRacePhase(GraphicsDevice, "nfm2/9_majestic", new PvpGamemodeFactory(PvpConstraint.Both), [
+            new PlayerParameters
+            {
+                CarName = "nfmm/radicalone",
+                IsClientPlayer = true,
+                PlayerName = "MadPlayer",
+                Color = default,
+                IsBot = false
+            },
+            new PlayerParameters
+            {
+                CarName = "nfmm/audir8",
+                IsClientPlayer = true,
+                PlayerName = "ElStupido",
+                Color = default,
+                IsBot = true
+            }
+        ]);
         GameSparker.SetPhase(inRace);
 
         Logging.Info("Game started!");
@@ -106,9 +122,16 @@ public class MainMenuPhase : BaseStageRenderingPhase
             GaragePhase gp = new(GraphicsDevice, stageName);
             gp.CarSelected += (sender, car) =>
             {
-                var inRace = new InRacePhase(GraphicsDevice, car.FileName);
-                inRace.gamemode = GameModes.TimeTrial;
-                inRace.LoadStage(stageName);
+                var inRace = new InRacePhase(GraphicsDevice, stageName, new TimeTrialGamemodeFactory(), [
+                    new PlayerParameters()
+                    {
+                        CarName = car.FileName,
+                        Color = default,
+                        IsBot = false,
+                        IsClientPlayer = true,
+                        PlayerName = "MadPlayer"
+                    }
+                ]);
                 GameSparker.SetPhase(inRace);
             };
 

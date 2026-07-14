@@ -362,7 +362,7 @@ public class LobbyPhase(GraphicsDevice graphicsDevice, IMultiplayerClientTranspo
             {
                 transport.SendPacketToServer(new C2S_CreateSession()
                 {
-                    GameMode = GameModes.Sandbox,
+                    GameMode = DefaultGamemodes.Racing,
                     StageName = stages[_selectedStage].Split("##")[0],
                     MaxPlayers = (byte)_maxPlayers
                 });

@@ -9,7 +9,7 @@ using NFMWorldLibrary.Files;
 namespace NFMWorld.Gameplay.Gamemodes;
 
 public class TimeTrialPreviewGamemode(
-    BaseGamemodeParameters gamemodeParameters,
+    GamemodeParameters gamemodeParameters,
     IGamemodeData gamemodeData,
     SavedTimeTrial timeTrial)
     : TimeTrialGamemode(gamemodeParameters, gamemodeData)

@@ -9,7 +9,7 @@ using NFMWorldLibrary.Helpers;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class TimeTrialGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+public class TimeTrialGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     protected const int PlayerCarIndex = 0;
