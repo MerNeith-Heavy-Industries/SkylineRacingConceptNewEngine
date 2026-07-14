@@ -2,23 +2,25 @@
 
 ## Overview
 
-Four services replace the old monolithic `GameOrchestrator`:
+Three services: Lobby, Game Master (dumb relay for v1), and Worker (replay validation for v2).
 
 ```
-┌──────────┐  WebSocket        ┌──────────┐  HMAC HTTP      ┌──────────┐  SharedMemory    ┌──────────┐
-│  Client  │ ←───────────────→ │  Lobby   │ ←─────────────→ │  Game    │ ←────────────→  │  Worker  │
-│          │                   │          │                 │  Master  │                 │          │
-└────┬─────┘                   └──────────┘                 └────┬─────┘                 └──────────┘
-     │                        matchmaking,                   │  ENet UDP               RaceGamemode
-     │                        chat, sessions,                │  forward inputs         63 TPS loop
-     │                        race start                     │  broadcast state
+┌──────────┐  WebSocket        ┌──────────┐  HMAC HTTP      ┌──────────┐
+│  Client  │ ←───────────────→ │  Lobby   │ ←─────────────→ │  Game    │
+│          │                   │          │                 │  Master  │
+└────┬─────┘                   └──────────┘                 └────┬─────┘
+     │                        matchmaking,                   │  ENet UDP
+     │                        chat, sessions,                │  relay
+     │                        race start                     │
      │                                                       │
      └──────── ENet UDP (in-game, to assigned GM) ───────────┘
-              C2S_PlayerState, C2S_RaceLoaded
-              S2C_PlayerState, S2C_RaceCanStart
+              C2S_PlayerState → relayed direct as S2C_PlayerState
+              C2S_RaceLoaded, C2S_GameFinished
+              S2C_RaceCanStart, S2C_PlayerState, S2C_GameFinished
 ```
 
----
+v1: Game Master is a dumb UDP relay. Clients are authoritative — state is forwarded directly.
+v2: Worker project handles replay-based cheat validation (code in repo, not active).
 
 ## Service Descriptions
 
@@ -27,8 +29,8 @@ Four services replace the old monolithic `GameOrchestrator`:
 
 | Protocol | Port | Purpose |
 |---|---|---|
-| WebSocket | `LOBBY_PORT` (default 7000) | Client connections |
-| HTTP | `LOBBY_HTTP_ENDPOINT` (default 7001) | Receives race results from Game Masters |
+| WebSocket | `LOBBY_PORT` (default 7000) | Client connections (System.Net.HttpListener) |
+| HTTP | `LOBBY_HTTP_ENDPOINT` (default 7001) | Race results from Game Masters |
 
 **Key classes:**
 - `GameOrchestrator` — coordinator delegating to managers
@@ -40,29 +42,32 @@ Four services replace the old monolithic `GameOrchestrator`:
 - `GameMasterHttpClient` — HMAC-signed HTTP to Game Masters
 
 ### Game Master (`NFMWorld.Server.Game`)
-**Role:** Race orchestration and packet routing between clients and Workers.
+**Role:** Race session relay — validates join tokens, relays packets between clients.
 
 | Protocol | Port | Purpose |
 |---|---|---|
-| ENet UDP | `GM_GAME_PORT` (default 7000) | Client in-game connections |
-| HTTP | `GM_HTTP_ENDPOINT` (default 7002) | Lobby API (`/create-race`) |
+| ENet UDP | `GM_GAME_PORT` (default 7002) | Client in-game connections |
+| HTTP | `GM_HTTP_ENDPOINT` (default 7003) | Lobby API (`/create-race`) |
 
 **Key classes:**
-- `RaceOrchestrator` — validates join tokens, dispatches packets
-- `WorkerManager` — spawns Worker processes, forwards inputs immediately via RPC, broadcasts state
-
-The Game Master does **not** run a tick loop. It forwards each `C2S_PlayerState` immediately to the Worker via SharedMemory RPC. The Worker drives its own 63 TPS simulation loop and sends state back to the Game Master when ready.
+- `RaceOrchestrator` — validates join tokens, relays `C2S_PlayerState` → `S2C_PlayerState` to other clients, handles `C2S_GameFinished` (first-come first-served)
+- `WorkerManager` — kept in repo for v2 replay validation; not used in active v1 path
 
 ### Worker (`NFMWorld.Server.Game.Worker`)
-**Role:** Per-race game simulation. One OS process per race.
+**Role:** Per-race replay validation (v2). Not active in v1 relay path.
 
-**Key classes:**
-- `RaceWorker` — wraps `RaceGamemode`, accumulates inputs, runs 63 TPS loop
-- `Program.cs` — CLI entry point, RPC handler, tick loop
+Code kept in repo for future use: `RaceWorker` wraps `RaceGamemode` for headless simulation. The Worker project and `WorkerManager` are compiled but not instantiated by the v1 relay.
 
-The Worker owns the simulation loop:
-1. RPC handler thread: accumulates player inputs as they arrive
-2. Main thread (63 TPS): snap accumulated inputs → `CarFrame.ApplyToCar` (full trust v1) → `GameTick()` → send `GameStateSnapshot` back to Game Master
+## Player Identity
+
+Players are identified by two IDs:
+
+| ID | Type | Scope | Assigned by |
+|---|---|---|---|
+| Client index | `uint` | Transport-level (ENet/WebSocket connection) | Transport |
+| Player ID | `Guid` | Application-level (lobby, packets, sessions) | Lobby (`PlayerRegistry`) |
+
+The `PlayerRegistry` maps between them. All packets use `Guid` player IDs for addressing. `S2C_PlayerState.PlayerId` is a `Guid`. `S2C_LobbyState.PlayerInfo` carries both the transport index and the GUID.
 
 ---
 
@@ -70,7 +75,8 @@ The Worker owns the simulation loop:
 
 ### Client ↔ Lobby (WebSocket)
 
-The `WebSocketMultiplayerClientTransport` connects to `ws://host:port/game`. All packets use the shared `MemoryPack` + opcode wire format.
+`WebSocketMultiplayerClientTransport` (System.Net.WebSockets.ClientWebSocket) connects to `ws://host:port/game`.
+Server side: `WebSocketMultiplayerServerTransport` (System.Net.HttpListener + HttpListenerWebSocketContext).
 
 | Packet | Opcode | Direction | Purpose |
 |---|---|---|---|
@@ -108,25 +114,11 @@ Authenticated with HMAC-SHA256. See [HMAC Authentication](#hmac-authentication).
 | `POST /create-race` | Lobby → GM | `Lobby2RaceServer_CreateRace` (MemoryPack) | `Lobby2RaceServer_CreateRaceResponse` (join tokens) |
 | `POST /race-ended` | GM → Lobby | `RaceServer2Lobby_RaceResults` (MemoryPack) | 200 OK |
 
-### Game Master ↔ Worker (SharedMemory RPC)
+### Game Master ↔ Worker (SharedMemory RPC) — v2 only
 
-Uses the `SharedMemory` NuGet package (`RpcBuffer`) for lock-free, bidirectional communication. The Game Master opens the Controller side first; the Worker opens the Worker side.
+Not active in v1 relay. Uses `SharedMemory` NuGet (`RpcBuffer`) for lock-free Controller↔Worker communication. `RpcBridge` wraps it with typed MemoryPack messages.
 
-| RPC | Direction | Payload | Response |
-|---|---|---|---|
-| `PlayerInputs` | Controller → Worker | `PlayerInputBatch` (single player) | Empty ack |
-| `GameState` | Worker → Controller | `GameStateSnapshot` | Empty ack |
-| `Shutdown` | Controller → Worker | None | Shutdown ack |
-
-**Message types** are defined in `NFMWorld.Server.SharedMemory/RpcMessage.cs` and `RpcMessages.cs`.
-
-### Shared wire format
-
-All binary protocols (ENet, WebSocket, RPC) use:
-
-```
-[1 byte opcode] [MemoryPack body]
-```
+Types in `NFMWorld.Server.SharedMemory/`: `RpcBridge`, `RpcMessage`, `PlayerInputBatch`, `GameStateSnapshot`.
 
 ---
 
@@ -204,8 +196,8 @@ GAME_MASTER_DOMAINS=localhost:7002+7003,gm1.nfmw.example.com
 8. Client creates new ENet UDP transport → Game Master
 9. Client sends `C2S_RaceLoaded` with join token
 10. When all loaded → Game Master sends `S2C_RaceCanStart`
-11. During race: client sends `C2S_PlayerState` at 63 TPS → Game Master → Worker → simulation → state broadcast
-12. Race ends: Worker detects completion → Game Master broadcasts `S2C_GameFinished`
+11. During race: client sends `C2S_PlayerState` at 63 TPS → Game Master relays directly as `S2C_PlayerState` to other clients
+12. Race ends: first client to send `C2S_GameFinished` wins (v1 first-come first-served) → Game Master broadcasts `S2C_GameFinished`
 13. Client transitions back to LobbyPhase (WebSocket transport kept alive)
 
 ---
@@ -228,10 +220,9 @@ Save the output — you'll need `HMAC_KEY_ID`, `HMAC_SECRET_KEY`, and `GM_HMAC_K
 ### 2. Start the Game Master
 
 ```powershell
-# PowerShell
 $env:GM_HMAC_KEYS = "primary=LC7aXjNZ5mcB2AJxwXZ+OZjAKyEaCjV6pTXIpRAmrjY="
-$env:GM_HTTP_ENDPOINT = "http://localhost:7002/"
-$env:GM_GAME_PORT = "7000"
+$env:GM_HTTP_ENDPOINT = "http://localhost:7003/"
+$env:GM_GAME_PORT = "7002"
 
 dotnet run --project NFMWorld.Server.Game
 ```
@@ -276,14 +267,13 @@ connect localhost 7000
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `GM_GAME_PORT` | `7000` | ENet UDP port for players |
-| `GM_HTTP_ENDPOINT` | `http://localhost:7002/` | HTTP endpoint for Lobby API |
+| `GM_GAME_PORT` | `7002` | ENet UDP port for players |
+| `GM_HTTP_ENDPOINT` | `http://localhost:7003/` | HTTP endpoint for Lobby API |
 | `GM_HMAC_KEYS` | *(required)* | `keyId=base64secret,...` pairs |
 | `WORKER_BINARY_PATH` | `dotnet` | Path to Worker binary, or `dotnet` for dev |
 
-#### Worker (no env vars — receives config via CLI args)
+#### Worker (v2 only — receives config via CLI args)
 
-CLI args passed by Game Master:
 ```
 --shm-name nfmw-race-{guid} --stage nfmm/trackname --gamemode 0 --players {base64}
 ```
@@ -297,16 +287,48 @@ NFMWorld.Server.Lobby/           Lobby server
   GameOrchestrator.cs             Coordinator
   SessionManager.cs               Session CRUD + timeouts
   ChatManager.cs                  Chat messages
-  PlayerRegistry.cs               Player identity/connection tracking
+  PlayerRegistry.cs               Player identity (Guid) + transport index mapping
   LobbyStateBroadcaster.cs        Periodic lobby state snapshots
   GameMasterRegistry.cs           GM discovery (SRV + dev mode)
   GameMasterHttpClient.cs         HMAC-signed HTTP to GMs
   Program.cs                      Entry point
 
-NFMWorld.Server.Game/            Game Master (Controller)
-  RaceOrchestrator.cs             Packet handling, join token validation
-  WorkerManager.cs                Worker process lifecycle, input forwarding
-  Program.cs                      Entry point + HTTP server
+NFMWorld.Server.Game/            Game Master (dumb relay v1)
+  RaceOrchestrator.cs             Join token validation, direct packet relay
+  WorkerManager.cs                (v2 only — Worker process lifecycle)
+  Program.cs                      Entry point + HttpListener
+
+NFMWorld.Server.Game.Worker/     Worker (v2 replay validation)
+  RaceWorker.cs                   Simulation loop wrapping RaceGamemode
+  Program.cs                      Entry point, RPC handler, 63 TPS loop
+
+NFMWorld.Server.SharedMemory/    Shared RPC types (v2)
+  RpcBridge.cs                    Wrapper around SharedMemory.RpcBuffer
+  RpcMessage.cs                   Message envelope + opcodes
+  RpcMessages.cs                  PlayerInputBatch, GameStateSnapshot
+
+NFMWorld.Library/                Shared types
+  Mad/Multiplayer/HmacAuth.cs     HMAC signing + verification
+  Mad/Multiplayer/Packets/        All packet definitions (C2S, S2C)
+  Mad/Multiplayer/HttpMessages/   HTTP message types
+
+NFMWorld.Multiplayer.Base/      Transport layer
+  WebSockets/                     System.Net WebSocket server + client
+  ENet/                           ENet UDP transport
+  Steam/                          Steamworks transport
+NFMWorld.GenerateHmacKey/       HMAC key generation tool
+```
+
+---
+
+## Known Limitations & Future Work
+
+- **v1 relay only**: Game Master is a dumb UDP relay. Clients are fully trusted. Cheat protection is v2.
+- **v2 replay validation**: Worker infrastructure (`WorkerManager`, `RaceWorker`, `SharedMemory`) is built and ready for replay-based cheat validation.
+- **SRV records**: Currently uses A/AAAA lookup. Planned: `DnsClient` NuGet for full SRV support.
+- **Login/Archive**: Out of scope. `C2S_PlayerIdentity` is accepted without validation.
+- **Race results to Lobby**: `POST /race-ended` endpoint exists but Game Master doesn't send results yet.
+- **Players addressed by Guid**: Application-level player IDs are Guids, mapped from transport-level `uint` indices by `PlayerRegistry`.
 
 NFMWorld.Server.Game.Worker/     Worker (per-race simulation)
   RaceWorker.cs                   Simulation loop wrapping RaceGamemode
