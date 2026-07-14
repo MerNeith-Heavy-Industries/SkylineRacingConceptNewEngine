@@ -37,6 +37,12 @@ public abstract class BaseStageRenderingPhase : BasePhase
         _spriteBatch = new SpriteBatch(graphicsDevice);
         GraphicsDevice = graphicsDevice;
         StageName = stageName;
+
+        // Stage loading happens once at construction time, not on every Enter().
+        // This prevents phases from resetting when an overlay (e.g., Settings) is
+        // pushed and popped over them.
+        if (StageName != null)
+            LoadStage(StageName);
     }
 
     public override void Enter()
@@ -46,13 +52,16 @@ public abstract class BaseStageRenderingPhase : BasePhase
         Camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
         Camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
 
-        if (StageName != null)
-            LoadStage(StageName);
+        // Resume stage music that was paused by Exit().
+        if (_stageMusic != null)
+            GameSparker.CurrentMusic = _stageMusic;
     }
 
     public override void Exit()
     {
         base.Exit();
+        // Pause music while this phase is not displayed (buried in the stack).
+        // Music is resumed in Enter() and unloaded in Dispose().
         GameSparker.CurrentMusic = null;
     }
 

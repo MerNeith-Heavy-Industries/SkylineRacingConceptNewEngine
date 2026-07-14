@@ -31,6 +31,11 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         Gamemode = gamemode;
         Players = players;
         CefBridge = HudBridge;
+
+        // Create the gamemode once at construction time. Enter/Exit only handle
+        // display-level activation/deactivation; the gamemode survives across
+        // push/pop cycles (e.g., opening Settings over a race).
+        GamemodeInstance = ReloadGamemode();
     }
 
     private bool _hasAutoPopped;
@@ -98,9 +103,10 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
 
     public override void Enter()
     {
+        // Gamemode is created in the constructor and survives across push/pop.
+        // Enter/Exit only handle display activation/deactivation (CEF bridge,
+        // camera, music) — no gamemode or stage reload.
         base.Enter();
-        GamemodeInstance = ReloadGamemode();
-        GamemodeInstance.Enter();
     }
     
     protected virtual IGamemode ReloadGamemode()
@@ -118,9 +124,21 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
 
     public override void Exit()
     {
+        // Music pause is handled by BaseStageRenderingPhase.Exit().
+        // Gamemode teardown (unload, exit cleanup) happens in Dispose().
         base.Exit();
-        GameSparker.CurrentMusic?.Unload();
-        GamemodeInstance?.Exit();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            GameSparker.CurrentMusic?.Unload();
+            GamemodeInstance?.Exit();
+            GamemodeInstance = null;
+        }
+
+        base.Dispose(disposing);
     }
 
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
