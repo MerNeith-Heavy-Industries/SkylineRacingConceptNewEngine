@@ -98,8 +98,8 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.ChargedBlinkAmount?.SetValue(_lineType is LineType.Charged && World.ChargedPolyBlink ? World.ChargeAmount : 0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
-        Effects.Line.OutlineCullDistance?.SetValue(World.EffectiveOutlineCullDistance);
-        Effects.Line.OutlineFalloffReferenceDistance?.SetValue(World.OutlineFalloffReferenceDistance);
+        Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
+        Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
         Effects.Line.OutlineMinimumVisibleThickness?.SetValue(World.OutlineMinimumVisibleThickness);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);

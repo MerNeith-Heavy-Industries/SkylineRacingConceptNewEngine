@@ -12,13 +12,9 @@ public enum DistantOutlineBehavior
 public static partial class World
 {
     public static DistantOutlineBehavior DistantOutlineBehavior = DistantOutlineBehavior.ClassicCutoff;
-    public static float OutlineCullDistance = 3000f;
-    public static float OutlineMinimumVisibleThickness = 0.1f;
-    public const float OutlineCullDistanceReferenceThickness = 0.5f;
+    
+    public static float OutlineFalloffStartDistance = 900f; //default camera is 800 behind and 250 above the car (838 total) so we shouldn't start the falloff too early
+    public static float OutlineClassicCutoffDistance = 3000f; //distance from the original game where lines would start to disappear
+    public static float OutlineMinimumVisibleThickness = 0.1f; //minimum thickness at which outlines are still rendered
 
-    public static float EffectiveOutlineCullDistance =>
-        OutlineCullDistance * (OutlineThickness < 0f ? 0f : OutlineThickness) / OutlineCullDistanceReferenceThickness;
-
-    public static float OutlineFalloffReferenceDistance =>
-        OutlineCullDistance * OutlineMinimumVisibleThickness / OutlineCullDistanceReferenceThickness;
 }

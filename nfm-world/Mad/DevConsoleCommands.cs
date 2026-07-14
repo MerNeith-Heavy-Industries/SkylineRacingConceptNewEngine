@@ -227,8 +227,8 @@ public static class DevConsoleCommands
     {
         Logging.Info(
             $"Distant outline mode={World.DistantOutlineBehavior} value={(int)World.DistantOutlineBehavior} " +
-            $"half={World.OutlineThickness:0.###} cutoff={World.EffectiveOutlineCullDistance:0.###} " +
-            $"falloffRef={World.OutlineFalloffReferenceDistance:0.###} min={World.OutlineMinimumVisibleThickness:0.###}");
+            $"half={World.OutlineThickness:0.###} classicCutoff={World.OutlineClassicCutoffDistance:0.###} " +
+            $"falloffStart={World.OutlineFalloffStartDistance:0.###} min={World.OutlineMinimumVisibleThickness:0.###}");
     }
 
     private static bool TryParseOutlineMode(string value, out DistantOutlineBehavior behavior)

@@ -38,8 +38,8 @@ float DistantOutlineDistanceFalloffWithCutoff;
 float DistantOutlineClassicCutoff;
 float DistantOutlineHideOutlines;
 float DistantOutlineDistanceFalloff;
-float OutlineCullDistance;
-float OutlineFalloffReferenceDistance;
+float OutlineClassicCutoffDistance;
+float OutlineFalloffStartDistance;
 float OutlineMinimumVisibleThickness;
 
 struct VertexShaderInput
@@ -80,16 +80,17 @@ VertexShaderOutput MainVS(
     float hideLine = 0.0;
     float3 worldCentroid = mul(float4(input.Centroid, 1), world).xyz;
     float viewDepth = abs(mul(float4(worldCentroid, 1), View).z);
-    float outlineDistanceEnabled = saturate(sign(OutlineCullDistance));
+    float classicCutoffEnabled = saturate(sign(OutlineClassicCutoffDistance));
+    float falloffEnabled = saturate(sign(OutlineFalloffStartDistance));
     float falloffMode = saturate(DistantOutlineDistanceFalloff + DistantOutlineDistanceFalloffWithCutoff);
-    float cutoffMode = DistantOutlineClassicCutoff * outlineDistanceEnabled;
-    float cullPastDistance = saturate(sign(viewDepth - OutlineCullDistance));
+    float cutoffMode = DistantOutlineClassicCutoff * classicCutoffEnabled;
+    float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
     float minVisibleThickness = max(OutlineMinimumVisibleThickness, 0.0);
-    float referenceDepth = max(OutlineFalloffReferenceDistance, 0.0001);
+    float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
     float actualThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
     float safeHalfThickness = max(HalfThickness, 0.0001);
 
-    thicknessScale = lerp(1.0, actualThickness / safeHalfThickness, falloffMode * outlineDistanceEnabled);
+    thicknessScale = lerp(1.0, actualThickness / safeHalfThickness, falloffMode * falloffEnabled);
 
     float halfThicknessNotPositive = saturate(sign(0.0001 - HalfThickness));
     float halfThicknessBelowMin = saturate(sign(minVisibleThickness - HalfThickness));
