@@ -30,19 +30,13 @@ public abstract class BaseStageRenderingPhase : BasePhase
 
     private IRadicalMusic? _stageMusic;
     public string? StageName;
-
-    protected BaseStageRenderingPhase(GraphicsDevice graphicsDevice, string stageName)
+    
+    // please don't pass null except for stage select
+    protected BaseStageRenderingPhase(GraphicsDevice graphicsDevice, string? stageName = null)
     {
         _spriteBatch = new SpriteBatch(graphicsDevice);
         GraphicsDevice = graphicsDevice;
         StageName = stageName;
-    }
-
-    // used by stage select
-    protected BaseStageRenderingPhase(GraphicsDevice graphicsDevice)
-    {
-        _spriteBatch = new SpriteBatch(graphicsDevice);
-        GraphicsDevice = graphicsDevice;
     }
 
     public override void Enter()

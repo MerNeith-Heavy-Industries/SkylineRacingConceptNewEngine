@@ -33,13 +33,31 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         CefBridge = HudBridge;
     }
 
+    private bool _hasAutoPopped;
+
     public RaceState RaceState
     {
         get;
         set
         {
+            // Guard against re-entrant updates after auto-pop
+            if (_hasAutoPopped)
+            {
+                field = value;
+                return;
+            }
+
             field = value;
             RaceStateChanged?.Invoke(this, value);
+
+            // Auto-navigate back to the previous phase when the race finishes or fails.
+            // This centralizes return-to-caller logic — callers no longer need to wire
+            // RaceStateChanged for navigation.
+            if (value is RaceState.Finished or RaceState.FailedToStart)
+            {
+                _hasAutoPopped = true;
+                GameSparker.PopPhase();
+            }
         }
     } = RaceState.InProgress;
 

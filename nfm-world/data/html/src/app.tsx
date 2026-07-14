@@ -5,6 +5,7 @@ import { MainMenu } from "./pages/MainMenu";
 import { Garage } from "./pages/Garage";
 import { RaceHud } from "./pages/RaceHud";
 import { TestPage } from "./pages/Test";
+import { Settings } from "./pages/Settings";
 import { onNfmwEvent } from "./shared/bridge";
 
 // Wire goober to Preact's h function — must run before any styled() calls.
@@ -20,6 +21,7 @@ const routes: Record<string, FunctionComponent> = {
   "#/garage": Garage,
   "#/race": RaceHud,
   "#/test": TestPage,
+  "#/settings": Settings,
   '#/empty': () => <div style={{ width: "100%", height: "100%" }}></div>
 };
 

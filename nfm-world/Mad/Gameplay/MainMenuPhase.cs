@@ -99,7 +99,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
                 IsBot = true
             }
         ]);
-        GameSparker.SetPhase(inRace);
+        GameSparker.PushPhase(inRace);
 
         Logging.Info("Game started!");
     }
@@ -132,18 +132,18 @@ public class MainMenuPhase : BaseStageRenderingPhase
                         PlayerName = "MadPlayer"
                     }
                 ]);
-                GameSparker.SetPhase(inRace);
+                GameSparker.PushPhase(inRace);
             };
 
             gp.CarSelectionCancelled += (sender, _) =>
             {
-                GameSparker.SetPhase(this);
+                GameSparker.PopPhase();
             };
 
-            GameSparker.SetPhase(gp);
+            GameSparker.PushPhase(gp);
         };
 
-        GameSparker.SetPhase(ssp);
+        GameSparker.PushPhase(ssp);
     }
 
     private void OnGarageClicked()
@@ -152,15 +152,15 @@ public class MainMenuPhase : BaseStageRenderingPhase
         
         gp.CarSelected += (sender, c) =>
         {
-            GameSparker.SetPhase(this);
+            GameSparker.PopPhase();
         };
 
         gp.CarSelectionCancelled += (sender, _) =>
         {
-            GameSparker.SetPhase(this);
+            GameSparker.PopPhase();
         };
 
-        GameSparker.SetPhase(gp);
+        GameSparker.PushPhase(gp);
     }
 
 
@@ -176,7 +176,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnSettingsClicked()
     {
-        GameSparker.SettingsMenu.Open();
+        GameSparker.PushPhase(new SettingsPhase(GraphicsDevice, StageName!));
     }
 
     private void OnClickUnavailable()
@@ -204,15 +204,6 @@ public class MainMenuPhase : BaseStageRenderingPhase
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
         base.KeyPressed(key, imguiWantsKeyboard, keys);
-
-        if (imguiWantsKeyboard) return;
-
-        // Handle key capture for settings menu
-        if (GameSparker.SettingsMenu.IsOpen && GameSparker.SettingsMenu.IsCapturingKey())
-        {
-            GameSparker.SettingsMenu.HandleKeyCapture(key);
-        }
-        return;
     }
 
     public override void RenderImgui()

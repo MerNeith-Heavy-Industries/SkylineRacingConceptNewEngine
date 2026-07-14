@@ -5,6 +5,7 @@ using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
+using NFMWorld.UI.Cef;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
@@ -14,7 +15,8 @@ using NFMWorld.Sentry;
 namespace NFMWorld.UI;
 
 /// <summary>
-/// Settings menu with tabs, similar to Half-Life 1 style
+/// Settings menu with tabs, similar to Half-Life 1 style.
+/// Also serves as the static settings backend used by SettingsBridge for CEF-based settings.
 /// </summary>
 public class SettingsMenu(WorldGame game)
 {
@@ -50,47 +52,51 @@ public class SettingsMenu(WorldGame game)
     private string? _capturingAction = null;
     private int _selectedBindingIndex = -1;
 
-    // Video settings
-    private static readonly string[] Renderers = false switch
+    // Video settings (static — shared between ImGui and CEF bridge)
+    public static readonly string[] Renderers = false switch
     {
         _ when RuntimeInformation.IsOSPlatform(OSPlatform.OSX) => ["Auto", "Metal", "OpenGL 2.1", "OpenGL 4.6", "OpenGL ES 3.0"],
         _ when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => ["Auto", "D3D11", "D3D12", "Vulkan", "OpenGL 2.1", "OpenGL 4.6", "Metal", "OpenGL ES 3.0"],
         _ => ["Auto", "Vulkan", "OpenGL 2.1", "OpenGL 4.6", "OpenGL ES 3.0"]
     };
-    private int _selectedRenderer = 0;
-    private static readonly string[] Resolutions = GetSupportedResolutions();
-    private int _selectedResolution = Resolutions.FindIndex(e => e == "1280 x 720");
-    private static readonly string[] DisplayModes = ["Fullscreen", "Windowed", "Borderless"];
-    private int _selectedDisplayMode = 1;
-    private bool _vsync = true;
-    private static readonly string[] AntialiasModes = ["Off", "MSAA 1x", "MSAA 2x", "MSAA 4x", "MSAA 8x"]; // must be powers of 2
-    private int _antialias = 4; // 8x
-    private int _shadowCascadeLevel = 3;
-    private static readonly string[] ShadowCascadeLevels = ["Off", "Close", "Far", "Further"];
-    private int _shadowResolution = 2; // 2048x
-    private static readonly string[] ShadowResolutions = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
-    private int _fpsLimit = 63;
-    private float _lineWidth = 1;
-    private bool _lowLatency = false;
-    private static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
+    private static int _selectedRenderer = 0;
+    private static string[] _resolutions = GetSupportedResolutions();
+    public static string[] Resolutions => _resolutions;
+    private static int _selectedResolution = Array.FindIndex(_resolutions, e => e == "1280 x 720");
+    public static readonly string[] DisplayModes = ["Fullscreen", "Windowed", "Borderless"];
+    private static int _selectedDisplayMode = 1;
+    private static bool _vsync = true;
+    public static readonly string[] AntialiasModes = ["Off", "MSAA 1x", "MSAA 2x", "MSAA 4x", "MSAA 8x"]; // must be powers of 2
+    private static int _antialias = 4; // 8x
+    private static int _shadowCascadeLevel = 3;
+    public static readonly string[] ShadowCascadeLevelNames = ["Off", "Close", "Far", "Further"];
+    private static int _shadowResolution = 2; // 2048x
+    public static readonly string[] ShadowResolutionNames = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
+    private static int _fpsLimit = 63;
+    private static float _lineWidth = 1;
+    private static bool _lowLatency = false;
+    public static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
     private static readonly float[] RenderDistances = [22500, 45000, 90000, 180000, 360000, int.MaxValue];
-    private int _renderDistance = 5; // default to max distance
+    private static int _renderDistance = 5; // default to max distance
 
-    // Audio settings
-    private float _masterVolume = 1.0f;
-    private float _musicVolume = 0.8f;
-    private float _effectsVolume = 0.9f;
-    private bool _muteAll = false;
-    private bool _remasteredMusic = false;
+    // Audio settings (static)
+    private static float _masterVolume = 1.0f;
+    private static float _musicVolume = 0.8f;
+    private static float _effectsVolume = 0.9f;
+    private static bool _muteAll = false;
+    private static bool _remasteredMusic = false;
 
-    // Game settings (Camera)
-    private float _fov = 90.0f;
-    private int _followY = 0;
-    private int _followZ = 0;
-    private bool _smoothFov;
+    // Game settings — Camera (static)
+    private static float _fov = 90.0f;
+    private static int _followY = 0;
+    private static int _followZ = 0;
+    private static bool _smoothFov;
 
     // Keyboard settings
     private string _settingMessage = "";
+
+    /// <summary>Fired when the resolutions list changes (window resize, fullscreen toggle).</summary>
+    public static event Action? ResolutionsChanged;
 
     public bool IsOpen => _isOpen;
 
@@ -115,6 +121,36 @@ public class SettingsMenu(WorldGame game)
             resolutions.Add($"{displayMode.Width} x {displayMode.Height}");
         }
         return resolutions.ToArray();
+    }
+
+    /// <summary>
+    /// Register a new resolution and select it. Called automatically when the
+    /// window is resized or fullscreen is toggled. Adds the resolution to the
+    /// list if it doesn't already exist.
+    /// </summary>
+    public static void RegisterResolution(int width, int height)
+    {
+        var res = $"{width} x {height}";
+
+        // Already exists — just select it
+        var idx = Array.IndexOf(_resolutions, res);
+        if (idx >= 0)
+        {
+            _selectedResolution = idx;
+            return;
+        }
+
+        // Add and sort by total pixels
+        var list = new List<string>(_resolutions) { res };
+        list.Sort((a, b) =>
+        {
+            var aParts = a.Split('x', StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
+            var bParts = b.Split('x', StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
+            return (aParts[0] * aParts[1]).CompareTo(bParts[0] * bParts[1]);
+        });
+        _resolutions = list.ToArray();
+        _selectedResolution = Array.IndexOf(_resolutions, res);
+        ResolutionsChanged?.Invoke();
     }
 
     public void Open()
@@ -287,10 +323,10 @@ public class SettingsMenu(WorldGame game)
         ImGui.Combo("##Antialiasing", ref _antialias, AntialiasModes, AntialiasModes.Length);
 
         ImGui.Text("Shadow Distance");
-        ImGui.Combo("##ShadowCascadeLevel", ref _shadowCascadeLevel, ShadowCascadeLevels, ShadowCascadeLevels.Length);
+        ImGui.Combo("##ShadowCascadeLevel", ref _shadowCascadeLevel, ShadowCascadeLevelNames, ShadowCascadeLevelNames.Length);
         
         ImGui.Text("Shadow Resolution");
-        ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutions, ShadowResolutions.Length);
+        ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutionNames, ShadowResolutionNames.Length);
         
         ImGui.Text("Render Distance");
         ImGui.Combo("##RenderDistance", ref _renderDistance, RenderDistanceNames, RenderDistanceNames.Length);
@@ -383,7 +419,7 @@ public class SettingsMenu(WorldGame game)
         ImGui.Spacing();
         
         ImGui.Text("Field of View");
-        ImGui.SliderFloat("##FOV", ref _fov, 70.0f, 120.0f, "%.1f°");
+        ImGui.SliderFloat("##FOV", ref _fov, 58.7f, 120.0f, "%.1f°");
         
         ImGui.Spacing();
         ImGui.Checkbox("Smooth FOV Changes", ref _smoothFov);
@@ -460,8 +496,6 @@ public class SettingsMenu(WorldGame game)
 
     private void ApplySettingsAndSave()
     {
-        // Here you would actually apply the settings to the game
-        // For now, just show a confirmation message
         _settingMessage = "Settings applied successfully!";
         
         ApplySettings(out var requireRestart);
@@ -470,8 +504,10 @@ public class SettingsMenu(WorldGame game)
         SaveConfig();
     }
 
-    private void ApplySettings(out bool requireRestart)
+    public static void ApplySettings(out bool requireRestart)
     {
+        var game = GameSparker.Game;
+
         // Apply audio settings
         if (_muteAll)
         {
@@ -612,7 +648,18 @@ public class SettingsMenu(WorldGame game)
         World.OutlineThickness = _lineWidth;
     }
 
-    private void SaveConfig()
+    /// <summary>
+    /// Saves config and returns whether a restart is required (e.g., renderer change).
+    /// Call from SettingsBridge when the user clicks OK or Apply.
+    /// </summary>
+    public static bool SaveConfigAndCheckRestart()
+    {
+        ApplySettings(out var requireRestart);
+        SaveConfig();
+        return requireRestart;
+    }
+
+    public static void SaveConfig()
     {
         try
         {
@@ -764,7 +811,7 @@ public class SettingsMenu(WorldGame game)
         };
     }
     
-    public void LoadConfig()
+    public static void LoadConfig()
     {
         _selectedRenderer = Renderers.IndexOf(GetFna3DRenderer());
         
@@ -929,5 +976,191 @@ public class SettingsMenu(WorldGame game)
             SentrySdk.CaptureException(ex);
             Logging.Error($"Error loading config: {ex.Message}");
         }
+    }
+
+    // ── Static API for CEF SettingsBridge ──────────────────────────
+
+    /// <summary>
+    /// Snapshot of all current settings for serialization to JS.
+    /// </summary>
+    public static SettingsSnapshot GetCurrentSnapshot()
+    {
+        var bindingProps = typeof(KeyBindings).GetProperties();
+        var keyBindings = new KeyBindingData[bindingProps.Length];
+        for (var i = 0; i < bindingProps.Length; i++)
+        {
+            var prop = bindingProps[i];
+            keyBindings[i] = new KeyBindingData
+            {
+                Action = prop.Name,
+                DisplayName = prop.Name, // JS can localize
+                KeyCode = (int)(prop.GetValue(Bindings) as Key? ?? Key.None)
+            };
+        }
+
+        return new SettingsSnapshot
+        {
+            SelectedRenderer = _selectedRenderer,
+            SelectedResolution = _selectedResolution,
+            SelectedDisplayMode = _selectedDisplayMode,
+            Vsync = _vsync,
+            FpsLimit = _fpsLimit,
+            Antialias = _antialias,
+            ShadowCascadeLevel = _shadowCascadeLevel,
+            ShadowResolution = _shadowResolution,
+            RenderDistance = _renderDistance,
+            LowLatency = _lowLatency,
+            LineWidth = _lineWidth,
+            MasterVolume = _masterVolume,
+            MusicVolume = _musicVolume,
+            EffectsVolume = _effectsVolume,
+            MuteAll = _muteAll,
+            RemasteredMusic = _remasteredMusic,
+            Fov = _fov,
+            FollowY = _followY,
+            FollowZ = _followZ,
+            SmoothFov = _smoothFov,
+            KeyBindings = keyBindings
+        };
+    }
+
+    /// <summary>
+    /// Lists of valid choices for dropdowns, for the current OS platform.
+    /// </summary>
+    public static AvailableOptions GetAvailableOptions()
+    {
+        return new AvailableOptions
+        {
+            Renderers = Renderers,
+            Resolutions = Resolutions,
+            DisplayModes = DisplayModes,
+            AntialiasModes = AntialiasModes,
+            ShadowCascadeLevels = ShadowCascadeLevelNames,
+            ShadowResolutions = ShadowResolutionNames,
+            RenderDistanceNames = RenderDistanceNames
+        };
+    }
+
+    /// <summary>
+    /// Apply a single setting change from JS. Key is the setting name,
+    /// value is parsed from the JsonElement.
+    /// </summary>
+    public static void ApplySetting(string key, System.Text.Json.JsonElement args)
+    {
+        switch (key)
+        {
+            // Video
+            case "selectedRenderer":
+                if (args.TryGetProperty("value", out var v) && v.TryGetInt32(out var iv))
+                    _selectedRenderer = iv;
+                break;
+            case "selectedResolution":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _selectedResolution = iv;
+                break;
+            case "selectedDisplayMode":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _selectedDisplayMode = iv;
+                break;
+            case "vsync":
+                if (args.TryGetProperty("value", out v) && v.ValueKind == System.Text.Json.JsonValueKind.True || v.ValueKind == System.Text.Json.JsonValueKind.False)
+                    _vsync = v.GetBoolean();
+                break;
+            case "fpsLimit":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _fpsLimit = iv;
+                break;
+            case "antialias":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _antialias = iv;
+                break;
+            case "shadowCascadeLevel":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _shadowCascadeLevel = iv;
+                break;
+            case "shadowResolution":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _shadowResolution = iv;
+                break;
+            case "renderDistance":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _renderDistance = iv;
+                break;
+            case "lowLatency":
+                if (args.TryGetProperty("value", out v))
+                    _lowLatency = v.GetBoolean();
+                break;
+            case "lineWidth":
+                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out var fv))
+                    _lineWidth = fv;
+                break;
+
+            // Audio
+            case "masterVolume":
+                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                    _masterVolume = fv;
+                break;
+            case "musicVolume":
+                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                    _musicVolume = fv;
+                break;
+            case "effectsVolume":
+                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                    _effectsVolume = fv;
+                break;
+            case "muteAll":
+                if (args.TryGetProperty("value", out v))
+                    _muteAll = v.GetBoolean();
+                break;
+            case "remasteredMusic":
+                if (args.TryGetProperty("value", out v))
+                    _remasteredMusic = v.GetBoolean();
+                break;
+
+            // Camera
+            case "fov":
+                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                    _fov = fv;
+                break;
+            case "followY":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _followY = iv;
+                break;
+            case "followZ":
+                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                    _followZ = iv;
+                break;
+            case "smoothFov":
+                if (args.TryGetProperty("value", out v))
+                    _smoothFov = v.GetBoolean();
+                break;
+
+            // Key binding
+            case "keyBinding":
+                if (args.TryGetProperty("action", out var actionProp)
+                    && args.TryGetProperty("keyCode", out var codeProp)
+                    && codeProp.TryGetInt32(out var keyCode))
+                {
+                    var action = actionProp.GetString() ?? "";
+                    var prop = typeof(KeyBindings).GetProperty(action);
+                    prop?.SetValue(Bindings, (Key)keyCode);
+                }
+                break;
+        }
+
+        // Apply immediately for live preview
+        ApplySettings(out _);
+    }
+
+    /// <summary>
+    /// Reset camera settings to defaults.
+    /// </summary>
+    public static void ResetCameraDefaults()
+    {
+        _fov = 90.0f;
+        _smoothFov = true;
+        _followY = 0;
+        _followZ = 0;
+        ApplySettings(out _);
     }
 }

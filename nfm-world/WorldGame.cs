@@ -140,6 +140,10 @@ public class WorldGame : Game
             GameThreadContext.Current.ExecutePendingTasks();
             transaction.Finish();
         }
+
+        // Dispose any phases that were popped/replaced this frame.
+        // Must happen after all game logic to avoid disposal during event handlers.
+        GameSparker.Phases.FlushDisposals();
     }
 
     protected override void Initialize()
@@ -184,6 +188,9 @@ public class WorldGame : Game
 
         if (disposing)
         {
+            // Dispose all phases before tearing down CEF and graphics.
+            GameSparker.Phases.Shutdown();
+
             _cefRenderer?.Dispose();
             foreach (var shadowRenderTarget in ShadowRenderTargets)
             {
@@ -207,7 +214,7 @@ public class WorldGame : Game
         
         RebuildCascades();
         
-        GameSparker.SettingsMenu.LoadConfig();
+        SettingsMenu.LoadConfig();
 
         #region Imgui
         
