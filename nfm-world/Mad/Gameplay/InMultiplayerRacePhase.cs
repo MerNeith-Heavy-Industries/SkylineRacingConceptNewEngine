@@ -18,26 +18,27 @@ public class InMultiplayerRacePhase(
     GraphicsDevice graphicsDevice,
     IMultiplayerClientTransport transport,
     MatchGameplayInfo session,
-    uint playerClientId,
+    Guid clientPlayerId,
     Guid joinToken
 )
     : BaseRacePhase(graphicsDevice)
 {
-    private uint _ticks = 0; // overflows after ~497 days at 60 ticks per second
+    private uint _ticks = 0;
     private UnlimitedArray<uint> _lastTick = [];
-    
+    private bool _sentRaceLoaded;
+
     public override void Enter()
     {
         raceState = RaceState.WaitingToStart;
-
         base.Enter();
-
         LoadStage(session.StageName);
+    }
 
-        transport.SendPacketToServer(new C2S_RaceLoaded
-        {
-            JoinToken = joinToken
-        });
+    public override void Exit()
+    {
+        base.Exit();
+        
+        transport.Stop();
     }
 
     protected override IGamemode ReloadGamemode()
@@ -51,7 +52,7 @@ public class InMultiplayerRacePhase(
                     Color = c.Value.Color,
                     PlayerName = c.Value.Name,
                     IsBot = false,
-                    IsClientPlayer = c.Value.Id == playerClientId
+                    IsClientPlayer = c.Value.Id == clientPlayerId
                 })
                 .ToArray()
         };
@@ -69,7 +70,14 @@ public class InMultiplayerRacePhase(
     public override void GameTick()
     {
         FrameTrace.AddMessage($"race state: {raceState}");
-        
+
+        // Send C2S_RaceLoaded once transport is connected
+        if (!_sentRaceLoaded && transport.State == ClientState.Connected)
+        {
+            _sentRaceLoaded = true;
+            transport.SendPacketToServer(new C2S_RaceLoaded { JoinToken = joinToken });
+        }
+
         foreach (var packet in transport.GetNewPackets())
         {
             switch (packet)
@@ -81,7 +89,11 @@ public class InMultiplayerRacePhase(
                     raceState = RaceState.FailedToStart;
                     break;
                 case S2C_PlayerState playerState:
-                    var carIndex = session.Players.First(e => e.Value.Id == playerState.PlayerClientId).Key;
+                    Console.WriteLine($"[Client] Received player state for {playerState.PlayerId} at tick {playerState.State.Ticks}");
+                    Console.WriteLine(string.Join(", ", session.Players.Select(e => $"{e.Value.Name} ({e.Value.Id})")));
+                    var carIndex = session.Players
+                        .First(e => e.Value.Id == playerState.PlayerId)
+                        .Key;
                     var car = CarsInRace[carIndex];
                     if (playerState.State.Ticks <= _lastTick[carIndex])
                         break;
@@ -92,16 +104,17 @@ public class InMultiplayerRacePhase(
         }
 
         base.GameTick();
-        
-        // camera.Position = new Vector3(0, 10000, 0);
-        // camera.LookAt = new Vector3(1, 250, 0);
-        
+
         if (raceState == RaceState.InProgress)
         {
-            transport.SendPacketToServer(new C2S_PlayerState()
+            var myCar = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer);
+            if (myCar is not null)
             {
-                State = PlayerState.CreateFrom(_ticks++, CarsInRace.First(c => c.Player.IsClientPlayer))
-            });
+                transport.SendPacketToServer(new C2S_PlayerState()
+                {
+                    State = PlayerState.CreateFrom(_ticks++, myCar)
+                }, false);
+            }
         }
     }
 

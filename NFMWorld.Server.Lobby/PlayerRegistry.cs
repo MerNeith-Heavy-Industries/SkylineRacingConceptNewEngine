@@ -10,27 +10,83 @@ namespace NFMWorldLibrary.Multiplayer;
 /// </summary>
 public class PlayerRegistry
 {
-    private readonly ConcurrentDictionary<uint, ClientInfo> _clients = new();
+    private readonly Dictionary<uint, ClientInfo> _clients = new();
+    private readonly Dictionary<Guid, ClientInfo> _clientsById = new();
+    private readonly Lock _lock = new();
 
-    public ClientInfo GetOrAdd(uint clientId, ClientState state = ClientState.Connecting)
+    public ClientInfo? Get(Guid id)
     {
-        return _clients.GetOrAdd(clientId, _ => new ClientInfo { State = state });
+        lock (_lock)
+        {
+            _clientsById.TryGetValue(id, out var client);
+            return client;
+        }
     }
 
-    public ClientInfo? Get(uint clientId)
+    public ClientInfo GetOrAdd(uint clientIndex, ClientState state = ClientState.Connecting)
     {
-        _clients.TryGetValue(clientId, out var client);
-        return client;
+        lock (_lock)
+        {
+            if (!_clients.TryGetValue(clientIndex, out var client))
+            {
+                client = new ClientInfo
+                {
+                    ClientIndex = clientIndex,
+                    Id = Guid.NewGuid(),
+                    State = state,
+                };
+                _clients[clientIndex] = client;
+                _clientsById[client.Id] = client;
+            }
+
+            return client;
+        }
     }
 
-    public bool TryRemove(uint clientId, out ClientInfo? client)
+    public ClientInfo? Get(uint clientIndex)
     {
-        return _clients.TryRemove(clientId, out client);
+        lock (_lock)
+        {
+            _clients.TryGetValue(clientIndex, out var client);
+            return client;
+        }
     }
 
-    public IEnumerable<KeyValuePair<uint, ClientInfo>> All => _clients;
+    public bool TryRemove(uint clientIndex, out ClientInfo? client)
+    {
+        lock (_lock)
+        {
+            if (_clients.Remove(clientIndex, out client))
+            {
+                _clientsById.Remove(client.Id);
+                return true;
+            }
 
-    public int Count => _clients.Count;
+            return false;
+        }
+    }
+
+    public IEnumerable<KeyValuePair<uint, ClientInfo>> All
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _clients.ToArray();
+            }
+        }
+    }
+
+    public int Count
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _clients.Count;
+            }
+        }
+    }
 
     /// <summary>
     /// Inner types must match the original GameOrchestrator inner classes
@@ -38,6 +94,8 @@ public class PlayerRegistry
     /// </summary>
     public class ClientInfo
     {
+        public uint ClientIndex { get; set; }
+        public Guid Id { get; set; }
         public ClientState State { get; set; }
         public string Name { get; set; } = "hogan rewish";
         public string Vehicle { get; set; } = "nfmm/radicalone";

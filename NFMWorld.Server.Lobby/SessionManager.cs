@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 namespace NFMWorldLibrary.Multiplayer;
 
@@ -28,24 +27,28 @@ public class SessionManager
     }
 
     /// <summary>Creates a new session. Returns the created session.</summary>
-    public GameSession CreateSession(uint creatorClientId, string stageName, byte maxPlayers, GameModes gamemode = GameModes.Sandbox)
+    public GameSession? CreateSession(uint creatorclientIndex, string stageName, byte maxPlayers, GameModes gamemode = GameModes.Sandbox)
     {
-        var creator = _players.Get(creatorClientId);
+        var creator = _players.Get(creatorclientIndex);
+        if (creator is null)
+            return null;
+
         var session = new GameSession
         {
             Id = Interlocked.Increment(ref _maxSessionId),
-            CreatorId = creatorClientId,
-            CreatorName = creator?.Name ?? "Unknown",
+            CreatorId = creator.Id,
+            CreatorName = creator.Name,
             StageName = stageName,
             MaxPlayers = maxPlayers,
             Gamemode = gamemode,
-            PlayerClientIds = new ConcurrentDictionary<byte, uint> { [0] = creatorClientId }
+            Players = new ConcurrentDictionary<byte, Guid> { [0] = creator.Id }
         };
 
-        if (creator is not null)
-            creator.InSession = (0, session.Id);
+        creator.InSession = (0, session.Id);
 
-        _sessions.TryAdd(session.Id, session);
+        if (!_sessions.TryAdd(session.Id, session))
+            return null;
+        
         return session;
     }
 
@@ -53,9 +56,9 @@ public class SessionManager
     /// Attempts to join a session. Handles auto-leave from any existing session.
     /// Returns (sessionJoined, oldSessionLeft).
     /// </summary>
-    public (GameSession? Joined, GameSession? Left) JoinSession(uint clientId, uint sessionId)
+    public (GameSession? Joined, GameSession? Left) JoinSession(uint clientIndex, uint sessionId)
     {
-        var player = _players.Get(clientId);
+        var player = _players.Get(clientIndex);
         if (player is null) return (null, null);
 
         GameSession? leftSession = null;
@@ -64,21 +67,20 @@ public class SessionManager
         if (player.InSession is { } current &&
             _sessions.TryGetValue(current.SessionIndex, out var leaving))
         {
-            leaving.PlayerClientIds.TryRemove(
-                KeyValuePair.Create(current.PlayerIndex, clientId));
+            leaving.Players.TryRemove(KeyValuePair.Create(current.PlayerIndex, player.Id));
             player.InSession = null;
             leftSession = leaving;
         }
 
         // Join new session
         if (_sessions.TryGetValue(sessionId, out var target) &&
-            target.PlayerClientIds.Count < target.MaxPlayers)
+            target.Players.Count < target.MaxPlayers)
         {
             byte playerIndex = 0;
-            while (target.PlayerClientIds.ContainsKey(playerIndex))
+            while (target.Players.ContainsKey(playerIndex))
                 playerIndex++;
 
-            target.PlayerClientIds[playerIndex] = clientId;
+            target.Players[playerIndex] = player.Id;
             player.InSession = (playerIndex, target.Id);
             return (target, leftSession);
         }
@@ -87,15 +89,14 @@ public class SessionManager
     }
 
     /// <summary>Leaves the player's current session. Returns the session left, if any.</summary>
-    public GameSession? LeaveSession(uint clientId, uint sessionId)
+    public GameSession? LeaveSession(uint clientIndex, uint sessionId)
     {
-        var player = _players.Get(clientId);
+        var player = _players.Get(clientIndex);
         if (player?.InSession is { } current &&
             current.SessionIndex == sessionId &&
             _sessions.TryGetValue(sessionId, out var session))
         {
-            session.PlayerClientIds.TryRemove(
-                KeyValuePair.Create(current.PlayerIndex, clientId));
+            session.Players.TryRemove(KeyValuePair.Create(current.PlayerIndex, player.Id));
             player.InSession = null;
             return session;
         }
@@ -104,20 +105,25 @@ public class SessionManager
     }
 
     /// <summary>Marks a session as started/loading and sets the load timeout.</summary>
-    public bool StartRace(uint clientId, uint sessionId)
+    public bool StartRace(uint clientIndex, uint sessionId)
     {
+        var player = _players.Get(clientIndex);
+        if (player is null)
+            return false;
+        
         if (_sessions.TryGetValue(sessionId, out var session) &&
-            session.PlayerClientIds.Any(e => e.Value == clientId) &&
+            session.Players.Any(e => e.Value == player.Id) &&
             session.State == SessionState.NotStarted)
         {
             session.State = SessionState.WaitingToLoad;
             session.StartTime = DateTimeOffset.Now.AddSeconds(20);
 
-            foreach (var (_, id) in session.PlayerClientIds)
+            foreach (var (_, id) in session.Players)
             {
-                var player = _players.Get(id);
-                if (player is not null)
-                    player.IsInGame = true;
+                var aplayer = _players.Get(id);
+                if (aplayer is null)
+                    return false;
+                aplayer.IsInGame = true;
             }
 
             return true;
@@ -142,9 +148,9 @@ public class SessionManager
                 session.State = SessionState.Finished;
                 timedOut.Add(session);
 
-                foreach (var (_, clientId) in session.PlayerClientIds)
+                foreach (var (_, clientIndex) in session.Players)
                 {
-                    var player = _players.Get(clientId);
+                    var player = _players.Get(clientIndex);
                     if (player is not null)
                     {
                         player.InSession = null;
@@ -158,9 +164,9 @@ public class SessionManager
     }
 
     /// <summary>Marks a player as ready/unready in their session.</summary>
-    public bool SetPlayerReady(uint clientId, uint sessionId, bool isReady)
+    public bool SetPlayerReady(uint clientIndex, uint sessionId, bool isReady)
     {
-        var player = _players.Get(clientId);
+        var player = _players.Get(clientIndex);
         if (player?.InSession is { } current &&
             current.SessionIndex == sessionId &&
             _sessions.TryGetValue(sessionId, out var session) &&
@@ -178,11 +184,11 @@ public class SessionManager
     public class GameSession
     {
         public required uint Id { get; set; }
-        public required uint CreatorId { get; set; }
+        public required Guid CreatorId { get; set; }
         public required string CreatorName { get; set; }
         public required string StageName { get; set; }
         public int MaxPlayers { get; set; }
-        public ConcurrentDictionary<byte, uint> PlayerClientIds { get; set; } = [];
+        public ConcurrentDictionary<byte, Guid> Players { get; set; } = [];
         public DateTimeOffset? StartTime { get; set; }
         public SessionState State { get; set; } = SessionState.NotStarted;
         public GameModes Gamemode { get; set; } = GameModes.Sandbox;

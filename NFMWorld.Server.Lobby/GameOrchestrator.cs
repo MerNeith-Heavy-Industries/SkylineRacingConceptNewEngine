@@ -19,7 +19,7 @@ public class GameOrchestrator
     private readonly GameMasterRegistry _gmRegistry;
     private readonly GameMasterHttpClient _gmClient;
 
-    private Thread _lobbyThread;
+    private Thread? _lobbyThread;
     private bool _lobbyIsRunning = true;
 
     public GameOrchestrator(IMultiplayerServerTransport transport)
@@ -66,7 +66,11 @@ public class GameOrchestrator
             foreach (var session in _sessions.CheckTimeouts())
             {
                 _transport.SendPacketToClients(
-                    session.PlayerClientIds.Values.ToArray(),
+                    session.Players
+                        .Select(kv => _players.Get(kv.Value)?.ClientIndex ?? null)
+                        .Where(ci => ci.HasValue)
+                        .Select(ci => ci!.Value)
+                        .ToArray(),
                     new S2C_RaceFailedToStart(),
                     false);
             }
@@ -86,8 +90,7 @@ public class GameOrchestrator
     private void TransportOnClientConnected(object? sender, uint clientIndex)
     {
         var client = _players.Get(clientIndex);
-        if (client is not null)
-            client.State = ClientState.Connected;
+        client?.State = ClientState.Connected;
 
         _broadcaster.BroadcastToAll();
     }
@@ -99,8 +102,7 @@ public class GameOrchestrator
             if (client.InSession is { } inSession)
             {
                 var session = _sessions.Get(inSession.SessionIndex);
-                session?.PlayerClientIds.TryRemove(
-                    KeyValuePair.Create(inSession.PlayerIndex, clientIndex));
+                session?.Players.TryRemove(KeyValuePair.Create(inSession.PlayerIndex, client.Id));
             }
 
             _chat.BroadcastSystem($"{client.Name} has left...");
@@ -143,12 +145,6 @@ public class GameOrchestrator
                 _ = HandleStartRaceAsync(e.ClientIndex, startRace);
                 break;
 
-            // In-game packets are NOT handled by the Lobby.
-            // Clients send these to the Game Master after S2C_RaceStarted.
-            case C2S_PlayerState:
-            case C2S_RaceLoaded:
-                break;
-
             default:
                 throw new ArgumentOutOfRangeException(nameof(e.Packet),
                     $"Unexpected packet type: {e.Packet.GetType().Name}");
@@ -172,8 +168,7 @@ public class GameOrchestrator
         var player = _players.Get(clientId);
         if (player is null) return;
 
-        var session = _sessions.CreateSession(
-            clientId, create.StageName, (byte)create.MaxPlayers, create.GameMode);
+        var session = _sessions.CreateSession(clientId, create.StageName, (byte)create.MaxPlayers, create.GameMode);
 
         _chat.BroadcastSystem(
             $"{session.CreatorName} has started a session for {session.StageName}!");
@@ -188,12 +183,10 @@ public class GameOrchestrator
         var (joined, left) = _sessions.JoinSession(clientId, join.SessionId);
 
         if (left is not null)
-            _chat.BroadcastSystem(
-                $"{player.Name} has left {left.CreatorName}'s session!");
+            _chat.BroadcastSystem($"{player.Name} has left {left.CreatorName}'s session!");
 
         if (joined is not null)
-            _chat.BroadcastSystem(
-                $"{player.Name} has joined {joined.CreatorName}'s session!");
+            _chat.BroadcastSystem($"{player.Name} has joined {joined.CreatorName}'s session!");
 
         _broadcaster.BroadcastToAll();
     }
@@ -216,7 +209,7 @@ public class GameOrchestrator
     {
         var player = _players.Get(clientId);
         if (player is not null && !player.IsInGame)
-            _chat.SendChatMessage(clientId, chat.Message);
+            _chat.SendChatMessage(player.Id, chat.Message);
     }
 
     private void HandlePlayerReady(uint clientId, C2S_LobbyPlayerReadyState ready)
@@ -234,15 +227,17 @@ public class GameOrchestrator
         if (session is null) return;
 
         var playerInfos = new Dictionary<byte, PlayerInfo>();
-        foreach (var (index, pid) in session.PlayerClientIds)
+        foreach (var (index, pid) in session.Players)
         {
             var p = _players.Get(pid);
+            if (p is null)
+                return;
             playerInfos[index] = new PlayerInfo
             {
-                Id = pid,
-                Name = p?.Name ?? "Unknown",
-                Vehicle = p?.Vehicle ?? "nfmm/radicalone",
-                Color = p?.Color ?? new Color3()
+                Id = p.Id,
+                Name = p.Name,
+                Vehicle = p.Vehicle,
+                Color = p.Color
             };
         }
 
@@ -258,7 +253,7 @@ public class GameOrchestrator
             var gm = _gmRegistry.SelectGameMaster();
             var createRequest = new Lobby2RaceServer_CreateRace
             {
-                MatchKey = Guid.NewGuid().ToString("N"),
+                MatchKey = Guid.NewGuid(),
                 MatchGameplayInfo = matchInfo
             };
 
@@ -271,20 +266,24 @@ public class GameOrchestrator
             // Use the GM's SRV-resolved game address (Lobby already knows it)
             var gameAddress = gm.GameAddress;
 
-            foreach (var kv in session.PlayerClientIds)
+            foreach (var (index, id) in session.Players)
             {
-                if (createResponse.PlayerSecretIds.TryGetValue(kv.Key, out var token))
+                if (createResponse.PlayerSecretIds.TryGetValue(index, out var token))
                 {
-                    _transport.SendPacketToClient(kv.Value, new S2C_RaceStarted
+                    var player = _players.Get(id);
+                    if (player != null)
                     {
-                        MatchGameplayInfo = matchInfo,
-                        State = session.State,
-                        JoinInfo = new S2C_RaceStarted.GameJoinInfo
+                        _transport.SendPacketToClient(player.ClientIndex, new S2C_RaceStarted
                         {
-                            RaceServerIpAddress = gameAddress,
-                            JoinToken = token
-                        }
-                    });
+                            MatchGameplayInfo = matchInfo,
+                            State = session.State,
+                            JoinInfo = new S2C_RaceStarted.GameJoinInfo
+                            {
+                                RaceServerIpAddress = gameAddress,
+                                JoinToken = token
+                            }
+                        });
+                    }
                 }
             }
 
@@ -296,7 +295,7 @@ public class GameOrchestrator
             session.State = SessionState.NotStarted;
             session.StartTime = null;
 
-            foreach (var (_, pid) in session.PlayerClientIds)
+            foreach (var (_, pid) in session.Players)
             {
                 var p = _players.Get(pid);
                 if (p is not null) p.IsInGame = false;
