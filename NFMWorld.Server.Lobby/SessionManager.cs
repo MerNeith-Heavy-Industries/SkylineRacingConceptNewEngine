@@ -5,18 +5,11 @@ namespace NFMWorldLibrary.Multiplayer;
 /// <summary>
 /// Manages game sessions: create, join, leave, player-ready tracking, and timeout.
 /// </summary>
-public class SessionManager
+public class SessionManager(IMultiplayerServerTransport transport, PlayerRegistry players)
 {
     private readonly ConcurrentDictionary<uint, GameSession> _sessions = new();
     private uint _maxSessionId;
-    private readonly IMultiplayerServerTransport _transport;
-    private readonly PlayerRegistry _players;
-
-    public SessionManager(IMultiplayerServerTransport transport, PlayerRegistry players)
-    {
-        _transport = transport;
-        _players = players;
-    }
+    private readonly IMultiplayerServerTransport _transport = transport;
 
     public IEnumerable<KeyValuePair<uint, GameSession>> All => _sessions;
 
@@ -27,9 +20,9 @@ public class SessionManager
     }
 
     /// <summary>Creates a new session. Returns the created session.</summary>
-    public GameSession? CreateSession(uint creatorclientIndex, string stageName, byte maxPlayers, GameModes gamemode = GameModes.Sandbox)
+    public GameSession? CreateSession(uint creatorclientIndex, string stageName, byte maxPlayers, string gamemode)
     {
-        var creator = _players.Get(creatorclientIndex);
+        var creator = players.Get(creatorclientIndex);
         if (creator is null)
             return null;
 
@@ -58,7 +51,7 @@ public class SessionManager
     /// </summary>
     public (GameSession? Joined, GameSession? Left) JoinSession(uint clientIndex, uint sessionId)
     {
-        var player = _players.Get(clientIndex);
+        var player = players.Get(clientIndex);
         if (player is null) return (null, null);
 
         GameSession? leftSession = null;
@@ -91,7 +84,7 @@ public class SessionManager
     /// <summary>Leaves the player's current session. Returns the session left, if any.</summary>
     public GameSession? LeaveSession(uint clientIndex, uint sessionId)
     {
-        var player = _players.Get(clientIndex);
+        var player = players.Get(clientIndex);
         if (player?.InSession is { } current &&
             current.SessionIndex == sessionId &&
             _sessions.TryGetValue(sessionId, out var session))
@@ -107,7 +100,7 @@ public class SessionManager
     /// <summary>Marks a session as started/loading and sets the load timeout.</summary>
     public bool StartRace(uint clientIndex, uint sessionId)
     {
-        var player = _players.Get(clientIndex);
+        var player = players.Get(clientIndex);
         if (player is null)
             return false;
         
@@ -120,7 +113,7 @@ public class SessionManager
 
             foreach (var (_, id) in session.Players)
             {
-                var aplayer = _players.Get(id);
+                var aplayer = players.Get(id);
                 if (aplayer is null)
                     return false;
                 aplayer.IsInGame = true;
@@ -150,7 +143,7 @@ public class SessionManager
 
                 foreach (var (_, clientIndex) in session.Players)
                 {
-                    var player = _players.Get(clientIndex);
+                    var player = players.Get(clientIndex);
                     if (player is not null)
                     {
                         player.InSession = null;
@@ -166,7 +159,7 @@ public class SessionManager
     /// <summary>Marks a player as ready/unready in their session.</summary>
     public bool SetPlayerReady(uint clientIndex, uint sessionId, bool isReady)
     {
-        var player = _players.Get(clientIndex);
+        var player = players.Get(clientIndex);
         if (player?.InSession is { } current &&
             current.SessionIndex == sessionId &&
             _sessions.TryGetValue(sessionId, out var session) &&
@@ -191,6 +184,6 @@ public class SessionManager
         public ConcurrentDictionary<byte, Guid> Players { get; set; } = [];
         public DateTimeOffset? StartTime { get; set; }
         public SessionState State { get; set; } = SessionState.NotStarted;
-        public GameModes Gamemode { get; set; } = GameModes.Sandbox;
+        public string Gamemode { get; set; } = DefaultGamemodes.Racing;
     }
 }

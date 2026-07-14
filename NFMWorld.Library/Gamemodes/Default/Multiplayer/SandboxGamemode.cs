@@ -5,7 +5,7 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
+public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
     public override event EventHandler<byte[]>? RaceFinished;
@@ -45,7 +45,7 @@ public class SandboxGamemode(BaseGamemodeParameters gamemodeParameters, IGamemod
         
         FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
 
-        if (gamemodeData.raceState == RaceState.InProgress)
+        if (gamemodeData.RaceState == RaceState.InProgress)
         {
             // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
             // We round this up to 3 ticks per 63TPS tick.

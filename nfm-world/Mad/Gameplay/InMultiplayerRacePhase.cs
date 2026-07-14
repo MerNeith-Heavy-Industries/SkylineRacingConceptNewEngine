@@ -21,55 +21,60 @@ public class InMultiplayerRacePhase(
     Guid clientPlayerId,
     Guid joinToken
 )
-    : BaseRacePhase(graphicsDevice)
+    : BaseRacePhase(
+        graphicsDevice,
+        session.StageName,
+        GetGameModeFactory(session),
+        session.Players
+            .Select(c => new PlayerParameters
+            {
+                CarName = c.Value.Vehicle,
+                Color = c.Value.Color,
+                PlayerName = c.Value.Name,
+                IsBot = false,
+                IsClientPlayer = c.Value.Id == clientPlayerId
+            })
+            .ToArray()
+    )
 {
+    private static BaseGamemodeFactory GetGameModeFactory(MatchGameplayInfo matchGameplayInfo)
+    {
+        switch (matchGameplayInfo.Gamemode)
+        {
+            case DefaultGamemodes.Racing:
+                return new PvpGamemodeFactory(PvpConstraint.Racing);
+            case DefaultGamemodes.Wasting:
+                return new PvpGamemodeFactory(PvpConstraint.Wasting);
+            case DefaultGamemodes.Both:
+                return new PvpGamemodeFactory(PvpConstraint.Both);
+            case DefaultGamemodes.Football:
+                return new FootballGamemodeFactory();
+            case DefaultGamemodes.Sandbox:
+                return new SandboxGamemodeFactory();
+            default:
+                throw new ArgumentOutOfRangeException(nameof(matchGameplayInfo.Gamemode), matchGameplayInfo.Gamemode, "Unknown gamemode");
+        }
+    }
+
     private uint _ticks = 0;
     private UnlimitedArray<uint> _lastTick = [];
     private bool _sentRaceLoaded;
 
     public override void Enter()
     {
-        raceState = RaceState.WaitingToStart;
+        RaceState = RaceState.WaitingToStart;
         base.Enter();
-        LoadStage(session.StageName);
     }
 
     public override void Exit()
     {
         base.Exit();
-        
         transport.Stop();
-    }
-
-    protected override IGamemode ReloadGamemode()
-    {
-        var parameters = new BaseGamemodeParameters()
-        {
-            Players = session.Players
-                .Select(c => new PlayerParameters
-                {
-                    CarName = c.Value.Vehicle,
-                    Color = c.Value.Color,
-                    PlayerName = c.Value.Name,
-                    IsBot = false,
-                    IsClientPlayer = c.Value.Id == clientPlayerId
-                })
-                .ToArray()
-        };
-
-        return session.Gamemode switch
-        {
-            GameModes.Sandbox => new SandboxGamemode(parameters, this),
-            GameModes.Football => new FootballGamemode(parameters, this),
-            GameModes.Racing => new RaceGamemode(parameters, this),
-            GameModes.TimeTrial => new TimeTrialGamemode(parameters, this),
-            _ => throw new ArgumentOutOfRangeException(nameof(session.Gamemode), session.Gamemode, null)
-        };
     }
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"race state: {raceState}");
+        FrameTrace.AddMessage($"race state: {RaceState}");
 
         // Send C2S_RaceLoaded once transport is connected
         if (!_sentRaceLoaded && transport.State == ClientState.Connected)
@@ -83,10 +88,10 @@ public class InMultiplayerRacePhase(
             switch (packet)
             {
                 case S2C_RaceCanStart raceCanStart:
-                    raceState = RaceState.InProgress;
+                    RaceState = RaceState.InProgress;
                     break;
                 case S2C_RaceFailedToStart raceFailedToStart:
-                    raceState = RaceState.FailedToStart;
+                    RaceState = RaceState.FailedToStart;
                     break;
                 case S2C_PlayerState playerState:
                     Console.WriteLine($"[Client] Received player state for {playerState.PlayerId} at tick {playerState.State.Ticks}");
@@ -105,7 +110,7 @@ public class InMultiplayerRacePhase(
 
         base.GameTick();
 
-        if (raceState == RaceState.InProgress)
+        if (RaceState == RaceState.InProgress)
         {
             var myCar = CarsInRace.FirstOrDefault(c => c.Player.IsClientPlayer);
             if (myCar is not null)
@@ -115,13 +120,14 @@ public class InMultiplayerRacePhase(
                     State = PlayerState.CreateFrom(_ticks++, myCar)
                 }, false);
             }
+            
         }
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
-        if (raceState == RaceState.WaitingToStart)
+        if (RaceState == RaceState.WaitingToStart)
         {
             G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Plain, 26));
             G.SetColor(new Color(255, 255, 255));

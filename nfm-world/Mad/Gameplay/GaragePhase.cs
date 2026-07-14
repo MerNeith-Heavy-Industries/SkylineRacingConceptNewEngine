@@ -52,7 +52,7 @@ public class GaragePhase : BaseStageRenderingPhase
     /// <summary>
     /// Creates a GaragePhase that loads the specified stage as background.
     /// </summary>
-    public GaragePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice)
+    public GaragePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice, GameSparker.GetAvailableStages().Shuffle().First())
     {
         InitBridge();
     }

@@ -2,7 +2,7 @@
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class TimeTrialSimulationGamemode(BaseGamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, SavedTimeTrial timeTrial)
+public class TimeTrialSimulationGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, SavedTimeTrial timeTrial)
     : TimeTrialGamemode(gamemodeParameters, gamemodeData)
 {
     private int _tick = 0;
