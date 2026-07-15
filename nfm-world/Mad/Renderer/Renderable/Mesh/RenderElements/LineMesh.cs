@@ -251,11 +251,10 @@ internal static class LineEffectDistantOutlineSettings
 {
     public static void Apply(DistantOutlineBehavior behavior)
     {
-        // Send mode switches as independent numeric masks. Line.fx combines these with branchless math so
-        // the compiled effect behaves consistently across the FNA/Metal shader translation path.
-        Effects.Line.DistantOutlineDistanceFalloffWithCutoff?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
-        Effects.Line.DistantOutlineClassicCutoff?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
-        Effects.Line.DistantOutlineHideOutlines?.SetValue(behavior == DistantOutlineBehavior.HideOutlines ? 1f : 0f);
-        Effects.Line.DistantOutlineDistanceFalloff?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
+        // Send mode switches as independent numeric masks. Line.fx uses these in branchless math 
+        Effects.Line.DistantOutlineDistanceFalloffWithCutoffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineClassicCutoffMask?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineHideMask?.SetValue(behavior == DistantOutlineBehavior.HideOutlines ? 1f : 0f);
+        Effects.Line.DistantOutlineDistanceFalloffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
     }
 }
