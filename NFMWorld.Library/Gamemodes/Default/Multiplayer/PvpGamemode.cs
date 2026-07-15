@@ -221,6 +221,11 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
     protected override void ClientReset()
     {
         _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
+        if (_playerCarIndex == -1)
+        {
+            Logging.Warning("Client player not found in players list, defaulting to index 0");
+            _playerCarIndex = 0;
+        }
         base.ClientReset();
     }
 

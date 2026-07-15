@@ -36,6 +36,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         // display-level activation/deactivation; the gamemode survives across
         // push/pop cycles (e.g., opening Settings over a race).
         GamemodeInstance = ReloadGamemode();
+        GamemodeInstance?.Enter();
     }
 
     private bool _hasAutoPopped;
