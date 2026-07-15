@@ -6,9 +6,9 @@ namespace NFMWorldLibrary.Backend.Gamemodes;
 
 public interface IGamemode
 {
-    public IReadOnlyList<PlayerParameters> players { get; }
-    public UnlimitedArray<IInGameCar> carsInRace { get; }
-    public BackendStage currentStage { get; }
+    public IReadOnlyList<PlayerParameters> Players { get; }
+    public UnlimitedArray<IInGameCar> CarsInRace { get; }
+    public BackendStage CurrentStage { get; }
     public int NumPlayers { get; }
     
     /// <summary>
@@ -16,8 +16,8 @@ public interface IGamemode
     /// </summary>
     public event EventHandler<byte[]>? RaceFinished;
 
-    public void Enter();
-    public void Exit();
+    public void Begin();
+    public void End();
     public void GameTick();
     public void Reset();
 

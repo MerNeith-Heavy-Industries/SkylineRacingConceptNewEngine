@@ -37,12 +37,12 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
     
     private int _winner;
 
-    public override void Enter()
+    public override void Begin()
     {
         Reset();
     }
 
-    public override void Exit()
+    public override void End()
     {
         // Cleanup for Time Trial mode
     }
@@ -56,16 +56,16 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         _finishTicks = 0;
         raceTimer.Reset();
 
-        carsInRace.Clear();
+        CarsInRace.Clear();
         
-        foreach (var (idx, player) in players.WithIndex())
+        foreach (var (idx, player) in Players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(player, idx, -500 + (400 * idx), 0);
-            carsInRace[idx].CurrentCheckpoint = 0;
-            carsInRace[idx].CurrentLap = 0;
+            CarsInRace[idx] = new BackendCar(player, idx, -500 + (400 * idx), 0);
+            CarsInRace[idx].CurrentCheckpoint = 0;
+            CarsInRace[idx].CurrentLap = 0;
             if (player.IsBot)
             {
-                carsInRace[idx].Bot = new ElStupido(this, GamemodeData);
+                CarsInRace[idx].Bot = new ElStupido(this, GamemodeData);
             }
         }
 
@@ -99,9 +99,9 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
     protected virtual void InRace()
     {
-        for (var i = 0; i < carsInRace.Count; i++)
+        for (var i = 0; i < CarsInRace.Count; i++)
         {
-            var inGameCar = carsInRace[i];
+            var inGameCar = CarsInRace[i];
             if (inGameCar.Bot is { } bot)
             {
                 bot.RunAi(inGameCar, i);
@@ -112,40 +112,40 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         // We round this up to 3 ticks per 63TPS tick.
         if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
-            for (int i = 0; i < carsInRace.Count; i++)
-            for (int j = 0; j < carsInRace.Count; j++)
+            for (int i = 0; i < CarsInRace.Count; i++)
+            for (int j = 0; j < CarsInRace.Count; j++)
             {
                 if (i != j)
                 {
-                    carsInRace[i].Collide(carsInRace[j]);
+                    CarsInRace[i].Collide(CarsInRace[j]);
                 }
             }
 
             _newTick = 0;
         }
         
-        foreach (var inGameCar in carsInRace)
+        foreach (var inGameCar in CarsInRace)
         {
-            inGameCar.Drive(currentStage);
+            inGameCar.Drive(CurrentStage);
         }
 
-        if (currentStage.checkpoints.Count == 0)
+        if (CurrentStage.checkpoints.Count == 0)
         {
             // lol
             return;
         }
         
-        for (var i = 0; i < carsInRace.Count; i++)
+        for (var i = 0; i < CarsInRace.Count; i++)
         {
-            FixHoopHelper.HandleFixHoops(currentStage, carsInRace[i]);
-            CheckPointHelper.HandleCheckPoint(currentStage, carsInRace[i]);
+            FixHoopHelper.HandleFixHoops(CurrentStage, CarsInRace[i]);
+            CheckPointHelper.HandleCheckPoint(CurrentStage, CarsInRace[i]);
         }
         
-        CheckPointHelper.CalculatePositions(currentStage, carsInRace);
+        CheckPointHelper.CalculatePositions(CurrentStage, CarsInRace);
 
-        for (var i = 0; i < carsInRace.Count; i++)
+        for (var i = 0; i < CarsInRace.Count; i++)
         {
-            if (carsInRace[i].CurrentLap >= currentStage.nlaps)
+            if (CarsInRace[i].CurrentLap >= CurrentStage.nlaps)
             {
                 _currentState = InnerRaceState.Finished;
                 _winner = i;
@@ -158,7 +158,7 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
     private void Finished()
     {
-        foreach (var inGameCar in carsInRace)
+        foreach (var inGameCar in CarsInRace)
         {
             inGameCar.CarPhysics.Halted = true;
             inGameCar.Drive(GamemodeData.CurrentStage);
@@ -168,17 +168,17 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
         if (_finishTicks == 30)
         {
-            var positions = new byte[carsInRace.Count];
+            var positions = new byte[CarsInRace.Count];
             // always give position 0 to _winner. assign remaining positions in ascending order based on placement.
             positions[_winner] = 0;
             byte currentPosition = 1;
-            for (byte pos = 0; pos < carsInRace.Count; pos++)
+            for (byte pos = 0; pos < CarsInRace.Count; pos++)
             {
                 if (pos == _winner) continue;
-                for (byte i = 0; i < carsInRace.Count; i++)
+                for (byte i = 0; i < CarsInRace.Count; i++)
                 {
                     if (i == _winner) continue;
-                    if (carsInRace[i].Placement == pos)
+                    if (CarsInRace[i].Placement == pos)
                     {
                         positions[i] = currentPosition;
                         currentPosition++;
@@ -214,13 +214,13 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
     [ClientOnly]
     protected void ClientGameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[_playerCarIndex].Position.X:0.00}, contoz: {carsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {carsInRace[_playerCarIndex].Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {CarsInRace[_playerCarIndex].Position.X:0.00}, contoz: {CarsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {CarsInRace[_playerCarIndex].Position.Y:0.00}");
     }
 
     [ClientOnly]
     protected override void ClientReset()
     {
-        _playerCarIndex = players.FindIndex(p => p.IsClientPlayer);
+        _playerCarIndex = Players.FindIndex(p => p.IsClientPlayer);
         if (_playerCarIndex == -1)
         {
             Logging.Warning("Client player not found in players list, defaulting to index 0");
@@ -232,7 +232,7 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
     [ClientOnly]
     protected void InRaceClient()
     {
-        UpdateHudAndSounds(carsInRace[_playerCarIndex]);
+        UpdateHudAndSounds(CarsInRace[_playerCarIndex]);
     }
 
     public override void Render()

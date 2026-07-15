@@ -12,23 +12,23 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
 
     private int _newTick = 0;
 
-    public override void Enter()
+    public override void Begin()
     {
-        foreach (var (idx, player) in players.WithIndex())
+        foreach (var (idx, player) in Players.WithIndex())
         {
-            var car = carsInRace[idx] = new BackendCar(player, idx, 0, 0);
+            var car = CarsInRace[idx] = new BackendCar(player, idx, 0, 0);
             car.Position = new f64Vector3(fix64.Zero, (fix64)(World.Ground - car.GroundAt) - 250, fix64.Zero);
             car.Rotation = car.Rotation with { Xz = f64AngleSingle.FromDegrees(0) };
             car.CarPhysics.Pxy = 0;
             car.CarPhysics.Pzy = 90;
 
         }
-        carsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
+        CarsInRace[NumPlayers] = new BackendCar(BackendGameSparker.GetCar("nfmm/audir8").Rad!, 1, 100, 0, false);
 
         Reset();
     }
 
-    public override void Exit()
+    public override void End()
     {
         // Cleanup for Time Trial mode
     }
@@ -43,7 +43,7 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
     {
         ClientServer.RunIfOnClient(ClientGameTick);
         
-        FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {CarsInRace[0].Position.X:0.00}, contoz: {CarsInRace[0].Position.Z:0.00}, contoy: {CarsInRace[0].Position.Y:0.00}");
 
         if (gamemodeData.RaceState == RaceState.InProgress)
         {
@@ -51,19 +51,19 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
             // We round this up to 3 ticks per 63TPS tick.
             if (++_newTick == Physics.OriginalTicksPerNewTick)
             {
-                for (int i = 0; i < carsInRace.Count; i++)
-                for (int j = 0; j < carsInRace.Count; j++)
+                for (int i = 0; i < CarsInRace.Count; i++)
+                for (int j = 0; j < CarsInRace.Count; j++)
                 {
                     if (i != j)
                     {
-                        carsInRace[i].Collide(carsInRace[j]);
+                        CarsInRace[i].Collide(CarsInRace[j]);
                     }
                 }
 
                 _newTick = 0;
             }
 
-            foreach (var car in carsInRace)
+            foreach (var car in CarsInRace)
             {
                 car.Drive(gamemodeData.CurrentStage);
             }
@@ -81,8 +81,8 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
     [ClientOnly]
     protected void ClientGameTick()
     {
-        HudState.Damage = (float)carsInRace[0].CarPhysics.DamagePoints / carsInRace[0].Stats.Maxmag;
-        HudState.Power = (float)carsInRace[0].CarPhysics.Power / 100f;
+        HudState.Damage = (float)CarsInRace[0].CarPhysics.DamagePoints / CarsInRace[0].Stats.Maxmag;
+        HudState.Power = (float)CarsInRace[0].CarPhysics.Power / 100f;
     }
 
     public override void KeyPressed(Key key, in Keys keys)
