@@ -71,9 +71,8 @@ public class SettingsMenu(WorldGame game)
     private static readonly string[] ShadowResolutions = ["512", "1024", "2048", "4096", "8192"]; // must be powers of 2 starting at 2^9
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
-    // Keep this order aligned with DistantOutlineBehavior values; settings store the selected index while config stores names.
-    private static readonly string[] DistantOutlineBehaviorNames = ["Distance Falloff", "Distance Falloff (With Cutoff)", "Classic Cutoff (NFM)", "Always Render", "Hide Outlines"];
-    private int _distantOutlineBehavior = (int)DistantOutlineBehavior.ClassicCutoff;
+    private static readonly DistantOutlineBehavior[] DistantOutlineBehaviors = Enum.GetValues<DistantOutlineBehavior>();
+    private DistantOutlineBehavior _distantOutlineBehavior = DistantOutlineBehavior.ClassicCutoff;
     private bool _lowLatency = false;
     private static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
     private static readonly float[] RenderDistances = [22500, 45000, 90000, 180000, 360000, int.MaxValue];
@@ -130,7 +129,7 @@ public class SettingsMenu(WorldGame game)
         _followZ = FollowCamera.FollowZOffset;
         _smoothFov = CameraSettings.SmoothFov;
         _lineWidth = World.OutlineThickness;
-        _distantOutlineBehavior = (int)World.DistantOutlineBehavior;
+        _distantOutlineBehavior = World.DistantOutlineBehavior;
     }
 
     public void Close()
@@ -308,7 +307,18 @@ public class SettingsMenu(WorldGame game)
         ImGui.SliderFloat("##LineWidth", ref _lineWidth, 0.5f, 4f, "%.1f");
 
         ImGui.Text("Distant Outline Behavior");
-        ImGui.Combo("##DistantOutlineBehavior", ref _distantOutlineBehavior, DistantOutlineBehaviorNames, DistantOutlineBehaviorNames.Length);
+        if (ImGui.BeginCombo("##DistantOutlineBehavior", GetDistantOutlineBehaviorDisplayName(_distantOutlineBehavior)))
+        {
+            foreach (var behavior in DistantOutlineBehaviors)
+            {
+                if (ImGui.Selectable(GetDistantOutlineBehaviorDisplayName(behavior), behavior == _distantOutlineBehavior))
+                {
+                    _distantOutlineBehavior = behavior;
+                }
+            }
+
+            ImGui.EndCombo();
+        }
         // ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f), 
         //     "Note: changing some video options will cause the game to exit and restart.");
     }
@@ -618,7 +628,7 @@ public class SettingsMenu(WorldGame game)
         }
 
         World.OutlineThickness = _lineWidth;
-        World.DistantOutlineBehavior = GetDistantOutlineBehavior();
+        World.DistantOutlineBehavior = _distantOutlineBehavior;
     }
 
     private void SaveConfig()
@@ -776,7 +786,7 @@ public class SettingsMenu(WorldGame game)
 
     private string GetDistantOutlineBehaviorConfigValue()
     {
-        return GetDistantOutlineBehavior() switch
+        return _distantOutlineBehavior switch
         {
             DistantOutlineBehavior.DistanceFalloff => "distance_falloff",
             DistantOutlineBehavior.DistanceFalloffWithCutoff => "distance_falloff_with_cutoff",
@@ -787,20 +797,28 @@ public class SettingsMenu(WorldGame game)
         };
     }
 
-    private DistantOutlineBehavior GetDistantOutlineBehavior()
+    private static string GetDistantOutlineBehaviorDisplayName(DistantOutlineBehavior behavior)
     {
-        return (DistantOutlineBehavior)Math.Clamp(_distantOutlineBehavior, 0, DistantOutlineBehaviorNames.Length - 1);
+        return behavior switch
+        {
+            DistantOutlineBehavior.DistanceFalloff => "Distance Falloff",
+            DistantOutlineBehavior.DistanceFalloffWithCutoff => "Distance Falloff (With Cutoff)",
+            DistantOutlineBehavior.ClassicCutoff => "Classic Cutoff (NFM)",
+            DistantOutlineBehavior.AlwaysRender => "Always Render",
+            DistantOutlineBehavior.HideOutlines => "Hide Outlines",
+            _ => behavior.ToString()
+        };
     }
 
-    private static int ParseDistantOutlineBehavior(string value, int fallback)
+    private static DistantOutlineBehavior ParseDistantOutlineBehavior(string value, DistantOutlineBehavior fallback)
     {
         return value.ToLowerInvariant() switch
         {
-            "distance_falloff" => (int)DistantOutlineBehavior.DistanceFalloff,
-            "distance_falloff_with_cutoff" => (int)DistantOutlineBehavior.DistanceFalloffWithCutoff,
-            "classic_cutoff" => (int)DistantOutlineBehavior.ClassicCutoff,
-            "always_render" => (int)DistantOutlineBehavior.AlwaysRender,
-            "hide_outlines" => (int)DistantOutlineBehavior.HideOutlines,
+            "distance_falloff" => DistantOutlineBehavior.DistanceFalloff,
+            "distance_falloff_with_cutoff" => DistantOutlineBehavior.DistanceFalloffWithCutoff,
+            "classic_cutoff" => DistantOutlineBehavior.ClassicCutoff,
+            "always_render" => DistantOutlineBehavior.AlwaysRender,
+            "hide_outlines" => DistantOutlineBehavior.HideOutlines,
             _ => fallback
         };
     }
