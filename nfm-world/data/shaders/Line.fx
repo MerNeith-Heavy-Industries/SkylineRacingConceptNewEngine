@@ -39,7 +39,6 @@ float2 Resolution;
 // On the FNA/Metal shader path, branchless masks are more reliable than dynamic enum branches
 float DistantOutlineDistanceFalloffWithCutoffMask;
 float DistantOutlineClassicCutoffMask;
-float DistantOutlineHideMask;
 float DistantOutlineDistanceFalloffMask;
 
 
@@ -132,7 +131,7 @@ VertexShaderOutput MainVS(
     float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoffMask * max(halfThicknessNotPositive, max(halfThicknessBelowMin, pastFalloffCutoff));
     float distanceHidden = DistantOutlineDistanceFalloffMask * halfThicknessNotPositive;
     float classicHidden = cutoffMode * cullPastDistance;
-    hideLine = saturate(max(DistantOutlineHideMask, max(classicHidden, max(distanceCutoffHidden, distanceHidden))));
+    hideLine = saturate(max(classicHidden, max(distanceCutoffHidden, distanceHidden)));
 
     // Decode Side: abs > 1.5 means endpoint B, sign gives offset direction
     float3 position = (abs(input.Side) > 1.5) ? input.PositionB : input.PositionA;

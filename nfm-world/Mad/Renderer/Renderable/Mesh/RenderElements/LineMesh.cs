@@ -253,7 +253,6 @@ internal static class LineEffectDistantOutlineSettings
         // Send mode switches as independent numeric masks. Line.fx uses these in branchless math 
         Effects.Line.DistantOutlineDistanceFalloffWithCutoffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
         Effects.Line.DistantOutlineClassicCutoffMask?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
-        Effects.Line.DistantOutlineHideMask?.SetValue(behavior == DistantOutlineBehavior.HideOutlines ? 1f : 0f);
         Effects.Line.DistantOutlineDistanceFalloffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
     }
 }
