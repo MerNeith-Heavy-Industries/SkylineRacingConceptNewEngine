@@ -10,18 +10,18 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
 
     private int _newTick = 0;
 
-    public override void Enter()
+    public override void Begin()
     {
-        foreach (var (idx, player) in players.WithIndex())
+        foreach (var (idx, player) in Players.WithIndex())
         {
-            carsInRace[idx] = new BackendCar(player, idx, 500, 0);
+            CarsInRace[idx] = new BackendCar(player, idx, 500, 0);
         }
-        carsInRace[players.Count] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
+        CarsInRace[Players.Count] = new BackendCar(BackendGameSparker.GetCar("football/BALL").Rad!, 1, 0, 0, false);
 
         Reset();
     }
 
-    public override void Exit()
+    public override void End()
     {
         
     }
@@ -33,7 +33,7 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
 
     public override void GameTick()
     {
-        FrameTrace.AddMessage($"contox: {carsInRace[0].Position.X:0.00}, contoz: {carsInRace[0].Position.Z:0.00}, contoy: {carsInRace[0].Position.Y:0.00}");
+        FrameTrace.AddMessage($"contox: {CarsInRace[0].Position.X:0.00}, contoz: {CarsInRace[0].Position.Z:0.00}, contoy: {CarsInRace[0].Position.Y:0.00}");
 
         // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
         // We round this up to 3 ticks per 63TPS tick.
@@ -43,19 +43,19 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
 
         if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
-            for (int i = 0; i < carsInRace.Count; i++)
-            for (int j = 0; j < carsInRace.Count; j++)
+            for (int i = 0; i < CarsInRace.Count; i++)
+            for (int j = 0; j < CarsInRace.Count; j++)
             {
                 if (i != j)
                 {
-                    carsInRace[i].Collide(carsInRace[j]);
+                    CarsInRace[i].Collide(CarsInRace[j]);
                 }
             }
 
             _newTick = 0;
         }
 
-        foreach (var car in carsInRace)
+        foreach (var car in CarsInRace)
         {
             car.Drive(gamemodeData.CurrentStage);
         }

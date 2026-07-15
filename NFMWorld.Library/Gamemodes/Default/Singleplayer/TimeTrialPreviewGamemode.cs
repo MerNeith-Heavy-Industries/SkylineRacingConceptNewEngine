@@ -30,7 +30,7 @@ public class TimeTrialPreviewGamemode(
 
     protected override BackendCar LoadPlayerCar(int x, int z)
     {
-        return new BackendCar(timeTrial.CarData ?? BackendGameSparker.GetCar(players[0].CarName).Rad!, 0, x, z, true);
+        return new BackendCar(timeTrial.CarData ?? BackendGameSparker.GetCar(Players[0].CarName).Rad!, 0, x, z, true);
     }
 
     protected override void TimeTrialInRace()
@@ -39,11 +39,11 @@ public class TimeTrialPreviewGamemode(
         {
             if (_tick < timeTrial.DemoData.Ticks.Count && _tick > 0)
             {
-                timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(carsInRace[0]);
+                timeTrial.DemoData.Ticks[_tick - 1].ApplyToCar(CarsInRace[0]);
             }
         }
 
-        carsInRace[PlayerCarIndex].Control
+        CarsInRace[PlayerCarIndex].Control
             .Decode(timeTrial.GetTick(_tick) ?? (false, false, false, false, false));
         base.TimeTrialInRace();
 
