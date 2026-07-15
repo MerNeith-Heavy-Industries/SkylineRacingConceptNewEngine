@@ -26,7 +26,6 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         var data = new List<LineMeshVertexAttribute>(LineMeshHelpers.VerticesPerLine * lines.Count);
         var indices = new List<int>(LineMeshHelpers.IndicesPerLine * lines.Count);
 
-        const float halfThickness = 1f;
         Span<LineMeshVertexAttribute> verts = stackalloc LineMeshVertexAttribute[LineMeshHelpers.VerticesPerLine];
         Span<int> inds = stackalloc int[LineMeshHelpers.IndicesPerLine];
 
