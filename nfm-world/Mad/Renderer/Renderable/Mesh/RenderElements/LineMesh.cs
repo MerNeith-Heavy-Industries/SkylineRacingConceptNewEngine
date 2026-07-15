@@ -104,6 +104,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
         Effects.Line.OutlineMinimumVisibleThickness?.SetValue(World.OutlineMinimumVisibleThickness);
+        Effects.Line.OutlineFalloffCutoffParameters?.SetValue(GetOutlineFalloffCutoffParameters());
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);
         Effects.Line.FogColor?.SetValue(World.Fog.Snap(World.Snap));
@@ -177,6 +178,32 @@ public class LineMesh : IInstancedRenderElement, IDisposable
 
             _graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, _lineVertexCount, 0, _lineTriangleCount, instanceCount);
         }
+    }
+
+    private static Vector4 GetOutlineFalloffCutoffParameters()
+    {
+        const float epsilon = 0.0001f;
+        var outlineThickness = MathF.Max(World.OutlineThickness, 0f);
+        var falloffStartDistance = MathF.Max(World.OutlineFalloffStartDistance, epsilon);
+        var minimumVisibleThickness = MathF.Max(World.OutlineMinimumVisibleThickness, epsilon);
+
+        // Inverse-depth sizing reaches the minimum at this width-dependent depth. The final portion is
+        // replaced with a linear fade that still reaches zero at the same depth.
+        var cutoffDistance = falloffStartDistance * outlineThickness / minimumVisibleThickness;
+        var linearFadeStartDistance = MathF.Max(
+            falloffStartDistance,
+            cutoffDistance - MathF.Max(World.OutlineLinearFadeDistance, 0f)
+        );
+        var linearFadeLength = MathF.Max(cutoffDistance - linearFadeStartDistance, epsilon);
+        var linearFadeStartThickness = outlineThickness * MathF.Min(1f, falloffStartDistance / linearFadeStartDistance);
+
+        // Packing these draw-wide values into one uniform avoids repeating divisions for every line vertex.
+        return new Vector4(
+            cutoffDistance,
+            linearFadeStartDistance,
+            linearFadeStartThickness,
+            1f / linearFadeLength
+        );
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

@@ -44,8 +44,11 @@ float DistantOutlineDistanceFalloff;
 float OutlineClassicCutoffDistance;
 // Falloff start is the distance where perspective-like shrinking begins
 float OutlineFalloffStartDistance;
-// Falloff with cutoff hides lines once their computed screen-space width drops below this value.
+// Defines the width-dependent depth where falloff with cutoff reaches zero.
 float OutlineMinimumVisibleThickness;
+// Falloff-with-cutoff values computed once per draw: cutoff depth, linear-fade start depth,
+// thickness at the start of the linear fade, and reciprocal linear-fade length.
+float4 OutlineFalloffCutoffParameters;
 
 struct VertexShaderInput
 {
@@ -101,17 +104,29 @@ VertexShaderOutput MainVS(
     // Falloff uses the user's specified width up to FalloffStartDistance, then follows
     // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
     float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
-    float actualThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
+    float inverseDepthThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
     float safeHalfThickness = max(HalfThickness, 0.0001);
 
-    thicknessScale = lerp(1.0, actualThickness / safeHalfThickness, falloffMode * falloffEnabled);
+    // The cutoff mode follows inverse-depth sizing until its final segment, then fades linearly to zero.
+    // All divisions needed to locate this segment are precomputed on the CPU and packed into one uniform.
+    float falloffCutoffDistance = OutlineFalloffCutoffParameters.x;
+    float linearFadeStartDistance = OutlineFalloffCutoffParameters.y;
+    float linearFadeStartThickness = OutlineFalloffCutoffParameters.z;
+    float inverseLinearFadeLength = OutlineFalloffCutoffParameters.w;
+    float linearFadeAmount = saturate((falloffCutoffDistance - viewDepth) * inverseLinearFadeLength);
+    float linearFadeThickness = linearFadeStartThickness * linearFadeAmount;
+    float inLinearFade = saturate(sign(viewDepth - linearFadeStartDistance));
+    float cutoffThickness = lerp(inverseDepthThickness, linearFadeThickness, inLinearFade);
+    float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoff);
 
-    // DistanceFalloffWithCutoff is the only mode where user width affects the final cutoff distance:
-    // thicker lines take longer to shrink below the minimum visible thickness.
+    thicknessScale = lerp(1.0, falloffThickness / safeHalfThickness, falloffMode * falloffEnabled);
+
+    // User width still determines where inverse-depth sizing would reach the minimum thickness. Only
+    // DistanceFalloffWithCutoff replaces the final segment and hides the line after that distance.
     float halfThicknessNotPositive = saturate(sign(0.0001 - HalfThickness));
     float halfThicknessBelowMin = saturate(sign(minVisibleThickness - HalfThickness));
-    float actualThicknessBelowMin = saturate(sign(minVisibleThickness - actualThickness));
-    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoff * max(halfThicknessNotPositive, max(halfThicknessBelowMin, actualThicknessBelowMin));
+    float pastFalloffCutoff = saturate(sign(viewDepth - falloffCutoffDistance));
+    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoff * max(halfThicknessNotPositive, max(halfThicknessBelowMin, pastFalloffCutoff));
     float distanceHidden = DistantOutlineDistanceFalloff * halfThicknessNotPositive;
     float classicHidden = cutoffMode * cullPastDistance;
     hideLine = saturate(max(DistantOutlineHideOutlines, max(classicHidden, max(distanceCutoffHidden, distanceHidden))));

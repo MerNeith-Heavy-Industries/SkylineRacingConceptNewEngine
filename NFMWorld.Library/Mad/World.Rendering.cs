@@ -4,7 +4,7 @@ public enum DistantOutlineBehavior
 {
     // Perspective-like mode: outlines keep shrinking with distance, but never get hard-hidden by the minimum visible thickness.
     DistanceFalloff = 0,
-    // Same perspective-like sizing as DistanceFalloff, but skips lines once they become too thin to matter visually.
+    // Same perspective-like sizing as DistanceFalloff, with a short linear fade to zero at its final cutoff.
     DistanceFalloffWithCutoff = 1,
     // Original NFM-style behavior render outlines at full width until a fixed distance, then hide them.
     ClassicCutoff = 2,
@@ -26,6 +26,10 @@ public static partial class World
     // It does not scale with user outline width; thicker lines only survive farther in falloff with cutoff mode.
     public static float OutlineClassicCutoffDistance = 3000f;
 
-    // Below this screen-space thickness, falloff with cutoff stops drawing a line because it is visually negligible.
+    // Defines the width-dependent depth where falloff with cutoff reaches zero and stops drawing the line.
     public static float OutlineMinimumVisibleThickness = 0.1f;
+
+    // FalloffWithCutoff switches from inverse-depth sizing to a linear fade this far before the line
+    // would reach OutlineMinimumVisibleThickness, then reaches zero at the original cutoff distance.
+    public static float OutlineLinearFadeDistance = 1000f;
 }
