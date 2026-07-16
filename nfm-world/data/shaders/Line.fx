@@ -44,9 +44,9 @@ float DistantOutlineDistanceFalloffMask;
 
 // used only for classic cutoff setting
 float OutlineClassicCutoffDistance;
-// Falloff start is the distance where perspective-like shrinking begins
+// Falloff start is the distance where perspective like shrinking begins
 float OutlineFalloffStartDistance;
-// Defines the width-dependent depth where falloff with cutoff reaches zero.
+// Defines the depth where falloff with cutoff reaches zero.
 float OutlineMinimumVisibleThickness;
 // Cutoff depth, linear fade start depth & thickness, and linear-fade length.
 float4 OutlineFalloffCutoffParameters;
@@ -85,7 +85,7 @@ VertexShaderOutput MainVS(
     VS_UnpackParameters(parameters, getsShadowed, alphaOverride, isFullbright, glow);
 
     VertexShaderOutput output = (VertexShaderOutput)0;
-    float lineSizeMultiplier = 1.0;
+    float lineThicknessMultiplier = 1.0;
     float hideLine = 0.0;
 
     // Distance behavior is based on the line's centroid not the endpoints
@@ -121,7 +121,7 @@ VertexShaderOutput MainVS(
     float cutoffThickness = lerp(inverseDepthThickness, linearFadeThickness, linearFadeRegionMask);
     float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoffMask);
 
-    lineSizeMultiplier = lerp(1.0, falloffThickness / safeHalfThickness, falloffMode * falloffEnabled);
+    lineThicknessMultiplier = lerp(1.0, falloffThickness / safeHalfThickness, falloffMode * falloffEnabled);
 
     // User width still determines where inverse-depth sizing would reach the minimum thickness. Only
     // DistanceFalloffWithCutoff replaces the final segment and hides the line after that distance.
@@ -166,7 +166,7 @@ VertexShaderOutput MainVS(
 
     // Screen-space offset for line thickness
     float4 clipPos = mul(viewPos, Projection);
-    float2 offset = normal * HalfThickness * lineSizeMultiplier * sideSign / Resolution * 2.0;
+    float2 offset = normal * HalfThickness * lineThicknessMultiplier * sideSign / Resolution * 2.0;
 
 	float3 color = input.Color;
 
