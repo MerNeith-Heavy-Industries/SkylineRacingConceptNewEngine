@@ -101,7 +101,11 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
-        Effects.Line.OutlineFalloffCutoffParameters?.SetValue(GetOutlineFalloffCutoffParameters());
+        var (CutoffDistance, LinearFadeStartDistance, LinearFadeStartThickness, InverseLinearFadeLength) = GetOutlineFalloffCutoffParameters();
+        Effects.Line.OutlineFalloffCutoffDistance?.SetValue(CutoffDistance);
+        Effects.Line.OutlineFalloffLinearFadeStartDistance?.SetValue(LinearFadeStartDistance);
+        Effects.Line.OutlineFalloffLinearFadeStartThickness?.SetValue(LinearFadeStartThickness);
+        Effects.Line.OutlineFalloffInverseLinearFadeLength?.SetValue(InverseLinearFadeLength);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);
         Effects.Line.FogColor?.SetValue(World.Fog.Snap(World.Snap));
@@ -177,7 +181,12 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         }
     }
 
-    private static Vector4 GetOutlineFalloffCutoffParameters()
+    private static (
+        float CutoffDistance,
+        float LinearFadeStartDistance,
+        float LinearFadeStartThickness,
+        float InverseLinearFadeLength
+    ) GetOutlineFalloffCutoffParameters()
     {
         const float epsilon = 0.0001f;
         var outlineThickness = MathF.Max(World.OutlineThickness, 0f);
@@ -194,8 +203,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         var linearFadeLength = MathF.Max(cutoffDistance - linearFadeStartDistance, epsilon);
         var linearFadeStartThickness = outlineThickness * MathF.Min(1f, falloffStartDistance / linearFadeStartDistance);
 
-        // Constants 
-        return new Vector4(
+        return (
             cutoffDistance,
             linearFadeStartDistance,
             linearFadeStartThickness,
