@@ -72,7 +72,7 @@ public class SettingsMenu(WorldGame game)
     private int _fpsLimit = 63;
     private float _lineWidth = 1;
     private static readonly DistantOutlineBehavior[] DistantOutlineBehaviors = Enum.GetValues<DistantOutlineBehavior>();
-    private DistantOutlineBehavior _distantOutlineBehavior = DistantOutlineBehavior.ClassicCutoff;
+    private DistantOutlineBehavior _distantOutlineBehavior = DistantOutlineBehavior.DistanceFalloffWithCutoff;
     private bool _lowLatency = false;
     private static readonly string[] RenderDistanceNames = ["Tiny", "Short", "Medium", "Far", "Very Far", "Unlimited"];
     private static readonly float[] RenderDistances = [22500, 45000, 90000, 180000, 360000, int.MaxValue];
@@ -793,7 +793,7 @@ public class SettingsMenu(WorldGame game)
             DistantOutlineBehavior.ClassicCutoff => "classic_cutoff",
             DistantOutlineBehavior.AlwaysRender => "always_render",
             DistantOutlineBehavior.HideOutlines => "hide_outlines",
-            _ => "distance_falloff"
+            _ => "distance_falloff_with_cutoff"
         };
     }
 

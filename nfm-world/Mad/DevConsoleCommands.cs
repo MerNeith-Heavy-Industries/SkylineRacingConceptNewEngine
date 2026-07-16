@@ -19,6 +19,8 @@ namespace NFMWorld;
 
 public static class DevConsoleCommands
 {
+    private static readonly DistantOutlineBehavior[] DistantOutlineBehaviors = Enum.GetValues<DistantOutlineBehavior>();
+
     public static void RegisterAll(DevConsole console)
     {
 
@@ -236,16 +238,13 @@ public static class DevConsoleCommands
     {
         if (value.Equals("next", StringComparison.OrdinalIgnoreCase))
         {
-            var next = ((int)World.DistantOutlineBehavior + 1) % Enum.GetValues<DistantOutlineBehavior>().Length;
-            behavior = (DistantOutlineBehavior)next;
+            behavior = GetAdjacentOutlineMode(1);
             return true;
         }
 
         if (value.Equals("prev", StringComparison.OrdinalIgnoreCase))
         {
-            var values = Enum.GetValues<DistantOutlineBehavior>();
-            var next = ((int)World.DistantOutlineBehavior - 1 + values.Length) % values.Length;
-            behavior = (DistantOutlineBehavior)next;
+            behavior = GetAdjacentOutlineMode(-1);
             return true;
         }
 
@@ -283,6 +282,16 @@ public static class DevConsoleCommands
                 behavior = default;
                 return false;
         }
+    }
+
+    private static DistantOutlineBehavior GetAdjacentOutlineMode(int offset)
+    {
+        var currentIndex = Array.IndexOf(DistantOutlineBehaviors, World.DistantOutlineBehavior);
+        if (currentIndex < 0)
+            return DistantOutlineBehaviors[0];
+
+        var nextIndex = (currentIndex + offset + DistantOutlineBehaviors.Length) % DistantOutlineBehaviors.Length;
+        return DistantOutlineBehaviors[nextIndex];
     }
 
     private static void RemasteredMusic(DevConsole console, string[] args)

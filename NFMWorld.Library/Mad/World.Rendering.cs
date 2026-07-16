@@ -2,10 +2,10 @@ namespace NFMWorldLibrary;
 
 public enum DistantOutlineBehavior
 {
-    // Perspective-like mode: outlines keep shrinking with distance, but never get hard-hidden by the minimum visible thickness.
-    DistanceFalloff = 0,
     // Same perspective-like sizing as DistanceFalloff, with a short linear fade to zero at its final cutoff.
-    DistanceFalloffWithCutoff = 1,
+    DistanceFalloffWithCutoff = 0,
+    // Perspective-like mode: outlines keep shrinking with distance, but never get hard-hidden by the minimum visible thickness.
+    DistanceFalloff = 1,
     // Original NFM-style behavior render outlines at full width until a fixed distance, then hide them.
     ClassicCutoff = 2,
     // debug / simple mode, always render outlines
@@ -16,7 +16,7 @@ public enum DistantOutlineBehavior
 
 public static partial class World
 {
-    public static DistantOutlineBehavior DistantOutlineBehavior = DistantOutlineBehavior.ClassicCutoff;
+    public static DistantOutlineBehavior DistantOutlineBehavior = DistantOutlineBehavior.DistanceFalloffWithCutoff;
 
     // The default follow camera is 838 units from the car, 900 prevents shrinking too early
     // Past this point, falloff modes use inverse-depth sizing
