@@ -98,7 +98,6 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
 
         // Line meshes are batched, so exact cutoff/falloff happens in the shader per line centroid.
-        // Keep the distances explicit: classic cutoff is fixed, falloff start controls perspective-like shrinking.
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
@@ -186,7 +185,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         var minimumVisibleThickness = MathF.Max(World.OutlineMinimumVisibleThickness, epsilon);
 
         // Inverse-depth sizing reaches the minimum at this width-dependent depth. The final portion is
-        // replaced with a linear fade that still reaches zero at the same depth.
+        // replaced with a linear fade for a smoother transition to zero thickness
         var cutoffDistance = falloffStartDistance * outlineThickness / minimumVisibleThickness;
         var linearFadeStartDistance = MathF.Max(
             falloffStartDistance,
@@ -195,7 +194,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         var linearFadeLength = MathF.Max(cutoffDistance - linearFadeStartDistance, epsilon);
         var linearFadeStartThickness = outlineThickness * MathF.Min(1f, falloffStartDistance / linearFadeStartDistance);
 
-        // Packing these draw-wide values into one uniform avoids repeating divisions for every line vertex.
+        // Constants 
         return new Vector4(
             cutoffDistance,
             linearFadeStartDistance,
@@ -249,7 +248,7 @@ internal static class LineEffectDistantOutlineSettings
 {
     public static void Apply(DistantOutlineBehavior behavior)
     {
-        // Send mode switches as independent numeric masks. Line.fx uses these in branchless math 
+        // Send mode switches as independent numeric masks for branchless operation
         Effects.Line.DistantOutlineDistanceFalloffWithCutoffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
         Effects.Line.DistantOutlineClassicCutoffMask?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
         Effects.Line.DistantOutlineDistanceFalloffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
