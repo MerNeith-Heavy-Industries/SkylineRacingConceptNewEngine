@@ -661,70 +661,12 @@ public class SettingsMenu(WorldGame game)
 
     public static void SaveConfig()
     {
+        var content = SaveConfigToString();
         try
         {
             var configPath = Path.Combine("data", "cfg", "config.cfg");
             Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-            
-            using (var cfgWriter = new StreamWriter(configPath))
-            {
-                cfgWriter.WriteLine("// NFM-World Configuration File");
-                cfgWriter.WriteLine("// Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                cfgWriter.WriteLine();
-                
-                // Video settings
-                cfgWriter.WriteLine("// Video Settings");
-                cfgWriter.WriteLine($"video_renderer2 {Renderers[_selectedRenderer]}");
-                cfgWriter.WriteLine($"video_resolution3 {Resolutions[_selectedResolution]}");
-                cfgWriter.WriteLine($"video_displaymode {_selectedDisplayMode}");
-                cfgWriter.WriteLine($"video_vsync {(_vsync ? 1 : 0)}");
-                cfgWriter.WriteLine($"video_antialias {_antialias}");
-                cfgWriter.WriteLine($"video_fps {_fpsLimit}");
-                cfgWriter.WriteLine($"video_linewidth2 {_lineWidth.ToString("F4", CultureInfo.InvariantCulture)}");
-                cfgWriter.WriteLine($"video_shadow_cascade {_shadowCascadeLevel}");
-                cfgWriter.WriteLine($"video_shadow_res {_shadowResolution}");
-                cfgWriter.WriteLine($"video_low_latency {(_lowLatency ? 1 : 0)}");
-                cfgWriter.WriteLine($"video_render_distance {_renderDistance}");
-                cfgWriter.WriteLine();
-                
-                // Audio settings
-                cfgWriter.WriteLine("// Audio Settings");
-                cfgWriter.WriteLine($"audio_mute {(_muteAll ? 1 : 0)}");
-                cfgWriter.WriteLine($"audio_master {_masterVolume.ToString("F2", CultureInfo.InvariantCulture)}");
-                cfgWriter.WriteLine($"audio_music {_musicVolume.ToString("F2", CultureInfo.InvariantCulture)}");
-                cfgWriter.WriteLine($"audio_effects {_effectsVolume.ToString("F2", CultureInfo.InvariantCulture)}");
-                cfgWriter.WriteLine($"audio_remaster {(_remasteredMusic ? 1 : 0)}");
-                cfgWriter.WriteLine();
-                
-                // Camera settings
-                cfgWriter.WriteLine("// Camera Settings");
-                cfgWriter.WriteLine($"camera_fov {_fov.ToString("F1", CultureInfo.InvariantCulture)}");
-                cfgWriter.WriteLine($"camera_follow_y {_followY}");
-                cfgWriter.WriteLine($"camera_follow_z {_followZ}");
-                cfgWriter.WriteLine($"camera_smooth_fov {(_smoothFov ? 1 : 0)}");
-                cfgWriter.WriteLine();
-                
-                // Key bindings
-                cfgWriter.WriteLine("// Key Bindings");
-                cfgWriter.WriteLine($"key_accelerate {(int)Bindings.Accelerate}");
-                cfgWriter.WriteLine($"key_ab {(int)Bindings.AerialBounce}");
-                cfgWriter.WriteLine($"key_smoothturn {(int)Bindings.AerialStrafe}");
-                cfgWriter.WriteLine($"key_brake {(int)Bindings.Brake}");
-                cfgWriter.WriteLine($"key_turnleft {(int)Bindings.TurnLeft}");
-                cfgWriter.WriteLine($"key_turnright {(int)Bindings.TurnRight}");
-                cfgWriter.WriteLine($"key_handbrake {(int)Bindings.Handbrake}");
-                cfgWriter.WriteLine($"key_lookback {(int)Bindings.LookBack}");
-                cfgWriter.WriteLine($"key_lookleft {(int)Bindings.LookLeft}");
-                cfgWriter.WriteLine($"key_lookright {(int)Bindings.LookRight}");
-                cfgWriter.WriteLine($"key_togglemusic {(int)Bindings.ToggleMusic}");
-                cfgWriter.WriteLine($"key_togglesfx {(int)Bindings.ToggleSFX}");
-                cfgWriter.WriteLine($"key_togglearrace {(int)Bindings.ToggleArrace}");
-                cfgWriter.WriteLine($"key_toggleradar {(int)Bindings.ToggleRadar}");
-                cfgWriter.WriteLine($"key_cycleview {(int)Bindings.CycleView}");
-                cfgWriter.WriteLine($"key_console {(int)Bindings.ToggleDevConsole}");
-                cfgWriter.WriteLine();
-            }
-            
+            File.WriteAllText(configPath, content);
             Logging.Debug($"Config saved to {configPath}");
         }
         catch (Exception ex)
@@ -732,6 +674,210 @@ public class SettingsMenu(WorldGame game)
             SentrySdk.CaptureException(ex);
             Logging.Error($"Error saving config: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Serialize current settings to the config.cfg format as a string.
+    /// Used to snapshot state before editing so Cancel can revert.
+    /// </summary>
+    public static string SaveConfigToString()
+    {
+        using var sw = new StringWriter();
+        sw.WriteLine("// NFM-World Configuration File");
+        sw.WriteLine();
+        sw.WriteLine("// Video Settings");
+        sw.WriteLine($"video_renderer2 {Renderers[_selectedRenderer]}");
+        sw.WriteLine($"video_resolution3 {Resolutions[_selectedResolution]}");
+        sw.WriteLine($"video_displaymode {_selectedDisplayMode}");
+        sw.WriteLine($"video_vsync {(_vsync ? 1 : 0)}");
+        sw.WriteLine($"video_antialias {_antialias}");
+        sw.WriteLine($"video_fps {_fpsLimit}");
+        sw.WriteLine($"video_linewidth2 {_lineWidth.ToString("F4", CultureInfo.InvariantCulture)}");
+        sw.WriteLine($"video_shadow_cascade {_shadowCascadeLevel}");
+        sw.WriteLine($"video_shadow_res {_shadowResolution}");
+        sw.WriteLine($"video_low_latency {(_lowLatency ? 1 : 0)}");
+        sw.WriteLine($"video_render_distance {_renderDistance}");
+        sw.WriteLine();
+        sw.WriteLine("// Audio Settings");
+        sw.WriteLine($"audio_mute {(_muteAll ? 1 : 0)}");
+        sw.WriteLine($"audio_master {_masterVolume.ToString("F2", CultureInfo.InvariantCulture)}");
+        sw.WriteLine($"audio_music {_musicVolume.ToString("F2", CultureInfo.InvariantCulture)}");
+        sw.WriteLine($"audio_effects {_effectsVolume.ToString("F2", CultureInfo.InvariantCulture)}");
+        sw.WriteLine($"audio_remaster {(_remasteredMusic ? 1 : 0)}");
+        sw.WriteLine();
+        sw.WriteLine("// Camera Settings");
+        sw.WriteLine($"camera_fov {_fov.ToString("F1", CultureInfo.InvariantCulture)}");
+        sw.WriteLine($"camera_follow_y {_followY}");
+        sw.WriteLine($"camera_follow_z {_followZ}");
+        sw.WriteLine($"camera_smooth_fov {(_smoothFov ? 1 : 0)}");
+        sw.WriteLine();
+        sw.WriteLine("// Key Bindings");
+        sw.WriteLine($"key_accelerate {(int)Bindings.Accelerate}");
+        sw.WriteLine($"key_ab {(int)Bindings.AerialBounce}");
+        sw.WriteLine($"key_smoothturn {(int)Bindings.AerialStrafe}");
+        sw.WriteLine($"key_brake {(int)Bindings.Brake}");
+        sw.WriteLine($"key_turnleft {(int)Bindings.TurnLeft}");
+        sw.WriteLine($"key_turnright {(int)Bindings.TurnRight}");
+        sw.WriteLine($"key_handbrake {(int)Bindings.Handbrake}");
+        sw.WriteLine($"key_lookback {(int)Bindings.LookBack}");
+        sw.WriteLine($"key_lookleft {(int)Bindings.LookLeft}");
+        sw.WriteLine($"key_lookright {(int)Bindings.LookRight}");
+        sw.WriteLine($"key_togglemusic {(int)Bindings.ToggleMusic}");
+        sw.WriteLine($"key_togglesfx {(int)Bindings.ToggleSFX}");
+        sw.WriteLine($"key_togglearrace {(int)Bindings.ToggleArrace}");
+        sw.WriteLine($"key_toggleradar {(int)Bindings.ToggleRadar}");
+        sw.WriteLine($"key_cycleview {(int)Bindings.CycleView}");
+        sw.WriteLine($"key_console {(int)Bindings.ToggleDevConsole}");
+        return sw.ToString();
+    }
+
+    /// <summary>
+    /// Restore settings from a previously-saved config string.
+    /// Used to revert changes when Cancel is clicked.
+    /// </summary>
+    public static void LoadConfigFromSnapshot(string configString)
+    {
+        using var sr = new StringReader(configString);
+        string? line;
+        while ((line = sr.ReadLine()) != null)
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("//"))
+                continue;
+
+            var parts = trimmed.Split(' ', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+                continue;
+
+            ParseConfigLine(parts[0], parts[1]);
+        }
+        ApplySettings(out _);
+    }
+
+    /// <summary>
+    /// Parse a single "key value" config line and update the corresponding static field.
+    /// </summary>
+    private static void ParseConfigLine(string key, string value)
+    {
+        try
+        {
+            switch (key)
+            {
+                // Video
+                case "video_renderer2":
+                    _selectedRenderer = Array.IndexOf(_resolutions, value) is var r and > -1 ? r : _selectedRenderer;
+                    break;
+                case "video_resolution3":
+                    _selectedResolution = Array.IndexOf(_resolutions, value) is var resIdx and > -1 ? resIdx : _selectedResolution;
+                    break;
+                case "video_displaymode":
+                    _selectedDisplayMode = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_vsync":
+                    _vsync = int.Parse(value) != 0;
+                    break;
+                case "video_antialias":
+                    _antialias = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_fps":
+                    _fpsLimit = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_linewidth2":
+                    _lineWidth = float.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_shadow_cascade":
+                    _shadowCascadeLevel = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_shadow_res":
+                    _shadowResolution = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "video_low_latency":
+                    _lowLatency = int.Parse(value) != 0;
+                    break;
+                case "video_render_distance":
+                    _renderDistance = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                // Audio
+                case "audio_mute":
+                    _muteAll = int.Parse(value) != 0;
+                    break;
+                case "audio_master":
+                    _masterVolume = float.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "audio_music":
+                    _musicVolume = float.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "audio_effects":
+                    _effectsVolume = float.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "audio_remaster":
+                    _remasteredMusic = int.Parse(value) != 0;
+                    break;
+                // Camera
+                case "camera_fov":
+                    _fov = float.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "camera_follow_y":
+                    _followY = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "camera_follow_z":
+                    _followZ = int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "camera_smooth_fov":
+                    _smoothFov = int.Parse(value) != 0;
+                    break;
+                // Key bindings
+                case "key_accelerate":
+                    Bindings.Accelerate = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_ab":
+                    Bindings.AerialBounce = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_smoothturn":
+                    Bindings.AerialStrafe = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_brake":
+                    Bindings.Brake = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_turnleft":
+                    Bindings.TurnLeft = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_turnright":
+                    Bindings.TurnRight = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_handbrake":
+                    Bindings.Handbrake = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_lookback":
+                    Bindings.LookBack = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_lookleft":
+                    Bindings.LookLeft = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_lookright":
+                    Bindings.LookRight = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_togglemusic":
+                    Bindings.ToggleMusic = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_togglesfx":
+                    Bindings.ToggleSFX = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_togglearrace":
+                    Bindings.ToggleArrace = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_toggleradar":
+                    Bindings.ToggleRadar = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_cycleview":
+                    Bindings.CycleView = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+                case "key_console":
+                    Bindings.ToggleDevConsole = (Key)int.Parse(value, CultureInfo.InvariantCulture);
+                    break;
+            }
+        }
+        catch { /* skip malformed lines */ }
     }
 
     public static void LoadFnaRenderer()

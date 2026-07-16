@@ -13,6 +13,7 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
     public override bool EnableInput => true;
 
     private string? _capturingAction;
+    private string? _originalConfig;
 
     protected override void OnMessage(string type, JsonElement? args)
     {
@@ -26,12 +27,17 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
                 break;
             case "saveConfig":
                 var requireRestart = SettingsMenu.SaveConfigAndCheckRestart();
+                // Snapshot the newly-saved state as the new baseline
+                _originalConfig = null; // will be re-captured on next getConfig if needed
                 if (requireRestart)
                     Push("requireRestart", true);
                 else
                     Push("saved", true);
                 break;
             case "close":
+                // Cancel: restore settings to the state when the page was opened
+                if (_originalConfig != null)
+                    SettingsMenu.LoadConfigFromSnapshot(_originalConfig);
                 CloseRequested?.Invoke();
                 break;
             case "restartNow":
@@ -56,6 +62,9 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
     /// </summary>
     public void PushInitialState()
     {
+        // Capture the baseline config before any JS-driven changes
+        _originalConfig ??= SettingsMenu.SaveConfigToString();
+
         var snapshot = SettingsMenu.GetCurrentSnapshot();
         PushMemoryPack("config", snapshot);
 
