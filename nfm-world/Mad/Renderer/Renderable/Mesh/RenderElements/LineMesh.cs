@@ -102,7 +102,6 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
-        Effects.Line.OutlineMinimumVisibleThickness?.SetValue(World.OutlineMinimumVisibleThickness);
         Effects.Line.OutlineFalloffCutoffParameters?.SetValue(GetOutlineFalloffCutoffParameters());
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);

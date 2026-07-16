@@ -46,16 +46,14 @@ float DistantOutlineDistanceFalloffMask;
 float OutlineClassicCutoffDistance;
 // Falloff start is the distance where perspective like shrinking begins
 float OutlineFalloffStartDistance;
-// Defines the depth where falloff with cutoff reaches zero.
-float OutlineMinimumVisibleThickness;
-// Cutoff depth, linear fade start depth & thickness, and linear-fade length.
+// Cutoff depth, linear fade start depth & thickness, and reciprocal linear-fade length.
 float4 OutlineFalloffCutoffParameters;
 
 struct VertexShaderInput
 {
 	float3 PositionA : POSITION0;
 	float3 PositionB : POSITION1;
-	float Side : TEXCOORD0; // -1 or 1
+	float Side : TEXCOORD0; // +/-1 for endpoint A, +/-2 for endpoint B
 	float3 Normal : NORMAL0;
 	float3 Color : COLOR0;
 	float3 Centroid : POSITION2;
@@ -85,8 +83,6 @@ VertexShaderOutput MainVS(
     VS_UnpackParameters(parameters, getsShadowed, alphaOverride, isFullbright, glow);
 
     VertexShaderOutput output = (VertexShaderOutput)0;
-    float lineThicknessMultiplier = 1.0;
-    float hideLine = 0.0;
 
     // Distance behavior is based on the line's centroid not the endpoints
     // Using camera-space depth matches how the line actually appears on screen better than radial distance
@@ -95,18 +91,13 @@ VertexShaderOutput MainVS(
 
     // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently,
     // masks also let us collapse hidden quads without using pixel-shader discard
-    float classicCutoffEnabled = saturate(sign(OutlineClassicCutoffDistance));
-    float falloffEnabled = saturate(sign(OutlineFalloffStartDistance));
-    float falloffMode = saturate(DistantOutlineDistanceFalloffMask + DistantOutlineDistanceFalloffWithCutoffMask);
-    float cutoffMode = DistantOutlineClassicCutoffMask * classicCutoffEnabled;
+    float falloffMode = DistantOutlineDistanceFalloffMask + DistantOutlineDistanceFalloffWithCutoffMask;
     float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
-    float minVisibleThickness = max(OutlineMinimumVisibleThickness, 0.0);
 
     // Falloff uses the user's specified width up to FalloffStartDistance, then follows
     // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
     float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
     float inverseDepthThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
-    float safeHalfThickness = max(HalfThickness, 0.0001);
 
     // The cutoff mode follows inverse-depth sizing until its final segment, then fades linearly to zero.
     // All divisions needed to locate this segment are precomputed on the CPU and packed into one uniform.
@@ -120,18 +111,13 @@ VertexShaderOutput MainVS(
     float linearFadeRegionMask = saturate(sign(viewDepth - linearFadeStartDistance));
     float cutoffThickness = lerp(inverseDepthThickness, linearFadeThickness, linearFadeRegionMask);
     float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoffMask);
+    float renderedHalfThickness = lerp(HalfThickness, falloffThickness, falloffMode);
 
-    lineThicknessMultiplier = lerp(1.0, falloffThickness / safeHalfThickness, falloffMode * falloffEnabled);
-
-    // User width still determines where inverse-depth sizing would reach the minimum thickness. Only
-    // DistanceFalloffWithCutoff replaces the final segment and hides the line after that distance.
-    float halfThicknessNotPositive = saturate(sign(0.0001 - HalfThickness));
-    float halfThicknessBelowMin = saturate(sign(minVisibleThickness - HalfThickness));
+    // Only DistanceFalloffWithCutoff hides the line after its precomputed cutoff distance.
     float pastFalloffCutoff = saturate(sign(viewDepth - falloffCutoffDistance));
-    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoffMask * max(halfThicknessNotPositive, max(halfThicknessBelowMin, pastFalloffCutoff));
-    float distanceHidden = DistantOutlineDistanceFalloffMask * halfThicknessNotPositive;
-    float classicHidden = cutoffMode * cullPastDistance;
-    hideLine = saturate(max(classicHidden, max(distanceCutoffHidden, distanceHidden)));
+    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoffMask * pastFalloffCutoff;
+    float classicHidden = DistantOutlineClassicCutoffMask * cullPastDistance;
+    float hideLine = max(classicHidden, distanceCutoffHidden);
 
     // Decode Side: abs > 1.5 means endpoint B, sign gives offset direction
     float3 position = (abs(input.Side) > 1.5) ? input.PositionB : input.PositionA;
@@ -166,7 +152,7 @@ VertexShaderOutput MainVS(
 
     // Screen-space offset for line thickness
     float4 clipPos = mul(viewPos, Projection);
-    float2 offset = normal * HalfThickness * lineThicknessMultiplier * sideSign / Resolution * 2.0;
+    float2 offset = normal * renderedHalfThickness * sideSign / Resolution * 2.0;
 
 	float3 color = input.Color;
 
