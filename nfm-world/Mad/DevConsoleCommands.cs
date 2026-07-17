@@ -124,17 +124,17 @@ public static class DevConsoleCommands
             }
         });
         console.RegisterCommand("html_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
-        console.RegisterCommand("cef_devtools", (console, args) =>
-        {
-            GameSparker.CefRenderer?.ShowDevTools();
-            Logging.Info("CEF DevTools opened.");
-        });
         console.RegisterCommand("cef_reload", (console, args) =>
         {
             GameSparker.CefRenderer?.Reload();
             Logging.Info("CEF page reloaded.");
         });
 #endif
+        console.RegisterCommand("cef_devtools", (console, args) =>
+        {
+            GameSparker.CefRenderer?.ShowDevTools();
+            Logging.Info("CEF DevTools opened.");
+        });
 
         //cheats
         //console.RegisterCommand("sv_cheats", SVCheats);

@@ -153,7 +153,22 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         // Fix crash with youtube https://github.com/chromiumembedded/cef/issues/3643
         flags = (flags ?? []).Append(KeyValuePair.Create("disable-features", "FirstPartySets")).ToArray();
 
-        CustomScheme[] customSchemes = [];
+        var nfmwSchemeHandlerFactory = new NfmwSchemeHandlerFactory();
+
+        CustomScheme[] customSchemes =
+        [
+            new()
+            {
+                SchemeName = "nfmw",
+                DomainName = "",
+                IsStandard = true,
+                IsLocal = true,
+                IsSecure = true,
+                IsCorsEnabled = true,
+                IsFetchEnabled = true,
+                SchemeHandlerFactory = nfmwSchemeHandlerFactory,
+            },
+        ];
         CefRuntime.Initialize(new CefMainArgs([System.Environment.ProcessPath]), settings, new BrowserCefApp(customSchemes, flags), IntPtr.Zero);
 
         foreach (var scheme in customSchemes)
@@ -309,15 +324,8 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
             return "http://localhost:5173/";
         }
 
-        // Production: load from built dist/
-        var indexPath = Path.Combine(AppContext.BaseDirectory, "data", "html", "dist", "index.html");
-
-        if (File.Exists(indexPath))
-        {
-            return new Uri(indexPath).AbsoluteUri;
-        }
-
-        return "about:blank";
+        // Production: load via custom nfmw:// scheme (served from data/html/dist/)
+        return "nfmw://app/index.html";
     }
 
     /// <summary>
