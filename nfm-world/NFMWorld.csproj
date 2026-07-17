@@ -191,13 +191,14 @@
         <Exec Command="pnpm run build" WorkingDirectory="data\html" />
     </Target>
 
-    <Target Name="IncludeWebUi" BeforeTargets="GetCopyToOutputDirectoryItems"
+    <Target Name="IncludeWebUi" BeforeTargets="AssignTargetPaths"
+            DependsOnTargets="BuildWebUi"
             Condition="Exists('data\html\dist')">
         <ItemGroup>
             <WebUiFiles Include="data\html\dist\**\*" />
             <Content Include="@(WebUiFiles)">
                 <Link>data\html\dist\%(RecursiveDir)%(FileName)%(Extension)</Link>
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
             </Content>
         </ItemGroup>
     </Target>
