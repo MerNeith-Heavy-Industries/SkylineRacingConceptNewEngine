@@ -84,6 +84,21 @@
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
 
+    <Target Name="EnsureCefGlueMacRuntimeLibrariesInOutDir"
+            BeforeTargets="_CopyOutOfDateSourceItemsToOutputDirectory"
+            Condition="$([MSBuild]::IsOSPlatform('OSX')) and ('$(RuntimeIdentifier)' == 'osx-x64' or '$(RuntimeIdentifier)' == 'osx-arm64')">
+        <ItemGroup>
+            <_CefMacRuntimeLibraries Include="@(CefRedistOSX64);@(CefRedistOSXARM64)"
+                                     Condition="'%(Filename)%(Extension)' == 'libEGL.dylib' or '%(Filename)%(Extension)' == 'libGLESv2.dylib' or '%(Filename)%(Extension)' == 'libvk_swiftshader.dylib'" />
+            <_CefMacRuntimeLibrariesToCopy Include="@(_CefMacRuntimeLibraries)"
+                                           Condition="!Exists('$(OutDir)%(Filename)%(Extension)')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_CefMacRuntimeLibrariesToCopy)"
+              DestinationFolder="$(OutDir)"
+              SkipUnchangedFiles="true"
+              Condition="'@(_CefMacRuntimeLibrariesToCopy)' != ''" />
+    </Target>
+
     <!-- XAML files to compile -->
     
     <!-- Shaders to compile -->
