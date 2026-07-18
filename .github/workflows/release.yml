@@ -251,6 +251,11 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - name: Install Command Line Tools for Xcode
         run: |
           # Install Xcode Command Line Tools (required for NativeAOT)
