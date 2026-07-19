@@ -15,19 +15,6 @@ public class TimeTrialGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
     protected const int PlayerCarIndex = 0;
     protected const int GhostCarIndex = 1;
 
-    public override event EventHandler<byte[]>? RaceFinished;
-
-    protected enum TimeTrialState
-    {
-        NotStarted,
-        Countdown,
-        InProgress,
-        Finished
-    }
-
-    protected int _countdownTime = 3;
-    // Amount of ticks until we decrease countdown by 1
-    protected int _innerCountdownTicks = PlayerCarIndex;
     protected TimeTrialState _currentState = TimeTrialState.NotStarted;
 
     public override void Begin()
@@ -99,7 +86,6 @@ public class TimeTrialGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
 
         if (CarsInRace[PlayerCarIndex].CurrentLap >= CurrentStage.nlaps)
         {
-            RaceFinished?.Invoke(this, []);
             _currentState = TimeTrialState.Finished;
         }
         

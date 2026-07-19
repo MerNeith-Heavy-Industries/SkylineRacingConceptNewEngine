@@ -18,10 +18,26 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
     /// <summary>Per-frame HUD state pushed to the CEF overlay.</summary>
     public HudStateData HudState { get; protected set; } = new();
 
-    /// <summary>
-    /// Arguments: byte[] player standings indexed by player index
-    /// </summary>
-    public abstract event EventHandler<byte[]>? RaceFinished;
+    /// <inheritdoc />
+    public virtual RaceResults? GetResults() => null;
+
+    /// <inheritdoc />
+    public virtual void SetServerResults(RaceResults results) { }
+
+    /// <inheritdoc />
+    public virtual void OnServerEvent(ReadOnlySpan<byte> payload) { }
+
+    /// <inheritdoc />
+    public virtual void SetEventSender(Action<ReadOnlyMemory<byte>> sendToServer)
+    {
+        _sendToServer = sendToServer;
+    }
+
+    /// <summary>Send an event to the server. No-op if no sender is configured.</summary>
+    protected void SendToServer(ReadOnlyMemory<byte> payload)
+        => _sendToServer?.Invoke(payload);
+
+    private Action<ReadOnlyMemory<byte>>? _sendToServer;
 
     /// <summary>
     /// Called to awake the gamemode.
