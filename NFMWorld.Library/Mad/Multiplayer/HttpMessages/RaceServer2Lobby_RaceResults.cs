@@ -1,4 +1,5 @@
 using MemoryPack;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer.Packets.S2C;
 
 namespace NFMWorldLibrary.Multiplayer.HttpMessages;
@@ -15,5 +16,5 @@ public partial struct RaceServer2Lobby_RaceResults
 
     /// <summary>Player finish results, keyed by player index.</summary>
     [MemoryPackOrder(1)]
-    public required Dictionary<byte, PlayerResult> PlayerResults { get; set; }
+    public required RaceResults Results { get; set; }
 }

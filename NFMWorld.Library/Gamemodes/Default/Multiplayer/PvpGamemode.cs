@@ -1,22 +1,26 @@
 using System.Diagnostics;
 using Maxine.Extensions;
-using Microsoft.Xna.Framework;
+using MemoryPack;
 using NFMWorld.DriverInterface;
 using NFMWorld.Sfx;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary.Backend.AI;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Util;
 
-
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
-public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, PvpConstraint constraint)
+/// <summary>
+/// Client-side PvP racing gamemode. Runs full physics locally, sends
+/// checkpoint events to the server, and receives authoritative standings.
+/// Removes all <see cref="ClientServer.RunIfOnClient"/> gating — this
+/// class is the client-only gamemode.
+/// </summary>
+public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData, PvpConstraint constraint)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
-    public override event EventHandler<byte[]>? RaceFinished;
-
     protected enum InnerRaceState
     {
         Countdown,
@@ -25,7 +29,6 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
     }
 
     protected int _countdownTime = 3;
-    // Amount of ticks until we decrease countdown by 1
     private int _innerCountdownTicks = 0;
     protected InnerRaceState _currentState = InnerRaceState.Countdown;
 
@@ -33,9 +36,16 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
     private int _newTick = 0;
 
-    private int _finishTicks;
-    
-    private int _winner;
+    // ── Client-only fields (formerly [ClientOnly]) ────────────────
+    private int _playerCarIndex;
+    private int _lastSentCheckpoint = -1;
+    private int _lastSentLap = 0;
+    private uint _clientTicks;
+
+    // ── Server-driven standings ───────────────────────────────────
+    private RaceResults? _serverResults;
+
+    // ── Lifecycle ─────────────────────────────────────────────────
 
     public override void Begin()
     {
@@ -44,7 +54,6 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
     public override void End()
     {
-        // Cleanup for Time Trial mode
     }
 
     public override void Reset()
@@ -52,8 +61,10 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         base.Reset();
 
         _countdownTime = 4;
-        _innerCountdownTicks = 0; // Tick down immediately to "three"
-        _finishTicks = 0;
+        _innerCountdownTicks = 0;
+        _lastSentCheckpoint = -1;
+        _lastSentLap = 0;
+        _serverResults = null;
         raceTimer.Reset();
 
         CarsInRace.Clear();
@@ -71,12 +82,24 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
         _currentState = InnerRaceState.Countdown;
 
-        ClientServer.RunIfOnClient(ClientReset);
+        // Client-side reset (formerly ClientReset)
+        _playerCarIndex = Players.FindIndex(p => p.IsClientPlayer);
+        if (_playerCarIndex == -1)
+        {
+            Logging.Warning("Client player not found in players list, defaulting to index 0");
+            _playerCarIndex = 0;
+        }
+
+        GamemodeData.ClientCallbacks.ResetCheckpointGlow();
+        HudState = new HudStateData { Lap = 1, TotalLaps = CurrentStage.nlaps };
+        IBackend.Backend.StopAllSounds();
     }
+
+    // ── Main tick ─────────────────────────────────────────────────
 
     public override void GameTick()
     {
-        ClientServer.RunIfOnClient(ClientGameTick);
+        FrameTrace.AddMessage($"contox: {CarsInRace[_playerCarIndex].Position.X:0.00}, contoz: {CarsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {CarsInRace[_playerCarIndex].Position.Y:0.00}");
 
         if (GamemodeData.RaceState != RaceState.InProgress)
         {
@@ -97,6 +120,27 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         }
     }
 
+    // ── Countdown ─────────────────────────────────────────────────
+
+    protected virtual void CountdownTick()
+    {
+        _innerCountdownTicks--;
+        if (_innerCountdownTicks <= 0)
+        {
+            _countdownTime--;
+            _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
+            if (_countdownTime <= 0)
+            {
+                _currentState = InnerRaceState.InProgress;
+                raceTimer.Start();
+            }
+        }
+
+        UpdateCountdown(_countdownTime);
+    }
+
+    // ── In-race ───────────────────────────────────────────────────
+
     protected virtual void InRace()
     {
         for (var i = 0; i < CarsInRace.Count; i++)
@@ -108,8 +152,7 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
             }
         }
 
-        // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
-        // We round this up to 3 ticks per 63TPS tick.
+        // Inter-car collision at original tickrate (21.4 TPS)
         if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
             for (int i = 0; i < CarsInRace.Count; i++)
@@ -131,7 +174,6 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
 
         if (CurrentStage.checkpoints.Count == 0)
         {
-            // lol
             return;
         }
         
@@ -143,18 +185,40 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         
         CheckPointHelper.CalculatePositions(CurrentStage, CarsInRace);
 
+        // ── Local race finish detection (client-side fallback) ────
         for (var i = 0; i < CarsInRace.Count; i++)
         {
             if (CarsInRace[i].CurrentLap >= CurrentStage.nlaps)
             {
                 _currentState = InnerRaceState.Finished;
-                _winner = i;
                 raceTimer.Stop();
             }
         }
 
-        ClientServer.RunIfOnClient(InRaceClient);
+        // ── Send checkpoint events to server ──────────────────────
+        var myCar = CarsInRace[_playerCarIndex];
+        if (myCar.CurrentCheckpoint != _lastSentCheckpoint ||
+            myCar.CurrentLap != _lastSentLap)
+        {
+            var evt = new PvpCheckpointEvent
+            {
+                CheckpointIndex = myCar.CurrentCheckpoint,
+                Lap = myCar.CurrentLap,
+                ClientTick = _clientTicks
+            };
+            var payload = MemoryPackSerializer.Serialize<IPvpServerEvent>(evt);
+            SendToServer(payload);
+
+            _lastSentCheckpoint = myCar.CurrentCheckpoint;
+            _lastSentLap = myCar.CurrentLap;
+        }
+        _clientTicks++;
+
+        // ── HUD and sounds ────────────────────────────────────────
+        UpdateHudAndSounds(myCar);
     }
+
+    // ── Finished ──────────────────────────────────────────────────
 
     private void Finished()
     {
@@ -163,77 +227,47 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
             inGameCar.CarPhysics.Halted = true;
             inGameCar.Drive(GamemodeData.CurrentStage);
         }
+    }
 
-        _finishTicks++;
+    // ── Server events ─────────────────────────────────────────────
 
-        if (_finishTicks == 30)
+    public override void OnServerEvent(ReadOnlySpan<byte> payload)
+    {
+        // Handle gamemode-specific server events (e.g., standings updates).
+    }
+
+    public override void SetServerResults(RaceResults results)
+    {
+        _serverResults = results;
+        _currentState = InnerRaceState.Finished;
+        raceTimer.Stop();
+    }
+
+    // ── Results ───────────────────────────────────────────────────
+
+    public override RaceResults? GetResults()
+    {
+        if (_serverResults != null)
+            return _serverResults;
+
+        if (_currentState != InnerRaceState.Finished)
+            return null;
+
+        return new RaceResults
         {
-            var positions = new byte[CarsInRace.Count];
-            // always give position 0 to _winner. assign remaining positions in ascending order based on placement.
-            positions[_winner] = 0;
-            byte currentPosition = 1;
-            for (byte pos = 0; pos < CarsInRace.Count; pos++)
+            GamemodeId = constraint switch
             {
-                if (pos == _winner) continue;
-                for (byte i = 0; i < CarsInRace.Count; i++)
-                {
-                    if (i == _winner) continue;
-                    if (CarsInRace[i].Placement == pos)
-                    {
-                        positions[i] = currentPosition;
-                        currentPosition++;
-                    }
-                }
-            }
-            RaceFinished?.Invoke(this, positions);
-        }
+                PvpConstraint.Racing => "nfmm/racing",
+                PvpConstraint.Wasting => "nfmm/wasting",
+                PvpConstraint.Both => "nfmm/both",
+                _ => "nfmm/racing"
+            },
+            RaceDuration = raceTimer.Elapsed,
+            Standings = []
+        };
     }
 
-    protected virtual void CountdownTick()
-    {
-        _innerCountdownTicks--;
-        if (_innerCountdownTicks <= 0)
-        {
-            _countdownTime--;
-            _innerCountdownTicks = (int)(10 * (1 / Physics.PHYSICS_MULTIPLIER));
-            if (_countdownTime <= 0)
-            {
-                _currentState = InnerRaceState.InProgress;
-                raceTimer.Start();
-            }
-        }
-
-        ClientServer.RunIfOnClient(ClientCountdownTick);
-    }
-    
-    #region Client
-
-    [ClientOnly]
-    private int _playerCarIndex;
-
-    [ClientOnly]
-    protected void ClientGameTick()
-    {
-        FrameTrace.AddMessage($"contox: {CarsInRace[_playerCarIndex].Position.X:0.00}, contoz: {CarsInRace[_playerCarIndex].Position.Z:0.00}, contoy: {CarsInRace[_playerCarIndex].Position.Y:0.00}");
-    }
-
-    [ClientOnly]
-    protected override void ClientReset()
-    {
-        _playerCarIndex = Players.FindIndex(p => p.IsClientPlayer);
-        if (_playerCarIndex == -1)
-        {
-            Logging.Warning("Client player not found in players list, defaulting to index 0");
-            _playerCarIndex = 0;
-        }
-        base.ClientReset();
-    }
-
-    [ClientOnly]
-    protected void InRaceClient()
-    {
-        UpdateHudAndSounds(CarsInRace[_playerCarIndex]);
-    }
+    // ── Rendering ─────────────────────────────────────────────────
 
     public override void Render()
     {
@@ -246,11 +280,14 @@ public class PvpGamemode(GamemodeParameters gamemodeParameters, IGamemodeData ga
         }
     }
 
-    [ClientOnly]
-    protected void ClientCountdownTick()
+    // ── Input ─────────────────────────────────────────────────────
+
+    public override void KeyPressed(Key key, in Keys keys)
     {
-        UpdateCountdown(_countdownTime);
+        base.KeyPressed(key, keys);
+        if (key == Key.R)
+        {
+            Reset();
+        }
     }
-    
-    #endregion
 }

@@ -61,6 +61,13 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
             // RaceStateChanged for navigation.
             if (value is RaceState.Finished or RaceState.FailedToStart)
             {
+                if (value == RaceState.Finished)
+                {
+                    var results = GamemodeInstance?.GetResults();
+                    if (results is { } resultsValue)
+                        RaceFinished?.Invoke(this, resultsValue);
+                }
+
                 _hasAutoPopped = true;
                 GameSparker.PopPhase();
             }
@@ -68,6 +75,13 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     } = RaceState.InProgress;
 
     IClientCallbacks IGamemodeData.ClientCallbacks => this;
+
+    /// <summary>
+    /// Fired when <see cref="RaceState"/> transitions to <see cref="RaceState.Finished"/>.
+    /// Campaign code hooks here to receive race results uniformly for both
+    /// singleplayer and multiplayer.
+    /// </summary>
+    public event EventHandler<RaceResults>? RaceFinished;
 
     public event EventHandler<RaceState>? RaceStateChanged;
 

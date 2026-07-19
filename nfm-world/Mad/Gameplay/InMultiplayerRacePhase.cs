@@ -48,6 +48,10 @@ public class InMultiplayerRacePhase : BaseRacePhase
         _session = session;
         // Set initial race state once at construction; Enter() no longer resets it.
         RaceState = RaceState.WaitingToStart;
+
+        // Inject event sender so the client gamemode can send events to the server.
+        GamemodeInstance?.SetEventSender(payload =>
+            _transport.SendPacketToServer(new C2S_ClientEvent { Payload = payload.ToArray() }, reliable: true));
     }
     private static BaseGamemodeFactory GetGameModeFactory(MatchGameplayInfo matchGameplayInfo)
     {
@@ -127,6 +131,20 @@ public class InMultiplayerRacePhase : BaseRacePhase
                         break;
                     _lastTick[carIndex] = playerState.State.Ticks;
                     PlayerState.ApplyTo(playerState.State, car);
+                    break;
+                case S2C_ServerEvent serverEvent:
+                    try
+                    {
+                        GamemodeInstance?.OnServerEvent(serverEvent.Payload.Span);
+                    }
+                    finally
+                    {
+                        serverEvent.Dispose();
+                    }
+                    break;
+                case S2C_GameFinished gameFinished:
+                    GamemodeInstance?.SetServerResults(gameFinished.Results);
+                    RaceState = RaceState.Finished;
                     break;
             }
         }

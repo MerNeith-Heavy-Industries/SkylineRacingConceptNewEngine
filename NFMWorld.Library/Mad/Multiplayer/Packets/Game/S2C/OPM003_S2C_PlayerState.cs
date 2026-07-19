@@ -17,8 +17,4 @@ public partial struct S2C_PlayerState : IPacketServerToClient<S2C_PlayerState>
         readonly get => DateTimeOffset.FromUnixTimeMilliseconds((long)_currentTimeInMs);
         set => _currentTimeInMs = (ulong)value.ToUnixTimeMilliseconds();
     }
-    
-    public S2C_PlayerState()
-    {
-    }
 }

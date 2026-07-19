@@ -7,8 +7,6 @@ namespace NFMWorldLibrary.Backend.Gamemodes;
 public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
-    public override event EventHandler<byte[]>? RaceFinished;
-
     private int _newTick = 0;
 
     public override void Begin()

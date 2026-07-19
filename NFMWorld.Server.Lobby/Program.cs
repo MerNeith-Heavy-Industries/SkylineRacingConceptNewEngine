@@ -73,7 +73,7 @@ static void HandleHttpRequest(HttpListenerContext ctx)
         using var seq = req.InputStream.AsPooledReadOnlySequence();
         var results = MemoryPackSerializer.Deserialize<RaceServer2Lobby_RaceResults>(seq.Sequence);
 
-        Console.WriteLine($"[Lobby] Race ended: MatchKey={results.MatchKey}, Players={results.PlayerResults?.Count ?? 0}");
+        Console.WriteLine($"[Lobby] Race ended: MatchKey={results.MatchKey}, Players={results.Results.Standings?.Length ?? 0}");
         res.StatusCode = 200;
         res.Close();
     }
