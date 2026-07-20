@@ -107,7 +107,7 @@ public class ImGuiRenderer : IDisposable
 
     public virtual void UnbindTexture(ImTextureRef textureRef)
     {
-        if (_textures.TryGetValue(textureRef.TexID, out TextureInfo textureInfo))
+        if (_textures.TryGetValue(textureRef.TexID, out var textureInfo))
         {
             if (textureInfo.IsManaged)
                 textureInfo.Texture?.Dispose();
@@ -163,7 +163,7 @@ public class ImGuiRenderer : IDisposable
     private unsafe void UpdateTextureData(ImTextureDataPtr textureData)
     {
         IntPtr texId = textureData.GetTexID();
-        if (!_textures.TryGetValue(texId, out TextureInfo textureInfo) || textureInfo.Texture == null)
+        if (!_textures.TryGetValue(texId, out var textureInfo) || textureInfo.Texture == null)
             return;
 
         Texture2D texture = textureInfo.Texture;
@@ -190,7 +190,7 @@ public class ImGuiRenderer : IDisposable
     private void DestroyTexture(ImTextureDataPtr textureData)
     {
         IntPtr texId = textureData.GetTexID();
-        if (_textures.TryGetValue(texId, out TextureInfo textureInfo))
+        if (_textures.TryGetValue(texId, out var textureInfo))
         {
             if (textureInfo.IsManaged)
                 textureInfo.Texture?.Dispose();
