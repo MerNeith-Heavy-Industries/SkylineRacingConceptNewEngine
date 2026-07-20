@@ -108,6 +108,12 @@ public abstract class BasePhase : IDisposable
         {
             GameSparker.CefRenderer.SetInputEnabled(EnableCefInput);
         }
+
+        // Consume the current keyboard state to prevent key bleeding.
+        // When a phase transition is triggered by a key press (e.g., Enter on
+        // stage select → garage), the same physical key-down must not be
+        // forwarded to CEF as a new RawKeyDown for the incoming phase's page.
+        GameSparker.CefRenderer?.ConsumeKeyboardState();
     }
 
     /// <summary>
