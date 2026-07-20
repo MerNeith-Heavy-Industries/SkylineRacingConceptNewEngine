@@ -426,7 +426,7 @@ public class CarPhysics
         return bottomy;
     }
 
-    public event EventHandler Distruct;
+    public event EventHandler? Distruct;
 
     public void bounceRebound(int wi, ContO conto, DeterministicRandom random)
     {
