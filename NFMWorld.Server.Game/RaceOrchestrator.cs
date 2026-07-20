@@ -13,7 +13,7 @@ namespace NFMWorldLibrary.Multiplayer;
 /// <summary>
 /// Game Master — dumb UDP relay for v1.
 /// Validates join tokens, relays PlayerState between clients, handles race finish.
-/// 
+///
 /// v2: <see cref="WorkerManager"/> and the Worker project will handle replay-based
 /// validation. For now, the relay is direct.
 /// </summary>

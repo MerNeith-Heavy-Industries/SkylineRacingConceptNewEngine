@@ -34,7 +34,7 @@ public class TimeTrialGamemodeFactory : BaseGamemodeFactory
 {
     public override string GamemodeId => "nfmm/timetrial";
     public override IGamemode CreateGameMode(GamemodeParameters parameters, IGamemodeData gamemodeData)
-        => new TimeTrialGamemode(parameters, gamemodeData);
+        => new TimeTrialClientGamemode(parameters, gamemodeData);
 }
 public class TimeTrialPreviewGamemodeFactory(SavedTimeTrial timeTrial) : BaseGamemodeFactory
 {
@@ -62,6 +62,9 @@ public class FootballGamemodeFactory : BaseGamemodeFactory
     public override string GamemodeId => DefaultGamemodes.Football;
     public override IGamemode CreateGameMode(GamemodeParameters parameters, IGamemodeData gamemodeData)
         => new FootballGamemode(parameters, gamemodeData);
+
+    public override IServerGamemode? CreateServerGamemode(GamemodeParameters parameters)
+        => new FootballServerGamemode();
 }
 
 public enum PvpConstraint

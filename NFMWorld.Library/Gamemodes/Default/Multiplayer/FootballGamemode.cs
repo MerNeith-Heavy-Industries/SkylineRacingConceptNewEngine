@@ -3,6 +3,10 @@ using NFMWorld.DriverInterface;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
+/// <summary>
+/// Client-side football (soccer) gamemode. No server-side logic —
+/// purely physics-driven with a ball entity.
+/// </summary>
 public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
@@ -21,7 +25,6 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
 
     public override void End()
     {
-        
     }
 
     public override void Reset()
@@ -32,12 +35,6 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
     public override void GameTick()
     {
         FrameTrace.AddMessage($"contox: {CarsInRace[0].Position.X:0.00}, contoz: {CarsInRace[0].Position.Z:0.00}, contoy: {CarsInRace[0].Position.Y:0.00}");
-
-        // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
-        // We round this up to 3 ticks per 63TPS tick.
-
-
-        //All footballers have no powerloss.
 
         if (++_newTick == Physics.OriginalTicksPerNewTick)
         {
@@ -59,13 +56,9 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
         }
     }
 
-    #region Client
-
     public override void KeyPressed(Key key, in Keys keys)
     {
         base.KeyPressed(key, keys);
-        
-        // Handle key presses specific to Time Trial mode
         if (key == Key.R)
         {
             Reset();
@@ -75,13 +68,10 @@ public class FootballGamemode(GamemodeParameters gamemodeParameters, IGamemodeDa
     public override void KeyReleased(Key key, in Keys keys)
     {
         base.KeyReleased(key, keys);
-        // Handle key releases specific to Time Trial mode
     }
 
     public override void Render()
     {
         base.Render();
     }
-
-    #endregion
 }

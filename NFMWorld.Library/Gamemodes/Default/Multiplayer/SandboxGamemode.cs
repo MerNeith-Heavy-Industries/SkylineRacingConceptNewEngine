@@ -5,6 +5,9 @@ using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;
 
+/// <summary>
+/// Client-side sandbox gamemode. Free-roam with no objectives or server logic.
+/// </summary>
 public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeData gamemodeData)
     : BaseGamemode(gamemodeParameters, gamemodeData)
 {
@@ -28,25 +31,23 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
 
     public override void End()
     {
-        // Cleanup for Time Trial mode
     }
 
     public override void Reset()
     {
         base.Reset();
-        ClientServer.RunIfOnClient(ClientReset);
     }
 
     public override void GameTick()
     {
-        ClientServer.RunIfOnClient(ClientGameTick);
-        
         FrameTrace.AddMessage($"contox: {CarsInRace[0].Position.X:0.00}, contoz: {CarsInRace[0].Position.Z:0.00}, contoy: {CarsInRace[0].Position.Y:0.00}");
+
+        // HUD state
+        HudState.Damage = (float)CarsInRace[0].CarPhysics.DamagePoints / CarsInRace[0].Stats.Maxmag;
+        HudState.Power = (float)CarsInRace[0].CarPhysics.Power / 100f;
 
         if (gamemodeData.RaceState == RaceState.InProgress)
         {
-            // Inter-car collision is run at the original tickrate (21.4TPS) to emulate original physics behavior
-            // We round this up to 3 ticks per 63TPS tick.
             if (++_newTick == Physics.OriginalTicksPerNewTick)
             {
                 for (int i = 0; i < CarsInRace.Count; i++)
@@ -68,26 +69,9 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
         }
     }
 
-    #region Client
-
-    [ClientOnly]
-    protected void ClientReset()
-    {
-        // PowerUp event no longer needed — CEF HUD reads HudState each frame.
-    }
-
-    [ClientOnly]
-    protected void ClientGameTick()
-    {
-        HudState.Damage = (float)CarsInRace[0].CarPhysics.DamagePoints / CarsInRace[0].Stats.Maxmag;
-        HudState.Power = (float)CarsInRace[0].CarPhysics.Power / 100f;
-    }
-
     public override void KeyPressed(Key key, in Keys keys)
     {
         base.KeyPressed(key, keys);
-        
-        // Handle key presses specific to Time Trial mode
         if (key == Key.R)
         {
             Reset();
@@ -103,6 +87,4 @@ public class SandboxGamemode(GamemodeParameters gamemodeParameters, IGamemodeDat
     {
         base.Render();
     }
-
-    #endregion
 }

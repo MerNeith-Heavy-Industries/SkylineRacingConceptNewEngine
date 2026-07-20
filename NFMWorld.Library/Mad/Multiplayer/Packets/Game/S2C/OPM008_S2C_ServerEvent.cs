@@ -10,7 +10,7 @@ namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 public partial struct S2C_ServerEvent : IPacketServerToClient<S2C_ServerEvent>, IDisposable
 {
     [MemoryPackOrder(0)]
-    [MemoryPoolFormatter<byte>]
+    [ReadOnlyMemoryPoolFormatterAttribute<byte>]
     public required ReadOnlyMemory<byte> Payload;
 
     private bool _usePool;
