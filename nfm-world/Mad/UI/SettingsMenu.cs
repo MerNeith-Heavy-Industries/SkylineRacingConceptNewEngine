@@ -87,7 +87,7 @@ public class SettingsMenu(WorldGame game)
     private static bool _remasteredMusic = false;
 
     // Game settings — Camera (static)
-    private static float _fov = 90.0f;
+    private static float _fov = PerspectiveCamera.DefaultFov;
     private static int _followY = 0;
     private static int _followZ = 0;
     private static bool _smoothFov;
