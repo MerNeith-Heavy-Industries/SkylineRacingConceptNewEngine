@@ -16,7 +16,7 @@ namespace NFMWorld.UI;
 
 /// <summary>
 /// Settings menu with tabs, similar to Half-Life 1 style.
-/// Also serves as the static settings backend used by SettingsBridge for CEF-based settings.
+/// Also serves as the static settings backend used by SettingsHandler for CEF-based settings.
 /// </summary>
 public class SettingsMenu(WorldGame game)
 {
@@ -650,7 +650,7 @@ public class SettingsMenu(WorldGame game)
 
     /// <summary>
     /// Saves config and returns whether a restart is required (e.g., renderer change).
-    /// Call from SettingsBridge when the user clicks OK or Apply.
+    /// Call from SettingsHandler when the user clicks OK or Apply.
     /// </summary>
     public static bool SaveConfigAndCheckRestart()
     {
@@ -1124,7 +1124,7 @@ public class SettingsMenu(WorldGame game)
         }
     }
 
-    // ── Static API for CEF SettingsBridge ──────────────────────────
+    // ── Static API for CEF SettingsHandler ──────────────────────────
 
     /// <summary>
     /// Snapshot of all current settings for serialization to JS.

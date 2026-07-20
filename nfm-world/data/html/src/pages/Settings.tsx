@@ -242,7 +242,12 @@ function keyCodeToName(code: number): string {
 
 // ── Component ────────────────────────────────────────────────────
 
-export function Settings() {
+interface SettingsProps {
+  /** Called when the user dismisses settings (Cancel/OK). */
+  onClose?: () => void;
+}
+
+export function Settings({ onClose }: SettingsProps) {
   const [tab, setTab] = useState<Tab>("video");
   const [config, setConfig] = useState<SettingsSnapshot | null>(null);
   const [options, setOptions] = useState<AvailableOptions | null>(null);
@@ -300,7 +305,7 @@ export function Settings() {
       () => {
         if (_pendingCloseRef.current) {
           _pendingCloseRef.current = false;
-          callNfmw("close");
+          onClose?.();
         }
       }
     );
@@ -332,7 +337,8 @@ export function Settings() {
 
   const handleClose = useCallback(() => {
     callNfmw("close");
-  }, []);
+    onClose?.();
+  }, [onClose]);
 
   const handleOk = useCallback(() => {
     callNfmw("saveConfig");
@@ -471,7 +477,7 @@ export function Settings() {
                 setRestartModal(false);
                 if (_pendingCloseRef.current) {
                   _pendingCloseRef.current = false;
-                  callNfmw("close");
+                  onClose?.();
                 }
               }}>
                 Later
