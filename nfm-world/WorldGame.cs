@@ -157,6 +157,10 @@ public class WorldGame : Game
 #if USE_BASS
         Bass.Init();
 #endif
+#if USE_FAUDIO
+        // FAudio is lazily initialized by FNA's SoundEffect on first use.
+        // No explicit init needed.
+#endif
 
         _oldKeyState = Keys.FromState(Keyboard.GetState());
         var mouseState = Mouse.GetState();
@@ -195,6 +199,10 @@ public class WorldGame : Game
 
 #if USE_BASS
             Bass.Free();
+#endif
+#if USE_FAUDIO
+            // FAudio is managed by FNA and cleaned up via FAudioContext.Dispose()
+            // on app domain exit. No explicit free needed.
 #endif
         }
     }
@@ -358,14 +366,6 @@ public class WorldGame : Game
             {
                 GameSparker.KeyPressed(nfmKey);
                 GameSparker.CurrentPhase.KeyPressed(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
-
-#if DEBUG
-                if (nfmKey == Key.F9)
-                {
-                    _yogaInspectorEnabled = !_yogaInspectorEnabled;
-                }
-
-#endif
             }
             else if (!keys[nfmKey] && _oldKeyState[nfmKey])
             {

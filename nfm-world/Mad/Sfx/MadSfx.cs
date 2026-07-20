@@ -378,7 +378,7 @@ public class MadSfx
     private void SfxPlayCrash(object? sender, (float f, int i) crashData)
     {
         crashData.f *= 1 / Physics.PHYSICS_MULTIPLIER;
-#if USE_BASS
+#if USE_BASS || USE_FAUDIO
         if (!Mute && bfcrash == 0)
         {
             if (crashData.i == 0)
@@ -447,7 +447,7 @@ public class MadSfx
 
     private void SfxPlaySkid(object? sender, (CarPhysics.SurfaceType surfaceType, float skidIntensity) skidData)
     {
-#if USE_BASS
+#if USE_BASS || USE_FAUDIO
         if (!Mute && bfcrash == 0 && bfskid == 0 && skidData.skidIntensity > 150.0F)
         {
             if (skidData.surfaceType == CarPhysics.SurfaceType.Road)
