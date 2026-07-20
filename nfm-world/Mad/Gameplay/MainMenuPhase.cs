@@ -25,6 +25,7 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
         _bridge.NavigateRequested += OnNavigateRequested;
         _bridge.LogoutRequested += OnLogoutClicked;
+        _bridge.SettingsRestartConfirmed += () => System.Environment.Exit(0);
 
         // Push initial account state if available
         var account = GameSparker.AccountManager.LoggedIn
@@ -59,7 +60,8 @@ public class MainMenuPhase : BaseStageRenderingPhase
                 OnGarageClicked();
                 break;
             case "settings":
-                OnSettingsClicked();
+                // Settings is now an embedded component in the main menu UI —
+                // the frontend handles view switching directly without a phase push.
                 break;
             case "credits":
                 OnClickUnavailable();
@@ -176,7 +178,8 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnSettingsClicked()
     {
-        GameSparker.PushPhase(new SettingsPhase(GraphicsDevice, StageName!));
+        // Settings is now embedded in the main menu UI via SettingsHandler sub-handler.
+        // The frontend MainMenu.tsx shows/hides the Settings component directly.
     }
 
     private void OnClickUnavailable()
@@ -204,6 +207,10 @@ public class MainMenuPhase : BaseStageRenderingPhase
     public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
         base.KeyPressed(key, imguiWantsKeyboard, keys);
+
+        // Forward to sub-handlers (e.g., SettingsHandler key capture during rebinding)
+        if (_bridge.TryHandleKeyPress(key))
+            return;
     }
 
     public override void RenderImgui()

@@ -105,11 +105,6 @@ public static class DevConsoleCommands
         //ui
         console.RegisterCommand("ui_open_devcam", (c, args) => ToggleCameraSettings(c));
         console.RegisterCommand("ui_open_devmsg", ShowMessageTest);
-        console.RegisterCommand("ui_open_settings", (c, args) =>
-        {
-            var stageName = GameSparker.MainMenuPhase.StageName ?? "nfm2/16_4dv";
-            GameSparker.PushPhase(new SettingsPhase(GameSparker.GraphicsDevice, stageName));
-        });
 
         console.RegisterCommand("demo_playback", DemoPlayback);
         console.RegisterCommand("music_remastered", RemasteredMusic);

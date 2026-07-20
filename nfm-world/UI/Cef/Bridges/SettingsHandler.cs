@@ -5,64 +5,92 @@ using NFMWorld.DriverInterface;
 namespace NFMWorld.UI.Cef;
 
 /// <summary>
-/// Bridge for SettingsPhase — handles settings read/write, key binding capture,
-/// and confirmation dialogs.
+/// Settings sub-handler — handles settings read/write, key binding capture,
+/// and confirmation dialogs. Composable into any <see cref="PhaseBridge"/>
+/// via <see cref="PhaseBridge.AddSubHandler"/>.
+///
+/// Uses a hardcoded <c>"settings"</c> event prefix for all C#→JS pushes,
+/// so the frontend listens to <c>"settings:config"</c>, <c>"settings:options"</c>,
+/// etc. regardless of which parent phase hosts it.
 /// </summary>
-public sealed class SettingsBridge() : PhaseBridge("settings")
+public sealed class SettingsHandler : ISubHandler
 {
-    public override bool EnableInput => true;
-
+    private CefRenderer? _renderer;
     private string? _capturingAction;
     private string? _originalConfig;
 
-    protected override void OnMessage(string type, JsonElement? args)
+    public bool IsCapturing => _capturingAction != null;
+
+    // ── ISubHandler ──────────────────────────────────────────────
+
+    public bool TryHandleMessage(string type, JsonElement? args)
     {
         switch (type)
         {
             case "getConfig":
                 PushInitialState();
-                break;
+                return true;
             case "applySetting":
                 ApplySettingFromJs(args);
-                break;
+                return true;
             case "saveConfig":
                 var requireRestart = SettingsMenu.SaveConfigAndCheckRestart();
-                // Snapshot the newly-saved state as the new baseline
-                _originalConfig = null; // will be re-captured on next getConfig if needed
+                _originalConfig = null; // re-captured on next getConfig if needed
                 if (requireRestart)
                     Push("requireRestart", true);
                 else
                     Push("saved", true);
-                break;
+                return true;
             case "close":
-                // Cancel: restore settings to the state when the page was opened
                 if (_originalConfig != null)
                     SettingsMenu.LoadConfigFromSnapshot(_originalConfig);
                 CloseRequested?.Invoke();
-                break;
+                return true;
             case "restartNow":
                 RestartConfirmed?.Invoke();
-                break;
+                return true;
             case "startCapture":
                 if (args is { } a && a.TryGetProperty("action", out var action))
                     _capturingAction = action.GetString();
-                break;
+                return true;
             case "stopCapture":
                 _capturingAction = null;
-                break;
+                return true;
             case "resetDefaults":
                 HandleResetDefaults(args);
-                break;
+                return true;
+            default:
+                return false;
         }
     }
 
+    public void OnActivated(CefRenderer renderer)
+    {
+        _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
+        SettingsMenu.ResolutionsChanged += OnResolutionsChanged;
+    }
+
+    public void OnDeactivated()
+    {
+        SettingsMenu.ResolutionsChanged -= OnResolutionsChanged;
+        _renderer = null;
+    }
+
+    public bool TryHandleKeyPress(Key key)
+    {
+        if (!IsCapturing) return false;
+        HandleCapturedKey(key);
+        return true;
+    }
+
+    // ── Public API (called by hosting phase / bridge) ─────────────
+
     /// <summary>
     /// Push current settings snapshot and available options to JS.
-    /// Called on initial registration and when JS requests a refresh.
+    /// Called on initial activation and when JS requests a refresh.
     /// </summary>
     public void PushInitialState()
     {
-        // Capture the baseline config before any JS-driven changes
         _originalConfig ??= SettingsMenu.SaveConfigToString();
 
         var snapshot = SettingsMenu.GetCurrentSnapshot();
@@ -72,28 +100,10 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
         PushMemoryPack("options", options);
     }
 
-    protected override void OnRegistered()
-    {
-        SettingsMenu.ResolutionsChanged += OnResolutionsChanged;
-    }
-
-    protected override void OnUnregistered()
-    {
-        SettingsMenu.ResolutionsChanged -= OnResolutionsChanged;
-    }
-
-    private void OnResolutionsChanged()
-    {
-        // Push updated options (new resolution added) and current config
-        var options = SettingsMenu.GetAvailableOptions();
-        PushMemoryPack("options", options);
-        var snapshot = SettingsMenu.GetCurrentSnapshot();
-        PushMemoryPack("config", snapshot);
-    }
-
     /// <summary>
-    /// Set the current key capture action. Called by SettingsPhase.KeyPressed
-    /// when a key is pressed during capture.
+    /// Set the current key capture action. Called by the hosting phase's
+    /// KeyPressed when a key is pressed during capture (routed via
+    /// <see cref="TryHandleKeyPress"/>).
     /// </summary>
     public void HandleCapturedKey(Key key)
     {
@@ -127,7 +137,7 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
         Push("keyCaptured", new { action = capturedAction, keyCode = (int)key, cancelled = false });
     }
 
-    public bool IsCapturing => _capturingAction != null;
+    // ── Private helpers ───────────────────────────────────────────
 
     private void ApplySettingFromJs(JsonElement? args)
     {
@@ -156,6 +166,29 @@ public sealed class SettingsBridge() : PhaseBridge("settings")
         PushInitialState();
     }
 
+    private void OnResolutionsChanged()
+    {
+        var options = SettingsMenu.GetAvailableOptions();
+        PushMemoryPack("options", options);
+        var snapshot = SettingsMenu.GetCurrentSnapshot();
+        PushMemoryPack("config", snapshot);
+    }
+
+    // ── Push helpers (hardcoded "settings" prefix) ────────────────
+
+    private void PushMemoryPack<T>(string eventType, T? data)
+    {
+        _renderer?.PushToJs("settings", eventType, MemoryPackSerializer.Serialize(data));
+    }
+
+    private void Push(string eventType, object? data)
+    {
+        _renderer?.PushToJs("settings", eventType, data);
+    }
+
+    // ── Events ────────────────────────────────────────────────────
+
+    /// <summary>Fired when the user closes settings (Cancel/Back).</summary>
     public event Action? CloseRequested;
 
     /// <summary>Fired when the user confirms they want to restart now.</summary>
