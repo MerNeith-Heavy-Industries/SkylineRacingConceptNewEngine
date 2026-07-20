@@ -146,7 +146,9 @@ public class SettingsMenu(WorldGame game)
         {
             var aParts = a.Split('x', StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
             var bParts = b.Split('x', StringSplitOptions.TrimEntries).Select(int.Parse).ToArray();
-            return (aParts[0] * aParts[1]).CompareTo(bParts[0] * bParts[1]);
+            var aPixels = aParts[0] * aParts[1];
+            var bPixels = bParts[0] * bParts[1];
+            return aPixels.CompareTo(bPixels);
         });
         _resolutions = list.ToArray();
         _selectedResolution = Array.IndexOf(_resolutions, res);
