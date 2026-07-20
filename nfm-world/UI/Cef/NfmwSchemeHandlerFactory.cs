@@ -25,8 +25,12 @@ internal sealed class NfmwSchemeHandlerFactory : CefSchemeHandlerFactory
     /// </summary>
     internal NfmwSchemeHandlerFactory(string distRoot)
     {
+        // Check for dev mode: NFMW_VITE_DEV env var or .vite-dev marker file
+        var isDev = System.Environment.GetEnvironmentVariable("NFMW_VITE_DEV") == "1"
+                    || File.Exists(Path.Combine(AppContext.BaseDirectory, "data", "html", ".vite-dev"));
+
         _distRoot = Path.GetFullPath(distRoot);
-        if (!Directory.Exists(_distRoot))
+        if (!Directory.Exists(_distRoot) && !isDev)
             throw new DirectoryNotFoundException($"Web UI dist directory not found: {_distRoot}");
     }
 
