@@ -55,6 +55,7 @@ struct VertexShaderOutput
     float3 NormalWorld : TEXCOORD4;   // world-space face normal
     float3 CentroidWorld : TEXCOORD5; // world-space centroid
     float Lit : TEXCOORD6;            // 1 = apply diffuse/snap, 0 = fullbright/glow
+    float Diffuse : TEXCOORD7;        // pre-computed in VS, consumed in PS
 };
 
 VertexShaderOutput MainVS(
@@ -132,13 +133,15 @@ VertexShaderOutput MainVS(
         color = min(color, float3(1.0, 1.0, 1.0));
     }
 
-    // Diffuse, snap, charged-blink and fog are applied per-pixel (see MainPS)
-    // so the geometric diffuse and the shadow map fold into one darkening pass.
+    // Geometric diffuse is computed here (VS, per-face). Snap, charged-blink
+    // and fog are applied per-pixel (see MainPS) so the geometric diffuse and
+    // the shadow map fold into one darkening pass.
     output.NormalWorld = normalize(mul(float4(input.Normal, 0), world).xyz);
     output.CentroidWorld = mul(float4(input.Centroid, 1), world).xyz;
     output.Lit = (IsFullbright == false && isFullbright == false && glow == false) ? 1.0f : 0.0f;
+    output.Diffuse = ComputePolygonDiffuse(output.CentroidWorld, output.NormalWorld, LightDirection, CameraPosition);
 
-    // Ship the UNLIT color; lighting happens in the pixel shader.
+    // Ship the UNLIT color; diffuse application + snap + fog happen in PS.
     output.Color = float4(color, min(alphaOverride, Alpha));
 
 	return output;
@@ -151,14 +154,8 @@ float4 MainPS(VertexShaderOutput input) : SV_TARGET
 
     if (input.Lit > 0.0)
     {
-        // Geometric diffuse - already 0 when the camera is on the opposite
-        // side of the face from the light (a "max shadow" situation).
-        float diff = ComputePolygonDiffuse(
-            input.CentroidWorld,
-            input.NormalWorld,
-            LightDirection,
-            CameraPosition
-        );
+        // Pre-computed in vertex shader (per-face value, same for all pixels).
+        float diff = input.Diffuse;
 
         // Shadow map: if occluded, force the SAME factor to its minimum.
         // This is what stops pixels being shadowed twice.
