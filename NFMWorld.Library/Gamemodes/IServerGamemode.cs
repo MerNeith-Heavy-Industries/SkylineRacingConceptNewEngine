@@ -7,7 +7,7 @@ namespace NFMWorldLibrary.Gamemodes;
 /// <summary>
 /// Server-side gamemode contract. Runs on the Game Master / Worker,
 /// receives client events, manages authoritative game state.
-/// 
+///
 /// Unlike <see cref="IGamemode"/>, this does NOT involve rendering,
 /// input handling, or physics simulation. It validates events and
 /// drives the game state machine.

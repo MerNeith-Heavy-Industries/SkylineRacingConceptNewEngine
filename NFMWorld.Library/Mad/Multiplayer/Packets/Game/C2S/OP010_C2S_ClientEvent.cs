@@ -10,7 +10,7 @@ namespace NFMWorldLibrary.Multiplayer.Packets.C2S;
 public partial struct C2S_ClientEvent : IPacketClientToServer<C2S_ClientEvent>, IDisposable
 {
     [MemoryPackOrder(0)]
-    [MemoryPoolFormatter<byte>]
+    [ReadOnlyMemoryPoolFormatterAttribute<byte>]
     public required ReadOnlyMemory<byte> Payload;
     
     private bool _usePool;

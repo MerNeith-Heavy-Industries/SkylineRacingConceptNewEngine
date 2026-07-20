@@ -88,10 +88,10 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     protected FollowCamera PlayerFollowCamera = new();
     protected AroundCamera PlayerAroundCamera = new();
     protected AroundStageCamera StageAroundCamera = new();
-    
+
     // Track which keys are currently pressed to properly handle meta-bindings
     private HashSet<Key> _pressedKeys = new();
-    
+
     // View modes
     public enum ViewMode
     {
@@ -123,7 +123,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         // camera, music) — no gamemode or stage reload.
         base.Enter();
     }
-    
+
     protected virtual IGamemode ReloadGamemode()
     {
         return CreateGameMode(new GamemodeParameters
@@ -161,12 +161,12 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         base.KeyPressed(key, imguiWantsKeyboard, keys);
 
         if (imguiWantsKeyboard) return;
-        
+
         var bindings = SettingsMenu.Bindings;
-        
+
         // Track pressed keys
         _pressedKeys.Add(key);
-        
+
         // Update control state based on all currently pressed keys
         UpdateControlState();
 
@@ -232,7 +232,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         base.KeyTyped(character, imguiWantsKeyboard);
 
         if (imguiWantsKeyboard) return;
-        
+
         GamemodeInstance?.KeyTyped(character);
     }
 
@@ -261,7 +261,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
 
                 if (aerialStrafePressed)
                 {
-                    
+
                 }
 
                 control.Left = turnLeftPressed || aerialStrafePressed;
@@ -276,10 +276,10 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         base.KeyReleased(key, imguiWantsKeyboard, keys);
 
         var bindings = SettingsMenu.Bindings;
-        
+
         // track released keys
         _pressedKeys.Remove(key);
-        
+
         // update control state based on remaining pressed keys
         UpdateControlState();
 
@@ -310,7 +310,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         bool shiftKey, bool altKey)
     {
         base.MousePressed(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
-        
+
         GamemodeInstance?.MousePressed(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
@@ -318,7 +318,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         bool shiftKey, bool altKey)
     {
         base.MouseReleased(x, y, imguiWantsMouse, button, buttons, ctrlKey, shiftKey, altKey);
-        
+
         GamemodeInstance?.MouseReleased(x, y, button, buttons, ctrlKey, shiftKey, altKey);
     }
 
@@ -326,21 +326,21 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
         bool ctrlKey, bool shiftKey, bool altKey)
     {
         base.MouseScrolled(x, y, delta, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
-        
+
         GamemodeInstance?.MouseScrolled(x, y, delta, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         base.MouseMoved(x, y, imguiWantsMouse, buttons, ctrlKey, shiftKey, altKey);
-        
+
         GamemodeInstance?.MouseMoved(x, y, buttons, ctrlKey, shiftKey, altKey);
     }
 
     public override void WindowSizeChanged(int width, int height)
     {
         base.WindowSizeChanged(width, height);
-        
+
         Camera.Width = width;
         Camera.Height = height;
     }
@@ -358,18 +358,18 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
             G.DrawString($"Power: {CarsInRace[0]?.CarPhysics?.Power:0.00}", 100, 140);
             G.DrawString($"Ticks executed last frame: {WorldGame.LastTickCount}", 100, 160);
         }
-        
+
         GamemodeInstance?.Render();
     }
 
     private static void RenderMessages()
     {
         if (!FrameTrace.IsEnabled) return;
-        
+
         var y = 0f;
         const float x = 250;
         const float increment = 20;
-        
+
         G.SetColor(new Color(0, 0, 0));
         G.DrawString(FrameTrace.GetMessageString(), (int)x, (int)y);
     }
@@ -390,7 +390,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
                 {
                     case ViewMode.Follow:
                         PlayerFollowCamera.Follow(
-                            Camera, 
+                            Camera,
                             car,
                             (float)car.CarPhysics.Cxz,
                             car.Control.Lookback,
@@ -432,5 +432,5 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         return GetCarVisual(index).Visuals;
     }
-    
+
 }

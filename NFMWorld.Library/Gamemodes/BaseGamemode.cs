@@ -44,7 +44,7 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
     /// </summary>
     public virtual void Begin()
     {
-        
+
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
     /// </summary>
     public virtual void End()
     {
-        
+
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
     /// </summary>
     public virtual void Reset()
     {
-        
+
     }
 
     public virtual void KeyPressed(Key key, in Keys keys)
@@ -105,13 +105,13 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
 
     [ClientOnly]
     private int _lastClientCheckpoint = 0;
-    
+
     [ClientOnly]
     private int _lastCountdownTime = 0;
 
     [ClientOnly]
     private fix64 _lcarx;
-    
+
     [ClientOnly]
     private fix64 _lcarz;
 
@@ -121,7 +121,7 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
     protected virtual void ClientReset()
     {
         GamemodeData.ClientCallbacks.ResetCheckpointGlow();
-            
+
         HudState = new HudStateData { Lap = 1, TotalLaps = CurrentStage.nlaps };
         IBackend.Backend.StopAllSounds();
     }
@@ -136,7 +136,7 @@ public abstract class BaseGamemode(GamemodeParameters gamemodeParameters, IGamem
         var diffz  = (float)(car.Position.Z - _lcarz);
         _lcarx = car.Position.X;
         _lcarz = car.Position.Z;
-        
+
         HudState.Speed = MathF.Sqrt(diffx * diffx + diffz * diffz);
         HudState.Lap = car.CurrentLap + 1;
         HudState.Damage = (float)car.CarPhysics.DamagePoints / CarsInRace[0].Stats.Maxmag;

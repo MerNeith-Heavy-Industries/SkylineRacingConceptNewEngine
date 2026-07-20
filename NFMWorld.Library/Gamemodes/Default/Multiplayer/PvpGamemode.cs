@@ -68,7 +68,7 @@ public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
         raceTimer.Reset();
 
         CarsInRace.Clear();
-        
+
         foreach (var (idx, player) in Players.WithIndex())
         {
             CarsInRace[idx] = new BackendCar(player, idx, -500 + (400 * idx), 0);
@@ -105,7 +105,7 @@ public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
         {
             return;
         }
-        
+
         switch (_currentState)
         {
             case InnerRaceState.Countdown:
@@ -166,7 +166,7 @@ public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
 
             _newTick = 0;
         }
-        
+
         foreach (var inGameCar in CarsInRace)
         {
             inGameCar.Drive(CurrentStage);
@@ -176,13 +176,13 @@ public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
         {
             return;
         }
-        
+
         for (var i = 0; i < CarsInRace.Count; i++)
         {
             FixHoopHelper.HandleFixHoops(CurrentStage, CarsInRace[i]);
             CheckPointHelper.HandleCheckPoint(CurrentStage, CarsInRace[i]);
         }
-        
+
         CheckPointHelper.CalculatePositions(CurrentStage, CarsInRace);
 
         // ── Local race finish detection (client-side fallback) ────
@@ -272,7 +272,7 @@ public class PvpClientGamemode(GamemodeParameters gamemodeParameters, IGamemodeD
     public override void Render()
     {
         base.Render();
-        
+
         if (_currentState == InnerRaceState.Finished)
         {
             HudState.StateText = $"Finished! Time: {raceTimer.Elapsed.Minutes:D2}:{raceTimer.Elapsed.Seconds:D2}.{raceTimer.Elapsed.Milliseconds:D3}";

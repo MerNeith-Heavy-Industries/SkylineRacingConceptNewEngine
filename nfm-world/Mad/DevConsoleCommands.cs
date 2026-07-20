@@ -187,14 +187,14 @@ public static class DevConsoleCommands
     private static void RemasteredMusic(DevConsole console, string[] args)
     {
         GameSparker.UseRemasteredMusic = !GameSparker.UseRemasteredMusic;
-        Logging.Info("Remastered music is now " + (GameSparker.UseRemasteredMusic ? "enabled" : "disabled") + ".");
+        Logging.Info($"Remastered music is now {(GameSparker.UseRemasteredMusic ? "enabled" : "disabled")}.");
         Logging.Info("Change stage for the change to teka effect.");
     }
 
     private static void DemoPlayback(DevConsole console, string[] args)
     {
-        TimeTrialGamemode.PlaybackOnReset = !TimeTrialGamemode.PlaybackOnReset;
-        Logging.Info("Playback set to " + TimeTrialGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
+        TimeTrialClientGamemode.PlaybackOnReset = !TimeTrialClientGamemode.PlaybackOnReset;
+        Logging.Info($"Playback set to {TimeTrialClientGamemode.PlaybackOnReset}, for maps with a saved demo file.");
         Logging.Info("Restart the time trial for changes to take effect.");
     }
 

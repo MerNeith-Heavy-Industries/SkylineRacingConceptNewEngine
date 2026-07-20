@@ -24,7 +24,7 @@ public static class ClientServer
             action(parameter);
         }
     }
-    
+
     [DoesNotReturn]
     public static void AccidentallyCalledClientMethodOnServer([CallerMemberName] string? methodName = null)
     {

@@ -12,7 +12,7 @@ public class TimeTrialPreviewGamemode(
     GamemodeParameters gamemodeParameters,
     IGamemodeData gamemodeData,
     SavedTimeTrial timeTrial)
-    : TimeTrialGamemode(gamemodeParameters, gamemodeData)
+    : TimeTrialClientGamemode(gamemodeParameters, gamemodeData)
 {
     private int _tick = 0;
     private bool _paused;

@@ -7,7 +7,7 @@ namespace NFMWorldLibrary.Backend.Gamemodes;
 /// <summary>
 /// Server-side PvP racing gamemode. Validates checkpoint events from clients,
 /// tracks authoritative lap counts and standings, and detects race finish.
-/// 
+///
 /// Does NOT run physics — it validates discrete events with fuzzy proximity checks.
 /// </summary>
 public class PvpServerGamemode(PvpConstraint constraint) : BaseServerGamemode
