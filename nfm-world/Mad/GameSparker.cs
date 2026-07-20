@@ -17,7 +17,7 @@ using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
-public static class GameSparker
+public static partial class GameSparker
 {
     public static WorldGame Game = null!;
     public static GraphicsDevice GraphicsDevice = null!;
@@ -179,11 +179,13 @@ public static class GameSparker
             
             for (int seg = 0; seg < Math.Min(aSegments.Length, bSegments.Length); seg++)
             {
-                var aParts = System.Text.RegularExpressions.Regex.Split(aSegments[seg], @"(\d+)")
-                    .Where(s => !string.IsNullOrEmpty(s)).ToArray();
-                var bParts = System.Text.RegularExpressions.Regex.Split(bSegments[seg], @"(\d+)")
-                    .Where(s => !string.IsNullOrEmpty(s)).ToArray();
-                
+                var aParts = DigitSplit.Split(aSegments[seg])
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+                var bParts = DigitSplit.Split(bSegments[seg])
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+
                 for (int i = 0; i < Math.Min(aParts.Length, bParts.Length); i++)
                 {
                     if (int.TryParse(aParts[i], out var aNum) && int.TryParse(bParts[i], out var bNum))
@@ -298,4 +300,7 @@ public static class GameSparker
     {
         SettingsMenu.RegisterResolution(width, height);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(\d+)")]
+    private static partial System.Text.RegularExpressions.Regex DigitSplit { get; }
 }
