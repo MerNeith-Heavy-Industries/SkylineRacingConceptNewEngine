@@ -270,6 +270,17 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
     }
 
     /// <summary>
+    /// Consume the current keyboard state so that keys currently held down
+    /// are not forwarded to CEF as new key-down events on the next frame.
+    /// Call this after a phase transition that was triggered by a key press,
+    /// to prevent key bleeding from one CEF page to the next.
+    /// </summary>
+    public void ConsumeKeyboardState()
+    {
+        _lastKeyboardState = Keyboard.GetState();
+    }
+
+    /// <summary>
     /// Resize the browser viewport.
     /// </summary>
     public void Resize(int width, int height)
