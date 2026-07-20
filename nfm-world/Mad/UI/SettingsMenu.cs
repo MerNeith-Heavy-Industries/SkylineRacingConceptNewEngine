@@ -100,7 +100,7 @@ public class SettingsMenu(WorldGame game)
 
     public bool IsOpen => _isOpen;
 
-    Vector4 RGB(int r, int g, int b, float a = 1.0f) => new Vector4(r / 255f, g / 255f, b / 255f, a);
+    private static Vector4 RGB(int r, int g, int b, float a = 1.0f) => new Vector4(r / 255f, g / 255f, b / 255f, a);
 
     private static string[] GetSupportedResolutions()
     {
