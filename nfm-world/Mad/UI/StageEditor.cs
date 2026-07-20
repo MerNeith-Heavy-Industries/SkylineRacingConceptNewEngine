@@ -260,10 +260,6 @@ public partial class StageEditorPhase : BasePhase
     public static PerspectiveCamera perspectiveCamera = new();
     public static Camera activeCamera = perspectiveCamera;
     
-    // Drag and drop state
-    private int _draggedPartIndex = -1;
-    private bool _isDraggingFromLibrary = false;
-    
     // Placement mode: user selects a part from the library then clicks in the viewport to place it
     private int _pendingPlacementPartIndex = -1; // index into _availableParts; -1 = not in placement mode
     private f64Vector3 _pendingPlacementPos = f64Vector3.Zero;
@@ -290,7 +286,6 @@ public partial class StageEditorPhase : BasePhase
     // New stage dialog state
     private bool _showNewStageDialog = false;
     private string _newStageName = "";
-    private string _stageFileName = "";
     private int _newStageStartPartIndex = 0; // index into _newStageStartPartOptions
     private static readonly string[] _newStageStartPartOptions =
     {

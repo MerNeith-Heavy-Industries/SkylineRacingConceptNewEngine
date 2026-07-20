@@ -1797,9 +1797,6 @@ public class CarPhysics
                 //Record.Dest[Im] = 300;
             }
         }
-        var i89 = 0;
-        var i90 = 0;
-        var i91 = 0;
         /*for (var i92 = 0; i92 < CheckPoints.N; i92++)
         {
             if (CheckPoints.Typ[i92] > 0)

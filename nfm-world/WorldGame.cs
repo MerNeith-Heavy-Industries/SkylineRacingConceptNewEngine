@@ -56,13 +56,6 @@ public class WorldGame : Game
     
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
-    private static bool _yogaInspectorEnabled = false;
-    private static int _yogaInspectorPage = 0;
-
-    private static readonly MouseButtons[] MouseButtonsArray = Enum.GetValues<MouseButtons>();
-    public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
-    public static ImGuiRenderer ImguiRenderer { get; private set; }
-
     private WorldGame()
     {
         GameThreadContext.Install();

@@ -7,7 +7,7 @@ namespace NFMWorldLibrary.Backend.AI;
 /// <summary>
 /// Handles AI decision making, path finding, and control inputs based on difficulty and race conditions.
 /// </summary>
-public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
+public class ElStupido(IGamemode _, IGamemodeData racePhase) : BaseAi
 {
     /// <summary>
     /// Pythagorean distance squared calculation (integer version).
@@ -33,7 +33,6 @@ public class ElStupido(IGamemode gamemode, IGamemodeData racePhase) : BaseAi
     private Sequence? sequence;
     
     private int? targetFixRoadStartNode = null;
-    private bool bouncing;
     private int _targetNode;
     
     // Obstacle avoidance state
