@@ -4,6 +4,7 @@ using CommunityToolkit.HighPerformance;
 using FontStashSharp;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using NFMWorld.Audio;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.SkiaDriver;
@@ -33,17 +34,29 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 {
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
+#if USE_FAUDIO
+        return new FaudioMusic(file, tempomul);
+#else
         return new RadicalMusic(file, tempomul);
+#endif
     }
 
     public void StopAllSounds()
     {
+#if USE_FAUDIO
+        FaudioSoundClip.StopAll();
+#else
         SoundClip.StopAll();
+#endif
     }
 
     public ISoundClip GetSound(string filePath)
     {
+#if USE_FAUDIO
+        return new FaudioSoundClip(filePath);
+#else
         return new SoundClip(filePath);
+#endif
     }
 
     public IGraphics Graphics { get; } = new NvgGraphics(context);
@@ -333,7 +346,11 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
     public void SetAllVolumes(float vol)
     {
+#if USE_FAUDIO
+        FaudioSoundClip.SetAllVolumes(vol);
+#else
         SoundClip.SetAllVolumes(vol);
+#endif
     }
 
     public Key GetKeyFromScancode(Key key)
