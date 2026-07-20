@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <PackageReference Include="CefGlue.Common" Version="120.6099.211" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
   <Target Name="EnsureCefGlueMacRuntimeLibrariesInOutDir"

@@ -8,14 +8,6 @@ namespace NFMWorld.Gameplay;
 public abstract class BasePhase : IDisposable
 {
     /// <summary>
-    /// Whether this phase is a singleton that should never be disposed during normal navigation.
-    /// Deprecated: with the <see cref="PhaseManager"/> stack, the root phase is inherently never popped.
-    /// This property is retained for backward compatibility only.
-    /// </summary>
-    [Obsolete("PhaseManager prevents popping the root phase. IsSingleton is no longer needed.")]
-    public virtual bool IsSingleton => false;
-    
-    /// <summary>
     /// Whether CEF input should be forwarded while this phase is active.
     /// Defaults to the bridge's preference (<see cref="PhaseBridge.EnableInput"/>)
     /// if a bridge is set, otherwise false. Override for custom logic.

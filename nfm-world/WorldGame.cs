@@ -58,9 +58,6 @@ public class WorldGame : Game
     
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
-    private static bool _yogaInspectorEnabled = false;
-    private static int _yogaInspectorPage = 0;
-
     private WorldGame()
     {
         GameThreadContext.Install();

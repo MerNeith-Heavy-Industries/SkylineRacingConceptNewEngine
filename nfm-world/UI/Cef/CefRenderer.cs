@@ -42,7 +42,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
 
     // Rendering
     private SpriteBatch? _spriteBatch;
-    private bool _textureNeedsUpdate;
 
     // Input
     private int _scrollWheelValue;
@@ -81,7 +80,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         // 3. Create handlers
         _renderHandler = new NfmwCefRenderHandler(_graphicsDevice);
         _renderHandler.SetViewSize(browserWidth, browserHeight);
-        _renderHandler.OnBrowserPainted += () => _textureNeedsUpdate = true;
         _cefClient = new NfmwCefClient(_renderHandler, this);
 
         // 4. Initialize CEF
@@ -241,8 +239,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
         _graphicsDevice.BlendState = oldBlend;
         _graphicsDevice.DepthStencilState = oldDepth;
         _graphicsDevice.RasterizerState = oldRaster;
-
-        _textureNeedsUpdate = false;
     }
 
     /// <summary>

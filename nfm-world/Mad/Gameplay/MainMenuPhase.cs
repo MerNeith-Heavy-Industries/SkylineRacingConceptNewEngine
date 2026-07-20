@@ -15,8 +15,6 @@ namespace NFMWorld.Gameplay;
 
 public class MainMenuPhase : BaseStageRenderingPhase
 {
-    public override bool IsSingleton => true;
-
     private readonly MainMenuBridge _bridge = new();
 
     public MainMenuPhase(GraphicsDevice graphicsDevice, string stageName) : base(graphicsDevice, stageName)
