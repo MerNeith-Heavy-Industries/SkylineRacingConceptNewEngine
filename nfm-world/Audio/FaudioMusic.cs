@@ -76,7 +76,7 @@ public sealed class FaudioMusic : IRadicalMusic
 
             _currentTempoMultiplier = tempomul;
 
-            byte[]? arrayToReturnToPool = null;
+            ArraySegment<byte> arrayToReturnToPool = default;
 
             try
             {
@@ -87,14 +87,14 @@ public sealed class FaudioMusic : IRadicalMusic
                     : result.PcmData;
 
                 // Create SoundEffect with loop points (loop entire track)
-                var totalSamples = finalPcm.Length / 2; // 16-bit = 2 bytes per sample
+                var totalSamples = finalPcm.Count / 2; // 16-bit = 2 bytes per sample
                 var totalFrames = totalSamples / Channels; // samples per channel
                 _effect = new SoundEffect(finalPcm, result.SampleRate, result.Channels, 0, totalFrames);
             }
             finally
             {
-                if (arrayToReturnToPool != null)
-                    ArrayPool<byte>.Shared.Return(arrayToReturnToPool);
+                if (arrayToReturnToPool.Array != null)
+                    ArrayPool<byte>.Shared.Return(arrayToReturnToPool.Array);
             }
 
             _readable = true;
@@ -167,52 +167,15 @@ public sealed class FaudioMusic : IRadicalMusic
         return _instance.Volume;
     }
 
+
     public void SetFreqMultiplier(double multiplier)
     {
-        if (!_readable || OriginalPcm == null) return;
+        if (!_readable) return;
 
-        // Clamp to valid range
         multiplier = Math.Clamp(multiplier, 0.50, 2.0);
 
-        // If the multiplier hasn't changed meaningfully, skip re-processing
-        if (Math.Abs(multiplier - _currentTempoMultiplier) < 0.001)
-            return;
-
-        _currentTempoMultiplier = multiplier;
-
-        // Re-apply tempo stretching and re-create the SoundEffect
-        byte[]? arrayToReturnToPool = null;
-
-        var wasPlaying = _instance?.State == SoundState.Playing;
-
-        try
-        {
-            var finalPcm = Math.Abs(multiplier - 1.0) > 0.01
-                ? arrayToReturnToPool = TempoStretcher.Process(OriginalPcm, SampleRate, Channels, multiplier)
-                : OriginalPcm;
-
-            // Clean up old instances
-            _instance?.Stop();
-            _instance?.Dispose();
-            _instance = null;
-            _effect?.Dispose();
-
-            // Re-create SoundEffect
-            var totalFrames = finalPcm.Length / 2 / Channels;
-            _effect = new SoundEffect(finalPcm, SampleRate, (AudioChannels)Channels, 0, totalFrames);
-        }
-        finally
-        {
-            if (arrayToReturnToPool != null)
-                ArrayPool<byte>.Shared.Return(arrayToReturnToPool);
-        }
-
-        // Resume playback if it was playing
-        if (wasPlaying)
-        {
-            _instance = _effect.CreateInstance();
-            _instance.IsLooped = true;
-            _instance.Play();
-        }
+        // Apply directly to the active instance (if any).
+        // New instances pick it up in Play().
+        _instance?.Pitch = MathF.Log2((float)multiplier);
     }
 }

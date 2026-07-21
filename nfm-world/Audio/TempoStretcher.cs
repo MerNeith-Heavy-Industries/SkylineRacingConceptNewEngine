@@ -21,7 +21,7 @@ public static class TempoStretcher
     /// <param name="channels">1 for mono, 2 for stereo.</param>
     /// <param name="tempoRatio">Tempo multiplier. 1.0 = normal, >1 = faster, &lt;1 = slower.</param>
     /// <returns>Pooled array containing time-stretched 16-bit PCM data.</returns>
-    public static byte[] Process(byte[] pcmData, int sampleRate, int channels, double tempoRatio)
+    public static ArraySegment<byte> Process(byte[] pcmData, int sampleRate, int channels, double tempoRatio)
     {
         if (Math.Abs(tempoRatio - 1.0) < 0.001)
             return pcmData; // No stretching needed
@@ -43,6 +43,6 @@ public static class TempoStretcher
         outputStream.CopyTo(outputMemory);
         var resultPool = ArrayPool<byte>.Shared.Rent((int)outputMemory.Length);
         outputMemory.GetReadOnlySequence().CopyTo(resultPool);
-        return resultPool;
+        return new ArraySegment<byte>(resultPool, 0, (int)outputMemory.Length);
     }
 }
