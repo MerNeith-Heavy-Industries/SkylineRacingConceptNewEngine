@@ -20,6 +20,15 @@
     <PackageReference Include="CefGlue.Common" Version="120.6099.211" />
   </ItemGroup>
 
+  <!--
+    Prevent CefGlue.Common NuGet from copying its bundled self-contained browser process
+    (Xilium.CefGlue.BrowserProcess.exe + entire .NET runtime) to output/publish.
+    NFMWorld.BrowserProcess.exe already compiles all CefGlue.BrowserProcess source via ProjectReference.
+  -->
+  <ItemGroup>
+    <CefGlueBrowserProcessFiles Remove="@(CefGlueBrowserProcessFiles)" />
+  </ItemGroup>
+
   <Target Name="EnsureCefGlueMacRuntimeLibrariesInOutDir"
           BeforeTargets="_CopyOutOfDateSourceItemsToOutputDirectory"
           Condition="'$(RuntimeIdentifier)' == 'osx-x64' or '$(RuntimeIdentifier)' == 'osx-arm64'">
