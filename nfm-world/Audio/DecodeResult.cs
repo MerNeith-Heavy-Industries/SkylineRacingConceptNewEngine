@@ -6,17 +6,17 @@ namespace NFMWorld.Audio;
 /// <summary>
 /// Result of decoding a tracker module.
 /// </summary>
-public readonly struct DecodeResult(byte[] pcmData, int sampleRate, AudioChannels channels, bool pooled) : IDisposable
+public readonly struct DecodeResult(ArraySegment<byte> pcmData, int sampleRate, AudioChannels channels, bool pooled) : IDisposable
 {
-    public readonly byte[] PcmData = pcmData;
+    public readonly ArraySegment<byte> PcmData = pcmData;
     public readonly int SampleRate = sampleRate;
     public readonly AudioChannels Channels = channels;
 
     public void Dispose()
     {
-        if (pooled)
+        if (pooled && PcmData.Array is {} arr)
         {
-            ArrayPool<byte>.Shared.Return(PcmData);
+            ArrayPool<byte>.Shared.Return(arr);
         }
     }
 }

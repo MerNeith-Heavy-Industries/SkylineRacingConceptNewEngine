@@ -20,7 +20,7 @@ public sealed class FaudioMusic : IRadicalMusic
     private bool _readable;
 
     // Stored for re-stretching if SetFreqMultiplier is called
-    private byte[] OriginalPcm => _decoded.PcmData;
+    private ArraySegment<byte> OriginalPcm => _decoded.PcmData;
     private int SampleRate => _decoded.SampleRate;
     private int Channels => (int)_decoded.Channels;
     private double _currentTempoMultiplier = 1.0;

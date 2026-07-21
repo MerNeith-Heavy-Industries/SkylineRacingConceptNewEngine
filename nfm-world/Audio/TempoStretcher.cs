@@ -1,5 +1,6 @@
 using System.Buffers;
 using Collections.Pooled;
+using Maxine.Extensions;
 using Microsoft.IO;
 using NAudio.Wave;
 using SoundTouch;
@@ -21,11 +22,8 @@ public static class TempoStretcher
     /// <param name="channels">1 for mono, 2 for stereo.</param>
     /// <param name="tempoRatio">Tempo multiplier. 1.0 = normal, >1 = faster, &lt;1 = slower.</param>
     /// <returns>Pooled array containing time-stretched 16-bit PCM data.</returns>
-    public static ArraySegment<byte> Process(byte[] pcmData, int sampleRate, int channels, double tempoRatio)
+    public static ArraySegment<byte> Process(Memory<byte> pcmData, int sampleRate, int channels, double tempoRatio)
     {
-        if (Math.Abs(tempoRatio - 1.0) < 0.001)
-            return pcmData; // No stretching needed
-
         // Configure SoundTouch
         var processor = new SoundTouchProcessor
         {
@@ -34,7 +32,7 @@ public static class TempoStretcher
             Tempo = tempoRatio
         };
 
-        using var inputFile = new RawSourceWaveStream(new MemoryStream(pcmData), new WaveFormat(sampleRate, 16, channels));
+        using var inputFile = new RawSourceWaveStream(new MemoryStream2(pcmData), new WaveFormat(sampleRate, 16, channels));
         using var inputStream = new WaveChannel32(inputFile) { PadWithZeroes = false };
         using var processStream = new SoundTouchWaveStream(inputStream, processor);
         using var outputStream = new Wave32To16Stream(processStream);

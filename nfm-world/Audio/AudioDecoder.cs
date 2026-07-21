@@ -148,7 +148,7 @@ public static class AudioDecoder
                 _ => throw new NotSupportedException($"Unsupported channel count: {waveFormat.Channels}")
             };
 
-            return new DecodeResult(pcmData, waveFormat.SampleRate, channels, true);
+            return new DecodeResult(new ArraySegment<byte>(pcmData, 0, floatSamples.Length * 2), waveFormat.SampleRate, channels, true);
         }
         catch
         {

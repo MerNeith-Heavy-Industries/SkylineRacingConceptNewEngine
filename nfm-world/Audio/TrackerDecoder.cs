@@ -144,7 +144,7 @@ public static unsafe class TrackerDecoder
                         pcmData[i * 2 + 1] = (byte)((int16Sample >> 8) & 0xFF);
                     }
 
-                    return new DecodeResult(pcmData, DefaultSampleRate, AudioChannels.Stereo, true);
+                    return new DecodeResult(new ArraySegment<byte>(pcmData, 0, actualFloatSamples * 2), DefaultSampleRate, AudioChannels.Stereo, true);
                 }
                 catch
                 {
