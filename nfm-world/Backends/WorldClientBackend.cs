@@ -103,10 +103,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             IImage LoadImageInternal()
             {
                 using var stream = VFS.OpenRead(file);
-                if (Path.GetExtension(file) == ".svg")
-                {
-                    return NanoSVGImage.FromStream(stream);
-                }
                 if (Path.GetExtension(file) == ".dds")
                 {
                     return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, stream));
@@ -118,11 +114,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public IImage LoadImage(ReadOnlyMemory<byte> file)
         {
-            if (file.Span is [(byte)'<', (byte)'s', (byte)'v', (byte)'g', ..] or [(byte)'<', (byte)'?', (byte)'x', (byte)'m', (byte)'l', ..])
-            {
-                return NanoSVGImage.FromStream(file.AsStream());
-            }
-
             if (file.Span is [(byte)'D', (byte)'D', (byte)'S', (byte)' ', ..])
             {
                 return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, file.AsStream()));
@@ -235,8 +226,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y)
         {
-            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
-
             if (image is NanoVGImage img)
             {
                 var imgPaint = _context.ImagePattern(x, y, img.Width, img.Height, 0.0f, img.Texture, 1.0f);
@@ -245,10 +234,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Rect(x, y, img.Width, img.Height);
                 _context.Fill();
                 _context.FillPaint(_paint);
-            }
-            else if (image is NanoSVGImage nsvg)
-            {
-                nsvg.Draw(_context, x, y, nsvg.Width, nsvg.Height);
             }
         }
 
@@ -326,8 +311,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y, int width, int height)
         {
-            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
-
             if (image is NanoVGImage img)
             {
                 var imgPaint = _context.ImagePattern(x, y, width, height, 0.0f, img.Texture, 1.0f);
@@ -336,10 +319,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Rect(x, y, width, height);
                 _context.Fill();
                 _context.FillPaint(_paint);
-            }
-            else if (image is NanoSVGImage nsvg)
-            {
-                nsvg.Draw(_context, x, y, width, height);
             }
         }
     }

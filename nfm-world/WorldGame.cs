@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
@@ -21,7 +22,6 @@ using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using Sokol;
 using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
 using NFMWorld.Sentry;
@@ -34,8 +34,10 @@ namespace NFMWorld;
 /// </summary>
 public class WorldGame : Game
 {
+    public static UnlimitedArray<RenderTarget2D> ShadowRenderTargets = [];
+
     public GraphicsDeviceManager Graphics;
-    private ImGuiRenderer _imguiRenderer;
+    public static ImGuiRenderer ImguiRenderer;
     private CefRenderer _cefRenderer;
 
     internal static long LastFrameTime;
@@ -143,8 +145,7 @@ public class WorldGame : Game
 
     protected override void Initialize()
     {
-        _imguiRenderer = new ImGuiRenderer(this);
-        ImguiRenderer = _imguiRenderer;
+        ImguiRenderer = new ImGuiRenderer(this);
 
         // Initialize CEF renderer after GraphicsDevice is ready.
         // Load the single-page app (hash router) as the initial URL.
@@ -195,7 +196,7 @@ public class WorldGame : Game
             {
                 shadowRenderTarget?.Dispose();
             }
-            _imguiRenderer.Dispose();
+            ImguiRenderer.Dispose();
 
 #if USE_BASS
             Bass.Free();
@@ -211,7 +212,7 @@ public class WorldGame : Game
     {
         GameSparker.Load(this);
 
-        _imguiRenderer.RebuildFontAtlas();
+        ImguiRenderer.RebuildFontAtlas();
 
         Effects.Initialize(GraphicsDevice);
 
@@ -377,6 +378,8 @@ public class WorldGame : Game
         // Update saved state.
         _oldKeyState = keys;
     }
+
+    private static readonly MouseButtons[] MouseButtonsArray = Enum.GetValues<MouseButtons>();
     private void UpdateMouse()
     {
         var newState = Mouse.GetState();
@@ -441,9 +444,9 @@ public class WorldGame : Game
         GameSparker.Render3DOverlays();
 
         // // Render ImGui
-        _imguiRenderer.BeginLayout(gameTime);
+        ImguiRenderer.BeginLayout(gameTime);
         GameSparker.RenderImgui();
-        _imguiRenderer.EndLayout();
+        ImguiRenderer.EndLayout();
 
         base.Draw(gameTime);
         LastFrameTime = t.ElapsedMilliseconds;
@@ -466,7 +469,6 @@ public class WorldGame : Game
         NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassFx).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassOpus).Assembly, ImportResolver);
-        NativeLibrary.SetDllImportResolver(typeof(SokolExtensions).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
 
@@ -646,6 +648,6 @@ public class WorldGame : Game
         // dlopen treats a slash-containing name as a path relative to the CWD (ignoring
         // LD_LIBRARY_PATH), so a relative "libs/..." only resolves when launched from the
         // output folder. AppContext.BaseDirectory is always the output folder.
-        return NativeLibrary.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
+        return NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
     }
 }
