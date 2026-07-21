@@ -155,14 +155,6 @@ public class WorldGame : Game
         _cefRenderer.Initialize();
         GameSparker.CefRenderer = _cefRenderer;
 
-#if USE_BASS
-        Bass.Init();
-#endif
-#if USE_FAUDIO
-        // FAudio is lazily initialized by FNA's SoundEffect on first use.
-        // No explicit init needed.
-#endif
-
         _oldKeyState = Keys.FromState(Keyboard.GetState());
         var mouseState = Mouse.GetState();
         _oldMouseState = MouseButtons.FromState(mouseState);
@@ -571,39 +563,11 @@ public class WorldGame : Game
                 "linux" or "freebsd" or "netbsd" => "libSDL2-2.0.so.0",
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             },
-            "bass" => os switch
-            {
-                "windows" => "bass.dll",
-                "osx" => "libbass.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbass.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "bass_fx" => os switch
-            {
-                "windows" => "bass_fx.dll",
-                "osx" => "libbass_fx.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbass_fx.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "bassopus" => os switch
-            {
-                "windows" => "bassopus.dll",
-                "osx" => "libbassopus.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbassopus.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
             "steam_api" or "steam_api64" => os switch
             {
                 "windows" => wordsize is "64" ? "steam_api64.dll" : "steam_api.dll",
                 "osx" => "libsteam_api.dylib",
                 "linux" or "freebsd" or "netbsd" => "libsteam_api.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "nanosvg" => os switch
-            {
-                "windows" => "nanosvg.dll",
-                "osx" => "libnanosvg.dylib",
-                "linux" or "freebsd" or "netbsd" => "libnanosvg.so",
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             },
             _ => os switch
