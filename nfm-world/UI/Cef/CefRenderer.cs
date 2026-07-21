@@ -75,6 +75,7 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
             BackgroundColor = new CefColor(0, 0, 0, 0), // Transparent
             RootCachePath = Path.Combine(Path.GetTempPath(), $"NFMW_CefCache_{System.Environment.ProcessId}"),
             LogSeverity = CefLogSeverity.Warning,
+            PackLoadingDisabled = true
         };
 
         // 3. Create handlers
