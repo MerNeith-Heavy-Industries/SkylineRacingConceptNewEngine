@@ -37,3 +37,6 @@
 [submodule "websocket-sharp"]
 	path = websocket-sharp
 	url = https://github.com/uwx/websocket-sharp
+[submodule "NAudio.Flac"]
+	path = NAudio.Flac
+	url = https://github.com/uwx/NAudio.Flac
