@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.IO.Compression;
 using Collections.Pooled;
+using Maxine.Extensions.Collections;
 using Microsoft.Xna.Framework.Audio;
 using NAudio.Flac;
 using NAudio.SoundFile;
@@ -113,8 +114,7 @@ public static class AudioDecoder
 
         // Read all float samples
         using var allFloats = new PooledList<float>();
-        var floatBuffer = ArrayPool<float>.Shared.Rent(4096);
-        try
+        using (var floatBuffer = SafeArrayPool<float>.Shared.Rent(4096))
         {
             int samplesRead;
             while ((samplesRead = sampleProvider.Read(floatBuffer)) > 0)
@@ -122,14 +122,10 @@ public static class AudioDecoder
                 allFloats.AddRange(floatBuffer.AsSpan(0, samplesRead));
             }
         }
-        finally
-        {
-            ArrayPool<float>.Shared.Return(floatBuffer);
-        }
 
         // Convert float [-1.0, 1.0] to 16-bit PCM
         var floatSamples = allFloats.ToArray();
-        var pcmData = ArrayPool<byte>.Shared.Rent(floatSamples.Length * 2);
+        var pcmData = SafeArrayPool<byte>.Shared.Rent(floatSamples.Length * 2);
         try
         {
             for (int i = 0; i < floatSamples.Length; i++)
@@ -148,11 +144,11 @@ public static class AudioDecoder
                 _ => throw new NotSupportedException($"Unsupported channel count: {waveFormat.Channels}")
             };
 
-            return new DecodeResult(new ArraySegment<byte>(pcmData, 0, floatSamples.Length * 2), waveFormat.SampleRate, channels, true);
+            return new DecodeResult(pcmData, waveFormat.SampleRate, channels, true);
         }
         catch
         {
-            ArrayPool<byte>.Shared.Return(pcmData);
+            pcmData.Dispose();
             throw;
         }
     }

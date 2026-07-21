@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
+using Maxine.Extensions.Collections;
 using Microsoft.Xna.Framework.Audio;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
@@ -76,7 +77,7 @@ public sealed class FaudioMusic : IRadicalMusic
 
             _currentTempoMultiplier = tempomul;
 
-            ArraySegment<byte> arrayToReturnToPool = default;
+            DisposableArraySegment<byte> arrayToReturnToPool = default;
 
             try
             {
@@ -93,8 +94,7 @@ public sealed class FaudioMusic : IRadicalMusic
             }
             finally
             {
-                if (arrayToReturnToPool.Array != null)
-                    ArrayPool<byte>.Shared.Return(arrayToReturnToPool.Array);
+                arrayToReturnToPool.Dispose();
             }
 
             _readable = true;
