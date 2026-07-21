@@ -43,3 +43,6 @@
 [submodule "nfm-world/src/data"]
 	path = nfm-world/src/data
 	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineClientData
+[submodule "NAudio.Flac"]
+	path = NAudio.Flac
+	url = https://github.com/uwx/NAudio.Flac
