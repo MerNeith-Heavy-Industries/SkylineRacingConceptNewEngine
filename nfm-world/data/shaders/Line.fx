@@ -111,7 +111,7 @@ VertexShaderOutput MainVS(
     // Distance behavior is based on the line's centroid not the endpoints
     // Using camera-space depth matches how the line actually appears on screen better than radial distance
     float3 worldCentroid = mul(float4(input.Centroid, 1), world).xyz;
-    float viewDepth = abs(mul(float4(worldCentroid, 1), View).z);
+    float viewDepth = -mul(float4(worldCentroid, 1), View).z;
 
     // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently,
     // masks also let us collapse hidden quads without using pixel-shader discard
