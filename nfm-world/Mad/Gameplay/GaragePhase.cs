@@ -32,25 +32,14 @@ public class GaragePhase : BaseStageRenderingPhase
 
     private readonly GarageBridge _bridge = new();
 
-    private readonly string? _stageName;
-    private bool _loadedStageMusic = false;
     private bool _pushedCollections = false;
 
-    /// <summary>
-    /// Creates a GaragePhase that loads the specified stage as background.
-    /// </summary>
-    public GaragePhase(GraphicsDevice graphicsDevice) : base(graphicsDevice, GameSparker.GetAvailableStages().Shuffle().First())
+    public GaragePhase(GraphicsDevice graphicsDevice, string? stageName = null) : base(graphicsDevice, stageName ?? GameSparker.GetAvailableStages().Shuffle().First())
     {
         InitBridge();
     }
 
-    public GaragePhase(GraphicsDevice graphicsDevice, string? stageName) : this(graphicsDevice)
-    {
-        _stageName = stageName;
-        InitBridge();
-    }
-
-    public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar) : this(graphicsDevice)
+    public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar, string? stageName) : this(graphicsDevice)
     {
         _selectedCarIdx = _cars.FindIndex(c =>
         {
@@ -122,35 +111,12 @@ public class GaragePhase : BaseStageRenderingPhase
 
     private void SetupCurrentCar()
     {
-        if (_stageName != null)
-        {
-            LoadStage(_stageName, loadMusic: false);
-        }
-        else
-        {
-            var stages = VFS.EnumerateFiles("data/stages", "*.txt", SearchOption.AllDirectories).ToArray();
-            string stagePath = "";
-            while (string.IsNullOrEmpty(stagePath) || stagePath.Contains("rar2"))
-            {
-                stagePath = stages[(int)(URandom.Double() * stages.Length)];
-            }
-            stagePath = stagePath.Replace("data/stages/", "").Replace(".txt", "");
-            
-            LoadStage(stagePath, false);
-        }
-
         _backendCar = new BackendCar(_cars[_selectedCarIdx], 0, 0, 0, true);
         CarsInRace[0] = _backendCar;
 
         Camera.LookAt = new Vector3(0, 250, 400);
         Camera.Position = new Vector3(-750, 50, 750);
         FovOverride = 53;
-
-        if (!_loadedStageMusic)
-        {
-            LoadStageMusic(true);
-            _loadedStageMusic = true;
-        }
 
         // create and position stat bars
         float switsLevel = (_backendCar.Stats.Swits[2] - 220) / 90f;
