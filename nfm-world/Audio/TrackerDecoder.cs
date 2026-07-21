@@ -34,11 +34,15 @@ public static unsafe class TrackerDecoder
     {
         using var memoryStream = new RecyclableMemoryStream(MemoryManager.Manager, Guid.NewGuid(), "TrackerDecoder stream");
         stream.CopyTo(memoryStream);
-        var arr = ArrayPool<byte>.Shared.Rent((int)memoryStream.Length);
+        var length = (int)memoryStream.Length;
+        var arr = ArrayPool<byte>.Shared.Rent(length);
         try
         {
             memoryStream.GetReadOnlySequence().CopyTo(arr);
-            return Decode(arr);
+            // Slice to exact length: the rented array may be larger than
+            // the actual data, and feeding garbage bytes to libopenmpt
+            // produces corrupted samples.
+            return Decode(arr.AsSpan(0, length));
         }
         finally
         {
@@ -59,7 +63,7 @@ public static unsafe class TrackerDecoder
             fixed (byte* pData = fileData)
             {
                 var error = 0;
-                
+
                 mod = NativeMethods.module_create_from_memory2(
                     pData,
                     (nuint)fileData.Length,
