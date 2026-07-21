@@ -3,6 +3,7 @@ import { callNfmw, onNfmwEvent } from "@shared/bridge";
 import { GlassCard, StatBar } from "@shared/components/GlassCard";
 import { CarStatsData } from "@shared/memorypack/CarStatsData";
 import { CarCollectionsData } from "@shared/memorypack/CarCollectionsData";
+import { CurrentCollectionData } from "@shared/memorypack/CurrentCollectionData";
 
 // ── Garage ───────────────────────────────────────────────────────
 // Functional Preact component: car selection + stat display + search + collection switching.
@@ -10,16 +11,14 @@ import { CarCollectionsData } from "@shared/memorypack/CarCollectionsData";
 export function Garage() {
   const [currentCar, setCurrentCar] = useState<CarStatsData | null>(null);
   const [collections, setCollections] = useState<CarCollectionsData | null>(null);
-  const [currentCollection, setCurrentCollection] = useState<string | null>(null);
+  const [currentCollection, setCurrentCollection] = useState<CurrentCollectionData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const u1 = onNfmwEvent<CarStatsData | null>("garage:currentCar", setCurrentCar, CarStatsData.deserialize.bind(CarStatsData));
     const u2 = onNfmwEvent<CarCollectionsData | null>("garage:collections", setCollections, CarCollectionsData.deserialize.bind(CarCollectionsData));
-    const u3 = onNfmwEvent<{ collection: string } | null>("garage:currentCollection", (data) => {
-      setCurrentCollection(data?.collection ?? null);
-    });
+    const u3 = onNfmwEvent<CurrentCollectionData | null>("garage:currentCollection", setCurrentCollection, CurrentCollectionData.deserialize.bind(CurrentCollectionData));
     return () => { u1(); u2(); u3(); };
   }, []);
 
@@ -143,9 +142,9 @@ export function Garage() {
                 style={{
                   fontSize: "12px", marginBottom: "6px", letterSpacing: "1px", textTransform: "uppercase",
                   cursor: "pointer", padding: "4px 8px", borderRadius: "4px",
-                  color: currentCollection === col.name ? "#4fc3f7" : "rgba(255,255,255,0.4)",
-                  background: currentCollection === col.name ? "rgba(79,195,247,0.08)" : "transparent",
-                  borderLeft: currentCollection === col.name ? "2px solid #4fc3f7" : "2px solid transparent",
+                  color: currentCollection?.id === col.id ? "#4fc3f7" : "rgba(255,255,255,0.4)",
+                  background: currentCollection?.id === col.id ? "rgba(79,195,247,0.08)" : "transparent",
+                  borderLeft: currentCollection?.id === col.id ? "2px solid #4fc3f7" : "2px solid transparent",
                   transition: "color 0.15s ease, background 0.15s ease",
                 }}
               >

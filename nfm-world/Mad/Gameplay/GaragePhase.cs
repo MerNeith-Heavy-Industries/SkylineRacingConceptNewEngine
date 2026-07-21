@@ -39,7 +39,7 @@ public class GaragePhase : BaseStageRenderingPhase
         InitBridge();
     }
 
-    public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar, string? stageName) : this(graphicsDevice)
+    public GaragePhase(GraphicsDevice graphicsDevice, Rad3d currentCar, string? stageName = null) : this(graphicsDevice, stageName)
     {
         _selectedCarIdx = _cars.FindIndex(c =>
         {
@@ -72,7 +72,7 @@ public class GaragePhase : BaseStageRenderingPhase
                     _cars = cars;
                     _selectedCarIdx = idx;
                     SetupCurrentCar();
-                    _bridge.PushCurrentCollection(_currentCollection.ToString());
+                    _bridge.PushCurrentCollection(_currentCollection);
                 }
             }
         };
@@ -87,7 +87,7 @@ public class GaragePhase : BaseStageRenderingPhase
                 _selectedCarIdx = 0;
                 _currentCollection = col;
                 SetupCurrentCar();
-                _bridge.PushCurrentCollection(_currentCollection.ToString());
+                _bridge.PushCurrentCollection(_currentCollection);
             }
         };
 
@@ -140,7 +140,7 @@ public class GaragePhase : BaseStageRenderingPhase
         _bridge.PushCurrentCar(new CarStatsData
         {
             Name = _cars[_selectedCarIdx].Stats.Name,
-            Collection = _currentCollection.ToString(),
+            Collection = _currentCollection,
             TopSpeed = switsLevel,
             Acceleration = accel,
             Handling = (float)_backendCar.Stats.Dishandle,
@@ -153,7 +153,7 @@ public class GaragePhase : BaseStageRenderingPhase
         });
 
         // Push current collection so JS can highlight the active one.
-        _bridge.PushCurrentCollection(_currentCollection.ToString());
+        _bridge.PushCurrentCollection(_currentCollection);
     }
 
     /// <summary>
@@ -166,13 +166,13 @@ public class GaragePhase : BaseStageRenderingPhase
             .Where(kv => kv.Value.Count > 0)
             .Select(kv => new CarCollectionData
             {
+                Id = kv.Key,
                 Name = kv.Key.ToString(),
                 Cars = kv.Value
-                    .Where(c => c != null)
                     .Select(c => new CarStatsData
                     {
                         Name = c.Stats.Name,
-                        Collection = kv.Key.ToString(),
+                        Collection = kv.Key,
                     })
                     .ToArray(),
             })
@@ -180,20 +180,6 @@ public class GaragePhase : BaseStageRenderingPhase
 
         _bridge.PushCollections(data);
         _pushedCollections = true;
-    }
-
-
-
-    public override void GameTick()
-    {
-        base.GameTick();
-        // CEF handles UI rendering; no Reactor mount needed
-    }
-
-    public override void Render(float alpha)
-    {
-        base.Render(alpha);
-        // CEF handles UI rendering; no LayoutAndRender needed
     }
 
     public override void Enter()
@@ -210,13 +196,13 @@ public class GaragePhase : BaseStageRenderingPhase
 
     private void SelectedCar()
     {
-        if (CarSelected == null) throw new ArgumentNullException("Attempted to invoke CarSelected, but it was null.");
+        if (CarSelected == null) throw new ArgumentNullException(nameof(CarSelected), "Attempted to invoke CarSelected, but it was null.");
         CarSelected.Invoke(this, _backendCar!.Rad);
     }
 
     private void SelectionCancelled()
     {
-        if (CarSelectionCancelled == null) throw new ArgumentNullException("Attempted to invoke CarSelectionCancelled, but it was null.");
+        if (CarSelectionCancelled == null) throw new ArgumentNullException(nameof(CarSelected), "Attempted to invoke CarSelectionCancelled, but it was null.");
         CarSelectionCancelled.Invoke(this, EventArgs.Empty);
     }
 
