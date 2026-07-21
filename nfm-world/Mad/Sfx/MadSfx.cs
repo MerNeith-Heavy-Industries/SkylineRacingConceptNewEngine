@@ -39,7 +39,7 @@ public class MadSfx
         _carPhysics.SfxPlayScrape += SfxPlayScrape;
         _carPhysics.SfxPlayGscrape += SfxPlayGscrape;
         _carPhysics.SfxPlaySkid += SfxPlaySkid;
-        carPhysics.PowerUp += SfxPlayPowerup;
+        _carPhysics.PowerUp += SfxPlayPowerup;
     }
 
     private void SfxPlayPowerup(object? sender, float f)
