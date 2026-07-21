@@ -74,6 +74,25 @@ struct VertexShaderOutput
     float3 Normal : TEXCOORD4;
 };
 
+float CalculateFalloffHalfThickness(float viewDepth)
+{
+    // Falloff uses the user's specified width up to FalloffStartDistance, then follows
+    // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
+    float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
+    float inverseDepthThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
+
+    // The cutoff mode follows inverse-depth sizing until its final segment, then fades linearly to zero.
+    // All divisions needed to locate this segment are precomputed on the CPU.
+    float linearFadeAmount = saturate((OutlineFalloffCutoffDistance - viewDepth) * OutlineFalloffInverseLinearFadeLength);
+    float linearFadeThickness = OutlineFalloffLinearFadeStartThickness * linearFadeAmount;
+    float linearFadeRegionMask = saturate(sign(viewDepth - OutlineFalloffLinearFadeStartDistance));
+    float cutoffThickness = lerp(inverseDepthThickness, linearFadeThickness, linearFadeRegionMask);
+    float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoffMask);
+    float falloffMode = DistantOutlineDistanceFalloffMask + DistantOutlineDistanceFalloffWithCutoffMask;
+
+    return lerp(HalfThickness, falloffThickness, falloffMode);
+}
+
 VertexShaderOutput MainVS(
     in VertexShaderInput input,
     // instance parameters
@@ -96,22 +115,8 @@ VertexShaderOutput MainVS(
 
     // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently,
     // masks also let us collapse hidden quads without using pixel-shader discard
-    float falloffMode = DistantOutlineDistanceFalloffMask + DistantOutlineDistanceFalloffWithCutoffMask;
     float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
-
-    // Falloff uses the user's specified width up to FalloffStartDistance, then follows
-    // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
-    float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
-    float inverseDepthThickness = HalfThickness * min(1.0, referenceDepth / max(viewDepth, 0.0001));
-
-    // The cutoff mode follows inverse-depth sizing until its final segment, then fades linearly to zero.
-    // All divisions needed to locate this segment are precomputed on the CPU.
-    float linearFadeAmount = saturate((OutlineFalloffCutoffDistance - viewDepth) * OutlineFalloffInverseLinearFadeLength);
-    float linearFadeThickness = OutlineFalloffLinearFadeStartThickness * linearFadeAmount;
-    float linearFadeRegionMask = saturate(sign(viewDepth - OutlineFalloffLinearFadeStartDistance));
-    float cutoffThickness = lerp(inverseDepthThickness, linearFadeThickness, linearFadeRegionMask);
-    float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoffMask);
-    float renderedHalfThickness = lerp(HalfThickness, falloffThickness, falloffMode);
+    float renderedHalfThickness = CalculateFalloffHalfThickness(viewDepth);
 
     // Only DistanceFalloffWithCutoff hides the line after its precomputed cutoff distance.
     float pastFalloffCutoff = saturate(sign(viewDepth - OutlineFalloffCutoffDistance));
