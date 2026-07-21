@@ -54,9 +54,9 @@ export class KeyBindingData {
 
         const value = new KeyBindingData();
         if (count == 3) {
-            value.action = reader.readString();
-            value.displayName = reader.readString();
-            value.keyCode = reader.readInt32();
+            value.action = reader.readString()!;
+            value.displayName = reader.readString()!;
+            value.keyCode = reader.readInt32()!;
 
         }
         else if (count > 3) {
@@ -64,9 +64,9 @@ export class KeyBindingData {
         }
         else {
             if (count == 0) return value;
-            value.action = reader.readString(); if (count == 1) return value;
-            value.displayName = reader.readString(); if (count == 2) return value;
-            value.keyCode = reader.readInt32(); if (count == 3) return value;
+            value.action = reader.readString()!; if (count == 1) return value;
+            value.displayName = reader.readString()!; if (count == 2) return value;
+            value.keyCode = reader.readInt32()!; if (count == 3) return value;
 
         }
         return value;

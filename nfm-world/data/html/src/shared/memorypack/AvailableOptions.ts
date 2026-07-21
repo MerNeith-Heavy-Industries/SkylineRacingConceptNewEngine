@@ -66,13 +66,13 @@ export class AvailableOptions {
 
         const value = new AvailableOptions();
         if (count == 7) {
-            value.renderers = reader.readArray(reader => reader.readString());
-            value.resolutions = reader.readArray(reader => reader.readString());
-            value.displayModes = reader.readArray(reader => reader.readString());
-            value.antialiasModes = reader.readArray(reader => reader.readString());
-            value.shadowCascadeLevels = reader.readArray(reader => reader.readString());
-            value.shadowResolutions = reader.readArray(reader => reader.readString());
-            value.renderDistanceNames = reader.readArray(reader => reader.readString());
+            value.renderers = reader.readArray(reader => reader.readString()!);
+            value.resolutions = reader.readArray(reader => reader.readString()!);
+            value.displayModes = reader.readArray(reader => reader.readString()!);
+            value.antialiasModes = reader.readArray(reader => reader.readString()!);
+            value.shadowCascadeLevels = reader.readArray(reader => reader.readString()!);
+            value.shadowResolutions = reader.readArray(reader => reader.readString()!);
+            value.renderDistanceNames = reader.readArray(reader => reader.readString()!);
 
         }
         else if (count > 7) {
@@ -80,13 +80,13 @@ export class AvailableOptions {
         }
         else {
             if (count == 0) return value;
-            value.renderers = reader.readArray(reader => reader.readString()); if (count == 1) return value;
-            value.resolutions = reader.readArray(reader => reader.readString()); if (count == 2) return value;
-            value.displayModes = reader.readArray(reader => reader.readString()); if (count == 3) return value;
-            value.antialiasModes = reader.readArray(reader => reader.readString()); if (count == 4) return value;
-            value.shadowCascadeLevels = reader.readArray(reader => reader.readString()); if (count == 5) return value;
-            value.shadowResolutions = reader.readArray(reader => reader.readString()); if (count == 6) return value;
-            value.renderDistanceNames = reader.readArray(reader => reader.readString()); if (count == 7) return value;
+            value.renderers = reader.readArray(reader => reader.readString()!); if (count == 1) return value;
+            value.resolutions = reader.readArray(reader => reader.readString()!); if (count == 2) return value;
+            value.displayModes = reader.readArray(reader => reader.readString()!); if (count == 3) return value;
+            value.antialiasModes = reader.readArray(reader => reader.readString()!); if (count == 4) return value;
+            value.shadowCascadeLevels = reader.readArray(reader => reader.readString()!); if (count == 5) return value;
+            value.shadowResolutions = reader.readArray(reader => reader.readString()!); if (count == 6) return value;
+            value.renderDistanceNames = reader.readArray(reader => reader.readString()!); if (count == 7) return value;
 
         }
         return value;

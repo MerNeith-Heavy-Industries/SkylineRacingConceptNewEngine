@@ -79,17 +79,17 @@ export class CarStatsData {
 
         const value = new CarStatsData();
         if (count == 11) {
-            value.name = reader.readString();
-            value.collection = reader.readInt32();
-            value.topSpeed = reader.readFloat64();
-            value.acceleration = reader.readFloat64();
-            value.handling = reader.readFloat64();
-            value.powerSave = reader.readFloat64();
-            value.strength = reader.readFloat64();
-            value.maxHealth = reader.readFloat64();
-            value.stunting = reader.readFloat64();
-            value.hypergliding = reader.readFloat64();
-            value.abing = reader.readFloat64();
+            value.name = reader.readString()!;
+            value.collection = reader.readInt32()!;
+            value.topSpeed = reader.readFloat64()!;
+            value.acceleration = reader.readFloat64()!;
+            value.handling = reader.readFloat64()!;
+            value.powerSave = reader.readFloat64()!;
+            value.strength = reader.readFloat64()!;
+            value.maxHealth = reader.readFloat64()!;
+            value.stunting = reader.readFloat64()!;
+            value.hypergliding = reader.readFloat64()!;
+            value.abing = reader.readFloat64()!;
 
         }
         else if (count > 11) {
@@ -97,17 +97,17 @@ export class CarStatsData {
         }
         else {
             if (count == 0) return value;
-            value.name = reader.readString(); if (count == 1) return value;
-            value.collection = reader.readInt32(); if (count == 2) return value;
-            value.topSpeed = reader.readFloat64(); if (count == 3) return value;
-            value.acceleration = reader.readFloat64(); if (count == 4) return value;
-            value.handling = reader.readFloat64(); if (count == 5) return value;
-            value.powerSave = reader.readFloat64(); if (count == 6) return value;
-            value.strength = reader.readFloat64(); if (count == 7) return value;
-            value.maxHealth = reader.readFloat64(); if (count == 8) return value;
-            value.stunting = reader.readFloat64(); if (count == 9) return value;
-            value.hypergliding = reader.readFloat64(); if (count == 10) return value;
-            value.abing = reader.readFloat64(); if (count == 11) return value;
+            value.name = reader.readString()!; if (count == 1) return value;
+            value.collection = reader.readInt32()!; if (count == 2) return value;
+            value.topSpeed = reader.readFloat64()!; if (count == 3) return value;
+            value.acceleration = reader.readFloat64()!; if (count == 4) return value;
+            value.handling = reader.readFloat64()!; if (count == 5) return value;
+            value.powerSave = reader.readFloat64()!; if (count == 6) return value;
+            value.strength = reader.readFloat64()!; if (count == 7) return value;
+            value.maxHealth = reader.readFloat64()!; if (count == 8) return value;
+            value.stunting = reader.readFloat64()!; if (count == 9) return value;
+            value.hypergliding = reader.readFloat64()!; if (count == 10) return value;
+            value.abing = reader.readFloat64()!; if (count == 11) return value;
 
         }
         return value;

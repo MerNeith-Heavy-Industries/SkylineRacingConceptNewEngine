@@ -56,8 +56,8 @@ export class CarCollectionData {
 
         const value = new CarCollectionData();
         if (count == 3) {
-            value.id = reader.readInt32();
-            value.name = reader.readString();
+            value.id = reader.readInt32()!;
+            value.name = reader.readString()!;
             value.cars = reader.readArray(reader => CarStatsData.deserializeCore(reader));
 
         }
@@ -66,8 +66,8 @@ export class CarCollectionData {
         }
         else {
             if (count == 0) return value;
-            value.id = reader.readInt32(); if (count == 1) return value;
-            value.name = reader.readString(); if (count == 2) return value;
+            value.id = reader.readInt32()!; if (count == 1) return value;
+            value.name = reader.readString()!; if (count == 2) return value;
             value.cars = reader.readArray(reader => CarStatsData.deserializeCore(reader)); if (count == 3) return value;
 
         }
