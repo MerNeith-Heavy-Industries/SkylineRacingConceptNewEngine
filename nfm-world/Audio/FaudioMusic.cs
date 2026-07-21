@@ -134,7 +134,7 @@ public sealed class FaudioMusic : IRadicalMusic
         _effect = null;
 
         _readable = false;
-        
+
         _decoded.Dispose();
     }
 

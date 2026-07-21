@@ -22,7 +22,7 @@ public class SettingsMenu(WorldGame game)
 {
     private bool _isOpen;
     private int _selectedTab = 0;
-    
+
     private readonly string[] _tabNames = { "Keyboard", "Video", "Audio", "Game" };
 
     // Keyboard bindings
@@ -112,7 +112,7 @@ public class SettingsMenu(WorldGame game)
             var bPixels = bParts[0] * bParts[1];
             return aPixels.CompareTo(bPixels);
         }))
-        { 
+        {
             "640 x 480", "800 x 600", "1024 x 768", "1280 x 720", "1280 x 1024", "1920 x 1080", "2560 x 1440",
             "3840 x 2160"
         };
@@ -158,7 +158,7 @@ public class SettingsMenu(WorldGame game)
     public void Open()
     {
         _isOpen = true;
-        
+
         // Load current game settings
         _fov = CameraSettings.Fov;
         _followY = FollowCamera.FollowYOffset;
@@ -187,7 +187,7 @@ public class SettingsMenu(WorldGame game)
         if (ImGui.Begin("Options", ref _isOpen, flags))
         {
             DrawTabs();
-            
+
             ImGui.Spacing();
 
             // Calculate height for scrollable content area (leave room for bottom buttons)
@@ -245,10 +245,10 @@ public class SettingsMenu(WorldGame game)
 
         ImGui.Text("Master Volume");
         ImGui.SliderFloat("##MasterVolume", ref _masterVolume, 0.0f, 1.0f, "%.2f");
-        
+
         ImGui.Text("Music Volume");
         ImGui.SliderFloat("##MusicVolume", ref _musicVolume, 0.0f, 1.0f, "%.2f");
-        
+
         ImGui.Text("Effects Volume");
         ImGui.SliderFloat("##EffectsVolume", ref _effectsVolume, 0.0f, 1.0f, "%.2f");
     }
@@ -306,40 +306,40 @@ public class SettingsMenu(WorldGame game)
 
         ImGui.Text("Renderer");
         ImGui.Combo("##Renderer", ref _selectedRenderer, Renderers, Renderers.Length);
-        
+
         ImGui.Text("Resolution");
         ImGui.Combo("##Resolution", ref _selectedResolution, Resolutions, Resolutions.Length);
-        
+
         ImGui.Text("Display Mode");
         ImGui.Combo("##DisplayMode", ref _selectedDisplayMode, DisplayModes, DisplayModes.Length);
-        
+
         ImGui.Spacing();
         ImGui.Checkbox("Wait for vertical sync", ref _vsync);
-        
+
         ImGui.Text("FPS Limit");
         var sliderWidth = ImGui.GetContentRegionAvail().X;
         ImGui.SetNextItemWidth(sliderWidth);
         ImGui.SliderInt("##FPSLimit", ref _fpsLimit, 0, 240, "%d FPS (0 = Unlimited)");
-        
+
         ImGui.Text("Antialiasing");
         ImGui.Combo("##Antialiasing", ref _antialias, AntialiasModes, AntialiasModes.Length);
 
         ImGui.Text("Shadow Distance");
         ImGui.Combo("##ShadowCascadeLevel", ref _shadowCascadeLevel, ShadowCascadeLevelNames, ShadowCascadeLevelNames.Length);
-        
+
         ImGui.Text("Shadow Resolution");
         ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutionNames, ShadowResolutionNames.Length);
-        
+
         ImGui.Text("Render Distance");
         ImGui.Combo("##RenderDistance", ref _renderDistance, RenderDistanceNames, RenderDistanceNames.Length);
-        
+
         ImGui.Checkbox("Low Latency (Disable interpolation)", ref _lowLatency);
 
         ImGui.Spacing();
         ImGui.Text("Outline Width");
         ImGui.SetNextItemWidth(sliderWidth);
         ImGui.SliderFloat("##LineWidth", ref _lineWidth, 0.5f, 4f, "%.1f");
-        // ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f), 
+        // ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f),
         //     "Note: changing some video options will cause the game to exit and restart.");
     }
 
@@ -363,7 +363,7 @@ public class SettingsMenu(WorldGame game)
         ImGui.Spacing();
 
         // Draw key binding table
-        var bindings = new (string Action, string PropertyName, Key Key)[] 
+        var bindings = new (string Action, string PropertyName, Key Key)[]
         {
             ("Accelerate", "Accelerate", Bindings.Accelerate),
             ("Brake / Reverse", "Brake", Bindings.Brake),
@@ -386,32 +386,32 @@ public class SettingsMenu(WorldGame game)
 
         ImGui.Columns(2, "KeyBindings", true);
         ImGui.SetColumnWidth(0, 200);
-        
+
         for (var i = 0; i < bindings.Length; i++)
         {
             var (action, propName, key) = bindings[i];
-            
+
             ImGui.Text(action);
             ImGui.NextColumn();
-            
+
             var isCapturing = _capturingAction == propName;
             var buttonLabel = isCapturing ? "Press any key..." : key.ToString();
-            
+
             if (isCapturing)
                 ImGui.PushStyleColor(ImGuiCol.Button, RGB(128, 77, 3, 0.8f));
-            
+
             if (ImGui.Button($"{buttonLabel}##{propName}", new Vector2(-1, 0)))
             {
                 _capturingAction = propName;
                 _selectedBindingIndex = i;
             }
-            
+
             if (isCapturing)
                 ImGui.PopStyleColor();
-            
+
             ImGui.NextColumn();
         }
-        
+
         ImGui.Columns(1);
     }
 
@@ -419,21 +419,21 @@ public class SettingsMenu(WorldGame game)
     {
         ImGui.Text("Camera Settings");
         ImGui.Spacing();
-        
+
         ImGui.Text("Field of View");
         ImGui.SliderFloat("##FOV", ref _fov, 58.7f, 120.0f, "%.1f°");
-        
+
         ImGui.Spacing();
         ImGui.Checkbox("Smooth FOV Changes", ref _smoothFov);
-        
+
         ImGui.Spacing();
         ImGui.Text("Follow Y Offset");
         ImGui.SliderInt("##FollowY", ref _followY, -160, 500);
-        
+
         ImGui.Spacing();
         ImGui.Text("Follow Z Offset");
         ImGui.SliderInt("##FollowZ", ref _followZ, -500, 500);
-        
+
         ImGui.Spacing();
         if (ImGui.Button("Reset Camera Defaults", new Vector2(-1, 0)))
         {
@@ -454,7 +454,7 @@ public class SettingsMenu(WorldGame game)
         var buttonWidth = 100f;
         var spacing = 10f;
         var totalWidth = buttonWidth * 3 + spacing * 2;
-        
+
         ImGui.SetCursorPosX((ImGui.GetWindowWidth() - totalWidth) * 0.5f);
 
         if (ImGui.Button("OK", new Vector2(buttonWidth, 30)))
@@ -484,7 +484,7 @@ public class SettingsMenu(WorldGame game)
                 _settingMessage = "";
             }
             ImGui.Spacing();
-            ImGui.TextColored(new Vector4(1.0f, 0.7f, 0.2f, 1.0f), 
+            ImGui.TextColored(new Vector4(1.0f, 0.7f, 0.2f, 1.0f),
                 "Press any key to bind, or ESC to cancel...");
         }
 
@@ -499,7 +499,7 @@ public class SettingsMenu(WorldGame game)
     private void ApplySettingsAndSave()
     {
         _settingMessage = "Settings applied successfully!";
-        
+
         ApplySettings(out var requireRestart);
 
         // Save config to file
@@ -551,7 +551,7 @@ public class SettingsMenu(WorldGame game)
                 game.Graphics.PreferMultiSampling = true;
                 graphicsChanged = true;
             }
-            
+
             var msaaCount = (int) MathF.Round(MathF.Pow(2, _antialias - 1));
 
             if (game.Graphics.GraphicsDevice.PresentationParameters.MultiSampleCount != msaaCount)
@@ -568,7 +568,7 @@ public class SettingsMenu(WorldGame game)
                 graphicsChanged = true;
             }
         }
-        
+
         if (_selectedDisplayMode == 0) // fullscreen
         {
             if (!game.Graphics.IsFullScreen)
@@ -610,7 +610,7 @@ public class SettingsMenu(WorldGame game)
                 graphicsChanged = true;
             }
         }
-        
+
         var widthHeight = Resolutions[_selectedResolution].Split('x', StringSplitOptions.TrimEntries);
         var (width, height) = (int.Parse(widthHeight[0]), int.Parse(widthHeight[1]));
         if (game.Graphics.PreferredBackBufferWidth != width || game.Graphics.PreferredBackBufferHeight != height)
@@ -626,7 +626,7 @@ public class SettingsMenu(WorldGame game)
             WorldGame.ShadowResolution = (int)MathF.Round(MathF.Pow(2, _shadowResolution + 9));
             game.RebuildCascades();
         }
-        
+
         if (Renderers[_selectedRenderer] != GetFna3DRenderer())
         {
             requireRestart = true;
@@ -958,15 +958,15 @@ public class SettingsMenu(WorldGame game)
             _ => "Auto"
         };
     }
-    
+
     public static void LoadConfig()
     {
         _selectedRenderer = Renderers.IndexOf(GetFna3DRenderer());
-        
+
         try
         {
             var configPath = Path.Combine("data", "cfg", "config.cfg");
-            
+
             if (!File.Exists(configPath))
             {
                 Logging.Warning("No config file found, using defaults.");
@@ -978,14 +978,14 @@ public class SettingsMenu(WorldGame game)
                 var trimmed = line.Trim();
                 if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("//"))
                     continue;
-                
+
                 var parts = trimmed.Split(' ', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length != 2)
                     continue;
-                
+
                 var key = parts[0];
                 var value = parts[1];
-                
+
                 try
                 {
                     switch (key)
@@ -1024,7 +1024,7 @@ public class SettingsMenu(WorldGame game)
                         case "video_render_distance":
                             _renderDistance = int.Parse(value, CultureInfo.InvariantCulture);
                             break;
-                        
+
                         // Audio settings
                         case "audio_mute":
                             _muteAll = int.Parse(value) != 0;
@@ -1041,7 +1041,7 @@ public class SettingsMenu(WorldGame game)
                         case "audio_remaster":
                             _remasteredMusic = int.Parse(value) != 0;
                             break;
-                        
+
                         // Camera settings
                         case "camera_fov":
                             _fov = float.Parse(value, CultureInfo.InvariantCulture);
@@ -1055,7 +1055,7 @@ public class SettingsMenu(WorldGame game)
                         case "camera_smooth_fov":
                             _smoothFov = int.Parse(value) != 0;
                             break;
-                        
+
                         // Key bindings
                         case "key_accelerate":
                             Bindings.Accelerate = (Key)int.Parse(value, CultureInfo.InvariantCulture);
@@ -1113,10 +1113,10 @@ public class SettingsMenu(WorldGame game)
                     Logging.Error($"Error parsing config line '{line}': {ex.Message}");
                 }
             }
-            
+
             // Apply loaded settings immediately
             ApplySettings(out _);
-            
+
             Logging.Debug($"Config loaded from {configPath}");
         }
         catch (Exception ex)

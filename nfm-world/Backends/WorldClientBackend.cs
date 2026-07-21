@@ -64,7 +64,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
     public sealed class NvgGraphics : IGraphics
     {
         public Vector2 Viewport => new(_context.GraphicsDevice.Viewport.Width, _context.GraphicsDevice.Viewport.Height);
-        
+
         public float Scale { get; set; } = 1;
 
         private ConcurrentDictionary<string, IImage> _imageCache = new();
@@ -81,14 +81,14 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
         private Color _color1;
         private Color _color2;
         private float _alpha = 1.0f;
-        
+
         private Dictionary<FontFamily, FontSystem> _fontSystems = new();
         private DynamicSpriteFont _font;
 
         public NvgGraphics(NvgContext context)
         {
             _context = context;
-            
+
             _fontSystems[FontFamily.DroidSans] = LoadFont("./data/fonts/DroidSans.ttf");
             _fontSystems[FontFamily.AdventureHollow] = LoadFont("./data/fonts/AdventureHollow.otf");
             _fontSystems[FontFamily.Adventure] = LoadFont("./data/fonts/Adventure.otf");
@@ -99,7 +99,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
         public IImage LoadImage(string file)
         {
             return _imageCache.GetOrAdd(file, _ => LoadImageInternal());
-            
+
             IImage LoadImageInternal()
             {
                 using var stream = VFS.OpenRead(file);
@@ -122,7 +122,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             {
                 return NanoSVGImage.FromStream(file.AsStream());
             }
-            
+
             if (file.Span is [(byte)'D', (byte)'D', (byte)'S', (byte)' ', ..])
             {
                 return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, file.AsStream()));
@@ -149,12 +149,12 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             {
                 throw new NotImplementedException("Custom color positions are not supported currently.");
             }
-            
+
             _color1 = colors[0];
             _color2 = colors[1];
             var icol = colors[0] with { A = (byte)(_color1.A / 255f * _alpha * 255f) };
             var ocol = colors[1] with { A = (byte)(_color2.A / 255f * _alpha * 255f) };
-            
+
             var gradientPaint = _context.LinearGradient(x, y, x + width, y + height, icol, ocol);
             _paint = gradientPaint;
             _context.FillPaint(_paint);
@@ -170,9 +170,9 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
         {
             _color1 = c;
             _color2 = c;
-            
+
             c = c with { A = (byte)(_color1.A / 255f * _alpha * 255f) };
-            
+
             _paint = new Paint(c);
             _context.FillPaint(_paint);
             _context.StrokePaint(_paint);
@@ -187,7 +187,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
         {
             _context.MoveTo(x, y);
         }
-        
+
         public void LineTo(float x, float y)
         {
             _context.LineTo(x, y);
@@ -223,7 +223,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             set
             {
                 _alpha = value;
-                
+
                 var icol = _color1 with { A = (byte)(_color1.A / 255f * _alpha * 255f) };
                 var ocol = _color2 with { A = (byte)(_color2.A / 255f * _alpha * 255f) };
                 _paint.InnerColor = icol;
@@ -311,7 +311,7 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                     x -= sz.X;
                 }
             }
-            
+
             if (vAlign == TextVerticalAlignment.Center)
             {
                 y += areaHeight / 2f;
@@ -365,7 +365,7 @@ internal readonly struct NanoVGFontMetrics(DynamicSpriteFont font) : IFontMetric
     {
         return font.MeasureString(text);
     }
-    
+
     public float LineHeight => font.LineHeight;
 }
 
