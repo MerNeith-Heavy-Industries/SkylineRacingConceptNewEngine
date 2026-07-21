@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MemoryPack;
+using NFMWorldLibrary;
 
 namespace NFMWorld.UI.Cef;
 
@@ -65,11 +66,11 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     }
 
     /// <summary>
-    /// Push the currently active collection name to JS.
+    /// Push the currently active collection to JS.
     /// </summary>
-    public void PushCurrentCollection(string name)
+    public void PushCurrentCollection(Collection collection)
     {
-        Push("currentCollection", new { collection = name });
+        PushMemoryPack("currentCollection", new CurrentCollectionData { Id = collection });
     }
 
     public event Action<string, string>? CarSelected;
@@ -88,7 +89,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
 public sealed partial class CarStatsData
 {
     public string Name { get; set; } = "";
-    public string Collection { get; set; } = "";
+    public Collection Collection { get; set; } = Collection.User;
     public double TopSpeed { get; set; }
     public double Acceleration { get; set; }
     public double Handling { get; set; }
@@ -117,6 +118,14 @@ public sealed partial class CarCollectionsData
 [GenerateTypeScript]
 public sealed partial class CarCollectionData
 {
+    public Collection Id { get; set; } = Collection.User;
     public string Name { get; set; } = "";
     public CarStatsData[] Cars { get; set; } = [];
+}
+
+[MemoryPackable]
+[GenerateTypeScript]
+public sealed partial class CurrentCollectionData
+{
+    public required Collection Id { get; set; }
 }
