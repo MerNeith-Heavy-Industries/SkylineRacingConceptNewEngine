@@ -101,8 +101,6 @@ public abstract class BaseStageRenderingPhase : BasePhase
             _stageMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
             _stageMusic.SetFreqMultiplier(freqMul);
         }
-
-        GameSparker.CurrentMusic = _stageMusic;
     }
 
     public CarVisual GetCarVisual(int index)
