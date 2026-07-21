@@ -1,4 +1,4 @@
-﻿using MemoryPack;
+﻿﻿using MemoryPack;
 
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
 

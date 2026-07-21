@@ -2,9 +2,7 @@ using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using MemoryPack;
-
 namespace NFMWorldLibrary.Multiplayer.Packets.S2C;
-
 [MemoryPackable]
 [PacketServerToClient(-8)]
 public partial struct S2C_ServerEvent : IPacketServerToClient<S2C_ServerEvent>, IDisposable

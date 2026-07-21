@@ -34,9 +34,6 @@
 [submodule "LibTessDotNet"]
 	path = LibTessDotNet
 	url = https://github.com/uwx/LibTessDotNet
-[submodule "websocket-sharp"]
-	path = websocket-sharp
-	url = https://github.com/uwx/websocket-sharp
 [submodule "NFMWorld.Library/src/data"]
 	path = NFMWorld.Library/src/data
 	url = https://github.com/MerNeith-Heavy-Industries/SkylineRacingConceptNewEngineServerData

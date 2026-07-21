@@ -49,7 +49,7 @@ export class CurrentCollectionData {
 
         const value = new CurrentCollectionData();
         if (count == 1) {
-            value.id = reader.readInt32()!;
+            value.id = reader.readInt32();
 
         }
         else if (count > 1) {
@@ -57,7 +57,7 @@ export class CurrentCollectionData {
         }
         else {
             if (count == 0) return value;
-            value.id = reader.readInt32()!; if (count == 1) return value;
+            value.id = reader.readInt32(); if (count == 1) return value;
 
         }
         return value;

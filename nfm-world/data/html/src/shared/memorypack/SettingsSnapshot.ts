@@ -109,26 +109,26 @@ export class SettingsSnapshot {
 
         const value = new SettingsSnapshot();
         if (count == 21) {
-            value.selectedRenderer = reader.readInt32()!;
-            value.selectedResolution = reader.readInt32()!;
-            value.selectedDisplayMode = reader.readInt32()!;
-            value.vsync = reader.readBoolean()!;
-            value.fpsLimit = reader.readInt32()!;
-            value.antialias = reader.readInt32()!;
-            value.shadowCascadeLevel = reader.readInt32()!;
-            value.shadowResolution = reader.readInt32()!;
-            value.renderDistance = reader.readInt32()!;
-            value.lowLatency = reader.readBoolean()!;
-            value.lineWidth = reader.readFloat32()!;
-            value.masterVolume = reader.readFloat32()!;
-            value.musicVolume = reader.readFloat32()!;
-            value.effectsVolume = reader.readFloat32()!;
-            value.muteAll = reader.readBoolean()!;
-            value.remasteredMusic = reader.readBoolean()!;
-            value.fov = reader.readFloat32()!;
-            value.followY = reader.readInt32()!;
-            value.followZ = reader.readInt32()!;
-            value.smoothFov = reader.readBoolean()!;
+            value.selectedRenderer = reader.readInt32();
+            value.selectedResolution = reader.readInt32();
+            value.selectedDisplayMode = reader.readInt32();
+            value.vsync = reader.readBoolean();
+            value.fpsLimit = reader.readInt32();
+            value.antialias = reader.readInt32();
+            value.shadowCascadeLevel = reader.readInt32();
+            value.shadowResolution = reader.readInt32();
+            value.renderDistance = reader.readInt32();
+            value.lowLatency = reader.readBoolean();
+            value.lineWidth = reader.readFloat32();
+            value.masterVolume = reader.readFloat32();
+            value.musicVolume = reader.readFloat32();
+            value.effectsVolume = reader.readFloat32();
+            value.muteAll = reader.readBoolean();
+            value.remasteredMusic = reader.readBoolean();
+            value.fov = reader.readFloat32();
+            value.followY = reader.readInt32();
+            value.followZ = reader.readInt32();
+            value.smoothFov = reader.readBoolean();
             value.keyBindings = reader.readArray(reader => KeyBindingData.deserializeCore(reader));
 
         }
@@ -137,26 +137,26 @@ export class SettingsSnapshot {
         }
         else {
             if (count == 0) return value;
-            value.selectedRenderer = reader.readInt32()!; if (count == 1) return value;
-            value.selectedResolution = reader.readInt32()!; if (count == 2) return value;
-            value.selectedDisplayMode = reader.readInt32()!; if (count == 3) return value;
-            value.vsync = reader.readBoolean()!; if (count == 4) return value;
-            value.fpsLimit = reader.readInt32()!; if (count == 5) return value;
-            value.antialias = reader.readInt32()!; if (count == 6) return value;
-            value.shadowCascadeLevel = reader.readInt32()!; if (count == 7) return value;
-            value.shadowResolution = reader.readInt32()!; if (count == 8) return value;
-            value.renderDistance = reader.readInt32()!; if (count == 9) return value;
-            value.lowLatency = reader.readBoolean()!; if (count == 10) return value;
-            value.lineWidth = reader.readFloat32()!; if (count == 11) return value;
-            value.masterVolume = reader.readFloat32()!; if (count == 12) return value;
-            value.musicVolume = reader.readFloat32()!; if (count == 13) return value;
-            value.effectsVolume = reader.readFloat32()!; if (count == 14) return value;
-            value.muteAll = reader.readBoolean()!; if (count == 15) return value;
-            value.remasteredMusic = reader.readBoolean()!; if (count == 16) return value;
-            value.fov = reader.readFloat32()!; if (count == 17) return value;
-            value.followY = reader.readInt32()!; if (count == 18) return value;
-            value.followZ = reader.readInt32()!; if (count == 19) return value;
-            value.smoothFov = reader.readBoolean()!; if (count == 20) return value;
+            value.selectedRenderer = reader.readInt32(); if (count == 1) return value;
+            value.selectedResolution = reader.readInt32(); if (count == 2) return value;
+            value.selectedDisplayMode = reader.readInt32(); if (count == 3) return value;
+            value.vsync = reader.readBoolean(); if (count == 4) return value;
+            value.fpsLimit = reader.readInt32(); if (count == 5) return value;
+            value.antialias = reader.readInt32(); if (count == 6) return value;
+            value.shadowCascadeLevel = reader.readInt32(); if (count == 7) return value;
+            value.shadowResolution = reader.readInt32(); if (count == 8) return value;
+            value.renderDistance = reader.readInt32(); if (count == 9) return value;
+            value.lowLatency = reader.readBoolean(); if (count == 10) return value;
+            value.lineWidth = reader.readFloat32(); if (count == 11) return value;
+            value.masterVolume = reader.readFloat32(); if (count == 12) return value;
+            value.musicVolume = reader.readFloat32(); if (count == 13) return value;
+            value.effectsVolume = reader.readFloat32(); if (count == 14) return value;
+            value.muteAll = reader.readBoolean(); if (count == 15) return value;
+            value.remasteredMusic = reader.readBoolean(); if (count == 16) return value;
+            value.fov = reader.readFloat32(); if (count == 17) return value;
+            value.followY = reader.readInt32(); if (count == 18) return value;
+            value.followZ = reader.readInt32(); if (count == 19) return value;
+            value.smoothFov = reader.readBoolean(); if (count == 20) return value;
             value.keyBindings = reader.readArray(reader => KeyBindingData.deserializeCore(reader)); if (count == 21) return value;
 
         }

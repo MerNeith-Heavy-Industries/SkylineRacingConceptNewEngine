@@ -35,9 +35,7 @@ namespace NFMWorld;
 public class WorldGame : Game
 {
     public GraphicsDeviceManager Graphics;
-    public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
     private ImGuiRenderer _imguiRenderer;
-    public static ImGuiRenderer ImguiRenderer { get; private set; }
     private CefRenderer _cefRenderer;
 
     internal static long LastFrameTime;
@@ -379,8 +377,6 @@ public class WorldGame : Game
         // Update saved state.
         _oldKeyState = keys;
     }
-
-    private static readonly MouseButtons[] MouseButtonsArray = Enum.GetValues<MouseButtons>();
     private void UpdateMouse()
     {
         var newState = Mouse.GetState();
@@ -645,7 +641,11 @@ public class WorldGame : Game
             },
             _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
         };
-
-        return NativeLibrary.Load($"libs/{dir}/{newLibraryName}");
+        
+        // Anchor to the app base directory rather than the process working directory:
+        // dlopen treats a slash-containing name as a path relative to the CWD (ignoring
+        // LD_LIBRARY_PATH), so a relative "libs/..." only resolves when launched from the
+        // output folder. AppContext.BaseDirectory is always the output folder.
+        return NativeLibrary.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
     }
 }
