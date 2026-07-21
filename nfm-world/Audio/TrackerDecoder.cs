@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
 using LibOpenMPT.NET;
+using Maxine.Extensions.Collections;
 using Microsoft.IO;
 using Microsoft.Xna.Framework.Audio;
 using NFMWorldLibrary;
@@ -34,20 +35,9 @@ public static unsafe class TrackerDecoder
     {
         using var memoryStream = new RecyclableMemoryStream(MemoryManager.Manager, Guid.NewGuid(), "TrackerDecoder stream");
         stream.CopyTo(memoryStream);
-        var length = (int)memoryStream.Length;
-        var arr = ArrayPool<byte>.Shared.Rent(length);
-        try
-        {
-            memoryStream.GetReadOnlySequence().CopyTo(arr);
-            // Slice to exact length: the rented array may be larger than
-            // the actual data, and feeding garbage bytes to libopenmpt
-            // produces corrupted samples.
-            return Decode(arr.AsSpan(0, length));
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(arr);
-        }
+        using var arr = SafeArrayPool<byte>.Shared.Rent((int)memoryStream.Length);
+        memoryStream.GetReadOnlySequence().CopyTo(arr);
+        return Decode(arr);
     }
 
     /// <summary>
@@ -100,61 +90,54 @@ public static unsafe class TrackerDecoder
             var totalFloatSamples = totalFrames * 2; // stereo interleaved
 
             // Render to float buffer first (higher quality internal processing)
-            var floatBuffer = ArrayPool<float>.Shared.Rent(totalFloatSamples);
+            using var floatBuffer = SafeArrayPool<float>.Shared.Rent(totalFloatSamples);
 
-            try
+            nuint totalFramesRead = 0;
+            const int chunkFrames = 4096;
+
+            fixed (float* pOut = floatBuffer)
             {
-                nuint totalFramesRead = 0;
-                const int chunkFrames = 4096;
-
-                fixed (float* pOut = floatBuffer)
+                while (totalFramesRead < (nuint)totalFrames)
                 {
-                    while (totalFramesRead < (nuint)totalFrames)
-                    {
-                        var remaining = (nuint)(totalFrames - (int)totalFramesRead);
-                        var toRead = remaining < chunkFrames ? remaining : chunkFrames;
+                    var remaining = (nuint)(totalFrames - (int)totalFramesRead);
+                    var toRead = remaining < chunkFrames ? remaining : chunkFrames;
 
-                        var framesRead = NativeMethods.module_read_interleaved_float_stereo(
-                            mod,
-                            DefaultSampleRate,
-                            toRead,
-                            pOut + (int)totalFramesRead * 2 // advance by frames*2 (stereo)
-                        );
+                    var framesRead = NativeMethods.module_read_interleaved_float_stereo(
+                        mod,
+                        DefaultSampleRate,
+                        toRead,
+                        pOut + (int)totalFramesRead * 2 // advance by frames*2 (stereo)
+                    );
 
-                        if (framesRead == 0)
-                            break; // end of module
+                    if (framesRead == 0)
+                        break; // end of module
 
-                        totalFramesRead += framesRead;
-                    }
-                }
-
-                // Trim buffer to actual rendered length
-                var actualFloatSamples = (int)totalFramesRead * 2;
-                var actualFloats = floatBuffer.AsSpan(0, actualFloatSamples);
-
-                // Convert float [-1.0, 1.0] to 16-bit PCM
-                var pcmData = ArrayPool<byte>.Shared.Rent(actualFloatSamples * 2);
-                try
-                {
-                    for (int i = 0; i < actualFloatSamples; i++)
-                    {
-                        var sample = Math.Clamp(actualFloats[i], -1.0f, 1.0f);
-                        var int16Sample = (short)(sample * short.MaxValue);
-                        pcmData[i * 2] = (byte)(int16Sample & 0xFF);
-                        pcmData[i * 2 + 1] = (byte)((int16Sample >> 8) & 0xFF);
-                    }
-
-                    return new DecodeResult(new ArraySegment<byte>(pcmData, 0, actualFloatSamples * 2), DefaultSampleRate, AudioChannels.Stereo, true);
-                }
-                catch
-                {
-                    ArrayPool<byte>.Shared.Return(pcmData);
-                    throw;
+                    totalFramesRead += framesRead;
                 }
             }
-            finally
+
+            // Trim buffer to actual rendered length
+            var actualFloatSamples = (int)totalFramesRead * 2;
+            var actualFloats = floatBuffer.AsSpan(0, actualFloatSamples);
+
+            // Convert float [-1.0, 1.0] to 16-bit PCM
+            var pcmData = SafeArrayPool<byte>.Shared.Rent(actualFloatSamples * 2);
+            try
             {
-                ArrayPool<float>.Shared.Return(floatBuffer);
+                for (int i = 0; i < actualFloatSamples; i++)
+                {
+                    var sample = Math.Clamp(actualFloats[i], -1.0f, 1.0f);
+                    var int16Sample = (short)(sample * short.MaxValue);
+                    pcmData[i * 2] = (byte)(int16Sample & 0xFF);
+                    pcmData[i * 2 + 1] = (byte)((int16Sample >> 8) & 0xFF);
+                }
+
+                return new DecodeResult(pcmData, DefaultSampleRate, AudioChannels.Stereo, true);
+            }
+            catch
+            {
+                pcmData.Dispose();
+                throw;
             }
         }
         finally

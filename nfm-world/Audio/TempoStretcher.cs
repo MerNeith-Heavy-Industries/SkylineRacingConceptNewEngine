@@ -1,6 +1,7 @@
 using System.Buffers;
 using Collections.Pooled;
 using Maxine.Extensions;
+using Maxine.Extensions.Collections;
 using Microsoft.IO;
 using NAudio.Wave;
 using SoundTouch;
@@ -22,7 +23,7 @@ public static class TempoStretcher
     /// <param name="channels">1 for mono, 2 for stereo.</param>
     /// <param name="tempoRatio">Tempo multiplier. 1.0 = normal, >1 = faster, &lt;1 = slower.</param>
     /// <returns>Pooled array containing time-stretched 16-bit PCM data.</returns>
-    public static ArraySegment<byte> Process(Memory<byte> pcmData, int sampleRate, int channels, double tempoRatio)
+    public static DisposableArraySegment<byte> Process(Memory<byte> pcmData, int sampleRate, int channels, double tempoRatio)
     {
         // Configure SoundTouch
         var processor = new SoundTouchProcessor
@@ -39,8 +40,8 @@ public static class TempoStretcher
         using var outputMemory = new RecyclableMemoryStream(MemoryManager.Manager, Guid.NewGuid(), "TempoStretcher Stream");
         
         outputStream.CopyTo(outputMemory);
-        var resultPool = ArrayPool<byte>.Shared.Rent((int)outputMemory.Length);
+        var resultPool = SafeArrayPool<byte>.Shared.Rent((int)outputMemory.Length);
         outputMemory.GetReadOnlySequence().CopyTo(resultPool);
-        return new ArraySegment<byte>(resultPool, 0, (int)outputMemory.Length);
+        return resultPool;
     }
 }
