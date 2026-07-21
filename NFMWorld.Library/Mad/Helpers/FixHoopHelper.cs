@@ -23,6 +23,7 @@ public class FixHoopHelper
                         fixhoop.Position.Y / 100
                     ) < 30)
                 {
+                    car.Fix();
                     return true;
                     // if (Im == XTGraphics.Im && !conto.Fix && !XTGraphics.Mutes)
                     // {
@@ -39,6 +40,7 @@ public class FixHoopHelper
                          fixhoop.Position.Y / 100
                     ) < 30)
             {
+                car.Fix();
                 return true;
                 // if (Im == XTGraphics.Im && !conto.Fix && !XTGraphics.Mutes)
                 // {

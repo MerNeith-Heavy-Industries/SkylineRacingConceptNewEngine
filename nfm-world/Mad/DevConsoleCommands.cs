@@ -1,14 +1,18 @@
 using System.Reflection;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Gameplay;
 using NFMWorld.Gameplay.Gamemodes;
 using NFMWorld.UI;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
+using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Files;
 using NFMWorldLibrary.FixedMath;
+using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using Steamworks;
-using WorldXaml.UI.Yoga;
+using Logging = NFMWorldLibrary.Logging;
 
 namespace NFMWorld;
 
@@ -35,10 +39,22 @@ public static class DevConsoleCommands
         console.RegisterCommand("breaky", BreakY);
         console.RegisterCommand("breakz", BreakZ);
         console.RegisterCommand("waste", WastePlayer);
-        console.RegisterCommand("startserver", StartServer);
         console.RegisterCommand("connect", Connect);
-        console.RegisterCommand("startserversteam", StartServerSteam);
-        console.RegisterCommand("connectsteam", ConnectSteam);
+        
+        console.RegisterCommand("replay_trial", (c, args) =>
+        {
+            var inRace = new InRacePhase(GameSparker.GraphicsDevice, args[1], new TimeTrialPreviewGamemodeFactory(SavedTimeTrial.Load(args[0], args[1])!), [
+                new PlayerParameters
+                {
+                    CarName = args[0],
+                    Color = new Color3(255, 0, 0),
+                    PlayerName = "Player",
+                    IsBot = false,
+                    IsClientPlayer = true
+                }
+            ]);
+            GameSparker.SetPhase(inRace);
+        });
             
         // rendering
         console.RegisterCommand("r_frametrace", SetFrameTrace);
@@ -55,28 +71,32 @@ public static class DevConsoleCommands
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.SetGamemode(GameModes.TimeTrial);
+                var inRace = new InRacePhase(GameSparker.GraphicsDevice, inRacePhase.StageName, new TimeTrialGamemodeFactory(), inRacePhase.Players);
+                GameSparker.SetPhase(inRace);
             }
         });
         console.RegisterCommand("go_race", (c, args) =>
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.SetGamemode(GameModes.Racing);
+                var inRace = new InRacePhase(GameSparker.GraphicsDevice, inRacePhase.StageName, new PvpGamemodeFactory(PvpConstraint.Racing), inRacePhase.Players);
+                GameSparker.SetPhase(inRace);
             }
         });
         console.RegisterCommand("go_sbox", (c, args) =>
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.SetGamemode(GameModes.Sandbox);
+                var inRace = new InRacePhase(GameSparker.GraphicsDevice, inRacePhase.StageName, new SandboxGamemodeFactory(), inRacePhase.Players);
+                GameSparker.SetPhase(inRace);
             }
         });
         console.RegisterCommand("go_football", (c, args) =>
         {
             if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                inRacePhase.SetGamemode(GameModes.Football);
+                var inRace = new InRacePhase(GameSparker.GraphicsDevice, inRacePhase.StageName, new FootballGamemodeFactory(), inRacePhase.Players);
+                GameSparker.SetPhase(inRace);
             }
         });
 
@@ -85,36 +105,31 @@ public static class DevConsoleCommands
         //ui
         console.RegisterCommand("ui_open_devcam", (c, args) => ToggleCameraSettings(c));
         console.RegisterCommand("ui_open_devmsg", ShowMessageTest);
-        console.RegisterCommand("ui_open_settings", (c, args) => GameSparker.SettingsMenu.Open());
 
         console.RegisterCommand("demo_playback", DemoPlayback);
         console.RegisterCommand("music_remastered", RemasteredMusic);
 
 #if DEBUG
-        console.RegisterCommand("xaml_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
-        console.RegisterCommand("debugui", (console, args) =>
+        console.RegisterCommand("fix", (c, args) =>
         {
-            if (args.Length < 1)
+            if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
             {
-                Logging.Info("Usage: debugui <classname>");
-                return;
+                var car = inRacePhase.CarsInRace[0];
+                car.Fix();
             }
-
-            WorldGame.DebugUiClass = args[0];
-            WorldGame.DebugUiRoot = null;
         });
-        console.RegisterArgumentAutocompleter("debugui", (args, position) =>
-#pragma warning disable IL2026 // Never run during AOT
-            position == 0
-                ? Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .Where(e => e.IsAssignableTo(typeof(View)))
-                    .Select(e => e.Name)
-                    .ToList()
-                : []
-        );
-#pragma warning restore IL2026
+        console.RegisterCommand("html_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
+        console.RegisterCommand("cef_reload", (console, args) =>
+        {
+            GameSparker.CefRenderer?.Reload();
+            Logging.Info("CEF page reloaded.");
+        });
 #endif
+        console.RegisterCommand("cef_devtools", (console, args) =>
+        {
+            GameSparker.CefRenderer?.ShowDevTools();
+            Logging.Info("CEF DevTools opened.");
+        });
 
         //cheats
         //console.RegisterCommand("sv_cheats", SVCheats);
@@ -127,8 +142,8 @@ public static class DevConsoleCommands
         // car command: only autocomplete first argument (position 0)
         console.RegisterArgumentAutocompleter("car", (args, position) =>
             position == 0
-                ? [.. BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName)]
-                : new List<string>());
+                ? BackendGameSparker.cars.Values.SelectMany(i => i).Select(a => a.FileName).ToArray()
+                : []);
             
         // create command: only autocomplete first argument (position 0) - the stage/road name
         console.RegisterArgumentAutocompleter("create", (args, position) => 
@@ -136,25 +151,45 @@ public static class DevConsoleCommands
                 ? BackendGameSparker.stage_parts.Select(part => part.FileName)
                     .Concat(BackendGameSparker.vendor_stage_parts.Select(part => part.FileName))
                     .Concat(BackendGameSparker.user_stage_parts.Select(part => part.FileName))
-                    .ToList()
+                    .ToArray()
                 : []);
             
         // map command: only autocomplete first argument (position 0)
         console.RegisterArgumentAutocompleter("map", (args, position) => 
             position == 0 ? GameSparker.GetAvailableStages() : []);
+        
+        console.RegisterArgumentAutocompleter("replay_trial", (args, position) =>
+        {
+            _tts ??= SavedTimeTrial.GetTimeTrials().ToArray();
+
+            if (position == 0)
+            {
+                return _tts.Select(tt => tt.carName).Distinct().ToArray();
+            }
+
+            if (position == 1)
+            {
+                var carName = args[0];
+                return _tts.Where(tt => tt.carName == carName).Select(tt => tt.stageName).Distinct().ToArray();
+            }
+
+            return [];
+        });
     }
+
+    private static (string stageName, string carName, string fileName)[]? _tts;
 
     private static void RemasteredMusic(DevConsole console, string[] args)
     {
         GameSparker.UseRemasteredMusic = !GameSparker.UseRemasteredMusic;
-        Logging.Info("Remastered music is now " + (GameSparker.UseRemasteredMusic ? "enabled" : "disabled") + ".");
+        Logging.Info($"Remastered music is now {(GameSparker.UseRemasteredMusic ? "enabled" : "disabled")}.");
         Logging.Info("Change stage for the change to teka effect.");
     }
 
     private static void DemoPlayback(DevConsole console, string[] args)
     {
         TimeTrialClientGamemode.PlaybackOnReset = !TimeTrialClientGamemode.PlaybackOnReset;
-        Logging.Info("Playback set to " + TimeTrialClientGamemode.PlaybackOnReset + ", for maps with a saved demo file.");
+        Logging.Info($"Playback set to {TimeTrialClientGamemode.PlaybackOnReset}, for maps with a saved demo file.");
         Logging.Info("Restart the time trial for changes to take effect.");
     }
 
@@ -162,7 +197,7 @@ public static class DevConsoleCommands
     {
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.GetClientCar(inRacePhase.playerCarIndex).VisuallyWasted = true;
+            inRacePhase.GetCarVisual(0).VisuallyWasted = true;
         }
     }
 
@@ -177,54 +212,10 @@ public static class DevConsoleCommands
         }
             
         if (args.Length < 2 || !ushort.TryParse(args[1], out ushort port))
-        {
             port = 7000;
-        }
 
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport(args[0], port)));
-    }
-    private static void ConnectSteam(DevConsole console, string[] args)
-    {
-        SteamMultiplayer.Init();
-
-        if (args.Length < 1 || !ulong.TryParse(args[0], out ulong steamid))
-        {
-            Logging.Info("Usage: connectsteam <steamid> <port>");
-            return;
-        }
-            
-        if (args.Length < 2 || !int.TryParse(args[1], out int port))
-        {
-            port = 0;
-        }
-
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(steamid, port)));
-    }
-
-    private static void StartServerSteam(DevConsole console, string[] args)
-    {
-        SteamMultiplayer.Init();
-            
-        if (args.Length < 1 || !int.TryParse(args[0], out int port))
-        {
-            port = 0;
-        }
-            
-        SteamMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new SteamMultiplayerClientTransport(SteamClient.SteamId, port)));
-    }
-
-    private static void StartServer(DevConsole console, string[] args)
-    {
-        ENetMultiplayer.Init();
-            
-        if (args.Length < 1 || !ushort.TryParse(args[0], out ushort port))
-        {
-            port = 7000;
-        }
-            
-        ENetMultiplayer.StartServer(port);
-        GameSparker.SetPhase(new LobbyPhase(GameSparker._graphicsDevice, new ENetMultiplayerClientTransport("localhost", port)));
+        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice,
+            new WebSocketMultiplayerClientTransport(args[0], port)));
     }
 
     private static void BreakX(DevConsole console, string[] args)
@@ -236,11 +227,13 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
-            MeshDamage.DamageX(car.Stats, car, 0, amount);
-            MeshDamage.DamageX(car.Stats, car, 1, amount);
-            MeshDamage.DamageX(car.Stats, car, 2, amount);
-            MeshDamage.DamageX(car.Stats, car, 3, amount);
+            var car = inRacePhase.CarsInRace[0];
+            var visual = inRacePhase.GetCarVisual(0);
+            var stats = car.Stats;
+            MeshDamage.DamageX(stats, car, visual, 0, amount);
+            MeshDamage.DamageX(stats, car, visual, 1, amount);
+            MeshDamage.DamageX(stats, car, visual, 2, amount);
+            MeshDamage.DamageX(stats, car, visual, 3, amount);
         }
     }
 
@@ -253,14 +246,16 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
+            var car = inRacePhase.CarsInRace[0];
+            var visual = inRacePhase.GetCarVisual(0);
+            var stats = car.Stats;
             var nbsq = 0;
-            var squash = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Squash;
-            var mtouch = inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Mtouch;
-            MeshDamage.DamageY(car.Stats, car, 0, amount, mtouch, ref nbsq, ref squash);
-            MeshDamage.DamageY(car.Stats, car, 1, amount, mtouch, ref nbsq, ref squash);
-            MeshDamage.DamageY(car.Stats, car, 2, amount, mtouch, ref nbsq, ref squash);
-            MeshDamage.DamageY(car.Stats, car, 3, amount, mtouch, ref nbsq, ref squash);
+            var squash = inRacePhase.CarsInRace[0].CarPhysics.RoofDamage;
+            var mtouch = inRacePhase.CarsInRace[0].CarPhysics.Mtouch;
+            MeshDamage.DamageY(stats, car, visual, 0, amount, mtouch, ref nbsq, ref squash);
+            MeshDamage.DamageY(stats, car, visual, 1, amount, mtouch, ref nbsq, ref squash);
+            MeshDamage.DamageY(stats, car, visual, 2, amount, mtouch, ref nbsq, ref squash);
+            MeshDamage.DamageY(stats, car, visual, 3, amount, mtouch, ref nbsq, ref squash);
         }
     }
 
@@ -273,11 +268,13 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var car = inRacePhase.GetClientCar(inRacePhase.playerCarIndex);
-            MeshDamage.DamageZ(car.Stats, car, 0, amount);
-            MeshDamage.DamageZ(car.Stats, car, 1, amount);
-            MeshDamage.DamageZ(car.Stats, car, 2, amount);
-            MeshDamage.DamageZ(car.Stats, car, 3, amount);
+            var car = inRacePhase.CarsInRace[0];
+            var visual = inRacePhase.GetCarVisual(0);
+            var stats = car.Stats;
+            MeshDamage.DamageZ(stats, car, visual, 0, amount);
+            MeshDamage.DamageZ(stats, car, visual, 1, amount);
+            MeshDamage.DamageZ(stats, car, visual, 2, amount);
+            MeshDamage.DamageZ(stats, car, visual, 3, amount);
         }
     }
 
@@ -352,7 +349,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex].Mad.Speed = (fix64)speed;
+            inRacePhase.CarsInRace[0].CarPhysics.Speed = (fix64)speed;
         }
         Logging.Info($"Set player car speed to {speed}");
     }
@@ -361,8 +358,8 @@ public static class DevConsoleCommands
     {
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            var originalCar = inRacePhase.CarsInRace[inRacePhase.playerCarIndex];
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(originalCar.Rad, inRacePhase.playerCarIndex, 0, 0, true);
+            var originalCar = inRacePhase.CarsInRace[0];
+            inRacePhase.CarsInRace[0] = new BackendCar(originalCar.Rad, 0, 0, 0, true);
         }
 
         Logging.Info("Position reset");
@@ -402,7 +399,7 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.CurrentStage.CreateObject(objectName, x, y, z, r);
+            inRacePhase.CurrentStage.Backend.CreateObject(objectName, x, y, z, r);
         }
         else
         {
@@ -422,9 +419,8 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.LoadStage(stageName);
             Logging.Info($"Switched to stage '{stageName}'");
-            inRacePhase.ReloadGamemode();
+            GameSparker.SetPhase(new InRacePhase(GameSparker.GraphicsDevice, stageName, inRacePhase.Gamemode, inRacePhase.Players));
         }
     }
 
@@ -447,9 +443,23 @@ public static class DevConsoleCommands
 
         if (GameSparker.CurrentPhase is InRacePhase inRacePhase)
         {
-            inRacePhase.playerCarName = car.FileName;
-            inRacePhase.CarsInRace[inRacePhase.playerCarIndex] = new BackendCar(car, inRacePhase.playerCarIndex, 0, 0, true);
-            inRacePhase.ReloadGamemode();
+            GameSparker.SetPhase(
+                new InRacePhase(
+                    GameSparker.GraphicsDevice,
+                    inRacePhase.StageName,
+                    inRacePhase.Gamemode,
+                    inRacePhase.Players.Select(p => p.IsClientPlayer
+                        ? new PlayerParameters
+                        {
+                            CarName = car.FileName,
+                            Color = p.Color,
+                            PlayerName = p.PlayerName,
+                            IsBot = p.IsBot,
+                            IsClientPlayer = true
+                        }
+                        : p).ToArray()
+                )
+            );
         }
         
         IBackend.Backend.StopAllSounds();
@@ -553,14 +563,13 @@ public static class DevConsoleCommands
 
     private static void Disconnect(DevConsole console)
     {
-        if (GameSparker.CurrentPhase is not InRacePhase)
+        if (GameSparker.CurrentPhase is not InRacePhase or InMultiplayerRacePhase)
         {
             Logging.Info("Not in game.");
             return;
         }
 
-        //GameSparker.MainMenu = new MainMenuPhase();
-        GameSparker.SetPhase(GameSparker.MainMenu);
+        GameSparker.SetPhase(GameSparker.MainMenuPhase);
         IBackend.Backend.StopAllSounds();
             
         Logging.Info("Returned to main menu.");

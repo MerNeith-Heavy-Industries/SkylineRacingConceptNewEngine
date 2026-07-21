@@ -32,7 +32,7 @@ public static class World
     public static bool DrawStars;
     public static bool DrawPolys;
     public static Color3 GroundPolysColor;
-    
+
     // texture (without snap)
     public static int[] Texture = [0, 0, 0, 50];
     

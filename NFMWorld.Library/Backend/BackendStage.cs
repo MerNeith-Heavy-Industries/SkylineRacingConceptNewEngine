@@ -4,6 +4,7 @@ using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -44,33 +45,13 @@ public class BackendStage : IStage
         stageLoader = new StageLoader();
     }
 
-    public BackendStage(string stageName, StageLoader stageLoader) : this()
+    public BackendStage(string stageName, StageLoader? stageLoader = null) : this()
     {
         Path = stageName;
         try
         {
-            this.stageLoader = stageLoader;
-            LoadStageInternal(stageLoader);
-        }
-        catch (StageLoadException exception)
-        {
-            SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}\nAt line: {exception.Line} (number {exception.LineNumber})\n{exception.ToString()}");
-        }
-        catch (Exception exception)
-        {
-            SentrySdk.CaptureException(exception);
-            Logging.Error($"Error in stage: {stageName}\n{exception.ToString()}");
-        }
-    }
-
-    public BackendStage(string stageName) : this()
-    {
-        Path = stageName;
-        try
-        {
-            stageLoader = new StageLoader(stageName);
-            LoadStageInternal(stageLoader);
+            this.stageLoader = stageLoader ?? new StageLoader(stageName);
+            LoadStageInternal(this.stageLoader);
         }
         catch (StageLoadException exception)
         {

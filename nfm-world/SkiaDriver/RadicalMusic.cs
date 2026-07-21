@@ -2,7 +2,9 @@ using System.IO.Compression;
 using ManagedBass;
 using ManagedBass.Fx;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary;
+using NFMWorld.Sentry;
 
 namespace NFMWorld.SkiaDriver;
 
@@ -77,6 +79,11 @@ internal class RadicalMusic : IRadicalMusic
     public RadicalMusic()
     {
         // empty
+    }
+    
+    ~RadicalMusic()
+    {
+        Unload();
     }
 
     public void SetPaused(bool p0)

@@ -1,29 +1,140 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Maxine.Extensions.UnionGen;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 
 namespace NFMWorldLibrary.Collision;
 
-[UnmanagedUnion(typeof(ShapeRoad), typeof(ShapeWall), typeof(ShapeRamp), typeof(ShapeMesh), typeof(ShapeHull))]
-public readonly partial struct CollisionShapeUnion;
+public class CollisionShapeUnion : IUnion
+{
+    private readonly sbyte _unionKind;
+    private readonly ShapeRoad _union1ShapeRoad;
 
-// NB: FieldOffset here makes it so the object-containing collisionmesh/collisionhull instances do not overlap in memory with the other collision shape types, which would cause a CLR error.
-// The 128 offset is arbitrary, just needs to be large enough to not overlap with the other fields.
-[StructLayout(LayoutKind.Explicit)]
-public readonly record struct ShapeMesh([field: FieldOffset(0)] f64Vector3 GameObjectPosition, [field: FieldOffset(24)] fix64 GameObjectXz, [field: FieldOffset(128)] SrcRad3dCollisionMesh CollisionMesh);
-[StructLayout(LayoutKind.Explicit)]
-public readonly record struct ShapeHull([field: FieldOffset(0)] f64Vector3 GameObjectPosition, [field: FieldOffset(24)] fix64 GameObjectXz, [field: FieldOffset(128)] SrcRad3dCollisionHull CollisionHull);
+    public CollisionShapeUnion(ShapeRoad value)
+    {
+        _union1ShapeRoad = value;
+        _unionKind = 1;
+    }
+
+    public bool TryGetValue(out ShapeRoad value)
+    {
+        if (_unionKind == 1)
+        {
+            value = _union1ShapeRoad;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    private readonly ShapeWall _union2ShapeWall;
+
+    public CollisionShapeUnion(ShapeWall value)
+    {
+        _union2ShapeWall = value;
+        _unionKind = 2;
+    }
+
+    public bool TryGetValue(out ShapeWall value)
+    {
+        if (_unionKind == 2)
+        {
+            value = _union2ShapeWall;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    private readonly ShapeRamp _union3ShapeRamp;
+
+    public CollisionShapeUnion(ShapeRamp value)
+    {
+        _union3ShapeRamp = value;
+        _unionKind = 3;
+    }
+
+    public bool TryGetValue(out ShapeRamp value)
+    {
+        if (_unionKind == 3)
+        {
+            value = _union3ShapeRamp;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    private readonly ShapeMesh _union4ShapeMesh;
+
+    public CollisionShapeUnion(ShapeMesh value)
+    {
+        _union4ShapeMesh = value;
+        _unionKind = 4;
+    }
+
+    public bool TryGetValue(out ShapeMesh value)
+    {
+        if (_unionKind == 4)
+        {
+            value = _union4ShapeMesh;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    private readonly ShapeHull _union5ShapeHull;
+
+    public CollisionShapeUnion(ShapeHull value)
+    {
+        _union5ShapeHull = value;
+        _unionKind = 5;
+    }
+
+    public bool TryGetValue(out ShapeHull value)
+    {
+        if (_unionKind == 5)
+        {
+            value = _union5ShapeHull;
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public object? Value => _unionKind switch
+    {
+        1 => _union1ShapeRoad,
+        2 => _union2ShapeWall,
+        3 => _union3ShapeRamp,
+        4 => _union4ShapeMesh,
+        5 => _union5ShapeHull,
+        _ => null
+    };
+
+    public bool HasValue => _unionKind != 0;
+}
+
+public readonly record struct ShapeMesh(f64Vector3 GameObjectPosition, fix64 GameObjectXz, SrcRad3dCollisionMesh CollisionMesh);
+public readonly record struct ShapeHull(f64Vector3 GameObjectPosition, fix64 GameObjectXz, SrcRad3dCollisionHull CollisionHull);
 
 public readonly struct CollisionShapeRef : IQuadObject
 {
     public readonly int Index;
 
-    public readonly int Skid;
+    public readonly CarPhysics.SurfaceType SurfaceType;
+    public readonly fix64 TractionMultiplier;
     public readonly int Damage;
     public readonly bool NotWall;
     public readonly Color3 DustColor;
-        
+
     public readonly CollisionShapeUnion Box;
     
     public f64Bounds Bounds { get; }
@@ -82,10 +193,11 @@ public readonly struct CollisionShapeRef : IQuadObject
         Index = index;
         var gameObjectPosition = new f64Vector3(gameObjectX, gameObjectY, gameObjectZ);
 
-        Skid = box.Skid;
+        SurfaceType = box.SurfaceType;
         Damage = box.Damage;
         NotWall = box.NotWall;
         DustColor = box.Color;
+        TractionMultiplier = box.TractionMultiplier ?? fix64.One;
 
         var rad = box.Radius;
         var radFlipped = new f64Vector3(rad.Z, rad.Y, rad.X);

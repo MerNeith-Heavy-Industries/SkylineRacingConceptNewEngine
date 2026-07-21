@@ -1,5 +1,6 @@
 using ManagedBass;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 
 namespace NFMWorld.SkiaDriver;
 
@@ -29,10 +30,6 @@ internal class SoundClip : ISoundClip
         Bass.ChannelRemoveFlag(_chan, BassFlags.Loop);
         Bass.ChannelPlay(_chan);//TODO see restart parameter
 #endif
-    }
-
-    public void Checkopen()
-    {
     }
 
     public void Loop()

@@ -1,13 +1,11 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using Maxine.Extensions;
-using Maxine.VFS;
-using Microsoft.Extensions.Logging;
-using NFMWorldLibrary.Backend;
-using NFMWorldLibrary.Backend.Gamemodes;
-using NFMWorldLibrary.Files;
+using NFMWorld.CrashReporter;
+using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
+using NFMWorld.Sentry;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 
@@ -42,127 +40,138 @@ public static class BackendGameSparker
 
     private static bool _loaded;
 
-    public static void Load()
+    public static void Load(bool isHeadless = true)
     {
         if (_loaded)
             return;
         _loaded = true;
+
+        IBackend.Backend = new ServerBackend();
         
         SentrySdk.Init(options =>
         {
-            // A Sentry Data Source Name (DSN) is required.
-            // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
-            // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
             options.Dsn = Logging.SentryDsn;
-
-            // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
-            // This might be helpful, or might interfere with the normal operation of your application.
-            // We enable it here for demonstration purposes when first trying Sentry.
-            // You shouldn't do this in your applications unless you're troubleshooting issues with Sentry.
             options.Debug = false;
-
-            // This option is recommended. It enables Sentry's "Release Health" feature.
-            options.AutoSessionTracking = true;
-
-            // Set TracesSampleRate to 1.0 to capture 100%
-            // of transactions for tracing.
-            // We recommend adjusting this value in production.
             options.TracesSampleRate = 0.05;
-            
-            // Enable logs to be sent to Sentry
-            options.EnableLogs = true;
-            
-            // Try get NFMWorld assembly version first
             options.Release = Logging.Release;
         });
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
+
+#if !DEBUG
+                if (!isHeadless && !Debugger.IsAttached)
+                {
+                    CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
+                }
+        #endif
         
-        var realFs = new RelativeFileSystem(AppDomain.CurrentDomain.BaseDirectory);
-        var realFs2 = new RelativeFileSystem(Directory.GetCurrentDirectory());
-        VFS.MountNewFileTarget(realFs2);
+        VFS.MountDirectory(AppDomain.CurrentDomain.BaseDirectory);
+        VFS.MountDirectory(Directory.GetCurrentDirectory());
+        VFS.MountWriteDestination(Directory.GetCurrentDirectory());
         
-        // VFS.MountFileSystem(new HttpFileSystem());
-        VFS.MountFileSystem(realFs);
-        VFS.MountFileSystem(realFs2);
         var modsFolder = Path.Combine(Directory.GetCurrentDirectory(), "mods");
         if (Directory.Exists(modsFolder))
-            VFS.MountFileSystem(new RelativeFileSystem(modsFolder));
+            VFS.MountDirectory(modsFolder);
 
         cars.Add(Collection.NFMM, []);
-        FileUtil.LoadFiles("./data/models/nfmm/cars", CarRads, (ais, id, fileName) =>
-        {
-            cars[Collection.NFMM][id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
-        });
-
-        FileUtil.LoadFiles("./data/models/nfmm/stage", StageRads, (ais, id, fileName) =>
-        {
-            stage_parts[id] = RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName);
-        });
+        FileUtil.LoadFiles(
+            "./data/models/nfmm/cars",
+            CarRads,
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName),
+            (id, result) => cars[Collection.NFMM][id] = result  
+        );
+        
+        FileUtil.LoadFiles(
+            "./data/models/nfmm/stage",
+            StageRads,
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "nfmm/" + fileName),
+            (id, result) => stage_parts[id] = result  
+        );
 
         cars.Add(Collection.World, []);
-        FileUtil.LoadFiles("./data/models/world/cars", (ais, fileName) =>
-        {
-            cars[Collection.World].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/world/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName),
+            result => cars[Collection.World].Add(result)
+        );
 
         cars.Add(Collection.Elo, []);
-        FileUtil.LoadFiles("./data/models/elo/cars", (ais, fileName) =>
-        {
-            cars[Collection.Elo].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "elo/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/elo/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "elo/" + fileName),
+            result => cars[Collection.Elo].Add(result)
+        );
 
         cars.Add(Collection.Football, []);
-        FileUtil.LoadFiles("./data/models/football/cars", (ais, fileName) =>
-        {
-            cars[Collection.Football].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName));
-        });
+        FileUtil.LoadFiles(
+            "./data/models/football/cars",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName),
+            result => cars[Collection.Football].Add(result)
+        );
 
-        FileUtil.LoadFiles("./data/models/world/stage", (ais, fileName) =>
-        {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName));
-        });
-
-        FileUtil.LoadFiles("./data/models/football/stage", (ais, fileName) =>
-        {
-            vendor_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais)) with
-            {
-                FileName = "football/" + fileName
-            });
-        });
+        FileUtil.LoadFiles(
+            "./data/models/world/stage",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "world/" + fileName),
+            result => vendor_stage_parts.Add(result)
+        );
+        
+        FileUtil.LoadFiles(
+            "./data/models/football/stage",
+            (ais, fileName) => RadParser.ParseRad(Encoding.UTF8.GetString(ais), "football/" + fileName),
+            result => vendor_stage_parts.Add(result)
+        );
 
         cars.Add(Collection.User, []);
-        FileUtil.LoadFiles("./data/models/user/cars", (ais, fileName) =>
-        {
-            try
+        FileUtil.LoadFiles(
+            "./data/models/user/cars",
+            (ais, fileName) =>
             {
-                cars[Collection.User].Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
-            }
-        });
-
-        FileUtil.LoadFiles("./data/models/user/stage", (ais, fileName) =>
-        {
-            try
-            {
-                user_stage_parts.Add(RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName));
-            }
-            catch (Exception ex)
-            {
-                SentrySdk.CaptureEvent(new SentryEvent(ex)
+                try
                 {
-                    Message = $"Error loading user stage part '{fileName}'"
-                });
-                Logging.Info($"Error loading user stage part '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName);
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureEvent(new SentryEvent(ex)
+                    {
+                        Message = $"Error loading user car part '{fileName}'"
+                    });
+                    Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return null;
+                }
+            },
+            result =>
+            {
+                if (result != null)
+                    cars[Collection.User].Add(result);
             }
-        });
+        );
 
-        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad"))) with
-        {
-            FileName = "error.rad"
-        };
+        FileUtil.LoadFiles(
+            "./data/models/user/cars",
+            (ais, fileName) =>
+            {
+                try
+                {
+                    return RadParser.ParseRad(Encoding.UTF8.GetString(ais), "user/" + fileName);
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureEvent(new SentryEvent(ex)
+                    {
+                        Message = $"Error loading user stage part '{fileName}'"
+                    });
+                    Logging.Info($"Error loading user car '{fileName}': {ex.Message}\n{ex.StackTrace}");
+                    return null;
+                }
+            },
+            result =>
+            {
+                if (result != null)
+                    user_stage_parts.Add(result);
+            }
+        );
+
+        error_mesh = RadParser.ParseRad(Encoding.UTF8.GetString(VFS.ReadAllBytes("./data/models/error.rad")), "error.rad");
         
         for (var i = 0; i < StageRads.Length; i++) {
             if (stage_parts[i] == null) {
@@ -291,19 +300,18 @@ public static class BackendGameSparker
             }
         }
 
-        if (Path.IsPathRooted(name))
+        if (dynamic_models.TryGetValue(name, out var dynRad))
         {
-            if (dynamic_models.TryGetValue(name, out var dynRad))
-            {
-                return dynRad;
-            }
+            return dynRad;
+        }
+
+        var relativePath = $"data/models/{name}.rad";
+        if (VFS.FileExists(relativePath))
+        {
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
-                {
-                    FileName = name
-                };
+                var rad = RadParser.ParseRad(VFS.ReadAllText(relativePath), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)
@@ -339,19 +347,13 @@ public static class BackendGameSparker
             }
         }
 
-        if (Path.IsPathRooted(name))
+        var relativePath = $"data/models/{name}.rad";
+        if (VFS.FileExists(relativePath))
         {
-            if (dynamic_models.TryGetValue(name, out var dynRad))
-            {
-                return dynRad;
-            }
             try
             {
                 total += dynamic_models.Count;
-                var rad = RadParser.ParseRad(System.IO.File.ReadAllText(name)) with
-                {
-                    FileName = name
-                };
+                var rad = RadParser.ParseRad(VFS.ReadAllText(relativePath), name);
                 return dynamic_models[name] = (total, rad);
             }
             catch (Exception ex)
@@ -379,247 +381,5 @@ public static class BackendGameSparker
         }
         
         return "";
-    }
-    
-    [UnmanagedCallersOnly(EntryPoint = "nfmw_get_tt_info", CallConvs = [typeof(CallConvStdcall)])]
-    public static unsafe GetTTInfoResult GetTTInfo(GetTTInfoArgs* args)
-    {
-        try
-        {
-            using var timeTrialMemory =
-                new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
-            var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
-            if (timeTrial == null)
-            {
-                SentrySdk.CaptureMessage("Failed to load time trial data", SentryLevel.Error);
-                throw new InvalidOperationException("Failed to load time trial data");
-            }
-
-            return new GetTTInfoResult
-            {
-                CheckpointCount = timeTrial.Splits.SplitTimes.Count,
-                ReplayVersion = timeTrial.Version ?? 0,
-                BackendVersion = SavedTimeTrial.CURRENT_VERSION,
-                TickCount = timeTrial.DemoData.Ticks.Count,
-                HasError = false
-            };
-        }
-        catch (Exception ex)
-        {
-            SentrySdk.CaptureException(ex);
-            return new GetTTInfoResult
-            {
-                CheckpointCount = -1,
-                ReplayVersion = -1,
-                BackendVersion = SavedTimeTrial.CURRENT_VERSION,
-                TickCount = -1,
-                HasError = true,
-                Exception = NativeException.FromException(ex)
-            };
-        }
-    }
-    [InlineArray(16384)]
-    public struct ErrorBuffer
-    {
-        public byte Data;
-        public Span<byte> AsSpan()
-        {
-            unsafe
-            {
-                fixed (byte* ptr = &Data)
-                {
-                    return new Span<byte>(ptr, 16384);
-                }
-            }
-        }
-    }
-    [InlineArray(1024)]
-    public struct ErrorMessageBuffer
-    {
-        public byte Data;
-        public Span<byte> AsSpan()
-        {
-            unsafe
-            {
-                fixed (byte* ptr = &Data)
-                {
-                    return new Span<byte>(ptr, 1024);
-                }
-            }
-        }
-    }
-        
-    [StructLayout(LayoutKind.Sequential)]
-    public struct NativeException
-    {
-        public ErrorMessageBuffer TypeName;
-        public ErrorMessageBuffer Message;
-        public ErrorBuffer StackTrace;
-            
-        public static NativeException FromException(Exception ex)
-        {
-            var typeNameBytes = Encoding.UTF8.GetBytes(ex.GetType().FullName ?? "UnknownException");
-            var messageBytes = Encoding.UTF8.GetBytes(ex.Message);
-            var stackTraceBytes = Encoding.UTF8.GetBytes(ex.StackTrace ?? "");
-
-            var nativeEx = new NativeException();
-            typeNameBytes.AsSpan(0, Math.Min(typeNameBytes.Length, 1024)).CopyTo(nativeEx.TypeName.AsSpan());
-            messageBytes.AsSpan(0, Math.Min(messageBytes.Length, 1024)).CopyTo(nativeEx.Message.AsSpan());
-            stackTraceBytes.AsSpan(0, Math.Min(stackTraceBytes.Length, 16384)).CopyTo(nativeEx.StackTrace.AsSpan());
-                
-            return nativeEx;
-        }
-    }
-
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct GetTTInfoArgs
-    {
-        // Pointer to time trial data
-        public byte* TimeTrialData;
-        // Length of time trial data
-        public int TimeTrialDataLength;
-    }
-    
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GetTTInfoResult
-    {
-        // Number of checkpoints in the time trial
-        public required int CheckpointCount;
-        public required int TickCount;
-        public required int ReplayVersion;
-        public required int BackendVersion;
-
-        // Whether an error occurred
-        public required bool HasError;
-        // Error information
-        public NativeException Exception;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LoadResult
-    {
-        // Whether an error occurred
-        public required bool HasError;
-        // Error information
-        public NativeException Exception;
-    }
-
-    /// <summary>
-    /// Loads the backend.
-    /// </summary>
-    /// <returns></returns>
-    [UnmanagedCallersOnly(EntryPoint = "nfmw_load", CallConvs = [typeof(CallConvStdcall)])]
-    public static unsafe LoadResult LoadUnmanaged()
-    {
-        try
-        {
-            Load();
-            return new LoadResult
-            {
-                HasError = false
-            };
-        }
-        catch (Exception ex)
-        {
-            SentrySdk.CaptureException(ex);
-            return new LoadResult
-            {
-                HasError = true,
-                Exception = NativeException.FromException(ex)
-            };
-        }
-    }
-
-    /// <summary>
-    /// Simulates a time trial to completion with a limit of 100M ticks. Returns the number of elapsed ticks, or -1 on
-    /// timeout.
-    /// </summary>
-    /// <param name="args">The args</param>
-    /// <returns></returns>
-    [UnmanagedCallersOnly(EntryPoint = "nfmw_simulate_tt", CallConvs = [typeof(CallConvStdcall)])]
-    public static unsafe SimulateTimeTrialResult SimulateTimeTrial(SimulateTimeTrialArgs* args)
-    {
-        try
-        {
-            using var timeTrialMemory =
-                new UnmanagedMemoryManager<byte>(args->TimeTrialData, args->TimeTrialDataLength);
-            var timeTrial = SavedTimeTrial.Load(timeTrialMemory.Memory);
-
-            var simulator = timeTrial.StageData is {} stageData
-                ? BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName), stageData)
-                : BackendRaceValues.Create(Encoding.UTF8.GetString(args->StageName));
-
-            var gamemode = new TimeTrialSimulationGamemode(new BaseGamemodeParameters()
-            {
-                PlayerCarIndex = 0,
-                Players =
-                [
-                    new PlayerParameters()
-                    {
-                        PlayerName = "Player",
-                        CarName = Encoding.UTF8.GetString(args->Cars[0].CarName),
-                        Color = new Color3(255, 0, 0),
-                        IsBot = false
-                    }
-                ]
-            }, simulator, timeTrial);
-
-            return new SimulateTimeTrialResult
-            {
-                ElapsedTicks = gamemode.SimulateToCompletion(timeTrial.DemoData.Ticks.Count + 500) ?? -1,
-                ExpectedTicks = timeTrial.DemoData.Ticks.Count,
-                HasError = false
-            };
-        }
-        catch (Exception ex)
-        {
-            SentrySdk.CaptureException(ex);
-            return new SimulateTimeTrialResult
-            {
-                ElapsedTicks = -1,
-                ExpectedTicks = -1,
-                HasError = true,
-                Exception = NativeException.FromException(ex)
-            };
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct SimulateTimeTrialResult
-    {
-        // The result code: number of ticks elapsed, or -1 on timeout or error
-        public required int ElapsedTicks;
-        // Number of input ticks in the replay
-        public required int ExpectedTicks;
-
-        // Whether an error occurred
-        public required bool HasError;
-        // Error information
-        public NativeException Exception;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct SimulateTimeTrialArgs
-    {
-        [StructLayout(LayoutKind.Sequential)]
-        public struct CarInfoUnmanaged
-        {
-            // Pointer to UTF-8 encoded car name, null-terminated
-            public byte* CarName;
-        }
-
-        // Pointer to UTF-8 encoded stage name, null-terminated
-        public byte* StageName;
-        
-        // Pointer to array of CarInfoUnmanaged
-        public CarInfoUnmanaged* Cars;
-        // Number of cars
-        public int CarCount;
-        
-        // Pointer to time trial data
-        public byte* TimeTrialData;
-        // Length of time trial data
-        public int TimeTrialDataLength;
     }
 }

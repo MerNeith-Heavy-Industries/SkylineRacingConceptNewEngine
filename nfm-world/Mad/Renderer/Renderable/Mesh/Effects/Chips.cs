@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Chips
+public class Chips : IDisposable, IImmediateRenderElement
 {
     private struct Chip
     {
@@ -17,20 +17,27 @@ public class Chips
         public Color3 Color;
     }
     
-    private readonly ClientCar _car;
+    private readonly CarVisual _car;
     private readonly GraphicsDevice _graphicsDevice;
     
     private Chip[] _chips;
     private readonly VertexPositionColor[] _triangles;
     private int _triangleCount;
 
-    public Chips(ClientCar car, GraphicsDevice graphicsDevice)
+    private DynamicVertexBuffer _triangleBuffer;
+
+    public Chips(CarVisual car, GraphicsDevice graphicsDevice)
     {
         _car = car;
         _graphicsDevice = graphicsDevice;
         _chips = new Chip[_car.Mesh.Polys.Length];
         
         _triangles = new VertexPositionColor[3 * _car.Mesh.Polys.Length];
+        _triangleBuffer = new DynamicVertexBuffer(_graphicsDevice, VertexPositionColor.VertexDeclaration, _triangles.Length, BufferUsage.WriteOnly)
+        {
+            Name = "Chips Vertex Buffer"
+        };
+        _triangleBuffer.SetDataEXT(_triangles, SetDataOptions.Discard);
     }
 
     public void GameTick()
@@ -129,9 +136,14 @@ public class Chips
                 }
             }
         }
+        
+        if (_triangleCount > 0)
+        {
+            _triangleBuffer.SetDataEXT(_triangles.AsSpan(0, _triangleCount * 3), SetDataOptions.Discard);
+        }
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_triangleCount == 0) return;
 
@@ -140,16 +152,15 @@ public class Chips
         Effects.Chip.Projection = camera.ProjectionMatrix;
         
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+        _graphicsDevice.SetVertexBuffer(_triangleBuffer);
         foreach (var pass in Effects.Chip.CurrentTechnique.Passes)
         {
             pass.Apply();
 
-            _graphicsDevice.DrawUserPrimitives(
+            _graphicsDevice.DrawPrimitives(
                 PrimitiveType.TriangleList,
-                _triangles,
                 0,
-                _triangleCount,
-                VertexPositionColor.VertexDeclaration
+                _triangleCount
             );
         }
         _graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -168,5 +179,26 @@ public class Chips
             _chips[i].State = 1;
             _chips[i].Ctmag = 2f;
         }
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+        _triangleBuffer.Dispose();
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~Chips()
+    {
+        Dispose(false);
     }
 }

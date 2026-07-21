@@ -1,9 +1,11 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
@@ -17,6 +19,8 @@ public class Environment
         GraphicsDevice graphicsDevice
     )
     {
+        var transaction = SentrySdk.StartTransaction("MakePolys", "stageGeneration");
+        
         var cpol = World.GroundPolysColor.Snap(World.Snap);
         var cgrnd = World.GroundColor.Snap(World.Snap);
         
@@ -136,6 +140,15 @@ public class Environment
 
         #region writePolys1
 
+        // fan triangulation
+        var tris = new uint[18];
+        for (uint j = 1; j < 7; j++)
+        {
+            tris[(j - 1) * 3] = 0;
+            tris[((j - 1) * 3) + 1] = j;
+            tris[((j - 1) * 3) + 2] = j + 1;
+        }
+
         for (int i = 0; i < nrw * ncl; i++)
         {
             points.Clear();
@@ -152,8 +165,8 @@ public class Environment
                 int py = 250;
                 points.Add(new Vector3(px, py, pz));
             }
-
-            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray());
+            
+            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray(), ImmutableCollectionsMarshal.AsImmutableArray(tris));
             verts.Add(poly);
         }
 
@@ -178,12 +191,14 @@ public class Environment
                 points.Add(new Vector3(px, py, pz));
             }
 
-            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray());
+            var poly = new Rad3dPoly(color, null, PolyType.Flat, null, 0.0f, points.ToArray(), ImmutableCollectionsMarshal.AsImmutableArray(tris));
             verts.Add(poly);
         }
 
         #endregion
 
+        transaction.Finish();
+        
         return new GroundPolys(graphicsDevice, verts.ToArray());
     }
 
@@ -191,6 +206,8 @@ public class Environment
         int maxl, int maxr, int maxb, int maxt, // newclouds
         GraphicsDevice graphicsDevice)
     {
+        var transaction = SentrySdk.StartTransaction("MakeClouds", "stageGeneration");
+        
         var cldd = World.Clouds;
         var clds = World.CloudColor.Snap(World.Snap);
 
@@ -528,6 +545,8 @@ public class Environment
 
         #endregion
 
+        transaction.Finish();
+
         return new GroundPolys(graphicsDevice, polys.ToArray());
     }
     
@@ -536,6 +555,8 @@ public class Environment
         GraphicsDevice graphicsDevice
     )
     {
+        var transaction = SentrySdk.StartTransaction("MakeMountains", "stageGeneration");
+        
         #region newmountains
 
         var random = new URandom(World.MountainSeed);
@@ -694,6 +715,8 @@ public class Environment
         }
 
         #endregion
+        
+        transaction.Finish();
 
         return new Mountains(graphicsDevice, polys.ToArray());
     }

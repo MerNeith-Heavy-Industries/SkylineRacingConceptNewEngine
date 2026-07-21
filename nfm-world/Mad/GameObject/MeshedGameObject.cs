@@ -1,5 +1,7 @@
-﻿using NFMWorldLibrary;
+﻿using Maxine.Extensions.Mathematics;
+using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
+using BoundingSphere = Microsoft.Xna.Framework.BoundingSphere;
 
 namespace NFMWorld;
 
@@ -39,19 +41,13 @@ public class MeshedGameObject(Mesh mesh) : GameObject
         set;
     }
 
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
-    {
-        if (lighting?.IsCreateShadowMap == true && !(CastsShadow || Position.Y < World.Ground)) yield break;
-        
-        foreach (var (element, renderOrder) in Mesh.GetRenderables(lighting, Finish ?? false))
-        {
-            var actualRenderOrder = AlphaOverride is {} alphaOverride and < 1.0f ? 1 : renderOrder;
-            yield return new RenderData(element, MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false, actualRenderOrder);
-        }
+    public RenderBucket RenderBucket { get; set; } = RenderBucket.StagePieces;
 
-        foreach (var renderData in base.GetRenderData(lighting))
-        {
-            yield return renderData;
-        }
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
+    {
+        var boundingSphere = new BoundingSphere(MatrixWorld.Translation, Mesh.MaxRadius);
+        Mesh.SubmitRenderables(queue, lighting, Finish ?? false, boundingSphere, RenderBucket, MatrixWorld, GetsShadowed ?? true, AlphaOverride ?? 1.0f, Glow ?? false, Glow ?? false);
+
+        base.SubmitDraws(queue, camera, lighting, pass);
     }
 }

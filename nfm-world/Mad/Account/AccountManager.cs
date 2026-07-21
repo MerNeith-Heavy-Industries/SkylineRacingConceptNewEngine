@@ -1,13 +1,40 @@
-using NFMWorld.Account.OAuth2;
+using System.Diagnostics;
+using System.Net;
+using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using NFMWorld.Api;
 
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
 public class AccountManager
 {
-    public Account? ActiveAccount;
+    public static NfmwClient Client { get; } = new("https://nfmwapi.jacher.io", new HttpClient());
+    
+    public Account? ActiveAccount
+    {
+        get;
+        set
+        {
+            field = value;
+            ActiveAccountChanged?.Invoke(value);
+        }
+    }
 
-    public bool LoggedIn { get { return ActiveAccount is not null; } }
+    public IObservable<Account?> ActiveAccountObservable;
+
+    public event Action<Account?>? ActiveAccountChanged;
+
+    private bool _signingIn;
+
+    public AccountManager()
+    {
+        ActiveAccountObservable = Observable.FromEventPattern<Action<Account?>, Account?>(
+                h => ActiveAccountChanged += h,
+                h => ActiveAccountChanged -= h)
+            .Select(e => e.EventArgs);
+    }
+
+    public bool LoggedIn => ActiveAccount is not null;
 
     // TODO: Logout properly by querying API to invalidate token?
     public void LogOut()
@@ -25,11 +52,22 @@ public class AccountManager
     /// <param name="username">The username</param>
     /// <param name="password">The password</param>
     /// <returns>The result of account creation. Throws an exception where there is a server error or input validation error.</returns>
-    public async Task<CreateLocalAccountResult> CreateLocalAccount(string username, string password)
+    public async Task<RequestResult> CreateLocalAccount(string username, string password)
     {
-        var res = await UserApi.CreateLocalAccount(username, password);
-        
-        return new CreateLocalAccountResult(res.Item2?.Status ?? "Unknown Status", res.Item1);
+        try
+        {
+            var res = await Client.CreateLocalAccountAsync(new CreateLocalAccountRequest()
+            {
+                Username = username,
+                Password = password
+            });
+
+            return new RequestResult("Success", true);
+        }
+        catch (ApiException<ErrorResponse> ex)
+        {
+            return new RequestResult(ex.Result.Error, false);
+        }
     }
 
     /// <summary>
@@ -48,20 +86,24 @@ public class AccountManager
     /// <param name="username">The username</param>
     /// <param name="password">The password</param>
     /// <returns>The log in result. Throws an exception on serious failure.</returns>
-    public async Task<LocalLogInResult> LogInToLocalAccount(string username, string password)
+    public async Task<RequestResult> LogInToLocalAccount(string username, string password)
     {
-        var res = await UserApi.LocalLogIn(username, password);
-        var inner_res = new LocalLogInResult(res.Item2?.Status ?? "Unknown Status", res.Item1);
-
-        if(!inner_res.Success)
+        try
         {
-            return inner_res;
+            var res = await Client.LoginLocalAccountAsync(new LoginLocalAccountRequest()
+            {
+                Username = username,
+                Password = password
+            });
+
+            ActiveAccount = new Account(res.SessionToken, res.Username);
+            
+            return new RequestResult("Success", true);
         }
-
-        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
-        ActiveAccount = new Account(token, username);
-
-        return inner_res;
+        catch (ApiException<ErrorResponse> ex)
+        {
+            return new RequestResult(ex.Result.Error, false);
+        }
     }
 
     /// <summary>
@@ -76,60 +118,74 @@ public class AccountManager
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Attempt to log in using a Discord Oauth2 authorization code. The code must be valid.
-    /// If this code (when converted to a token) is associated with an existing user account, a session code for that user is created and returned.
-    /// If not, this call will fail and instead should call into DiscordOauth2CreateAccount, which accepts both a code and a username. 
-    /// 
-    /// Please note - if the user changes their Discord password, the session token is *not* invalidated. The user needs to manually revoke
-    /// all session tokens after resetting the Discord password.
-    /// 
-    /// See LogInToLocalAccount for session token retention policy.
-    /// </summary>
-    /// <param name="code">The token to log in from.</param>
-    /// <param name="redirectUri">The escaped redirect URI used for accessing the code.</param>
-    /// <returns>Either a session token or an error state describing actions the user must take.</returns>
-    public async Task<Oauth2LogInResult> DiscordOauth2AttemptLogIn(string code, string redirectUri)
+    private static void OpenUrl(string url)
     {
-        var res = await UserApi.DiscordOauth2LogIn(code, redirectUri);
-        var inner_res = new Oauth2LogInResult(res.Item2?.Status ?? "Unknown Status", res.Item1);
-
-        if(!inner_res.Success)
+        // hack because of this: https://github.com/dotnet/corefx/issues/10361
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-
-            inner_res.TempToken = res.Item2?.TempToken;
-            return inner_res;
+            url = url.Replace("&", "^&");
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
-
-        // todo: dont throw here
-        string username = res.Item2?.Username ?? throw new Exception("username was null in api response");
-        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
-        ActiveAccount = new Account(token, username);
-
-        return inner_res;
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Process.Start("xdg-open", url);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Process.Start("open", url);
+        }
+        else
+        {
+            throw new PlatformNotSupportedException(RuntimeInformation.OSDescription);
+        }
     }
-
-    /// <summary>
-    /// Create an account based on the provided Oauth2 code. The code must be associated with a Discord user that has not already registered.
-    /// The username must also be unique and follow the username policy.
-    /// </summary>
-    /// <param name="tempToken">The temporary session token returned by /discord/login</param>
-    /// <param name="username">The username to create the account under</param>
-    /// <returns></returns>
-    public async Task<Oauth2CreateAccountResult> DiscordOauth2CreateAccount(string tempToken, string username)
+    
+    public async Task<RequestResult> LogInWithDiscord()
     {
-        // When we create an account via oauth, we automatically log in
-        var res = await UserApi.CreateDiscordOauth2Account(tempToken, username);
-        var inner_res = new Oauth2CreateAccountResult(res.Item2?.Status ?? "Unknown Status", res.Item1);
-
-        if(!inner_res.Success)
+        if (_signingIn)
         {
-            return inner_res;
+            return new RequestResult("Already started signing in, please finish on that window first.", false);
         }
 
-        string token = res.Item2?.Token ?? throw new Exception("token was null in api response");
-        ActiveAccount = new Account(token, username);
+        try
+        {
+            _signingIn = true;
 
-        return inner_res;
+            var response = await Client.InitDiscordOauthAsync();
+
+            var uri = new Uri(response.Url);
+            if (uri.Scheme != "https")
+            {
+                throw new Exception("Invalid URL scheme for Discord OAuth: " + uri.Scheme);
+            }
+        
+            OpenUrl(uri.AbsoluteUri);
+
+            var pollCount = 0;
+            const int maxPollCount = 120;
+
+            while (pollCount < maxPollCount)
+            {
+                var oauth = await Client.PollOauthAsync(response.PollId);
+                if (oauth.Status == "login")
+                {
+                    ActiveAccount = new Account(oauth.Payload!, ""); // TODO...
+                    return new RequestResult("Success", true);
+                }
+                else if (oauth.Status == "error")
+                {
+                    return new RequestResult(oauth.Payload ?? "Unknown error", false);
+                }
+            
+                await Task.Delay(1000);
+                pollCount++;
+            }
+
+            return new RequestResult("Timed out", false);
+        }
+        finally
+        {
+            _signingIn = false;
+        }
     }
 }

@@ -65,6 +65,8 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             sb.AppendLine(
                 $$"""
+                  #nullable enable
+                  using MemoryPack;
                   using NFMWorldLibrary.Util;
 
                   namespace NFMWorldLibrary.Multiplayer;
@@ -75,7 +77,7 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             using (sb.Indent())
             {
-                sb.AppendLine("private static T DeserializePacket<T>(ReadOnlyMemory<byte> data) where T : IReadableWritable<T> => T.Read(data);");
+                sb.AppendLine("private static T DeserializePacket<T>(ReadOnlyMemory<byte> data) where T : IReadableWritable<T>, IMemoryPackable<T> => T.Read(data);");
                 sb.AppendLine("public static IPacketClientToServer? TryDeserializeC2SPacket(sbyte opcode, ReadOnlyMemory<byte> data)");
                 sb.AppendLine("{");
 
@@ -139,13 +141,14 @@ public class OpcodeIncrementalGenerator : IIncrementalGenerator
 
             sb.AppendLine(
                 $$"""
-                  using MessagePack;
+                  #nullable enable
+                  using MemoryPack;
                   
                   namespace {{packetInfo.Namespace}};
 
                   partial {{(packetInfo.IsStruct ? "struct" : packetInfo.IsRecord ? "record" : "class")}} {{packetInfo.Name}}
                   {
-                      [IgnoreMember]
+                      [MemoryPackIgnore]
                       public {{(packetInfo.IsStruct ? "readonly " : "")}}sbyte Opcode => {{packetInfo.Opcode}};
                   }
                   """);

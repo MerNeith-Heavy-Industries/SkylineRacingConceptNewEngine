@@ -1,17 +1,18 @@
 ﻿using System.Buffers;
-using MessagePack;
+using System.Diagnostics.CodeAnalysis;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Util;
 
-public interface IReadableWritable<out TSelf>
+public interface IReadableWritable<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] out TSelf> where TSelf : IMemoryPackable<TSelf>
 {
     void Write<T>(T writer) where T : IBufferWriter<byte>
     {
-        MessagePackSerializer.Serialize<TSelf>(writer, (TSelf)this, MsgPackHelpers.Options);
+        MemoryPackSerializer.Serialize<TSelf, T>(writer, (TSelf)this, MemoryPackHelpers.Options);
     }
 
     public static virtual TSelf Read(ReadOnlyMemory<byte> data)
     {
-        return MessagePackSerializer.Deserialize<TSelf>(data, MsgPackHelpers.Options);
+        return MemoryPackSerializer.Deserialize<TSelf>(data.Span, MemoryPackHelpers.Options)!;
     }
 }

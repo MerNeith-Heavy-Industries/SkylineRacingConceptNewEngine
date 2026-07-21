@@ -131,13 +131,13 @@ public static class TriangleMesh
         var maxZ = fix64.Max(p0.Z, fix64.Max(p1.Z, p2.Z));
 
         // A wheel at position.Y is snapped if:
-        //   surfaceY <= position.Y + 5       => wheel can be up to 5 below the surface
-        //   position.Y - surfaceY <= MaxGroundSnapDistance  => wheel can be up to MaxGroundSnapDistance above
+        //   surfaceY <= position.Y + MaxGroundPenetration  => position.Y >= surfaceY - MaxGroundPenetration
+        //   position.Y - surfaceY <= MaxGroundSnapDistance  => position.Y <= surfaceY + MaxGroundSnapDistance
         // So relative to the triangle's Y range:
-        //   wheel Y range = [minY - MaxGroundSnapDistance, maxY + 5]
+        //   wheel Y range = [minY - MaxGroundPenetration, maxY + MaxGroundSnapDistance]
         return (
-            new f64Vector3(minX - edgeExpand, minY - MaxGroundSnapDistance, minZ - edgeExpand),
-            new f64Vector3(maxX + edgeExpand, maxY + MaxGroundPenetration, maxZ + edgeExpand)
+            new f64Vector3(minX - edgeExpand, minY - MaxGroundPenetration, minZ - edgeExpand),
+            new f64Vector3(maxX + edgeExpand, maxY + MaxGroundSnapDistance, maxZ + edgeExpand)
         );
     }
 
@@ -169,17 +169,18 @@ public static class TriangleMesh
         in f64Vector3 p0, in f64Vector3 p1, in f64Vector3 p2
     )
     {
-        var e0 = (p1 - p0).LengthNoOverflow();
-        var e1 = (p2 - p1).LengthNoOverflow();
-        var e2 = (p0 - p2).LengthNoOverflow();
-        var maxEdge = fix64.Max(e0, fix64.Max(e1, e2));
-        var edgeExpand = fix64.Abs((fix64)EdgeTolerance * maxEdge);
+        // The barycentric edge tolerance lets a point sit at u=-tol, v=-tol simultaneously.
+        // Its displacement from p0 is -tol*edge1 + -tol*edge2, so the per-axis overshoot
+        // can be up to |tol| * (|edge1| + |edge2|), not just |tol| * max(|edge1|, |edge2|).
+        var edge1Len = (p1 - p0).LengthNoOverflow();
+        var edge2Len = (p2 - p0).LengthNoOverflow();
+        var edgeExpand = fix64.Abs((fix64)EdgeTolerance) * (edge1Len + edge2Len);
 
         var (min, max) = ComputeGroundAABB(p0, p1, p2, edgeExpand);
         
         var (minWall, maxWall) = ComputeWallAABB(p0, p1, p2, edgeExpand);
-        min = f64Vector3.Max(min, minWall);
-        max = f64Vector3.Min(max, maxWall);
+        min = f64Vector3.Min(min, minWall);
+        max = f64Vector3.Max(max, maxWall);
         
         return (min, max);
     }
@@ -192,6 +193,7 @@ public static class TriangleMesh
 
         return isInAabb;
     }
+    
     
     /// <summary>
     /// Barycentric point-in-triangle test using float to avoid fix64 overflow.
@@ -209,15 +211,10 @@ public static class TriangleMesh
         if (denom.Abs() < (Fixed128)1e-6f) return false; // degenerate
 
         // Equivalent to:
-        // var u = (d22 * d1p - d12 * d2p) / denom;
-        // var v = (d11 * d2p - d12 * d1p) / denom;
-        //
-        // var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
-        var uD = (d22 * d1p - d12 * d2p);
-        var vD = (d11 * d2p - d12 * d1p);
-        var w = EdgeTolerance * denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
         
-        var inside = uD >= w && vD >= w && (uD + vD) <= (denom - w);
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
         return inside;
     }
 
@@ -233,15 +230,10 @@ public static class TriangleMesh
         if (denom.Abs() < (Fixed128)1e-6f) return "degen";
 
         // Equivalent to:
-        // var u = (d22 * d1p - d12 * d2p) / denom;
-        // var v = (d11 * d2p - d12 * d1p) / denom;
-        //
-        // var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
-        var uD = (d22 * d1p - d12 * d2p);
-        var vD = (d11 * d2p - d12 * d1p);
-        var w = EdgeTolerance * denom;
+        var u = (d22 * d1p - d12 * d2p) / denom;
+        var v = (d11 * d2p - d12 * d1p) / denom;
         
-        var inside = uD >= w && vD >= w && (uD + vD) <= (denom - w);
-        return $"{inside} u={uD:F3} v={vD:F3}";
+        var inside = u >= EdgeTolerance && v >= EdgeTolerance && (u + v) <= 1 - EdgeTolerance;
+        return $"{inside} u={u:F3} v={v:F3}";
     }
 }

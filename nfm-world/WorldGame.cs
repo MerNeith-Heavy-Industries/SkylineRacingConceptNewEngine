@@ -5,22 +5,26 @@ using Hexa.NET.ImGui;
 using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Opus;
-using Maxine.Extensions.Collections.SpanLinq;
+using Maxine.Extensions;
+using Maxine.Extensions.Mathematics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
+using NFMWorld.CrashReporter;
+using NFMWorld.DriverInterface;
 using NFMWorld.UI;
+using NFMWorld.UI.Cef;
 using NFMWorld.UI.Hud;
+using NFMWorld.Util;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Base;
-using WorldXaml.UI.Base.Xaml;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Xaml;
-using Keys = NFMWorld.Util.Keys;
+using Sokol;
+using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
@@ -30,235 +34,44 @@ namespace NFMWorld;
 /// </summary>
 public class WorldGame : Game
 {
-    public GraphicsDeviceManager _graphics;
-    public static RenderTarget2D?[] shadowRenderTargets { get; } = new RenderTarget2D[3];
+    public GraphicsDeviceManager Graphics;
     private ImGuiRenderer _imguiRenderer;
-    public static ImGuiRenderer ImguiRenderer { get; private set; }
+    private CefRenderer _cefRenderer;
 
-    internal static long _lastFrameTime;
-    internal static long _lastTickTime;
-    internal static int _lastTickCount;
-    private KeyboardState oldKeyState;
-    private MouseState oldMouseState;
+    internal static long LastFrameTime;
+    internal static long LastTickTime;
+    internal static int LastTickCount;
+    private Keys _oldKeyState;
+    private MouseButtons _oldMouseState;
+    private Int2 _oldMousePosition;
+    private int _oldScrollValue;
     private NanoVGRenderer _nvg;
     private TimeStep _tickTimeStep = new((1000f / Physics.TargetTps) / 1000f);
     public static bool LowLatency = false;
     public static int NumCascades = 3;
     public static int ShadowResolution = 2048;
 
-    private static bool loaded;
+    private static bool _loaded;
     private const int FrameDelay = (int) (1000 / 21.3f);
-    
+
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
-
-    private static bool _yogaInspectorEnabled = false;
-    private static int _yogaInspectorPage = 0;
-
-#if DEBUG
-    internal static string? DebugUiClass;
-    internal static Node? DebugUiRoot;
-#endif
-
-    private static Keys TranslateKey(Microsoft.Xna.Framework.Input.Keys key)
-    {
-        return key switch
-        {
-            Microsoft.Xna.Framework.Input.Keys.Space => Keys.Space,
-            Microsoft.Xna.Framework.Input.Keys.D0 => Keys.D0,
-            Microsoft.Xna.Framework.Input.Keys.D1 => Keys.D1,
-            Microsoft.Xna.Framework.Input.Keys.D2 => Keys.D2,
-            Microsoft.Xna.Framework.Input.Keys.D3 => Keys.D3,
-            Microsoft.Xna.Framework.Input.Keys.D4 => Keys.D4,
-            Microsoft.Xna.Framework.Input.Keys.D5 => Keys.D5,
-            Microsoft.Xna.Framework.Input.Keys.D6 => Keys.D6,
-            Microsoft.Xna.Framework.Input.Keys.D7 => Keys.D7,
-            Microsoft.Xna.Framework.Input.Keys.D8 => Keys.D8,
-            Microsoft.Xna.Framework.Input.Keys.D9 => Keys.D9,
-            Microsoft.Xna.Framework.Input.Keys.OemSemicolon => Keys.OemSemicolon,
-            Microsoft.Xna.Framework.Input.Keys.A => Keys.A,
-            Microsoft.Xna.Framework.Input.Keys.B => Keys.B,
-            Microsoft.Xna.Framework.Input.Keys.C => Keys.C,
-            Microsoft.Xna.Framework.Input.Keys.D => Keys.D,
-            Microsoft.Xna.Framework.Input.Keys.E => Keys.E,
-            Microsoft.Xna.Framework.Input.Keys.F => Keys.F,
-            Microsoft.Xna.Framework.Input.Keys.G => Keys.G,
-            Microsoft.Xna.Framework.Input.Keys.H => Keys.H,
-            Microsoft.Xna.Framework.Input.Keys.I => Keys.I,
-            Microsoft.Xna.Framework.Input.Keys.J => Keys.J,
-            Microsoft.Xna.Framework.Input.Keys.K => Keys.K,
-            Microsoft.Xna.Framework.Input.Keys.L => Keys.L,
-            Microsoft.Xna.Framework.Input.Keys.M => Keys.M,
-            Microsoft.Xna.Framework.Input.Keys.N => Keys.N,
-            Microsoft.Xna.Framework.Input.Keys.O => Keys.O,
-            Microsoft.Xna.Framework.Input.Keys.P => Keys.P,
-            Microsoft.Xna.Framework.Input.Keys.Q => Keys.Q,
-            Microsoft.Xna.Framework.Input.Keys.R => Keys.R,
-            Microsoft.Xna.Framework.Input.Keys.S => Keys.S,
-            Microsoft.Xna.Framework.Input.Keys.T => Keys.T,
-            Microsoft.Xna.Framework.Input.Keys.U => Keys.U,
-            Microsoft.Xna.Framework.Input.Keys.V => Keys.V,
-            Microsoft.Xna.Framework.Input.Keys.W => Keys.W,
-            Microsoft.Xna.Framework.Input.Keys.X => Keys.X,
-            Microsoft.Xna.Framework.Input.Keys.Y => Keys.Y,
-            Microsoft.Xna.Framework.Input.Keys.Z => Keys.Z,
-            Microsoft.Xna.Framework.Input.Keys.Escape => Keys.Escape,
-            Microsoft.Xna.Framework.Input.Keys.Enter => Keys.Enter,
-            Microsoft.Xna.Framework.Input.Keys.Tab => Keys.Tab,
-            Microsoft.Xna.Framework.Input.Keys.Back => Keys.Back,
-            Microsoft.Xna.Framework.Input.Keys.Insert => Keys.Insert,
-            Microsoft.Xna.Framework.Input.Keys.Delete => Keys.Delete,
-            Microsoft.Xna.Framework.Input.Keys.Right => Keys.Right,
-            Microsoft.Xna.Framework.Input.Keys.Left => Keys.Left,
-            Microsoft.Xna.Framework.Input.Keys.Down => Keys.Down,
-            Microsoft.Xna.Framework.Input.Keys.Up => Keys.Up,
-            Microsoft.Xna.Framework.Input.Keys.PageUp => Keys.PageUp,
-            Microsoft.Xna.Framework.Input.Keys.PageDown => Keys.PageDown,
-            Microsoft.Xna.Framework.Input.Keys.Home => Keys.Home,
-            Microsoft.Xna.Framework.Input.Keys.End => Keys.End,
-            Microsoft.Xna.Framework.Input.Keys.CapsLock => Keys.CapsLock,
-            Microsoft.Xna.Framework.Input.Keys.Scroll => Keys.Scroll,
-            Microsoft.Xna.Framework.Input.Keys.NumLock => Keys.NumLock,
-            Microsoft.Xna.Framework.Input.Keys.PrintScreen => Keys.PrintScreen,
-            Microsoft.Xna.Framework.Input.Keys.Pause => Keys.Pause,
-            Microsoft.Xna.Framework.Input.Keys.F1 => Keys.F1,
-            Microsoft.Xna.Framework.Input.Keys.F2 => Keys.F2,
-            Microsoft.Xna.Framework.Input.Keys.F3 => Keys.F3,
-            Microsoft.Xna.Framework.Input.Keys.F4 => Keys.F4,
-            Microsoft.Xna.Framework.Input.Keys.F5 => Keys.F5,
-            Microsoft.Xna.Framework.Input.Keys.F6 => Keys.F6,
-            Microsoft.Xna.Framework.Input.Keys.F7 => Keys.F7,
-            Microsoft.Xna.Framework.Input.Keys.F8 => Keys.F8,
-            Microsoft.Xna.Framework.Input.Keys.F9 => Keys.F9,
-            Microsoft.Xna.Framework.Input.Keys.F10 => Keys.F10,
-            Microsoft.Xna.Framework.Input.Keys.F11 => Keys.F11,
-            Microsoft.Xna.Framework.Input.Keys.F12 => Keys.F12,
-            Microsoft.Xna.Framework.Input.Keys.F13 => Keys.F13,
-            Microsoft.Xna.Framework.Input.Keys.F14 => Keys.F14,
-            Microsoft.Xna.Framework.Input.Keys.F15 => Keys.F15,
-            Microsoft.Xna.Framework.Input.Keys.F16 => Keys.F16,
-            Microsoft.Xna.Framework.Input.Keys.F17 => Keys.F17,
-            Microsoft.Xna.Framework.Input.Keys.F18 => Keys.F18,
-            Microsoft.Xna.Framework.Input.Keys.F19 => Keys.F19,
-            Microsoft.Xna.Framework.Input.Keys.F20 => Keys.F20,
-            Microsoft.Xna.Framework.Input.Keys.F21 => Keys.F21,
-            Microsoft.Xna.Framework.Input.Keys.F22 => Keys.F22,
-            Microsoft.Xna.Framework.Input.Keys.F23 => Keys.F23,
-            Microsoft.Xna.Framework.Input.Keys.F24 => Keys.F24,
-            Microsoft.Xna.Framework.Input.Keys.NumPad0 => Keys.NumPad0,
-            Microsoft.Xna.Framework.Input.Keys.NumPad1 => Keys.NumPad1,
-            Microsoft.Xna.Framework.Input.Keys.NumPad2 => Keys.NumPad2,
-            Microsoft.Xna.Framework.Input.Keys.NumPad3 => Keys.NumPad3,
-            Microsoft.Xna.Framework.Input.Keys.NumPad4 => Keys.NumPad4,
-            Microsoft.Xna.Framework.Input.Keys.NumPad5 => Keys.NumPad5,
-            Microsoft.Xna.Framework.Input.Keys.NumPad6 => Keys.NumPad6,
-            Microsoft.Xna.Framework.Input.Keys.NumPad7 => Keys.NumPad7,
-            Microsoft.Xna.Framework.Input.Keys.NumPad8 => Keys.NumPad8,
-            Microsoft.Xna.Framework.Input.Keys.NumPad9 => Keys.NumPad9,
-            Microsoft.Xna.Framework.Input.Keys.LeftShift => Keys.LShiftKey,
-            Microsoft.Xna.Framework.Input.Keys.LeftControl => Keys.LControlKey,
-            Microsoft.Xna.Framework.Input.Keys.LeftAlt => Keys.Alt,
-            Microsoft.Xna.Framework.Input.Keys.RightShift => Keys.RShiftKey,
-            Microsoft.Xna.Framework.Input.Keys.RightControl => Keys.RControlKey,
-            Microsoft.Xna.Framework.Input.Keys.RightAlt => Keys.Alt,
-            Microsoft.Xna.Framework.Input.Keys.Select => Keys.Select,
-            Microsoft.Xna.Framework.Input.Keys.Print => Keys.Print,
-            Microsoft.Xna.Framework.Input.Keys.Execute => Keys.Execute,
-            Microsoft.Xna.Framework.Input.Keys.Help => Keys.Help,
-            Microsoft.Xna.Framework.Input.Keys.LeftWindows => Keys.LWin,
-            Microsoft.Xna.Framework.Input.Keys.RightWindows => Keys.RWin,
-            Microsoft.Xna.Framework.Input.Keys.Apps => Keys.Apps,
-            Microsoft.Xna.Framework.Input.Keys.Sleep => Keys.Sleep,
-            Microsoft.Xna.Framework.Input.Keys.Multiply => Keys.Multiply,
-            Microsoft.Xna.Framework.Input.Keys.Add => Keys.Add,
-            Microsoft.Xna.Framework.Input.Keys.Separator => Keys.Separator,
-            Microsoft.Xna.Framework.Input.Keys.Subtract => Keys.Subtract,
-            Microsoft.Xna.Framework.Input.Keys.Decimal => Keys.Decimal,
-            Microsoft.Xna.Framework.Input.Keys.Divide => Keys.Divide,
-            Microsoft.Xna.Framework.Input.Keys.BrowserBack => Keys.BrowserBack,
-            Microsoft.Xna.Framework.Input.Keys.BrowserForward => Keys.BrowserForward,
-            Microsoft.Xna.Framework.Input.Keys.BrowserRefresh => Keys.BrowserRefresh,
-            Microsoft.Xna.Framework.Input.Keys.BrowserStop => Keys.BrowserStop,
-            Microsoft.Xna.Framework.Input.Keys.BrowserSearch => Keys.BrowserSearch,
-            Microsoft.Xna.Framework.Input.Keys.BrowserFavorites => Keys.BrowserFavorites,
-            Microsoft.Xna.Framework.Input.Keys.BrowserHome => Keys.BrowserHome,
-            Microsoft.Xna.Framework.Input.Keys.VolumeMute => Keys.VolumeMute,
-            Microsoft.Xna.Framework.Input.Keys.VolumeDown => Keys.VolumeDown,
-            Microsoft.Xna.Framework.Input.Keys.VolumeUp => Keys.VolumeUp,
-            Microsoft.Xna.Framework.Input.Keys.MediaNextTrack => Keys.MediaNextTrack,
-            Microsoft.Xna.Framework.Input.Keys.MediaPreviousTrack => Keys.MediaPreviousTrack,
-            Microsoft.Xna.Framework.Input.Keys.MediaStop => Keys.MediaStop,
-            Microsoft.Xna.Framework.Input.Keys.MediaPlayPause => Keys.MediaPlayPause,
-            Microsoft.Xna.Framework.Input.Keys.LaunchMail => Keys.LaunchMail,
-            Microsoft.Xna.Framework.Input.Keys.SelectMedia => Keys.SelectMedia,
-            Microsoft.Xna.Framework.Input.Keys.LaunchApplication1 => Keys.LaunchApplication1,
-            Microsoft.Xna.Framework.Input.Keys.LaunchApplication2 => Keys.LaunchApplication2,
-            Microsoft.Xna.Framework.Input.Keys.OemPlus => Keys.Oemplus,
-            Microsoft.Xna.Framework.Input.Keys.OemComma => Keys.Oemcomma,
-            Microsoft.Xna.Framework.Input.Keys.OemMinus => Keys.OemMinus,
-            Microsoft.Xna.Framework.Input.Keys.OemPeriod => Keys.OemPeriod,
-            Microsoft.Xna.Framework.Input.Keys.OemQuestion => Keys.OemQuestion,
-            Microsoft.Xna.Framework.Input.Keys.OemTilde => Keys.Oemtilde,
-            Microsoft.Xna.Framework.Input.Keys.OemOpenBrackets => Keys.OemOpenBrackets,
-            Microsoft.Xna.Framework.Input.Keys.OemPipe => Keys.OemPipe,
-            Microsoft.Xna.Framework.Input.Keys.OemCloseBrackets => Keys.OemCloseBrackets,
-            Microsoft.Xna.Framework.Input.Keys.OemQuotes => Keys.OemQuotes,
-            Microsoft.Xna.Framework.Input.Keys.Oem8 => Keys.Oem8,
-            Microsoft.Xna.Framework.Input.Keys.OemBackslash => Keys.OemBackslash,
-            Microsoft.Xna.Framework.Input.Keys.ProcessKey => Keys.ProcessKey,
-            Microsoft.Xna.Framework.Input.Keys.Attn => Keys.Attn,
-            Microsoft.Xna.Framework.Input.Keys.Crsel => Keys.Crsel,
-            Microsoft.Xna.Framework.Input.Keys.Exsel => Keys.Exsel,
-            Microsoft.Xna.Framework.Input.Keys.EraseEof => Keys.EraseEof,
-            Microsoft.Xna.Framework.Input.Keys.Play => Keys.Play,
-            Microsoft.Xna.Framework.Input.Keys.Zoom => Keys.Zoom,
-            Microsoft.Xna.Framework.Input.Keys.Pa1 => Keys.Pa1,
-            Microsoft.Xna.Framework.Input.Keys.OemClear => Keys.OemClear,
-            Microsoft.Xna.Framework.Input.Keys.ChatPadGreen => Keys.None,
-            Microsoft.Xna.Framework.Input.Keys.ChatPadOrange => Keys.None,
-            Microsoft.Xna.Framework.Input.Keys.ImeConvert => Keys.IMEConvert,
-            Microsoft.Xna.Framework.Input.Keys.ImeNoConvert => Keys.IMENonconvert,
-            Microsoft.Xna.Framework.Input.Keys.Kana => Keys.KanaMode,
-            Microsoft.Xna.Framework.Input.Keys.Kanji => Keys.KanjiMode,
-            Microsoft.Xna.Framework.Input.Keys.OemAuto => Keys.None,
-            Microsoft.Xna.Framework.Input.Keys.OemCopy => Keys.None,
-            Microsoft.Xna.Framework.Input.Keys.OemEnlW => Keys.None,
-            Microsoft.Xna.Framework.Input.Keys.None => Keys.None,
-            _ => Keys.None
-        };
-    }
 
     private WorldGame()
     {
         GameThreadContext.Install();
 
-        var xamlLogger = Logging.LoggerFactory.CreateLogger("WorldXaml");
-        XamlConfig.LogMessage = (level, message) =>
-        {
-#pragma warning disable CA2254
-            if (level == WorldXaml.UI.Base.LogLevel.Info)
-                xamlLogger.LogInformation(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Warning)
-                xamlLogger.LogWarning(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Error)
-                xamlLogger.LogError(message);
-            else if (level == WorldXaml.UI.Base.LogLevel.Debug)
-                xamlLogger.LogDebug(message);
-            else
-                throw new ArgumentOutOfRangeException(nameof(level), level, null);
-#pragma warning restore CA2254
-        };
-        
-        _graphics = new GraphicsDeviceManager(this);
-        _graphics.GraphicsProfile = GraphicsProfile.Reach;
+        Graphics = new GraphicsDeviceManager(this);
+        Graphics.GraphicsProfile = GraphicsProfile.Reach;
+        Graphics.PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8;
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
 
-        _graphics.SynchronizeWithVerticalRetrace = true;
+        Graphics.SynchronizeWithVerticalRetrace = true;
         IsFixedTimeStep = false;
         TargetElapsedTime = TimeSpan.FromMilliseconds(1000 / Physics.TargetTps);
-        _graphics.PreferredBackBufferWidth = 1280;
-        _graphics.PreferredBackBufferHeight = 720;
-        _graphics.PreferMultiSampling = true;
+        Graphics.PreferredBackBufferWidth = 1280;
+        Graphics.PreferredBackBufferHeight = 720;
+        Graphics.PreferMultiSampling = true;
 
         // IBackend.Backend = new DummyBackend();
         Window.AllowUserResizing = true;
@@ -270,44 +83,62 @@ public class WorldGame : Game
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             G.Scale = Window.ClientBounds.Height / 720f;
+            _cefRenderer?.Resize(Window.ClientBounds.Width, Window.ClientBounds.Height);
+        };
+
+        TextInputEXT.TextInput += character =>
+        {
+            GameSparker.CurrentPhase.KeyTyped(character, ImGui.GetIO().WantCaptureKeyboard);
         };
     }
 
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
-        FPSCounter.Update(gameTime, _lastTickTime, _lastFrameTime);
-        
+        FPSCounter.Update(gameTime, LastTickTime, LastFrameTime);
+
         UpdateInput();
         UpdateMouse();
 
-        if (!loaded)
+        _cefRenderer.Update(gameTime);
+
+        if (!_loaded)
         {
-            loaded = true;
+            _loaded = true;
         }
 
         var timesToTick = _tickTimeStep.Update(gameTime);
         if (timesToTick > 0)
         {
-            _lastTickTime = 0;
+            LastTickTime = 0;
 
             for (int i = 0; i < timesToTick; i++)
             {
                 var tick = new MicroStopwatch();
                 tick.Start();
 
+                var transaction = SentrySdk.StartTransaction("GameTick", "gameloop.tick");
                 GameSparker.CurrentPhase.BeginGameTick();
                 GameSparker.GameTick();
                 GameSparker.CurrentPhase.GameTick();
                 GameSparker.CurrentPhase.EndGameTick();
-            
-                _lastTickTime += tick.ElapsedMicroseconds;
+                transaction.Finish();
+
+                LastTickTime += tick.ElapsedMicroseconds;
             }
 
-            _lastTickCount = timesToTick;
+            LastTickCount = timesToTick;
         }
-        
-        GameThreadContext.Current.ExecutePendingTasks();
+
+        {
+            var transaction = SentrySdk.StartTransaction("GameThreadContext", "gameloop.gamethread");
+            GameThreadContext.Current.ExecutePendingTasks();
+            transaction.Finish();
+        }
+
+        // Dispose any phases that were popped/replaced this frame.
+        // Must happen after all game logic to avoid disposal during event handlers.
+        GameSparker.Phases.FlushDisposals();
     }
 
     protected override void Initialize()
@@ -315,25 +146,38 @@ public class WorldGame : Game
         _imguiRenderer = new ImGuiRenderer(this);
         ImguiRenderer = _imguiRenderer;
 
+        // Initialize CEF renderer after GraphicsDevice is ready.
+        // Load the single-page app (hash router) as the initial URL.
+        // Phase bridges use ExecuteJavaScript to change the hash on enter.
+        var baseUrl = CefRenderer.ResolveBasePageUrl();
+        _cefRenderer = new CefRenderer(this, baseUrl);
+        _cefRenderer.Initialize();
+        GameSparker.CefRenderer = _cefRenderer;
+
 #if USE_BASS
         Bass.Init();
 #endif
-        
-#if DEBUG
-#pragma warning disable IL3050
-#pragma warning disable IL2026
-        XamlHotReload.Initialize();
-#pragma warning restore IL2026
-#pragma warning restore IL3050
+#if USE_FAUDIO
+        // FAudio is lazily initialized by FNA's SoundEffect on first use.
+        // No explicit init needed.
 #endif
 
-        oldKeyState = Keyboard.GetState();
-        oldMouseState = Mouse.GetState();
-        
+        _oldKeyState = Keys.FromState(Keyboard.GetState());
+        var mouseState = Mouse.GetState();
+        _oldMouseState = MouseButtons.FromState(mouseState);
+        _oldMousePosition = new Int2(mouseState.X, mouseState.Y);
+        _oldScrollValue = mouseState.ScrollWheelValue;
+
         _nvg = new NanoVGRenderer(GraphicsDevice);
-        
-        GraphicsDevice.PresentationParameters.MultiSampleCount = 8;
-        
+
+        // MSAA is set by SettingsMenu.LoadConfig -> ApplySettings at startup.
+        // Fallback: ensure MSAA is at least enabled if no config file exists.
+        if (GraphicsDevice.PresentationParameters.MultiSampleCount == 0)
+        {
+            GraphicsDevice.PresentationParameters.MultiSampleCount = 8;
+            Graphics.ApplyChanges();
+        }
+
         base.Initialize();
     }
 
@@ -343,7 +187,11 @@ public class WorldGame : Game
 
         if (disposing)
         {
-            foreach (var shadowRenderTarget in shadowRenderTargets)
+            // Dispose all phases before tearing down CEF and graphics.
+            GameSparker.Phases.Shutdown();
+
+            _cefRenderer?.Dispose();
+            foreach (var shadowRenderTarget in ShadowRenderTargets)
             {
                 shadowRenderTarget?.Dispose();
             }
@@ -351,6 +199,10 @@ public class WorldGame : Game
 
 #if USE_BASS
             Bass.Free();
+#endif
+#if USE_FAUDIO
+            // FAudio is managed by FNA and cleaned up via FAudioContext.Dispose()
+            // on app domain exit. No explicit free needed.
 #endif
         }
     }
@@ -362,13 +214,13 @@ public class WorldGame : Game
         _imguiRenderer.RebuildFontAtlas();
 
         Effects.Initialize(GraphicsDevice);
-        
+
         RebuildCascades();
-        
-        GameSparker.SettingsMenu.LoadConfig();
+
+        SettingsMenu.LoadConfig();
 
         #region Imgui
-        
+
         // Initialize ImGui
         ImGui.CreateContext();
         ImGui.StyleColorsDark();
@@ -376,112 +228,112 @@ public class WorldGame : Game
 
         // custom style
         var style = ImGui.GetStyle();
-        
-        // Rounding 
+
+        // Rounding
         style.WindowRounding = 4.0f;
         style.FrameRounding = 6.0f;
         style.GrabRounding = 4.0f;
         style.PopupRounding = 6.0f;
         style.ScrollbarRounding = 6.0f;
         style.TabRounding = 4.0f;
-        
+
         // Spacing and padding
-        style.WindowPadding = new System.Numerics.Vector2(12, 12);
-        style.FramePadding = new System.Numerics.Vector2(8, 4);
-        style.ItemSpacing = new System.Numerics.Vector2(8, 6);
-        
+        style.WindowPadding = new Vector2(12, 12);
+        style.FramePadding = new Vector2(8, 4);
+        style.ItemSpacing = new Vector2(8, 6);
+
         // Border
         style.WindowBorderSize = 2.0f;
         style.FrameBorderSize = 2.0f;
 
         var colors = style.Colors;
-        
+
         // Windows and backgrounds
-        colors[(int)ImGuiCol.WindowBg] = RGB(31, 26, 46, 0.95f);          // Dark purple
-        colors[(int)ImGuiCol.ChildBg] = RGB(26, 20, 38, 0.90f);           // Darker purple
-        colors[(int)ImGuiCol.PopupBg] = RGB(26, 20, 38, 0.95f);           // Darker purple
-        colors[(int)ImGuiCol.MenuBarBg] = RGB(38, 31, 56, 1.0f);          // Medium purple
-        
+        colors[(int)ImGuiCol.WindowBg] = Rgb(31, 26, 46, 0.95f);          // Dark purple
+        colors[(int)ImGuiCol.ChildBg] = Rgb(26, 20, 38, 0.90f);           // Darker purple
+        colors[(int)ImGuiCol.PopupBg] = Rgb(26, 20, 38, 0.95f);           // Darker purple
+        colors[(int)ImGuiCol.MenuBarBg] = Rgb(38, 31, 56, 1.0f);          // Medium purple
+
         // Borders
-        colors[(int)ImGuiCol.Border] = RGB(230, 128, 26, 0.8f);           // Orange
-        colors[(int)ImGuiCol.BorderShadow] = RGB(0, 0, 0, 0.5f);          // Black shadow
-        
+        colors[(int)ImGuiCol.Border] = Rgb(230, 128, 26, 0.8f);           // Orange
+        colors[(int)ImGuiCol.BorderShadow] = Rgb(0, 0, 0, 0.5f);          // Black shadow
+
         // Text
-        colors[(int)ImGuiCol.Text] = RGB(255, 191, 51, 1.0f);             // Light orange/yellow
-        colors[(int)ImGuiCol.TextDisabled] = RGB(153, 115, 38, 1.0f);     // Dimmed orange
-        
+        colors[(int)ImGuiCol.Text] = Rgb(255, 191, 51, 1.0f);             // Light orange/yellow
+        colors[(int)ImGuiCol.TextDisabled] = Rgb(153, 115, 38, 1.0f);     // Dimmed orange
+
         // Title bar
-        colors[(int)ImGuiCol.TitleBg] = RGB(38, 31, 64, 1.0f);            // Dark purple
-        colors[(int)ImGuiCol.TitleBgActive] = RGB(51, 38, 89, 1.0f);      // Medium purple
-        colors[(int)ImGuiCol.TitleBgCollapsed] = RGB(31, 26, 51, 0.75f);  // Very dark purple
-        
+        colors[(int)ImGuiCol.TitleBg] = Rgb(38, 31, 64, 1.0f);            // Dark purple
+        colors[(int)ImGuiCol.TitleBgActive] = Rgb(51, 38, 89, 1.0f);      // Medium purple
+        colors[(int)ImGuiCol.TitleBgCollapsed] = Rgb(31, 26, 51, 0.75f);  // Very dark purple
+
         // Frames (inputs, etc)
-        colors[(int)ImGuiCol.FrameBg] = RGB(38, 31, 56, 0.9f);            // Medium purple
-        colors[(int)ImGuiCol.FrameBgHovered] = RGB(64, 51, 89, 1.0f);     // Lighter purple
-        colors[(int)ImGuiCol.FrameBgActive] = RGB(77, 64, 102, 1.0f);     // Even lighter purple
-        
+        colors[(int)ImGuiCol.FrameBg] = Rgb(38, 31, 56, 0.9f);            // Medium purple
+        colors[(int)ImGuiCol.FrameBgHovered] = Rgb(64, 51, 89, 1.0f);     // Lighter purple
+        colors[(int)ImGuiCol.FrameBgActive] = Rgb(77, 64, 102, 1.0f);     // Even lighter purple
+
         // Buttons (dark with orange on hover)
-        colors[(int)ImGuiCol.Button] = RGB(38, 31, 64, 1.0f);             // Dark purple
-        colors[(int)ImGuiCol.ButtonHovered] = RGB(64, 51, 89, 1.0f);      // Lighter purple
-        colors[(int)ImGuiCol.ButtonActive] = RGB(128, 77, 3, 0.8f);       // Dark orange
-        
+        colors[(int)ImGuiCol.Button] = Rgb(38, 31, 64, 1.0f);             // Dark purple
+        colors[(int)ImGuiCol.ButtonHovered] = Rgb(64, 51, 89, 1.0f);      // Lighter purple
+        colors[(int)ImGuiCol.ButtonActive] = Rgb(128, 77, 3, 0.8f);       // Dark orange
+
         // Headers
-        colors[(int)ImGuiCol.Header] = RGB(51, 38, 77, 1.0f);             // Medium purple
-        colors[(int)ImGuiCol.HeaderHovered] = RGB(230, 128, 26, 0.6f);    // Orange
-        colors[(int)ImGuiCol.HeaderActive] = RGB(128, 77, 3, 0.8f);       // Dark orange
-        
+        colors[(int)ImGuiCol.Header] = Rgb(51, 38, 77, 1.0f);             // Medium purple
+        colors[(int)ImGuiCol.HeaderHovered] = Rgb(230, 128, 26, 0.6f);    // Orange
+        colors[(int)ImGuiCol.HeaderActive] = Rgb(128, 77, 3, 0.8f);       // Dark orange
+
         // Tabs
-        colors[(int)ImGuiCol.Tab] = RGB(38, 31, 64, 1.0f);                     // Dark purple (inactive)
-        colors[(int)ImGuiCol.TabHovered] = RGB(230, 128, 26, 0.8f);            // Orange (hovered)
-        colors[(int)ImGuiCol.TabSelected] = RGB(128, 77, 3, 1.0f);           // Orange (active/selected)
-        colors[(int)ImGuiCol.TabDimmed] = RGB(31, 26, 51, 1.0f);               // Very dark purple (unfocused)
-        colors[(int)ImGuiCol.TabDimmedSelected] = RGB(128, 77, 26, 0.8f);      // Dimmed orange (unfocused selected)
-        colors[(int)ImGuiCol.TabDimmedSelectedOverline] = RGB(230, 128, 26, 1.0f); // Orange underline
-        colors[(int)ImGuiCol.TabSelectedOverline] = RGB(230, 128, 26, 1.0f);   // Orange underline (focused)
-        
+        colors[(int)ImGuiCol.Tab] = Rgb(38, 31, 64, 1.0f);                     // Dark purple (inactive)
+        colors[(int)ImGuiCol.TabHovered] = Rgb(230, 128, 26, 0.8f);            // Orange (hovered)
+        colors[(int)ImGuiCol.TabSelected] = Rgb(128, 77, 3, 1.0f);           // Orange (active/selected)
+        colors[(int)ImGuiCol.TabDimmed] = Rgb(31, 26, 51, 1.0f);               // Very dark purple (unfocused)
+        colors[(int)ImGuiCol.TabDimmedSelected] = Rgb(128, 77, 26, 0.8f);      // Dimmed orange (unfocused selected)
+        colors[(int)ImGuiCol.TabDimmedSelectedOverline] = Rgb(230, 128, 26, 1.0f); // Orange underline
+        colors[(int)ImGuiCol.TabSelectedOverline] = Rgb(230, 128, 26, 1.0f);   // Orange underline (focused)
+
         // Checkmarks and sliders (orange)
-        colors[(int)ImGuiCol.CheckMark] = RGB(255, 179, 51, 1.0f);        // Light orange
-        colors[(int)ImGuiCol.SliderGrab] = RGB(230, 128, 26, 1.0f);       // Orange
-        colors[(int)ImGuiCol.SliderGrabActive] = RGB(255, 166, 51, 1.0f); // Lighter orange
-        
+        colors[(int)ImGuiCol.CheckMark] = Rgb(255, 179, 51, 1.0f);        // Light orange
+        colors[(int)ImGuiCol.SliderGrab] = Rgb(230, 128, 26, 1.0f);       // Orange
+        colors[(int)ImGuiCol.SliderGrabActive] = Rgb(255, 166, 51, 1.0f); // Lighter orange
+
         // Scrollbar
-        colors[(int)ImGuiCol.ScrollbarBg] = RGB(26, 20, 38, 0.9f);        // Dark purple
-        colors[(int)ImGuiCol.ScrollbarGrab] = RGB(64, 51, 89, 1.0f);      // Medium purple
-        colors[(int)ImGuiCol.ScrollbarGrabHovered] = RGB(89, 71, 115, 1.0f); // Lighter purple
-        colors[(int)ImGuiCol.ScrollbarGrabActive] = RGB(230, 128, 26, 1.0f); // Orange
-        
+        colors[(int)ImGuiCol.ScrollbarBg] = Rgb(26, 20, 38, 0.9f);        // Dark purple
+        colors[(int)ImGuiCol.ScrollbarGrab] = Rgb(64, 51, 89, 1.0f);      // Medium purple
+        colors[(int)ImGuiCol.ScrollbarGrabHovered] = Rgb(89, 71, 115, 1.0f); // Lighter purple
+        colors[(int)ImGuiCol.ScrollbarGrabActive] = Rgb(230, 128, 26, 1.0f); // Orange
+
         // Separators (orange)
-        colors[(int)ImGuiCol.Separator] = RGB(230, 128, 26, 0.5f);        // Orange
-        colors[(int)ImGuiCol.SeparatorHovered] = RGB(230, 128, 26, 0.8f); // Orange
-        colors[(int)ImGuiCol.SeparatorActive] = RGB(255, 153, 51, 1.0f);  // Lighter orange
-        
+        colors[(int)ImGuiCol.Separator] = Rgb(230, 128, 26, 0.5f);        // Orange
+        colors[(int)ImGuiCol.SeparatorHovered] = Rgb(230, 128, 26, 0.8f); // Orange
+        colors[(int)ImGuiCol.SeparatorActive] = Rgb(255, 153, 51, 1.0f);  // Lighter orange
+
         // Resize grip
-        colors[(int)ImGuiCol.ResizeGrip] = RGB(230, 128, 26, 0.3f);       // Orange
-        colors[(int)ImGuiCol.ResizeGripHovered] = RGB(230, 128, 26, 0.6f); // Orange
-        colors[(int)ImGuiCol.ResizeGripActive] = RGB(255, 153, 51, 1.0f);  // Lighter orange
+        colors[(int)ImGuiCol.ResizeGrip] = Rgb(230, 128, 26, 0.3f);       // Orange
+        colors[(int)ImGuiCol.ResizeGripHovered] = Rgb(230, 128, 26, 0.6f); // Orange
+        colors[(int)ImGuiCol.ResizeGripActive] = Rgb(255, 153, 51, 1.0f);  // Lighter orange
         style.FrameRounding = 3.0f;
-        style.WindowPadding = new System.Numerics.Vector2(10, 10);
-        style.FramePadding = new System.Numerics.Vector2(5, 3);
-        style.ItemSpacing = new System.Numerics.Vector2(8, 4);
-        
+        style.WindowPadding = new Vector2(10, 10);
+        style.FramePadding = new Vector2(5, 3);
+        style.ItemSpacing = new Vector2(8, 4);
+
         #endregion
 
         return;
 
-        static System.Numerics.Vector4 RGB(int r, int g, int b, float a = 1.0f) => new(r / 255f, g / 255f, b / 255f, a);
+        static Vector4 Rgb(int r, int g, int b, float a = 1.0f) => new(r / 255f, g / 255f, b / 255f, a);
     }
 
     public void RebuildCascades()
     {
-        foreach (var shadowRenderTarget in shadowRenderTargets)
+        foreach (var shadowRenderTarget in ShadowRenderTargets)
         {
             shadowRenderTarget?.Dispose();
         }
-        
+
         // Create floating point render target
         for (int i = NumCascades - 1; i >= 0; i--)
         {
-            shadowRenderTargets[i] = new RenderTarget2D(
+            ShadowRenderTargets[i] = new RenderTarget2D(
                 GraphicsDevice,
                 ShadowResolution,
                 ShadowResolution,
@@ -491,11 +343,11 @@ public class WorldGame : Game
                 0,
                 RenderTargetUsage.DiscardContents);
         }
-        
+
         // Clear all render targets AFTER creating them all
         for (int i = 0; i < NumCascades; i++)
         {
-            GraphicsDevice.SetRenderTarget(shadowRenderTargets[i]);
+            GraphicsDevice.SetRenderTarget(ShadowRenderTargets[i]);
             GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
             GraphicsDevice.SetRenderTarget(null);
         }
@@ -504,133 +356,120 @@ public class WorldGame : Game
     private void UpdateInput()
     {
         var newState = Keyboard.GetState();
-        
+
+        var keys = Keys.FromState(newState);
+
         foreach (var xnaKey in XnaKeys)
         {
-            var nfmKey = TranslateKey(xnaKey);
-            if (newState.IsKeyDown(xnaKey) && !oldKeyState.IsKeyDown(xnaKey))
+            var nfmKey = Key.FromXna(xnaKey);
+            if (keys[nfmKey] && !_oldKeyState[nfmKey])
             {
-                KeyDown(nfmKey);
+                GameSparker.KeyPressed(nfmKey);
+                GameSparker.CurrentPhase.KeyPressed(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
             }
-            else if (newState.IsKeyUp(xnaKey) && !oldKeyState.IsKeyUp(xnaKey))
+            else if (!keys[nfmKey] && _oldKeyState[nfmKey])
             {
-                KeyUp(nfmKey);
+                GameSparker.KeyReleased(nfmKey);
+                GameSparker.CurrentPhase.KeyReleased(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
             }
         }
 
         // Update saved state.
-        oldKeyState = newState;
+        _oldKeyState = keys;
     }
-
     private void UpdateMouse()
     {
         var newState = Mouse.GetState();
-        
-        if (newState.LeftButton == ButtonState.Pressed && oldMouseState.LeftButton != ButtonState.Pressed)
-        {
-            MouseDown(newState.X, newState.Y);
-        }
-        else if (newState.LeftButton == ButtonState.Released && oldMouseState.LeftButton != ButtonState.Released)
-        {
-            MouseUp(newState.X, newState.Y);
-        }
+        var buttons = MouseButtons.FromState(newState);
+        var mousePosition = new Int2(newState.X, newState.Y);
+        var scrollValue = newState.ScrollWheelValue;
 
-        if (newState.X != oldMouseState.X || newState.Y != oldMouseState.Y)
-        {
-#if DEBUG
-            if (_yogaInspectorEnabled)
-                YogaDebugger.MouseMove(newState.X, newState.Y);
-#endif
+        var ctrlKey = _oldKeyState[Key.LControlKey] || _oldKeyState[Key.RControlKey];
+        var shiftKey = _oldKeyState[Key.LShiftKey] || _oldKeyState[Key.RShiftKey];
+        var altKey = _oldKeyState[Key.Alt];
+        var wantCaptureMouse = ImGui.GetIO().WantCaptureMouse;
 
-            GameSparker.CurrentPhase.MouseMoved(newState.X, newState.Y, ImGui.GetIO().WantCaptureMouse);
-        }
-
-        if (newState.ScrollWheelValue != oldMouseState.ScrollWheelValue)
+        foreach (var button in MouseButtonsArray)
         {
-            var delta = newState.ScrollWheelValue - oldMouseState.ScrollWheelValue;
-            GameSparker.CurrentPhase.MouseScrolled(delta, ImGui.GetIO().WantCaptureMouse);
+            if (buttons.HasFlag(button) && !_oldMouseState.HasFlag(button))
+            {
+                GameSparker.CurrentPhase.MousePressed(newState.X, newState.Y, wantCaptureMouse, MouseButton.Primary, buttons, ctrlKey, shiftKey, altKey);
+            }
+            else if (!buttons.HasFlag(button) && _oldMouseState.HasFlag(button))
+            {
+                GameSparker.CurrentPhase.MouseReleased(newState.X, newState.Y, wantCaptureMouse, MouseButton.Primary, buttons, ctrlKey, shiftKey, altKey);
+            }
         }
 
-        oldMouseState = newState;
+        if (mousePosition.X != _oldMousePosition.X || mousePosition.Y != _oldMousePosition.Y)
+        {
+            GameSparker.CurrentPhase.MouseMoved(mousePosition.X, mousePosition.Y, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
+        }
+
+        if (scrollValue != _oldScrollValue)
+        {
+            var delta = scrollValue - _oldScrollValue;
+            GameSparker.CurrentPhase.MouseScrolled(mousePosition.X, mousePosition.Y, delta, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
+        }
+
+        _oldMouseState = buttons;
+        _oldMousePosition = mousePosition;
+        _oldScrollValue = scrollValue;
     }
 
     protected override void Draw(GameTime gameTime)
     {
+        var transaction = SentrySdk.StartTransaction("GameDraw", "gameloop.draw");
+
         var alpha = LowLatency ? 1f : (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
-        
+
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         var t = Stopwatch.StartNew();
-        
-#if DEBUG
-        NodeDebugger.NewFrame();
-#endif
-        
+
         GameSparker.Render();
-        
+
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
-        
-#if DEBUG
-        if (DebugUiClass != null)
-        {
-            if (DebugUiRoot == null)
-            {
-#pragma warning disable IL2057 // Never run during AOT compilation
-#pragma warning disable IL2026 // Never run during AOT compilation
-                var type = Type.GetType(DebugUiClass) ?? Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .FirstOrDefault(e => e.Name == DebugUiClass);
-#pragma warning restore IL2026
-#pragma warning restore IL2057
-                if (type != null)
-                {
-#pragma warning disable IL2072 // Never run during AOT compilation
-                    DebugUiRoot = Activator.CreateInstance(type) as Node;
-#pragma warning restore IL2072
-                }
-            }
-
-            G.SetColor(Color.CornflowerBlue);
-            G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
-            DebugUiRoot?.LayoutAndRender(G.Viewport);
-        }
-
-        if (_yogaInspectorEnabled)
-            YogaDebugger.Render(_yogaInspectorPage);
-#endif
 
         FPSCounter.Render();
-        
         _nvg.Render();
 
+        // Render CEF browser overlay (between NanoVG and ImGui)
+        _cefRenderer.Render();
+
         GameSparker.Render3DOverlays();
-        
+
         // // Render ImGui
         _imguiRenderer.BeginLayout(gameTime);
         GameSparker.RenderImgui();
         _imguiRenderer.EndLayout();
-        
+
         base.Draw(gameTime);
-        _lastFrameTime = t.ElapsedMilliseconds;
+        LastFrameTime = t.ElapsedMilliseconds;
+
+        transaction.Finish();
     }
 
     public static void Main(string[] args)
     {
+        ClientServer.IsRunningOnClient = true;
+
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
-            Process.GetCurrentProcess().Kill();
+            Process.GetCurrentProcess().Kill(false);
         };
-        
+
         NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(WorldGame).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassFx).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassOpus).Assembly, ImportResolver);
+        NativeLibrary.SetDllImportResolver(typeof(SokolExtensions).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
-        
+
         var fnaLogger = Logging.LoggerFactory.CreateLogger("FNA");
         FNALoggerEXT.LogError = (message) =>
         {
@@ -644,16 +483,8 @@ public class WorldGame : Game
         {
             fnaLogger.LogWarning(message);
         };
-        
-#if DEBUG
-        if (args.IndexOf("-debugui", StringComparer.OrdinalIgnoreCase) is var index and >= 0)
-        {
-            DebugUiClass = args.Length > index + 1 ? args[index + 1] : typeof(CentralTextView).FullName;
-            _yogaInspectorEnabled = true;
-        }
-#endif
-        
-        BackendGameSparker.Load();
+
+        BackendGameSparker.Load(isHeadless: false);
 
         var program = new WorldGame();
         program.Run();
@@ -700,7 +531,7 @@ public class WorldGame : Game
         string os = GetPlatformName();
         string cpu = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         string wordsize = (IntPtr.Size * 8).ToString();
-        
+
         var newLibraryName = libraryName switch
         {
             "SDL3" => os switch
@@ -781,7 +612,7 @@ public class WorldGame : Game
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             }
         };
-        
+
         var dir = os switch
         {
             "windows" => cpu switch
@@ -811,170 +642,10 @@ public class WorldGame : Game
             _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
         };
         
-        return NativeLibrary.Load($"libs/{dir}/{newLibraryName}");
-    }
-
-    private void KeyDown(Keys key)
-    {
-        const bool isDown = true;
-        HandleKeyPress(key, isDown);
-    }
-
-    protected void KeyUp(Keys key)
-    {
-        const bool isDown = false;
-        HandleKeyPress(key, isDown);
-    }
-
-    private void MouseUp(int x, int y)
-    {
-        GameSparker.CurrentPhase.MouseReleased(x, y, ImGui.GetIO().WantCaptureMouse);
-    }
-
-    private void MouseDown(int x, int y)
-    {
-        GameSparker.CurrentPhase.MousePressed(x, y, ImGui.GetIO().WantCaptureMouse);
-    }
-
-    private void HandleKeyPress(Keys key, bool isDown)
-    {
-        if (isDown)
-        {
-            GameSparker.KeyPressed(key);
-            GameSparker.CurrentPhase.KeyPressed(key, ImGui.GetIO().WantCaptureKeyboard);
-
-#if DEBUG
-            if (key == Keys.F9)
-            {
-                _yogaInspectorEnabled = !_yogaInspectorEnabled;
-            }
-
-            if (key == Keys.F10)
-            {
-                _yogaInspectorPage++;
-                if (_yogaInspectorPage > YogaDebugger.MaxPages)
-                    _yogaInspectorPage = 0;
-            }
-#endif
-        }
-        else
-        {
-            GameSparker.KeyReleased(key);
-            GameSparker.CurrentPhase.KeyReleased(key, ImGui.GetIO().WantCaptureKeyboard);
-        }
-    }
-}
-
-internal static class NfmwInterpolators
-{
-    [XamlInterpolator]
-    public static Color InterpolateColor(Color from, Color to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var fromA = from.A;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var toA = to.A;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        var a = (byte)(fromA + (toA - fromA) * alpha);
-        return new Color(r, g, b, a);
-    }
-
-    [XamlInterpolator]
-    public static Color? InterpolateColorOrNull(Color? from, Color? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [XamlInterpolator]
-    public static Color3 InterpolateColor(Color3 from, Color3 to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        return new Color3(r, g, b);
-    }
-
-    [XamlInterpolator]
-    public static Color3? InterpolateColorOrNull(Color3? from, Color3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [XamlInterpolator]
-    public static Vector2 InterpolateVector2(Vector2 from, Vector2 to, float alpha)
-    {
-        return new Vector2(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha);
-    }
-
-    [XamlInterpolator]
-    public static Vector3 InterpolateVector3(Vector3 from, Vector3 to, float alpha)
-    {
-        return new Vector3(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha);
-    }
-
-    [XamlInterpolator]
-    public static Vector4 InterpolateVector4(Vector4 from, Vector4 to, float alpha)
-    {
-        return new Vector4(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha, from.W + (to.W - from.W) * alpha);
-    }
-
-    [XamlInterpolator]
-    public static Vector2? InterpolateVector2OrNull(Vector2? from, Vector2? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector2(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [XamlInterpolator]
-    public static Vector3? InterpolateVector3OrNull(Vector3? from, Vector3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector3(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [XamlInterpolator]
-    public static Vector4? InterpolateVector4OrNull(Vector4? from, Vector4? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector4(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
+        // Anchor to the app base directory rather than the process working directory:
+        // dlopen treats a slash-containing name as a path relative to the CWD (ignoring
+        // LD_LIBRARY_PATH), so a relative "libs/..." only resolves when launched from the
+        // output folder. AppContext.BaseDirectory is always the output folder.
+        return NativeLibrary.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
     }
 }

@@ -1,28 +1,66 @@
 ﻿using System.Text.Json.Serialization;
-using MessagePack;
+using FixedMathSharp;
+using MemoryPack;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;
 
-[MessagePackObject]
-[method: SerializationConstructor]
-public sealed record Rad3d(
-    [property: JsonPropertyName("colors"), Key(0)] Color3[] Colors,
-    [property: JsonPropertyName("stats"), Key(1)] CarStats Stats,
-    [property: JsonPropertyName("wheels"), Key(2)] Rad3dWheelDef[] Wheels,
-    [property: JsonPropertyName("rims"), Key(3)] Rad3dRimsDef? Rims,
-    [property: JsonPropertyName("boxes"), Key(4)] Rad3dBoxDef[] Boxes,
-    [property: JsonPropertyName("polys"), Key(5)] Rad3dPoly[] Polys,
-    [property: JsonPropertyName("shadow"), Key(6)] bool CastsShadow,
-    [property: JsonPropertyName("atp"), Key(7)] Vector2[] Atp,
-    [property: JsonPropertyName("fileName"), Key(8)] string FileName = "hogan rewish",
-    [property: JsonPropertyName("collisionMesh"), Key(9)] SrcRad3dCollisionMesh? CollisionMesh = null,
-    [property: JsonPropertyName("collisionHull"), Key(10)] SrcRad3dCollisionHull? CollisionHull = null
+// init properties aren't compatible with CircularReference, so can't use record
+[MemoryPackable(GenerateType.CircularReference)]
+public sealed partial class Rad3d(
+    Color3[] Colors,
+    CarStats Stats,
+    Rad3dWheelDef[] Wheels,
+    Rad3dRimsDef? Rims,
+    Rad3dBoxDef[] Boxes,
+    Rad3dPoly[] Polys,
+    bool CastsShadow,
+    Vector2[] Atp,
+    string FileName = "hogan rewish",
+    SrcRad3dCollisionMesh? CollisionMesh = null,
+    SrcRad3dCollisionHull? CollisionHull = null,
+    Rad3dAttachmentLine[]? AtLines = null
 )
 {
-    [IgnoreMember] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
+    [MemoryPackIgnore] public int MaxRadius { get; } = CalculateMaxRadius(Polys);
 
-    private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp);
+    [JsonPropertyName("colors"), MemoryPackOrder(0)]
+    public Color3[] Colors { get; set; } = Colors;
+
+    [JsonPropertyName("stats"), MemoryPackOrder(1)]
+    public CarStats Stats { get; set; } = Stats;
+
+    [JsonPropertyName("wheels"), MemoryPackOrder(2)]
+    public Rad3dWheelDef[] Wheels { get; set; } = Wheels;
+
+    [JsonPropertyName("rims"), MemoryPackOrder(3)]
+    public Rad3dRimsDef? Rims { get; set; } = Rims;
+
+    [JsonPropertyName("boxes"), MemoryPackOrder(4)]
+    public Rad3dBoxDef[] Boxes { get; set; } = Boxes;
+
+    [JsonPropertyName("polys"), MemoryPackOrder(5)]
+    public Rad3dPoly[] Polys { get; set; } = Polys;
+
+    [JsonPropertyName("shadow"), MemoryPackOrder(6)]
+    public bool CastsShadow { get; set; } = CastsShadow;
+
+    [JsonPropertyName("atp"), MemoryPackOrder(7)]
+    public Vector2[] Atp { get; set; } = Atp;
+
+    [JsonPropertyName("fileName"), MemoryPackOrder(8)]
+    public string FileName { get; set; } = FileName;
+
+    [JsonPropertyName("collisionMesh"), MemoryPackOrder(9)]
+    public SrcRad3dCollisionMesh? CollisionMesh { get; set; } = CollisionMesh;
+
+    [JsonPropertyName("collisionHull"), MemoryPackOrder(10)]
+    public SrcRad3dCollisionHull? CollisionHull { get; set; } = CollisionHull;
+
+    [JsonPropertyName("atLines"), MemoryPackOrder(11)]
+    public Rad3dAttachmentLine[]? AtLines { get; set; } = AtLines;
+
+    private readonly int _hashCode = CalculateHashCode(Colors, Stats, Wheels, Rims, Boxes, Polys, CastsShadow, Atp, CollisionMesh, CollisionHull, AtLines);
     private readonly int _visualHashCode = CalculateVisualHashCode(Colors, Wheels, Rims, Polys, CastsShadow);
 
     private static int CalculateMaxRadius(Rad3dPoly[] polys)
@@ -41,6 +79,11 @@ public sealed record Rad3d(
         return maxR;
     }
 
+    [MemoryPackConstructor]
+    private Rad3d() : this([], default, [], null, [], [], false, [])
+    {
+    }
+
     public bool Equals(Rad3d? other)
     {
         if (other is null) return false;
@@ -52,7 +95,14 @@ public sealed record Rad3d(
         if (!Boxes.SequenceEqual(other.Boxes)) return false;
         if (!Polys.SequenceEqual(other.Polys)) return false;
         if (CastsShadow != other.CastsShadow) return false;
-        return Atp.Equals(other.Atp);
+        if (!Atp.SequenceEqual(other.Atp)) return false;
+        if (CollisionMesh != null && !CollisionMesh.Equals(other.CollisionMesh)) return false;
+        if (CollisionMesh == null && other.CollisionMesh != null) return false;
+        if (CollisionHull != null && !CollisionHull.Equals(other.CollisionHull)) return false;
+        if (CollisionHull == null && other.CollisionHull != null) return false;
+        if (AtLines != null && !AtLines.SequenceEqual(other.AtLines)) return false;
+        if (AtLines == null && other.AtLines != null) return false;
+        return true;
     }
 
     private static int CalculateHashCode(
@@ -63,7 +113,10 @@ public sealed record Rad3d(
         Rad3dBoxDef[] boxes,
         Rad3dPoly[] polys,
         bool castsShadow,
-        Vector2[] atp
+        Vector2[] atp,
+        SrcRad3dCollisionMesh? colMesh,
+        SrcRad3dCollisionHull? colHull,
+        Rad3dAttachmentLine[]? atLines
     )
     {
         var hashCode = new HashCode();
@@ -94,6 +147,23 @@ public sealed record Rad3d(
         foreach (var at in atp)
         {
             hashCode.Add(at);
+        }
+
+        if (colMesh != null)
+        {
+            hashCode.Add(colMesh);
+        }
+        if (colHull != null)
+        {
+            hashCode.Add(colHull);
+        }
+        if (atLines != null)
+        {
+            hashCode.Add(atLines.Length);
+            foreach (var atLine in atLines)
+            {
+                hashCode.Add(atLine);
+            }
         }
         return hashCode.ToHashCode();
     }
@@ -150,5 +220,21 @@ public sealed record Rad3d(
         {
             return obj._visualHashCode;
         }
+    }
+
+    public void Deconstruct(out Color3[] Colors, out CarStats Stats, out Rad3dWheelDef[] Wheels, out Rad3dRimsDef? Rims, out Rad3dBoxDef[] Boxes, out Rad3dPoly[] Polys, out bool CastsShadow, out Vector2[] Atp, out string FileName, out SrcRad3dCollisionMesh? CollisionMesh, out SrcRad3dCollisionHull? CollisionHull, out Rad3dAttachmentLine[]? AtLines)
+    {
+        Colors = this.Colors;
+        Stats = this.Stats;
+        Wheels = this.Wheels;
+        Rims = this.Rims;
+        Boxes = this.Boxes;
+        Polys = this.Polys;
+        CastsShadow = this.CastsShadow;
+        Atp = this.Atp;
+        FileName = this.FileName;
+        CollisionMesh = this.CollisionMesh;
+        CollisionHull = this.CollisionHull;
+        AtLines = this.AtLines;
     }
 }

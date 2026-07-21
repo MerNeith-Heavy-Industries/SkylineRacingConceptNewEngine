@@ -1,21 +1,22 @@
-﻿using System.Runtime.CompilerServices;
+﻿﻿﻿using System.Runtime.CompilerServices;
 using Maxine.Extensions.Collections;
-using MessagePack;
+using MemoryPack;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorldLibrary;
 
-[MessagePackObject]
-public readonly record struct PiecePlacement(
-    [property: Key(0)] PiecePlacementType Type,
-    [property: Key(1)] Rad3d Object,
-    [property: Key(2)] f64Vector3 Position,
-    [property: Key(3)] f64Euler Rotation,
-    [property: Key(4)] AiNodeKind? NodeKind = null,
-    [property: Key(5)] bool IsSpecial = false,
-    [property: Key(6)] bool IsWall = false
+[MemoryPackable(GenerateType.VersionTolerant)]
+public readonly partial record struct PiecePlacement(
+    [property: MemoryPackOrder(0)] PiecePlacementType Type,
+    [property: MemoryPackOrder(1)] Rad3d Object,
+    [property: MemoryPackOrder(2)] f64Vector3 Position,
+    [property: MemoryPackOrder(3)] f64Euler Rotation,
+    [property: MemoryPackOrder(4)] AiNodeKind? NodeKind = null,
+    [property: MemoryPackOrder(5)] bool IsSpecial = false,
+    [property: MemoryPackOrder(6)] bool IsWall = false
 );
 
 public enum PiecePlacementType : byte
@@ -28,8 +29,8 @@ public enum PiecePlacementType : byte
 // count = n parameter
 // position = o parameter
 // offset = p parameter
-[MessagePackObject]
-public readonly record struct StageWall([property: Key(0)] WallDirection Direction, [property: Key(1)] int Count, [property: Key(2)] int Position, [property: Key(3)] int Offset);
+[MemoryPackable(GenerateType.VersionTolerant)]
+public partial record StageWall([property: MemoryPackOrder(0)] WallDirection Direction, [property: MemoryPackOrder(1)] int Count, [property: MemoryPackOrder(2)] int Position, [property: MemoryPackOrder(3)] int Offset);
 
 public enum WallDirection : byte
 {
@@ -39,107 +40,106 @@ public enum WallDirection : byte
     Bottom
 }
 
-[MessagePackObject]
-public readonly record struct HierarchyGroup(
-    [property: Key(0)] string Name,
-    [property: Key(1)] UnlimitedArray<PiecePlacement> Pieces,
+[MemoryPackable(GenerateType.VersionTolerant)]
+public readonly partial record struct HierarchyGroup(
+    [property: MemoryPackOrder(0)] string Name,
+    [property: MemoryPackOrder(1)] UnlimitedArray<PiecePlacement> Pieces,
     // Old group format: #editor_group(Name,x:z,...)
-    [property: Key(2)] UnlimitedArray<string> CoordinateKeys
+    [property: MemoryPackOrder(2)] UnlimitedArray<string> CoordinateKeys
 );
 
 // colors have to be processed in order, so we provide a list of instructions in order
-[MessagePackObject]
-[Union(0, typeof(SnapInstruction))]
-[Union(1, typeof(SkyInstruction))]
-[Union(2, typeof(FogInstruction))]
-[Union(3, typeof(CloudsInstruction))]
-[Union(4, typeof(GroundInstruction))]
-[Union(5, typeof(TextureInstruction))]
-[Union(6, typeof(PolysInstruction))]
-public abstract record EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record SnapInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record SkyInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record FogInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record CloudsInstruction([property: Key(0)] InlineArray5Ex<int> Clouds) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record GroundInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record TextureInstruction([property: Key(0)] InlineArray4Ex<int> Texture) : EnvironmentInstruction;
-[MessagePackObject] [method: SerializationConstructor] public record PolysInstruction([property: Key(0)] Color3 Color) : EnvironmentInstruction;
+[MemoryPackable]
+[MemoryPackUnion(0, typeof(SnapInstruction))]
+[MemoryPackUnion(1, typeof(SkyInstruction))]
+[MemoryPackUnion(2, typeof(FogInstruction))]
+[MemoryPackUnion(3, typeof(CloudsInstruction))]
+[MemoryPackUnion(4, typeof(GroundInstruction))]
+[MemoryPackUnion(5, typeof(TextureInstruction))]
+[MemoryPackUnion(6, typeof(PolysInstruction))]
+public abstract partial record EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record SnapInstruction([property: MemoryPackOrder(0)] Color3 Color) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record SkyInstruction([property: MemoryPackOrder(0)] Color3 Color) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record FogInstruction([property: MemoryPackOrder(0)] Color3 Color) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record CloudsInstruction([property: MemoryPackOrder(0)] InlineArray5Ex<int> Clouds) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record GroundInstruction([property: MemoryPackOrder(0)] Color3 Color) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record TextureInstruction([property: MemoryPackOrder(0)] InlineArray4Ex<int> Texture) : EnvironmentInstruction;
+[MemoryPackable(GenerateType.VersionTolerant)] [method: MemoryPackConstructor] public partial record PolysInstruction([property: MemoryPackOrder(0)] Color3 Color) : EnvironmentInstruction;
 
-[MessagePackObject]
-public class StageLoader
+[MemoryPackable(GenerateType.CircularReference)]
+public partial class StageLoader
 {
-    [Key(0)] public readonly string Path;
+    [MemoryPackOrder(0)] public string Path;
 
-    [Key(1)] public ushort nlaps = 3;
+    [MemoryPackOrder(1)] public ushort nlaps = 3;
 
     // soundtrack(folder,fileName)
-    [Key(2)] public string musicPath = "";
+    [MemoryPackOrder(2)] public string musicPath = "";
 
     // soundtrackremaster(folder,fileName)
-    [Key(3)] public string remasteredMusicPath = "";
+    [MemoryPackOrder(3)] public string remasteredMusicPath = "";
 
     // soundtrackfreqmul(mul)
-    [Key(4)] public double musicFreqMul = 1.0d;
-    [Key(5)] public double musicTempoMul = 0d;
-    [Key(6)] public string Name = "hogan rewish";
-    [Key(7)] public int indexOffset = 10;
+    [MemoryPackOrder(4)] public double musicFreqMul = 1.0d;
+    [MemoryPackOrder(5)] public double musicTempoMul = 1.0d;
+    [MemoryPackOrder(6)] public string Name = "hogan rewish";
+    [MemoryPackOrder(7)] public int indexOffset = 10;
 
     private bool swapYandRot = false;
     private bool reverseChkY = false;
 
     // left
-    [Key(8)] public int Sx;
+    [MemoryPackOrder(8)] public int Sx;
 
     // top
-    [Key(9)] public int Sz;
+    [MemoryPackOrder(9)] public int Sz;
 
     // width
-    [Key(10)] public int Ncx;
+    [MemoryPackOrder(10)] public int Ncx;
 
     // height
-    [Key(11)] public int Ncz;
+    [MemoryPackOrder(11)] public int Ncz;
 
-    [Key(21)] public float? CloudCoverage;
-    [Key(22)] public int? FogDensity;
-    [Key(23)] public int? FadeFrom;
-    [Key(24)] public bool LightsOn;
-    [Key(25)] public bool DrawMountains = true;
-    [Key(26)] public int? MountainSeed;
-    [Key(27)] public float? MountainCoverage;
-    [Key(28)] public Vector3? LightDirection;
-    [Key(29)] public UnlimitedArray<PiecePlacement> pieces = new();
-    [Key(30)] public UnlimitedArray<Rad3dBoxDef> walls = new();
-    [Key(31)] public int maxr = 0;
-    [Key(32)] public int maxl = 100;
-    [Key(33)] public int maxt = 0;
-    [Key(34)] public int maxb = 100;
+    [MemoryPackOrder(21)] public float? CloudCoverage;
+    [MemoryPackOrder(22)] public int? FogDensity;
+    [MemoryPackOrder(23)] public int? FadeFrom;
+    [MemoryPackOrder(24)] public bool LightsOn;
+    [MemoryPackOrder(25)] public bool DrawMountains = true;
+    [MemoryPackOrder(26)] public int? MountainSeed;
+    [MemoryPackOrder(27)] public float? MountainCoverage;
+    [MemoryPackOrder(28)] public Vector3? LightDirection;
+    [MemoryPackOrder(29)] public UnlimitedArray<PiecePlacement> pieces = new();
+    [MemoryPackOrder(30)] public UnlimitedArray<Rad3dBoxDef> walls = new();
+    [MemoryPackOrder(31)] public int maxr = 0;
+    [MemoryPackOrder(32)] public int maxl = 100;
+    [MemoryPackOrder(33)] public int maxt = 0;
+    [MemoryPackOrder(34)] public int maxb = 100;
 
-    [Key(35)] public UnlimitedArray<EnvironmentInstruction> EnvironmentInstructions = new();
-    [Key(36)] public bool DrawPolys = true;
-    [Key(37)] public bool DrawClouds = true;
+    [MemoryPackOrder(35)] public UnlimitedArray<EnvironmentInstruction> EnvironmentInstructions = new();
+    [MemoryPackOrder(36)] public bool DrawPolys = true;
+    [MemoryPackOrder(37)] public bool DrawClouds = true;
 
-    [IgnoreMember] public UnlimitedArray<StageWall> wallDefs = [];
+    [MemoryPackIgnore] public UnlimitedArray<StageWall> wallDefs = [];
 
-    [IgnoreMember] public UnlimitedArray<HierarchyGroup> groups = [];
-    [IgnoreMember] public HierarchyGroup ungrouped = new("Ungrouped", [], []);
-    [IgnoreMember] public HierarchyGroup currentGroup;
-    [IgnoreMember] public int UngroupedOrderIndex = -1;
+    [MemoryPackIgnore] public UnlimitedArray<HierarchyGroup> groups = [];
+    [MemoryPackIgnore] public HierarchyGroup ungrouped = new("Ungrouped", [], []);
+    [MemoryPackIgnore] public HierarchyGroup currentGroup;
+    [MemoryPackIgnore] public int UngroupedOrderIndex = -1;
 
-    [IgnoreMember] public UnlimitedArray<string> unknownParameters = [];
+    [MemoryPackIgnore] public UnlimitedArray<string> unknownParameters = [];
 
     public StageLoader(string stageName)
     {
         currentGroup = ungrouped;
 
         Path = stageName;
-        //var customStagePath = "stages/" + CheckPoints.Stage + ".txt";
-        var customStagePath = System.IO.Path.IsPathRooted(stageName) ? stageName : "data/stages/" + stageName + ".txt";
+        var customStagePath = $"data/stages/{stageName}.txt";
         var line = "";
         int lineNumber = 0;
 
         try
         {
-            foreach (var aline in File.ReadAllLines(customStagePath))
+            foreach (var aline in VFS.ReadAllLines(customStagePath))
             {
                 line = aline.Trim();
                 lineNumber++;
@@ -591,7 +591,7 @@ public class StageLoader
                         Radius: new f64Vector3(600, 7100, n * 4800 / 2),
                         Xy: 90,
                         Zy: 0,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -624,7 +624,7 @@ public class StageLoader
                         Radius: new f64Vector3(600, 7100, n * 4800 / 2),
                         Xy: -90,
                         Zy: 0,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -657,7 +657,7 @@ public class StageLoader
                         Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
                         Xy: 0,
                         Zy: 90,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -690,7 +690,7 @@ public class StageLoader
                         Radius: new f64Vector3(n * 4800 / 2, 7100, 600),
                         Xy: 180,
                         Zy: -90,
-                        Skid: 0,
+                        SurfaceType: 0,
                         NotWall: false,
                         Color: new Color3(),
                         Damage: 1
@@ -710,6 +710,7 @@ public class StageLoader
         }
     }
 
+    [MemoryPackConstructor]
     public StageLoader()
     {
         // Create an empty stage loader for editor purposes

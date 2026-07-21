@@ -5,7 +5,7 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorld;
 
-public sealed class CollisionDebugMesh : GameObject, IDisposable
+public sealed class CollisionDebugMesh : GameObject, IDisposable, IImmediateRenderElement
 {
     private int lineTriangleCount;
     private IndexBuffer? lineIndexBuffer;
@@ -132,14 +132,14 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
             }
         }
 
-        lineVertexBuffer = new VertexBuffer(GameSparker._graphicsDevice, LineMesh.LineMeshVertexAttribute.VertexDeclaration, data.Count, BufferUsage.None)
+        lineVertexBuffer = new VertexBuffer(GameSparker.GraphicsDevice, LineMesh.LineMeshVertexAttribute.VertexDeclaration, data.Count, BufferUsage.None)
         {
             Name = "Collision Debug Mesh Vertex Buffer",
             Tag = this
         };
         lineVertexBuffer.SetDataEXT(data);
 	    
-        lineIndexBuffer = new IndexBuffer(GameSparker._graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None)
+        lineIndexBuffer = new IndexBuffer(GameSparker.GraphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count, BufferUsage.None)
         {
             Name = "Collision Debug Mesh Index Buffer",
             Tag = this
@@ -149,7 +149,7 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         lineTriangleCount = indices.Count / 3;
         lineVertexCount = data.Count;
         
-        lineInstanceBuffer = new DynamicVertexBuffer(GameSparker._graphicsDevice, InstanceData.InstanceDeclaration, 1, BufferUsage.WriteOnly)
+        lineInstanceBuffer = new DynamicVertexBuffer(GameSparker.GraphicsDevice, InstanceData.InstanceDeclaration, 1, BufferUsage.WriteOnly)
         {
             Name = "Collision Debug Mesh Instance Buffer",
             Tag = this
@@ -164,18 +164,20 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Dispose(false);
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    /// <summary>
+    /// Legacy immediate render path for editor usage.
+    /// </summary>
+    public void Render(Camera camera, Lighting? lighting)
     {
         if (lighting?.IsCreateShadowMap == true || !GameSparker.devRenderTrackers) return;
         if (lineInstanceBuffer == null || lineVertexBuffer == null || lineIndexBuffer == null) return;
-        
+
         lineInstanceBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(MatrixWorld)]);
 
-        GameSparker._graphicsDevice.SetVertexBuffers(lineVertexBuffer, new VertexBufferBinding(lineInstanceBuffer, 0, 1));
-        GameSparker._graphicsDevice.Indices = lineIndexBuffer;
+        GameSparker.GraphicsDevice.SetVertexBuffers(lineVertexBuffer, new VertexBufferBinding(lineInstanceBuffer, 0, 1));
+        GameSparker.GraphicsDevice.Indices = lineIndexBuffer;
 
-        // If a parameter is null that means the HLSL compiler optimized it out.
-        Effects.Line.SnapColor?.SetValue((Vector3)new Color3(100, 100, 100));
+        Effects.Line.SnapColor?.SetValue(new Color3(100, 100, 100));
         Effects.Line.IsFullbright?.SetValue(true);
         Effects.Line.UseBaseColor?.SetValue(false);
         Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -200,15 +202,23 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable
         Effects.Line.Expand?.SetValue(false);
         Effects.Line.Darken?.SetValue(1.0f);
         Effects.Line.RandomFloat?.SetValue(URandom.Single());
-        
-        GameSparker._graphicsDevice.RasterizerState = RasterizerState.CullNone;
+
+        GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
         foreach (var pass in Effects.Line.CurrentTechnique.Passes)
         {
             pass.Apply();
-    
-            GameSparker._graphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, lineVertexCount, 0, lineTriangleCount, 1);
+            GameSparker.GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, lineVertexCount, 0, lineTriangleCount, 1);
         }
-        GameSparker._graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+        GameSparker.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+    }
+
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
+    {
+        if (pass.IsShadow || !GameSparker.devRenderTrackers) return;
+
+        if (lineVertexBuffer == null || lineIndexBuffer == null || lineInstanceBuffer == null) return;
+
+        queue.AddImmediate(SortKey.Create(RenderBucket.CollisionDebugMesh), this);
     }
 
     private void ReleaseUnmanagedResources()

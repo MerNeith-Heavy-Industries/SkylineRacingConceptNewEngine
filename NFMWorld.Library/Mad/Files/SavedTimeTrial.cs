@@ -1,23 +1,27 @@
 using System.IO.Compression;
-using MessagePack;
+using CommunityToolkit.HighPerformance;
+using Maxine.Extensions;
+using Maxine.Extensions.Io;
+using MemoryPack;
+using MemoryPack.Compression;
 using NFMWorldLibrary.Files.Demo;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary.Files;
 
-[MessagePackObject(AllowPrivate = true)]
+[MemoryPackable(GenerateType.CircularReference)]
 public partial class SavedTimeTrial
 {
-    public const int CURRENT_VERSION = 2;
+    public const int CURRENT_VERSION = 3;
     
-    [Key(0)] public string CarName;
-    [Key(1)] public string StageName;
-    [Key(2)] public Demo.Demo DemoData;
-    [Key(3)] public Splits Splits;
-    [Key(4)] public int? Version; // New in version 1, defaults to 0
-    [Key(5)] public StageLoader? StageData; // New in version 2 
-    [Key(6)] public Rad3d? CarData; // New in version 2
+    [MemoryPackOrder(0)] public string CarName;
+    [MemoryPackOrder(1)] public string StageName;
+    [MemoryPackOrder(2)] public Demo.Demo DemoData;
+    [MemoryPackOrder(3)] public Splits Splits;
+    [MemoryPackOrder(4)] public int? Version; // New in version 1, defaults to 0
+    [MemoryPackOrder(5)] public StageLoader? StageData; // New in version 2 
+    [MemoryPackOrder(6)] public Rad3d? CarData; // New in version 2
 
     public static string GetDirName(string carName, string stageName)
     {
@@ -26,24 +30,44 @@ public partial class SavedTimeTrial
 
     public static string GetPathName(string carName, string stageName)
     {
+        return "data/tts/" + stageName.Replace("/", "++") + "++" + carName.Replace("/", "++") + ".timetrial";
+    }
+
+    public static string GetOldPathName(string carName, string stageName)
+    {
         return "data/tts/" + stageName + "/" + carName + ".timetrial";
     }
 
-    [SerializationConstructor]
-    private SavedTimeTrial(string carName, string stageName)
+    public static IEnumerable<(string stageName, string carName, string fileName)> GetTimeTrials()
     {
-        CarName = carName;
-        StageName = stageName;
+        foreach (var file in VFS.EnumerateFiles("data/tts", "*.timetrial", SearchOption.AllDirectories))
+        {
+            var tt = Load(file);
+            if (tt != null)
+            {
+                yield return (tt.StageName, tt.CarName, file);
+            }
+        }
+    }
 
-        DemoData = new Demo.Demo()
+    [MemoryPackConstructor]
+    private SavedTimeTrial()
+    {
+        DemoData = new Demo.Demo
         {
             Ticks = []
         };
-        Splits = new Splits()
+        Splits = new Splits
         {
             SplitTimes = []
         };
         Version = CURRENT_VERSION;
+    }
+
+    private SavedTimeTrial(string carName, string stageName) : this()
+    {
+        CarName = carName;
+        StageName = stageName;
     }
 
     public SavedTimeTrial(string carName, string stageName, StageLoader stageData, Rad3d carData) : this(carName, stageName)
@@ -54,26 +78,39 @@ public partial class SavedTimeTrial
 
     public static SavedTimeTrial? Load(string carName, string stageName)
     {
+        return Load(GetPathName(carName, stageName)) ?? Load(GetOldPathName(carName, stageName));
+    }
+
+    public static SavedTimeTrial? Load(string fileName)
+    {
         try
         {
-            if (System.IO.File.Exists(GetPathName(carName, stageName)))
+            if (File.Exists(fileName))
             {
-                using var fileStream = System.IO.File.OpenRead(GetPathName(carName, stageName));
-                using var compressedStream = new DeflateStream(fileStream, CompressionMode.Decompress);
-                return MessagePackSerializer.Deserialize<SavedTimeTrial>(compressedStream, MsgPackHelpers.Options);
+                using var decompressor = new BrotliDecompressor();
+                using var stream = File.OpenRead(fileName);
+                using var sequence = stream.AsPooledReadOnlySequence();
+                var data = decompressor.Decompress(sequence.Sequence);
+                return MemoryPackSerializer.Deserialize<SavedTimeTrial>(data, MemoryPackHelpers.Options);
+            }
+            else
+            {
+                Logging.Info($"No timetrial file for {fileName} found.");
             }
         }
         catch (Exception ex)
         {
-            Logging.Info($"Failed to load SavedTimeTrial for {carName} on {stageName}: {ex}");
+            Logging.Info($"Failed to load SavedTimeTrial for {fileName}: {ex}");
         }
 
         return null;
     }
 
-    public static SavedTimeTrial Load(ReadOnlyMemory<byte> data)
+    public static SavedTimeTrial? Load(ReadOnlyMemory<byte> data)
     {
-        return MessagePackSerializer.Deserialize<SavedTimeTrial>(data, MsgPackHelpers.Options);
+        using var decompressor = new BrotliDecompressor();
+        var decompData = decompressor.Decompress(data.Span);
+        return MemoryPackSerializer.Deserialize<SavedTimeTrial>(decompData, MemoryPackHelpers.Options);
     }
 
     public void Save()
@@ -84,16 +121,15 @@ public partial class SavedTimeTrial
         }
 
         // compress file using DeflateStream
-
-        using var fileStream = System.IO.File.Create(GetPathName(CarName, StageName));
-        using var deflateStream = new DeflateStream(fileStream, CompressionMode.Compress);
-
-        MessagePackSerializer.Serialize(deflateStream, this, MsgPackHelpers.Options);
+        using var fileStream = File.Create(GetPathName(CarName, StageName));
+        using var compressor = new BrotliCompressor(CompressionLevel.Fastest);
+        MemoryPackSerializer.Serialize(compressor, this, MemoryPackHelpers.Options);
+        compressor.CopyTo(fileStream.AsBufferWriter<byte>());
     }
 
     public void RecordTick(IInGameCar car)
     {
-        DemoEntry entry = DemoEntry.Create(car);
+        CarFrame entry = CarFrame.Create(car);
         DemoData.AddEntry(entry);
     }
     public (bool Up, bool Down, bool Left, bool Right, bool Handb)? GetTick(int tick)

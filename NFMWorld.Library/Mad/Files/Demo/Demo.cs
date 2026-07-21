@@ -1,18 +1,18 @@
-using MessagePack;
+using MemoryPack;
 
 namespace NFMWorldLibrary.Files.Demo;
 
-[MessagePackObject]
-public class Demo
+[MemoryPackable(GenerateType.VersionTolerant)]
+public partial class Demo
 {
-    [Key(0)] public required List<DemoEntry> Ticks;
+    [MemoryPackOrder(0)] public List<NFMWorldLibrary.CarFrame> Ticks = [];
 
-    public void AddEntry(DemoEntry entry)
+    public void AddEntry(NFMWorldLibrary.CarFrame entry)
     {
         Ticks.Add(entry);
     }
 
-    public DemoEntry GetEntry(int tick)
+    public NFMWorldLibrary.CarFrame GetEntry(int tick)
     {
         return Ticks[tick];
     }

@@ -5,10 +5,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\FNA.Math\FNA.Math.csproj" />
+      <ProjectReference Include="..\LibTessDotNet\LibTessDotNet\LibTessDotNet.csproj" />
+      <ProjectReference Include="..\Poly2Tri\Poly2Tri.csproj" />
     </ItemGroup>
 
 </Project>

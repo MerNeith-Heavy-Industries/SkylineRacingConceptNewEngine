@@ -7,9 +7,22 @@ namespace NFMWorld;
 
 public static class MeshDamage
 {
+    public static void NewCar(IInGameCar car, CarVisual visual)
+    {
+        visual.Mesh.Polys = Array.ConvertAll(visual.Mesh.OriginalPolys, static poly => poly.SafeClone());
+        
+        for (var i = 0; i < visual.Mesh.Polys.Length; i++)
+        {
+            visual.Bfase[i] = 0.0f;
+        }
+        
+        visual.Mesh.RebuildMesh();
+    }
+    
     public static void DamageX(
         CarStats stat,
-        ClientCar car,
+        IInGameCar car,
+        CarVisual visual,
         int wheelIdx,
         float damageFactor
     )
@@ -29,23 +42,23 @@ public static class MeshDamage
                 damageFactor += 100.0f;
             }
 
-            for (var i = 0; i < car.Mesh.Polys.Length; i++)
+            for (var i = 0; i < visual.Mesh.Polys.Length; i++)
             {
                 var breakFactor = 0.0f;
-                for (var j = 0; j < car.Mesh.Polys[i].Points.Length; j++)
+                for (var j = 0; j < visual.Mesh.Polys[i].Points.Length; j++)
                 {
                     if (UMath.Py(
                             (float)wheel.Position.X,
-                            car.Mesh.Polys[i].Points[j].X, // x
+                            visual.Mesh.Polys[i].Points[j].X, // x
                             (float)wheel.Position.Z,
-                            car.Mesh.Polys[i].Points[j].Z // z
+                            visual.Mesh.Polys[i].Points[j].Z // z
                         ) < stat.Clrad)
                     {
                         breakFactor = damageFactor / 20.0f * Random.Single();
-                        car.Mesh.Polys[i].Points[j].Z -= (breakFactor * UMath.SinUnsafe((float)car.Rotation.Xz.Degrees) *
-                                                     UMath.CosUnsafe((float)car.Rotation.Zy.Degrees)); // z
-                        car.Mesh.Polys[i].Points[j].X += (breakFactor * UMath.CosUnsafe((float)car.Rotation.Xz.Degrees) *
-                                                     UMath.CosUnsafe((float)car.Rotation.Xy.Degrees)); // x
+                        visual.Mesh.Polys[i].Points[j].Z -= (breakFactor * UMath.SinUnsafe((float)visual.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)visual.Rotation.Zy.Degrees)); // z
+                        visual.Mesh.Polys[i].Points[j].X += (breakFactor * UMath.CosUnsafe((float)visual.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)visual.Rotation.Xy.Degrees)); // x
                     }
                 }
 
@@ -53,60 +66,61 @@ public static class MeshDamage
                 {
                     if (Math.Abs(breakFactor) >= 1.0F)
                     {
-                        car.Chip(i, breakFactor);
+                        visual.Chip(i, breakFactor);
                     }
 
-                    if (car.Mesh.Polys[i].PolyType != PolyType.Glass)
+                    if (visual.Mesh.Polys[i].PolyType != PolyType.Glass)
                     {
-                        car.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
-                        if (car.Bfase[i] > 20 && saturation > 0.25)
+                        visual.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
+                        if (visual.Bfase[i] > 20 && saturation > 0.25)
                         {
                             saturation = 0.25f;
                         }
 
-                        if (car.Bfase[i] > 25 && brightness > 0.7)
+                        if (visual.Bfase[i] > 25 && brightness > 0.7)
                         {
                             brightness = 0.7f;
                         }
 
-                        if (car.Bfase[i] > 30 && saturation > 0.15)
+                        if (visual.Bfase[i] > 30 && saturation > 0.15)
                         {
                             saturation = 0.15f;
                         }
 
-                        if (car.Bfase[i] > 35 && brightness > 0.6)
+                        if (visual.Bfase[i] > 35 && brightness > 0.6)
                         {
                             brightness = 0.6f;
                         }
 
-                        if (car.Bfase[i] > 40)
+                        if (visual.Bfase[i] > 40)
                         {
                             hue = 0.075f;
                         }
 
-                        if (car.Bfase[i] > 50 && brightness > 0.5)
+                        if (visual.Bfase[i] > 50 && brightness > 0.5)
                         {
                             brightness = 0.5f;
                         }
 
-                        if (car.Bfase[i] > 60)
+                        if (visual.Bfase[i] > 60)
                         {
                             hue = 0.05f;
                         }
 
-                        car.Bfase[i] += Math.Abs(breakFactor);
-                        car.Mesh.Polys[i] = car.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
+                        visual.Bfase[i] += Math.Abs(breakFactor);
+                        visual.Mesh.Polys[i] = visual.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
                     }
                 }
             }
 
-            car.Mesh.RebuildMesh();
+            visual.Mesh.RebuildMesh();
         }
     }
 
     public static void DamageY(
         CarStats stat,
-        ClientCar car,
+        IInGameCar car,
+        CarVisual visual,
         int wheelIdx,
         float damageFactor,
         bool mtouch,
@@ -131,8 +145,8 @@ public static class MeshDamage
 
             var flipZy = 0;
             var flipXy = 0;
-            var zy = car.Rotation.Zy.Degrees;
-            var xy = car.Rotation.Xy.Degrees;
+            var zy = visual.Rotation.Zy.Degrees;
+            var xy = visual.Rotation.Xy.Degrees;
             for ( /**/; zy < 360; zy += 360)
             {
             }
@@ -171,21 +185,21 @@ public static class MeshDamage
 
             if (flipXy * flipZy == 0 || mtouch)
             {
-                for (var i = 0; i < car.Mesh.Polys.Length; i++)
+                for (var i = 0; i < visual.Mesh.Polys.Length; i++)
                 {
                     var breakFactor = 0.0f;
-                    for (var j = 0; j < car.Mesh.Polys[i].Points.Length; j++)
+                    for (var j = 0; j < visual.Mesh.Polys[i].Points.Length; j++)
                     {
                         if (UMath.Py(
                                 (float)wheel.Position.X,
-                                car.Mesh.Polys[i].Points[j].X, // x
+                                visual.Mesh.Polys[i].Points[j].X, // x
                                 (float)wheel.Position.Z,
-                                car.Mesh.Polys[i].Points[j].Z // z
+                                visual.Mesh.Polys[i].Points[j].Z // z
                             ) < stat.Clrad)
                         {
                             breakFactor = damageFactor / 20.0f * Random.Single();
-                            car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.SinUnsafe((float)zy); // z
-                            car.Mesh.Polys[i].Points[j].X -= breakFactor * UMath.SinUnsafe((float)xy); // x
+                            visual.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.SinUnsafe((float)zy); // z
+                            visual.Mesh.Polys[i].Points[j].X -= breakFactor * UMath.SinUnsafe((float)xy); // x
                         }
                     }
 
@@ -193,49 +207,49 @@ public static class MeshDamage
                     {
                         if (Math.Abs(breakFactor) >= 1.0F)
                         {
-                            car.Chip(i, breakFactor);
+                            visual.Chip(i, breakFactor);
                         }
 
-                        if (car.Mesh.Polys[i].PolyType != PolyType.Glass)
+                        if (visual.Mesh.Polys[i].PolyType != PolyType.Glass)
                         {
-                            car.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
-                            if (car.Bfase[i] > 20 && saturation > 0.25)
+                            visual.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
+                            if (visual.Bfase[i] > 20 && saturation > 0.25)
                             {
                                 saturation = 0.25f;
                             }
 
-                            if (car.Bfase[i] > 25 && brightness > 0.7)
+                            if (visual.Bfase[i] > 25 && brightness > 0.7)
                             {
                                 brightness = 0.7f;
                             }
 
-                            if (car.Bfase[i] > 30 && saturation > 0.15)
+                            if (visual.Bfase[i] > 30 && saturation > 0.15)
                             {
                                 saturation = 0.15f;
                             }
 
-                            if (car.Bfase[i] > 35 && brightness > 0.6)
+                            if (visual.Bfase[i] > 35 && brightness > 0.6)
                             {
                                 brightness = 0.6f;
                             }
 
-                            if (car.Bfase[i] > 40)
+                            if (visual.Bfase[i] > 40)
                             {
                                 hue = 0.075f;
                             }
 
-                            if (car.Bfase[i] > 50 && brightness > 0.5)
+                            if (visual.Bfase[i] > 50 && brightness > 0.5)
                             {
                                 brightness = 0.5f;
                             }
 
-                            if (car.Bfase[i] > 60)
+                            if (visual.Bfase[i] > 60)
                             {
                                 hue = 0.05f;
                             }
 
-                            car.Bfase[i] += Math.Abs(breakFactor);
-                            car.Mesh.Polys[i] = car.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
+                            visual.Bfase[i] += Math.Abs(breakFactor);
+                            visual.Mesh.Polys[i] = visual.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
                         }
                     }
                 }
@@ -247,32 +261,32 @@ public static class MeshDamage
                 {
                     var totalDmg = 0f;
                     var damagedPts = 1;
-                    for (var i = 0; i < car.Mesh.Polys.Length; i++)
+                    for (var i = 0; i < visual.Mesh.Polys.Length; i++)
                     {
                         var polyDmg = 0.0f;
-                        for (var j = 0; j < car.Mesh.Polys[i].Points.Length; j++)
+                        for (var j = 0; j < visual.Mesh.Polys[i].Points.Length; j++)
                         {
                             polyDmg = damageFactor / 15.0f * Random.Single();
                             if ((
-                                    Math.Abs(car.Mesh.Polys[i].Points[j].Y /* y */ - stat.Flipy - squash) <
+                                    Math.Abs(visual.Mesh.Polys[i].Points[j].Y /* y */ - stat.Flipy - squash) <
                                     stat.Msquash * 3 ||
-                                    car.Mesh.Polys[i].Points[j].Y /* y */ < stat.Flipy + squash
+                                    visual.Mesh.Polys[i].Points[j].Y /* y */ < stat.Flipy + squash
                                 ) && squash < stat.Msquash)
                             {
-                                car.Mesh.Polys[i].Points[j].Y /* y */ += polyDmg;
+                                visual.Mesh.Polys[i].Points[j].Y /* y */ += polyDmg;
                                 totalDmg += polyDmg;
                                 damagedPts++;
                             }
                         }
 
-                        if (car.Mesh.Polys[i].PolyType != PolyType.Glass && polyDmg != 0.0f)
+                        if (visual.Mesh.Polys[i].PolyType != PolyType.Glass && polyDmg != 0.0f)
                         {
-                            car.Bfase[i] += polyDmg;
+                            visual.Bfase[i] += polyDmg;
                         }
 
                         if (Math.Abs(polyDmg) >= 1.0)
                         {
-                            car.Chip(i, polyDmg);
+                            visual.Chip(i, polyDmg);
                         }
                     }
 
@@ -285,13 +299,14 @@ public static class MeshDamage
                 }
             }
 
-            car.Mesh.RebuildMesh();
+            visual.Mesh.RebuildMesh();
         }
     }
 
     public static void DamageZ(
         CarStats stat,
-        ClientCar car,
+        IInGameCar car,
+        CarVisual visual,
         int wheelIdx,
         float damageFactor
     )
@@ -311,23 +326,23 @@ public static class MeshDamage
                 damageFactor += 100.0f;
             }
 
-            for (var i = 0; i < car.Mesh.Polys.Length; i++)
+            for (var i = 0; i < visual.Mesh.Polys.Length; i++)
             {
                 var breakFactor = 0.0f;
-                for (var j = 0; j < car.Mesh.Polys[i].Points.Length; j++)
+                for (var j = 0; j < visual.Mesh.Polys[i].Points.Length; j++)
                 {
                     if (UMath.Py(
                             (float)wheel.Position.X,
-                            car.Mesh.Polys[i].Points[j].X, // x
+                            visual.Mesh.Polys[i].Points[j].X, // x
                             (float)wheel.Position.Z,
-                            car.Mesh.Polys[i].Points[j].Z // z
+                            visual.Mesh.Polys[i].Points[j].Z // z
                         ) < stat.Clrad)
                     {
                         breakFactor = damageFactor / 20.0f * Random.Single();
-                        car.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.CosUnsafe((float)car.Rotation.Xz.Degrees) *
-                                                     UMath.CosUnsafe((float)car.Rotation.Zy.Degrees); // z
-                        car.Mesh.Polys[i].Points[j].X += breakFactor * UMath.SinUnsafe((float)car.Rotation.Xz.Degrees) *
-                                                     UMath.CosUnsafe((float)car.Rotation.Xy.Degrees); // x
+                        visual.Mesh.Polys[i].Points[j].Z += breakFactor * UMath.CosUnsafe((float)visual.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)visual.Rotation.Zy.Degrees); // z
+                        visual.Mesh.Polys[i].Points[j].X += breakFactor * UMath.SinUnsafe((float)visual.Rotation.Xz.Degrees) *
+                                                     UMath.CosUnsafe((float)visual.Rotation.Xy.Degrees); // x
                     }
                 }
 
@@ -335,54 +350,54 @@ public static class MeshDamage
                 {
                     if (Math.Abs(breakFactor) >= 1.0F)
                     {
-                        car.Chip(i, breakFactor);
+                        visual.Chip(i, breakFactor);
                     }
 
-                    if (car.Mesh.Polys[i].PolyType != PolyType.Glass)
+                    if (visual.Mesh.Polys[i].PolyType != PolyType.Glass)
                     {
-                        car.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
-                        if (car.Bfase[i] > 20 && saturation > 0.25)
+                        visual.Mesh.Polys[i].Color.ToHSB(out var hue, out var saturation, out var brightness);
+                        if (visual.Bfase[i] > 20 && saturation > 0.25)
                         {
                             saturation = 0.25f;
                         }
 
-                        if (car.Bfase[i] > 25 && brightness > 0.7f)
+                        if (visual.Bfase[i] > 25 && brightness > 0.7f)
                         {
                             brightness = 0.7f;
                         }
 
-                        if (car.Bfase[i] > 30 && saturation > 0.15f)
+                        if (visual.Bfase[i] > 30 && saturation > 0.15f)
                         {
                             saturation = 0.15f;
                         }
 
-                        if (car.Bfase[i] > 35 && brightness > 0.6f)
+                        if (visual.Bfase[i] > 35 && brightness > 0.6f)
                         {
                             brightness = 0.6f;
                         }
 
-                        if (car.Bfase[i] > 40)
+                        if (visual.Bfase[i] > 40)
                         {
                             hue = 0.075f;
                         }
 
-                        if (car.Bfase[i] > 50 && brightness > 0.5f)
+                        if (visual.Bfase[i] > 50 && brightness > 0.5f)
                         {
                             brightness = 0.5f;
                         }
 
-                        if (car.Bfase[i] > 60)
+                        if (visual.Bfase[i] > 60)
                         {
                             hue = 0.05f;
                         }
 
-                        car.Bfase[i] += Math.Abs(breakFactor);
-                        car.Mesh.Polys[i] = car.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
+                        visual.Bfase[i] += Math.Abs(breakFactor);
+                        visual.Mesh.Polys[i] = visual.Mesh.Polys[i] with { Color = Color3.FromHSB(hue, saturation, brightness) };
                     }
                 }
             }
 
-            car.Mesh.RebuildMesh();
+            visual.Mesh.RebuildMesh();
         }
     }
 }

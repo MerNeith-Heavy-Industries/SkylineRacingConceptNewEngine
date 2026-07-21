@@ -20,7 +20,7 @@ public class DevConsole
     // Autocomplete state
     private List<string> _autocompleteMatches = new();
     private int _autocompleteIndex = -1;
-    private readonly Dictionary<string, Func<string[], int, List<string>>> _argumentAutocompleters = new();
+    private readonly Dictionary<string, Func<string[], int, IReadOnlyList<string>?>> _argumentAutocompleters = new();
 
     public DevConsole()
     {
@@ -66,7 +66,7 @@ public class DevConsole
         _commands[name] = action;
     }
 
-    public void RegisterArgumentAutocompleter(string commandName, Func<string[], int, List<string>> autocompleter)
+    public void RegisterArgumentAutocompleter(string commandName, Func<string[], int, IReadOnlyList<string>?> autocompleter)
     {
         _argumentAutocompleters[commandName] = autocompleter;
     }
@@ -369,7 +369,7 @@ public class DevConsole
         else if (parts.Length > 0)
         {
             var command = parts[0];
-            var args = parts.Length > 1 ? parts[1..] : Array.Empty<string>();
+            var args = parts.Length > 1 ? parts[1..] : [];
             var currentArg = _currentInput.EndsWith(' ') ? string.Empty : (args.Length > 0 ? args[^1] : string.Empty);
                 
             // Determine which argument position we're on (0-based)

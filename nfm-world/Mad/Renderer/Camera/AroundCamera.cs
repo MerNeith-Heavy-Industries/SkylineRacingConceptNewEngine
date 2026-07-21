@@ -63,6 +63,7 @@ public class AroundCamera
         float camY = (float)obj.Position.Y - Height;
         float camZ = (float)obj.Position.Z - Distance * sincos.Sin;
 
+        camera.Fov = 90f;
         camera.Position = new Vector3(camX, camY, camZ);
         camera.LookAt = (Vector3)obj.Position;
     }

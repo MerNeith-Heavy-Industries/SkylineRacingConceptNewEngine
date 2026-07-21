@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -7,118 +9,114 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Gameplay;
 
-public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : BasePhase
+public abstract class BaseStageRenderingPhase : BasePhase
 {
     protected int? FovOverride = null;
     public static bool DebugDisplay = false;
 
-    private readonly SpriteBatch _spriteBatch = new(graphicsDevice);
+    private readonly SpriteBatch _spriteBatch;
 
-    public readonly GraphicsDevice GraphicsDevice = graphicsDevice;
+    public readonly GraphicsDevice GraphicsDevice;
 
-    public PerspectiveCamera camera = new();
-    public Camera[] lightCameras = [
-        new OrthoLightCamera
-        {
-            Width = 3000,
-            Height = 3000
-        },
-        new OrthoLightCamera
-        {
-            Width = 16384,
-            Height = 16384
-        },
-        new OrthoLightCamera
-        {
-            Width = 65536,
-            Height = 65536
-        }
+    public PerspectiveCamera Camera = new();
+    public Camera[] LightCameras = [
+        new OrthoLightCamera { Width = 3000, Height = 3000 },
+        new OrthoLightCamera { Width = 16384, Height = 16384 },
+        new OrthoLightCamera { Width = 65536, Height = 65536 }
     ];
 
-    public BackendStage CurrentStage = null!;
-    public Scene current_scene = null!;
+    public ClientStage CurrentStage = null!;
+    public ObservableUnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
 
-    public UnlimitedArray<IInGameCar> CarsInRace { get; protected set; } = [];
-    public int playerCarIndex = 0;
-    private ClientCarCollection clientCarCollection;
-    public ClientStageRenderer clientStageRenderer;
+    private IRadicalMusic? _stageMusic;
+    public string? StageName;
+    
+    // please don't pass null except for stage select
+    protected BaseStageRenderingPhase(GraphicsDevice graphicsDevice, string? stageName = null)
+    {
+        _spriteBatch = new SpriteBatch(graphicsDevice);
+        GraphicsDevice = graphicsDevice;
+        StageName = stageName;
+
+        // Stage loading happens once at construction time, not on every Enter().
+        // This prevents phases from resetting when an overlay (e.g., Settings) is
+        // pushed and popped over them.
+        if (StageName != null)
+            LoadStage(StageName);
+    }
 
     public override void Enter()
     {
         base.Enter();
-        
-        camera.Width = GameSparker._game.GraphicsDevice.Viewport.Width;
-        camera.Height = GameSparker._game.GraphicsDevice.Viewport.Height;
+
+        Camera.Width = GameSparker.Game.GraphicsDevice.Viewport.Width;
+        Camera.Height = GameSparker.Game.GraphicsDevice.Viewport.Height;
+
+        // Resume stage music that was paused by Exit().
+        if (_stageMusic != null)
+            GameSparker.CurrentMusic = _stageMusic;
     }
 
     public override void Exit()
     {
         base.Exit();
-        GameSparker.CurrentMusic?.Unload();
+        // Pause music while this phase is not displayed (buried in the stack).
+        // Music is resumed in Enter() and unloaded in Dispose().
+        GameSparker.CurrentMusic = null;
     }
 
-    public virtual void LoadStageMusic(bool reloadIfLoaded = false)
+    protected override void Dispose(bool disposing)
     {
-        if ((reloadIfLoaded && GameSparker.CurrentMusic != null) || GameSparker.CurrentMusic == null)
+        base.Dispose(disposing);
+
+        if (disposing)
         {
-            if(reloadIfLoaded && GameSparker.CurrentMusic != null)
-            {
-                GameSparker.CurrentMusic?.Unload();
-            }
-
-            Logging.Debug("playing stage music: " + clientStageRenderer.musicPath);
-
-            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath);
-            // Dont shift pitch or tempo if using remastered
-            string path = useRemastered ? clientStageRenderer.remasteredMusicPath : clientStageRenderer.musicPath;
-            double tempoMul = !useRemastered ? clientStageRenderer.musicTempoMul : 0d;
-            double freqMul = !useRemastered ? clientStageRenderer.musicFreqMul : 1d;
-
-            GameSparker.CurrentMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
-            GameSparker.CurrentMusic.SetFreqMultiplier(freqMul);
-            GameSparker.CurrentMusic.SetVolume(IRadicalMusic.CurrentVolume);
-            GameSparker.CurrentMusic.Play();
+            // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+            CurrentStage?.Dispose();
+            CurrentStage = null!;
         }
     }
 
-    public virtual void LoadStage(string stageName, bool loadMusic = true)
+    protected virtual void LoadStage(string stageName, bool loadMusic = true, bool reloadIfLoaded = false)
     {
-        CurrentStage = new BackendStage(stageName);
-        clientStageRenderer = new ClientStageRenderer(GraphicsDevice, CurrentStage);
+        StageName = stageName;
+        CurrentStage?.Dispose();
+        CurrentStage = new ClientStage(GraphicsDevice, stageName, CarsInRace, Camera, LightCameras);
 
-        RecreateScene();
+        if (loadMusic && !string.IsNullOrEmpty(CurrentStage.MusicPath))
+            LoadStageMusic(reloadIfLoaded: reloadIfLoaded);
+    }
 
-        if (loadMusic && (!string.IsNullOrEmpty(clientStageRenderer.musicPath) || (GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(clientStageRenderer.remasteredMusicPath))))
+    protected virtual void LoadStageMusic(bool reloadIfLoaded = false)
+    {
+        if ((reloadIfLoaded && GameSparker.CurrentMusic != null) || _stageMusic == null)
         {
-            LoadStageMusic(true);
+            Logging.Debug("playing stage music: " + CurrentStage.MusicPath);
+
+            bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath);
+            string path = useRemastered ? CurrentStage.RemasteredMusicPath : CurrentStage.MusicPath;
+            double tempoMul = !useRemastered ? CurrentStage.MusicTempoMul : 1d;
+            double freqMul = !useRemastered ? CurrentStage.MusicFreqMul : 1d;
+
+            _stageMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);
+            _stageMusic.SetFreqMultiplier(freqMul);
         }
     }
 
-    public virtual void RecreateScene()
+    public CarVisual GetCarVisual(int index)
     {
-        clientCarCollection = new ClientCarCollection(GraphicsDevice, CarsInRace);
-        current_scene = new Scene(
-            GraphicsDevice,
-            [clientStageRenderer, clientCarCollection],
-            camera,
-            lightCameras
-        );
-    }
-    public ClientCar GetClientCar(int index)
-    {
-        return clientCarCollection.GetCar(CarsInRace[index]);
+        return CurrentStage.GetCarVisual(index);
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
-
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
         if (imguiWantsKeyboard) return;
     }
 
-    public override void KeyReleased(Keys key, bool imguiWantsKeyboard)
+    public override void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyReleased(key, imguiWantsKeyboard);
+        base.KeyReleased(key, imguiWantsKeyboard, keys);
     }
 
     public override void WindowSizeChanged(int width, int height)
@@ -127,43 +125,45 @@ public abstract class BaseStageRenderingPhase(GraphicsDevice graphicsDevice) : B
 
         G.Scale = 1280f / width;
 
-        camera.Width = width;
-        camera.Height = height;
+        Camera.Width = width;
+        Camera.Height = height;
     }
 
     public override void BeginGameTick()
     {
+        CurrentStage.OnBeforeGameTick();
         base.BeginGameTick();
-        current_scene.OnBeforeUpdate();
     }
 
     public override void GameTick()
     {
         base.GameTick();
-        current_scene.GameTick(CurrentStage);
+        CurrentStage?.GameTick();
     }
 
     public override void Render(float alpha)
     {
         base.Render(alpha);
-        
-        foreach (var lightCamera in lightCameras)
+
+        if (CurrentStage == null)
+            return;
+
+        foreach (var lightCamera in LightCameras)
         {
-            lightCamera.Position = camera.Position + new Vector3(0, -5000, 0);
-            lightCamera.LookAt = camera.Position + new Vector3(1f, 0, 0); // 0,0,0 causes shadows to break
+            lightCamera.Position = Camera.Position + new Vector3(0, -5000, 0);
+            lightCamera.LookAt = Camera.Position + new Vector3(1f, 0, 0);
         }
 
-        camera.Fov = FovOverride ?? CameraSettings.Fov;
+        Camera.Fov = FovOverride ?? Camera.Fov;
 
-        current_scene.Render(alpha, true);
+        CurrentStage.Render(alpha, useShadowMapping: true);
 
         if (DebugDisplay)
         {
-            // DISPLAY SHADOW MAP
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullCounterClockwise);
-            if (WorldGame.shadowRenderTargets[0] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[0], new Microsoft.Xna.Framework.Rectangle(0, 0, 128, 128), Microsoft.Xna.Framework.Color.White);
-            if (WorldGame.shadowRenderTargets[1] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[1], new Microsoft.Xna.Framework.Rectangle(0, 128, 128, 128), Microsoft.Xna.Framework.Color.White);
-            if (WorldGame.shadowRenderTargets[2] != null) _spriteBatch.Draw(WorldGame.shadowRenderTargets[2], new Microsoft.Xna.Framework.Rectangle(0, 256, 128, 128), Microsoft.Xna.Framework.Color.White);
+            if (WorldGame.ShadowRenderTargets[0] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[0], new Microsoft.Xna.Framework.Rectangle(0, 0, 128, 128), Color.White);
+            if (WorldGame.ShadowRenderTargets[1] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[1], new Microsoft.Xna.Framework.Rectangle(0, 128, 128, 128), Color.White);
+            if (WorldGame.ShadowRenderTargets[2] != null) _spriteBatch.Draw(WorldGame.ShadowRenderTargets[2], new Microsoft.Xna.Framework.Rectangle(0, 256, 128, 128), Color.White);
             _spriteBatch.End();
         }
 

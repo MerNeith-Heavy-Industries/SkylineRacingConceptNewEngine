@@ -1,25 +1,34 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
-using NFMWorld.Account;
+using NFMWorld.Accounts;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Gameplay;
 using NFMWorld.Sfx;
 using NFMWorld.UI;
-using NFMWorld.Util;
+using NFMWorld.UI.Cef;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 using Path = System.IO.Path;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
-public class GameSparker
+public static partial class GameSparker
 {
-    public static WorldGame _game;
-    public static GraphicsDevice _graphicsDevice;
+    public static WorldGame Game = null!;
+    public static GraphicsDevice GraphicsDevice = null!;
     public static readonly string version = GetVersionString();
     public static AccountManager AccountManager = new AccountManager();
+
+    /// <summary>
+    /// The shared CEF renderer. Set by WorldGame.Initialize(). Phases access
+    /// this to register/unregister their <see cref="PhaseBridge"/> instances.
+    /// </summary>
+    public static CefRenderer? CefRenderer { get; set; }
 
     private static string GetVersionString()
     {
@@ -46,35 +55,77 @@ public class GameSparker
 
     public static BasePhase CurrentPhase
     {
-        get;
-        private set;
+        get => Phases.Current;
     }
 
+    /// <summary>
+    /// The phase stack manager. Handles navigation (Push, Pop, Replace)
+    /// and deferred disposal of popped phases.
+    /// </summary>
+    public static PhaseManager Phases { get; } = new();
+
+    /// <summary>
+    /// Replaces the current phase with a new one. The old phase is disposed
+    /// at end-of-frame via <see cref="PhaseManager.FlushDisposals"/>.
+    /// For navigation with back-support, use <see cref="PushPhase"/> instead.
+    /// </summary>
     public static void SetPhase(BasePhase phase)
     {
-        CurrentPhase?.Exit();
-        CurrentPhase = phase;
-        CurrentPhase?.Enter();
+        Phases.Replace(phase);
     }
 
-    public static IRadicalMusic? CurrentMusic;
+    /// <summary>
+    /// Pushes a new phase onto the stack, keeping the current phase alive.
+    /// Use <see cref="PopPhase"/> to return to the previous phase.
+    /// </summary>
+    public static void PushPhase(BasePhase phase)
+    {
+        Phases.Push(phase);
+    }
+
+    /// <summary>
+    /// Pops the current phase and returns to the previous phase on the stack.
+    /// The popped phase is disposed at end-of-frame.
+    /// </summary>
+    public static void PopPhase()
+    {
+        Phases.Pop();
+    }
+
+    /// <summary>
+    /// Pops all phases above the root, returning to the root phase (typically MainMenu).
+    /// All intermediate phases are disposed at end-of-frame.
+    /// </summary>
+    public static void PopToRoot()
+    {
+        Phases.PopToRoot();
+    }
+
+    public static IRadicalMusic? CurrentMusic
+    {
+        get;
+        set
+        {
+            field?.SetPaused(true);
+
+            field = value;
+
+            if (field != null)
+            {
+                field.SetVolume(IRadicalMusic.CurrentVolume);
+                field.Play();
+            }
+        }
+    }
     /// <summary>
     /// Use remastered music (soundtrackremaster in stage files) where available.
     /// </summary>
     public static bool UseRemasteredMusic = false;
 
-    public static MainMenuPhase? MainMenu;
-    public static InRacePhase? InRace;
     public static MessageWindow MessageWindow = new();
-    public static ModelEditorPhase? ModelEditor;
-    public static StageEditorPhase? StageEditor;
-
-    private static DirectionalLight light;
-    
-    private static MicroStopwatch timer;
 
     public static Dictionary<Rad3d, Mesh> stage_part_meshes = new(Rad3d.VisualEqualityComparer.Instance);
-    public static Mesh error_mesh;
+    public static Mesh error_mesh = null!;
     
     public static bool devRenderTrackers = false;
     
@@ -84,9 +135,10 @@ public class GameSparker
 
     /////////////////////////////////
 
-    public static Dictionary<Keys, bool> DebugKeyStates = new();
+    public static Dictionary<Key, bool> DebugKeyStates = new();
+    public static MainMenuPhase MainMenuPhase;
 
-    public static void KeyPressed(Keys key)
+    public static void KeyPressed(Key key)
     {
         DebugKeyStates[key] = true;
 
@@ -98,7 +150,7 @@ public class GameSparker
         }
     }
 
-    public static void KeyReleased(Keys key)
+    public static void KeyReleased(Key key)
     {
         DebugKeyStates[key] = false;
         
@@ -109,10 +161,10 @@ public class GameSparker
         var stages = new List<string>();
         var stagesPath = "data/stages";
         
-        if (Directory.Exists(stagesPath))
+        if (VFS.DirectoryExists(stagesPath))
         {
             // recursive search
-            foreach (var file in Directory.GetFiles(stagesPath, "*.txt", SearchOption.AllDirectories))
+            foreach (var file in VFS.EnumerateFiles(stagesPath, "*.txt", SearchOption.AllDirectories))
             {
                 var relativePath = Path.GetRelativePath(stagesPath, file);
                 var pathWithoutExtension = Path.ChangeExtension(relativePath, null);
@@ -127,11 +179,13 @@ public class GameSparker
             
             for (int seg = 0; seg < Math.Min(aSegments.Length, bSegments.Length); seg++)
             {
-                var aParts = System.Text.RegularExpressions.Regex.Split(aSegments[seg], @"(\d+)")
-                    .Where(s => !string.IsNullOrEmpty(s)).ToArray();
-                var bParts = System.Text.RegularExpressions.Regex.Split(bSegments[seg], @"(\d+)")
-                    .Where(s => !string.IsNullOrEmpty(s)).ToArray();
-                
+                var aParts = DigitSplit.Split(aSegments[seg])
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+                var bParts = DigitSplit.Split(bSegments[seg])
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToArray();
+
                 for (int i = 0; i < Math.Min(aParts.Length, bParts.Length); i++)
                 {
                     if (int.TryParse(aParts[i], out var aNum) && int.TryParse(bParts[i], out var bNum))
@@ -157,15 +211,15 @@ public class GameSparker
     }
     public static void Load(WorldGame game)
     {
-        _game = game;
-        _graphicsDevice = game.GraphicsDevice;
+        Game = game;
+        GraphicsDevice = game.GraphicsDevice;
 
         foreach (var stageParts in (Span<UnlimitedArray<Rad3d>>)[BackendGameSparker.stage_parts, BackendGameSparker.vendor_stage_parts, BackendGameSparker.user_stage_parts])
         foreach (var stagePart in stageParts)
         {
             try
             {
-                var mesh = new Mesh(_graphicsDevice, stagePart);
+                var mesh = new Mesh(GraphicsDevice, stagePart);
                 stage_part_meshes[stagePart] = mesh;
             }
             catch (Exception ex)
@@ -175,24 +229,16 @@ public class GameSparker
             }
         }
         
-        error_mesh = new Mesh(_graphicsDevice, BackendGameSparker.error_mesh);
+        error_mesh = new Mesh(GraphicsDevice, BackendGameSparker.error_mesh);
 
         SfxLibrary.LoadSounds();
 
-        timer = new MicroStopwatch();
-        timer.Start();
-        
         // init menu
         SettingsMenu = new SettingsMenu(game);
-        MainMenu = new MainMenuPhase(_graphicsDevice);
+        PhaseSharedState.SelectedStageName = "nfm2/16_4dv";
+        MainMenuPhase = new MainMenuPhase(GraphicsDevice, PhaseSharedState.SelectedStageName);
 
-        InRace = new InRacePhase(_graphicsDevice);
-        SetPhase(MainMenu);
-
-        // Initialize ModelEditor after cars are loaded
-        ModelEditor = new ModelEditorPhase(_graphicsDevice);
-        
-        StageEditor = new StageEditorPhase(_graphicsDevice);
+        Phases.SetRoot(MainMenuPhase);
     }
     
     public static Mesh GetStagePartMesh(Rad3d stagePart)
@@ -203,36 +249,28 @@ public class GameSparker
             return mesh!;
         }
 
-        return mesh = new Mesh(_graphicsDevice, stagePart);
+        return mesh = new Mesh(GraphicsDevice, stagePart);
     }
 
     public static void StartModelViewer()
     {
-        SetPhase(ModelEditor);
+        SetPhase(new ModelEditorPhase(GraphicsDevice));
     }
     
     public static void ExitEditor()
     {
-        SetPhase(MainMenu);
+        SetPhase(MainMenuPhase);
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        SetPhase(StageEditor);
+        SetPhase(new StageEditorPhase(GraphicsDevice));
     }
-    
+
     public static void ReturnToMainMenu()
     {
-        SetPhase(MainMenu);
-    }
-
-    public static void StartGame()
-    {
-        // temp
-        SetPhase(InRace);
-
-        Logging.Info("Game started!");
+        SetPhase(MainMenuPhase);
     }
 
     public static void GameTick()
@@ -260,5 +298,9 @@ public class GameSparker
 
     public static void WindowSizeChanged(int width, int height)
     {
+        SettingsMenu.RegisterResolution(width, height);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(\d+)")]
+    private static partial System.Text.RegularExpressions.Regex DigitSplit { get; }
 }

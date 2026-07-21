@@ -6,53 +6,75 @@ namespace NFMWorld;
 
 public class Lighting
 {
-    public Camera[] LightCameras;
+    public IReadOnlyList<Camera> LightCameras;
     public RenderTarget2D?[] ShadowMaps;
-    
+
+    /// <summary>
+    /// Describes the current render pass (shadow cascade or main colour pass).
+    /// Replaces the boolean <see cref="IsCreateShadowMap"/> plus cascade-index pattern.
+    /// </summary>
+    public RenderPass RenderPass { get; }
+
     [MemberNotNullWhen(true, nameof(CascadeLightCamera))]
-    public bool IsCreateShadowMap { get; }
-    public int NumCascade;
+    public bool IsCreateShadowMap => RenderPass.IsShadow;
 
-    public int TotalCascades;
+    public int NumCascade => RenderPass.CascadeIndex;
 
+    public int TotalCascades => RenderPass.TotalCascades;
+
+    /// <summary>
+    /// New-style constructor using <see cref="RenderPass"/>.
+    /// </summary>
     public Lighting(
-        Camera[] lightCameras,
+        IReadOnlyList<Camera> lightCameras,
+        RenderTarget2D?[] shadowMaps,
+        RenderPass renderPass
+    )
+    {
+        LightCameras = lightCameras;
+        ShadowMaps = shadowMaps;
+        RenderPass = renderPass;
+
+        if (renderPass.IsShadow && renderPass.CascadeIndex >= 0)
+        {
+            CascadeLightCamera = LightCameras[renderPass.CascadeIndex];
+        }
+    }
+
+    /// <summary>
+    /// Legacy constructor. Prefer the <see cref="RenderPass"/>-based overload.
+    /// </summary>
+    public Lighting(
+        IReadOnlyList<Camera> lightCameras,
         RenderTarget2D?[] shadowMaps,
         bool isCreateShadowMap = false,
         int numCascade = -1,
         int totalCascades = 3
     )
+        : this(
+            lightCameras,
+            shadowMaps,
+            isCreateShadowMap
+                ? NFMWorld.RenderPass.Shadow(numCascade, totalCascades)
+                : NFMWorld.RenderPass.Main(totalCascades))
     {
-        LightCameras = lightCameras;
-        ShadowMaps = shadowMaps;
-        IsCreateShadowMap = isCreateShadowMap;
-        TotalCascades = totalCascades;
-        NumCascade = numCascade;
-        if (numCascade != -1)
-        {
-            CascadeLightCamera = LightCameras[numCascade];
-        }
-        else if (isCreateShadowMap)
-        {
-            throw new InvalidOperationException($"{nameof(numCascade)} must be set if {nameof(isCreateShadowMap)} is set to true");
-        }
     }
 
     public Camera? CascadeLightCamera;
 
     public void SetShadowMapParameters(Effect effect)
     {
-        if (LightCameras.Length > 0)
+        if (LightCameras.Count > 0)
         {
             effect.Parameters["LightViewProj0"]?.SetValue(LightCameras[0].ViewProjectionMatrix);
         }
 
-        if (LightCameras.Length > 1)
+        if (LightCameras.Count > 1)
         {
             effect.Parameters["LightViewProj1"]?.SetValue(LightCameras[1].ViewProjectionMatrix);
         }
 
-        if (LightCameras.Length > 2)
+        if (LightCameras.Count > 2)
         {
             effect.Parameters["LightViewProj2"]?.SetValue(LightCameras[2].ViewProjectionMatrix);
         }

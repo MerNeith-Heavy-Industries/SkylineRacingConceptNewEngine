@@ -4,7 +4,7 @@ using NFMWorldLibrary.Rad;
 
 namespace NFMWorld;
 
-public class Mountains : Transform, IImmediateRenderable
+public class Mountains : Transform, IRenderable, IImmediateRenderElement, IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -18,29 +18,25 @@ public class Mountains : Transform, IImmediateRenderable
     {
         _graphicsDevice = graphicsDevice;
         
-        var triangulation = Array.ConvertAll(polys,
-            poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
-
         var data = new List<VertexPositionColor>();
-        var indices = new List<int>();
+        var indices = new List<uint>();
         
         for (var i = 0; i < polys.Length; i++)
         {
             var poly = polys[i];
-            var result = triangulation[i];
 
-            var baseIndex = data.Count;
+            var baseIndex = (uint)data.Count;
             foreach (var point in poly.Points)
             {
                 var color = poly.Color;
                 data.Add(new VertexPositionColor(point, color));
             }
 
-            for (var index = 0; index < result.Triangles.Length; index += 3)
+            for (var index = 0; index < poly.Triangles.Length; index += 3)
             {
-                var i0 = result.Triangles[index];
-                var i1 = result.Triangles[index + 1];
-                var i2 = result.Triangles[index + 2];
+                var i0 = poly.Triangles[index];
+                var i1 = poly.Triangles[index + 1];
+                var i2 = poly.Triangles[index + 2];
 
                 indices.AddRange(i0 + baseIndex, i1 + baseIndex, i2 + baseIndex);
             }
@@ -65,32 +61,57 @@ public class Mountains : Transform, IImmediateRenderable
 
     ~Mountains()
     {
-        _vertexBuffer.Dispose();
-        _indexBuffer.Dispose();
+        Dispose(false);
     }
 
-    public void Render(Camera camera, Lighting? lighting = null)
+    public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        if (lighting?.IsCreateShadowMap == true) return;
+        if (pass.IsShadow) return;
 
+        queue.AddImmediate(SortKey.Create(RenderBucket.Mountains), this);
+    }
+
+    public void Render(Camera cam, Lighting? lt)
+    {
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.Indices = _indexBuffer;
         _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
-        Effects.Mountains.Parameters["WorldView"]?.SetValue(camera.ViewMatrix);
-        Effects.Mountains.Parameters["WorldViewProj"]?.SetValue(camera.ViewMatrix * camera.ProjectionMatrix);
-        
-        Effects.Mountains.Parameters["DepthBias"]?.SetValue(0.00005f);
-        Effects.Mountains.Parameters["FogColor"]?.SetValue((Vector3)World.Fog.Snap(World.Snap));
-        Effects.Mountains.Parameters["FogDistance"]?.SetValue(World.FadeFrom);
-        Effects.Mountains.Parameters["FogDensity"]?.SetValue(World.FogDensity / (World.FogDensity + 1f));
+        Effects.Mountains.WorldView?.SetValue(cam.ViewMatrix);
+        Effects.Mountains.WorldViewProj?.SetValue(cam.ViewMatrix * cam.ProjectionMatrix);
 
-        lighting?.SetShadowMapParameters(Effects.Mountains.UnderlyingEffect);
+        Effects.Mountains.DepthBias?.SetValue(0.00005f);
+        Effects.Mountains.FogColor?.SetValue(World.Fog.Snap(World.Snap));
+        Effects.Mountains.FogDistance?.SetValue(World.FadeFrom);
+        Effects.Mountains.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1f));
+
+        lt?.SetShadowMapParameters(Effects.Mountains.UnderlyingEffect);
+
         foreach (var pass in Effects.Mountains.CurrentTechnique.Passes)
         {
             pass.Apply();
-    
             _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _vertexCount, 0, _triangleCount);
         }
+
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _vertexBuffer.Dispose();
+            _indexBuffer.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

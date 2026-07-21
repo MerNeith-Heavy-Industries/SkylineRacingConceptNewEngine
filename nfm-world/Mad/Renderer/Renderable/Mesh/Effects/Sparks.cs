@@ -1,12 +1,13 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
+using NFMWorld.Sentry;
 
 namespace NFMWorld;
 
-public class Sparks : IDisposable
+public class Sparks : IDisposable, IImmediateRenderElement
 {
-    private readonly ClientCar _car;
+    private readonly CarVisual _visual;
     private readonly GraphicsDevice _graphicsDevice;
 
     internal int Sprk;
@@ -34,12 +35,12 @@ public class Sparks : IDisposable
     private readonly DynamicIndexBuffer _indexBuffer;
     private readonly VertexBuffer _instanceBuffer;
 
-    public Sparks(ClientCar car, GraphicsDevice graphicsDevice)
+    public Sparks(IInGameCar car, CarVisual visual, GraphicsDevice graphicsDevice)
     {
-        _car = car;
+        _visual = visual;
         _graphicsDevice = graphicsDevice;
 
-        _sprkat = _car.Wheels.FirstOrDefault().Sparkat;
+        _sprkat = car.Wheels[0].Sparkat;
 
         _vertexBuffer = new DynamicVertexBuffer(graphicsDevice, LineMesh.LineMeshVertexAttribute.VertexDeclaration,
             100 * LineMeshHelpers.VerticesPerLine, BufferUsage.WriteOnly)
@@ -59,6 +60,12 @@ public class Sparks : IDisposable
             Tag = this
         };
         _instanceBuffer.SetDataEXT((ReadOnlySpan<InstanceData>)[new InstanceData(Matrix.Identity)]);
+
+        // Initialize GPU buffers with zeroed data to prevent rendering of uninitialized memory.
+        // DynamicVertexBuffer/DynamicIndexBuffer created with WriteOnly do not guarantee
+        // zeroed backing storage on all GPU drivers.
+        _vertexBuffer.SetDataEXT(_lineVertices.AsSpan(0, 8), SetDataOptions.Discard);
+        _indexBuffer.SetDataEXT(_lineIndices.AsSpan(0, 12), SetDataOptions.Discard);
     }
     
     ~Sparks()
@@ -70,9 +77,9 @@ public class Sparks : IDisposable
     {
         if (type != 1)
         {
-            Srx = (wheelx - _sprkat * UMath.SinUnsafe((float)_car.Rotation.Xz.Degrees));
-            Sry = (wheely - wheelGround - _sprkat * UMath.CosUnsafe((float)_car.Rotation.Zy.Degrees) * UMath.CosUnsafe((float)_car.Rotation.Xy.Degrees));
-            Srz = (wheelz + _sprkat * UMath.CosUnsafe((float)_car.Rotation.Xz.Degrees));
+            Srx = (wheelx - _sprkat * UMath.SinUnsafe((float)_visual.Rotation.Xz.Degrees));
+            Sry = (wheely - wheelGround - _sprkat * UMath.CosUnsafe((float)_visual.Rotation.Zy.Degrees) * UMath.CosUnsafe((float)_visual.Rotation.Xy.Degrees));
+            Srz = (wheelz + _sprkat * UMath.CosUnsafe((float)_visual.Rotation.Xz.Degrees));
             Sprk = 1;
         }
         else
@@ -80,9 +87,9 @@ public class Sparks : IDisposable
             Sprk++;
             if (Sprk == 4)
             {
-                Srx = ((float)_car.Position.X + scx);
+                Srx = ((float)_visual.Position.X + scx);
                 Sry = wheely - wheelGround;
-                Srz = ((float)_car.Position.Z + scz);
+                Srz = ((float)_visual.Position.Z + scz);
                 Sprk = 5;
             }
             else
@@ -146,6 +153,30 @@ public class Sparks : IDisposable
             {
                 if (_rtg[i] == 1)
                 {
+                    // Log inherited velocity from previous spark in this slot.
+                    // Non-zero inherited velocity can produce erratic spark motion.
+                    var inheritedVx = _vrx[i];
+                    var inheritedVy = _vry[i];
+                    var inheritedVz = _vrz[i];
+                    var inheritedSpeedSq = inheritedVx * inheritedVx + inheritedVy * inheritedVy + inheritedVz * inheritedVz;
+                    if (inheritedSpeedSq > 1.0f)
+                    {
+                        Logging.Info(
+                            $"Sparks: inherited non-zero velocity at slot {i} | " +
+                            $"v=({inheritedVx:F2},{inheritedVy:F2},{inheritedVz:F2}) speedSq={inheritedSpeedSq:F2}");
+                        SentrySdk.CaptureMessage(
+                            $"Sparks: inherited non-zero velocity at slot {i} | " +
+                            $"v=({inheritedVx:F2},{inheritedVy:F2},{inheritedVz:F2}) speedSq={inheritedSpeedSq:F2}",
+                            SentryLevel.Warning);
+                    }
+
+                    // Zero velocity so inherited values don't leak from the previous
+                    // spark that occupied this slot. Conditional init below has only
+                    // ~50% chance per component of overwriting.
+                    _vrx[i] = 0;
+                    _vry[i] = 0;
+                    _vrz[i] = 0;
+
                     if (Sprk < 5)
                     {
                         _rx[i] = Srx + 3 - (URandom.Single() * 6.7F);
@@ -199,8 +230,39 @@ public class Sparks : IDisposable
                 _rz[i] = (_rz[i] + _vrz[i]);
                 var start = new Vector3(_rx[i], _ry[i], _rz[i]);
                 var end = new Vector3(_rx[i] + _vrx[i], _ry[i] + _vry[i], _rz[i] + _vrz[i]);
+                var lineLenSq = (start - end).LengthSquared();
                 var color = new Color3(255, (short)(197 - 30 * _rtg[i]), 0);
-                if ((start - end).LengthSquared() < 0.01f)
+
+                // Log near-degenerate lines that pass the threshold but are still short
+                // enough that screen-space projection may produce unstable normalize() in
+                // the Line.fx vertex shader.
+                if (lineLenSq is >= 0.01f and < 0.05f)
+                {
+                    Logging.Info(
+                        $"Sparks: near-degenerate line at slot {i} | " +
+                        $"lenSq={lineLenSq:F4} start=({start.X:F2},{start.Y:F2},{start.Z:F2}) end=({end.X:F2},{end.Y:F2},{end.Z:F2})");
+                    
+                    SentrySdk.CaptureMessage(
+                        $"Sparks: near-degenerate line at slot {i} | " +
+                        $"lenSq={lineLenSq:F4} start=({start.X:F2},{start.Y:F2},{start.Z:F2}) end=({end.X:F2},{end.Y:F2},{end.Z:F2})",
+                        SentryLevel.Warning);
+                }
+
+                // Log black/dark spark colors (green channel negative or near-zero).
+                var greenChannel = (short)(197 - 30 * _rtg[i]);
+                if (greenChannel <= 0)
+                {
+                    Logging.Info(
+                        $"Sparks: dark/black spark at slot {i} | " +
+                        $"rtg={_rtg[i]} green={greenChannel} color=({color.R},{color.G},{color.B})");
+                    
+                    SentrySdk.CaptureMessage(
+                        $"Sparks: dark/black spark at slot {i} | " +
+                        $"rtg={_rtg[i]} green={greenChannel} color=({color.R},{color.G},{color.B})",
+                        SentryLevel.Warning);
+                }
+
+                if (lineLenSq < 0.01f)
                 {
                     // Console.WriteLine("Degenerate line!!!");
                     continue;
@@ -210,6 +272,14 @@ public class Sparks : IDisposable
                 
                 // draw line
                 LineMeshHelpers.CreateLineMesh(start, end, _vertexCount, default, default, color, 0f, verts, inds);
+
+                // Bounds guard: prevent writing past pre-allocated arrays
+                if (_vertexCount + LineMeshHelpers.VerticesPerLine > _lineVertices.Length ||
+                    _triangleCount * 3 + LineMeshHelpers.IndicesPerLine > _lineIndices.Length)
+                {
+                    break;
+                }
+
                 for (var v = 0; v < LineMeshHelpers.VerticesPerLine; v++)
                 {
                     _lineVertices[_vertexCount + v] = verts[v];
@@ -244,7 +314,7 @@ public class Sparks : IDisposable
         Sprk = 0;
     }
 
-    public void Render(Camera camera)
+    public void Render(Camera camera, Lighting? _)
     {
         if (_vertexCount == 0 || _triangleCount == 0) return;
         
@@ -281,6 +351,29 @@ public class Sparks : IDisposable
         Effects.Line.Resolution?.SetValue(new Vector2(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height));
 
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+
+#if DEBUG
+        // Diagnostic: detect default (uninitialized) vertex colors reaching the GPU.
+        // default(Color) = (0,0,0,0) which the shader reads as black via float3 COLOR0.
+        {
+            var uploadedVerts = _lineVertices.AsSpan(0, _vertexCount);
+            int blackCount = 0;
+            for (int vi = 0; vi < uploadedVerts.Length; vi++)
+            {
+                if (uploadedVerts[vi].Color == default)
+                {
+                    blackCount++;
+                }
+            }
+            if (blackCount > 0)
+            {
+                SentrySdk.CaptureMessage(
+                    $"Sparks.Render: {blackCount}/{_vertexCount} vertices have default (black) Color",
+                    SentryLevel.Warning);
+            }
+        }
+#endif
+
         foreach (var pass in Effects.Line.CurrentTechnique.Passes)
         {
             pass.Apply();

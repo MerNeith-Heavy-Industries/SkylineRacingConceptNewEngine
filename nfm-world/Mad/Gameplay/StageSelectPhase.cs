@@ -1,6 +1,7 @@
 using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend;
@@ -10,7 +11,7 @@ namespace NFMWorld.Gameplay;
 
 public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderingPhase(graphicsDevice)
 {
-    public event EventHandler<BackendStage>? StageSelected;
+    public event EventHandler<string>? StageSelected;
 
     private UnlimitedArray<string> _stageCollections = [];
     private string _selectedCollection = "";
@@ -44,7 +45,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         LoadStageInCollection();
 
         GameSparker.CurrentMusic?.Unload();
-        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic("data/music/nfm1/stageselectremastered.mp3", 0f);
+        GameSparker.CurrentMusic = IBackend.Backend.LoadMusic("data/music/nfm1/stageselectremastered.mp3");
         GameSparker.CurrentMusic?.Play();
     }
 
@@ -92,7 +93,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
     {
         base.GameTick();
 
-        _aroundStageCamera.AroundStage(camera, CurrentStage);
+        _aroundStageCamera.AroundStage(Camera, CurrentStage.Backend);
     }
 
     public override void Render(float alpha)
@@ -143,7 +144,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
 
         if (_openSearchPopup)
         {
-            ImGui.SetNextWindowSize(new System.Numerics.Vector2(0, 0));
+            ImGui.SetNextWindowSize(new Vector2(0, 0));
 
             bool open = _openSearchPopup;
 
@@ -169,9 +170,9 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
 
         G.SetFont(new Font(FontFamily.DroidSans, FontStyle.Bold, 48));
         G.SetColor(new Color(0, 0, 0));
-        G.DrawStringStrokeAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringStrokeAligned(CurrentStage.Backend.Name, 0, 60, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
         G.SetColor(new Color(255, 255, 255));
-        G.DrawStringAligned(CurrentStage.Name, 0, 60, graphicsDevice.Viewport.Width, graphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
+        G.DrawStringAligned(CurrentStage.Backend.Name, 0, 60, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, TextHorizontalAlignment.Center);
     }
 
     private bool HandleSearch()
@@ -218,11 +219,11 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
         return false;
     }
 
-    public override void KeyPressed(Keys key, bool imguiWantsKeyboard)
+    public override void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        base.KeyPressed(key, imguiWantsKeyboard);
+        base.KeyPressed(key, imguiWantsKeyboard, keys);
 
-        if (key == Keys.Down && _inAutocomplete)
+        if (key == Key.Down && _inAutocomplete)
         {
             _autocompleteIndex++;
             if (_autocompleteIndex >= _autocompleteMatches.Length)
@@ -230,7 +231,7 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
                 _autocompleteIndex = 0;
             }
         }
-        else if (key == Keys.Up && _inAutocomplete)
+        else if (key == Key.Up && _inAutocomplete)
         {
             _autocompleteIndex--;
             if (_autocompleteIndex < 0)
@@ -241,18 +242,18 @@ public class StageSelectPhase(GraphicsDevice graphicsDevice) : BaseStageRenderin
 
         if (imguiWantsKeyboard) return;
 
-        if (key == Keys.Left)
+        if (key == Key.Left)
         {
             CycleStageInCollection(-1);
         }
-        else if (key == Keys.Right)
+        else if (key == Key.Right)
         {
             CycleStageInCollection(1);
         }
-        else if (key == Keys.Enter)
+        else if (key == Key.Enter)
         {
-            StageSelected?.Invoke(this, CurrentStage);
-        } else if (key == Keys.S)
+            StageSelected?.Invoke(this, $"{_selectedCollection}/{_stagesInCollection[_selectedStageIndex]}");
+        } else if (key == Key.S)
         {
             _openSearchPopup = true;
         }

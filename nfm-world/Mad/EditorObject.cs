@@ -1,19 +1,27 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System;
+using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 
 // This duplicates some code from CollisionObject, no workaround
 namespace NFMWorld;
 
-public class EditorObject : ClientCar
+public class EditorObject : StaticMeshObject, IDisposable
 {
     public Rad3dBoxDef[] Boxes { get; }
 
     private readonly CollisionDebugMesh? _collisionDebugMesh;
 
-    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, new ClientOnlyBackendCar(rad))
+    private readonly MeshedGameObject[] _wheels;
+
+    public IReadOnlyList<MeshedGameObject> WheelObjects => _wheels;
+
+    public Rad3dWheelDef[] Wheels { get; }
+
+    public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad) : base(graphicsDevice, rad)
     {
         Boxes = rad.Boxes;
+        Wheels = rad.Wheels;
         if (rad.Boxes.Length > 0)
         {
             _collisionDebugMesh = new CollisionDebugMesh(rad.Boxes)
@@ -21,6 +29,11 @@ public class EditorObject : ClientCar
                 Parent = this
             };
         }
+
+        Wheels = rad.Wheels;
+        _wheels = rad.Wheels
+            .Select(wheel => new WheelMeshBuilder(wheel, rad.Rims).BuildGameObject(graphicsDevice, this))
+            .ToArray();
     }
 
     public EditorObject(GraphicsDevice graphicsDevice, Rad3d rad, f64Vector3 position, f64Euler rotation) : this(graphicsDevice, rad)
@@ -29,17 +42,35 @@ public class EditorObject : ClientCar
         Rotation = rotation;
     }
 
-    public override IEnumerable<RenderData> GetRenderData(Lighting? lighting)
+    public override void OnBeforeRender(float alpha)
     {
-        foreach (var renderData in base.GetRenderData(lighting))
+        base.OnBeforeRender(alpha);
+        for (var i = 0; i < _wheels.Length; i++)
         {
-            yield return renderData;
+            _wheels[i].Parent = this;
+            _wheels[i].OnBeforeRender(alpha);
         }
     }
 
-    public override void Render(Camera camera, Lighting? lighting)
+    public override void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
     {
-        base.Render(camera, lighting);
-        _collisionDebugMesh?.Render(camera, lighting);
+        base.SubmitDraws(queue, camera, lighting, pass);
+
+        foreach (var wheel in _wheels)
+        {
+            wheel.SubmitDraws(queue, camera, lighting, pass);
+        }
+
+        _collisionDebugMesh?.SubmitDraws(queue, camera, lighting, pass);
+    }
+
+    public void Dispose()
+    {
+        _collisionDebugMesh?.Dispose();
+        foreach (var wheel in _wheels)
+        {
+            wheel.Mesh.Dispose();
+        }
+        GC.SuppressFinalize(this);
     }
 }

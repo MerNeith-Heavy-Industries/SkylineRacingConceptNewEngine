@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using HoleyDiver;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorldLibrary.Rad;
 
@@ -8,6 +9,7 @@ namespace NFMWorld;
 
 public class Mesh : IDisposable
 {
+    public Rad3dPoly[] OriginalPolys;
     public Rad3dPoly[] Polys;
 
     public readonly GraphicsDevice GraphicsDevice;
@@ -15,8 +17,6 @@ public class Mesh : IDisposable
     protected Submesh?[] Submeshes;
     protected LineMesh?[]? LineMeshes;
     
-    public readonly PolygonTriangulator.TriangulationResult[] Triangulation;
-
     public int GroundAt;
     
     public string FileName;
@@ -29,15 +29,17 @@ public class Mesh : IDisposable
     public bool Expand;
     public float Darken = 1.0f;
 
+    public byte PolyFixState = 0;
+
     public Mesh(GraphicsDevice graphicsDevice, Rad3d rad)
     {
         // make a copy of points for damageable meshes
-        Polys = Array.ConvertAll(rad.Polys, poly => poly with { Points = [..poly.Points] });
+        OriginalPolys = rad.Polys;
+        Polys = Array.ConvertAll(rad.Polys, static poly => poly.SafeClone());
         GroundAt = rad.Wheels.FirstOrDefault().Ground;
 
         GraphicsDevice = graphicsDevice;
 
-        Triangulation = Array.ConvertAll(Polys, poly => MeshHelpers.TriangulateIfNeeded(poly.Points));
         BuildMesh(graphicsDevice);
 
         FileName = rad.FileName;
@@ -48,11 +50,9 @@ public class Mesh : IDisposable
     public Mesh(Mesh baseMesh)
     {
         // make a copy of points for damageable meshes
-        Polys = Array.ConvertAll(baseMesh.Polys, poly => poly with { Points = [..poly.Points] });
+        Polys = Array.ConvertAll(baseMesh.Polys, static poly => poly.SafeClone());
         GraphicsDevice = baseMesh.GraphicsDevice;
         GroundAt = baseMesh.GroundAt;
-
-        Triangulation = baseMesh.Triangulation;
 
         BuildMesh(GraphicsDevice);
 
@@ -83,7 +83,7 @@ public class Mesh : IDisposable
         
         var submeshes = new (
             List<VertexPositionNormalColorCentroid> Data,
-            List<int> Indices
+            List<uint> Indices
         )[(int)(PolyType.MaxValue + 1)];
 
         for (var i = 0; i < submeshes.Length; i++)
@@ -106,23 +106,22 @@ public class Mesh : IDisposable
         for (var i = 0; i < Polys.Length; i++)
         {
             var poly = Polys[i];
-            var result = Triangulation[i];
 
             var (data, indices) = submeshes[(int)poly.PolyType];
             
-            var baseIndex = data.Count;
+            var baseIndex = (uint)data.Count;
             float decalOffset = poly.DecalOffset; // Use the decal offset value from polygon
             foreach (var point in poly.Points)
             {
                 var color = poly.Color;
-                data.Add(new VertexPositionNormalColorCentroid(point, result.PlaneNormal, result.Centroid, color, decalOffset));
+                data.Add(new VertexPositionNormalColorCentroid(point, poly.Normal, poly.Centroid, color, decalOffset));
             }
 
-            for (var index = 0; index < result.Triangles.Length; index += 3)
+            for (var index = 0; index < poly.Triangles.Length; index += 3)
             {
-                var i0 = result.Triangles[index];
-                var i1 = result.Triangles[index + 1];
-                var i2 = result.Triangles[index + 2];
+                var i0 = poly.Triangles[index];
+                var i1 = poly.Triangles[index + 1];
+                var i2 = poly.Triangles[index + 2];
 
                 indices.AddRange(i0 + baseIndex, i1 + baseIndex, i2 + baseIndex);
             }
@@ -133,7 +132,7 @@ public class Mesh : IDisposable
                 {
                     var p0 = poly.Points[j];
                     var p1 = poly.Points[(j + 1) % poly.Points.Length];
-                    lines[(int)poly.LineType].TryAdd((p0, p1), (poly, result.Centroid, result.PlaneNormal));
+                    lines[(int)poly.LineType].TryAdd((p0, p1), (poly, poly.Centroid, poly.Normal));
                 }
             }
         }
@@ -204,37 +203,36 @@ public class Mesh : IDisposable
         BuildMesh(GraphicsDevice);
     }
 
-    public IEnumerable<(IInstancedRenderElement Element, int RenderOrder)> GetRenderables(Lighting? lighting, bool finish)
+    public void SubmitRenderables(RenderQueue queue, Lighting? lighting, bool finish, BoundingSphere boundingSphere, RenderBucket renderBucket, Matrix matrixWorld, bool getsShadowed = false, float alphaOverride = 1.0f, bool isFullbright = false, bool glow = false)
     {
+        var instanceData = new InstanceData(matrixWorld, getsShadowed, alphaOverride, isFullbright, glow);
+
         foreach (var submesh in Submeshes)
         {
             // we care about the order of drawn submeshes only if we dont have an alpha override
-            if (submesh != null &&
-                submesh.PolyType != PolyType.Glass &&
-                (submesh.PolyType != PolyType.Finish || finish))
+            if (submesh != null && (submesh.PolyType != PolyType.Finish || finish))
             {
-                yield return (submesh, 0);
+                queue.AddInstanced(
+                    submesh,
+                    instanceData,
+                    SortKey.Create(renderBucket, (ushort)(alphaOverride < 1f || submesh.PolyType == PolyType.Glass ? 1 : 0)),
+                    boundingSphere);
             }
         }
 
-        if (lighting?.IsCreateShadowMap != true)
+        if (lighting?.IsCreateShadowMap != true && LineMeshes != null)
         {
-            if (LineMeshes != null)
+            foreach (var lineMesh in LineMeshes)
             {
-                foreach (var lineMesh in LineMeshes)
+                if (lineMesh != null)
                 {
-                    if (lineMesh != null)
-                    {
-                        yield return (lineMesh, 0);
-                    }
+                    queue.AddInstanced(
+                        lineMesh,
+                        instanceData,
+                        SortKey.Create(renderBucket, (ushort)(alphaOverride < 1f ? 1 : 0)),
+                        boundingSphere);
                 }
             }
-        }
-        
-        // Render glass (translucency) last if it is the only translucent thing
-        if (Submeshes[(int)PolyType.Glass] is {} glassSubmesh)
-        {
-            yield return (glassSubmesh, 1);
         }
     }
 

@@ -1,13 +1,3 @@
-namespace NFMWorld.Account;
+namespace NFMWorld.Accounts;
 
-public class Account
-{
-    public string? Token;
-    public string Username;
-
-    public Account(string token, string username)
-    {
-        Token = token;
-        Username = username;
-    }
-}
+public record Account(string Token, string Username);

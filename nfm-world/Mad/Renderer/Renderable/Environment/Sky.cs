@@ -3,7 +3,7 @@ using NFMWorldLibrary;
 
 namespace NFMWorld;
 
-public class Sky : Transform, IImmediateRenderable
+public class Sky : Transform, IRenderable, IImmediateRenderElement, IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
     private readonly VertexBuffer _vertexBuffer;
@@ -43,12 +43,12 @@ public class Sky : Transform, IImmediateRenderable
                 (new Vector3(-1e5f, -layersArr[i + 1].Position.Y, -layersArr[i + 1].Position.Z), layersArr[i + 1].Color),
                 (new Vector3(1e5f, -layersArr[i + 1].Position.Y, -layersArr[i + 1].Position.Z), layersArr[i + 1].Color),
             ];
-            data.Add(new VertexPositionColor(vertices[0].Position, new Microsoft.Xna.Framework.Color(vertices[0].Color)));
-            data.Add(new VertexPositionColor(vertices[1].Position, new Microsoft.Xna.Framework.Color(vertices[1].Color)));
-            data.Add(new VertexPositionColor(vertices[2].Position, new Microsoft.Xna.Framework.Color(vertices[2].Color)));
-            data.Add(new VertexPositionColor(vertices[1].Position, new Microsoft.Xna.Framework.Color(vertices[1].Color)));
-            data.Add(new VertexPositionColor(vertices[2].Position, new Microsoft.Xna.Framework.Color(vertices[2].Color)));
-            data.Add(new VertexPositionColor(vertices[3].Position, new Microsoft.Xna.Framework.Color(vertices[3].Color)));
+            data.Add(new VertexPositionColor(vertices[0].Position, new Color(vertices[0].Color)));
+            data.Add(new VertexPositionColor(vertices[1].Position, new Color(vertices[1].Color)));
+            data.Add(new VertexPositionColor(vertices[2].Position, new Color(vertices[2].Color)));
+            data.Add(new VertexPositionColor(vertices[1].Position, new Color(vertices[1].Color)));
+            data.Add(new VertexPositionColor(vertices[2].Position, new Color(vertices[2].Color)));
+            data.Add(new VertexPositionColor(vertices[3].Position, new Color(vertices[3].Color)));
         }
 
         var vertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColor), data.Count, BufferUsage.None)
@@ -69,45 +69,69 @@ public class Sky : Transform, IImmediateRenderable
 
     ~Sky()
     {
-        _vertexBuffer.Dispose();
+        Dispose(false);
     }
-    
-    public void Render(Camera camera, Lighting? lighting = null)
-    {
-        if (lighting?.IsCreateShadowMap == true) return;
 
+    public void SubmitDraws(RenderQueue queue, Camera camera, Lighting? lighting, RenderPass pass)
+    {
+        if (pass.IsShadow) return;
+
+        queue.AddImmediate(SortKey.Create(RenderBucket.Sky), this);
+    }
+
+    public void Render(Camera cam, Lighting? _)
+    {
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
-
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        
+
         Vector3 col = World.Sky.Snap(World.Snap);
-        for (var i = 1; i < 20; ++i) {
+        for (var i = 1; i < 20; ++i)
+        {
             col = new Vector3(0.991f, 0.991f, 0.998f) * col;
         }
-        _graphicsDevice.Clear(new Microsoft.Xna.Framework.Color(col));
-        
+
+        _graphicsDevice.Clear(new Color(col));
+
         // Extract camera rotation from view direction
-        var viewDirection = Vector3.Normalize(camera.LookAt - camera.Position);
-        
+        var viewDirection = Vector3.Normalize(cam.LookAt - cam.Position);
+
         // Calculate yaw from view direction
         var yaw = (float)Math.Atan2(viewDirection.X, viewDirection.Z);
-        
-        // Create rotation: first rotate by negative yaw, then apply full camera rotation
+
         var yawRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -yaw);
         var fullRotation = Quaternion.CreateFromYawPitchRoll(yaw, 0, 0);
         var combinedRotation = yawRotation * fullRotation;
         combinedRotation = Quaternion.Inverse(combinedRotation);
-        
+
         var viewMatrix = Matrix.CreateFromQuaternion(combinedRotation);
-        
-        Effects.Sky.Parameters["WorldViewProj"]?.SetValue(viewMatrix * camera.ProjectionMatrix);
+
+        Effects.Sky.Parameters["WorldViewProj"]?.SetValue(viewMatrix * cam.ProjectionMatrix);
         foreach (var pass in Effects.Sky.CurrentTechnique.Passes)
         {
             pass.Apply();
-    
             _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _triangleCount);
         }
+
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+    }
+
+    private void Dispose(bool disposing)
+    {
+        ReleaseUnmanagedResources();
+        if (disposing)
+        {
+            _vertexBuffer.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

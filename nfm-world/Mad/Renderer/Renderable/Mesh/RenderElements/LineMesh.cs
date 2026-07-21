@@ -88,7 +88,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         _graphicsDevice.RasterizerState = RasterizerState.CullNone;
 
         // If a parameter is null that means the HLSL compiler optimized it out.
-        Effects.Line.SnapColor?.SetValue((Vector3)World.Snap);
+        Effects.Line.SnapColor?.SetValue(World.Snap);
         Effects.Line.IsFullbright?.SetValue(false);
         Effects.Line.UseBaseColor?.SetValue(false);
         Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
@@ -96,7 +96,7 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);
-        Effects.Line.FogColor?.SetValue((Vector3)World.Fog.Snap(World.Snap));
+        Effects.Line.FogColor?.SetValue(World.Fog.Snap(World.Snap));
         Effects.Line.FogDistance?.SetValue(World.FadeFrom);
         Effects.Line.FogDensity?.SetValue(World.FogDensity / (World.FogDensity + 1));
         Effects.Line.EnvironmentLight?.SetValue(new Vector2(World.BlackPoint, World.WhitePoint));
@@ -115,6 +115,47 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.Alpha?.SetValue(1.0f);
 
         Effects.Line.Resolution?.SetValue(new Vector2(_graphicsDevice.Viewport.Width, _graphicsDevice.Viewport.Height));
+
+        if (_supermesh.PolyFixState == 2)
+        {
+            Effects.Line.UseBaseColor?.SetValue(true);
+            Effects.Line.BaseColor?.SetValue(new Vector3(0, 0, 0));
+            Effects.Line.IsFullbright?.SetValue(true);
+        }
+        else if (_supermesh.PolyFixState == 1)
+        {
+            const short r = 0;
+            short g = (short) (223F + 223F * (World.Snap[1] / 100F));
+            if (g > 255) g = 255;
+            if (g < 0) g = 0;
+            short b = (short) (255F + 255F * (World.Snap[2] / 100F));
+            if (b > 255) b = 255;
+            if (b < 0) b = 0;
+            
+            Effects.Line.UseBaseColor?.SetValue(true);
+            Effects.Line.BaseColor?.SetValue(new Color3(r, g, b));
+            Effects.Line.IsFullbright?.SetValue(true);
+        }
+        else if (_supermesh.PolyFixState == 3)
+        {
+            const short r = 0;
+            short g = (short) (255.0F + 255.0F * (World.Snap[1] / 100.0F));
+            if (g > 255) g = 255;
+            if (g < 0) g = 0;
+            short b = (short) (223.0F + 223.0F * (World.Snap[2] / 100.0F));
+            if (b > 255) b = 255;
+            if (b < 0) b = 0;
+            
+            Effects.Line.UseBaseColor?.SetValue(true);
+            Effects.Line.BaseColor?.SetValue(new Color3(r, g, b));
+            Effects.Line.IsFullbright?.SetValue(true);
+        }
+        else if (_supermesh.PolyFixState == 77)
+        {
+            Effects.Line.UseBaseColor?.SetValue(true);
+            Effects.Line.BaseColor?.SetValue(new Color3(16, 198, 255));
+            Effects.Line.IsFullbright?.SetValue(true);
+        }
 
         lighting?.SetShadowMapParameters(Effects.Line.UnderlyingEffect);
         

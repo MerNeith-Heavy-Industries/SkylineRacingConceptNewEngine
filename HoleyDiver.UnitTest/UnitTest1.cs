@@ -2598,4 +2598,192 @@ public class Tests
 
         return false;
     }
+
+    #region Hole Detection Tests
+
+    /// <summary>
+    /// Door polygon with a window cutout. The self-intersecting path defines a door shape
+    /// with a rectangular window hole. Should detect 2 regions (outer + 1 hole).
+    /// </summary>
+    [Test]
+    public void DoorPolygon_WithWindowCutout_DetectsHole()
+    {
+        var vertices = new Vector3[]
+        {
+            new Vector3(-56,-17,192),
+            new Vector3(-56,-9,192),
+            new Vector3(-56,40,192),
+            new Vector3(-57,40,177),
+            new Vector3(-59,40,161),
+            new Vector3(-60,40,145),
+            new Vector3(-62,40,129),
+            new Vector3(-63,40,118),
+            new Vector3(-63,-73,118),
+            new Vector3(-56,-73,185),
+            new Vector3(-56,-37,192),
+            new Vector3(-56,-37,185),
+            new Vector3(-57,-65,180),
+            new Vector3(-62,-65,128),
+            new Vector3(-62,-32,128),
+            new Vector3(-59,-32,157),
+            new Vector3(-58,-22,163),
+            new Vector3(-56,-22,185),
+            new Vector3(-56,-37,185),
+            new Vector3(-56,-37,192),
+        };
+
+        var result = PolygonTriangulator.Triangulate(vertices);
+
+        Assert.That(result.RegionCount, Is.EqualTo(2), "Door with window should detect 2 regions (outer + 1 hole).");
+        Assert.That(result.Triangles.Length, Is.GreaterThan(0), "Should produce triangles.");
+        Assert.That(result.Triangles.Length % 3, Is.EqualTo(0), "Triangle array length must be divisible by 3.");
+
+        // All triangle indices must be valid
+        foreach (var idx in result.Triangles)
+        {
+            Assert.That(idx, Is.LessThan((uint)vertices.Length), $"Triangle index {idx} out of range.");
+        }
+
+        // Verify no degenerate triangles (all 3 vertices distinct)
+        for (int i = 0; i < result.Triangles.Length; i += 3)
+        {
+            var a = vertices[result.Triangles[i]];
+            var b = vertices[result.Triangles[i + 1]];
+            var c = vertices[result.Triangles[i + 2]];
+            Assert.That(a, Is.Not.EqualTo(b), $"Degenerate triangle at {i}: vertex {result.Triangles[i]} equals {result.Triangles[i+1]}");
+            Assert.That(b, Is.Not.EqualTo(c), $"Degenerate triangle at {i}: vertex {result.Triangles[i+1]} equals {result.Triangles[i+2]}");
+            Assert.That(c, Is.Not.EqualTo(a), $"Degenerate triangle at {i}: vertex {result.Triangles[i+2]} equals {result.Triangles[i]}");
+        }
+    }
+
+    /// <summary>
+    /// Car rear polygon with 2 rectangular holes. Should detect 3 regions (outer + 2 holes).
+    /// </summary>
+    [Test]
+    public void CarRearPolygon_WithTwoHoles_DetectsBothHoles()
+    {
+        var vertices = new Vector3[]
+        {
+            new Vector3(-40,-54,-103),
+            new Vector3(-40,-27,-103),
+            new Vector3(40,-27,-103),
+            new Vector3(40,-54,-103),
+            new Vector3(38,-43,-103),
+            new Vector3(33,-42,-104),
+            new Vector3(33,-34,-104),
+            new Vector3(38,-33,-103),
+            new Vector3(38,-43,-103),
+            new Vector3(40,-54,-103),
+            new Vector3(19,-43,-103),
+            new Vector3(0,-45,-103),
+            new Vector3(-19,-43,-103),
+            new Vector3(-40,-54,-103),
+            new Vector3(-38,-43,-103),
+            new Vector3(-33,-42,-104),
+            new Vector3(-33,-34,-104),
+            new Vector3(-38,-33,-103),
+            new Vector3(-38,-43,-103),
+        };
+
+        var result = PolygonTriangulator.Triangulate(vertices);
+
+        Assert.That(result.RegionCount, Is.EqualTo(3), "Car rear should detect 3 regions (outer + 2 holes).");
+        Assert.That(result.Triangles.Length, Is.GreaterThan(0), "Should produce triangles.");
+        Assert.That(result.Triangles.Length % 3, Is.EqualTo(0), "Triangle array length must be divisible by 3.");
+
+        foreach (var idx in result.Triangles)
+        {
+            Assert.That(idx, Is.LessThan((uint)vertices.Length), $"Triangle index {idx} out of range.");
+        }
+
+        for (int i = 0; i < result.Triangles.Length; i += 3)
+        {
+            Assert.That(vertices[result.Triangles[i]], Is.Not.EqualTo(vertices[result.Triangles[i + 1]]));
+            Assert.That(vertices[result.Triangles[i + 1]], Is.Not.EqualTo(vertices[result.Triangles[i + 2]]));
+            Assert.That(vertices[result.Triangles[i + 2]], Is.Not.EqualTo(vertices[result.Triangles[i]]));
+        }
+    }
+
+    /// <summary>
+    /// Windshield polygon with 1 hole. Should detect 2 regions.
+    /// </summary>
+    [Test]
+    public void WindshieldPolygon_WithHole_DetectsHole()
+    {
+        var vertices = new Vector3[]
+        {
+            new Vector3(42.5f,23.800001f,207.40001f),
+            new Vector3(42.5f,-8.5f,207.40001f),
+            new Vector3(27.2f,-20.400002f,207.40001f),
+            new Vector3(13.6f,-23.800001f,207.40001f),
+            new Vector3(-13.6f,-23.800001f,207.40001f),
+            new Vector3(-27.2f,-20.400002f,207.40001f),
+            new Vector3(-42.5f,-8.5f,207.40001f),
+            new Vector3(-42.5f,23.800001f,207.40001f),
+            new Vector3(-35.7f,23.800001f,207.40001f),
+            new Vector3(35.7f,23.800001f,207.40001f),
+            new Vector3(35.7f,11.900001f,207.40001f),
+            new Vector3(-35.7f,11.900001f,207.40001f),
+            new Vector3(-35.7f,-5.1000004f,207.40001f),
+            new Vector3(-23.800001f,-15.3f,207.40001f),
+            new Vector3(-13.6f,-17f,207.40001f),
+            new Vector3(13.6f,-17f,207.40001f),
+            new Vector3(23.800001f,-15.3f,207.40001f),
+            new Vector3(35.7f,-5.1000004f,207.40001f),
+            new Vector3(35.7f,23.800001f,207.40001f),
+        };
+
+        var result = PolygonTriangulator.Triangulate(vertices);
+
+        Assert.That(result.RegionCount, Is.EqualTo(2), "Windshield should detect 2 regions (outer + 1 hole).");
+        Assert.That(result.Triangles.Length, Is.GreaterThan(0), "Should produce triangles.");
+        Assert.That(result.Triangles.Length % 3, Is.EqualTo(0), "Triangle array length must be divisible by 3.");
+
+        foreach (var idx in result.Triangles)
+        {
+            Assert.That(idx, Is.LessThan((uint)vertices.Length), $"Triangle index {idx} out of range.");
+        }
+
+        for (int i = 0; i < result.Triangles.Length; i += 3)
+        {
+            Assert.That(vertices[result.Triangles[i]], Is.Not.EqualTo(vertices[result.Triangles[i + 1]]));
+            Assert.That(vertices[result.Triangles[i + 1]], Is.Not.EqualTo(vertices[result.Triangles[i + 2]]));
+            Assert.That(vertices[result.Triangles[i + 2]], Is.Not.EqualTo(vertices[result.Triangles[i]]));
+        }
+    }
+
+    /// <summary>
+    /// Simple convex quad with no holes should take the fast path (TryTriangulateSimple).
+    /// </summary>
+    [Test]
+    public void SimpleConvexQuad_NoHoles_UsesFastPath()
+    {
+        var vertices = new Vector3[]
+        {
+            new Vector3(0, 0, 0),
+            new Vector3(10, 0, 0),
+            new Vector3(10, 10, 0),
+            new Vector3(0, 10, 0),
+        };
+
+        var result = PolygonTriangulator.Triangulate(vertices);
+
+        Assert.That(result.RegionCount, Is.EqualTo(1), "Simple quad should have 1 region.");
+        Assert.That(result.Triangles.Length, Is.EqualTo(6), "Simple convex quad should produce 2 triangles (6 indices).");
+
+        foreach (var idx in result.Triangles)
+        {
+            Assert.That(idx, Is.LessThan((uint)vertices.Length), $"Triangle index {idx} out of range.");
+        }
+
+        // Fan triangulation from vertex 0: (0,1,2) and (0,2,3)
+        Assert.That(result.Triangles[0], Is.EqualTo((uint)0));
+        Assert.That(result.Triangles[1], Is.EqualTo((uint)1));
+        Assert.That(result.Triangles[2], Is.EqualTo((uint)2));
+        Assert.That(result.Triangles[3], Is.EqualTo((uint)0));
+        Assert.That(result.Triangles[4], Is.EqualTo((uint)2));
+        Assert.That(result.Triangles[5], Is.EqualTo((uint)3));
+    }
+
+    #endregion
 }
