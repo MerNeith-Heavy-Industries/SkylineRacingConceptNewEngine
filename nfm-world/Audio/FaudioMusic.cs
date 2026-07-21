@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.IO.Compression;
 using Microsoft.Xna.Framework.Audio;
 using NFMWorld.DriverInterface;
@@ -19,10 +20,11 @@ public sealed class FaudioMusic : IRadicalMusic
     private bool _readable;
 
     // Stored for re-stretching if SetFreqMultiplier is called
-    private byte[]? _originalPcm;
-    private int _sampleRate;
-    private int _channels;
+    private byte[] OriginalPcm => _decoded.PcmData;
+    private int SampleRate => _decoded.SampleRate;
+    private int Channels => (int)_decoded.Channels;
     private double _currentTempoMultiplier = 1.0;
+    private readonly DecodeResult _decoded;
 
     /// <summary>
     /// Creates an empty, unplayable music instance. All methods are no-ops.
@@ -59,39 +61,41 @@ public sealed class FaudioMusic : IRadicalMusic
             }
 
             // Decode to PCM
-            byte[] pcmData;
-            int sampleRate;
-            AudioChannels audioChannels;
+            DecodeResult result;
 
             if (TrackerDecoder.IsTrackerFormat(extension))
             {
-                var result = TrackerDecoder.Decode(entryStream ?? stream);
-                pcmData = result.PcmData;
-                sampleRate = result.SampleRate;
-                audioChannels = result.Channels;
+                result = TrackerDecoder.Decode(entryStream ?? stream);
             }
             else
             {
-                var result = AudioDecoder.Decode(entryStream ?? stream, extension);
-                pcmData = result.PcmData;
-                sampleRate = result.SampleRate;
-                audioChannels = result.Channels;
+                result = AudioDecoder.Decode(entryStream ?? stream, extension);
             }
 
-            _originalPcm = pcmData;
-            _sampleRate = sampleRate;
-            _channels = (int)audioChannels;
+            _decoded = result;
+
             _currentTempoMultiplier = tempomul;
 
-            // Apply tempo stretching if needed
-            var finalPcm = Math.Abs(tempomul - 1.0) > 0.01
-                ? TempoStretcher.Process(pcmData, sampleRate, _channels, tempomul)
-                : pcmData;
+            byte[]? arrayToReturnToPool = null;
 
-            // Create SoundEffect with loop points (loop entire track)
-            var totalSamples = finalPcm.Length / 2; // 16-bit = 2 bytes per sample
-            var totalFrames = totalSamples / _channels; // samples per channel
-            _effect = new SoundEffect(finalPcm, sampleRate, audioChannels, 0, totalFrames);
+            try
+            {
+                // Apply tempo stretching if needed
+                var finalPcm = Math.Abs(tempomul - 1.0) > 0.01
+                    ? arrayToReturnToPool =
+                        TempoStretcher.Process(result.PcmData, result.SampleRate, Channels, tempomul)
+                    : result.PcmData;
+
+                // Create SoundEffect with loop points (loop entire track)
+                var totalSamples = finalPcm.Length / 2; // 16-bit = 2 bytes per sample
+                var totalFrames = totalSamples / Channels; // samples per channel
+                _effect = new SoundEffect(finalPcm, result.SampleRate, result.Channels, 0, totalFrames);
+            }
+            finally
+            {
+                if (arrayToReturnToPool != null)
+                    ArrayPool<byte>.Shared.Return(arrayToReturnToPool);
+            }
 
             _readable = true;
         }
@@ -129,8 +133,9 @@ public sealed class FaudioMusic : IRadicalMusic
         _effect?.Dispose();
         _effect = null;
 
-        _originalPcm = null;
         _readable = false;
+        
+        _decoded.Dispose();
     }
 
     public void Play()
@@ -164,7 +169,7 @@ public sealed class FaudioMusic : IRadicalMusic
 
     public void SetFreqMultiplier(double multiplier)
     {
-        if (!_readable || _originalPcm == null) return;
+        if (!_readable || OriginalPcm == null) return;
 
         // Clamp to valid range
         multiplier = Math.Clamp(multiplier, 0.50, 2.0);
@@ -176,21 +181,31 @@ public sealed class FaudioMusic : IRadicalMusic
         _currentTempoMultiplier = multiplier;
 
         // Re-apply tempo stretching and re-create the SoundEffect
-        var finalPcm = Math.Abs(multiplier - 1.0) > 0.01
-            ? TempoStretcher.Process(_originalPcm, _sampleRate, _channels, multiplier)
-            : _originalPcm;
+        byte[]? arrayToReturnToPool = null;
 
         var wasPlaying = _instance?.State == SoundState.Playing;
 
-        // Clean up old instances
-        _instance?.Stop();
-        _instance?.Dispose();
-        _instance = null;
-        _effect?.Dispose();
+        try
+        {
+            var finalPcm = Math.Abs(multiplier - 1.0) > 0.01
+                ? arrayToReturnToPool = TempoStretcher.Process(OriginalPcm, SampleRate, Channels, multiplier)
+                : OriginalPcm;
 
-        // Re-create SoundEffect
-        var totalFrames = finalPcm.Length / 2 / _channels;
-        _effect = new SoundEffect(finalPcm, _sampleRate, (AudioChannels)_channels, 0, totalFrames);
+            // Clean up old instances
+            _instance?.Stop();
+            _instance?.Dispose();
+            _instance = null;
+            _effect?.Dispose();
+
+            // Re-create SoundEffect
+            var totalFrames = finalPcm.Length / 2 / Channels;
+            _effect = new SoundEffect(finalPcm, SampleRate, (AudioChannels)Channels, 0, totalFrames);
+        }
+        finally
+        {
+            if (arrayToReturnToPool != null)
+                ArrayPool<byte>.Shared.Return(arrayToReturnToPool);
+        }
 
         // Resume playback if it was playing
         if (wasPlaying)

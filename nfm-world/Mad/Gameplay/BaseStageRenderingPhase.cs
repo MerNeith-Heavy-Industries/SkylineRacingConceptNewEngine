@@ -95,7 +95,7 @@ public abstract class BaseStageRenderingPhase : BasePhase
 
             bool useRemastered = GameSparker.UseRemasteredMusic && !string.IsNullOrEmpty(CurrentStage.RemasteredMusicPath);
             string path = useRemastered ? CurrentStage.RemasteredMusicPath : CurrentStage.MusicPath;
-            double tempoMul = !useRemastered ? CurrentStage.MusicTempoMul : 0d;
+            double tempoMul = !useRemastered ? CurrentStage.MusicTempoMul : 1d;
             double freqMul = !useRemastered ? CurrentStage.MusicFreqMul : 1d;
 
             _stageMusic = IBackend.Backend.LoadMusic($"./data/music/{path}", tempoMul);

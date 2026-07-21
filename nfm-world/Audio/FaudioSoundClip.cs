@@ -34,7 +34,7 @@ public sealed class FaudioSoundClip : ISoundClip
         var stream = VFS.OpenRead(filePath);
 
         // Decode to PCM (stream formats only; SFX are not tracker formats)
-        var result = AudioDecoder.Decode(stream, extension);
+        using var result = AudioDecoder.Decode(stream, extension);
 
         // Create SoundEffect (non-looped by default — loop flag set per-play)
         _effect = new SoundEffect(result.PcmData, result.SampleRate, result.Channels);
