@@ -81,7 +81,7 @@ public partial class StageLoader
 
     // soundtrackfreqmul(mul)
     [MemoryPackOrder(4)] public double musicFreqMul = 1.0d;
-    [MemoryPackOrder(5)] public double musicTempoMul = 0d;
+    [MemoryPackOrder(5)] public double musicTempoMul = 1.0d;
     [MemoryPackOrder(6)] public string Name = "hogan rewish";
     [MemoryPackOrder(7)] public int indexOffset = 10;
 

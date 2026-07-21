@@ -81,6 +81,7 @@
   <Project Path="NFMWorld.Server.SharedMemory/NFMWorld.Server.SharedMemory.csproj" />
   <Project Path="NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.csproj" />
   <Project Path="Sokol/Sokol.csproj" />
+  <Project Path="SoundTouch.Net.NAudioSupport/SoundTouch.Net.NAudioSupport.csproj" />
   <Project Path="TestSvgPreprocess/TestSvgPreprocess.csproj" />
   <Project Path="websocket-sharp/websocket-sharp/websocket-sharp.csproj" />
 </Solution>

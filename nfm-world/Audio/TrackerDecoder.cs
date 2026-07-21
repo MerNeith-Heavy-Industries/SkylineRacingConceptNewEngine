@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
 using LibOpenMPT.NET;
+using Microsoft.IO;
 using Microsoft.Xna.Framework.Audio;
 using NFMWorldLibrary;
 
@@ -31,10 +32,18 @@ public static unsafe class TrackerDecoder
     /// </summary>
     public static DecodeResult Decode(Stream stream)
     {
-        var memoryStream = new MemoryStream();
+        using var memoryStream = new RecyclableMemoryStream(MemoryManager.Manager, Guid.NewGuid(), "TrackerDecoder stream");
         stream.CopyTo(memoryStream);
-        memoryStream.Position = 0;
-        return Decode(memoryStream.ToArray());
+        var arr = ArrayPool<byte>.Shared.Rent((int)memoryStream.Length);
+        try
+        {
+            memoryStream.GetReadOnlySequence().CopyTo(arr);
+            return Decode(arr);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(arr);
+        }
     }
 
     /// <summary>
