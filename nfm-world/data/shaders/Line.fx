@@ -74,8 +74,13 @@ struct VertexShaderOutput
     float3 Normal : TEXCOORD4;
 };
 
-float CalculateFalloffHalfThickness(float viewDepth)
+void CalculateDistantOutline(
+    float viewDepth,
+    out float renderedHalfThickness,
+    out float hideLine
+)
 {
+    // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently.
     // Falloff uses the user's specified width up to FalloffStartDistance, then follows
     // inverse-depth sizing. For example, width 4 at 2x the start distance renders at width 2.
     float referenceDepth = max(OutlineFalloffStartDistance, 0.0001);
@@ -90,7 +95,14 @@ float CalculateFalloffHalfThickness(float viewDepth)
     float falloffThickness = lerp(inverseDepthThickness, cutoffThickness, DistantOutlineDistanceFalloffWithCutoffMask);
     float falloffMode = DistantOutlineDistanceFalloffMask + DistantOutlineDistanceFalloffWithCutoffMask;
 
-    return lerp(HalfThickness, falloffThickness, falloffMode);
+    renderedHalfThickness = lerp(HalfThickness, falloffThickness, falloffMode);
+
+    // Collapse hidden quads without using pixel-shader discard.
+    float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
+    float pastFalloffCutoff = saturate(sign(viewDepth - OutlineFalloffCutoffDistance));
+    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoffMask * pastFalloffCutoff;
+    float classicHidden = DistantOutlineClassicCutoffMask * cullPastDistance;
+    hideLine = max(classicHidden, distanceCutoffHidden);
 }
 
 VertexShaderOutput MainVS(
@@ -113,16 +125,9 @@ VertexShaderOutput MainVS(
     float3 worldCentroid = mul(float4(input.Centroid, 1), world).xyz;
     float viewDepth = -mul(float4(worldCentroid, 1), View).z;
 
-    // Keep this branchless. Some drivers handled dynamic bool branches in this effect inconsistently,
-    // masks also let us collapse hidden quads without using pixel-shader discard
-    float cullPastDistance = saturate(sign(viewDepth - OutlineClassicCutoffDistance));
-    float renderedHalfThickness = CalculateFalloffHalfThickness(viewDepth);
-
-    // Only DistanceFalloffWithCutoff hides the line after its precomputed cutoff distance.
-    float pastFalloffCutoff = saturate(sign(viewDepth - OutlineFalloffCutoffDistance));
-    float distanceCutoffHidden = DistantOutlineDistanceFalloffWithCutoffMask * pastFalloffCutoff;
-    float classicHidden = DistantOutlineClassicCutoffMask * cullPastDistance;
-    float hideLine = max(classicHidden, distanceCutoffHidden);
+    float renderedHalfThickness;
+    float hideLine;
+    CalculateDistantOutline(viewDepth, renderedHalfThickness, hideLine);
 
     // Decode Side: abs > 1.5 means endpoint B, sign gives offset direction
     float3 position = (abs(input.Side) > 1.5) ? input.PositionB : input.PositionA;
