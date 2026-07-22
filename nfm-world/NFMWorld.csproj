@@ -111,6 +111,129 @@
         <Copy SourceFiles="@(_CefMacRuntimeLibrariesToCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_CefMacRuntimeLibrariesToCopy)' != ''" />
     </Target>
 
+    <!--
+      Redirect CEF NuGet assets to the correct output layout:
+        - Native shared libs (.dll/.so/.dylib) -&gt; output root (alongside NFMWorld.BrowserProcess)
+        - Resources (.pak/.dat/.bin/.json)    -&gt; data/cef/
+        - Locales (locale .pak files)          -&gt; data/cef/locales/
+
+      Runs after CefGlue.Common.targets' ResolveCEFAssets (which creates None items
+      for Windows CEF runtime/locale files) and before the SDK's CopyFilesToOutputDirectory.
+      Does NOT patch any NuGet package files.
+    -->
+    <Target Name="RedirectCefAssetsToDataCef" AfterTargets="ResolveCEFAssets" BeforeTargets="CopyFilesToOutputDirectory">
+        <ItemGroup>
+            <!-- (a) Windows runtime items: have NuGetPackageId from RuntimeTargetsCopyLocalItems.
+                 Check None AND ReferenceCopyLocalPaths. The .NET SDK puts native runtime files
+                 in both: None items go to output root (via CefGlue.Common.targets), while
+                 ReferenceCopyLocalPaths items go to runtimes\{rid}\native\ (via SDK targets). -->
+            <_CefByPackage Include="@(None)"
+                Condition="$([System.String]::new('%(None.NuGetPackageId)').StartsWith('chromiumembeddedframework.runtime.'))" />
+            <_CefByPackage Include="@(ReferenceCopyLocalPaths)"
+                Condition="$([System.String]::new('%(ReferenceCopyLocalPaths.NuGetPackageId)').StartsWith('chromiumembeddedframework.runtime.'))" />
+
+            <!-- (b) Linux / macOS redist items: Link contains CefGlueBrowserProcess -->
+            <_CefByBpDir Include="@(None)"
+                Condition="$([System.String]::new('%(None.Link)').Contains('CefGlueBrowserProcess'))" />
+
+            <!-- (c) Windows locale items: Link under runtimes\...\locales\, .pak extension, no NuGetPackageId -->
+            <_CefWinLocales Include="@(None)"
+                Condition="'%(None.Extension)' == '.pak'
+                           AND $([System.String]::new('%(None.Link)').Contains('runtimes'))
+                           AND $([System.String]::new('%(None.Link)').Contains('locales'))" />
+        </ItemGroup>
+
+        <!-- Merge, deduplicating items caught by multiple filters -->
+        <ItemGroup>
+            <_CefAll Include="@(_CefByPackage)" />
+            <_CefAll Include="@(_CefByBpDir)"   Exclude="@(_CefByPackage)" />
+            <_CefAll Include="@(_CefWinLocales)" Exclude="@(_CefByPackage);@(_CefByBpDir)" />
+        </ItemGroup>
+
+        <!-- Split into three destination categories -->
+        <ItemGroup>
+            <!-- Native shared libraries -&gt; output root (flat) -->
+            <_CefNative Include="@(_CefAll)"
+                Condition="'%(_CefAll.Extension)' == '.dll'
+                           OR '%(_CefAll.Extension)' == '.so'
+                           OR '%(_CefAll.Extension)' == '.dylib'" />
+
+            <!-- Locale .pak files -&gt; data\cef\locales\ -->
+            <_CefLocales Include="@(_CefAll)"
+                Condition="'%(_CefAll.Extension)' == '.pak'
+                           AND $([System.String]::new('%(FullPath)').Contains('locales'))" />
+
+            <!-- Everything else (non-locale .pak, .dat, .bin, .json) -&gt; data\cef\ -->
+            <_CefResources Include="@(_CefAll)" Exclude="@(_CefNative);@(_CefLocales)" />
+        </ItemGroup>
+
+        <!-- Remove originals from None and ReferenceCopyLocalPaths -->
+        <ItemGroup>
+            <None Remove="@(_CefAll)" />
+            <ReferenceCopyLocalPaths Remove="@(_CefAll)" />
+        </ItemGroup>
+
+        <!-- Re-add native libs to output root -->
+        <ItemGroup Condition="'@(_CefNative)' != ''">
+            <None Include="@(_CefNative)">
+                <Link>%(_CefNative.FileName)%(_CefNative.Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishState>Included</PublishState>
+                <Visible>false</Visible>
+            </None>
+        </ItemGroup>
+
+        <!-- Re-add resources to data\cef\ -->
+        <ItemGroup Condition="'@(_CefResources)' != ''">
+            <None Include="@(_CefResources)">
+                <Link>data\cef\%(_CefResources.FileName)%(_CefResources.Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishState>Included</PublishState>
+                <Visible>false</Visible>
+            </None>
+        </ItemGroup>
+
+        <!-- Re-add locales to data\cef\locales\ -->
+        <ItemGroup Condition="'@(_CefLocales)' != ''">
+            <None Include="@(_CefLocales)">
+                <Link>data\cef\locales\%(_CefLocales.FileName)%(_CefLocales.Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+                <PublishState>Included</PublishState>
+                <Visible>false</Visible>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <!--
+      Post-copy cleanup: remove CEF duplicates that the .NET SDK places in
+      runtimes\{rid}\native\ alongside the copies CefGlue.Common.targets puts
+      in the output root. Our RedirectCefAssetsToDataCef target handles the
+      latter; this cleans up the former by deleting known CEF files from runtimes/.
+    -->
+    <Target Name="CleanupCefRuntimeDuplicates" AfterTargets="CopyFilesToOutputDirectory">
+        <PropertyGroup>
+            <_CefRuntimesRoot>$([System.IO.Path]::GetFullPath('$(OutDir)runtimes'))</_CefRuntimesRoot>
+        </PropertyGroup>
+        <ItemGroup>
+            <_CefDupPak Include="$(_CefRuntimesRoot)\**\*.pak" />
+            <_CefDupDat Include="$(_CefRuntimesRoot)\**\icudtl.dat" />
+            <_CefDupBin Include="$(_CefRuntimesRoot)\**\snapshot_blob.bin" />
+            <_CefDupBin Include="$(_CefRuntimesRoot)\**\v8_context_snapshot.bin" />
+            <_CefDupJson Include="$(_CefRuntimesRoot)\**\vk_swiftshader_icd.json" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\libcef.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\chrome_elf.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\libEGL.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\libGLESv2.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\vk_swiftshader.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\vulkan-1.*" />
+            <_CefDupDll Include="$(_CefRuntimesRoot)\**\d3dcompiler_47.*" />
+        </ItemGroup>
+        <Delete Files="@(_CefDupPak);@(_CefDupDat);@(_CefDupBin);@(_CefDupJson);@(_CefDupDll)" />
+    </Target>
+
     <!-- XAML files to compile -->
 
     <!-- Shaders to compile -->
