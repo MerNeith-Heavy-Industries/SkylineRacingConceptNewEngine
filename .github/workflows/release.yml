@@ -218,6 +218,9 @@ jobs:
 
       - name: Publish ${{ matrix.rid }}
         run: |
+          # Use /maxcpucount:1 to prevent a parallel-build race condition where MSBuild worker nodes
+          # simultaneously write NFMWorld.CrashReporter.runtimeconfig.json (diamond dependency via
+          # NFMWorld.Multiplayer.Base -> NFMWorld.Library -> NFMWorld.CrashReporter).
           dotnet publish nfm-world/NFMWorld.csproj \
             -c Release \
             -r ${{ matrix.rid }} \
@@ -228,7 +231,8 @@ jobs:
             -p:PublishReadyToRun=true \
             -p:IncludeNativeLibrariesForSelfExtract=false \
             -p:IncludeAllContentForSelfExtract=false \
-            -p:ErrorOnDuplicatePublishOutputFiles=false
+            -p:ErrorOnDuplicatePublishOutputFiles=false \
+            -- /maxcpucount:1
 
       - name: Publish NFMWorld.Library native library (${{ matrix.rid }})
         run: |
@@ -236,7 +240,8 @@ jobs:
           dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
             -c Release \
             -r "${{ matrix.rid }}" \
-            -o "./publish/${{ matrix.rid }}/native"
+            -o "./publish/${{ matrix.rid }}/native" \
+            -- /maxcpucount:1
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
