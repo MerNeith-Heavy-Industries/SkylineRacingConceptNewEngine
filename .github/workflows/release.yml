@@ -74,6 +74,11 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -137,6 +142,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
 
       - name: Install wine and dependencies
         run: |
@@ -241,6 +251,11 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - name: Install Command Line Tools for Xcode
         run: |
           # Install Xcode Command Line Tools (required for NativeAOT)
@@ -312,6 +327,9 @@ jobs:
       - name: Publish macOS x64 and arm64 binaries
         run: |
           # Build for both architectures separately (NativeAOT doesn't support multi-RID publishing)
+          # Use /maxcpucount:1 to prevent a parallel-build race condition where MSBuild worker nodes
+          # simultaneously write NFMWorld.CrashReporter.runtimeconfig.json (diamond dependency via
+          # NFMWorld.Multiplayer.Base -> NFMWorld.Library -> NFMWorld.CrashReporter).
           for RID in osx-x64 osx-arm64; do
             dotnet publish nfm-world/NFMWorld.csproj \
               -c Release \
@@ -323,12 +341,14 @@ jobs:
               -p:PublishReadyToRun=true \
               -p:IncludeNativeLibrariesForSelfExtract=false \
               -p:IncludeAllContentForSelfExtract=false \
-              -p:ErrorOnDuplicatePublishOutputFiles=false
+              -p:ErrorOnDuplicatePublishOutputFiles=false \
+              -- /maxcpucount:1
 
             dotnet publish NFMWorld.Library/NFMWorld.Library.csproj \
               -c Release \
               -r "$RID" \
-              -o "./publish/$RID/native"
+              -o "./publish/$RID/native" \
+              -- /maxcpucount:1
           done
 
       - name: Create universal binary

@@ -1,1 +1,0 @@
-﻿This implements some collections from https://github.com/Cysharp/ObservableCollections without synchronization.

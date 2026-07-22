@@ -221,8 +221,8 @@ public class Mesh : IDisposable
             }
         }
 
-        // HideOutlines cpu side by simply not adding to the render queue
-        // Other distant line behaviors live in the shader because they depend on the line centroids inside the mesh
+        // HideOutlines is handled on the CPU by not submitting line meshes. Other distance
+        // behavior remains in the shader because it depends on each line's centroid.
         if (lighting?.IsCreateShadowMap != true &&
             World.DistantOutlineBehavior != DistantOutlineBehavior.HideOutlines &&
             LineMeshes != null)

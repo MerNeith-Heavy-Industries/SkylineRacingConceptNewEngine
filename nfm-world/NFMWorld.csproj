@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>USE_BASS</DefineConstants>
+    <DefineConstants>USE_BASS;USE_FAUDIO</DefineConstants>
     <Version>0.0.0-dev</Version>
     <InformationalVersion>NFM-World dev</InformationalVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -44,41 +44,72 @@
         </EmbeddedResource>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Collections.Pooled" Version="2.0.0-preview.27" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
+        <PackageReference Include="LibOpenMPT.NET" Version="0.8.6" />
         <PackageReference Include="ManagedBass" Version="4.0.1" />
         <PackageReference Include="ManagedBass.Fx" Version="4.0.1" />
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
+        <None Remove="data\html\node_modules\**" CopyToOutputDirectory="Never" />
+        <None Remove="data\html\dist\**" CopyToOutputDirectory="Never" />
         <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
+        <PackageReference Include="NAudio" Version="3.0.0-preview.18" />
+        <PackageReference Include="NAudio.SoundFile" Version="3.0.0-preview.18" />
+        <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+        <PackageReference Include="NLayer" Version="2.0.1" />
+        <PackageReference Include="NLayer.NAudioSupport" Version="2.0.1" />
+        <PackageReference Include="NVorbis" Version="1.0.0-rc.2" />
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+        <PackageReference Include="SoundTouch.Net" Version="2.3.2" />
         <PackageReference Include="System.Reactive" Version="7.0.0-rc.1" />
+        <PackageReference Include="CefGlue.Common" Version="120.6099.211" />
         <PackageReference Include="Yoga-CS" Version="1.0.0" />
+    </ItemGroup>
+    <!--
+      Prevent CefGlue.Common NuGet from copying its bundled self-contained browser process
+      (Xilium.CefGlue.BrowserProcess.exe + entire .NET runtime) to output/publish.
+      NFMWorld.BrowserProcess.exe already compiles all CefGlue.BrowserProcess source via ProjectReference.
+    -->
+    <ItemGroup>
+        <CefGlueBrowserProcessFiles Remove="@(CefGlueBrowserProcessFiles)" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
         <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj" />
+        <ProjectReference Include="..\NAudio.Flac\NAudio.Flac\NAudio.Flac.csproj" />
         <ProjectReference Include="..\NFMWorld.Api\NFMWorld.Api.csproj" />
+        <ProjectReference Include="..\NFMWorld.BrowserProcess\NFMWorld.BrowserProcess.csproj" />
         <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
         <ProjectReference Include="..\NFMWorld.Multiplayer.Base\NFMWorld.Multiplayer.Base.csproj" />
         <ProjectReference Include="..\NFMWorld.NativeLibs\NFMWorld.NativeLibs.csproj" />
-        <ProjectReference Include="..\NFMWorld.Server.Lobby\NFMWorld.Server.Lobby.csproj" />
         <ProjectReference Include="..\NvgSharp\src\NvgSharp.Text\NvgSharp.Text.FNA.Core.csproj" />
         <ProjectReference Include="..\NvgSharp\src\XNA\NvgSharp.FNA.Core.csproj" />
-        <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
+
         <!-- Reference NFMWorld.ShaderSourceGen for XAML source generation -->
         <ProjectReference Include="..\NFMWorld.ShaderSourceGen\NFMWorld.ShaderSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen\Maxine.Extensions.UnionGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.UnionGen.Base\Maxine.Extensions.UnionGen.Base.csproj" />
-        <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\Sokol\Sokol.csproj" />
+
+        <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\SoundTouch.Net.NAudioSupport\SoundTouch.Net.NAudioSupport.csproj" />
     </ItemGroup>
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
 
+    <Target Name="EnsureCefGlueMacRuntimeLibrariesInOutDir" BeforeTargets="_CopyOutOfDateSourceItemsToOutputDirectory" Condition="'$(RuntimeIdentifier)' == 'osx-x64' or '$(RuntimeIdentifier)' == 'osx-arm64'">
+        <ItemGroup>
+            <_CefMacRuntimeLibraries Include="@(CefRedistOSX64);@(CefRedistOSXARM64)" Condition="'%(Filename)%(Extension)' == 'libEGL.dylib' or '%(Filename)%(Extension)' == 'libGLESv2.dylib' or '%(Filename)%(Extension)' == 'libvk_swiftshader.dylib'" />
+            <_CefMacRuntimeLibrariesToCopy Include="@(_CefMacRuntimeLibraries)" Condition="!Exists('$(OutDir)%(Filename)%(Extension)')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_CefMacRuntimeLibrariesToCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_CefMacRuntimeLibrariesToCopy)' != ''" />
+    </Target>
+
     <!-- XAML files to compile -->
-    
+
     <!-- Shaders to compile -->
     <ItemGroup>
         <FnaEffect Include="data\shaders\*.fx" />
@@ -160,11 +191,45 @@
         <CompileShader Include="data/shaders/*.fx" />
     </ItemGroup>
 
+    <!-- ── Web UI (Vite + Preact) Build ────────────────────────────── -->
+    <!-- On Release builds, run pnpm install + pnpm run build to produce -->
+    <!-- the production bundles. On Debug, use the Vite dev server instead -->
+    <!-- (run `pnpm run dev` in data/html/ alongside `dotnet run`).       -->
+
+    <!-- output memorypack TypeScript code to directory -->
+    <ItemGroup>
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptImportExtension" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptConvertPropertyName" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptEnableNullableTypes" />
+    </ItemGroup>
+    <PropertyGroup>
+        <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\data\html\src\shared\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+        <MemoryPackGenerator_TypeScriptEnableNullableTypes>true</MemoryPackGenerator_TypeScriptEnableNullableTypes>
+    </PropertyGroup>
+
+    <Target Name="BuildWebUi" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+        <Message Text="Building web UI (pnpm install + pnpm run build)..." Importance="High" />
+        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="data\html" />
+        <Exec Command="pnpm run build" WorkingDirectory="data\html" />
+    </Target>
+
+    <Target Name="IncludeWebUi" BeforeTargets="AssignTargetPaths" DependsOnTargets="BuildWebUi" Condition="Exists('data\html\dist')">
+        <ItemGroup>
+            <WebUiFiles Include="data\html\dist\**\*" />
+            <Content Include="@(WebUiFiles)">
+                <Link>data\html\dist\%(RecursiveDir)%(FileName)%(Extension)</Link>
+                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            </Content>
+        </ItemGroup>
+    </Target>
+
 
     <ItemGroup>
+      <Folder Include="data\html\src\shared\memorypack\" />
       <Folder Include="Mad\Renderer\Renderable\" />
     </ItemGroup>
-    
+
 
     <Target Name="CopyShadersOnPublish" AfterTargets="Publish">
         <ItemGroup>

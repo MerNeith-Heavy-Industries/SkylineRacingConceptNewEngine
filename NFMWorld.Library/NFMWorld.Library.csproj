@@ -21,10 +21,11 @@
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageReference Include="ENet-CSharp" Version="2.4.8" />
         <PackageReference Include="Lua.NET" Version="6.0.1" />
         <PackageReference Include="LuzFaltex.Core.Collections" Version="0.1.0" />
-        <PackageReference Include="MessagePack" Version="3.1.4" />
-        <PackageReference Include="MessagePack.Experimental" Version="3.1.4" />
+        <PackageReference Include="MessagePack" Version="3.1.8" />
+        <PackageReference Include="MessagePack.Experimental" Version="3.1.8" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.5.26302.115" />
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
@@ -36,9 +37,6 @@
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.PhysicsFS\NFMWorld.PhysicsFS.csproj" />
-        <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
-        <ProjectReference Include="..\NFMWorld.Reactor.Generator\NFMWorld.Reactor.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\NFMWorld.Reactor\NFMWorld.Reactor.csproj" />
         <ProjectReference Include="..\NFMWorld.Sentry\NFMWorld.Sentry.csproj" />
     </ItemGroup>
 
@@ -56,5 +54,18 @@
     <ItemGroup>
       <Folder Include="data\" />
       <Folder Include="Gamemodes\Default\" />
+      <Folder Include="Mad\Multiplayer\Packets\Lobby\" />
     </ItemGroup>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptImportExtension" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptConvertPropertyName" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptEnableNullableTypes" />
+    </ItemGroup>
+    <PropertyGroup>
+        <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\..\nfm-world\data\html\src\shared\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+        <MemoryPackGenerator_TypeScriptEnableNullableTypes>true</MemoryPackGenerator_TypeScriptEnableNullableTypes>
+    </PropertyGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace NFMWorldLibrary.Backend.Gamemodes;
+﻿namespace NFMWorld.DriverInterface;
 
 /// <summary>
 /// Methods with this attribute can only be called from within NFMWorld assembly or with

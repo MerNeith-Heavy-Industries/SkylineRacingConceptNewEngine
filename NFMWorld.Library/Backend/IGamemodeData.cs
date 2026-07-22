@@ -1,7 +1,6 @@
-﻿using NFMWorld.Reactor.Events;
+﻿using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -12,11 +11,8 @@ public interface IGamemodeData
 {
     ObservableUnlimitedArray<IInGameCar> CarsInRace { get; }
     BackendStage CurrentStage { get; }
-    RaceState raceState { get; }
+    RaceState RaceState { get; }
 
     [ClientOnly]
     IClientCallbacks ClientCallbacks { get; }
-    
-    [ClientOnly]
-    FocusManager FocusManager { get; }
 }

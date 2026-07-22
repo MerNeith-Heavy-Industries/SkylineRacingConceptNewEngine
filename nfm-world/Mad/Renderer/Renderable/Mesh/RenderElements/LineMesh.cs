@@ -97,15 +97,16 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         Effects.Line.ChargedBlinkAmount?.SetValue(_lineType is LineType.Charged && World.ChargedPolyBlink ? World.ChargeAmount : 0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
 
-        // Line meshes are batched, so exact cutoff/falloff happens in the shader per line centroid.
+        // Line meshes are batched, so cutoff and falloff are evaluated per-line in the shader.
         LineEffectDistantOutlineSettings.Apply(World.DistantOutlineBehavior);
         Effects.Line.OutlineClassicCutoffDistance?.SetValue(World.OutlineClassicCutoffDistance);
         Effects.Line.OutlineFalloffStartDistance?.SetValue(World.OutlineFalloffStartDistance);
-        var (CutoffDistance, LinearFadeStartDistance, LinearFadeStartThickness, InverseLinearFadeLength) = GetOutlineFalloffCutoffParameters();
-        Effects.Line.OutlineFalloffCutoffDistance?.SetValue(CutoffDistance);
-        Effects.Line.OutlineFalloffLinearFadeStartDistance?.SetValue(LinearFadeStartDistance);
-        Effects.Line.OutlineFalloffLinearFadeStartThickness?.SetValue(LinearFadeStartThickness);
-        Effects.Line.OutlineFalloffInverseLinearFadeLength?.SetValue(InverseLinearFadeLength);
+        var (cutoffDistance, linearFadeStartDistance, linearFadeStartThickness, inverseLinearFadeLength) =
+            GetOutlineFalloffCutoffParameters();
+        Effects.Line.OutlineFalloffCutoffDistance?.SetValue(cutoffDistance);
+        Effects.Line.OutlineFalloffLinearFadeStartDistance?.SetValue(linearFadeStartDistance);
+        Effects.Line.OutlineFalloffLinearFadeStartThickness?.SetValue(linearFadeStartThickness);
+        Effects.Line.OutlineFalloffInverseLinearFadeLength?.SetValue(inverseLinearFadeLength);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);
         Effects.Line.FogColor?.SetValue(World.Fog.Snap(World.Snap));
@@ -193,15 +194,16 @@ public class LineMesh : IInstancedRenderElement, IDisposable
         var falloffStartDistance = MathF.Max(World.OutlineFalloffStartDistance, epsilon);
         var minimumVisibleThickness = MathF.Max(World.OutlineMinimumVisibleThickness, epsilon);
 
-        // Inverse-depth sizing reaches the minimum at this width-dependent depth. The final portion is
-        // replaced with a linear fade for a smoother transition to zero thickness
+        // Inverse-depth sizing reaches the minimum at this width-dependent depth. Replace
+        // its final section with a linear fade so it reaches zero without a hard pop.
         var cutoffDistance = falloffStartDistance * outlineThickness / minimumVisibleThickness;
         var linearFadeStartDistance = MathF.Max(
             falloffStartDistance,
             cutoffDistance - MathF.Max(World.OutlineLinearFadeDistance, 0f)
         );
         var linearFadeLength = MathF.Max(cutoffDistance - linearFadeStartDistance, epsilon);
-        var linearFadeStartThickness = outlineThickness * MathF.Min(1f, falloffStartDistance / linearFadeStartDistance);
+        var linearFadeStartThickness = outlineThickness *
+                                       MathF.Min(1f, falloffStartDistance / linearFadeStartDistance);
 
         return (
             cutoffDistance,
@@ -256,9 +258,12 @@ internal static class LineEffectDistantOutlineSettings
 {
     public static void Apply(DistantOutlineBehavior behavior)
     {
-        // Send mode switches as independent numeric masks for branchless operation
-        Effects.Line.DistantOutlineDistanceFalloffWithCutoffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
-        Effects.Line.DistantOutlineClassicCutoffMask?.SetValue(behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
-        Effects.Line.DistantOutlineDistanceFalloffMask?.SetValue(behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
+        // Independent numeric switches keep the shader path branchless.
+        Effects.Line.DistantOutlineDistanceFalloffWithCutoffMask?.SetValue(
+            behavior == DistantOutlineBehavior.DistanceFalloffWithCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineClassicCutoffMask?.SetValue(
+            behavior == DistantOutlineBehavior.ClassicCutoff ? 1f : 0f);
+        Effects.Line.DistantOutlineDistanceFalloffMask?.SetValue(
+            behavior == DistantOutlineBehavior.DistanceFalloff ? 1f : 0f);
     }
 }

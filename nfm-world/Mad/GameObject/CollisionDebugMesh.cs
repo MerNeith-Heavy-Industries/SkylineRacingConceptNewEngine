@@ -184,7 +184,7 @@ public sealed class CollisionDebugMesh : GameObject, IDisposable, IImmediateRend
         Effects.Line.ChargedBlinkAmount?.SetValue(0.0f);
         Effects.Line.HalfThickness?.SetValue(World.OutlineThickness);
 
-        // Collision debug lines are editor/debug overlays, so they should stay visible regardless of gameplay outline mode.
+        // Collision debug lines are editor/debug overlays, so gameplay outline modes must not hide them.
         LineEffectDistantOutlineSettings.Apply(DistantOutlineBehavior.AlwaysRender);
 
         Effects.Line.LightDirection?.SetValue(World.LightDirection);

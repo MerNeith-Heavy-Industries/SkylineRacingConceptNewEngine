@@ -1,7 +1,7 @@
 using System.Numerics;
 using Microsoft.Xna.Framework;
 
-namespace NFMWorld.DriverInterface;
+namespace NFMWorld.DriverInterface.DriverInterface;
 
 public interface IGraphics
 {

@@ -1,7 +1,5 @@
-﻿using NFMWorld.Reactor.Events;
-using NFMWorldLibrary.Backend.Gamemodes;
+﻿using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorldLibrary.Backend;
 
@@ -9,9 +7,8 @@ public class BackendGamemodeData : IGamemodeData
 {
     public required ObservableUnlimitedArray<IInGameCar> CarsInRace { get; init; }
     public required BackendStage CurrentStage { get; init; }
-    public required RaceState raceState { get; init; }
+    public required RaceState RaceState { get; init; }
     public IClientCallbacks ClientCallbacks => ClientServer.AccidentallyCalledClientMethodOnServer<IClientCallbacks>();
-    public FocusManager FocusManager => ClientServer.AccidentallyCalledClientMethodOnServer<FocusManager>();
 
     public static BackendGamemodeData Create(string stage)
     {
@@ -22,7 +19,7 @@ public class BackendGamemodeData : IGamemodeData
         {
             CurrentStage = backendStage,
             CarsInRace = carsInRace,
-            raceState = RaceState.InProgress
+            RaceState = RaceState.InProgress
         };
     }
 
@@ -35,7 +32,7 @@ public class BackendGamemodeData : IGamemodeData
         {
             CurrentStage = backendStage,
             CarsInRace = carsInRace,
-            raceState = RaceState.InProgress
+            RaceState = RaceState.InProgress
         };
     }
 }

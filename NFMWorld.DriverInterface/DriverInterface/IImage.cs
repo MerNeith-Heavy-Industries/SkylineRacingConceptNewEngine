@@ -1,6 +1,4 @@
-using NFMWorldLibrary.Backend.Gamemodes;
-
-namespace NFMWorld.DriverInterface;
+namespace NFMWorld.DriverInterface.DriverInterface;
 
 [ClientOnly]
 public interface IImage

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
@@ -14,20 +15,15 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
-using NFMWorld.Reactor;
-using NFMWorld.Reactor.Events;
 using NFMWorld.UI;
+using NFMWorld.UI.Cef;
 using NFMWorld.UI.Hud;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
-using Sokol;
-using WorldXaml.UI.Yoga;
-using WorldXaml.UI.Yoga.Events;
-using Keys = WorldXaml.UI.Yoga.Events.Keys;
+using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
-using LogLevel = NFMWorld.Reactor.LogLevel;
 using NFMWorld.Sentry;
 
 namespace NFMWorld;
@@ -38,10 +34,11 @@ namespace NFMWorld;
 /// </summary>
 public class WorldGame : Game
 {
+    public static UnlimitedArray<RenderTarget2D> ShadowRenderTargets = [];
+
     public GraphicsDeviceManager Graphics;
-    public static RenderTarget2D?[] ShadowRenderTargets { get; } = new RenderTarget2D[3];
-    private ImGuiRenderer _imguiRenderer;
-    public static ImGuiRenderer ImguiRenderer { get; private set; }
+    public static ImGuiRenderer ImguiRenderer;
+    private CefRenderer _cefRenderer;
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
@@ -58,38 +55,13 @@ public class WorldGame : Game
 
     private static bool _loaded;
     private const int FrameDelay = (int) (1000 / 21.3f);
-    
+
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
-
-    private static bool _yogaInspectorEnabled = false;
-    private static int _yogaInspectorPage = 0;
-
-#if DEBUG
-    internal static string? DebugUiClass;
-    internal static Node? DebugUiRoot;
-#endif
 
     private WorldGame()
     {
         GameThreadContext.Install();
 
-        var xamlLogger = Logging.LoggerFactory.CreateLogger("WorldXaml");
-        ReactorConfig.LogMessage = (level, message) =>
-        {
-#pragma warning disable CA2254
-            if (level == LogLevel.Info)
-                xamlLogger.LogInformation(message);
-            else if (level == LogLevel.Warning)
-                xamlLogger.LogWarning(message);
-            else if (level == LogLevel.Error)
-                xamlLogger.LogError(message);
-            else if (level == LogLevel.Debug)
-                xamlLogger.LogDebug(message);
-            else
-                throw new ArgumentOutOfRangeException(nameof(level), level, null);
-#pragma warning restore CA2254
-        };
-        
         Graphics = new GraphicsDeviceManager(this);
         Graphics.GraphicsProfile = GraphicsProfile.Reach;
         Graphics.PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8;
@@ -113,6 +85,7 @@ public class WorldGame : Game
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             G.Scale = Window.ClientBounds.Height / 720f;
+            _cefRenderer?.Resize(Window.ClientBounds.Width, Window.ClientBounds.Height);
         };
 
         TextInputEXT.TextInput += character =>
@@ -125,9 +98,11 @@ public class WorldGame : Game
     {
         base.Update(gameTime);
         FPSCounter.Update(gameTime, LastTickTime, LastFrameTime);
-        
+
         UpdateInput();
         UpdateMouse();
+
+        _cefRenderer.Update(gameTime);
 
         if (!_loaded)
         {
@@ -162,23 +137,30 @@ public class WorldGame : Game
             GameThreadContext.Current.ExecutePendingTasks();
             transaction.Finish();
         }
+
+        // Dispose any phases that were popped/replaced this frame.
+        // Must happen after all game logic to avoid disposal during event handlers.
+        GameSparker.Phases.FlushDisposals();
     }
 
     protected override void Initialize()
     {
-        _imguiRenderer = new ImGuiRenderer(this);
-        ImguiRenderer = _imguiRenderer;
+        ImguiRenderer = new ImGuiRenderer(this);
 
-#if USE_BASS
-        Bass.Init();
-#endif
+        // Initialize CEF renderer after GraphicsDevice is ready.
+        // Load the single-page app (hash router) as the initial URL.
+        // Phase bridges use ExecuteJavaScript to change the hash on enter.
+        var baseUrl = CefRenderer.ResolveBasePageUrl();
+        _cefRenderer = new CefRenderer(this, baseUrl);
+        _cefRenderer.Initialize();
+        GameSparker.CefRenderer = _cefRenderer;
 
         _oldKeyState = Keys.FromState(Keyboard.GetState());
         var mouseState = Mouse.GetState();
         _oldMouseState = MouseButtons.FromState(mouseState);
         _oldMousePosition = new Int2(mouseState.X, mouseState.Y);
         _oldScrollValue = mouseState.ScrollWheelValue;
-        
+
         _nvg = new NanoVGRenderer(GraphicsDevice);
 
         // MSAA is set by SettingsMenu.LoadConfig -> ApplySettings at startup.
@@ -198,14 +180,22 @@ public class WorldGame : Game
 
         if (disposing)
         {
+            // Dispose all phases before tearing down CEF and graphics.
+            GameSparker.Phases.Shutdown();
+
+            _cefRenderer?.Dispose();
             foreach (var shadowRenderTarget in ShadowRenderTargets)
             {
                 shadowRenderTarget?.Dispose();
             }
-            _imguiRenderer.Dispose();
+            ImguiRenderer.Dispose();
 
 #if USE_BASS
             Bass.Free();
+#endif
+#if USE_FAUDIO
+            // FAudio is managed by FNA and cleaned up via FAudioContext.Dispose()
+            // on app domain exit. No explicit free needed.
 #endif
         }
     }
@@ -214,16 +204,16 @@ public class WorldGame : Game
     {
         GameSparker.Load(this);
 
-        _imguiRenderer.RebuildFontAtlas();
+        ImguiRenderer.RebuildFontAtlas();
 
         Effects.Initialize(GraphicsDevice);
-        
+
         RebuildCascades();
-        
-        GameSparker.SettingsMenu.LoadConfig();
+
+        SettingsMenu.LoadConfig();
 
         #region Imgui
-        
+
         // Initialize ImGui
         ImGui.CreateContext();
         ImGui.StyleColorsDark();
@@ -231,60 +221,60 @@ public class WorldGame : Game
 
         // custom style
         var style = ImGui.GetStyle();
-        
-        // Rounding 
+
+        // Rounding
         style.WindowRounding = 4.0f;
         style.FrameRounding = 6.0f;
         style.GrabRounding = 4.0f;
         style.PopupRounding = 6.0f;
         style.ScrollbarRounding = 6.0f;
         style.TabRounding = 4.0f;
-        
+
         // Spacing and padding
         style.WindowPadding = new Vector2(12, 12);
         style.FramePadding = new Vector2(8, 4);
         style.ItemSpacing = new Vector2(8, 6);
-        
+
         // Border
         style.WindowBorderSize = 2.0f;
         style.FrameBorderSize = 2.0f;
 
         var colors = style.Colors;
-        
+
         // Windows and backgrounds
         colors[(int)ImGuiCol.WindowBg] = Rgb(31, 26, 46, 0.95f);          // Dark purple
         colors[(int)ImGuiCol.ChildBg] = Rgb(26, 20, 38, 0.90f);           // Darker purple
         colors[(int)ImGuiCol.PopupBg] = Rgb(26, 20, 38, 0.95f);           // Darker purple
         colors[(int)ImGuiCol.MenuBarBg] = Rgb(38, 31, 56, 1.0f);          // Medium purple
-        
+
         // Borders
         colors[(int)ImGuiCol.Border] = Rgb(230, 128, 26, 0.8f);           // Orange
         colors[(int)ImGuiCol.BorderShadow] = Rgb(0, 0, 0, 0.5f);          // Black shadow
-        
+
         // Text
         colors[(int)ImGuiCol.Text] = Rgb(255, 191, 51, 1.0f);             // Light orange/yellow
         colors[(int)ImGuiCol.TextDisabled] = Rgb(153, 115, 38, 1.0f);     // Dimmed orange
-        
+
         // Title bar
         colors[(int)ImGuiCol.TitleBg] = Rgb(38, 31, 64, 1.0f);            // Dark purple
         colors[(int)ImGuiCol.TitleBgActive] = Rgb(51, 38, 89, 1.0f);      // Medium purple
         colors[(int)ImGuiCol.TitleBgCollapsed] = Rgb(31, 26, 51, 0.75f);  // Very dark purple
-        
+
         // Frames (inputs, etc)
         colors[(int)ImGuiCol.FrameBg] = Rgb(38, 31, 56, 0.9f);            // Medium purple
         colors[(int)ImGuiCol.FrameBgHovered] = Rgb(64, 51, 89, 1.0f);     // Lighter purple
         colors[(int)ImGuiCol.FrameBgActive] = Rgb(77, 64, 102, 1.0f);     // Even lighter purple
-        
+
         // Buttons (dark with orange on hover)
         colors[(int)ImGuiCol.Button] = Rgb(38, 31, 64, 1.0f);             // Dark purple
         colors[(int)ImGuiCol.ButtonHovered] = Rgb(64, 51, 89, 1.0f);      // Lighter purple
         colors[(int)ImGuiCol.ButtonActive] = Rgb(128, 77, 3, 0.8f);       // Dark orange
-        
+
         // Headers
         colors[(int)ImGuiCol.Header] = Rgb(51, 38, 77, 1.0f);             // Medium purple
         colors[(int)ImGuiCol.HeaderHovered] = Rgb(230, 128, 26, 0.6f);    // Orange
         colors[(int)ImGuiCol.HeaderActive] = Rgb(128, 77, 3, 0.8f);       // Dark orange
-        
+
         // Tabs
         colors[(int)ImGuiCol.Tab] = Rgb(38, 31, 64, 1.0f);                     // Dark purple (inactive)
         colors[(int)ImGuiCol.TabHovered] = Rgb(230, 128, 26, 0.8f);            // Orange (hovered)
@@ -293,23 +283,23 @@ public class WorldGame : Game
         colors[(int)ImGuiCol.TabDimmedSelected] = Rgb(128, 77, 26, 0.8f);      // Dimmed orange (unfocused selected)
         colors[(int)ImGuiCol.TabDimmedSelectedOverline] = Rgb(230, 128, 26, 1.0f); // Orange underline
         colors[(int)ImGuiCol.TabSelectedOverline] = Rgb(230, 128, 26, 1.0f);   // Orange underline (focused)
-        
+
         // Checkmarks and sliders (orange)
         colors[(int)ImGuiCol.CheckMark] = Rgb(255, 179, 51, 1.0f);        // Light orange
         colors[(int)ImGuiCol.SliderGrab] = Rgb(230, 128, 26, 1.0f);       // Orange
         colors[(int)ImGuiCol.SliderGrabActive] = Rgb(255, 166, 51, 1.0f); // Lighter orange
-        
+
         // Scrollbar
         colors[(int)ImGuiCol.ScrollbarBg] = Rgb(26, 20, 38, 0.9f);        // Dark purple
         colors[(int)ImGuiCol.ScrollbarGrab] = Rgb(64, 51, 89, 1.0f);      // Medium purple
         colors[(int)ImGuiCol.ScrollbarGrabHovered] = Rgb(89, 71, 115, 1.0f); // Lighter purple
         colors[(int)ImGuiCol.ScrollbarGrabActive] = Rgb(230, 128, 26, 1.0f); // Orange
-        
+
         // Separators (orange)
         colors[(int)ImGuiCol.Separator] = Rgb(230, 128, 26, 0.5f);        // Orange
         colors[(int)ImGuiCol.SeparatorHovered] = Rgb(230, 128, 26, 0.8f); // Orange
         colors[(int)ImGuiCol.SeparatorActive] = Rgb(255, 153, 51, 1.0f);  // Lighter orange
-        
+
         // Resize grip
         colors[(int)ImGuiCol.ResizeGrip] = Rgb(230, 128, 26, 0.3f);       // Orange
         colors[(int)ImGuiCol.ResizeGripHovered] = Rgb(230, 128, 26, 0.6f); // Orange
@@ -318,7 +308,7 @@ public class WorldGame : Game
         style.WindowPadding = new Vector2(10, 10);
         style.FramePadding = new Vector2(5, 3);
         style.ItemSpacing = new Vector2(8, 4);
-        
+
         #endregion
 
         return;
@@ -332,7 +322,7 @@ public class WorldGame : Game
         {
             shadowRenderTarget?.Dispose();
         }
-        
+
         // Create floating point render target
         for (int i = NumCascades - 1; i >= 0; i--)
         {
@@ -346,7 +336,7 @@ public class WorldGame : Game
                 0,
                 RenderTargetUsage.DiscardContents);
         }
-        
+
         // Clear all render targets AFTER creating them all
         for (int i = 0; i < NumCascades; i++)
         {
@@ -361,7 +351,7 @@ public class WorldGame : Game
         var newState = Keyboard.GetState();
 
         var keys = Keys.FromState(newState);
-        
+
         foreach (var xnaKey in XnaKeys)
         {
             var nfmKey = Key.FromXna(xnaKey);
@@ -369,20 +359,6 @@ public class WorldGame : Game
             {
                 GameSparker.KeyPressed(nfmKey);
                 GameSparker.CurrentPhase.KeyPressed(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
-
-#if DEBUG
-                if (nfmKey == Key.F9)
-                {
-                    _yogaInspectorEnabled = !_yogaInspectorEnabled;
-                }
-
-                if (nfmKey == Key.F10)
-                {
-                    _yogaInspectorPage++;
-                    if (_yogaInspectorPage > YogaDebugger.MaxPages)
-                        _yogaInspectorPage = 0;
-                }
-#endif
             }
             else if (!keys[nfmKey] && _oldKeyState[nfmKey])
             {
@@ -402,7 +378,7 @@ public class WorldGame : Game
         var buttons = MouseButtons.FromState(newState);
         var mousePosition = new Int2(newState.X, newState.Y);
         var scrollValue = newState.ScrollWheelValue;
-        
+
         var ctrlKey = _oldKeyState[Key.LControlKey] || _oldKeyState[Key.RControlKey];
         var shiftKey = _oldKeyState[Key.LShiftKey] || _oldKeyState[Key.RShiftKey];
         var altKey = _oldKeyState[Key.Alt];
@@ -422,11 +398,6 @@ public class WorldGame : Game
 
         if (mousePosition.X != _oldMousePosition.X || mousePosition.Y != _oldMousePosition.Y)
         {
-#if DEBUG
-            if (_yogaInspectorEnabled)
-                YogaDebugger.MouseMove(mousePosition.X, mousePosition.Y);
-#endif
-
             GameSparker.CurrentPhase.MouseMoved(mousePosition.X, mousePosition.Y, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
         }
 
@@ -444,86 +415,55 @@ public class WorldGame : Game
     protected override void Draw(GameTime gameTime)
     {
         var transaction = SentrySdk.StartTransaction("GameDraw", "gameloop.draw");
-        
+
         var alpha = LowLatency ? 1f : (float)((double)gameTime.ElapsedGameTime.Ticks / TargetElapsedTime.Ticks);
-        
+
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         var t = Stopwatch.StartNew();
-        
-#if DEBUG
-        NodeDebugger.NewFrame();
-#endif
-        
+
         GameSparker.Render();
-        
+
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
-        
-#if DEBUG
-        if (DebugUiClass != null)
-        {
-            if (DebugUiRoot == null)
-            {
-#pragma warning disable IL2057 // Never run during AOT compilation
-#pragma warning disable IL2026 // Never run during AOT compilation
-                var type = Type.GetType(DebugUiClass) ?? Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .FirstOrDefault(e => e.Name == DebugUiClass);
-#pragma warning restore IL2026
-#pragma warning restore IL2057
-                if (type != null!)
-                {
-#pragma warning disable IL2072 // Never run during AOT compilation
-                    DebugUiRoot = Activator.CreateInstance(type) as Node;
-#pragma warning restore IL2072
-                }
-            }
-
-            G.SetColor(Color.CornflowerBlue);
-            G.FillRect(0, 0, (int)G.Viewport.X, (int)G.Viewport.Y);
-            DebugUiRoot?.LayoutAndRender(G.Viewport);
-        }
-
-        if (_yogaInspectorEnabled)
-            YogaDebugger.Render(_yogaInspectorPage);
-#endif
 
         FPSCounter.Render();
         _nvg.Render();
 
+        // Render CEF browser overlay (between NanoVG and ImGui)
+        _cefRenderer.Render();
+
         GameSparker.Render3DOverlays();
-        
+
         // // Render ImGui
-        _imguiRenderer.BeginLayout(gameTime);
+        ImguiRenderer.BeginLayout(gameTime);
         GameSparker.RenderImgui();
-        _imguiRenderer.EndLayout();
-        
+        ImguiRenderer.EndLayout();
+
         base.Draw(gameTime);
         LastFrameTime = t.ElapsedMilliseconds;
-        
+
         transaction.Finish();
     }
 
     public static void Main(string[] args)
     {
         ClientServer.IsRunningOnClient = true;
-        
+
         // TODO figure out why SDL ProcessExit doesn't work properly
         AppDomain.CurrentDomain.ProcessExit += static (sender, args) =>
         {
             Process.GetCurrentProcess().Kill(false);
         };
-        
+
         NativeLibrary.SetDllImportResolver(typeof(Game).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(WorldGame).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(Bass).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassFx).Assembly, ImportResolver);
         NativeLibrary.SetDllImportResolver(typeof(BassOpus).Assembly, ImportResolver);
-        NativeLibrary.SetDllImportResolver(typeof(SokolExtensions).Assembly, ImportResolver);
 
         SettingsMenu.LoadFnaRenderer();
-        
+
         var fnaLogger = Logging.LoggerFactory.CreateLogger("FNA");
         FNALoggerEXT.LogError = (message) =>
         {
@@ -537,15 +477,7 @@ public class WorldGame : Game
         {
             fnaLogger.LogWarning(message);
         };
-        
-#if DEBUG
-        if (args.IndexOf("-debugui", StringComparer.OrdinalIgnoreCase) is var index and >= 0)
-        {
-            DebugUiClass = args.Length > index + 1 ? args[index + 1] : typeof(CentralTextView).FullName;
-            _yogaInspectorEnabled = true;
-        }
-#endif
-        
+
         BackendGameSparker.Load(isHeadless: false);
 
         var program = new WorldGame();
@@ -593,7 +525,7 @@ public class WorldGame : Game
         string os = GetPlatformName();
         string cpu = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         string wordsize = (IntPtr.Size * 8).ToString();
-        
+
         var newLibraryName = libraryName switch
         {
             "SDL3" => os switch
@@ -631,39 +563,11 @@ public class WorldGame : Game
                 "linux" or "freebsd" or "netbsd" => "libSDL2-2.0.so.0",
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             },
-            "bass" => os switch
-            {
-                "windows" => "bass.dll",
-                "osx" => "libbass.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbass.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "bass_fx" => os switch
-            {
-                "windows" => "bass_fx.dll",
-                "osx" => "libbass_fx.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbass_fx.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "bassopus" => os switch
-            {
-                "windows" => "bassopus.dll",
-                "osx" => "libbassopus.dylib",
-                "linux" or "freebsd" or "netbsd" => "libbassopus.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
             "steam_api" or "steam_api64" => os switch
             {
                 "windows" => wordsize is "64" ? "steam_api64.dll" : "steam_api.dll",
                 "osx" => "libsteam_api.dylib",
                 "linux" or "freebsd" or "netbsd" => "libsteam_api.so",
-                _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
-            },
-            "nanosvg" => os switch
-            {
-                "windows" => "nanosvg.dll",
-                "osx" => "libnanosvg.dylib",
-                "linux" or "freebsd" or "netbsd" => "libnanosvg.so",
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             },
             _ => os switch
@@ -674,7 +578,7 @@ public class WorldGame : Game
                 _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
             }
         };
-        
+
         var dir = os switch
         {
             "windows" => cpu switch
@@ -708,120 +612,6 @@ public class WorldGame : Game
         // dlopen treats a slash-containing name as a path relative to the CWD (ignoring
         // LD_LIBRARY_PATH), so a relative "libs/..." only resolves when launched from the
         // output folder. AppContext.BaseDirectory is always the output folder.
-        return NativeLibrary.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
-    }
-}
-
-internal static class NfmwInterpolators
-{
-    [ReactorInterpolator]
-    public static Color InterpolateColor(Color from, Color to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var fromA = from.A;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var toA = to.A;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        var a = (byte)(fromA + (toA - fromA) * alpha);
-        return new Color(r, g, b, a);
-    }
-
-    [ReactorInterpolator]
-    public static Color? InterpolateColorOrNull(Color? from, Color? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Color3 InterpolateColor(Color3 from, Color3 to, float alpha)
-    {
-        var fromR = from.R;
-        var fromG = from.G;
-        var fromB = from.B;
-        var toR = to.R;
-        var toG = to.G;
-        var toB = to.B;
-        var r = (byte)(fromR + (toR - fromR) * alpha);
-        var g = (byte)(fromG + (toG - fromG) * alpha);
-        var b = (byte)(fromB + (toB - fromB) * alpha);
-        return new Color3(r, g, b);
-    }
-
-    [ReactorInterpolator]
-    public static Color3? InterpolateColorOrNull(Color3? from, Color3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateColor(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector2 InterpolateVector2(Vector2 from, Vector2 to, float alpha)
-    {
-        return new Vector2(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector3 InterpolateVector3(Vector3 from, Vector3 to, float alpha)
-    {
-        return new Vector3(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector4 InterpolateVector4(Vector4 from, Vector4 to, float alpha)
-    {
-        return new Vector4(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alpha, from.Z + (to.Z - from.Z) * alpha, from.W + (to.W - from.W) * alpha);
-    }
-
-    [ReactorInterpolator]
-    public static Vector2? InterpolateVector2OrNull(Vector2? from, Vector2? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector2(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector3? InterpolateVector3OrNull(Vector3? from, Vector3? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector3(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
-    }
-
-    [ReactorInterpolator]
-    public static Vector4? InterpolateVector4OrNull(Vector4? from, Vector4? to, float alpha)
-    {
-        if (from is { } fromValue && to is { } toValue)
-        {
-            return InterpolateVector4(fromValue, toValue, alpha);
-        }
-
-        if (alpha < 0.5f) return from;
-        return to;
+        return NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "libs", dir, newLibraryName));
     }
 }

@@ -34,3 +34,6 @@
 [submodule "LibTessDotNet"]
 	path = LibTessDotNet
 	url = https://github.com/uwx/LibTessDotNet
+[submodule "NAudio.Flac"]
+	path = NAudio.Flac
+	url = https://github.com/uwx/NAudio.Flac

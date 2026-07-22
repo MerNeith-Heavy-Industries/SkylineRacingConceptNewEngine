@@ -29,6 +29,11 @@ replay_pid*
 .idea
 *.user
 
+/.vscode
+
 /publish
+/nfm-world/GPUCache
+/nfm-world/DawnCache
 
 Generated
+/nfm-world/imgui.ini

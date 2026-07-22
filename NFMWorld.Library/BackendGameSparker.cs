@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Sentry;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;

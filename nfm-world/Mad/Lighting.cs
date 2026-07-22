@@ -7,7 +7,7 @@ namespace NFMWorld;
 public class Lighting
 {
     public IReadOnlyList<Camera> LightCameras;
-    public RenderTarget2D?[] ShadowMaps;
+    public IReadOnlyList<RenderTarget2D?> ShadowMaps;
 
     /// <summary>
     /// Describes the current render pass (shadow cascade or main colour pass).
@@ -27,7 +27,7 @@ public class Lighting
     /// </summary>
     public Lighting(
         IReadOnlyList<Camera> lightCameras,
-        RenderTarget2D?[] shadowMaps,
+        IReadOnlyList<RenderTarget2D?> shadowMaps,
         RenderPass renderPass
     )
     {

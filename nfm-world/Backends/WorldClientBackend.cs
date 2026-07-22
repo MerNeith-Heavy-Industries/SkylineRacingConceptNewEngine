@@ -1,15 +1,15 @@
-﻿using System.Collections.Concurrent;
+﻿﻿using System.Collections.Concurrent;
 using System.Text;
 using CommunityToolkit.HighPerformance;
 using FontStashSharp;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using NFMWorld.Audio;
 using NFMWorld.DriverInterface;
-using NFMWorld.SkiaDriver;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Util;
 using NvgSharp;
-using WorldXaml.UI.Yoga.Events;
-using TextHorizontalAlignment = NFMWorld.DriverInterface.TextHorizontalAlignment;
+using TextHorizontalAlignment = NFMWorld.DriverInterface.DriverInterface.TextHorizontalAlignment;
 
 namespace NFMWorld;
 
@@ -33,17 +33,29 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 {
     public IRadicalMusic LoadMusic(string file, double tempomul)
     {
+#if USE_FAUDIO
+        return new FaudioMusic(file, tempomul);
+#else
         return new RadicalMusic(file, tempomul);
+#endif
     }
 
     public void StopAllSounds()
     {
+#if USE_FAUDIO
+        FaudioSoundClip.StopAll();
+#else
         SoundClip.StopAll();
+#endif
     }
 
     public ISoundClip GetSound(string filePath)
     {
+#if USE_FAUDIO
+        return new FaudioSoundClip(filePath);
+#else
         return new SoundClip(filePath);
+#endif
     }
 
     public IGraphics Graphics { get; } = new NvgGraphics(context);
@@ -90,10 +102,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             IImage LoadImageInternal()
             {
                 using var stream = VFS.OpenRead(file);
-                if (Path.GetExtension(file) == ".svg")
-                {
-                    return NanoSVGImage.FromStream(stream);
-                }
                 if (Path.GetExtension(file) == ".dds")
                 {
                     return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, stream));
@@ -105,11 +113,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public IImage LoadImage(ReadOnlyMemory<byte> file)
         {
-            if (file.Span is [(byte)'<', (byte)'s', (byte)'v', (byte)'g', ..] or [(byte)'<', (byte)'?', (byte)'x', (byte)'m', (byte)'l', ..])
-            {
-                return NanoSVGImage.FromStream(file.AsStream());
-            }
-            
             if (file.Span is [(byte)'D', (byte)'D', (byte)'S', (byte)' ', ..])
             {
                 return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, file.AsStream()));
@@ -222,8 +225,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y)
         {
-            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
-
             if (image is NanoVGImage img)
             {
                 var imgPaint = _context.ImagePattern(x, y, img.Width, img.Height, 0.0f, img.Texture, 1.0f);
@@ -232,10 +233,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Rect(x, y, img.Width, img.Height);
                 _context.Fill();
                 _context.FillPaint(_paint);
-            }
-            else if (image is NanoSVGImage nsvg)
-            {
-                nsvg.Draw(_context, x, y, nsvg.Width, nsvg.Height);
             }
         }
 
@@ -313,8 +310,6 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
 
         public void DrawImage(IImage image, int x, int y, int width, int height)
         {
-            if (image is not NanoVGImage and not NanoSVGImage) throw new ArgumentException("Invalid image type for NanoVGBackend.");
-
             if (image is NanoVGImage img)
             {
                 var imgPaint = _context.ImagePattern(x, y, width, height, 0.0f, img.Texture, 1.0f);
@@ -324,16 +319,16 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Fill();
                 _context.FillPaint(_paint);
             }
-            else if (image is NanoSVGImage nsvg)
-            {
-                nsvg.Draw(_context, x, y, width, height);
-            }
         }
     }
 
     public void SetAllVolumes(float vol)
     {
+#if USE_FAUDIO
+        FaudioSoundClip.SetAllVolumes(vol);
+#else
         SoundClip.SetAllVolumes(vol);
+#endif
     }
 
     public Key GetKeyFromScancode(Key key)

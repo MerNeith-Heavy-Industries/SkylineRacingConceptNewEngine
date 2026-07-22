@@ -4,12 +4,10 @@ using Maxine.Extensions.Mathematics;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.Gameplay;
-using NFMWorld.Reactor.Events;
 using NFMWorld.Util;
 using NFMWorldLibrary;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
-using WorldXaml.UI.Yoga.Events;
 using NFMWorld.Sentry;
 
 namespace NFMWorld.UI;
@@ -87,7 +85,6 @@ public class ModelEditorPhase : BasePhase
     private readonly GraphicsDevice _graphicsDevice;
     private bool _isOpen = false;
     private string[] _userModelNames = [];
-    private ClientStageRenderer? _modelViewerStage;
     
     // Tab management
     private List<ModelEditorTab> _tabs = new();
@@ -115,8 +112,6 @@ public class ModelEditorPhase : BasePhase
     private bool _panDown = false;
     private bool _zoomInAlt = false;
     private bool _zoomOutAlt = false;
-
-    private bool _lightsOn = true;
     
     // Camera control speeds
     private const float ORBIT_SPEED = 2.0f;  // degrees per frame
