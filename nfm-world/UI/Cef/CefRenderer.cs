@@ -128,10 +128,10 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
                 break;
 
             case CefRuntimePlatform.MacOS:
-                var resourcesPath = Path.Combine(basePath, "data/cef");
+                var resourcesPath = Path.Combine(basePath, "Resources");
                 if (!Directory.Exists(resourcesPath))
                 {
-                    throw new FileNotFoundException("Unable to find data/cef folder");
+                    throw new FileNotFoundException("Unable to find Resources folder");
                 }
 
                 settings.NoSandbox = true;
