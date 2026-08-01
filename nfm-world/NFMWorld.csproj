@@ -14,6 +14,7 @@
         <OptimizationPreference>Speed</OptimizationPreference>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+        <CETCompat>false</CETCompat>
     </PropertyGroup>
     <ItemGroup>
         <!-- Exclude emitted source-generator files from implicit *.cs glob to prevent double compilation -->
@@ -101,9 +102,9 @@
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
     
     <ItemGroup>
-        <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-        <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
-        <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+        <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801011841" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+        <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801011849" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
+        <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801011845" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     </ItemGroup>
 
     <!-- Shaders to compile -->
