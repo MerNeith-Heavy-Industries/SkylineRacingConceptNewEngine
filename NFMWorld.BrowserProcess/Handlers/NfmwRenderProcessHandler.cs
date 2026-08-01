@@ -93,7 +93,15 @@ internal sealed class NfmwRenderProcessHandler : RenderProcessHandler
                 var raw = args.GetBinary(1);
                 var pooled = ArrayPool<byte>.Shared.Rent((int)raw.Size);
                 raw.GetData(pooled, raw.Size, 0);
-                payload = CefV8Value.CreateArrayBuffer(GCHandle.Alloc(pooled, GCHandleType.Pinned).AddrOfPinnedObject(), (ulong)raw.Size, new PooledArrayReleaseCallback());
+                unsafe
+                {
+                    fixed (byte* ptr = pooled)
+                    {
+                        payload = CefV8Value.CreateArrayBufferWithCopy((nint)ptr, (ulong)raw.Size);
+                    }
+                }
+
+                ArrayPool<byte>.Shared.Return(pooled);
             }
             else if (args.Count >= 2)
             {
@@ -114,24 +122,6 @@ internal sealed class NfmwRenderProcessHandler : RenderProcessHandler
         }
 
         return true;
-    }
-
-    private class PooledArrayReleaseCallback : CefV8ArrayBufferReleaseCallback
-    {
-        protected override void ReleaseBuffer(IntPtr buffer)
-        {
-            // Release the pinned array back to the pool
-            var handle = GCHandle.FromIntPtr(buffer);
-            if (handle is { IsAllocated: true, Target: byte[] array })
-            {
-                ArrayPool<byte>.Shared.Return(array);
-                handle.Free();
-            }
-            else
-            {
-                Console.WriteLine("Attempted to release a buffer that was not allocated or not a byte array.");
-            }
-        }
     }
 }
 
