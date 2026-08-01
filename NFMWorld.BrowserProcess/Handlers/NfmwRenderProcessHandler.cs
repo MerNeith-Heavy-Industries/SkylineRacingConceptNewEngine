@@ -165,7 +165,7 @@ internal sealed class NfmwV8Handler(string functionName) : CefV8Handler
             }
 
             var frameId = ctx.GetFrame().Identifier;
-            var frame = browser.GetFrame(frameId);
+            var frame = browser.GetFrameByIdentifier(frameId);
             if (frame == null || !frame.IsValid)
             {
                 exception = "Frame is not valid";

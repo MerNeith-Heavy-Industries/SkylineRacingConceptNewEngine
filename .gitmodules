@@ -43,3 +43,6 @@
 [submodule "NAudio.Flac"]
 	path = NAudio.Flac
 	url = https://github.com/uwx/NAudio.Flac
+[submodule "CefGlue"]
+	path = CefGlue
+	url = https://github.com/uwx/CefGlue
