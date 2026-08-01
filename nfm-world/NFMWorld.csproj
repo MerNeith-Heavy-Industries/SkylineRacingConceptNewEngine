@@ -54,6 +54,9 @@
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <None Remove="data\html\node_modules\**" CopyToOutputDirectory="Never" />
         <None Remove="data\html\dist\**" CopyToOutputDirectory="Never" />
+        <None Include="src\**\*" CopyToOutputDirectory="Always" />
+        <None Remove="src\data\.git\**" CopyToOutputDirectory="Never" />
+        <None Remove="src\data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ManagedBass.Opus" Version="4.0.1" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
         <PackageReference Include="NAudio" Version="3.0.0-preview.18" />
@@ -102,9 +105,9 @@
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
     
     <ItemGroup>
-        <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801134528" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-        <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801134525" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
-        <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801134527" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+        <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801214822" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+        <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801214820" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
+        <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801214824" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
     </ItemGroup>
 
     <!-- Shaders to compile -->

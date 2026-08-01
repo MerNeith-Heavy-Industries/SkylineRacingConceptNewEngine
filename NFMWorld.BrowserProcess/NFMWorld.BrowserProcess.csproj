@@ -38,9 +38,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801134528" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-    <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801134525" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
-    <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801134527" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801214822" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801214820" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
+    <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801214824" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
   </ItemGroup>
 
 <!--  <Target Name="Editbin" AfterTargets="Compile" Condition="$(IsEditbinEnabled) == True And $(VcvarsFile) != '' And $([MSBuild]::IsOSPlatform('Windows'))">-->
