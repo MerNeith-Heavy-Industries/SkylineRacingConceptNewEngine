@@ -4,6 +4,24 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/CefGlue/">
+    <Project Path="CefGlue/CefGlue.BrowserProcess/CefGlue.BrowserProcess.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x86" Project="x64" />
+    </Project>
+    <Project Path="CefGlue/CefGlue.Common.Shared/CefGlue.Common.Shared.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x86" Project="x64" />
+    </Project>
+    <Project Path="CefGlue/CefGlue.Common/CefGlue.Common.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x86" Project="x64" />
+    </Project>
+    <Project Path="CefGlue/CefGlue/CefGlue.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x86" Project="x64" />
+    </Project>
+  </Folder>
   <Folder Name="/Facepunch.Steamworks/">
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Posix.csproj" />
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Win64.csproj" />
@@ -57,22 +75,6 @@
     <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj" />
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
   </Folder>
-  <Project Path="CefGlue/CefGlue.BrowserProcess/CefGlue.BrowserProcess.csproj">
-    <Platform Solution="*|Any CPU" Project="x64" />
-    <Platform Solution="*|x86" Project="x64" />
-  </Project>
-  <Project Path="CefGlue/CefGlue.Common.Shared/CefGlue.Common.Shared.csproj">
-    <Platform Solution="*|Any CPU" Project="x64" />
-    <Platform Solution="*|x86" Project="x64" />
-  </Project>
-  <Project Path="CefGlue/CefGlue.Common/CefGlue.Common.csproj">
-    <Platform Solution="*|Any CPU" Project="x64" />
-    <Platform Solution="*|x86" Project="x64" />
-  </Project>
-  <Project Path="CefGlue/CefGlue/CefGlue.csproj">
-    <Platform Solution="*|Any CPU" Project="x64" />
-    <Platform Solution="*|x86" Project="x64" />
-  </Project>
   <Project Path="LibTessDotNet/LibTessDotNet/LibTessDotNet.csproj" />
   <Project Path="NAudio.Flac/NAudio.Flac/NAudio.Flac.csproj" />
   <Project Path="nfm-world/NFMWorld.csproj" />
