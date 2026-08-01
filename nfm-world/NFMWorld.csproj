@@ -28,11 +28,6 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
-    <PropertyGroup>
-        <UseCefGlueArm64Package Condition="'$(RuntimeIdentifier)' != ''">$([System.String]::Copy('$(RuntimeIdentifier)').EndsWith('-arm64'))</UseCefGlueArm64Package>
-        <UseCefGlueArm64Package Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'ARM64'">true</UseCefGlueArm64Package>
-        <UseCefGlueArm64Package Condition="'$(UseCefGlueArm64Package)' == '' and '$(RuntimeIdentifier)' == '' and '$(Platform)' != 'x64'">$([System.String]::Copy('$(NETCoreSdkRuntimeIdentifier)').EndsWith('-arm64'))</UseCefGlueArm64Package>
-    </PropertyGroup>
     <ItemGroup>
         <None Remove="Icon.ico" />
         <None Remove="Icon.bmp" />
@@ -69,8 +64,6 @@
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
         <PackageReference Include="SoundTouch.Net" Version="2.3.2" />
         <PackageReference Include="System.Reactive" Version="7.0.0-rc.1" />
-        <PackageReference Include="CefGlue.Common" Version="120.6099.211" Condition="'$(UseCefGlueArm64Package)' != 'true'" />
-        <PackageReference Include="CefGlue.Common.ARM64" Version="120.6099.211" Condition="'$(UseCefGlueArm64Package)' == 'true'" />
         <PackageReference Include="Yoga-CS" Version="1.0.0" />
     </ItemGroup>
     <!--
@@ -82,6 +75,7 @@
         <CefGlueBrowserProcessFiles Remove="@(CefGlueBrowserProcessFiles)" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\CefGlue\CefGlue.Common\CefGlue.Common.csproj" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
@@ -105,171 +99,12 @@
     </ItemGroup>
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
-
-    <Target Name="EnsureCefGlueMacRuntimeLibrariesInOutDir" BeforeTargets="_CopyOutOfDateSourceItemsToOutputDirectory" Condition="'$(CefGlueTargetPlatform)' == 'osx-x64' or '$(CefGlueTargetPlatform)' == 'osx-arm64'">
-        <ItemGroup>
-            <_CefMacRuntimeLibraries Include="@(CefRedistOSX64)" Condition="'$(CefGlueTargetPlatform)' == 'osx-x64' and ('%(Filename)%(Extension)' == 'libEGL.dylib' or '%(Filename)%(Extension)' == 'libGLESv2.dylib' or '%(Filename)%(Extension)' == 'libvk_swiftshader.dylib')" />
-            <_CefMacRuntimeLibraries Include="@(CefRedistOSXARM64)" Condition="'$(CefGlueTargetPlatform)' == 'osx-arm64' and ('%(Filename)%(Extension)' == 'libEGL.dylib' or '%(Filename)%(Extension)' == 'libGLESv2.dylib' or '%(Filename)%(Extension)' == 'libvk_swiftshader.dylib')" />
-            <_CefMacRuntimeLibrariesToCopy Include="@(_CefMacRuntimeLibraries)" Condition="!Exists('$(OutDir)%(Filename)%(Extension)')" />
-        </ItemGroup>
-        <Copy SourceFiles="@(_CefMacRuntimeLibrariesToCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(_CefMacRuntimeLibrariesToCopy)' != ''" />
-    </Target>
-
-    <!--
-      Fix two places where CefGlue.Common.targets puts CEF files in the wrong location:
-      1. Linux / macOS: static ItemGroup puts everything under CefGlueBrowserProcess\
-         - our custom NFMWorld.BrowserProcess lives in the output root, not there.
-      2. Windows: ResolveCEFAssets puts locale .pak files under runtimes\{rid}\native\locales\
-         - they belong in locales\ in the output root.
-
-      Everything else stays where CefGlue puts it (resources in root on Win/Linux;
-      Resources\ on macOS via RecursiveDir). Runs before both build and publish copy steps.
-    -->
-    <Target Name="FixCefLayout" AfterTargets="ResolveCEFAssets" BeforeTargets="CopyFilesToOutputDirectory;PrepareForPublish">
-        <ItemGroup>
-            <!-- (a) Items with CefGlueBrowserProcess in Link (Linux/macOS static ItemGroup) -->
-            <_FixBp Include="@(None)"
-                    Condition="$([System.String]::new('%(None.Link)').Contains('CefGlueBrowserProcess'))" />
-
-            <!-- (b) Windows locale items: Link under runtimes\...\locales\, .pak extension -->
-            <_FixWinLoc Include="@(None)"
-                        Condition="'%(None.Extension)' == '.pak'
-                                   AND $([System.String]::new('%(None.Link)').Contains('runtimes'))
-                                   AND $([System.String]::new('%(None.Link)').Contains('locales'))" />
-        </ItemGroup>
-
-        <!-- Split: locale .pak vs everything else (native libs, resources) -->
-        <ItemGroup>
-            <_FixBpLoc Include="@(_FixBp)"
-                       Condition="'%(_FixBp.Extension)' == '.pak'
-                                  AND $([System.String]::new('%(FullPath)').Contains('locales'))" />
-            <_FixBpOther Include="@(_FixBp)" Exclude="@(_FixBpLoc)" />
-        </ItemGroup>
-
-        <!-- Remove originals from None, ReferenceCopyLocalPaths, ResolvedFileToPublish -->
-        <ItemGroup>
-            <None Remove="@(_FixBp);@(_FixWinLoc)" />
-            <ReferenceCopyLocalPaths Remove="@(_FixBp);@(_FixWinLoc)" />
-            <ResolvedFileToPublish Remove="@(_FixBp);@(_FixWinLoc)" />
-        </ItemGroup>
-
-        <!-- Re-add: BP non-locale items -> output root (flat) -->
-        <ItemGroup Condition="'@(_FixBpOther)' != ''">
-            <None Include="@(_FixBpOther)">
-                <Link>%(_FixBpOther.FileName)%(_FixBpOther.Extension)</Link>
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-                <PublishState>Included</PublishState>
-                <Visible>false</Visible>
-            </None>
-        </ItemGroup>
-
-        <!-- Re-add: BP locale items -> locales\ -->
-        <ItemGroup Condition="'@(_FixBpLoc)' != ''">
-            <None Include="@(_FixBpLoc)">
-                <Link>locales\%(_FixBpLoc.FileName)%(_FixBpLoc.Extension)</Link>
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-                <PublishState>Included</PublishState>
-                <Visible>false</Visible>
-            </None>
-        </ItemGroup>
-
-        <!-- Re-add: Windows locale items -> locales\ -->
-        <ItemGroup Condition="'@(_FixWinLoc)' != ''">
-            <None Include="@(_FixWinLoc)">
-                <Link>locales\%(_FixWinLoc.FileName)%(_FixWinLoc.Extension)</Link>
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-                <PublishState>Included</PublishState>
-                <Visible>false</Visible>
-            </None>
-        </ItemGroup>
-    </Target>
-
-    <!--
-      Post-copy cleanup: delete CEF duplicates from:
-      - CefGlueBrowserProcess\  (stale files from before FixCefLayout was added)
-      - runtimes\               (.NET SDK's native runtime copies of CEF files)
-
-      Handles both build output ($(OutDir)) and publish output ($(PublishDir)).
-    -->
-    <Target Name="CleanupCefDuplicates" AfterTargets="CopyFilesToOutputDirectory;Publish">
-        <PropertyGroup>
-            <_CefCleanBp>$([System.IO.Path]::GetFullPath('$(OutDir)CefGlueBrowserProcess'))</_CefCleanBp>
-            <_CefCleanRt>$([System.IO.Path]::GetFullPath('$(OutDir)runtimes'))</_CefCleanRt>
-            <_CefCleanBpPub Condition="'$(PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(PublishDir)CefGlueBrowserProcess'))</_CefCleanBpPub>
-            <_CefCleanRtPub Condition="'$(PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(PublishDir)runtimes'))</_CefCleanRtPub>
-        </PropertyGroup>
-        <!-- Build: CefGlueBrowserProcess -->
-        <ItemGroup>
-            <_CleanBp Include="$(_CefCleanBp)\**\*.pak" />
-            <_CleanBp Include="$(_CefCleanBp)\**\icudtl.dat" />
-            <_CleanBp Include="$(_CefCleanBp)\**\snapshot_blob.bin" />
-            <_CleanBp Include="$(_CefCleanBp)\**\v8_context_snapshot.bin" />
-            <_CleanBp Include="$(_CefCleanBp)\**\vk_swiftshader_icd.json" />
-            <_CleanBp Include="$(_CefCleanBp)\**\libcef.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\chrome_elf.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\libEGL.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\libGLESv2.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\vk_swiftshader.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\vulkan-1.*" />
-            <_CleanBp Include="$(_CefCleanBp)\**\d3dcompiler_47.*" />
-        </ItemGroup>
-        <Delete Files="@(_CleanBp)" />
-        <RemoveDir Directories="$(_CefCleanBp)" Condition="Exists('$(_CefCleanBp)')" />
-        <!-- Build: runtimes -->
-        <ItemGroup>
-            <_CleanRt Include="$(_CefCleanRt)\**\*.pak" />
-            <_CleanRt Include="$(_CefCleanRt)\**\icudtl.dat" />
-            <_CleanRt Include="$(_CefCleanRt)\**\snapshot_blob.bin" />
-            <_CleanRt Include="$(_CefCleanRt)\**\v8_context_snapshot.bin" />
-            <_CleanRt Include="$(_CefCleanRt)\**\vk_swiftshader_icd.json" />
-            <_CleanRt Include="$(_CefCleanRt)\**\libcef.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\chrome_elf.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\libEGL.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\libGLESv2.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\vk_swiftshader.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\vulkan-1.*" />
-            <_CleanRt Include="$(_CefCleanRt)\**\d3dcompiler_47.*" />
-        </ItemGroup>
-        <Delete Files="@(_CleanRt)" />
-        <!-- Publish: CefGlueBrowserProcess -->
-        <ItemGroup Condition="'$(PublishDir)' != ''">
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\*.pak" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\icudtl.dat" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\snapshot_blob.bin" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\v8_context_snapshot.bin" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\vk_swiftshader_icd.json" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\libcef.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\chrome_elf.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\libEGL.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\libGLESv2.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\vk_swiftshader.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\vulkan-1.*" />
-            <_CleanBpPub Include="$(_CefCleanBpPub)\**\d3dcompiler_47.*" />
-        </ItemGroup>
-        <Delete Files="@(_CleanBpPub)" Condition="'$(PublishDir)' != ''" />
-        <RemoveDir Directories="$(_CefCleanBpPub)" Condition="'$(PublishDir)' != '' and Exists('$(_CefCleanBpPub)')" />
-        <!-- Publish: runtimes -->
-        <ItemGroup Condition="'$(PublishDir)' != ''">
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\*.pak" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\icudtl.dat" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\snapshot_blob.bin" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\v8_context_snapshot.bin" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\vk_swiftshader_icd.json" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\libcef.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\chrome_elf.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\libEGL.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\libGLESv2.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\vk_swiftshader.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\vulkan-1.*" />
-            <_CleanRtPub Include="$(_CefCleanRtPub)\**\d3dcompiler_47.*" />
-        </ItemGroup>
-        <Delete Files="@(_CleanRtPub)" Condition="'$(PublishDir)' != ''" />
-    </Target>
-
-    <!-- XAML files to compile -->
+    
+    <ItemGroup>
+        <PackageReference Include="RawCef.Binaries.Windows64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+        <PackageReference Include="RawCef.Binaries.Macosarm64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('macOS'))" />
+        <PackageReference Include="RawCef.Binaries.Linux64.Release" Version="151.3.14-ci.20260801011844" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+    </ItemGroup>
 
     <!-- Shaders to compile -->
     <ItemGroup>

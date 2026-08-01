@@ -95,8 +95,6 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
             BackgroundColor = new CefColor(0, 0, 0, 0),
         };
 
-        CefRuntimeLoader.Initialize();
-
         _browser = CefBrowserHost.CreateBrowserSync(windowInfo, _cefClient, browserSettings, initialUrl);
         _browserHost = _browser?.GetHost();
 

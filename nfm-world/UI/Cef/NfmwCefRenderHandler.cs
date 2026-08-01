@@ -199,10 +199,9 @@ internal sealed class NfmwCefRenderHandler(GraphicsDevice graphicsDevice) : CefR
     {
     }
 
-    protected override void OnAcceleratedPaint(CefBrowser browser,
-        CefPaintElementType type, CefRectangle[] dirtyRects, nint sharedTextureHandle)
+    protected override void OnAcceleratedPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects,
+        CefAcceleratedPaintInfo info)
     {
-        // Accelerated paint uses shared textures — not used in off-screen mode
     }
 
     protected override CefAccessibilityHandler GetAccessibilityHandler()
