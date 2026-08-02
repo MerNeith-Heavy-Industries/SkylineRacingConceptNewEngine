@@ -254,23 +254,23 @@ public static partial class GameSparker
 
     public static void StartModelViewer()
     {
-        SetPhase(new ModelEditorPhase(GraphicsDevice));
+        PushPhase(new ModelEditorPhase(GraphicsDevice));
     }
     
     public static void ExitEditor()
     {
-        SetPhase(MainMenuPhase);
+        PopPhase();
         devRenderTrackers = false;
     }
 
     public static void StartStageEditor()
     {
-        SetPhase(new StageEditorPhase(GraphicsDevice));
+        PushPhase(new StageEditorPhase(GraphicsDevice));
     }
 
     public static void ReturnToMainMenu()
     {
-        SetPhase(MainMenuPhase);
+        PopPhase();
     }
 
     public static void GameTick()
