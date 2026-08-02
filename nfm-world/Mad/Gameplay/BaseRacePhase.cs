@@ -148,7 +148,6 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
     {
         if (disposing)
         {
-            GameSparker.CurrentMusic?.Unload();
             GamemodeInstance?.End();
             GamemodeInstance = null;
         }
