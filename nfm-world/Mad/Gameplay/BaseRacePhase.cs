@@ -69,7 +69,7 @@ public abstract class BaseRacePhase : BaseStageRenderingPhase, IGamemodeData, IC
                 }
 
                 _hasAutoPopped = true;
-                GameSparker.PopPhase();
+                GameSparker.PopGroup(PhaseManager.Groups.Event);
             }
         }
     } = RaceState.InProgress;
