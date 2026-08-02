@@ -53,7 +53,8 @@ public static class DevConsoleCommands
                     IsClientPlayer = true
                 }
             ]);
-            GameSparker.SetPhase(inRace);
+            GameSparker.PopToRoot();
+            GameSparker.PushPhase(inRace);
         });
             
         // rendering
@@ -118,7 +119,7 @@ public static class DevConsoleCommands
                 car.Fix();
             }
         });
-        console.RegisterCommand("html_test", (console, args) => GameSparker.SetPhase(new XamlTestPhase()));
+        console.RegisterCommand("html_test", (console, args) => GameSparker.PushPhase(new XamlTestPhase()));
         console.RegisterCommand("cef_reload", (console, args) =>
         {
             GameSparker.CefRenderer?.Reload();
@@ -214,7 +215,7 @@ public static class DevConsoleCommands
         if (args.Length < 2 || !ushort.TryParse(args[1], out ushort port))
             port = 7000;
 
-        GameSparker.SetPhase(new LobbyPhase(GameSparker.GraphicsDevice,
+        GameSparker.PushPhase(new LobbyPhase(GameSparker.GraphicsDevice,
             new WebSocketMultiplayerClientTransport(args[0], port)));
     }
 
@@ -569,7 +570,7 @@ public static class DevConsoleCommands
             return;
         }
 
-        GameSparker.SetPhase(GameSparker.MainMenuPhase);
+        GameSparker.PopToRoot();
         IBackend.Backend.StopAllSounds();
             
         Logging.Info("Returned to main menu.");

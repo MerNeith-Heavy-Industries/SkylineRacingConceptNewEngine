@@ -131,7 +131,7 @@ public abstract class BaseStageRenderingPhase : BasePhase
 
     public override void BeginGameTick()
     {
-        CurrentStage.OnBeforeGameTick();
+        CurrentStage?.OnBeforeGameTick();
         base.BeginGameTick();
     }
 
