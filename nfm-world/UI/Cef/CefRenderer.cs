@@ -71,8 +71,7 @@ public sealed class CefRenderer(Game game, string initialUrl, int browserWidth =
             NoSandbox = true,
             BackgroundColor = new CefColor(0, 0, 0, 0), // Transparent
             RootCachePath = Path.Combine(Path.GetTempPath(), $"NFMW_CefCache_{System.Environment.ProcessId}"),
-            LogSeverity = CefLogSeverity.Warning,
-            BrowserSubprocessPath = Path.Combine(AppContext.BaseDirectory, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "NFMWorld.BrowserProcess.exe" : "NFMWorld.BrowserProcess")
+            LogSeverity = CefLogSeverity.Warning
         };
 
         var nfmwSchemeHandlerFactory = new NfmwSchemeHandlerFactory();
