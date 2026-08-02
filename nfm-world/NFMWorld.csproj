@@ -79,7 +79,9 @@
         <CefGlueBrowserProcessFiles Remove="@(CefGlueBrowserProcessFiles)" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\CefGlue\CefGlue.BrowserProcess\CefGlue.BrowserProcess.csproj" />
         <ProjectReference Include="..\CefGlue\CefGlue.Common\CefGlue.Common.csproj" />
+        <ProjectReference Include="..\CefGlue\CefGlue\CefGlue.csproj" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
