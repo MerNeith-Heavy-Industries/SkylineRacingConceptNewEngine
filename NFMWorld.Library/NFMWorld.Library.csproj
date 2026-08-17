@@ -61,7 +61,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="data\gamemodes\" />
+      <Folder Include="data\gamemodes\nfmm\" />
       <Folder Include="Mad\Multiplayer\Packets\Lobby\" />
     </ItemGroup>
 
