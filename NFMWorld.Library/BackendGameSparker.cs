@@ -275,7 +275,7 @@ public static class BackendGameSparker
         SentrySdk.CaptureMessage("Hello world", SentryLevel.Debug);
 
 #if !DEBUG
-        if (!isHeadless && !Debugger.IsAttached)
+        if (!isHeadless && !System.Diagnostics.Debugger.IsAttached)
         {
             CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
         }
