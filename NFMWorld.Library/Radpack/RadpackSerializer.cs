@@ -138,6 +138,10 @@ public enum LuaScriptKind : byte
 public partial class RadpackLua : RadpackAsset
 {
     [MemoryPackOrder(1)] public required LuaScriptKind Kind;
+    
+    /// <summary>
+    /// The files, with path separator replaced with .
+    /// </summary>
     [MemoryPackOrder(2)] public required Dictionary<string, string> Files;
 }
 

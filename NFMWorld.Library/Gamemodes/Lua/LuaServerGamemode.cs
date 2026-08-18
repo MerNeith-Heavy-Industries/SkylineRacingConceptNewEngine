@@ -137,6 +137,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         _data = data;
         GamemodeId = gamemodeId;
         Config = config;
+        Players = parameters.Players;
         
         _state = LuaHelpers.OpenState();
 
