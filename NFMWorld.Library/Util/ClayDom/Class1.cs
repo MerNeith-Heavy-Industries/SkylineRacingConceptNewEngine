@@ -909,12 +909,6 @@ public partial class ClayTextNode : ClayNode
     public string text = "";
 }
 
-public class CustomFontInfo
-{
-    public string fontFamily = "";
-    public FontStyle fontStyle = FontStyle.Plain;
-}
-
 [LuaVisible]
 public partial class ClayTextElement : ClayElementBase
 {
