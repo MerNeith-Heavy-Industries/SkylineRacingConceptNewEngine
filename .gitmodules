@@ -43,3 +43,6 @@
 [submodule "Lua-CSharp"]
 	path = Lua-CSharp
 	url = https://github.com/uwx/Lua-CSharp
+[submodule "ClaySharp"]
+	path = ClaySharp
+	url = https://github.com/uwx/ClaySharp
