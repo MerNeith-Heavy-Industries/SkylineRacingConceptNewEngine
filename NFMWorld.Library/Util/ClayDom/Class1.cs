@@ -1,15 +1,78 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using ClaySharp;
 using nfm_world_library.Lua;
+using NFMWorld.DriverInterface.DriverInterface;
 
 namespace NFMWorld.ClayDom;
 
 [LuaVisible]
+public enum NodeType
+{
+    Element,
+    TextElement,
+    Text,
+}
+
+[LuaVisible]
 public abstract partial class ClayNode
 {
+    [LuaName]
+    public abstract NodeType NodeType { get; }
+}
+
+[LuaVisible]
+public abstract partial class ClayElementBase : ClayNode
+{
     private protected static uint MaxId;
+
+    public uint Id = MaxId++;
+    public string DebugName = string.Empty;
+
+    public List<ClayNode>? Children = null;
+
+    // id is the only thing that matter, stringId is shown in DebugView
+    public Clay_ElementId ElementId => new Clay_ElementId()
+    {
+        id = Id,
+        stringId = DebugName
+    };
+
+    protected virtual void OnChildrenChanged()
+    {
+    }
+
+    [LuaName]
+    public void AppendChild(ClayNode node)
+    {
+        (Children ??= []).Add(node);
+        OnChildrenChanged();
+    }
+
+    [LuaName]
+    public void InsertBefore(ClayNode node, ClayNode beforeNode)
+    {
+        if (Children?.IndexOf(beforeNode) is { } idx and > -1)
+        {
+            Children.Insert(idx, node);
+        }
+        else
+        {
+            AppendChild(node);
+        }
+        OnChildrenChanged();
+    }
+
+    [LuaName]
+    public void RemoveChild(ClayNode node)
+    {
+        if (Children?.Remove(node) == true)
+        {
+            OnChildrenChanged();
+        }
+    }
 
     internal abstract void LayoutSelfAndChildren();
 
@@ -106,6 +169,32 @@ public abstract partial class ClayNode
         return s_namedColors.ContainsKey(token);
     }
 
+    private protected static float ParsePixels(object value, string prop)
+    {
+        string s = ToCss(value).Trim();
+        var span = s.AsSpan();
+        if (span.EndsWith("px", StringComparison.OrdinalIgnoreCase))
+            span = span[..^2].Trim();
+        if (span.Length == 0)
+            throw new ArgumentException($"Invalid length for '{prop}': '{s}'.");
+        if (span.IndexOf('%') >= 0)
+            throw new ArgumentException($"'{prop}' does not accept percentages (expected pixels).");
+        return float.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture);
+    }
+
+    private protected static ushort ToUshort(float v, string prop)
+    {
+        if (v < 0 || v > ushort.MaxValue)
+            throw new ArgumentException($"Value for '{prop}' out of range (0-{ushort.MaxValue}): {v}.");
+        return (ushort)MathF.Round(v);
+    }
+
+    private protected static int ParseInt(object value, string prop)
+    {
+        string s = ToCss(value).Trim();
+        return int.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
+    }
+
     private protected static readonly Dictionary<string, Clay_Color> s_namedColors = new(StringComparer.OrdinalIgnoreCase)
     {
         ["transparent"] = new Clay_Color(0, 0, 0, 0),
@@ -131,11 +220,47 @@ public abstract partial class ClayNode
         ["navy"] = new Clay_Color(0, 0, 128, 255),
         ["teal"] = new Clay_Color(0, 128, 128, 255),
     };
+    
+    private protected static Clay_TextAlignment ParseTextAlignment(object value) =>
+        ToCss(value).Trim().ToLowerInvariant() switch
+        {
+            "left" or "start" => Clay_TextAlignment.CLAY_TEXT_ALIGN_LEFT,
+            "center" => Clay_TextAlignment.CLAY_TEXT_ALIGN_CENTER,
+            "right" or "end" => Clay_TextAlignment.CLAY_TEXT_ALIGN_RIGHT,
+            _ => throw new ArgumentException($"Unsupported 'text-align' value: '{value}'. Clay supports left/center/right."),
+        };
+
+    private protected static Clay_TextElementConfigWrapMode ParseWrapMode(object value) =>
+        ToCss(value).Trim().ToLowerInvariant() switch
+        {
+            "normal" or "wrap" or "words" => Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_WORDS,
+            "nowrap" or "none" => Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_NONE,
+            "pre" or "pre-wrap" or "newlines" => Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_NEWLINES,
+            _ => throw new ArgumentException($"Unsupported 'white-space' value: '{value}'. Clay supports normal/nowrap/pre."),
+        };
+
+    private protected static FontStyle ParseFontStyle(object value)
+    {
+        var style = ToCss(value);
+        switch (style)
+        {
+            case "normal":
+                return FontStyle.Plain;
+            case "italic":
+                return FontStyle.Italic;
+            case "bold":
+                return FontStyle.Bold;
+            default:
+                throw new ArgumentException("Value for 'font-style' must be normal, italic, or bold.");
+        }
+    }
 }
 
 [LuaVisible]
-public partial class ClayElement : ClayNode
+public partial class ClayElement : ClayElementBase
 {
+    public override NodeType NodeType => NodeType.Element;
+
     public Clay_LayoutConfig layout; // Controls the size and position of an element and its children.
     public Clay_Color backgroundColor; // Background color; generates a RECTANGLE render command (or is passed to IMAGE/CUSTOM).
     public Clay_Color overlayColor; // "Color Overlay" applied to this element and all its children.
@@ -149,46 +274,18 @@ public partial class ClayElement : ClayNode
     public Clay_TransitionElementConfig transition; // Transition settings.
     public object? userData; // Transparently passed through to resulting render commands.
 
-    public uint Id = MaxId++;
-    public string DebugName = string.Empty;
-
-    public List<ClayNode>? Children = null;
-
-    // id is the only thing that matter, stringId is shown in DebugView
-    public Clay_ElementId ElementId => new Clay_ElementId()
-    {
-        id = Id,
-        stringId = DebugName
-    };
+    // ---- Text ----
+    public Clay_Color textColor; // The RGBA color of the font to render, conventionally specified as 0-255.
+    public ushort fontId; // An integer transparently passed to the measure text function to identify the font to use.
+    public ushort fontSize; // Controls the size of the font.
+    public ushort letterSpacing; // Controls extra horizontal spacing between characters.
+    public ushort lineHeight; // Controls additional vertical space between wrapped lines of text.
+    public Clay_TextElementConfigWrapMode wrapMode; // How text wraps.
+    public Clay_TextAlignment textAlignment; // How wrapped lines are horizontally aligned.
 
     [LuaName]
     public ClayElement()
     {
-    }
-
-    [LuaName]
-    public void AppendChild(ClayNode node)
-    {
-        (Children ??= []).Add(node);
-    }
-
-    [LuaName]
-    public void InsertBefore(ClayNode node, ClayNode beforeNode)
-    {
-        if (Children?.IndexOf(beforeNode) is { } idx and > -1)
-        {
-            Children.Insert(idx, node);
-        }
-        else
-        {
-            AppendChild(node);
-        }
-    }
-
-    [LuaName]
-    public void RemoveChild(ClayNode node)
-    {
-        Children?.Remove(node);
     }
 
     [LuaName]
@@ -438,6 +535,61 @@ public partial class ClayElement : ClayNode
             case "transition-property":
                 transition.properties = ParseTransitionProperty(value);
                 break;
+            
+            // ---- Text ----
+            
+            case "font-family":
+            {
+                if (userData is CustomFontInfo fontInfo)
+                {
+                    fontInfo.fontFamily = ToCss(value);
+                }
+                else
+                {
+                    userData = new CustomFontInfo()
+                    {
+                        fontFamily = ToCss(value)
+                    };
+                }
+                break;
+            }
+            case "font-style":
+            {
+                if (userData is CustomFontInfo fontInfo)
+                {
+                    fontInfo.fontStyle = ParseFontStyle(value);
+                }
+                else
+                {
+                    userData = new CustomFontInfo()
+                    {
+                        fontStyle = ParseFontStyle(value)
+                    };
+                }
+                break;
+            }
+            case "color":
+                textColor = ParseColor(value);
+                break;
+            case "font-size":
+                fontSize = ToUshort(ParsePixels(value, "font-size"), "font-size");
+                break;
+            case "letter-spacing":
+                letterSpacing = ToUshort(ParsePixels(value, "letter-spacing"), "letter-spacing");
+                break;
+            case "line-height":
+                lineHeight = ToUshort(ParsePixels(value, "line-height"), "line-height");
+                break;
+            case "font-id":
+                fontId = ToUshort(ParseInt(value, "font-id"), "font-id");
+                break;
+            case "text-align":
+                textAlignment = ParseTextAlignment(value);
+                break;
+            case "white-space":
+            case "text-wrap":
+                wrapMode = ParseWrapMode(value);
+                break;
 
             default:
                 throw new ArgumentException($"Unsupported CSS property '{key}'.");
@@ -481,32 +633,6 @@ public partial class ClayElement : ClayNode
     }
 
     // ---------------- Parsers ----------------
-
-    private static float ParsePixels(object value, string prop)
-    {
-        string s = ToCss(value).Trim();
-        var span = s.AsSpan();
-        if (span.EndsWith("px", StringComparison.OrdinalIgnoreCase))
-            span = span[..^2].Trim();
-        if (span.Length == 0)
-            throw new ArgumentException($"Invalid length for '{prop}': '{s}'.");
-        if (span.IndexOf('%') >= 0)
-            throw new ArgumentException($"'{prop}' does not accept percentages (expected pixels).");
-        return float.Parse(span, NumberStyles.Float, CultureInfo.InvariantCulture);
-    }
-
-    private static ushort ToUshort(float v, string prop)
-    {
-        if (v < 0 || v > ushort.MaxValue)
-            throw new ArgumentException($"Value for '{prop}' out of range (0-{ushort.MaxValue}): {v}.");
-        return (ushort)MathF.Round(v);
-    }
-
-    private static int ParseInt(object value, string prop)
-    {
-        string s = ToCss(value).Trim();
-        return int.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
-    }
 
     private static (float top, float right, float bottom, float left) ParseEdgeValues(object value, string prop)
     {
@@ -670,6 +796,14 @@ public partial class ClayElement : ClayNode
         return false;
     }
 
+    public Action<Vector2>? MouseEnter;
+    public Action<Vector2>? MouseLeave;
+
+    public Action<Vector2>? MouseDown;
+    public Action<Vector2>? MouseUp;
+
+    private bool _isHovered;
+
     internal override void LayoutSelfAndChildren()
     {
         var scope = Clay.Element(ElementId, new Clay_ElementDeclaration
@@ -688,11 +822,67 @@ public partial class ClayElement : ClayNode
             userData = userData
         });
 
+        // ---- Hover ----
+        if (Clay.Hovered())
+        {
+            var data = Clay.GetPointerState();
+            if (data.state == Clay_PointerDataInteractionState.CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
+            {
+                MouseDown?.Invoke(data.position);
+            }
+            else if (data.state == Clay_PointerDataInteractionState.CLAY_POINTER_DATA_RELEASED_THIS_FRAME)
+            {
+                MouseUp?.Invoke(data.position);
+            }
+
+            if (!_isHovered)
+            {
+                _isHovered = true;
+                MouseEnter?.Invoke(data.position);
+            }
+        }
+        else
+        {
+            var data = Clay.GetPointerState();
+            if (_isHovered)
+            {
+                _isHovered = false;
+                MouseLeave?.Invoke(data.position);
+            }
+        }
+
+        // ---- Render children ----
         if (Children is not null)
         {
+            StringBuilder? sb = null;
+            
             foreach (var child in Children)
             {
-                child.LayoutSelfAndChildren();
+                if (child is ClayElement element)
+                {
+                    // Allow text embedded directly in ClayElement without ClayTextElement, like HTML
+                    if (sb?.Length > 0)
+                    {
+                        Clay.Text(sb.ToString(), new Clay_TextElementConfig()
+                        {
+                            userData = userData,
+                            textColor = textColor,
+                            fontId = fontId,
+                            fontSize = fontSize,
+                            letterSpacing = letterSpacing,
+                            lineHeight = lineHeight,
+                            wrapMode = wrapMode,
+                            textAlignment = textAlignment
+                        });
+                        sb.Clear();
+                    }
+                    
+                    element.LayoutSelfAndChildren();
+                }
+                else if (child is ClayTextNode textNode)
+                {
+                    (sb ??= new StringBuilder()).Append(textNode.text);
+                }
             }
         }
         
@@ -711,8 +901,25 @@ public partial class ClayElement : ClayNode
 }
 
 [LuaVisible]
-public partial class ClayTextElement : ClayNode
+public partial class ClayTextNode : ClayNode
 {
+    public override NodeType NodeType => NodeType.Text;
+
+    [LuaName]
+    public string text = "";
+}
+
+public class CustomFontInfo
+{
+    public string fontFamily = "";
+    public FontStyle fontStyle = FontStyle.Plain;
+}
+
+[LuaVisible]
+public partial class ClayTextElement : ClayElementBase
+{
+    public override NodeType NodeType => NodeType.TextElement;
+
     public object? userData; // A pointer that will be transparently passed through to the resulting render command.
     public Clay_Color textColor; // The RGBA color of the font to render, conventionally specified as 0-255.
     public ushort fontId; // An integer transparently passed to the measure text function to identify the font to use.
@@ -721,9 +928,24 @@ public partial class ClayTextElement : ClayNode
     public ushort lineHeight; // Controls additional vertical space between wrapped lines of text.
     public Clay_TextElementConfigWrapMode wrapMode; // How text wraps.
     public Clay_TextAlignment textAlignment; // How wrapped lines are horizontally aligned.
-    
-    [LuaName]
-    public string text = "";
+
+    private string text = "";
+
+    protected override void OnChildrenChanged()
+    {
+        var sb = new StringBuilder();
+        if (Children is not null)
+        {
+            foreach (var child in Children)
+            {
+                if (child is ClayTextNode textNode)
+                {
+                    sb.Append(textNode.text);
+                }
+            }
+        }
+        text = sb.ToString();
+    }
 
     internal override void LayoutSelfAndChildren()
     {
@@ -740,8 +962,68 @@ public partial class ClayTextElement : ClayNode
         });
     }
 
+    [LuaName]
     public override void SetProperty(string key, object value)
     {
-        
+        switch (key.Trim().ToLowerInvariant())
+        {
+            case "font-family":
+            {
+                if (userData is CustomFontInfo fontInfo)
+                {
+                    fontInfo.fontFamily = ToCss(value);
+                }
+                else
+                {
+                    userData = new CustomFontInfo()
+                    {
+                        fontFamily = ToCss(value)
+                    };
+                }
+                break;
+            }
+            case "font-style":
+            {
+                if (userData is CustomFontInfo fontInfo)
+                {
+                    fontInfo.fontStyle = ParseFontStyle(value);
+                }
+                else
+                {
+                    userData = new CustomFontInfo()
+                    {
+                        fontStyle = ParseFontStyle(value)
+                    };
+                }
+                break;
+            }
+            case "color":
+                textColor = ParseColor(value);
+                break;
+            case "font-size":
+                fontSize = ToUshort(ParsePixels(value, "font-size"), "font-size");
+                break;
+            case "letter-spacing":
+                letterSpacing = ToUshort(ParsePixels(value, "letter-spacing"), "letter-spacing");
+                break;
+            case "line-height":
+                lineHeight = ToUshort(ParsePixels(value, "line-height"), "line-height");
+                break;
+            case "font-id":
+                fontId = ToUshort(ParseInt(value, "font-id"), "font-id");
+                break;
+            case "text-align":
+                textAlignment = ParseTextAlignment(value);
+                break;
+            case "white-space":
+            case "text-wrap":
+                wrapMode = ParseWrapMode(value);
+                break;
+            case "data":
+                userData = value;
+                break;
+            default:
+                throw new ArgumentException($"Unsupported CSS property '{key}'.");
+        }
     }
 }
