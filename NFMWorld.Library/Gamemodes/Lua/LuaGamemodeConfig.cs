@@ -1,4 +1,5 @@
 ﻿using Lua;
+using Lua.Loaders;
 using Lua.Standard;
 using NFMWorld.LuaSourceGenerator.Generator;
 using NFMWorldLibrary.Radpack;
@@ -49,7 +50,7 @@ public class LuaGamemodeConfig
             return ValueTask.FromResult(context.Return());
         });
 
-        state.ModuleLoader = new RadpackModuleLoader(lua.Files);
+        state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(lua.Files), state.ModuleLoader!);
         state.DoString(lua.Files["config"]);
 
         return config ?? new LuaGamemodeConfig()
