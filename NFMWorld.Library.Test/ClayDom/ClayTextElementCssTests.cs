@@ -11,9 +11,9 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("color", "red");
-        Assert.AreEqual(255f, t.textColor.r);
-        Assert.AreEqual(0f, t.textColor.g);
-        Assert.AreEqual(0f, t.textColor.b);
+        Assert.AreEqual(255f, t.TextColor.R);
+        Assert.AreEqual(0f, t.TextColor.G);
+        Assert.AreEqual(0f, t.TextColor.B);
     }
 
     [TestMethod]
@@ -21,9 +21,9 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("color", "#00ff00");
-        Assert.AreEqual(0f, t.textColor.r);
-        Assert.AreEqual(255f, t.textColor.g);
-        Assert.AreEqual(0f, t.textColor.b);
+        Assert.AreEqual(0f, t.TextColor.R);
+        Assert.AreEqual(255f, t.TextColor.G);
+        Assert.AreEqual(0f, t.TextColor.B);
     }
 
     [TestMethod]
@@ -31,7 +31,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("font-size", "16px");
-        Assert.AreEqual((ushort)16, t.fontSize);
+        Assert.AreEqual((ushort)16, t.FontSize);
     }
 
     [TestMethod]
@@ -39,7 +39,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("letter-spacing", "2px");
-        Assert.AreEqual((ushort)2, t.letterSpacing);
+        Assert.AreEqual((ushort)2, t.LetterSpacing);
     }
 
     [TestMethod]
@@ -47,7 +47,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("line-height", "24px");
-        Assert.AreEqual((ushort)24, t.lineHeight);
+        Assert.AreEqual((ushort)24, t.LineHeight);
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("font-id", "3");
-        Assert.AreEqual((ushort)3, t.fontId);
+        Assert.AreEqual((ushort)3, t.FontId);
     }
 
     [TestMethod]
@@ -63,7 +63,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("text-align", "center");
-        Assert.AreEqual(Clay_TextAlignment.CLAY_TEXT_ALIGN_CENTER, t.textAlignment);
+        Assert.AreEqual(Clay.TextAlignment.Center, t.TextAlignment);
     }
 
     [TestMethod]
@@ -71,9 +71,9 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("text-align", "left");
-        Assert.AreEqual(Clay_TextAlignment.CLAY_TEXT_ALIGN_LEFT, t.textAlignment);
+        Assert.AreEqual(Clay.TextAlignment.Left, t.TextAlignment);
         t.SetProperty("text-align", "right");
-        Assert.AreEqual(Clay_TextAlignment.CLAY_TEXT_ALIGN_RIGHT, t.textAlignment);
+        Assert.AreEqual(Clay.TextAlignment.Right, t.TextAlignment);
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("white-space", "nowrap");
-        Assert.AreEqual(Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_NONE, t.wrapMode);
+        Assert.AreEqual(Clay.TextElementConfigWrapMode.None, t.WrapMode);
     }
 
     [TestMethod]
@@ -89,7 +89,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("white-space", "pre");
-        Assert.AreEqual(Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_NEWLINES, t.wrapMode);
+        Assert.AreEqual(Clay.TextElementConfigWrapMode.Newlines, t.WrapMode);
     }
 
     [TestMethod]
@@ -97,7 +97,7 @@ public class ClayTextElementCssTests
     {
         var t = new ClayTextElement();
         t.SetProperty("white-space", "normal");
-        Assert.AreEqual(Clay_TextElementConfigWrapMode.CLAY_TEXT_WRAP_WORDS, t.wrapMode);
+        Assert.AreEqual(Clay.TextElementConfigWrapMode.Words, t.WrapMode);
     }
 
     [TestMethod]
