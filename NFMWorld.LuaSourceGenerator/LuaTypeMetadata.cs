@@ -388,7 +388,6 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
             var inheritedProps = new List<LuaPropertyMetadata>();
             var inheritedFields = new List<LuaFieldMetadata>();
             var inheritedMethods = new List<LuaMethodMetadata>();
-            var inheritedIndexers = new List<LuaIndexerMetadata>();
 
             // Walk all base interfaces recursively
             WalkBaseInterfaces(symbol, new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default));
@@ -446,6 +445,55 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
                 }
             }
 
+            // Merge inherited members into the type's own lists
+            InstanceProperties = [.. InstanceProperties, .. inheritedProps];
+            InstanceFields = [.. InstanceFields, .. inheritedFields];
+            InstanceMethods = [.. InstanceMethods, .. inheritedMethods];
+        }
+        else
+        {
+            // Otherwise collect members from base types
+
+            var seenLuaNames = new HashSet<string>(
+                InstanceProperties.Select(p => p.LuaName)
+                    .Concat(InstanceFields.Select(f => f.LuaName))
+                    .Concat(InstanceMethods.Select(m => m.LuaName))
+            );
+            
+            var inheritedProps = new List<LuaPropertyMetadata>();
+            var inheritedFields = new List<LuaFieldMetadata>();
+            var inheritedMethods = new List<LuaMethodMetadata>();
+
+            var baseType = symbol.BaseType;
+            while (baseType != null)
+            {
+                var baseMembers = baseType.GetMembers();
+
+                var instanceMethods = CollectMethods(baseMembers, references, isStatic: false, symbol);
+                var instanceProperties = CollectProperties(baseMembers, references, isStatic: false);
+                var instanceFields = CollectFields(baseMembers, references, isStatic: false);
+                
+                foreach (var m in instanceMethods)
+                {
+                    if (seenLuaNames.Add(m.LuaName))
+                        inheritedMethods.Add(m);
+                }
+
+                foreach (var p in instanceProperties)
+                {
+                    if (seenLuaNames.Add(p.LuaName))
+                        inheritedProps.Add(p);
+                }
+                
+                foreach (var f in instanceFields)
+                {
+                    if (seenLuaNames.Add(f.LuaName))
+                        inheritedFields.Add(f);
+                }
+
+                baseType = baseType.BaseType;
+            }
+            
             // Merge inherited members into the type's own lists
             InstanceProperties = [.. InstanceProperties, .. inheritedProps];
             InstanceFields = [.. InstanceFields, .. inheritedFields];

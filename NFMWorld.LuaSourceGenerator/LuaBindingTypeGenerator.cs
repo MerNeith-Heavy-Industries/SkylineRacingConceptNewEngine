@@ -18,6 +18,8 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
         sb.AppendLine("#pragma warning disable CS8602");
         sb.AppendLine("#pragma warning disable CS8604");
         sb.AppendLine("#pragma warning disable CS8631");
+        sb.AppendLine("#pragma warning disable CS0108");
+        sb.AppendLine("#pragma warning disable CS8625");
         sb.AppendLine();
         sb.AppendLine("namespace NFMWorld.LuaSourceGenerator.Generator");
         using (sb.Block())
@@ -125,6 +127,8 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
         sb.AppendLine("#pragma warning restore CS8602");
         sb.AppendLine("#pragma warning restore CS8604");
         sb.AppendLine("#pragma warning restore CS8631");
+        sb.AppendLine("#pragma warning restore CS0108");
+        sb.AppendLine("#pragma warning restore CS8625");
         return sb.ToString();
     }
 
@@ -145,9 +149,9 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
         overloads = [.. overloads.OrderBy(m => m.OverloadPriority)];
 
         var baseMethod = overloads[0];
-        
+
         var argOffset = baseMethod.IsStatic || baseMethod.IsInstanceConstructor ? 0 : 1;
-        sb.AppendLine($"internal static readonly global::Lua.LuaFunction {GetFunctionName(baseMethod)} = new(\"{baseMethod.LuaName}\", (context, ct) =>");
+        sb.AppendLine($"internal static readonly global::Lua.LuaFunction {GetFunctionName(type, baseMethod)} = new(\"{baseMethod.LuaName}\", (context, ct) =>");
         using (sb.Block(end: "});"))
         {
             if (overloads.Count == 1)
@@ -414,7 +418,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
                 {
                     foreach (var method in type.InstanceMethods)
                     {
-                        sb.AppendLine($"if (stringKey == \"{method.LuaName}\") return new global::System.Threading.Tasks.ValueTask<int>(context.Return({GetFunctionName(method)}));");
+                        sb.AppendLine($"if (stringKey == \"{method.LuaName}\") return new global::System.Threading.Tasks.ValueTask<int>(context.Return({GetFunctionName(type, method)}));");
                     }
                 }
             }
@@ -518,7 +522,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
             }
             foreach (var op in type.Operators)
             {
-                sb.AppendLine($"{GetMetatableName(type)}[\"{op.MetamethodName}\"] = {GetFunctionName(op)};");
+                sb.AppendLine($"{GetMetatableName(type)}[\"{op.MetamethodName}\"] = {GetFunctionName(type, op)};");
             }
             sb.AppendLine($"{GetMetatableName(type)}[global::Lua.Runtime.Metamethods.ToString] = {GetMetamethodName(type, Metamethods.ToString)};");
         }
@@ -551,18 +555,18 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
             // static type table
             foreach (var method in type.StaticMethods)
             {
-                sb.AppendLine($"{GetTypeTableName(type)}[\"{method.LuaName}\"] = {GetFunctionName(method)};");
+                sb.AppendLine($"{GetTypeTableName(type)}[\"{method.LuaName}\"] = {GetFunctionName(type, method)};");
             }
             foreach (var ctor in type.Constructors)
             {
-                sb.AppendLine($"{GetTypeTableName(type)}[\"{ctor.LuaName}\"] = {GetFunctionName(ctor)};");
+                sb.AppendLine($"{GetTypeTableName(type)}[\"{ctor.LuaName}\"] = {GetFunctionName(type, ctor)};");
             }
             
             // lua convention: static type table gets instance methods taking self as first parameter
             // it's very rare that you'd use these, but tooling expects it to be there
             foreach (var method in type.InstanceMethods)
             {
-                sb.AppendLine($"{GetTypeTableName(type)}[\"{method.LuaName}\"] = {GetFunctionName(method)};");
+                sb.AppendLine($"{GetTypeTableName(type)}[\"{method.LuaName}\"] = {GetFunctionName(type, method)};");
             }
         }
     }
@@ -621,7 +625,7 @@ internal abstract class BaseLuaTypeGenerator
     [return: NotNullIfNotNull(nameof(ns))]
     protected static string? ToIdentifier(string? ns) =>
         ns?.Replace(".", "_");
-    protected static string GetFunctionName(LuaMethodMetadata method) => $"__function_{(method.IsStatic?"static_":"")}{ToIdentifier(method.DeclaringType?.LuaName)}_{method.LuaName}";
+    protected static string GetFunctionName(BaseLuaTypeMetadata type, LuaMethodMetadata method) => $"__function_{(method.IsStatic?"static_":"")}{ToIdentifier(type.LuaName)}_{method.LuaName}";
     protected static string GetMetamethodName(BaseLuaTypeMetadata type, string metamethod) => $"__metamethod_{ToIdentifier(type.LuaName)}_{metamethod}";
     protected static string GetStaticMetamethodName(BaseLuaTypeMetadata type, string metamethod) => $"__metamethod__static_{ToIdentifier(type.LuaName)}_{metamethod}";
     protected static string GetMetatableName(BaseLuaTypeMetadata type) => $"__metatable_{ToIdentifier(type.LuaName)}";
