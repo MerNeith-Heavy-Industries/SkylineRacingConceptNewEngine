@@ -29,6 +29,11 @@
     <Project Path="ClaySharp/examples/FNASimpleDemo/ClaySharp.FNASimpleDemo.csproj" />
     <Project Path="ClaySharp/examples/SDL3SimpleDemo/ClaySharp.SDL3SimpleDemo.csproj" />
   </Folder>
+  <Folder Name="/ClaySharp/plugins/">
+    <Project Path="ClaySharp/plugins/ClaySharp.Plugin.TextInput.FNA/ClaySharp.Plugin.TextInput.FNA.csproj" />
+    <Project Path="ClaySharp/plugins/ClaySharp.Plugin.TextInput.SDL3/ClaySharp.Plugin.TextInput.SDL3.csproj" />
+    <Project Path="ClaySharp/plugins/ClaySharp.Plugin.TextInput/ClaySharp.Plugin.TextInput.csproj" />
+  </Folder>
   <Folder Name="/ClaySharp/renderer/">
     <Project Path="ClaySharp/renderer/fna/ClaySharp.Renderer.FNA.csproj" />
     <Project Path="ClaySharp/renderer/sdl3/ClaySharp.Renderer.SDL3.csproj" />
