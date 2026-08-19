@@ -15,9 +15,39 @@ public static class LuaHelpers
         LuaVisibleTypeRegistry.RegisterAll(state);
         LuaKeysLibrary.Register(state);
 
+        state.ModuleLoader = new VfsModuleLoader();
+
         return state;
     }
-    
+
+    public sealed class VfsModuleLoader : ILuaModuleLoader
+    {
+        private static string ToLibraryPath(string moduleName)
+        {
+            moduleName = moduleName.TrimStart('.').Replace("..", ".").Replace(".", "/");
+
+            return $"./data/lua/library/{moduleName}.lua";
+        }
+        
+        public bool Exists(string moduleName)
+        {
+            if (moduleName.Contains('/') || moduleName.Contains('\\'))
+                return false;
+
+            return VFS.FileExists(ToLibraryPath(moduleName));
+        }
+
+        public ValueTask<LuaModule> LoadAsync(string moduleName, CancellationToken cancellationToken = default)
+        {
+            if (VFS.FileExists(ToLibraryPath(moduleName)))
+            {
+                return ValueTask.FromResult(new LuaModule(moduleName, VFS.ReadAllText(ToLibraryPath(moduleName))));
+            }
+            
+            throw new LuaModuleNotFoundException(moduleName);
+        }
+    }
+
     public static LuaValue ToLuaValue<T>(T value)
     {
         if (value is null) return LuaValue.Nil;

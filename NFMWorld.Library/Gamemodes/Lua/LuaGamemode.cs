@@ -1,4 +1,5 @@
 using Lua;
+using Lua.Loaders;
 using Lua.Standard;
 using MemoryPack;
 using nfm_world_library.Lua;
@@ -196,7 +197,7 @@ public sealed class LuaGamemode : BaseClientGamemode
 
         _state.Environment["GM"] = new LuaGamemodeContext(this);
 
-        _state.ModuleLoader = new RadpackModuleLoader(radpack.Files);
+        _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
         _state.DoString(radpack.Files["client"]);
     }
 

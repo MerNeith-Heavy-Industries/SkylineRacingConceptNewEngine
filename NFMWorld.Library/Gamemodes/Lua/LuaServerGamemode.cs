@@ -1,4 +1,5 @@
 using Lua;
+using Lua.Loaders;
 using Lua.Standard;
 using MemoryPack;
 using nfm_world_library.Lua;
@@ -143,7 +144,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
         _state.Environment["SGM"] = new LuaServerGamemodeContext(this, data);
 
-        _state.ModuleLoader = new RadpackModuleLoader(radpack.Files);
+        _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
         _state.DoString(radpack.Files["server"]);
     }
 
