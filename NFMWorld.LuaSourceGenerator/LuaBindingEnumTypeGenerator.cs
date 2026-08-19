@@ -15,6 +15,8 @@ internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type) : BaseLu
         sb.AppendLine("#pragma warning disable CS8602");
         sb.AppendLine("#pragma warning disable CS8604");
         sb.AppendLine("#pragma warning disable CS8631");
+        sb.AppendLine("#pragma warning disable CS0108");
+        sb.AppendLine("#pragma warning disable CS8625");
         sb.AppendLine();
         sb.AppendLine("namespace NFMWorld.LuaSourceGenerator.Generator;");
         sb.AppendLine("partial class GeneratorGenerated");
@@ -53,6 +55,8 @@ internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type) : BaseLu
         sb.AppendLine("#pragma warning restore CS8602");
         sb.AppendLine("#pragma warning restore CS8604");
         sb.AppendLine("#pragma warning restore CS8631");
+        sb.AppendLine("#pragma warning restore CS0108");
+        sb.AppendLine("#pragma warning restore CS8625");
         return sb.ToString();
     }
 }
