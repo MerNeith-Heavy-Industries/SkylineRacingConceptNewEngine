@@ -197,28 +197,146 @@ public abstract partial class ClayElementBase : ClayNode
 
     private protected static readonly Dictionary<string, Clay.Color> NamedColors = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["transparent"] = new Clay.Color(0, 0, 0, 0),
-        ["black"] = new Clay.Color(0, 0, 0, 255),
-        ["white"] = new Clay.Color(255, 255, 255, 255),
-        ["red"] = new Clay.Color(255, 0, 0, 255),
-        ["green"] = new Clay.Color(0, 128, 0, 255),
-        ["lime"] = new Clay.Color(0, 255, 0, 255),
-        ["blue"] = new Clay.Color(0, 0, 255, 255),
-        ["yellow"] = new Clay.Color(255, 255, 0, 255),
-        ["cyan"] = new Clay.Color(0, 255, 255, 255),
-        ["aqua"] = new Clay.Color(0, 255, 255, 255),
-        ["magenta"] = new Clay.Color(255, 0, 255, 255),
-        ["fuchsia"] = new Clay.Color(255, 0, 255, 255),
-        ["gray"] = new Clay.Color(128, 128, 128, 255),
-        ["grey"] = new Clay.Color(128, 128, 128, 255),
-        ["orange"] = new Clay.Color(255, 165, 0, 255),
-        ["purple"] = new Clay.Color(128, 0, 128, 255),
-        ["pink"] = new Clay.Color(255, 192, 203, 255),
-        ["brown"] = new Clay.Color(165, 42, 42, 255),
-        ["silver"] = new Clay.Color(192, 192, 192, 255),
-        ["gold"] = new Clay.Color(255, 215, 0, 255),
-        ["navy"] = new Clay.Color(0, 0, 128, 255),
-        ["teal"] = new Clay.Color(0, 128, 128, 255),
+	    ["aliceblue"] = new Clay.Color(240, 248, 255, 255),
+	    ["antiquewhite"] = new Clay.Color(250, 235, 215, 255),
+	    ["aqua"] = new Clay.Color(0, 255, 255, 255),
+	    ["aquamarine"] = new Clay.Color(127, 255, 212, 255),
+	    ["azure"] = new Clay.Color(240, 255, 255, 255),
+	    ["beige"] = new Clay.Color(245, 245, 220, 255),
+	    ["bisque"] = new Clay.Color(255, 228, 196, 255),
+	    ["black"] = new Clay.Color(0, 0, 0, 255),
+	    ["blanchedalmond"] = new Clay.Color(255, 235, 205, 255),
+	    ["blue"] = new Clay.Color(0, 0, 255, 255),
+	    ["blueviolet"] = new Clay.Color(138, 43, 226, 255),
+	    ["brown"] = new Clay.Color(165, 42, 42, 255),
+	    ["burlywood"] = new Clay.Color(222, 184, 135, 255),
+	    ["cadetblue"] = new Clay.Color(95, 158, 160, 255),
+	    ["chartreuse"] = new Clay.Color(127, 255, 0, 255),
+	    ["chocolate"] = new Clay.Color(210, 105, 30, 255),
+	    ["coral"] = new Clay.Color(255, 127, 80, 255),
+	    ["cornflowerblue"] = new Clay.Color(100, 149, 237, 255),
+	    ["cornsilk"] = new Clay.Color(255, 248, 220, 255),
+	    ["crimson"] = new Clay.Color(220, 20, 60, 255),
+	    ["cyan"] = new Clay.Color(0, 255, 255, 255),
+	    ["darkblue"] = new Clay.Color(0, 0, 139, 255),
+	    ["darkcyan"] = new Clay.Color(0, 139, 139, 255),
+	    ["darkgoldenrod"] = new Clay.Color(184, 134, 11, 255),
+	    ["darkgray"] = new Clay.Color(169, 169, 169, 255),
+	    ["darkgreen"] = new Clay.Color(0, 100, 0, 255),
+	    ["darkkhaki"] = new Clay.Color(189, 183, 107, 255),
+	    ["darkmagenta"] = new Clay.Color(139, 0, 139, 255),
+	    ["darkolivegreen"] = new Clay.Color(85, 107, 47, 255),
+	    ["darkorange"] = new Clay.Color(255, 140, 0, 255),
+	    ["darkorchid"] = new Clay.Color(153, 50, 204, 255),
+	    ["darkred"] = new Clay.Color(139, 0, 0, 255),
+	    ["darksalmon"] = new Clay.Color(233, 150, 122, 255),
+	    ["darkseagreen"] = new Clay.Color(143, 188, 139, 255),
+	    ["darkslateblue"] = new Clay.Color(72, 61, 139, 255),
+	    ["darkslategray"] = new Clay.Color(47, 79, 79, 255),
+	    ["darkturquoise"] = new Clay.Color(0, 206, 209, 255),
+	    ["darkviolet"] = new Clay.Color(148, 0, 211, 255),
+	    ["deeppink"] = new Clay.Color(255, 20, 147, 255),
+	    ["deepskyblue"] = new Clay.Color(0, 191, 255, 255),
+	    ["dimgray"] = new Clay.Color(105, 105, 105, 255),
+	    ["dodgerblue"] = new Clay.Color(30, 144, 255, 255),
+	    ["firebrick"] = new Clay.Color(178, 34, 34, 255),
+	    ["floralwhite"] = new Clay.Color(255, 250, 240, 255),
+	    ["forestgreen"] = new Clay.Color(34, 139, 34, 255),
+	    ["fuchsia"] = new Clay.Color(255, 0, 255, 255),
+	    ["gainsboro"] = new Clay.Color(220, 220, 220, 255),
+	    ["ghostwhite"] = new Clay.Color(248, 248, 255, 255),
+	    ["gold"] = new Clay.Color(255, 215, 0, 255),
+	    ["goldenrod"] = new Clay.Color(218, 165, 32, 255),
+	    ["gray"] = new Clay.Color(128, 128, 128, 255),
+	    ["green"] = new Clay.Color(0, 128, 0, 255),
+	    ["greenyellow"] = new Clay.Color(173, 255, 47, 255),
+	    ["honeydew"] = new Clay.Color(240, 255, 240, 255),
+	    ["hotpink"] = new Clay.Color(255, 105, 180, 255),
+	    ["indianred"] = new Clay.Color(205, 92, 92, 255),
+	    ["indigo"] = new Clay.Color(75, 0, 130, 255),
+	    ["ivory"] = new Clay.Color(255, 255, 240, 255),
+	    ["khaki"] = new Clay.Color(240, 230, 140, 255),
+	    ["lavender"] = new Clay.Color(230, 230, 250, 255),
+	    ["lavenderblush"] = new Clay.Color(255, 240, 245, 255),
+	    ["lawngreen"] = new Clay.Color(124, 252, 0, 255),
+	    ["lemonchiffon"] = new Clay.Color(255, 250, 205, 255),
+	    ["lightblue"] = new Clay.Color(173, 216, 230, 255),
+	    ["lightcoral"] = new Clay.Color(240, 128, 128, 255),
+	    ["lightcyan"] = new Clay.Color(224, 255, 255, 255),
+	    ["lightgoldenrodyellow"] = new Clay.Color(250, 250, 210, 255),
+	    ["lightgray"] = new Clay.Color(211, 211, 211, 255),
+	    ["lightgreen"] = new Clay.Color(144, 238, 144, 255),
+	    ["lightpink"] = new Clay.Color(255, 182, 193, 255),
+	    ["lightsalmon"] = new Clay.Color(255, 160, 122, 255),
+	    ["lightseagreen"] = new Clay.Color(32, 178, 170, 255),
+	    ["lightskyblue"] = new Clay.Color(135, 206, 250, 255),
+	    ["lightslategray"] = new Clay.Color(119, 136, 153, 255),
+	    ["lightsteelblue"] = new Clay.Color(176, 196, 222, 255),
+	    ["lightyellow"] = new Clay.Color(255, 255, 224, 255),
+	    ["lime"] = new Clay.Color(0, 255, 0, 255),
+	    ["limegreen"] = new Clay.Color(50, 205, 50, 255),
+	    ["linen"] = new Clay.Color(250, 240, 230, 255),
+	    ["magenta"] = new Clay.Color(255, 0, 255, 255),
+	    ["maroon"] = new Clay.Color(128, 0, 0, 255),
+	    ["mediumaquamarine"] = new Clay.Color(102, 205, 170, 255),
+	    ["mediumblue"] = new Clay.Color(0, 0, 205, 255),
+	    ["mediumorchid"] = new Clay.Color(186, 85, 211, 255),
+	    ["mediumpurple"] = new Clay.Color(147, 112, 219, 255),
+	    ["mediumseagreen"] = new Clay.Color(60, 179, 113, 255),
+	    ["mediumslateblue"] = new Clay.Color(123, 104, 238, 255),
+	    ["mediumspringgreen"] = new Clay.Color(0, 250, 154, 255),
+	    ["mediumturquoise"] = new Clay.Color(72, 209, 204, 255),
+	    ["mediumvioletred"] = new Clay.Color(199, 21, 133, 255),
+	    ["midnightblue"] = new Clay.Color(25, 25, 112, 255),
+	    ["mintcream"] = new Clay.Color(245, 255, 250, 255),
+	    ["mistyrose"] = new Clay.Color(255, 228, 225, 255),
+	    ["moccasin"] = new Clay.Color(255, 228, 181, 255),
+	    ["navajowhite"] = new Clay.Color(255, 222, 173, 255),
+	    ["navy"] = new Clay.Color(0, 0, 128, 255),
+	    ["oldlace"] = new Clay.Color(253, 245, 230, 255),
+	    ["olive"] = new Clay.Color(128, 128, 0, 255),
+	    ["olivedrab"] = new Clay.Color(107, 142, 35, 255),
+	    ["orange"] = new Clay.Color(255, 165, 0, 255),
+	    ["orangered"] = new Clay.Color(255, 69, 0, 255),
+	    ["orchid"] = new Clay.Color(218, 112, 214, 255),
+	    ["palegoldenrod"] = new Clay.Color(238, 232, 170, 255),
+	    ["palegreen"] = new Clay.Color(152, 251, 152, 255),
+	    ["paleturquoise"] = new Clay.Color(175, 238, 238, 255),
+	    ["palevioletred"] = new Clay.Color(219, 112, 147, 255),
+	    ["papayawhip"] = new Clay.Color(255, 239, 213, 255),
+	    ["peachpuff"] = new Clay.Color(255, 218, 185, 255),
+	    ["peru"] = new Clay.Color(205, 133, 63, 255),
+	    ["pink"] = new Clay.Color(255, 192, 203, 255),
+	    ["plum"] = new Clay.Color(221, 160, 221, 255),
+	    ["powderblue"] = new Clay.Color(176, 224, 230, 255),
+	    ["purple"] = new Clay.Color(128, 0, 128, 255),
+	    ["red"] = new Clay.Color(255, 0, 0, 255),
+	    ["rosybrown"] = new Clay.Color(188, 143, 143, 255),
+	    ["royalblue"] = new Clay.Color(65, 105, 225, 255),
+	    ["saddlebrown"] = new Clay.Color(139, 69, 19, 255),
+	    ["salmon"] = new Clay.Color(250, 128, 114, 255),
+	    ["sandybrown"] = new Clay.Color(244, 164, 96, 255),
+	    ["seagreen"] = new Clay.Color(46, 139, 87, 255),
+	    ["seashell"] = new Clay.Color(255, 245, 238, 255),
+	    ["sienna"] = new Clay.Color(160, 82, 45, 255),
+	    ["silver"] = new Clay.Color(192, 192, 192, 255),
+	    ["skyblue"] = new Clay.Color(135, 206, 235, 255),
+	    ["slateblue"] = new Clay.Color(106, 90, 205, 255),
+	    ["slategray"] = new Clay.Color(112, 128, 144, 255),
+	    ["snow"] = new Clay.Color(255, 250, 250, 255),
+	    ["springgreen"] = new Clay.Color(0, 255, 127, 255),
+	    ["steelblue"] = new Clay.Color(70, 130, 180, 255),
+	    ["tan"] = new Clay.Color(210, 180, 140, 255),
+	    ["teal"] = new Clay.Color(0, 128, 128, 255),
+	    ["thistle"] = new Clay.Color(216, 191, 216, 255),
+	    ["tomato"] = new Clay.Color(255, 99, 71, 255),
+	    ["turquoise"] = new Clay.Color(64, 224, 208, 255),
+	    ["violet"] = new Clay.Color(238, 130, 238, 255),
+	    ["wheat"] = new Clay.Color(245, 222, 179, 255),
+	    ["white"] = new Clay.Color(255, 255, 255, 255),
+	    ["whitesmoke"] = new Clay.Color(245, 245, 245, 255),
+	    ["yellow"] = new Clay.Color(255, 255, 0, 255),
+	    ["yellowgreen"] = new Clay.Color(154, 205, 50, 255),
     };
     
     private protected static Clay.TextAlignment ParseTextAlignment(object value) =>
@@ -305,17 +423,17 @@ public partial class ClayElement : ClayElementBase
                 break;
             
             // ---- Sizing ----
-            case "Width":
-                Layout.Sizing.Width = ParseSizing(value, "Width");
+            case "width":
+                Layout.Sizing.Width = ParseSizing(value, "width");
                 break;
             case "height":
                 Layout.Sizing.Height = ParseSizing(value, "height");
                 break;
-            case "min-Width":
-                Layout.Sizing.Width.MinMax.Min = ParsePixels(value, "min-Width");
+            case "min-width":
+                Layout.Sizing.Width.MinMax.Min = ParsePixels(value, "min-width");
                 break;
-            case "max-Width":
-                Layout.Sizing.Width.MinMax.Max = ParsePixels(value, "max-Width");
+            case "max-width":
+                Layout.Sizing.Width.MinMax.Max = ParsePixels(value, "max-width");
                 break;
             case "min-height":
                 Layout.Sizing.Height.MinMax.Min = ParsePixels(value, "min-height");
@@ -396,30 +514,30 @@ public partial class ClayElement : ClayElementBase
             case "border":
                 ApplyBorderShorthand(value);
                 break;
-            case "border-Width":
+            case "border-width":
             {
-                var (t, r, b, l) = ParseEdgeValues(value, "border-Width");
+                var (t, r, b, l) = ParseEdgeValues(value, "border-width");
                 Border.Width = new Clay.BorderWidth
                 {
-                    Top = ToUshort(t, "border-Width"),
-                    Right = ToUshort(r, "border-Width"),
-                    Bottom = ToUshort(b, "border-Width"),
-                    Left = ToUshort(l, "border-Width"),
+                    Top = ToUshort(t, "border-width"),
+                    Right = ToUshort(r, "border-width"),
+                    Bottom = ToUshort(b, "border-width"),
+                    Left = ToUshort(l, "border-width"),
                     BetweenChildren = 0,
                 };
                 break;
             }
-            case "border-top-Width":
-                Border.Width.Top = ToUshort(ParsePixels(value, "border-top-Width"), "border-top-Width");
+            case "border-top-width":
+                Border.Width.Top = ToUshort(ParsePixels(value, "border-top-width"), "border-top-width");
                 break;
-            case "border-right-Width":
-                Border.Width.Right = ToUshort(ParsePixels(value, "border-right-Width"), "border-right-Width");
+            case "border-right-width":
+                Border.Width.Right = ToUshort(ParsePixels(value, "border-right-width"), "border-right-width");
                 break;
-            case "border-bottom-Width":
-                Border.Width.Bottom = ToUshort(ParsePixels(value, "border-bottom-Width"), "border-bottom-Width");
+            case "border-bottom-width":
+                Border.Width.Bottom = ToUshort(ParsePixels(value, "border-bottom-width"), "border-bottom-width");
                 break;
-            case "border-left-Width":
-                Border.Width.Left = ToUshort(ParsePixels(value, "border-left-Width"), "border-left-Width");
+            case "border-left-width":
+                Border.Width.Left = ToUshort(ParsePixels(value, "border-left-width"), "border-left-width");
                 break;
             case "border-color":
                 Border.Color = ParseColor(value);
@@ -764,13 +882,13 @@ public partial class ClayElement : ClayElementBase
             {
                 "x" => Clay.TransitionProperty.X,
                 "y" => Clay.TransitionProperty.Y,
-                "Width" => Clay.TransitionProperty.Width,
+                "width" => Clay.TransitionProperty.Width,
                 "height" => Clay.TransitionProperty.Height,
                 "background-color" or "background" => Clay.TransitionProperty.BackgroundColor,
                 "overlay-color" or "color" => Clay.TransitionProperty.OverlayColor,
                 "corner-radius" or "border-radius" => Clay.TransitionProperty.CornerRadius,
                 "border-color" => Clay.TransitionProperty.BorderColor,
-                "border-Width" => Clay.TransitionProperty.BorderWidth,
+                "border-width" => Clay.TransitionProperty.BorderWidth,
                 _ => throw new ArgumentException($"Unsupported transition-property: '{raw}'."),
             };
         }
