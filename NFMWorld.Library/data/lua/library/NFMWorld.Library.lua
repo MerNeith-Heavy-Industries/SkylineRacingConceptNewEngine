@@ -1,83 +1,6 @@
----@class BaseAi
----@field runAi fun(self: BaseAi)
-
-BaseAi = {}
-
-
----@class BackendGameObject : NFMWorldLibrary.ITransform
----@field children { [integer]: BackendGameObject }
----@field parent BackendGameObject|nil
----@field position fixed64vector3
----@field rotation f64euler
-
-BackendGameObject = {}
-
-
----@class BackendStage
----@field pieces { [integer]: BackendGameObject }
----@field nodes { [integer]: StageObject }
----@field checkpoints { [integer]: StageObject }
----@field fixHoops { [integer]: StageObject }
----@field nlaps integer
----@field name string
----@field path string
----@field stageLoader StageLoader
-
-BackendStage = {}
-
-
----@class WallCollision : BackendGameObject, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
----@field boxes { [integer]: Rad3dBoxDef }
----@field maxRadius integer
-
-WallCollision = {}
-
-
----@class StageObject : BackendGameObject, NFMWorldLibrary.IAiNode, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
----@field originalPlacement PiecePlacement
----@field rad Rad3d
----@field nodeKind AiNodeKind
----@field isSpecial boolean
----@field boxes { [integer]: Rad3dBoxDef }
----@field maxRadius integer
----@field fileName string
-
-StageObject = {}
-
-
 ---@class AttachmentLineDirection : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
 
 AttachmentLineDirection = {}
-
-
----@class Rad3d
----@field maxRadius integer
----@field colors { [integer]: Color3 }
----@field stats CarStats
----@field wheels { [integer]: Rad3dWheelDef }
----@field rims Rad3dRimsDef|nil
----@field boxes { [integer]: Rad3dBoxDef }
----@field polys { [integer]: NFMWorldLibrary.Rad.Rad3dPoly }
----@field castsShadow boolean
----@field atp { [integer]: LuaVector2 }
----@field fileName string
----@field atLines { [integer]: Rad3dAttachmentLine }|nil
-
-Rad3d = {}
-
-
----@class LuaVector2 : System.IEquatable_LuaVector2
----@field x number
----@field y number
-
-LuaVector2 = {}
-
-
----@class Rad3dAttachmentLine : System.IEquatable_Rad3dAttachmentLine
----@field direction AttachmentLineDirection
----@field offset fixed64
-
-Rad3dAttachmentLine = {}
 
 
 ---@class Rad3dBoxDef : System.IEquatable_Rad3dBoxDef
@@ -94,100 +17,29 @@ Rad3dAttachmentLine = {}
 Rad3dBoxDef = {}
 
 
+---@class Rad3dAttachmentLine : System.IEquatable_Rad3dAttachmentLine
+---@field direction AttachmentLineDirection
+---@field offset fixed64
+
+Rad3dAttachmentLine = {}
+
+
+---@class AiNodeKind : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+AiNodeKind = {}
+
+
+---@class IGamemodeContext
+
+IGamemodeContext = {}
+
+
 ---@class Rad3dRimsDef : System.IEquatable_Rad3dRimsDef
 ---@field color Color3
 ---@field size number
 ---@field depth number
 
 Rad3dRimsDef = {}
-
-
----@class Rad3dWheelDef : System.IEquatable_Rad3dWheelDef
----@field position fixed64vector3
----@field rotates integer
----@field width fixed64
----@field height fixed64
-
-Rad3dWheelDef = {}
-
-
----@class SurfaceType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-SurfaceType = {}
-
-
----@class CarPhysics
----@field halted boolean
----@field btab boolean
----@field capcnt integer
----@field capsized boolean
----@field caught { [integer]: boolean }
----@field stat CarStats
----@field cn integer
----@field cntdest integer
----@field cntouch integer
----@field collidingWithClientPlayer boolean
----@field crank NFMWorldLibrary.Array2D_int
----@field lcrank NFMWorldLibrary.Array2D_int
----@field cxz fixed64
----@field staticCameraXz fixed64
----@field dcnt integer
----@field dcomp fixed64
----@field lcomp fixed64
----@field wasted boolean
----@field dominate NFMWorldLibrary.Util.UnlimitedArray_bool
----@field drag fixed64
----@field fixes integer
----@field forca fixed64
----@field ftab boolean
----@field turnXz fixed64
----@field gtouch boolean
----@field hitmag integer
----@field im integer
----@field lastcolido integer
----@field loop integer
----@field lxz fixed64
----@field mtouch boolean
----@field mxz fixed64
----@field numRoofDamage integer
----@field newcar boolean
----@field newedcar integer
----@field nmlt integer
----@field nofocus boolean
----@field outshakedam integer
----@field pd boolean
----@field pl boolean
----@field pmlt integer
----@field point integer
----@field power fixed64
----@field powerup fixed64
----@field pr boolean
----@field pu boolean
----@field pushed boolean
----@field pxy fixed64
----@field pzy fixed64
----@field rcomp fixed64
----@field rtab boolean
----@field scx { [integer]: fixed64 }
----@field scy { [integer]: fixed64 }
----@field scz { [integer]: fixed64 }
----@field shakedam integer
----@field skid integer
----@field speed fixed64
----@field roofDamage integer
----@field surfCount integer
----@field surfing boolean
----@field tilt fixed64
----@field totalStuntXy fixed64
----@field totalStuntXz fixed64
----@field totalStuntZy fixed64
----@field tcnt integer
----@field txz fixed64
----@field ucomp fixed64
----@field wtouch boolean
----@field xtpower integer
-
-CarPhysics = {}
 
 
 ---@class CarStats : System.IEquatable_CarStats
@@ -253,9 +105,83 @@ Int3 = {}
 Control = {}
 
 
----@class AiNodeKind : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+---@class Stopwatch
+---@field isRunning boolean
+---@field elapsed number
+---@field elapsedMilliseconds integer
+---@field elapsedMicroseconds integer
+---@field stop fun(self: Stopwatch)
+---@field start fun(self: Stopwatch)
+---@field restart fun(self: Stopwatch)
+---@field reset fun(self: Stopwatch)
 
-AiNodeKind = {}
+Stopwatch = {}
+
+
+---Creates a new Stopwatch
+---@return Stopwatch
+function Stopwatch.new() end
+
+---@return Stopwatch
+function Stopwatch.startNew() end
+
+---@class Rad3d
+---@field maxRadius integer
+---@field colors { [integer]: Color3 }
+---@field stats CarStats
+---@field wheels { [integer]: Rad3dWheelDef }
+---@field rims Rad3dRimsDef|nil
+---@field boxes { [integer]: Rad3dBoxDef }
+---@field polys { [integer]: NFMWorldLibrary.Rad.Rad3dPoly }
+---@field castsShadow boolean
+---@field atp { [integer]: LuaVector2 }
+---@field fileName string
+---@field atLines { [integer]: Rad3dAttachmentLine }|nil
+
+Rad3d = {}
+
+
+---@class LuaVector2 : System.IEquatable_LuaVector2
+---@field x number
+---@field y number
+
+LuaVector2 = {}
+
+
+---@class ClientSidePlayerInfo
+---@field playerName string
+---@field carName string
+---@field color Color3
+---@field isBot boolean
+---@field isClientPlayer boolean
+
+ClientSidePlayerInfo = {}
+
+
+---@class Color3 : System.IEquatable_Color3
+---@field r integer
+---@field g integer
+---@field b integer
+
+Color3 = {}
+
+
+---@class Rad3dWheelDef : System.IEquatable_Rad3dWheelDef
+---@field position fixed64vector3
+---@field rotates integer
+---@field width fixed64
+---@field height fixed64
+
+Rad3dWheelDef = {}
+
+
+---@class BackendGameObject : NFMWorldLibrary.ITransform
+---@field children { [integer]: BackendGameObject }
+---@field parent BackendGameObject|nil
+---@field position fixed64vector3
+---@field rotation f64euler
+
+BackendGameObject = {}
 
 
 ---@class PiecePlacement : System.IEquatable_PiecePlacement
@@ -386,29 +312,25 @@ LuaVector3 = {}
 StageLoader = {}
 
 
----@class DeterministicRandom
----@field next fun(self: DeterministicRandom): integer
----@field nextBetween fun(self: DeterministicRandom, min: integer, max: integer): integer
----@field nextf64 fun(self: DeterministicRandom): fixed64
+---@class HudStateData
+---@field speed number
+---@field power number
+---@field damage number
+---@field lap integer
+---@field totalLaps integer
+---@field lapTime integer
+---@field position integer
+---@field totalRacers integer
+---@field stateText string
+---@field lapDiffMs integer|nil
+---@field lastLapDiffMs integer|nil
+---@field chkDiffMs integer|nil
+---@field lastChkDiffMs integer|nil
+---@field countdownTimer integer
+---@field stateTextEndsAt number|nil
 
-DeterministicRandom = {}
+HudStateData = {}
 
-
----@class Color3 : System.IEquatable_Color3
----@field r integer
----@field g integer
----@field b integer
-
-Color3 = {}
-
-
----@class FrameTrace
-
-FrameTrace = {}
-
-
----@param message string
-function FrameTrace.addMessage(message) end
 
 ---@class ClientSidePlayer
 ---@field info ClientSidePlayerInfo
@@ -418,12 +340,6 @@ function FrameTrace.addMessage(message) end
 ---@field isFake boolean
 
 ClientSidePlayer = {}
-
-
----@class PhysicsController
----@field gameTick fun(self: PhysicsController)
-
-PhysicsController = {}
 
 
 ---@class LuaClientContext
@@ -466,58 +382,153 @@ LuaClientCarContext = {}
 GamemodeContext = {}
 
 
----@class ServerGamemodeContext
----@field currentStage BackendStage
----@field players { [integer]: ServerSidePlayerInfo }
+---@class SurfaceType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+SurfaceType = {}
+
+
+---@class CarPhysics
+---@field halted boolean
+---@field btab boolean
+---@field capcnt integer
+---@field capsized boolean
+---@field caught { [integer]: boolean }
+---@field stat CarStats
+---@field cn integer
+---@field cntdest integer
+---@field cntouch integer
+---@field collidingWithClientPlayer boolean
+---@field crank NFMWorldLibrary.Array2D_int
+---@field lcrank NFMWorldLibrary.Array2D_int
+---@field cxz fixed64
+---@field staticCameraXz fixed64
+---@field dcnt integer
+---@field dcomp fixed64
+---@field lcomp fixed64
+---@field wasted boolean
+---@field dominate NFMWorldLibrary.Util.UnlimitedArray_bool
+---@field drag fixed64
+---@field fixes integer
+---@field forca fixed64
+---@field ftab boolean
+---@field turnXz fixed64
+---@field gtouch boolean
+---@field hitmag integer
+---@field im integer
+---@field lastcolido integer
+---@field loop integer
+---@field lxz fixed64
+---@field mtouch boolean
+---@field mxz fixed64
+---@field numRoofDamage integer
+---@field newcar boolean
+---@field newedcar integer
+---@field nmlt integer
+---@field nofocus boolean
+---@field outshakedam integer
+---@field pd boolean
+---@field pl boolean
+---@field pmlt integer
+---@field point integer
+---@field power fixed64
+---@field powerup fixed64
+---@field pr boolean
+---@field pu boolean
+---@field pushed boolean
+---@field pxy fixed64
+---@field pzy fixed64
+---@field rcomp fixed64
+---@field rtab boolean
+---@field scx { [integer]: fixed64 }
+---@field scy { [integer]: fixed64 }
+---@field scz { [integer]: fixed64 }
+---@field shakedam integer
+---@field skid integer
+---@field speed fixed64
+---@field roofDamage integer
+---@field surfCount integer
+---@field surfing boolean
+---@field tilt fixed64
+---@field totalStuntXy fixed64
+---@field totalStuntXz fixed64
+---@field totalStuntZy fixed64
+---@field tcnt integer
+---@field txz fixed64
+---@field ucomp fixed64
+---@field wtouch boolean
+---@field xtpower integer
+
+CarPhysics = {}
+
+
+---@class AiContext
+---@field players { [integer]: ClientSidePlayer }
+---@field player ClientSidePlayer
+---@field stage BackendStage
 ---@field config table|nil
----@field countdownInterval integer
----@field getPlayerPosition fun(self: ServerGamemodeContext, playerId: string): fixed64vector3|nil
----@field broadcastEvent fun(self: ServerGamemodeContext, type: string, payload: table)
----@field finishRace fun(self: ServerGamemodeContext, standings: RaceStandings)
 
-ServerGamemodeContext = {}
+AiContext = {}
 
 
----@class TimeTrial
----@field hasGhost boolean
----@field begin fun(self: TimeTrial, car: BackendCar)
----@field applyGhost fun(self: TimeTrial, ghostCar: BackendCar, tick: integer)
----@field getSplitDiff fun(self: TimeTrial, splitIndex: integer): number|nil
----@field getLastSplitDiff fun(self: TimeTrial): number|nil
----@field getLapDiff fun(self: TimeTrial, lapIndex: integer): number|nil
----@field recordSplit fun(self: TimeTrial, splitTime: number)
----@field getLapTime fun(self: TimeTrial, lapIndex: integer): number|nil
----@field getLastSplitTime fun(self: TimeTrial): number|nil
----@field getBestLastSplitTime fun(self: TimeTrial): number|nil
----@field record fun(self: TimeTrial, car: BackendCar)
----@field save fun(self: TimeTrial)
+---@class PhysicsController
+---@field gameTick fun(self: PhysicsController)
 
-TimeTrial = {}
+PhysicsController = {}
 
 
----Creates a new TimeTrial
----@param stage BackendStage
----@return TimeTrial
-function TimeTrial.new(stage) end
+---@class BaseAi
+---@field runAi fun(self: BaseAi)
 
----@class HudStateData
----@field speed number
----@field power number
----@field damage number
----@field lap integer
----@field totalLaps integer
----@field lapTime integer
----@field position integer
----@field totalRacers integer
----@field stateText string
----@field lapDiffMs integer|nil
----@field lastLapDiffMs integer|nil
----@field chkDiffMs integer|nil
----@field lastChkDiffMs integer|nil
----@field countdownTimer integer
----@field stateTextEndsAt number|nil
+BaseAi = {}
 
-HudStateData = {}
+
+---@class ServerSidePlayerInfo
+---@field id string
+---@field playerName string
+---@field carName string
+---@field color Color3
+
+ServerSidePlayerInfo = {}
+
+
+---@class DeterministicRandom
+---@field next fun(self: DeterministicRandom): integer
+---@field nextBetween fun(self: DeterministicRandom, min: integer, max: integer): integer
+---@field nextf64 fun(self: DeterministicRandom): fixed64
+
+DeterministicRandom = {}
+
+
+---@class BackendStage
+---@field pieces { [integer]: BackendGameObject }
+---@field nodes { [integer]: StageObject }
+---@field checkpoints { [integer]: StageObject }
+---@field fixHoops { [integer]: StageObject }
+---@field nlaps integer
+---@field name string
+---@field path string
+---@field stageLoader StageLoader
+
+BackendStage = {}
+
+
+---@class WallCollision : BackendGameObject, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
+---@field boxes { [integer]: Rad3dBoxDef }
+---@field maxRadius integer
+
+WallCollision = {}
+
+
+---@class StageObject : BackendGameObject, NFMWorldLibrary.IAiNode, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
+---@field originalPlacement PiecePlacement
+---@field rad Rad3d
+---@field nodeKind AiNodeKind
+---@field isSpecial boolean
+---@field boxes { [integer]: Rad3dBoxDef }
+---@field maxRadius integer
+---@field fileName string
+
+StageObject = {}
 
 
 ---@class BackendCar : BackendGameObject, NFMWorldLibrary.ITransform
@@ -542,56 +553,70 @@ HudStateData = {}
 BackendCar = {}
 
 
----@class AiContext
----@field players { [integer]: ClientSidePlayer }
----@field player ClientSidePlayer
----@field stage BackendStage
+---@class TimeTrial
+---@field hasGhost boolean
+---@field begin fun(self: TimeTrial, car: BackendCar)
+---@field applyGhost fun(self: TimeTrial, ghostCar: BackendCar, tick: integer)
+---@field getSplitDiff fun(self: TimeTrial, splitIndex: integer): number|nil
+---@field getLastSplitDiff fun(self: TimeTrial): number|nil
+---@field getLapDiff fun(self: TimeTrial, lapIndex: integer): number|nil
+---@field recordSplit fun(self: TimeTrial, splitTime: number)
+---@field getLapTime fun(self: TimeTrial, lapIndex: integer): number|nil
+---@field getLastSplitTime fun(self: TimeTrial): number|nil
+---@field getBestLastSplitTime fun(self: TimeTrial): number|nil
+---@field record fun(self: TimeTrial, car: BackendCar)
+---@field save fun(self: TimeTrial)
+
+TimeTrial = {}
+
+
+---Creates a new TimeTrial
+---@param stage BackendStage
+---@return TimeTrial
+function TimeTrial.new(stage) end
+
+---@class FrameTrace
+
+FrameTrace = {}
+
+
+---@param message string
+function FrameTrace.addMessage(message) end
+
+---@class ServerGamemodeContext
+---@field currentStage BackendStage
+---@field players { [integer]: ServerSidePlayerInfo }
 ---@field config table|nil
+---@field countdownInterval integer
+---@field getPlayerPosition fun(self: ServerGamemodeContext, playerId: string): fixed64vector3|nil
+---@field broadcastEvent fun(self: ServerGamemodeContext, type: string, payload: table)
+---@field finishRace fun(self: ServerGamemodeContext, standings: RaceStandings)
 
-AiContext = {}
-
-
----@class Stopwatch
----@field isRunning boolean
----@field elapsed number
----@field elapsedMilliseconds integer
----@field elapsedMicroseconds integer
----@field stop fun(self: Stopwatch)
----@field start fun(self: Stopwatch)
----@field restart fun(self: Stopwatch)
----@field reset fun(self: Stopwatch)
-
-Stopwatch = {}
+ServerGamemodeContext = {}
 
 
----Creates a new Stopwatch
----@return Stopwatch
-function Stopwatch.new() end
+---@class ClayNode
+---@field setProperty fun(self: ClayNode, key: string, value: System.object)
 
----@return Stopwatch
-function Stopwatch.startNew() end
-
----@class IGamemodeContext
-
-IGamemodeContext = {}
+ClayNode = {}
 
 
----@class ClientSidePlayerInfo
----@field playerName string
----@field carName string
----@field color Color3
----@field isBot boolean
----@field isClientPlayer boolean
+---@class ClayElement : ClayNode
+---@field appendChild fun(self: ClayElement, node: ClayNode)
+---@field insertBefore fun(self: ClayElement, node: ClayNode, beforeNode: ClayNode)
+---@field removeChild fun(self: ClayElement, node: ClayNode)
+---@field setProperty fun(self: ClayElement, key: string, value: System.object)
 
-ClientSidePlayerInfo = {}
+ClayElement = {}
 
 
----@class ServerSidePlayerInfo
----@field id string
----@field playerName string
----@field carName string
----@field color Color3
+---Creates a new ClayElement
+---@return ClayElement
+function ClayElement.new() end
 
-ServerSidePlayerInfo = {}
+---@class ClayTextElement : ClayNode
+---@field text string
+
+ClayTextElement = {}
 
 

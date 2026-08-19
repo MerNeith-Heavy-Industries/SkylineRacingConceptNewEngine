@@ -33,6 +33,7 @@
         <None Remove="src\data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="src\data\.git" CopyToOutputDirectory="Never" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
+        <ProjectReference Include="..\ClaySharp\ClaySharp.csproj" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack\MemoryPack.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
