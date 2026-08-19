@@ -28,6 +28,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.5.26302.115" />
         <None Include="data\**\*" CopyToOutputDirectory="Always" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
+        <ProjectReference Include="..\ClaySharp\ClaySharp.csproj" />
         <ProjectReference Include="..\HoleyDiver\HoleyDiver.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack\MemoryPack.csproj" />
         <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />

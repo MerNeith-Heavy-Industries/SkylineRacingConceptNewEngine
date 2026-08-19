@@ -22,6 +22,17 @@
       <Platform Solution="*|x86" Project="x64" />
     </Project>
   </Folder>
+  <Folder Name="/ClaySharp/">
+    <Project Path="ClaySharp/ClaySharp.csproj" />
+  </Folder>
+  <Folder Name="/ClaySharp/examples/">
+    <Project Path="ClaySharp/examples/FNASimpleDemo/ClaySharp.FNASimpleDemo.csproj" />
+    <Project Path="ClaySharp/examples/SDL3SimpleDemo/ClaySharp.SDL3SimpleDemo.csproj" />
+  </Folder>
+  <Folder Name="/ClaySharp/renderer/">
+    <Project Path="ClaySharp/renderer/fna/ClaySharp.Renderer.FNA.csproj" />
+    <Project Path="ClaySharp/renderer/sdl3/ClaySharp.Renderer.SDL3.csproj" />
+  </Folder>
   <Folder Name="/Facepunch.Steamworks/">
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Posix.csproj" />
     <Project Path="Facepunch.Steamworks/Facepunch.Steamworks/Facepunch.Steamworks.Win64.csproj" />
