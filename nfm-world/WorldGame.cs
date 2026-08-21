@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.UI;
 using NFMWorld.UI.Cef;
 using NFMWorld.UI.Hud;
@@ -426,6 +427,9 @@ public class WorldGame : Game
 
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
+
+        var img = G.LoadImage("data/images/damage.svg");
+        G.DrawImage(img, 15, 15);
 
         FPSCounter.Render();
         _nvg.Render();

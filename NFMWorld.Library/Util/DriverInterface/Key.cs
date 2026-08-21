@@ -1,1012 +1,977 @@
+using nfm_world_library.Lua;
+
 namespace NFMWorld.DriverInterface;
 
-public readonly struct Keys : IEquatable<Keys>, IComparable<Keys>
+[Flags, LuaVisible]
+public enum Key
 {
     /// <summary>
-    /// Gets the state of a key.
+    ///  The bit mask to extract a key code from a key value.
     /// </summary>
-    /// <param name="key">The key.</param>
-    public bool this[Key key] => GetKey((int)key);
-    
+    KeyCode = 0x0000FFFF,
+
+    /// <summary>
+    ///  The bit mask to extract modifiers from a key value.
+    /// </summary>
+    Modifiers = unchecked((int)0xFFFF0000),
+
     /// <summary>
     ///  No key pressed.
     /// </summary>
-    public bool None => GetKey((int)Key.None);
+    None = 0x00,
 
     /// <summary>
     ///  The left mouse button.
     /// </summary>
-    public bool LButton => GetKey((int)Key.LButton);
+    LButton = 0x01,
 
     /// <summary>
     ///  The right mouse button.
     /// </summary>
-    public bool RButton => GetKey((int)Key.RButton);
+    RButton = 0x02,
 
     /// <summary>
     ///  The CANCEL key.
     /// </summary>
-    public bool Cancel => GetKey((int)Key.Cancel);
+    Cancel = 0x03,
 
     /// <summary>
     ///  The middle mouse button (three-button mouse).
     /// </summary>
-    public bool MButton => GetKey((int)Key.MButton);
+    MButton = 0x04,
 
     /// <summary>
     ///  The first x mouse button (five-button mouse).
     /// </summary>
-    public bool XButton1 => GetKey((int)Key.XButton1);
+    XButton1 = 0x05,
 
     /// <summary>
     ///  The second x mouse button (five-button mouse).
     /// </summary>
-    public bool XButton2 => GetKey((int)Key.XButton2);
+    XButton2 = 0x06,
 
     /// <summary>
     ///  The BACKSPACE key.
     /// </summary>
-    public bool Back => GetKey((int)Key.Back);
+    Back = 0x08,
 
     /// <summary>
     ///  The TAB key.
     /// </summary>
-    public bool Tab => GetKey((int)Key.Tab);
+    Tab = 0x09,
 
     /// <summary>
     ///  The CLEAR key.
     /// </summary>
-    public bool LineFeed => GetKey((int)Key.LineFeed);
+    LineFeed = 0x0A,
 
     /// <summary>
     ///  The CLEAR key.
     /// </summary>
-    public bool Clear => GetKey((int)Key.Clear);
+    Clear = 0x0C,
 
     /// <summary>
     ///  The RETURN key.
     /// </summary>
-    public bool Return => GetKey((int)Key.Return);
+    Return = 0x0D,
 
     /// <summary>
     ///  The ENTER key.
     /// </summary>
-    public bool Enter => GetKey((int)Key.Enter);
+    Enter = Return,
 
     /// <summary>
     ///  The SHIFT key.
     /// </summary>
-    public bool ShiftKey => GetKey((int)Key.ShiftKey);
+    ShiftKey = 0x10,
 
     /// <summary>
     ///  The CTRL key.
     /// </summary>
-    public bool ControlKey => GetKey((int)Key.ControlKey);
+    ControlKey = 0x11,
 
     /// <summary>
     ///  The ALT key.
     /// </summary>
-    public bool Menu => GetKey((int)Key.Menu);
+    Menu = 0x12,
 
     /// <summary>
     ///  The PAUSE key.
     /// </summary>
-    public bool Pause => GetKey((int)Key.Pause);
+    Pause = 0x13,
 
     /// <summary>
     ///  The CAPS LOCK key.
     /// </summary>
-    public bool Capital => GetKey((int)Key.Capital);
+    Capital = 0x14,
 
     /// <summary>
     ///  The CAPS LOCK key.
     /// </summary>
-    public bool CapsLock => GetKey((int)Key.CapsLock);
+    CapsLock = 0x14,
 
     /// <summary>
     ///  The IME Kana mode key.
     /// </summary>
-    public bool KanaMode => GetKey((int)Key.KanaMode);
+    KanaMode = 0x15,
 
     /// <summary>
     ///  The IME Hanguel mode key.
     /// </summary>
-    public bool HanguelMode => GetKey((int)Key.HanguelMode);
+    HanguelMode = 0x15,
 
     /// <summary>
     ///  The IME Hangul mode key.
     /// </summary>
-    public bool HangulMode => GetKey((int)Key.HangulMode);
+    HangulMode = 0x15,
 
     /// <summary>
     ///  The IME Junja mode key.
     /// </summary>
-    public bool JunjaMode => GetKey((int)Key.JunjaMode);
+    JunjaMode = 0x17,
 
     /// <summary>
     ///  The IME Final mode key.
     /// </summary>
-    public bool FinalMode => GetKey((int)Key.FinalMode);
+    FinalMode = 0x18,
 
     /// <summary>
     ///  The IME Hanja mode key.
     /// </summary>
-    public bool HanjaMode => GetKey((int)Key.HanjaMode);
+    HanjaMode = 0x19,
 
     /// <summary>
     ///  The IME Kanji mode key.
     /// </summary>
-    public bool KanjiMode => GetKey((int)Key.KanjiMode);
+    KanjiMode = 0x19,
 
     /// <summary>
     ///  The ESC key.
     /// </summary>
-    public bool Escape => GetKey((int)Key.Escape);
+    Escape = 0x1B,
 
     /// <summary>
     ///  The IME Convert key.
     /// </summary>
-    public bool IMEConvert => GetKey((int)Key.IMEConvert);
+    IMEConvert = 0x1C,
 
     /// <summary>
     ///  The IME NonConvert key.
     /// </summary>
-    public bool IMENonconvert => GetKey((int)Key.IMENonconvert);
+    IMENonconvert = 0x1D,
 
     /// <summary>
     ///  The IME Accept key.
     /// </summary>
-    public bool IMEAccept => GetKey((int)Key.IMEAccept);
+    IMEAccept = 0x1E,
 
     /// <summary>
     ///  The IME Accept key.
     /// </summary>
-    public bool IMEAceept => GetKey((int)Key.IMEAceept);
+    IMEAceept = IMEAccept,
 
     /// <summary>
     ///  The IME Mode change request.
     /// </summary>
-    public bool IMEModeChange => GetKey((int)Key.IMEModeChange);
+    IMEModeChange = 0x1F,
 
     /// <summary>
     ///  The SPACEBAR key.
     /// </summary>
-    public bool Space => GetKey((int)Key.Space);
+    Space = 0x20,
 
     /// <summary>
     ///  The PAGE UP key.
     /// </summary>
-    public bool Prior => GetKey((int)Key.Prior);
+    Prior = 0x21,
 
     /// <summary>
     ///  The PAGE UP key.
     /// </summary>
-    public bool PageUp => GetKey((int)Key.PageUp);
+    PageUp = Prior,
 
     /// <summary>
     ///  The PAGE DOWN key.
     /// </summary>
-    public bool Next => GetKey((int)Key.Next);
+    Next = 0x22,
 
     /// <summary>
     ///  The PAGE DOWN key.
     /// </summary>
-    public bool PageDown => GetKey((int)Key.PageDown);
+    PageDown = Next,
 
     /// <summary>
     ///  The END key.
     /// </summary>
-    public bool End => GetKey((int)Key.End);
+    End = 0x23,
 
     /// <summary>
     ///  The HOME key.
     /// </summary>
-    public bool Home => GetKey((int)Key.Home);
+    Home = 0x24,
 
     /// <summary>
     ///  The LEFT ARROW key.
     /// </summary>
-    public bool Left => GetKey((int)Key.Left);
+    Left = 0x25,
 
     /// <summary>
     ///  The UP ARROW key.
     /// </summary>
-    public bool Up => GetKey((int)Key.Up);
+    Up = 0x26,
 
     /// <summary>
     ///  The RIGHT ARROW key.
     /// </summary>
-    public bool Right => GetKey((int)Key.Right);
+    Right = 0x27,
 
     /// <summary>
     ///  The DOWN ARROW key.
     /// </summary>
-    public bool Down => GetKey((int)Key.Down);
+    Down = 0x28,
 
     /// <summary>
     ///  The SELECT key.
     /// </summary>
-    public bool Select => GetKey((int)Key.Select);
+    Select = 0x29,
 
     /// <summary>
     ///  The PRINT key.
     /// </summary>
-    public bool Print => GetKey((int)Key.Print);
+    Print = 0x2A,
 
     /// <summary>
     ///  The EXECUTE key.
     /// </summary>
-    public bool Execute => GetKey((int)Key.Execute);
+    Execute = 0x2B,
 
     /// <summary>
     ///  The PRINT SCREEN key.
     /// </summary>
-    public bool Snapshot => GetKey((int)Key.Snapshot);
+    Snapshot = 0x2C,
 
     /// <summary>
     ///  The PRINT SCREEN key.
     /// </summary>
-    public bool PrintScreen => GetKey((int)Key.PrintScreen);
+    PrintScreen = Snapshot,
 
     /// <summary>
     ///  The INS key.
     /// </summary>
-    public bool Insert => GetKey((int)Key.Insert);
+    Insert = 0x2D,
 
     /// <summary>
     ///  The DEL key.
     /// </summary>
-    public bool Delete => GetKey((int)Key.Delete);
+    Delete = 0x2E,
 
     /// <summary>
     ///  The HELP key.
     /// </summary>
-    public bool Help => GetKey((int)Key.Help);
+    Help = 0x2F,
 
     /// <summary>
     ///  The 0 key.
     /// </summary>
-    public bool D0 => GetKey((int)Key.D0); // 0
+    D0 = 0x30, // 0
 
     /// <summary>
     ///  The 1 key.
     /// </summary>
-    public bool D1 => GetKey((int)Key.D1); // 1
+    D1 = 0x31, // 1
 
     /// <summary>
     ///  The 2 key.
     /// </summary>
-    public bool D2 => GetKey((int)Key.D2); // 2
+    D2 = 0x32, // 2
 
     /// <summary>
     ///  The 3 key.
     /// </summary>
-    public bool D3 => GetKey((int)Key.D3); // 3
+    D3 = 0x33, // 3
 
     /// <summary>
     ///  The 4 key.
     /// </summary>
-    public bool D4 => GetKey((int)Key.D4); // 4
+    D4 = 0x34, // 4
 
     /// <summary>
     ///  The 5 key.
     /// </summary>
-    public bool D5 => GetKey((int)Key.D5); // 5
+    D5 = 0x35, // 5
 
     /// <summary>
     ///  The 6 key.
     /// </summary>
-    public bool D6 => GetKey((int)Key.D6); // 6
+    D6 = 0x36, // 6
 
     /// <summary>
     ///  The 7 key.
     /// </summary>
-    public bool D7 => GetKey((int)Key.D7); // 7
+    D7 = 0x37, // 7
 
     /// <summary>
     ///  The 8 key.
     /// </summary>
-    public bool D8 => GetKey((int)Key.D8); // 8
+    D8 = 0x38, // 8
 
     /// <summary>
     ///  The 9 key.
     /// </summary>
-    public bool D9 => GetKey((int)Key.D9); // 9
+    D9 = 0x39, // 9
 
     /// <summary>
     ///  The A key.
     /// </summary>
-    public bool A => GetKey((int)Key.A);
+    A = 0x41,
 
     /// <summary>
     ///  The B key.
     /// </summary>
-    public bool B => GetKey((int)Key.B);
+    B = 0x42,
 
     /// <summary>
     ///  The C key.
     /// </summary>
-    public bool C => GetKey((int)Key.C);
+    C = 0x43,
 
     /// <summary>
     ///  The D key.
     /// </summary>
-    public bool D => GetKey((int)Key.D);
+    D = 0x44,
 
     /// <summary>
     ///  The E key.
     /// </summary>
-    public bool E => GetKey((int)Key.E);
+    E = 0x45,
 
     /// <summary>
     ///  The F key.
     /// </summary>
-    public bool F => GetKey((int)Key.F);
+    F = 0x46,
 
     /// <summary>
     ///  The G key.
     /// </summary>
-    public bool G => GetKey((int)Key.G);
+    G = 0x47,
 
     /// <summary>
     ///  The H key.
     /// </summary>
-    public bool H => GetKey((int)Key.H);
+    H = 0x48,
 
     /// <summary>
     ///  The I key.
     /// </summary>
-    public bool I => GetKey((int)Key.I);
+    I = 0x49,
 
     /// <summary>
     ///  The J key.
     /// </summary>
-    public bool J => GetKey((int)Key.J);
+    J = 0x4A,
 
     /// <summary>
     ///  The K key.
     /// </summary>
-    public bool K => GetKey((int)Key.K);
+    K = 0x4B,
 
     /// <summary>
     ///  The L key.
     /// </summary>
-    public bool L => GetKey((int)Key.L);
+    L = 0x4C,
 
     /// <summary>
     ///  The M key.
     /// </summary>
-    public bool M => GetKey((int)Key.M);
+    M = 0x4D,
 
     /// <summary>
     ///  The N key.
     /// </summary>
-    public bool N => GetKey((int)Key.N);
+    N = 0x4E,
 
     /// <summary>
     ///  The O key.
     /// </summary>
-    public bool O => GetKey((int)Key.O);
+    O = 0x4F,
 
     /// <summary>
     ///  The P key.
     /// </summary>
-    public bool P => GetKey((int)Key.P);
+    P = 0x50,
 
     /// <summary>
     ///  The Q key.
     /// </summary>
-    public bool Q => GetKey((int)Key.Q);
+    Q = 0x51,
 
     /// <summary>
     ///  The R key.
     /// </summary>
-    public bool R => GetKey((int)Key.R);
+    R = 0x52,
 
     /// <summary>
     ///  The S key.
     /// </summary>
-    public bool S => GetKey((int)Key.S);
+    S = 0x53,
 
     /// <summary>
     ///  The T key.
     /// </summary>
-    public bool T => GetKey((int)Key.T);
+    T = 0x54,
 
     /// <summary>
     ///  The U key.
     /// </summary>
-    public bool U => GetKey((int)Key.U);
+    U = 0x55,
 
     /// <summary>
     ///  The V key.
     /// </summary>
-    public bool V => GetKey((int)Key.V);
+    V = 0x56,
 
     /// <summary>
     ///  The W key.
     /// </summary>
-    public bool W => GetKey((int)Key.W);
+    W = 0x57,
 
     /// <summary>
     ///  The X key.
     /// </summary>
-    public bool X => GetKey((int)Key.X);
+    X = 0x58,
 
     /// <summary>
     ///  The Y key.
     /// </summary>
-    public bool Y => GetKey((int)Key.Y);
+    Y = 0x59,
 
     /// <summary>
     ///  The Z key.
     /// </summary>
-    public bool Z => GetKey((int)Key.Z);
+    Z = 0x5A,
 
     /// <summary>
     ///  The left Windows logo key (Microsoft Natural Keyboard).
     /// </summary>
-    public bool LWin => GetKey((int)Key.LWin);
+    LWin = 0x5B,
 
     /// <summary>
     ///  The right Windows logo key (Microsoft Natural Keyboard).
     /// </summary>
-    public bool RWin => GetKey((int)Key.RWin);
+    RWin = 0x5C,
 
     /// <summary>
     ///  The Application key (Microsoft Natural Keyboard).
     /// </summary>
-    public bool Apps => GetKey((int)Key.Apps);
+    Apps = 0x5D,
 
     /// <summary>
     ///  The Computer Sleep key.
     /// </summary>
-    public bool Sleep => GetKey((int)Key.Sleep);
+    Sleep = 0x5F,
 
     /// <summary>
     ///  The 0 key on the numeric keypad.
     /// </summary>
-    public bool NumPad0 => GetKey((int)Key.NumPad0);
+    NumPad0 = 0x60,
 
     /// <summary>
     ///  The 1 key on the numeric keypad.
     /// </summary>
-    public bool NumPad1 => GetKey((int)Key.NumPad1);
+    NumPad1 = 0x61,
 
     /// <summary>
     ///  The 2 key on the numeric keypad.
     /// </summary>
-    public bool NumPad2 => GetKey((int)Key.NumPad2);
+    NumPad2 = 0x62,
 
     /// <summary>
     ///  The 3 key on the numeric keypad.
     /// </summary>
-    public bool NumPad3 => GetKey((int)Key.NumPad3);
+    NumPad3 = 0x63,
 
     /// <summary>
     ///  The 4 key on the numeric keypad.
     /// </summary>
-    public bool NumPad4 => GetKey((int)Key.NumPad4);
+    NumPad4 = 0x64,
 
     /// <summary>
     ///  The 5 key on the numeric keypad.
     /// </summary>
-    public bool NumPad5 => GetKey((int)Key.NumPad5);
+    NumPad5 = 0x65,
 
     /// <summary>
     ///  The 6 key on the numeric keypad.
     /// </summary>
-    public bool NumPad6 => GetKey((int)Key.NumPad6);
+    NumPad6 = 0x66,
 
     /// <summary>
     ///  The 7 key on the numeric keypad.
     /// </summary>
-    public bool NumPad7 => GetKey((int)Key.NumPad7);
+    NumPad7 = 0x67,
 
     /// <summary>
     ///  The 8 key on the numeric keypad.
     /// </summary>
-    public bool NumPad8 => GetKey((int)Key.NumPad8);
+    NumPad8 = 0x68,
 
     /// <summary>
     ///  The 9 key on the numeric keypad.
     /// </summary>
-    public bool NumPad9 => GetKey((int)Key.NumPad9);
+    NumPad9 = 0x69,
 
     /// <summary>
     ///  The Multiply key.
     /// </summary>
-    public bool Multiply => GetKey((int)Key.Multiply);
+    Multiply = 0x6A,
 
     /// <summary>
     ///  The Add key.
     /// </summary>
-    public bool Add => GetKey((int)Key.Add);
+    Add = 0x6B,
 
     /// <summary>
     ///  The Separator key.
     /// </summary>
-    public bool Separator => GetKey((int)Key.Separator);
+    Separator = 0x6C,
 
     /// <summary>
     ///  The Subtract key.
     /// </summary>
-    public bool Subtract => GetKey((int)Key.Subtract);
+    Subtract = 0x6D,
 
     /// <summary>
     ///  The Decimal key.
     /// </summary>
-    public bool Decimal => GetKey((int)Key.Decimal);
+    Decimal = 0x6E,
 
     /// <summary>
     ///  The Divide key.
     /// </summary>
-    public bool Divide => GetKey((int)Key.Divide);
+    Divide = 0x6F,
 
     /// <summary>
     ///  The F1 key.
     /// </summary>
-    public bool F1 => GetKey((int)Key.F1);
+    F1 = 0x70,
 
     /// <summary>
     ///  The F2 key.
     /// </summary>
-    public bool F2 => GetKey((int)Key.F2);
+    F2 = 0x71,
 
     /// <summary>
     ///  The F3 key.
     /// </summary>
-    public bool F3 => GetKey((int)Key.F3);
+    F3 = 0x72,
 
     /// <summary>
     ///  The F4 key.
     /// </summary>
-    public bool F4 => GetKey((int)Key.F4);
+    F4 = 0x73,
 
     /// <summary>
     ///  The F5 key.
     /// </summary>
-    public bool F5 => GetKey((int)Key.F5);
+    F5 = 0x74,
 
     /// <summary>
     ///  The F6 key.
     /// </summary>
-    public bool F6 => GetKey((int)Key.F6);
+    F6 = 0x75,
 
     /// <summary>
     ///  The F7 key.
     /// </summary>
-    public bool F7 => GetKey((int)Key.F7);
+    F7 = 0x76,
 
     /// <summary>
     ///  The F8 key.
     /// </summary>
-    public bool F8 => GetKey((int)Key.F8);
+    F8 = 0x77,
 
     /// <summary>
     ///  The F9 key.
     /// </summary>
-    public bool F9 => GetKey((int)Key.F9);
+    F9 = 0x78,
 
     /// <summary>
     ///  The F10 key.
     /// </summary>
-    public bool F10 => GetKey((int)Key.F10);
+    F10 = 0x79,
 
     /// <summary>
     ///  The F11 key.
     /// </summary>
-    public bool F11 => GetKey((int)Key.F11);
+    F11 = 0x7A,
 
     /// <summary>
     ///  The F12 key.
     /// </summary>
-    public bool F12 => GetKey((int)Key.F12);
+    F12 = 0x7B,
 
     /// <summary>
     ///  The F13 key.
     /// </summary>
-    public bool F13 => GetKey((int)Key.F13);
+    F13 = 0x7C,
 
     /// <summary>
     ///  The F14 key.
     /// </summary>
-    public bool F14 => GetKey((int)Key.F14);
+    F14 = 0x7D,
 
     /// <summary>
     ///  The F15 key.
     /// </summary>
-    public bool F15 => GetKey((int)Key.F15);
+    F15 = 0x7E,
 
     /// <summary>
     ///  The F16 key.
     /// </summary>
-    public bool F16 => GetKey((int)Key.F16);
+    F16 = 0x7F,
 
     /// <summary>
     ///  The F17 key.
     /// </summary>
-    public bool F17 => GetKey((int)Key.F17);
+    F17 = 0x80,
 
     /// <summary>
     ///  The F18 key.
     /// </summary>
-    public bool F18 => GetKey((int)Key.F18);
+    F18 = 0x81,
 
     /// <summary>
     ///  The F19 key.
     /// </summary>
-    public bool F19 => GetKey((int)Key.F19);
+    F19 = 0x82,
 
     /// <summary>
     ///  The F20 key.
     /// </summary>
-    public bool F20 => GetKey((int)Key.F20);
+    F20 = 0x83,
 
     /// <summary>
     ///  The F21 key.
     /// </summary>
-    public bool F21 => GetKey((int)Key.F21);
+    F21 = 0x84,
 
     /// <summary>
     ///  The F22 key.
     /// </summary>
-    public bool F22 => GetKey((int)Key.F22);
+    F22 = 0x85,
 
     /// <summary>
     ///  The F23 key.
     /// </summary>
-    public bool F23 => GetKey((int)Key.F23);
+    F23 = 0x86,
 
     /// <summary>
     ///  The F24 key.
     /// </summary>
-    public bool F24 => GetKey((int)Key.F24);
+    F24 = 0x87,
 
     /// <summary>
     ///  The NUM LOCK key.
     /// </summary>
-    public bool NumLock => GetKey((int)Key.NumLock);
+    NumLock = 0x90,
 
     /// <summary>
     ///  The SCROLL LOCK key.
     /// </summary>
-    public bool Scroll => GetKey((int)Key.Scroll);
+    Scroll = 0x91,
 
     /// <summary>
     ///  The left SHIFT key.
     /// </summary>
-    public bool LShiftKey => GetKey((int)Key.LShiftKey);
+    LShiftKey = 0xA0,
 
     /// <summary>
     ///  The right SHIFT key.
     /// </summary>
-    public bool RShiftKey => GetKey((int)Key.RShiftKey);
+    RShiftKey = 0xA1,
 
     /// <summary>
     ///  The left CTRL key.
     /// </summary>
-    public bool LControlKey => GetKey((int)Key.LControlKey);
+    LControlKey = 0xA2,
 
     /// <summary>
     ///  The right CTRL key.
     /// </summary>
-    public bool RControlKey => GetKey((int)Key.RControlKey);
+    RControlKey = 0xA3,
 
     /// <summary>
     ///  The left ALT key.
     /// </summary>
-    public bool LMenu => GetKey((int)Key.LMenu);
+    LMenu = 0xA4,
 
     /// <summary>
     ///  The right ALT key.
     /// </summary>
-    public bool RMenu => GetKey((int)Key.RMenu);
+    RMenu = 0xA5,
 
     /// <summary>
     ///  The Browser Back key.
     /// </summary>
-    public bool BrowserBack => GetKey((int)Key.BrowserBack);
+    BrowserBack = 0xA6,
 
     /// <summary>
     ///  The Browser Forward key.
     /// </summary>
-    public bool BrowserForward => GetKey((int)Key.BrowserForward);
+    BrowserForward = 0xA7,
 
     /// <summary>
     ///  The Browser Refresh key.
     /// </summary>
-    public bool BrowserRefresh => GetKey((int)Key.BrowserRefresh);
+    BrowserRefresh = 0xA8,
 
     /// <summary>
     ///  The Browser Stop key.
     /// </summary>
-    public bool BrowserStop => GetKey((int)Key.BrowserStop);
+    BrowserStop = 0xA9,
 
     /// <summary>
     ///  The Browser Search key.
     /// </summary>
-    public bool BrowserSearch => GetKey((int)Key.BrowserSearch);
+    BrowserSearch = 0xAA,
 
     /// <summary>
     ///  The Browser Favorites key.
     /// </summary>
-    public bool BrowserFavorites => GetKey((int)Key.BrowserFavorites);
+    BrowserFavorites = 0xAB,
 
     /// <summary>
     ///  The Browser Home key.
     /// </summary>
-    public bool BrowserHome => GetKey((int)Key.BrowserHome);
+    BrowserHome = 0xAC,
 
     /// <summary>
     ///  The Volume Mute key.
     /// </summary>
-    public bool VolumeMute => GetKey((int)Key.VolumeMute);
+    VolumeMute = 0xAD,
 
     /// <summary>
     ///  The Volume Down key.
     /// </summary>
-    public bool VolumeDown => GetKey((int)Key.VolumeDown);
+    VolumeDown = 0xAE,
 
     /// <summary>
     ///  The Volume Up key.
     /// </summary>
-    public bool VolumeUp => GetKey((int)Key.VolumeUp);
+    VolumeUp = 0xAF,
 
     /// <summary>
     ///  The Media Next Track key.
     /// </summary>
-    public bool MediaNextTrack => GetKey((int)Key.MediaNextTrack);
+    MediaNextTrack = 0xB0,
 
     /// <summary>
     ///  The Media Previous Track key.
     /// </summary>
-    public bool MediaPreviousTrack => GetKey((int)Key.MediaPreviousTrack);
+    MediaPreviousTrack = 0xB1,
 
     /// <summary>
     ///  The Media Stop key.
     /// </summary>
-    public bool MediaStop => GetKey((int)Key.MediaStop);
+    MediaStop = 0xB2,
 
     /// <summary>
     ///  The Media Play Pause key.
     /// </summary>
-    public bool MediaPlayPause => GetKey((int)Key.MediaPlayPause);
+    MediaPlayPause = 0xB3,
 
     /// <summary>
     ///  The Launch Mail key.
     /// </summary>
-    public bool LaunchMail => GetKey((int)Key.LaunchMail);
+    LaunchMail = 0xB4,
 
     /// <summary>
     ///  The Select Media key.
     /// </summary>
-    public bool SelectMedia => GetKey((int)Key.SelectMedia);
+    SelectMedia = 0xB5,
 
     /// <summary>
     ///  The Launch Application1 key.
     /// </summary>
-    public bool LaunchApplication1 => GetKey((int)Key.LaunchApplication1);
+    LaunchApplication1 = 0xB6,
 
     /// <summary>
     ///  The Launch Application2 key.
     /// </summary>
-    public bool LaunchApplication2 => GetKey((int)Key.LaunchApplication2);
+    LaunchApplication2 = 0xB7,
 
     /// <summary>
     ///  The Oem Semicolon key.
     /// </summary>
-    public bool OemSemicolon => GetKey((int)Key.OemSemicolon);
+    OemSemicolon = 0xBA,
 
     /// <summary>
     ///  The Oem 1 key.
     /// </summary>
-    public bool Oem1 => GetKey((int)Key.Oem1);
+    Oem1 = OemSemicolon,
 
     /// <summary>
     ///  The Oem plus key.
     /// </summary>
-    public bool Oemplus => GetKey((int)Key.Oemplus);
+    Oemplus = 0xBB,
 
     /// <summary>
     ///  The Oem comma key.
     /// </summary>
-    public bool Oemcomma => GetKey((int)Key.Oemcomma);
+    Oemcomma = 0xBC,
 
     /// <summary>
     ///  The Oem Minus key.
     /// </summary>
-    public bool OemMinus => GetKey((int)Key.OemMinus);
+    OemMinus = 0xBD,
 
     /// <summary>
     ///  The Oem Period key.
     /// </summary>
-    public bool OemPeriod => GetKey((int)Key.OemPeriod);
+    OemPeriod = 0xBE,
 
     /// <summary>
     ///  The Oem Question key.
     /// </summary>
-    public bool OemQuestion => GetKey((int)Key.OemQuestion);
+    OemQuestion = 0xBF,
 
     /// <summary>
     ///  The Oem 2 key.
     /// </summary>
-    public bool Oem2 => GetKey((int)Key.Oem2);
+    Oem2 = OemQuestion,
 
     /// <summary>
     ///  The Oem 3 key.
     /// </summary>
-    public bool Oem3 => GetKey((int)Key.Oem3);
+    Oem3 = 0xC0,
 
     /// <summary>
     ///  The Oem tilde key.
     /// </summary>
-    public bool Oemtilde => GetKey((int)Key.Oemtilde);
+    Oemtilde = Oem3,
 
     /// <summary>
     ///  The Oem Open Brackets key.
     /// </summary>
-    public bool OemOpenBrackets => GetKey((int)Key.OemOpenBrackets);
+    OemOpenBrackets = 0xDB,
 
     /// <summary>
     ///  The Oem 4 key.
     /// </summary>
-    public bool Oem4 => GetKey((int)Key.Oem4);
+    Oem4 = OemOpenBrackets,
 
     /// <summary>
     ///  The Oem Pipe key.
     /// </summary>
-    public bool OemPipe => GetKey((int)Key.OemPipe);
+    OemPipe = 0xDC,
 
     /// <summary>
     ///  The Oem 5 key.
     /// </summary>
-    public bool Oem5 => GetKey((int)Key.Oem5);
+    Oem5 = OemPipe,
 
     /// <summary>
     ///  The Oem Close Brackets key.
     /// </summary>
-    public bool OemCloseBrackets => GetKey((int)Key.OemCloseBrackets);
+    OemCloseBrackets = 0xDD,
 
     /// <summary>
     ///  The Oem 6 key.
     /// </summary>
-    public bool Oem6 => GetKey((int)Key.Oem6);
+    Oem6 = OemCloseBrackets,
 
     /// <summary>
     ///  The Oem 7 key.
     /// </summary>
-    public bool Oem7 => GetKey((int)Key.Oem7);
+    Oem7 = 0xDE,
 
     /// <summary>
     ///  The Oem Quotes key.
     /// </summary>
-    public bool OemQuotes => GetKey((int)Key.OemQuotes);
+    OemQuotes = Oem7,
 
     /// <summary>
     ///  The Oem8 key.
     /// </summary>
-    public bool Oem8 => GetKey((int)Key.Oem8);
+    Oem8 = 0xDF,
 
     /// <summary>
     ///  The Oem 102 key.
     /// </summary>
-    public bool Oem102 => GetKey((int)Key.Oem102);
+    Oem102 = 0xE2,
 
     /// <summary>
     ///  The Oem Backslash key.
     /// </summary>
-    public bool OemBackslash => GetKey((int)Key.OemBackslash);
+    OemBackslash = Oem102,
 
     /// <summary>
     ///  The PROCESS KEY key.
     /// </summary>
-    public bool ProcessKey => GetKey((int)Key.ProcessKey);
+    ProcessKey = 0xE5,
 
     /// <summary>
     ///  The Packet KEY key.
     /// </summary>
-    public bool Packet => GetKey((int)Key.Packet);
+    Packet = 0xE7,
 
     /// <summary>
     ///  The ATTN key.
     /// </summary>
-    public bool Attn => GetKey((int)Key.Attn);
+    Attn = 0xF6,
 
     /// <summary>
     ///  The CRSEL key.
     /// </summary>
-    public bool Crsel => GetKey((int)Key.Crsel);
+    Crsel = 0xF7,
 
     /// <summary>
     ///  The EXSEL key.
     /// </summary>
-    public bool Exsel => GetKey((int)Key.Exsel);
+    Exsel = 0xF8,
 
     /// <summary>
     ///  The ERASE EOF key.
     /// </summary>
-    public bool EraseEof => GetKey((int)Key.EraseEof);
+    EraseEof = 0xF9,
 
     /// <summary>
     ///  The PLAY key.
     /// </summary>
-    public bool Play => GetKey((int)Key.Play);
+    Play = 0xFA,
 
     /// <summary>
     ///  The ZOOM key.
     /// </summary>
-    public bool Zoom => GetKey((int)Key.Zoom);
+    Zoom = 0xFB,
 
     /// <summary>
     ///  A constant reserved for future use.
     /// </summary>
-    public bool NoName => GetKey((int)Key.NoName);
+    NoName = 0xFC,
 
     /// <summary>
     ///  The PA1 key.
     /// </summary>
-    public bool Pa1 => GetKey((int)Key.Pa1);
+    Pa1 = 0xFD,
 
     /// <summary>
     ///  The CLEAR key.
     /// </summary>
-    public bool OemClear => GetKey((int)Key.OemClear);
+    OemClear = 0xFE,
 
-    private readonly UInt128 _lowBits;
-    private readonly UInt128 _highBits;
+    /// <summary>
+    ///  The SHIFT modifier key.
+    /// </summary>
+    Shift = 0x00010000,
 
-    private Keys(UInt128 lowBits, UInt128 highBits)
-    {
-        _lowBits = lowBits;
-        _highBits = highBits;
-    }
+    /// <summary>
+    ///  The  CTRL modifier key.
+    /// </summary>
+    Control = 0x00020000,
 
-    private bool GetKey(int i)
-    {
-        return i < 128
-            ? (_lowBits & (UInt128.One << i)) != UInt128.Zero
-            : (_highBits & (UInt128.One << (i - 128))) != UInt128.Zero;
-    }
-
-    private Keys AddKey(int i)
-    {
-        return i < 128
-            ? new Keys(_lowBits | (UInt128.One << i), _highBits)
-            : new Keys(_lowBits, _highBits | (UInt128.One << (i - 128)));
-    }
-    
-    public static Keys operator |(Keys left, Keys right) => new(left._lowBits | right._lowBits, left._highBits | right._highBits);
-    public static Keys operator &(Keys left, Keys right) => new(left._lowBits | right._lowBits, left._highBits | right._highBits);
-    
-    public static Keys operator |(Keys left, Key right) => left.AddKey((int)right);
-    public static bool operator &(Keys left, Key right) => left.GetKey((int)right);
-    
-    public static Keys operator ~(Keys keys) => new(~keys._lowBits, ~keys._highBits);
-
-    public bool Equals(Keys other) => _lowBits.Equals(other._lowBits) && _highBits.Equals(other._highBits);
-    public override bool Equals(object? obj) => obj is Keys other && Equals(other);
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            return (_lowBits.GetHashCode() * 397) ^ _highBits.GetHashCode();
-        }
-    }
-
-    public static bool operator ==(Keys left, Keys right) => left.Equals(right);
-    public static bool operator !=(Keys left, Keys right) => !left.Equals(right);
-
-    public int CompareTo(Keys other)
-    {
-        var lowBitsComparison = _lowBits.CompareTo(other._lowBits);
-        if (lowBitsComparison != 0) return lowBitsComparison;
-        return _highBits.CompareTo(other._highBits);
-    }
-
-    public static bool operator <(Keys left, Keys right) => left.CompareTo(right) < 0;
-    public static bool operator >(Keys left, Keys right) => left.CompareTo(right) > 0;
-    public static bool operator <=(Keys left, Keys right) => left.CompareTo(right) <= 0;
-    public static bool operator >=(Keys left, Keys right) => left.CompareTo(right) >= 0;
+    /// <summary>
+    ///  The ALT modifier key.
+    /// </summary>
+    Alt = 0x00040000,
 }

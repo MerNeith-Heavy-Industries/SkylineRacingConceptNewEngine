@@ -99,7 +99,7 @@ public partial class RadParser
     private List<Rad3dPoly> _mainCarPolys = [];
     private List<Vector3> _points = [];
     private List<uint> _tris = [];
-    private List<LuaVector2> _atp = [];
+    private List<Util.LuaVector2> _atp = [];
     private List<Rad3dAttachmentLine> _atLines = [];
     private bool _road;
     private bool _castsShadow;
@@ -421,7 +421,7 @@ public partial class RadParser
         else if (line.StartsWith("atp("))
         {
             var (x, (z, _)) = BracketParser.GetNumbers(line, stackalloc fix64[2]);
-            _atp.Add(new LuaVector2((float)x, (float)z));
+            _atp.Add(new Util.LuaVector2((float)x, (float)z));
         }
 
         // SRC extension

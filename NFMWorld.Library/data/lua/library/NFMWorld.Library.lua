@@ -243,13 +243,6 @@ AttachmentLineDirection = {}
 Rad3d = {}
 
 
----@class LuaVector2 : System.IEquatable_LuaVector2
----@field x number
----@field y number
-
-LuaVector2 = {}
-
-
 ---@class Rad3dAttachmentLine : System.IEquatable_Rad3dAttachmentLine
 ---@field direction AttachmentLineDirection
 ---@field offset fixed64
@@ -563,12 +556,8 @@ LuaVector3 = {}
 StageLoader = {}
 
 
----@class ClayElement : ClayElementBase
+---@class ClayElement : NFMWorld.ClayDom.ClayElementBase
 ---@field nodeType NodeType
----@field setProperty fun(self: ClayElement, key: string, value: System.object)
----@field appendChild fun(self: ClayElement, node: ClayNode)
----@field insertBefore fun(self: ClayElement, node: ClayNode, beforeNode: ClayNode)
----@field removeChild fun(self: ClayElement, node: ClayNode)
 
 ClayElement = {}
 
@@ -577,28 +566,14 @@ ClayElement = {}
 ---@return ClayElement
 function ClayElement.new() end
 
----@class ClayElementBase : ClayNode
----@field nodeType NodeType
----@field appendChild fun(self: ClayElementBase, node: ClayNode)
----@field insertBefore fun(self: ClayElementBase, node: ClayNode, beforeNode: ClayNode)
----@field removeChild fun(self: ClayElementBase, node: ClayNode)
----@field setProperty fun(self: ClayElementBase, key: string, value: System.object)
-
-ClayElementBase = {}
-
-
 ---@class ClayNode
 ---@field nodeType NodeType
 
 ClayNode = {}
 
 
----@class ClayTextElement : ClayElementBase
+---@class ClayTextElement : NFMWorld.ClayDom.ClayElementBase
 ---@field nodeType NodeType
----@field setProperty fun(self: ClayTextElement, key: string, value: System.object)
----@field appendChild fun(self: ClayTextElement, node: ClayNode)
----@field insertBefore fun(self: ClayTextElement, node: ClayNode, beforeNode: ClayNode)
----@field removeChild fun(self: ClayTextElement, node: ClayNode)
 
 ClayTextElement = {}
 
@@ -658,4 +633,335 @@ FrameTrace = {}
 
 ---@param message string
 function FrameTrace.addMessage(message) end
+
+---@class BaseMouseDragEvent : System.IEquatable_BaseMouseDragEvent
+---@field dragStart LuaVector2
+---@field position LuaVector2
+---@field button integer
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+
+BaseMouseDragEvent = {}
+
+
+---@class BaseMouseEvent : System.IEquatable_BaseMouseEvent
+---@field position LuaVector2
+---@field button MouseButton
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field altKey boolean
+---@field shiftKey boolean
+
+BaseMouseEvent = {}
+
+
+---@class BaseMouseMoveEvent : System.IEquatable_BaseMouseMoveEvent
+---@field position LuaVector2
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field altKey boolean
+---@field shiftKey boolean
+
+BaseMouseMoveEvent = {}
+
+
+---@class BaseMouseWheelEvent : System.IEquatable_BaseMouseWheelEvent
+---@field delta LuaVector3
+---@field position LuaVector2
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+
+BaseMouseWheelEvent = {}
+
+
+---@class KeyboardEvent : System.IEquatable_KeyboardEvent
+---@field keyChar Key
+---@field keyCode Key
+---@field keys Keys
+
+KeyboardEvent = {}
+
+
+---@class KeyboardTypingEvent : System.IEquatable_KeyboardTypingEvent
+---@field keyChar integer
+
+KeyboardTypingEvent = {}
+
+
+---@class MouseButton : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+MouseButton = {}
+
+
+---@class MouseButtons : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+MouseButtons = {}
+
+
+---@class MouseDragEvent : System.IEquatable_MouseDragEvent
+---@field dragStart LuaVector2
+---@field relativeDragStart LuaVector2
+---@field position LuaVector2
+---@field button integer
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+---@field relativePosition LuaVector2
+
+MouseDragEvent = {}
+
+
+---@class MouseEvent : System.IEquatable_MouseEvent
+---@field position LuaVector2
+---@field button MouseButton
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+---@field relativePosition LuaVector2
+
+MouseEvent = {}
+
+
+---@class MouseMoveEvent : System.IEquatable_MouseMoveEvent
+---@field position LuaVector2
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+---@field relativePosition LuaVector2
+
+MouseMoveEvent = {}
+
+
+---@class MouseWheelEvent : System.IEquatable_MouseWheelEvent
+---@field delta LuaVector3
+---@field position LuaVector2
+---@field buttons MouseButtons
+---@field ctrlKey boolean
+---@field metaKey boolean
+---@field shiftKey boolean
+---@field relativePosition LuaVector2
+
+MouseWheelEvent = {}
+
+
+---@class Key : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+Key = {}
+
+
+---@class Keys : System.IEquatable_Keys, System.IComparable_Keys
+---@field none boolean
+---@field lButton boolean
+---@field rButton boolean
+---@field cancel boolean
+---@field mButton boolean
+---@field xButton1 boolean
+---@field xButton2 boolean
+---@field back boolean
+---@field tab boolean
+---@field lineFeed boolean
+---@field clear boolean
+---@field return boolean
+---@field enter boolean
+---@field shiftKey boolean
+---@field controlKey boolean
+---@field menu boolean
+---@field pause boolean
+---@field capital boolean
+---@field capsLock boolean
+---@field kanaMode boolean
+---@field hanguelMode boolean
+---@field hangulMode boolean
+---@field junjaMode boolean
+---@field finalMode boolean
+---@field hanjaMode boolean
+---@field kanjiMode boolean
+---@field escape boolean
+---@field iMEConvert boolean
+---@field iMENonconvert boolean
+---@field iMEAccept boolean
+---@field iMEAceept boolean
+---@field iMEModeChange boolean
+---@field space boolean
+---@field prior boolean
+---@field pageUp boolean
+---@field next boolean
+---@field pageDown boolean
+---@field end boolean
+---@field home boolean
+---@field left boolean
+---@field up boolean
+---@field right boolean
+---@field down boolean
+---@field select boolean
+---@field print boolean
+---@field execute boolean
+---@field snapshot boolean
+---@field printScreen boolean
+---@field insert boolean
+---@field delete boolean
+---@field help boolean
+---@field d0 boolean
+---@field d1 boolean
+---@field d2 boolean
+---@field d3 boolean
+---@field d4 boolean
+---@field d5 boolean
+---@field d6 boolean
+---@field d7 boolean
+---@field d8 boolean
+---@field d9 boolean
+---@field a boolean
+---@field b boolean
+---@field c boolean
+---@field d boolean
+---@field e boolean
+---@field f boolean
+---@field g boolean
+---@field h boolean
+---@field i boolean
+---@field j boolean
+---@field k boolean
+---@field l boolean
+---@field m boolean
+---@field n boolean
+---@field o boolean
+---@field p boolean
+---@field q boolean
+---@field r boolean
+---@field s boolean
+---@field t boolean
+---@field u boolean
+---@field v boolean
+---@field w boolean
+---@field x boolean
+---@field y boolean
+---@field z boolean
+---@field lWin boolean
+---@field rWin boolean
+---@field apps boolean
+---@field sleep boolean
+---@field numPad0 boolean
+---@field numPad1 boolean
+---@field numPad2 boolean
+---@field numPad3 boolean
+---@field numPad4 boolean
+---@field numPad5 boolean
+---@field numPad6 boolean
+---@field numPad7 boolean
+---@field numPad8 boolean
+---@field numPad9 boolean
+---@field multiply boolean
+---@field add boolean
+---@field separator boolean
+---@field subtract boolean
+---@field decimal boolean
+---@field divide boolean
+---@field f1 boolean
+---@field f2 boolean
+---@field f3 boolean
+---@field f4 boolean
+---@field f5 boolean
+---@field f6 boolean
+---@field f7 boolean
+---@field f8 boolean
+---@field f9 boolean
+---@field f10 boolean
+---@field f11 boolean
+---@field f12 boolean
+---@field f13 boolean
+---@field f14 boolean
+---@field f15 boolean
+---@field f16 boolean
+---@field f17 boolean
+---@field f18 boolean
+---@field f19 boolean
+---@field f20 boolean
+---@field f21 boolean
+---@field f22 boolean
+---@field f23 boolean
+---@field f24 boolean
+---@field numLock boolean
+---@field scroll boolean
+---@field lShiftKey boolean
+---@field rShiftKey boolean
+---@field lControlKey boolean
+---@field rControlKey boolean
+---@field lMenu boolean
+---@field rMenu boolean
+---@field browserBack boolean
+---@field browserForward boolean
+---@field browserRefresh boolean
+---@field browserStop boolean
+---@field browserSearch boolean
+---@field browserFavorites boolean
+---@field browserHome boolean
+---@field volumeMute boolean
+---@field volumeDown boolean
+---@field volumeUp boolean
+---@field mediaNextTrack boolean
+---@field mediaPreviousTrack boolean
+---@field mediaStop boolean
+---@field mediaPlayPause boolean
+---@field launchMail boolean
+---@field selectMedia boolean
+---@field launchApplication1 boolean
+---@field launchApplication2 boolean
+---@field oemSemicolon boolean
+---@field oem1 boolean
+---@field oemplus boolean
+---@field oemcomma boolean
+---@field oemMinus boolean
+---@field oemPeriod boolean
+---@field oemQuestion boolean
+---@field oem2 boolean
+---@field oem3 boolean
+---@field oemtilde boolean
+---@field oemOpenBrackets boolean
+---@field oem4 boolean
+---@field oemPipe boolean
+---@field oem5 boolean
+---@field oemCloseBrackets boolean
+---@field oem6 boolean
+---@field oem7 boolean
+---@field oemQuotes boolean
+---@field oem8 boolean
+---@field oem102 boolean
+---@field oemBackslash boolean
+---@field processKey boolean
+---@field packet boolean
+---@field attn boolean
+---@field crsel boolean
+---@field exsel boolean
+---@field eraseEof boolean
+---@field play boolean
+---@field zoom boolean
+---@field noName boolean
+---@field pa1 boolean
+---@field oemClear boolean
+
+Keys = {}
+
+
+---@class LuaVector2 : System.IEquatable_LuaVector2
+---@field x number
+---@field y number
+
+LuaVector2 = {}
+
+
+---@class LuaVector3 : System.IEquatable_LuaVector3
+---@field x number
+---@field y number
+---@field z number
+
+LuaVector3 = {}
+
 
