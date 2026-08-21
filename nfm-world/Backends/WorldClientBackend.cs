@@ -212,6 +212,16 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             _context.Fill();
         }
 
+        public void Arc(float cx, float cy, float arcRadius, float startAngleDeg, float endAngleDeg, bool clockWise)
+        {
+            _context.Arc(cx, cy, arcRadius, startAngleDeg, endAngleDeg, clockWise ? Winding.ClockWise : Winding.CounterClockWise);
+        }
+
+        public void LineCapButt()
+        {
+            _context.LineCap(LineCap.Butt);
+        }
+
         public float Alpha
         {
             set
