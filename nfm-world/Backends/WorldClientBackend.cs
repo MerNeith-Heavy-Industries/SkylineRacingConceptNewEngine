@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.Concurrent;
+﻿﻿﻿﻿﻿using System.Collections.Concurrent;
 using System.Text;
 using CommunityToolkit.HighPerformance;
 using FontStashSharp;
@@ -102,6 +102,10 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
             IImage LoadImageInternal()
             {
                 using var stream = VFS.OpenRead(file);
+                if (Path.GetExtension(file) == ".svg")
+                {
+                    return NanoSVGImage.FromStream(stream);
+                }
                 if (Path.GetExtension(file) == ".dds")
                 {
                     return new NanoVGImage(Texture2D.DDSFromStreamEXT(_context.GraphicsDevice, stream));
@@ -234,6 +238,10 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Fill();
                 _context.FillPaint(_paint);
             }
+            else if (image is NanoSVGImage nsvgImg)
+            {
+                nsvgImg.Draw(_context, x, y, nsvgImg.Width, nsvgImg.Height);
+            }
         }
 
         public void SetFont(Font font)
@@ -318,6 +326,10 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 _context.Rect(x, y, width, height);
                 _context.Fill();
                 _context.FillPaint(_paint);
+            }
+            else if (image is NanoSVGImage nsvgImg)
+            {
+                nsvgImg.Draw(_context, x, y, width, height);
             }
         }
     }

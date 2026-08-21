@@ -27,6 +27,7 @@
   </Folder>
   <Folder Name="/ClaySharp/examples/">
     <Project Path="ClaySharp/examples/FNASimpleDemo/ClaySharp.FNASimpleDemo.csproj" />
+    <Project Path="ClaySharp/examples/NvgSharpSimpleDemo/ClaySharp.NvgSharpSimpleDemo.csproj" />
     <Project Path="ClaySharp/examples/SDL3SimpleDemo/ClaySharp.SDL3SimpleDemo.csproj" />
   </Folder>
   <Folder Name="/ClaySharp/plugins/">
@@ -35,6 +36,7 @@
     <Project Path="ClaySharp/plugins/ClaySharp.Plugin.TextInput/ClaySharp.Plugin.TextInput.csproj" />
   </Folder>
   <Folder Name="/ClaySharp/renderer/">
+    <Project Path="ClaySharp/renderer/nvg/ClaySharp.Renderer.NvgSharp.csproj" />
     <Project Path="ClaySharp/renderer/fna/ClaySharp.Renderer.FNA.csproj" />
     <Project Path="ClaySharp/renderer/sdl3/ClaySharp.Renderer.SDL3.csproj" />
   </Folder>
@@ -99,13 +101,14 @@
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
   </Folder>
   <Project Path="LibTessDotNet/LibTessDotNet/LibTessDotNet.csproj" />
+  <Project Path="NanoSvgSharp.Test/NanoSvgSharp.Test.csproj" />
+  <Project Path="NanoSvgSharp/NanoSvgSharp.csproj" />
   <Project Path="NAudio.Flac/NAudio.Flac/NAudio.Flac.csproj" />
   <Project Path="nfm-world/NFMWorld.csproj" />
   <Project Path="NFMW.GenerateSinCosTable/NFMW.GenerateSinCosTable.csproj" />
   <Project Path="NFMWorld.Api/NFMWorld.Api.csproj" />
   <Project Path="NFMWorld.ClientOnlyAnalyzer/NFMWorld.ClientOnlyAnalyzer.csproj" />
   <Project Path="NFMWorld.CrashReporter/NFMWorld.CrashReporter.csproj" />
-  <Project Path="NFMWorld.DriverInterface/NFMWorld.DriverInterface.csproj" />
   <Project Path="NFMWorld.GenerateHmacKey/NFMWorld.GenerateHmacKey.csproj" />
   <Project Path="NFMWorld.Library.Test/NFMWorld.Library.Test.csproj" />
   <Project Path="NFMWorld.Library/NFMWorld.Library.csproj" />

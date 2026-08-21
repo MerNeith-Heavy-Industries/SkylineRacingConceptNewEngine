@@ -17,7 +17,7 @@ public sealed partial class Rad3d(
     Rad3dBoxDef[] boxes,
     Rad3dPoly[] polys,
     bool castsShadow,
-    LuaVector2[] atp,
+    Util.LuaVector2[] atp,
     string fileName = "hogan rewish",
     SrcRad3dCollisionMesh? collisionMesh = null,
     SrcRad3dCollisionHull? collisionHull = null,
@@ -48,7 +48,7 @@ public sealed partial class Rad3d(
     public bool CastsShadow { get; set; } = castsShadow;
 
     [JsonPropertyName("atp"), MemoryPackOrder(7), LuaName]
-    public LuaArray<LuaVector2> Atp { get; set; } = atp;
+    public LuaArray<Util.LuaVector2> Atp { get; set; } = atp;
 
     [JsonPropertyName("fileName"), MemoryPackOrder(8), LuaName]
     public string FileName { get; set; } = fileName;
@@ -115,7 +115,7 @@ public sealed partial class Rad3d(
         Rad3dBoxDef[] boxes,
         Rad3dPoly[] polys,
         bool castsShadow,
-        LuaVector2[] atp,
+        Util.LuaVector2[] atp,
         SrcRad3dCollisionMesh? colMesh,
         SrcRad3dCollisionHull? colHull,
         Rad3dAttachmentLine[]? atLines
@@ -224,6 +224,3 @@ public sealed partial class Rad3d(
         }
     }
 }
-
-[LuaVisible]
-public partial record struct LuaVector2([property: LuaName] float X, [property: LuaName] float Y);

@@ -91,6 +91,7 @@
         <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions\Maxine.Extensions.csproj" />
         <ProjectReference Include="..\Maxine.Extensions\RayTech.RayLog.MEL\RayTech.RayLog.MEL.csproj" />
         <ProjectReference Include="..\MonoGame.ImGuiNet\MonoGame.ImGuiNet\Monogame.ImGuiNet.csproj" />
+        <ProjectReference Include="..\NanoSvgSharp\NanoSvgSharp.csproj" />
         <ProjectReference Include="..\NAudio.Flac\NAudio.Flac\NAudio.Flac.csproj" />
         <ProjectReference Include="..\NFMWorld.Api\NFMWorld.Api.csproj" />
         <ProjectReference Include="..\NFMWorld.Library\NFMWorld.Library.csproj" />
