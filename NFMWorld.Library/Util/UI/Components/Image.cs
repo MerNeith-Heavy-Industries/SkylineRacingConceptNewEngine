@@ -1,6 +1,7 @@
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Util;
 using Yoga;
 
 namespace NFMWorld.DriverInterface.UI;
@@ -16,10 +17,11 @@ public partial class Image : Component
     {
         _imageSlot = new View();
         _children = [_imageSlot];
+        VisualChildren = new ReadOnlyLuaArray<Node>(_children);
         NodeInternal.InsertChild(_imageSlot.NodeInternal, 0);
     }
 
-    public override IReadOnlyList<Node> VisualChildren => _children;
+    public override ReadOnlyLuaArray<Node> VisualChildren { get; }
 
     [ClientOnly]
     public IImage? ImageData
@@ -55,7 +57,7 @@ public partial class Image : Component
     } = 1f;
 
     [ClientOnly]
-    protected override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderContent(LuaVector2 position, LuaVector2 size)
     {
         if (ImageData != null)
         {

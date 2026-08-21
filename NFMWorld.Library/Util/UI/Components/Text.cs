@@ -3,7 +3,9 @@ using System.Numerics;
 using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
+using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
 
@@ -22,80 +24,84 @@ public enum OverflowBehavior
     ContinueHorizontally
 }
 
-public class TextRun : Component
+public interface IReceivesTextInvalidation
+{
+    public void InvalidateText();
+}
+
+/// <summary>
+/// A text element. Inside of Text, only other Text and <see cref="TextNode"/> can be nested. Nested <see cref="Text"/>
+/// and <see cref="TextNode"/> inherit the styles from their parent elements.
+/// </summary>
+public class Text : Component, IRichTextElement, IReceivesTextInvalidation
 {
     protected bool Invalidated { get; private set; }= true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     public override bool DebugIsContentfulNode => true;
     
-    public TextElement[] Elements
+    public ComponentChildCollection Children { get; }
+
+    public override ReadOnlyLuaArray<Node> VisualChildren { get; }
+
+    // ── Visual children API ────────────────────────────────────────────
+    public override bool CanHaveChildren => true;
+    public override void AddChild(Node child) => Children.Add(child);
+    public override void InsertAt(int index, Node child) => Children.Insert(index, child);
+    public override void RemoveAt(int index) => Children.RemoveAt(index);
+    
+    Color? IRichTextElement.Background => Styles.BackgroundColor;
+    Color? IRichTextElement.Foreground => TextStyles.ForegroundColor;
+    Color? IRichTextElement.Stroke => TextStyles.StrokeColor;
+    FontFamily? IRichTextElement.FontFamily => TextStyles.FontFamily;
+    float? IRichTextElement.FontSize => TextStyles.FontSize;
+    FontStyle? IRichTextElement.FontStyle => TextStyles.FontStyle;
+
+    public Text()
     {
-        get;
-        set
-        {
-            field = value;
-            Invalidate();
-        }
-    } = [];
-
-    public bool HasComplexContent => Elements.Length > 0;
-
-    /// <summary>
-    /// Sets the text.
-    /// </summary>
-    public string? Text
-    {
-        get;
-        set
-        {
-            field = value;
-            
-            if (HasComplexContent)
-            {
-                Elements = [];
-            }
-
-            Invalidate();
-        }
-    } = "";
-
+        Children = new ComponentChildCollection(this);
+        VisualChildren = new ReadOnlyLuaArray<Node>(Children);
+    }
+    
     public TextStyles TextStyles
     {
         get;
         set
         {
             field = value;
-            Invalidate();
+            InvalidateText();
+        }
+    } = new();
+
+    public string? TextContent
+    {
+        set
+        {
+            if (Children is [TextNode textNode])
+            {
+                textNode.Text = value;
+            }
+            else
+            {
+                while (Children.Count > 0)
+                {
+                    RemoveAt(0);
+                }
+                AddChild(new TextNode { Text = value });
+            }
         }
     }
 
     protected override void OnStylesChanged()
     {
         base.OnStylesChanged();
-        Invalidate();
+        InvalidateText();
     }
 
     [ClientOnly]
     protected void RelayoutText(Vector2 size)
     {
-        IEnumerable<ComplexTextMetrics.FlattenedRichText> flattened;
-        if (!HasComplexContent)
-        {
-            if (!string.IsNullOrEmpty(Text))
-            {
-                flattened = [Text];
-            }
-            else
-            {
-                LaidOutComplexText = new ComplexTextMetrics.RichTextContainer([], Vector2.Zero);
-                return;
-            }
-        }
-        else
-        {
-            flattened = ComplexTextMetrics.FlattenText(Elements.OfType<IRichTextElement>());
-        }
+        var flattened = ComplexTextMetrics.FlattenText(Children.OfType<IRichTextElement>());
         
         var font = new Font(TextStyles.FontFamily, TextStyles.FontStyle, TextStyles.FontSize);
         if (TextStyles.OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && TextStyles.BreakType is not BreakType.None)
@@ -119,7 +125,13 @@ public class TextRun : Component
     }
 
     [ClientOnly]
-    protected override void RenderContent(Vector2 position, Vector2 size)
+    protected override void RenderBackground(LuaVector2 position, LuaVector2 size)
+    {
+        base.RenderBackground(position, size);
+    }
+
+    [ClientOnly]
+    protected override void RenderContent(LuaVector2 position, LuaVector2 size)
     {
         base.RenderContent(position, size);
         
@@ -142,7 +154,7 @@ public class TextRun : Component
             return;
         }
 
-        var basePosition = position;
+        var basePosition = (Vector2)position;
         ComplexTextMetrics.AlignBounds(LaidOutComplexText.Value.Size, (int)size.X, (int)size.Y, TextStyles.HorizontalAlignment, TextStyles.VerticalAlignment, ref basePosition.X, ref basePosition.Y);
 
         foreach (var element in LaidOutComplexText.Value.Elements)
@@ -178,7 +190,7 @@ public class TextRun : Component
         }
     }
 
-    public void Invalidate()
+    public void InvalidateText()
     {
         Invalidated = true;
     }

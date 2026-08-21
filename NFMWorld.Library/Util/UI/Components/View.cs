@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
 
@@ -13,17 +14,18 @@ public class View : Component
 {
     public ComponentChildCollection Children { get; }
 
-    public override IReadOnlyList<Node> VisualChildren => Children;
+    public override ReadOnlyLuaArray<Node> VisualChildren { get; }
 
     // ── Visual children API ────────────────────────────────────────────
     public override bool CanHaveChildren => true;
-    public override void AddChild(Node child) => Children.Add((Component)child);
-    public override void InsertAt(int index, Node child) => Children.Insert(index, (Component)child);
+    public override void AddChild(Node child) => Children.Add(child);
+    public override void InsertAt(int index, Node child) => Children.Insert(index, child);
     public override void RemoveAt(int index) => Children.RemoveAt(index);
 
     public View()
     {
         Children = new ComponentChildCollection(this);
+        VisualChildren = new ReadOnlyLuaArray<Node>(Children);
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
