@@ -60,6 +60,46 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     protected virtual void OnStylesChanged()
     {
+        NodeInternal.Direction = Styles.Direction.ToYogaDirection();
+        NodeInternal.FlexDirection = Styles.FlexDirection.ToYogaFlexDirection();
+        NodeInternal.JustifyContent = Styles.JustifyContent.ToYogaJustify();
+        NodeInternal.AlignItems = Styles.AlignItems.ToYogaAlign();
+        NodeInternal.AlignSelf = Styles.AlignSelf.ToYogaAlign();
+        NodeInternal.AlignContent = Styles.AlignContent.ToYogaAlign();
+        NodeInternal.PositionType = Styles.Position.ToYogaPositionType();
+        NodeInternal.FlexWrap = Styles.FlexWrap.ToYogaWrap();
+        NodeInternal.Overflow = Styles.Overflow.ToYogaOverflow();
+        NodeInternal.Display = Styles.Display.ToYogaDisplay();
+        NodeInternal.BoxSizing = Styles.BoxSizing.ToYogaBoxSizing();
+        NodeInternal.Flex = Styles.Flex ?? float.NaN;
+        NodeInternal.FlexGrow = Styles.FlexGrow ?? float.NaN;
+        NodeInternal.FlexShrink = Styles.FlexShrink ?? float.NaN;
+        NodeInternal.FlexBasis = Styles.FlexBasis;
+        NodeInternal.Left = Styles.Left;
+        NodeInternal.Top = Styles.Top;
+        NodeInternal.Right = Styles.Right;
+        NodeInternal.Bottom = Styles.Bottom;
+        NodeInternal.MarginTop = Styles.MarginTop;
+        NodeInternal.MarginBottom = Styles.MarginBottom;
+        NodeInternal.MarginLeft = Styles.MarginLeft;
+        NodeInternal.MarginRight = Styles.MarginRight;
+        NodeInternal.PaddingTop = Styles.PaddingTop;
+        NodeInternal.PaddingBottom = Styles.PaddingBottom;
+        NodeInternal.PaddingLeft = Styles.PaddingLeft;
+        NodeInternal.PaddingRight = Styles.PaddingRight;
+        NodeInternal.BorderTop = Styles.BorderTop?.Value ?? float.NaN;
+        NodeInternal.BorderBottom = Styles.BorderBottom?.Value ?? float.NaN;
+        NodeInternal.BorderLeft = Styles.BorderLeft?.Value ?? float.NaN;
+        NodeInternal.BorderRight = Styles.BorderRight?.Value ?? float.NaN;
+        NodeInternal.GapColumn = Styles.GapColumn;
+        NodeInternal.GapRow = Styles.GapRow;
+        NodeInternal.Width = Styles.Width;
+        NodeInternal.Height = Styles.Height;
+        NodeInternal.MinWidth = Styles.MinWidth;
+        NodeInternal.MinHeight = Styles.MinHeight;
+        NodeInternal.MaxWidth = Styles.MaxWidth;
+        NodeInternal.MaxHeight = Styles.MaxHeight; 
+        NodeInternal.AspectRatio = Styles.AspectRatio?.Value ?? float.NaN;
     }
 
     public Action? AnimationFrameBegan { get; set; }
@@ -67,7 +107,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     [EditorBrowsable(EditorBrowsableState.Never)]
     public virtual string DebugToString()
     {
-        return $"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
+        return $"Component(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
 
     #region Animations
