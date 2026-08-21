@@ -132,12 +132,15 @@ public abstract partial class Node
         }
     }
 
-    public virtual void DispatchMouseScrolled(BaseMouseWheelEvent @event)
+    public virtual bool DispatchMouseScrolled(BaseMouseWheelEvent @event)
     {
         foreach (var child in GetChildSnapshot())
         {
-            child.DispatchMouseScrolled(@event);
+            if (child.DispatchMouseScrolled(@event))
+                return true;
         }
+
+        return false;
     }
 
     public virtual void DispatchKeyPressed(KeyboardEvent @event)

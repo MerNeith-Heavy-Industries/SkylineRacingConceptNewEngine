@@ -98,13 +98,13 @@ public class TextRun : Component
         }
         
         var font = new Font(TextStyles.FontFamily, TextStyles.FontStyle, TextStyles.FontSize);
-        if (TextStyles.OverflowBehavior is not Reactor.OverflowBehavior.Stretch and not Reactor.OverflowBehavior.None && TextStyles.BreakType is not Reactor.BreakType.None)
+        if (TextStyles.OverflowBehavior is not OverflowBehavior.Stretch and not OverflowBehavior.None && TextStyles.BreakType is not BreakType.None)
         {
             flattened = ComplexTextMetrics.LayoutText(font, flattened, new Vector2(size.X, size.Y), TextStyles.BreakType, TextStyles.OverflowBehavior);
         }
         var measurements = ComplexTextMetrics.MeasureRichText(flattened, font);
 
-        if (TextStyles.OverflowBehavior is Reactor.OverflowBehavior.Stretch)
+        if (TextStyles.OverflowBehavior is OverflowBehavior.Stretch)
         {
             Styles = Styles with { Width = measurements.Size.X, Height = measurements.Size.Y };
         }

@@ -196,4 +196,14 @@ public interface IGraphics
     void Arc(float cx, float cy, float arcRadius, float startAngleDeg, float endAngleDeg, bool clockWise);
 
     void LineCapButt();
+
+    void SaveState();
+
+    void RestoreState();
+
+    void Scissor(float x, float y, float w, float h);
+
+    void IntersectScissor(float x, float y, float w, float h);
+
+    void ResetScissor();
 }

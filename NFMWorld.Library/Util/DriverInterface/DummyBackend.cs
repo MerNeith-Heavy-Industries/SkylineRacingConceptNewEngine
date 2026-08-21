@@ -121,6 +121,26 @@ public sealed class DummyBackend : IBackend
         public void LineCapButt()
         {
         }
+
+        public void SaveState()
+        {
+        }
+
+        public void RestoreState()
+        {
+        }
+
+        public void Scissor(float x, float y, float w, float h)
+        {
+        }
+
+        public void IntersectScissor(float x, float y, float w, float h)
+        {
+        }
+
+        public void ResetScissor()
+        {
+        }
     }
 
     public void SetAllVolumes(float vol)

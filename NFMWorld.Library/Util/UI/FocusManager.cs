@@ -71,6 +71,10 @@ public static class FocusManager
 
     private static bool HitTestChainRecursive(Component node, LuaVector2 pos, List<Component> chain)
     {
+        // Skip nodes (and their descendants) clipped out by an overflow ancestor.
+        if (node.ClipRect is { } clip && !clip.Contains(pos.X, pos.Y))
+            return false;
+
         var selfHit = false;
 
         if (node.IsFocusable)

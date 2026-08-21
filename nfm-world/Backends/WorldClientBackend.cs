@@ -342,6 +342,31 @@ internal sealed class WorldClientBackend(NvgContext context) : IBackend
                 nsvgImg.Draw(_context, x, y, width, height);
             }
         }
+
+        public void SaveState()
+        {
+            _context.SaveState();
+        }
+
+        public void RestoreState()
+        {
+            _context.RestoreState();
+        }
+
+        public void Scissor(float x, float y, float w, float h)
+        {
+            _context.Scissor(x, y, w, h);
+        }
+
+        public void IntersectScissor(float x, float y, float w, float h)
+        {
+            _context.IntersectScissor(x, y, w, h);
+        }
+
+        public void ResetScissor()
+        {
+            _context.ResetScissor();
+        }
     }
 
     public void SetAllVolumes(float vol)
