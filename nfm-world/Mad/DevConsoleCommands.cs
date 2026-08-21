@@ -90,6 +90,7 @@ public static class DevConsoleCommands
             }
         });
         console.RegisterCommand("html_test", (console, args) => GameSparker.PushPhase(new XamlTestPhase()));
+        console.RegisterCommand("yoga_test", (console, args) => GameSparker.PushPhase(new YogaTestPhase()));
         console.RegisterCommand("cef_reload", (console, args) =>
         {
             GameSparker.CefRenderer?.Reload();

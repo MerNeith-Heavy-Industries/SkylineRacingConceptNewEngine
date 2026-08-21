@@ -27,7 +27,6 @@ using NFMWorldLibrary.Util;
 using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
 using NFMWorld.Sentry;
-using WorldXaml.UI.Yoga;
 
 namespace NFMWorld;
 
@@ -415,8 +414,6 @@ public class WorldGame : Game
         _oldScrollValue = scrollValue;
     }
 
-    private static int counter = 420;
-    private static View view = TestView.Render(ref counter);
     protected override void Draw(GameTime gameTime)
     {
         var transaction = SentrySdk.StartTransaction("GameDraw", "gameloop.draw");
@@ -434,9 +431,6 @@ public class WorldGame : Game
 
         var img = G.LoadImage("data/images/damage.svg");
         G.DrawImage(img, 15, 15);
-
-        view.Update();
-        view.LayoutAndRender(G.Viewport);
 
         FPSCounter.Render();
         _nvg.Render();

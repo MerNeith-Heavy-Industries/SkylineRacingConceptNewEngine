@@ -59,27 +59,6 @@ public readonly partial record struct KeyboardTypingEvent(
 );
 
 [LuaVisible]
-public enum MouseButton
-{
-    Primary = 1,
-    Secondary = 2,
-    Middle = 3,
-    XButton1 = 4,
-    XButton2 = 5,
-}
-
-[Flags, LuaVisible]
-public enum MouseButtons
-{
-    None = 0,
-    Primary = 1,
-    Secondary = 2,
-    Middle = 4,
-    XButton1 = 8,
-    XButton2 = 16,
-}
-
-[LuaVisible]
 public readonly partial record struct MouseDragEvent(
     [property: LuaName] LuaVector2 DragStart,
     [property: LuaName] LuaVector2 RelativeDragStart,

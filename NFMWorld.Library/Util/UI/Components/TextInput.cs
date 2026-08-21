@@ -3,7 +3,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorldLibrary;
-using MouseButton = NFMWorld.ClayDom.Events.MouseButton;
+using MouseButton = NFMWorld.DriverInterface.MouseButton;
 
 namespace NFMWorld.Reactor;
 

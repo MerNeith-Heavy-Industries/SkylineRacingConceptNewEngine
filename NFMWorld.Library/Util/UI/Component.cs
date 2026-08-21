@@ -391,6 +391,104 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     #endregion
 
+    #region Scrolling
+
+    private float _scrollLeft;
+    private float _scrollTop;
+    private float _scrollableWidth;
+    private float _scrollableHeight;
+
+    /// <summary>
+    /// Horizontal scroll offset in points. Clamped to [0, <see cref="ScrollableWidth"/>].
+    /// </summary>
+    public float ScrollLeft
+    {
+        get => _scrollLeft;
+        set => _scrollLeft = Math.Clamp(value, 0f, _scrollableWidth);
+    }
+
+    /// <summary>
+    /// Vertical scroll offset in points. Clamped to [0, <see cref="ScrollableHeight"/>].
+    /// </summary>
+    public float ScrollTop
+    {
+        get => _scrollTop;
+        set => _scrollTop = Math.Clamp(value, 0f, _scrollableHeight);
+    }
+
+    /// <summary>
+    /// Maximum horizontal scroll offset (content width minus viewport width).
+    /// </summary>
+    public float ScrollableWidth => _scrollableWidth;
+
+    /// <summary>
+    /// Maximum vertical scroll offset (content height minus viewport height).
+    /// </summary>
+    public float ScrollableHeight => _scrollableHeight;
+
+    /// <summary>
+    /// Whether this node clips its children to its padding box.
+    /// </summary>
+    public bool IsClipping => Styles.Overflow is Overflow.Hidden or Overflow.Scroll;
+
+    /// <summary>
+    /// The effective clip rectangle (intersection of every clipping ancestor's
+    /// padding box) in screen space, or null when nothing clips. Set during
+    /// <see cref="Render"/>; used by hit-testing and mouse dispatch.
+    /// </summary>
+    internal RectangleF? ClipRect;
+
+    /// <summary>
+    /// Attempts to scroll this node by the wheel delta. Returns true when the
+    /// scroll offset actually changed (i.e. the event was consumed).
+    /// </summary>
+    public bool TryScroll(float deltaX, float deltaY, float factor = 1f)
+    {
+        if (Styles.Overflow != Overflow.Scroll)
+            return false;
+
+        var newLeft = Math.Clamp(ScrollLeft - deltaX * factor, 0f, _scrollableWidth);
+        var newTop = Math.Clamp(ScrollTop - deltaY * factor, 0f, _scrollableHeight);
+
+        if (newLeft == ScrollLeft && newTop == ScrollTop)
+            return false;
+
+        _scrollLeft = newLeft;
+        _scrollTop = newTop;
+        return true;
+    }
+
+    private void UpdateScrollExtent()
+    {
+        _scrollableWidth = 0f;
+        _scrollableHeight = 0f;
+
+        if (Styles.Overflow != Overflow.Scroll)
+            return;
+
+        var contentSize = LayoutContentSize;
+        float maxRight = 0f;
+        float maxBottom = 0f;
+
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is not Component c)
+                continue;
+
+            maxRight = Math.Max(maxRight, c.LayoutX + c.LayoutWidth + c.LayoutMarginRight);
+            maxBottom = Math.Max(maxBottom, c.LayoutY + c.LayoutHeight + c.LayoutMarginBottom);
+        }
+
+        _scrollableWidth = Math.Max(0f, maxRight - contentSize.X);
+        _scrollableHeight = Math.Max(0f, maxBottom - contentSize.Y);
+
+        // Re-clamp against the freshly computed extents (content may have shrank).
+        _scrollLeft = Math.Clamp(_scrollLeft, 0f, _scrollableWidth);
+        _scrollTop = Math.Clamp(_scrollTop, 0f, _scrollableHeight);
+    }
+
+    #endregion
+
     #region Focus
     
     public Action<MouseEvent>? MousePressed { get; set; }
@@ -569,6 +667,43 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
     }
 
+    protected virtual void RenderScrollbars(Vector2 position, Vector2 size)
+    {
+        if (Styles.Overflow != Overflow.Scroll)
+            return;
+
+        const float trackWidth = 6f;
+        const float minThumb = 20f;
+
+        if (ScrollableHeight > 0f && size.Y > 0f)
+        {
+            var contentHeight = size.Y + ScrollableHeight;
+            var thumbHeight = Math.Max(size.Y * size.Y / contentHeight, minThumb);
+            var travel = size.Y - thumbHeight;
+            var thumbTop = position.Y + ScrollTop / ScrollableHeight * travel;
+
+            G.SetColor(new Color(255, 255, 255, 32));
+            G.FillRoundedRect((int)(position.X + size.X - trackWidth), (int)position.Y, (int)trackWidth, (int)size.Y, 3f, 3f, 3f, 3f);
+
+            G.SetColor(new Color(255, 255, 255, 150));
+            G.FillRoundedRect((int)(position.X + size.X - trackWidth), (int)thumbTop, (int)trackWidth, (int)thumbHeight, 3f, 3f, 3f, 3f);
+        }
+
+        if (ScrollableWidth > 0f && size.X > 0f)
+        {
+            var contentWidth = size.X + ScrollableWidth;
+            var thumbWidth = Math.Max(size.X * size.X / contentWidth, minThumb);
+            var travel = size.X - thumbWidth;
+            var thumbLeft = position.X + ScrollLeft / ScrollableWidth * travel;
+
+            G.SetColor(new Color(255, 255, 255, 32));
+            G.FillRoundedRect((int)position.X, (int)(position.Y + size.Y - trackWidth), (int)size.X, (int)trackWidth, 3f, 3f, 3f, 3f);
+
+            G.SetColor(new Color(255, 255, 255, 150));
+            G.FillRoundedRect((int)thumbLeft, (int)(position.Y + size.Y - trackWidth), (int)thumbWidth, (int)trackWidth, 3f, 3f, 3f, 3f);
+        }
+    }
+
     public sealed override void Render(RenderContext context)
     {
         OnAnimationFrameBegan();
@@ -576,14 +711,46 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         if (Styles.Display != Display.None && Styles.Visibility == Visibility.Visible && Styles.Opacity > 0f)
         {
             var ownOpacity = context.InheritedOpacity * Styles.Opacity;
+
+            // Recompute scroll extent from freshly laid-out children.
+            UpdateScrollExtent();
+
+            // Compute this node's effective clip (padding box when clipping),
+            // intersected with any clip inherited from clipping ancestors.
+            var paddingPos = LayoutPaddingPosition;
+            var paddingSize = LayoutPaddingSize;
+            RectangleF? effectiveClip = context.Clip;
+            if (IsClipping)
+            {
+                var ownClip = new RectangleF(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
+                effectiveClip = effectiveClip is { } inherited ? RectangleF.Intersect(inherited, ownClip) : ownClip;
+            }
+            ClipRect = effectiveClip;
+
             G.Alpha = ownOpacity;
-            RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
+            RenderBackground(paddingPos, paddingSize);
             RenderBorder(LayoutBorderPosition, LayoutBorderSize);
             RenderContent(LayoutContentPosition, LayoutContentSize);
+
+            if (IsClipping)
+            {
+                G.SaveState();
+                G.IntersectScissor(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
+            }
+
+            var childOrigin = LayoutContentPosition - new Vector2(ScrollLeft, ScrollTop);
             foreach (var child in GetChildSnapshot())
             {
-                child.Render(new RenderContext(Root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
+                child.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
             }
+
+            if (IsClipping)
+            {
+                G.RestoreState();
+            }
+
+            G.Alpha = ownOpacity;
+            RenderScrollbars(paddingPos, paddingSize);
             G.Alpha = 1f;
         }
     }
@@ -644,6 +811,9 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     public override void DispatchMouseMoved(BaseMouseMoveEvent @event)
     {
+        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
+            return;
+
         if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
             var relativeEvent = new MouseMoveEvent(
@@ -700,6 +870,9 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     public sealed override void DispatchMousePressed(BaseMouseEvent @event)
     {
+        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
+            return;
+
         if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
             var relativeEvent = new MouseEvent(
@@ -738,6 +911,9 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     public sealed override void DispatchMouseReleased(BaseMouseEvent @event)
     {
+        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
+            return;
+
         if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
             var relativeEvent = new MouseEvent(
@@ -762,6 +938,9 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     public sealed override void DispatchMouseDragged(BaseMouseDragEvent @event)
     {
+        if (ClipRect is { } clip && !clip.Contains(@event.DragStart.X, @event.DragStart.Y))
+            return;
+
         if (@event.DragStart.X > LayoutPaddingPosition.X && @event.DragStart.Y > LayoutPaddingPosition.Y && @event.DragStart.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.DragStart.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
             var relativeEvent = new MouseDragEvent(
@@ -781,10 +960,20 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         base.DispatchMouseDragged(@event);
     }
 
-    public sealed override void DispatchMouseScrolled(BaseMouseWheelEvent @event)
+    public sealed override bool DispatchMouseScrolled(BaseMouseWheelEvent @event)
     {
+        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
+            return false;
+
+        // Deepest scrollable first: a descendant that scrolls consumes the event.
+        if (base.DispatchMouseScrolled(@event))
+            return true;
+
         if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
+            if (Styles.Overflow == Overflow.Scroll && TryScroll(@event.Delta.X, @event.Delta.Y))
+                return true;
+
             var relativeEvent = new MouseWheelEvent(
                 Delta: @event.Delta,
                 Position: @event.Position,
@@ -797,7 +986,8 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             MouseScrolled?.Invoke(relativeEvent);
             OnMouseScrolled(relativeEvent);
         }
-        base.DispatchMouseScrolled(@event);
+
+        return false;
     }
 
     public virtual void OnKeyPressed(KeyboardEvent @event)

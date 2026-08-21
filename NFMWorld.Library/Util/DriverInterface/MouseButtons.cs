@@ -1,6 +1,8 @@
-﻿namespace NFMWorld.DriverInterface;
+﻿using nfm_world_library.Lua;
 
-[Flags]
+namespace NFMWorld.DriverInterface;
+
+[Flags, LuaVisible]
 public enum MouseButtons
 {
     None = 0,
