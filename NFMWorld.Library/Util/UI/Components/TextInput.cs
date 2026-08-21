@@ -3,12 +3,13 @@ using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Util;
 using MouseButton = NFMWorld.DriverInterface.MouseButton;
 
 namespace NFMWorld.Reactor;
 
 /// <summary>
-/// A single-line text input component. Contains a <see cref="TextRun"/> child for text
+/// A single-line text input component. Contains a <see cref="Reactor.Text"/> child for text
 /// layout and measurement, plus a cursor overlay child rendered on top for
 /// the blinking cursor and selection highlight.
 /// </summary>
@@ -16,7 +17,7 @@ public partial class TextInput : Component
 {
     // ── Internal children ──────────────────────────────────────────
 
-    private readonly TextRun _textRun;
+    private readonly Text _text;
     private readonly CursorOverlay _cursorOverlay;
 
     // ── Cursor & selection state ──────────────────────────────────
@@ -49,10 +50,10 @@ public partial class TextInput : Component
         set
         {
             field = value;
-            _textRun.TextStyles = TextStyles;
+            _text.TextStyles = TextStyles;
             OnTextInvalidated();
         }
-    }
+    } = new();
 
     public TextInputStyles TextInputStyles
     {
@@ -62,7 +63,7 @@ public partial class TextInput : Component
             field = value;
             OnTextInvalidated();
         }
-    }
+    } = new();
 
     /// <summary>
     /// Placeholder text shown when <see cref="Text"/> is empty and the input is not focused.
@@ -90,14 +91,14 @@ public partial class TextInput : Component
 
     // ── Proxied TextRun properties ─────────────────────────────────
 
-    /// <inheritdoc cref="TextRun.Text"/>
+    /// <inheritdoc cref="Reactor.Text.TextContent"/>
     public string? Text
     {
         get;
         set
         {
             field = value;
-            _textRun.Text = value;
+            _text.TextContent = value;
             OnTextInvalidated();
         }
     }
@@ -131,22 +132,23 @@ public partial class TextInput : Component
         
         IsFocusable = true;
 
-        _textRun = new TextRun { IsFocusable = false };
+        _text = new Text { IsFocusable = false };
         _cursorOverlay = new CursorOverlay(this);
 
-        NodeInternal.InsertChild(_textRun.Contents, 0);
-        _textRun.VisualParent = this;
+        NodeInternal.InsertChild(_text.Contents, 0);
+        _text.VisualParent = this;
 
         NodeInternal.InsertChild(_cursorOverlay.Contents, 1);
         _cursorOverlay.VisualParent = this;
 
-        _visualChildren = [_textRun, _cursorOverlay];
+        _visualChildren = [_text, _cursorOverlay];
+        VisualChildren = new ReadOnlyLuaArray<Node>(_visualChildren);
     }
 
     // ── Visual children (void element — no external children) ─────
 
     private readonly Node[] _visualChildren;
-    public override IReadOnlyList<Node> VisualChildren => _visualChildren;
+    public override ReadOnlyLuaArray<Node> VisualChildren { get; }
 
     // ── Text invalidation ─────────────────────────────────────────
 
@@ -166,13 +168,13 @@ public partial class TextInput : Component
         // Draw placeholder when empty and not focused
         if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
         {
-            _textRun.TextStyles = _textRun.TextStyles with { ForegroundColor = TextInputStyles.PlaceholderColor };
-            _textRun.Text = Placeholder;
+            _text.TextStyles = _text.TextStyles with { ForegroundColor = TextInputStyles.PlaceholderColor };
+            _text.TextContent = Placeholder;
         }
         else
         {
-            _textRun.TextStyles = _textRun.TextStyles with { ForegroundColor = TextStyles.ForegroundColor };
-            _textRun.Text = Text;
+            _text.TextStyles = _text.TextStyles with { ForegroundColor = TextStyles.ForegroundColor };
+            _text.TextContent = Text;
         }
     }
 
@@ -216,12 +218,12 @@ public partial class TextInput : Component
 
     /// <summary>
     /// Returns the x-offset (in screen pixels) for the given character index.
-    /// Uses the internal <see cref="_textRun"/> laid-out text for accurate measurement.
+    /// Uses the internal <see cref="_text"/> laid-out text for accurate measurement.
     /// Laid-out positions are in logical pixels and are scaled by <see cref="G.Scale"/>.
     /// </summary>
     private float GetCursorXForCharIndex(int charIndex)
     {
-        var laidOut = _textRun.LaidOutComplexText;
+        var laidOut = _text.LaidOutComplexText;
         if (laidOut is not { } container || container.Elements.Count == 0)
             return 0;
 
@@ -269,7 +271,7 @@ public partial class TextInput : Component
         // Convert screen-pixel input to logical pixels for comparison with laid-out positions
         var logicalX = cursorX / G.Scale;
 
-        var laidOut = _textRun.LaidOutComplexText;
+        var laidOut = _text.LaidOutComplexText;
         if (laidOut is not { } container || container.Elements.Count == 0)
             return 0;
 
@@ -499,7 +501,7 @@ public partial class TextInput : Component
 
     // ── Rendering (background + border) ────────────────────────────
 
-    protected virtual void RenderBackground(Vector2 position, Vector2 size)
+    protected virtual void RenderBackground(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
         {
@@ -514,7 +516,7 @@ public partial class TextInput : Component
 
     }
 
-    protected virtual void RenderBorder(Vector2 position, Vector2 size)
+    protected virtual void RenderBorder(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
@@ -598,7 +600,7 @@ public partial class TextInput : Component
     /// <summary>
     /// Absolutely-positioned child that renders the cursor line and selection highlight
     /// on top of the text content. Rendered last in the child order so it appears above
-    /// the <see cref="TextRun"/> child's text.
+    /// the <see cref="Text"/> child's text.
     /// </summary>
     private sealed class CursorOverlay : Component
     {
@@ -619,7 +621,7 @@ public partial class TextInput : Component
         }
 
         [ClientOnly]
-        protected override void RenderContent(Vector2 position, Vector2 size)
+        protected override void RenderContent(LuaVector2 position, LuaVector2 size)
         {
             if (!_owner.IsFocused)
                 return;

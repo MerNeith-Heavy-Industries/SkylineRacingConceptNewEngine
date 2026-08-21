@@ -923,3 +923,67 @@ MouseMoveEvent = {}
 MouseWheelEvent = {}
 
 
+---@class Direction : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+Direction = {}
+
+
+---@class Node
+---@field visualParent Node|nil
+---@field visualChildren { [integer]: Node }
+
+Node = {}
+
+
+---@class Component : Node, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
+---@field visualChildren { [integer]: Node }
+---@field canHaveChildren boolean
+---@field name string
+---@field isFocusable boolean
+---@field layoutMarginPosition LuaVector2
+---@field layoutMarginSize LuaVector2
+---@field layoutBorderPosition LuaVector2
+---@field layoutBorderSize LuaVector2
+---@field layoutPaddingPosition LuaVector2
+---@field layoutPaddingSize LuaVector2
+---@field layoutContentPosition LuaVector2
+---@field layoutContentSize LuaVector2
+---@field layoutMargin LuaVector2
+---@field layoutPadding LuaVector2
+---@field layoutBorder LuaVector2
+---@field layoutWidth number
+---@field layoutHeight number
+---@field layoutX number
+---@field layoutY number
+---@field layoutDirection Direction
+---@field hadOverflow boolean
+---@field layoutMarginTop number
+---@field layoutMarginBottom number
+---@field layoutMarginLeft number
+---@field layoutMarginRight number
+---@field layoutPaddingTop number
+---@field layoutPaddingBottom number
+---@field layoutPaddingLeft number
+---@field layoutPaddingRight number
+---@field layoutBorderTop number
+---@field layoutBorderBottom number
+---@field layoutBorderLeft number
+---@field layoutBorderRight number
+---@field hasNewLayout boolean
+---@field isDirty boolean
+---@field isReferenceBaseline boolean
+---@field scrollLeft number
+---@field scrollTop number
+---@field scrollableWidth number
+---@field scrollableHeight number
+---@field isClipping boolean
+---@field isDisplayed boolean
+---@field visualParent Node|nil
+---@field addChild fun(self: Component, child: Node)
+---@field insertAt fun(self: Component, index: integer, child: Node)
+---@field removeAt fun(self: Component, index: integer)
+---@field scrollIntoView fun(self: Component)
+
+Component = {}
+
+

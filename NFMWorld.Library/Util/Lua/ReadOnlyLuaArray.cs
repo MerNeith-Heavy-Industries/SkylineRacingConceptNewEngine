@@ -5,6 +5,7 @@ using Lua.Runtime;
 using Maxine.Extensions.Collections;
 using MemoryPack;
 using nfm_world_library.Lua;
+using NFMWorld.Reactor;
 
 namespace NFMWorldLibrary.Util;
 
@@ -125,6 +126,8 @@ public partial class ReadOnlyLuaArray<T> : ILuaUserData, IReadOnlyList<T>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public int Count => Value.Count;
+    
+    public static ReadOnlyLuaArray<T> Empty { get; } = new([]);
 
     public static implicit operator ReadOnlyLuaArray<T>(T[] arr) => new(arr);
 }

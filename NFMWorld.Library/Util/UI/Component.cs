@@ -2,8 +2,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using nfm_world_library.Lua;
 using NFMWorld.ClayDom.Events;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Util;
 using Yoga;
 
 namespace NFMWorld.Reactor;
@@ -12,7 +14,7 @@ namespace NFMWorld.Reactor;
 /// <summary>
 /// Represents a single node in the Yoga layout system.
 /// </summary>
-[DebuggerDisplay("{DebugToString()}")]
+[DebuggerDisplay("{DebugToString()}"), LuaVisible]
 public abstract partial class Component : Node, IAnimationCallback, IDisposable
 {
     internal static readonly YGConfigPtr Config;
@@ -31,15 +33,53 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     }
 
     // ── Visual abstracts ────────────────────────────────────────────────
-    public override IReadOnlyList<Node> VisualChildren => [];
-    internal override YGNodePtr Contents => NodeInternal;
+    /// <summary>
+    /// Gets the visual children of this visual element.
+    /// </summary>
+    [LuaName]
+    public override ReadOnlyLuaArray<Node> VisualChildren { get; } = [];
+    
+    /// <summary>
+    /// Gets the Yoga node associated with this visual element representing its contents.
+    /// </summary>
+    internal virtual YGNodePtr Contents => NodeInternal;
 
     // ── Children API (no-op for leaf nodes) ──────────────────────────────
-    public override bool CanHaveChildren => false;
-    public override void AddChild(Node child) { }
-    public override void InsertAt(int index, Node child) { }
-    public override void RemoveAt(int index) { }
+    /// <summary>
+    /// Whether this visual can accept child nodes. <see cref="Component"/> returns false;
+    /// <see cref="View"/> returns true.
+    /// </summary>
+    [LuaName]
+    public virtual bool CanHaveChildren => false;
+    
+    /// <summary>Add a child to the end of the children list.</summary>
+    [LuaName]
+    public virtual void AddChild(Node child) { }
+    
+    /// <summary>Insert a child at the given index.</summary>
+    [LuaName]
+    public virtual void InsertAt(int index, Node child) { }
+    
+    /// <summary>Remove the child at the given index.</summary>
+    [LuaName]
+    public virtual void RemoveAt(int index) { }
+    
+    [LuaName]
+    public string? Name { get; set; }
 
+    // Reusable snapshot buffer so dispatch methods don't allocate a new list
+    // every time VisualChildren is iterated. Allocated once per Visual, cleared
+    // and repopulated on each use.
+    private List<Node>? _childSnapshot;
+
+    private protected List<Node> GetChildSnapshot()
+    {
+        var list = _childSnapshot ??= [];
+        list.Clear();
+        list.AddRange(VisualChildren);
+        return list;
+    }
+    
     // ── IDisposable ─────────────────────────────────────────────────────
     ~Component() { Dispose(false); }
     public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
@@ -56,7 +96,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             field = value;
             OnStylesChanged();
         }
-    }
+    } = new();
 
     protected virtual void OnStylesChanged()
     {
@@ -126,10 +166,11 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     #region Focus
     
+    [LuaName]
     public bool IsFocusable { get; set; }
 
-    public Vector2 FocusOrigin => LayoutPaddingPosition;
-    public Vector2 FocusSize => LayoutPaddingSize;
+    public LuaVector2 FocusOrigin => LayoutPaddingPosition;
+    public LuaVector2 FocusSize => LayoutPaddingSize;
 
     public bool IsHovered
     {
@@ -176,174 +217,174 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     #region Layout
 
     // https://www.w3schools.com/css/css_boxmodel.asp
-    private protected Vector2 Root;
+    private protected LuaVector2 Root;
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the margin box.
     /// </summary>
-    public Vector2 LayoutMarginPosition => Root + new Vector2(LayoutX, LayoutY);
+    [LuaName] public LuaVector2 LayoutMarginPosition => Root + new LuaVector2(LayoutX, LayoutY);
     
     /// <summary>
     /// In the CSS box model, gets the size of the margin box, from the top-left to the bottom-right.
     /// </summary>
-    public Vector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
+    [LuaName] public LuaVector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the border box.
     /// </summary>
-    public Vector2 LayoutBorderPosition => Root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
+    [LuaName] public LuaVector2 LayoutBorderPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the border box, from the top-left to the bottom-right.
     /// </summary>
-    public Vector2 LayoutBorderSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom));
+    [LuaName] public LuaVector2 LayoutBorderSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom));
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the padding box.
     /// </summary>
-    public Vector2 LayoutPaddingPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
+    [LuaName] public LuaVector2 LayoutPaddingPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the padding box, from the top-left to the bottom-right.
     /// </summary>
-    public Vector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
+    [LuaName] public LuaVector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
     
     /// <summary>
     /// In the CSS box model, gets the top-left position of the content box.
     /// </summary>
-    public Vector2 LayoutContentPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
+    [LuaName] public LuaVector2 LayoutContentPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
     
     /// <summary>
     /// In the CSS box model, gets the size of the content box, from the top-left to the bottom-right.
     /// </summary>
-    public Vector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
+    [LuaName] public LuaVector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
 
     /// <summary>
-    /// Gets the margin width and height of the node as a <see cref="Vector2"/>.
+    /// Gets the margin width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
-    public Vector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
+    [LuaName] public LuaVector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
     
     /// <summary>
-    /// Gets the padding width and height of the node as a <see cref="Vector2"/>.
+    /// Gets the padding width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
-    public Vector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
+    [LuaName] public LuaVector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
     
     /// <summary>
-    /// Gets the border width and height of the node as a <see cref="Vector2"/>.
+    /// Gets the border width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
-    public Vector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
+    [LuaName] public LuaVector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
 
     /// <summary>
     /// Gets the width of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and does not include margins, borders, or padding.
     /// </summary>
-    public float LayoutWidth => NodeInternal.LayoutWidth;
+    [LuaName] public float LayoutWidth => NodeInternal.LayoutWidth;
     
     /// <summary>
     /// Gets the height of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and does not include margins, borders, or padding.
     /// </summary>
-    public float LayoutHeight => NodeInternal.LayoutHeight;
+    [LuaName] public float LayoutHeight => NodeInternal.LayoutHeight;
     
     /// <summary>
     /// Gets the X position of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of the parent node's content box to the left edge of this node's margin box.
     /// </summary>
-    public float LayoutX => NodeInternal.LayoutX;
+    [LuaName] public float LayoutX => NodeInternal.LayoutX;
     
     /// <summary>
     /// Gets the Y position of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of the parent node's content box to the top edge of this node's margin box.
     /// </summary>
-    public float LayoutY => NodeInternal.LayoutY;
+    [LuaName] public float LayoutY => NodeInternal.LayoutY;
     
     /// <summary>
     /// Gets the layout direction of the node as determined by the Yoga layout engine after a layout pass.
     /// </summary>
-    public Direction LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
+    [LuaName] public Direction LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
     
     /// <summary>
     /// Gets a value indicating whether the node's content overflowed its layout bounds during the last layout pass.
     /// </summary>
-    public bool HadOverflow => NodeInternal.HadOverflow;
+    [LuaName] public bool HadOverflow => NodeInternal.HadOverflow;
     
     /// <summary>
     /// Gets the top margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's margin box to the top edge of its border box.
     /// </summary>
-    public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
+    [LuaName] public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
     
     /// <summary>
     /// Gets the bottom margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's margin box to the bottom edge of its border box.
     /// </summary>
-    public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
+    [LuaName] public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
     
     /// <summary>
     /// Gets the left margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's margin box to the left edge of its border box.
     /// </summary>
-    public float LayoutMarginLeft => NodeInternal.LayoutMarginLeft;
+    [LuaName] public float LayoutMarginLeft => NodeInternal.LayoutMarginLeft;
     
     /// <summary>
     /// Gets the right margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
     /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
     /// </summary>
-    public float LayoutMarginRight => NodeInternal.LayoutMarginRight;
+    [LuaName] public float LayoutMarginRight => NodeInternal.LayoutMarginRight;
     
     /// <summary>
     /// Gets the top padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its padding box.
     /// </summary>
-    public float LayoutPaddingTop => NodeInternal.LayoutPaddingTop;
+    [LuaName] public float LayoutPaddingTop => NodeInternal.LayoutPaddingTop;
     
     /// <summary>
     /// Gets the bottom padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its padding box.
     /// </summary>
-    public float LayoutPaddingBottom => NodeInternal.LayoutPaddingBottom;
+    [LuaName] public float LayoutPaddingBottom => NodeInternal.LayoutPaddingBottom;
     
     /// <summary>
     /// Gets the left padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its padding box.
     /// </summary>
-    public float LayoutPaddingLeft => NodeInternal.LayoutPaddingLeft;
+    [LuaName] public float LayoutPaddingLeft => NodeInternal.LayoutPaddingLeft;
     
     /// <summary>
     /// Gets the right padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its padding box.
     /// </summary>
-    public float LayoutPaddingRight => NodeInternal.LayoutPaddingRight;
+    [LuaName] public float LayoutPaddingRight => NodeInternal.LayoutPaddingRight;
     
     /// <summary>
     /// Gets the top border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its margin box.
     /// </summary>
-    public float LayoutBorderTop => NodeInternal.LayoutBorderTop;
+    [LuaName] public float LayoutBorderTop => NodeInternal.LayoutBorderTop;
     
     /// <summary>
     /// Gets the bottom border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its margin box.
     /// </summary>
-    public float LayoutBorderBottom => NodeInternal.LayoutBorderBottom;
+    [LuaName] public float LayoutBorderBottom => NodeInternal.LayoutBorderBottom;
     
     /// <summary>
     /// Gets the left border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its margin box.
     /// </summary>
-    public float LayoutBorderLeft => NodeInternal.LayoutBorderLeft;
+    [LuaName] public float LayoutBorderLeft => NodeInternal.LayoutBorderLeft;
     
     /// <summary>
     /// Gets the right border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its margin box.
     /// </summary>
-    public float LayoutBorderRight => NodeInternal.LayoutBorderRight;
+    [LuaName] public float LayoutBorderRight => NodeInternal.LayoutBorderRight;
 
     /// <summary>
     /// Gets or sets whether the node's Yoga layout changed. Must be reset by setting it to false.
     /// </summary>
-    public bool HasNewLayout
+    [LuaName] public bool HasNewLayout
     {
         get => NodeInternal.HasNewLayout;
         set => NodeInternal.HasNewLayout = value;
@@ -352,7 +393,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// <summary>
     /// Gets or sets whether the node's Yoga layout results are dirty due to it or its children changing.
     /// </summary>
-    public bool IsDirty
+    [LuaName] public bool IsDirty
     {
         get => NodeInternal.IsDirty;
         set => NodeInternal.IsDirty = value;
@@ -361,7 +402,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// <summary>
     /// Gets or sets whether this node is set as the reference baseline.
     /// </summary>
-    public bool IsReferenceBaseline
+    [LuaName] public bool IsReferenceBaseline
     {
         set => NodeInternal.IsReferenceBaseline = value;
         get => NodeInternal.IsReferenceBaseline;
@@ -397,10 +438,12 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     private float _scrollTop;
     private float _scrollableWidth;
     private float _scrollableHeight;
+    private static bool _textRenderReachedLogged;
 
     /// <summary>
     /// Horizontal scroll offset in points. Clamped to [0, <see cref="ScrollableWidth"/>].
     /// </summary>
+    [LuaName]
     public float ScrollLeft
     {
         get => _scrollLeft;
@@ -410,6 +453,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// <summary>
     /// Vertical scroll offset in points. Clamped to [0, <see cref="ScrollableHeight"/>].
     /// </summary>
+    [LuaName]
     public float ScrollTop
     {
         get => _scrollTop;
@@ -419,16 +463,19 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// <summary>
     /// Maximum horizontal scroll offset (content width minus viewport width).
     /// </summary>
+    [LuaName]
     public float ScrollableWidth => _scrollableWidth;
 
     /// <summary>
     /// Maximum vertical scroll offset (content height minus viewport height).
     /// </summary>
+    [LuaName]
     public float ScrollableHeight => _scrollableHeight;
 
     /// <summary>
     /// Whether this node clips its children to its padding box.
     /// </summary>
+    [LuaName]
     public bool IsClipping => Styles.Overflow is Overflow.Hidden or Overflow.Scroll;
 
     /// <summary>
@@ -463,6 +510,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// visible within it. Uses layout offsets (scroll-independent), so it is
     /// safe to call before the next render.
     /// </summary>
+    [LuaName]
     public void ScrollIntoView()
     {
         for (var ancestor = VisualParent as Component; ancestor != null; ancestor = ancestor.VisualParent as Component)
@@ -576,6 +624,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     #endregion
     
+    [LuaName]
     public bool IsDisplayed => Styles.Display != Display.None && Styles.Opacity > 0 && Styles.Visibility != Visibility.Hidden;
 
     private float _lastScale = 1f;
@@ -629,19 +678,20 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
     }
 
-    internal sealed override void NotifyUiScaleChanged()
+    internal void NotifyUiScaleChanged()
     {
         if (Rescale())
         {
             OnScaleChanged();
             foreach (var child in GetChildSnapshot())
             {
-                child.NotifyUiScaleChanged();
+                if (child is Component cmp)
+                    cmp.NotifyUiScaleChanged();
             }
         }
     }
 
-    protected virtual void RenderBackground(Vector2 position, Vector2 size)
+    protected virtual void RenderBackground(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
         {
@@ -656,7 +706,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     }
 
-    protected virtual void RenderBorder(Vector2 position, Vector2 size)
+    protected virtual void RenderBorder(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
@@ -735,11 +785,11 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         }
     }
 
-    protected virtual void RenderContent(Vector2 position, Vector2 size)
+    protected virtual void RenderContent(LuaVector2 position, LuaVector2 size)
     {
     }
 
-    protected virtual void RenderScrollbars(Vector2 position, Vector2 size)
+    protected virtual void RenderScrollbars(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.Overflow != Overflow.Scroll)
             return;
@@ -776,10 +826,17 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         }
     }
 
-    public sealed override void Render(RenderContext context)
+    public void Render(RenderContext context)
     {
         OnAnimationFrameBegan();
         Root = context.TopLeft;
+
+        if (this is Text && !_textRenderReachedLogged)
+        {
+            _textRenderReachedLogged = true;
+            Logging.Info($"[Render] TextRun reached. Display={Styles.Display} Vis={Styles.Visibility} Opacity={Styles.Opacity}");
+        }
+
         if (Styles.Display != Display.None && Styles.Visibility == Visibility.Visible && Styles.Opacity > 0f)
         {
             var ownOpacity = context.InheritedOpacity * Styles.Opacity;
@@ -810,10 +867,11 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
                 G.IntersectScissor(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
             }
 
-            var childOrigin = LayoutBorderPosition - new Vector2(ScrollLeft, ScrollTop);
+            var childOrigin = LayoutBorderPosition - new LuaVector2(ScrollLeft, ScrollTop);
             foreach (var child in GetChildSnapshot())
             {
-                child.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
+                if (child is Component cmp)
+                    cmp.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
             }
 
             if (IsClipping)
@@ -836,17 +894,21 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
     }
 
-    public void LayoutAndRender(Vector2 availableSize, Vector2? origin = null)
+    public void LayoutAndRender(LuaVector2 availableSize, LuaVector2? origin = null)
     {
         NotifyUiScaleChanged();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
-        Render(new RenderContext(origin ?? Vector2.Zero));
+        Render(new RenderContext(origin ?? default));
     }
 
-    public sealed override void Update()
+    public void Update()
     {
         GameTick();
-        base.Update();
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.Update();
+        }
     }
 
     protected virtual void OnMousePressed(MouseEvent @event)
@@ -881,7 +943,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
     }
 
-    public override void DispatchMouseMoved(BaseMouseMoveEvent @event)
+    public void DispatchMouseMoved(BaseMouseMoveEvent @event)
     {
         if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
             return;
@@ -899,10 +961,14 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             MouseMoved?.Invoke(relativeEvent);
             OnMouseMoved(relativeEvent);
         }
-        base.DispatchMouseMoved(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMouseMoved(@event);
+        }
     }
 
-    public override void DispatchMouseEntered(BaseMouseMoveEvent @event)
+    public void DispatchMouseEntered(BaseMouseMoveEvent @event)
     {
         Logging.Info(
             $"[Node] DispatchMouseEntered {GetType().Name} Name='{Name}' " +
@@ -921,10 +987,14 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         );
         MouseEntered?.Invoke(relativeEvent);
         OnMouseEntered(relativeEvent);
-        base.DispatchMouseEntered(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMouseEntered(@event);
+        }
     }
 
-    public override void DispatchMouseLeft(BaseMouseMoveEvent @event)
+    public void DispatchMouseLeft(BaseMouseMoveEvent @event)
     {
         IsHovered = false;
         var relativeEvent = new MouseMoveEvent(
@@ -937,10 +1007,14 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         );
         MouseLeft?.Invoke(relativeEvent);
         OnMouseLeft(relativeEvent);
-        base.DispatchMouseLeft(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMouseLeft(@event);
+        }
     }
 
-    public sealed override void DispatchMousePressed(BaseMouseEvent @event)
+    public void DispatchMousePressed(BaseMouseEvent @event)
     {
         if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
             return;
@@ -978,10 +1052,14 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             }
             OnMousePressed(relativeEvent);
         }
-        base.DispatchMousePressed(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMousePressed(@event);
+        }
     }
 
-    public sealed override void DispatchMouseReleased(BaseMouseEvent @event)
+    public void DispatchMouseReleased(BaseMouseEvent @event)
     {
         if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
             return;
@@ -1005,10 +1083,14 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             MouseReleased?.Invoke(relativeEvent);
             OnMouseReleased(relativeEvent);
         }
-        base.DispatchMouseReleased(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMouseReleased(@event);
+        }
     }
 
-    public sealed override void DispatchMouseDragged(BaseMouseDragEvent @event)
+    public void DispatchMouseDragged(BaseMouseDragEvent @event)
     {
         if (ClipRect is { } clip && !clip.Contains(@event.DragStart.X, @event.DragStart.Y))
             return;
@@ -1029,17 +1111,24 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             MouseDragged?.Invoke(relativeEvent);
             OnMouseDragged(relativeEvent);
         }
-        base.DispatchMouseDragged(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchMouseDragged(@event);
+        }
     }
 
-    public sealed override bool DispatchMouseScrolled(BaseMouseWheelEvent @event)
+    public bool DispatchMouseScrolled(BaseMouseWheelEvent @event)
     {
         if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
             return false;
 
         // Deepest scrollable first: a descendant that scrolls consumes the event.
-        if (base.DispatchMouseScrolled(@event))
-            return true;
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp && cmp.DispatchMouseScrolled(@event))
+                return true;
+        }
 
         if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
         {
@@ -1070,34 +1159,46 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
     }
 
-    public sealed override void DispatchKeyPressed(KeyboardEvent @event)
+    public void DispatchKeyPressed(KeyboardEvent @event)
     {
         if (IsFocusable && IsFocused)
         {
             KeyPressed?.Invoke(@event);
             OnKeyPressed(@event);
         }
-        base.DispatchKeyPressed(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchKeyPressed(@event);
+        }
     }
 
-    public sealed override void DispatchKeyReleased(KeyboardEvent @event)
+    public void DispatchKeyReleased(KeyboardEvent @event)
     {
         if (IsFocusable && IsFocused)
         {
             KeyReleased?.Invoke(@event);
             OnKeyReleased(@event);
         }
-        base.DispatchKeyReleased(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchKeyReleased(@event);
+        }
     }
 
-    public sealed override void DispatchKeyTyped(KeyboardTypingEvent @event)
+    public void DispatchKeyTyped(KeyboardTypingEvent @event)
     {
         if (IsFocusable && IsFocused)
         {
             KeyTyped?.Invoke(@event);
             OnKeyTyped(@event);
         }
-        base.DispatchKeyTyped(@event);
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+                cmp.DispatchKeyTyped(@event);
+        }
     }
 }
 

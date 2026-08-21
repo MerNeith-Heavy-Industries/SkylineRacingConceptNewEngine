@@ -1,5 +1,8 @@
+using nfm_world_library.Lua;
+
 namespace NFMWorld.Reactor;
 
+[LuaVisible]
 public enum Direction
 {
     Inherit,
@@ -71,6 +74,7 @@ public enum BoxSizing
     BorderBox,
     ContentBox,
 }
+
 public enum NodeType
 {
     Default,

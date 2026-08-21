@@ -7,7 +7,8 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
     protected override void InsertItem(int index, Node item)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        parent.NodeInternal.InsertChild(item.Contents, (uint)index);
+        if (item is Component cmp)
+            parent.NodeInternal.InsertChild(cmp.Contents, (uint)index);
         item.VisualParent = parent;
         base.InsertItem(index, item);
     }
@@ -17,7 +18,10 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
         var oldItem = Items[index];
         oldItem.VisualParent = null;
-        parent.NodeInternal.SwapChild(item.Contents, (uint)index);
+        if (item is Component cmp)
+            parent.NodeInternal.SwapChild(cmp.Contents, (uint)index);
+        else if (oldItem is Component cmp1)
+            parent.NodeInternal.RemoveChild(cmp1.Contents);
         item.VisualParent = parent;
         base.SetItem(index, item);
     }
@@ -36,7 +40,8 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
     {
         var item = Items[index];
         item.VisualParent = null;
-        parent.NodeInternal.RemoveChild(item.Contents);
+        if (item is Component cmp)
+            parent.NodeInternal.RemoveChild(cmp.Contents);
         base.RemoveItem(index);
     }
 }

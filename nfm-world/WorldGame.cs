@@ -429,9 +429,6 @@ public class WorldGame : Game
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
 
-        var img = G.LoadImage("data/images/damage.svg");
-        G.DrawImage(img, 15, 15);
-
         FPSCounter.Render();
         _nvg.Render();
 
