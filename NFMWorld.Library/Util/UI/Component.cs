@@ -458,14 +458,81 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Scrolls every scrollable ancestor so that this element's bounds become
+    /// visible within it. Uses layout offsets (scroll-independent), so it is
+    /// safe to call before the next render.
+    /// </summary>
+    public void ScrollIntoView()
+    {
+        for (var ancestor = VisualParent as Component; ancestor != null; ancestor = ancestor.VisualParent as Component)
+        {
+            if (ancestor.Styles.Overflow == Overflow.Scroll)
+            {
+                ScrollIntoAncestorView(ancestor);
+            }
+        }
+    }
+
+    private void ScrollIntoAncestorView(Component ancestor)
+    {
+        // Offset of this node's margin box relative to the ancestor's content
+        // box, summed from layout values (unaffected by scroll offsets).
+        float offsetX = 0f;
+        float offsetY = 0f;
+        for (var n = (Node)this; n != null && n != ancestor; n = n.VisualParent)
+        {
+            if (n is Component c)
+            {
+                offsetX += c.LayoutX;
+                offsetY += c.LayoutY;
+            }
+        }
+
+        // Yoga positions are relative to the ancestor's border box; convert to
+        // content-box coordinates to match ScrollLeft/ScrollTop.
+        offsetX -= ancestor.LayoutBorderLeft + ancestor.LayoutPaddingLeft;
+        offsetY -= ancestor.LayoutBorderTop + ancestor.LayoutPaddingTop;
+
+        var viewWidth = ancestor.LayoutContentSize.X;
+        var viewHeight = ancestor.LayoutContentSize.Y;
+        var elemWidth = LayoutMarginSize.X;
+        var elemHeight = LayoutMarginSize.Y;
+
+        if (offsetY < ancestor.ScrollTop)
+        {
+            ancestor.ScrollTop = offsetY;
+        }
+        else if (offsetY + elemHeight > ancestor.ScrollTop + viewHeight)
+        {
+            ancestor.ScrollTop = offsetY + elemHeight - viewHeight;
+        }
+
+        if (offsetX < ancestor.ScrollLeft)
+        {
+            ancestor.ScrollLeft = offsetX;
+        }
+        else if (offsetX + elemWidth > ancestor.ScrollLeft + viewWidth)
+        {
+            ancestor.ScrollLeft = offsetX + elemWidth - viewWidth;
+        }
+    }
+
     private void UpdateScrollExtent()
     {
+        // Floating-point rounding shouldn't create a scrollbar.
+        const float overflowEpsilon = 0.5f;
+
         _scrollableWidth = 0f;
         _scrollableHeight = 0f;
 
         if (Styles.Overflow != Overflow.Scroll)
             return;
 
+        // Yoga positions children relative to the parent's border box, so
+        // convert child offsets into content-box coordinates before measuring.
+        var originX = LayoutBorderLeft + LayoutPaddingLeft;
+        var originY = LayoutBorderTop + LayoutPaddingTop;
         var contentSize = LayoutContentSize;
         float maxRight = 0f;
         float maxBottom = 0f;
@@ -475,12 +542,17 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             if (child is not Component c)
                 continue;
 
-            maxRight = Math.Max(maxRight, c.LayoutX + c.LayoutWidth + c.LayoutMarginRight);
-            maxBottom = Math.Max(maxBottom, c.LayoutY + c.LayoutHeight + c.LayoutMarginBottom);
+            maxRight = Math.Max(maxRight, c.LayoutX - originX + c.LayoutWidth + c.LayoutMarginRight);
+            maxBottom = Math.Max(maxBottom, c.LayoutY - originY + c.LayoutHeight + c.LayoutMarginBottom);
         }
 
         _scrollableWidth = Math.Max(0f, maxRight - contentSize.X);
         _scrollableHeight = Math.Max(0f, maxBottom - contentSize.Y);
+
+        if (_scrollableWidth < overflowEpsilon)
+            _scrollableWidth = 0f;
+        if (_scrollableHeight < overflowEpsilon)
+            _scrollableHeight = 0f;
 
         // Re-clamp against the freshly computed extents (content may have shrank).
         _scrollLeft = Math.Clamp(_scrollLeft, 0f, _scrollableWidth);
@@ -738,7 +810,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
                 G.IntersectScissor(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
             }
 
-            var childOrigin = LayoutContentPosition - new Vector2(ScrollLeft, ScrollTop);
+            var childOrigin = LayoutBorderPosition - new Vector2(ScrollLeft, ScrollTop);
             foreach (var child in GetChildSnapshot())
             {
                 child.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
