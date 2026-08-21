@@ -113,6 +113,14 @@ public sealed class DummyBackend : IBackend
         public void Fill()
         {
         }
+
+        public void Arc(float cx, float cy, float arcRadius, float startAngleDeg, float endAngleDeg, bool clockWise)
+        {
+        }
+
+        public void LineCapButt()
+        {
+        }
     }
 
     public void SetAllVolumes(float vol)

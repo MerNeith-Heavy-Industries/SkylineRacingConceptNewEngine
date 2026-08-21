@@ -66,7 +66,7 @@ public interface IGraphics
         Fill();
     }
 
-    private void RoundedRectVarying(int x, int y, int width, int height, float radTopLeft, float radTopRight,
+    void RoundedRectVarying(int x, int y, int width, int height, float radTopLeft, float radTopRight,
         float radBottomRight, float radBottomLeft)
     {
         if (radTopLeft < 0.1f && radTopRight < 0.1f && radBottomRight < 0.1f && radBottomLeft < 0.1f)
@@ -192,4 +192,8 @@ public interface IGraphics
     public void Stroke();
 
     public void Fill();
+    
+    void Arc(float cx, float cy, float arcRadius, float startAngleDeg, float endAngleDeg, bool clockWise);
+
+    void LineCapButt();
 }

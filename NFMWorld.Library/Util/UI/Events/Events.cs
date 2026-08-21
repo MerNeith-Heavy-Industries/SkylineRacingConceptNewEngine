@@ -2,7 +2,7 @@
 using NFMWorld.DriverInterface;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Rad;
-using LuaVector2 = NFMWorldLibrary.Util.LuaVector2;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld.ClayDom.Events;
 
