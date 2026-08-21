@@ -1,0 +1,1880 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using NFMWorld.ClayDom.Events;
+using NFMWorldLibrary;
+using Yoga;
+
+namespace NFMWorld.Reactor;
+
+// ReSharper disable InconsistentNaming
+/// <summary>
+/// Represents a single node in the Yoga layout system.
+/// </summary>
+[DebuggerDisplay("{DebugToString()}")]
+public abstract partial class Component : Node, IAnimationCallback, IDisposable
+{
+    internal static readonly YGConfigPtr Config;
+    internal YGNodePtr NodeInternal = new(Config);
+
+    internal readonly string __INTERNAL_CtorCallerFilePath = "";
+    internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
+    internal readonly string __INTERNAL_CtorCallerMemberName = "";
+
+    public virtual bool DebugIsContentfulNode => Styles.BackgroundColor != null || Styles.BorderColor != null;
+
+    static Component()
+    {
+        Config = YGConfigPtr.GetDefault();
+        Config.UseWebDefaults = true;
+    }
+
+    // ── Visual abstracts ────────────────────────────────────────────────
+    public override IReadOnlyList<Node> VisualChildren => [];
+    internal override YGNodePtr Contents => NodeInternal;
+
+    // ── Children API (no-op for leaf nodes) ──────────────────────────────
+    public override bool CanHaveChildren => false;
+    public override void AddChild(Node child) { }
+    public override void InsertAt(int index, Node child) { }
+    public override void RemoveAt(int index) { }
+
+    // ── IDisposable ─────────────────────────────────────────────────────
+    ~Component() { Dispose(false); }
+    public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
+    protected virtual void Dispose(bool disposing)
+    {
+        NodeInternal.Dispose();
+    }
+
+    public Styles Styles
+    {
+        get;
+        set
+        {
+            field = value;
+            OnStylesChanged();
+        }
+    }
+
+    protected virtual void OnStylesChanged()
+    {
+    }
+
+    public Action? AnimationFrameBegan { get; set; }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public virtual string DebugToString()
+    {
+        return $"Node(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
+    }
+
+    #region Animations
+
+    /// <summary>
+    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Visible"/>
+    /// </summary>
+    public Action? Shown { get; set; }
+    
+    /// <summary>
+    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Hidden"/>
+    /// </summary>
+    public Action? Hidden { get; set; }
+
+    #endregion
+
+    #region Focus
+    
+    public bool IsFocusable { get; set; }
+
+    public Vector2 FocusOrigin => LayoutPaddingPosition;
+    public Vector2 FocusSize => LayoutPaddingSize;
+
+    public bool IsHovered
+    {
+        get;
+        set;
+    }
+
+    public bool IsActive
+    {
+        get => IsFocusable && ReferenceEquals(FocusManager.ActiveNode, this);
+        set
+        {
+            if (IsFocusable && value)
+            {
+                FocusManager.ActiveNode = this;
+            }
+            else if (IsFocusable && ReferenceEquals(FocusManager.ActiveNode, this))
+            {
+                FocusManager.ActiveNode = null;
+            }
+        }
+    }
+
+    public bool IsFocused
+    {
+        get => IsFocusable && ReferenceEquals(FocusManager.FocusedNode, this);
+        set
+        {
+            if (IsFocusable && value)
+            {
+                FocusManager.FocusedNode = this;
+            }
+            else if (IsFocusable && ReferenceEquals(FocusManager.FocusedNode, this))
+            {
+                FocusManager.FocusedNode = null;
+            }
+        }
+    }
+
+    public int TabOrder { get; set; }
+
+    #endregion
+
+    #region Layout
+
+    // https://www.w3schools.com/css/css_boxmodel.asp
+    private protected Vector2 Root;
+    
+    /// <summary>
+    /// In the CSS box model, gets the top-left position of the margin box.
+    /// </summary>
+    public Vector2 LayoutMarginPosition => Root + new Vector2(LayoutX, LayoutY);
+    
+    /// <summary>
+    /// In the CSS box model, gets the size of the margin box, from the top-left to the bottom-right.
+    /// </summary>
+    public Vector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
+    
+    /// <summary>
+    /// In the CSS box model, gets the top-left position of the border box.
+    /// </summary>
+    public Vector2 LayoutBorderPosition => Root + new Vector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
+    
+    /// <summary>
+    /// In the CSS box model, gets the size of the border box, from the top-left to the bottom-right.
+    /// </summary>
+    public Vector2 LayoutBorderSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom));
+    
+    /// <summary>
+    /// In the CSS box model, gets the top-left position of the padding box.
+    /// </summary>
+    public Vector2 LayoutPaddingPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
+    
+    /// <summary>
+    /// In the CSS box model, gets the size of the padding box, from the top-left to the bottom-right.
+    /// </summary>
+    public Vector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
+    
+    /// <summary>
+    /// In the CSS box model, gets the top-left position of the content box.
+    /// </summary>
+    public Vector2 LayoutContentPosition => Root + new Vector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
+    
+    /// <summary>
+    /// In the CSS box model, gets the size of the content box, from the top-left to the bottom-right.
+    /// </summary>
+    public Vector2 LayoutContentSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight + LayoutPaddingLeft + LayoutPaddingRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom + LayoutPaddingTop + LayoutPaddingBottom));
+
+    /// <summary>
+    /// Gets the margin width and height of the node as a <see cref="Vector2"/>.
+    /// </summary>
+    public Vector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
+    
+    /// <summary>
+    /// Gets the padding width and height of the node as a <see cref="Vector2"/>.
+    /// </summary>
+    public Vector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
+    
+    /// <summary>
+    /// Gets the border width and height of the node as a <see cref="Vector2"/>.
+    /// </summary>
+    public Vector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
+
+    /// <summary>
+    /// Gets the width of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and does not include margins, borders, or padding.
+    /// </summary>
+    public float LayoutWidth => NodeInternal.LayoutWidth;
+    
+    /// <summary>
+    /// Gets the height of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and does not include margins, borders, or padding.
+    /// </summary>
+    public float LayoutHeight => NodeInternal.LayoutHeight;
+    
+    /// <summary>
+    /// Gets the X position of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the left edge of the parent node's content box to the left edge of this node's margin box.
+    /// </summary>
+    public float LayoutX => NodeInternal.LayoutX;
+    
+    /// <summary>
+    /// Gets the Y position of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the top edge of the parent node's content box to the top edge of this node's margin box.
+    /// </summary>
+    public float LayoutY => NodeInternal.LayoutY;
+    
+    /// <summary>
+    /// Gets the layout direction of the node as determined by the Yoga layout engine after a layout pass.
+    /// </summary>
+    public Direction LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
+    
+    /// <summary>
+    /// Gets a value indicating whether the node's content overflowed its layout bounds during the last layout pass.
+    /// </summary>
+    public bool HadOverflow => NodeInternal.HadOverflow;
+    
+    /// <summary>
+    /// Gets the top margin of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the top edge of this node's margin box to the top edge of its border box.
+    /// </summary>
+    public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
+    
+    /// <summary>
+    /// Gets the bottom margin of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the bottom edge of this node's margin box to the bottom edge of its border box.
+    /// </summary>
+    public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
+    
+    /// <summary>
+    /// Gets the left margin of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the left edge of this node's margin box to the left edge of its border box.
+    /// </summary>
+    public float LayoutMarginLeft => NodeInternal.LayoutMarginLeft;
+    
+    /// <summary>
+    /// Gets the right margin of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
+    /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
+    /// </summary>
+    public float LayoutMarginRight => NodeInternal.LayoutMarginRight;
+    
+    /// <summary>
+    /// Gets the top padding of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its padding box.
+    /// </summary>
+    public float LayoutPaddingTop => NodeInternal.LayoutPaddingTop;
+    
+    /// <summary>
+    /// Gets the bottom padding of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its padding box.
+    /// </summary>
+    public float LayoutPaddingBottom => NodeInternal.LayoutPaddingBottom;
+    
+    /// <summary>
+    /// Gets the left padding of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its padding box.
+    /// </summary>
+    public float LayoutPaddingLeft => NodeInternal.LayoutPaddingLeft;
+    
+    /// <summary>
+    /// Gets the right padding of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its padding box.
+    /// </summary>
+    public float LayoutPaddingRight => NodeInternal.LayoutPaddingRight;
+    
+    /// <summary>
+    /// Gets the top border of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its margin box.
+    /// </summary>
+    public float LayoutBorderTop => NodeInternal.LayoutBorderTop;
+    
+    /// <summary>
+    /// Gets the bottom border of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its margin box.
+    /// </summary>
+    public float LayoutBorderBottom => NodeInternal.LayoutBorderBottom;
+    
+    /// <summary>
+    /// Gets the left border of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its margin box.
+    /// </summary>
+    public float LayoutBorderLeft => NodeInternal.LayoutBorderLeft;
+    
+    /// <summary>
+    /// Gets the right border of the node's layout as determined by the Yoga layout engine after a layout pass.
+    /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its margin box.
+    /// </summary>
+    public float LayoutBorderRight => NodeInternal.LayoutBorderRight;
+
+    /// <summary>
+    /// Gets or sets whether the node's Yoga layout changed. Must be reset by setting it to false.
+    /// </summary>
+    public bool HasNewLayout
+    {
+        get => NodeInternal.HasNewLayout;
+        set => NodeInternal.HasNewLayout = value;
+    }
+
+    /// <summary>
+    /// Gets or sets whether the node's Yoga layout results are dirty due to it or its children changing.
+    /// </summary>
+    public bool IsDirty
+    {
+        get => NodeInternal.IsDirty;
+        set => NodeInternal.IsDirty = value;
+    }
+
+    /// <summary>
+    /// Gets or sets whether this node is set as the reference baseline.
+    /// </summary>
+    public bool IsReferenceBaseline
+    {
+        set => NodeInternal.IsReferenceBaseline = value;
+        get => NodeInternal.IsReferenceBaseline;
+    }
+
+    /// <summary>
+    /// Gets or sets whether a leaf node's layout results may be truncated during layout rounding.
+    /// </summary>
+    public NodeType NodeType
+    {
+        get => NodeInternal.NodeType.ToNfmNodeType();
+        set => NodeInternal.NodeType = value.ToYogaNodeType();
+    }
+
+    /// <summary>
+    /// Make it so that this node will always form a containing block for any
+    /// descendant nodes. This is useful for when a node has a property outside of
+    /// of Yoga that will form a containing block. For example, transforms or some of
+    /// the others listed in
+    /// https://developer.mozilla.org/en-US/docs/Web/CSS/Containing_block
+    /// </summary>
+    public bool AlwaysFormsContainingBlock
+    {
+        get => NodeInternal.AlwaysFormsContainingBlock;
+        set => NodeInternal.AlwaysFormsContainingBlock = value;
+    }
+
+    #endregion
+
+    #region Focus
+    
+    public Action<MouseEvent>? MousePressed { get; set; }
+    public Action<MouseEvent>? MouseReleased { get; set; }
+    public Action<MouseDragEvent>? MouseDragged { get; set; }
+    public Action<MouseWheelEvent>? MouseScrolled { get; set; }
+    public Action<MouseMoveEvent>? MouseMoved { get; set; }
+    public Action<MouseMoveEvent>? MouseEntered { get; set; }
+    public Action<MouseMoveEvent>? MouseLeft { get; set; }
+    public Action<KeyboardTypingEvent>? KeyTyped { get; set; }
+    public Action<KeyboardEvent>? KeyPressed { get; set; }
+    public Action<KeyboardEvent>? KeyReleased { get; set; }
+
+    #endregion
+    
+    public bool IsDisplayed => Styles.Display != Display.None && Styles.Opacity > 0 && Styles.Visibility != Visibility.Hidden;
+
+    private float _lastScale = 1f;
+
+    /// <summary>
+    /// Do not use directly.
+    /// </summary>
+    /// <returns>true if scale changed</returns>
+    internal bool Rescale()
+    {
+        if (Math.Abs(_lastScale - G.Scale) > 0.001f)
+        {
+            // Re-trigger all size-related onChanged handlers so they re-scale with new G.Scale
+#pragma warning disable CA2245
+            NodeInternal.Width = Styles.Width.Scale(G.Scale);
+            NodeInternal.Height = Styles.Height.Scale(G.Scale);
+            NodeInternal.MinWidth = Styles.MinWidth.Scale(G.Scale);
+            NodeInternal.MinHeight = Styles.MinHeight.Scale(G.Scale);
+            NodeInternal.MaxWidth = Styles.MaxWidth.Scale(G.Scale);
+            NodeInternal.MaxHeight = Styles.MaxHeight.Scale(G.Scale);
+            NodeInternal.MarginTop = Styles.MarginTop.Scale(G.Scale);
+            NodeInternal.MarginBottom = Styles.MarginBottom.Scale(G.Scale);
+            NodeInternal.MarginLeft = Styles.MarginLeft.Scale(G.Scale);
+            NodeInternal.MarginRight = Styles.MarginRight.Scale(G.Scale);
+            NodeInternal.PaddingTop = Styles.PaddingTop.Scale(G.Scale);
+            NodeInternal.PaddingBottom = Styles.PaddingBottom.Scale(G.Scale);
+            NodeInternal.PaddingLeft = Styles.PaddingLeft.Scale(G.Scale);
+            NodeInternal.PaddingRight = Styles.PaddingRight.Scale(G.Scale);
+            NodeInternal.BorderTop = Styles.BorderTop?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderBottom = Styles.BorderBottom?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderLeft = Styles.BorderLeft?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.BorderRight = Styles.BorderRight?.Value * G.Scale ?? YG.YGUndefined;
+            NodeInternal.GapColumn = Styles.GapColumn;
+            NodeInternal.GapRow = Styles.GapRow;
+            NodeInternal.FlexBasis = Styles.FlexBasis.Scale(G.Scale);
+            NodeInternal.Left = Styles.Left.Scale(G.Scale);
+            NodeInternal.Top = Styles.Top.Scale(G.Scale);
+            NodeInternal.Right = Styles.Right.Scale(G.Scale);
+            NodeInternal.Bottom = Styles.Bottom.Scale(G.Scale);
+#pragma warning restore CA2245
+
+            _lastScale = G.Scale;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected virtual void OnScaleChanged()
+    {
+    }
+
+    internal sealed override void NotifyUiScaleChanged()
+    {
+        if (Rescale())
+        {
+            OnScaleChanged();
+            foreach (var child in GetChildSnapshot())
+            {
+                child.NotifyUiScaleChanged();
+            }
+        }
+    }
+
+    protected virtual void RenderBackground(Vector2 position, Vector2 size)
+    {
+        if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
+        {
+            G.SetColor(backgroundColor);
+            G.BeginPath();
+            G.RoundedRectVarying(
+                (int)position.X, (int)position.Y, (int)size.X, (int)size.Y,
+                Styles.BorderTopLeftRadius, Styles.BorderTopRightRadius,
+                Styles.BorderBottomRightRadius, Styles.BorderBottomLeftRadius);
+            G.Fill();
+        }
+
+    }
+
+    protected virtual void RenderBorder(Vector2 position, Vector2 size)
+    {
+        if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
+        {
+            G.SetColor(borderColor);
+            
+            float minRadius = Math.Min(size.X, size.Y) / 2f;
+            int tl = (int)Math.Min(Styles.BorderTopLeftRadius, minRadius);
+            int tr = (int)Math.Min(Styles.BorderTopRightRadius, minRadius);
+            int bl = (int)Math.Min(Styles.BorderBottomLeftRadius, minRadius);
+            int br = (int)Math.Min(Styles.BorderBottomRightRadius, minRadius);
+
+            int x0 = (int)position.X, y0 = (int)position.Y, x1 = (int)position.X + (int)size.X, y1 = (int)position.Y + (int)size.Y;
+
+            // Edges (filled rects), inset by the clamped corner radii.
+            if (Styles.BorderLeft > 0)
+            {
+                G.BeginPath();
+                G.Rect(x0, y0 + tl, (int)Styles.BorderLeft!.Value, (int)(size.Y - tl - bl));
+                G.Fill();
+            }
+
+            if (Styles.BorderRight > 0)
+            {
+                G.BeginPath();
+                G.Rect(x1 - (int)Styles.BorderRight!.Value, y0 + tr, (int)Styles.BorderRight!.Value, (int)(size.Y - tr - br));
+                G.Fill();
+            }
+
+            if (Styles.BorderTop > 0)
+            {
+                G.BeginPath();
+                G.Rect(x0 + tl, y0, (int)(size.X - tl - tr), (int)Styles.BorderTop!.Value);
+                G.Fill();
+            }
+
+            if (Styles.BorderBottom > 0)
+            {
+                G.BeginPath();
+                G.Rect(x0 + bl, y1 - (int)Styles.BorderBottom!.Value, (int)(size.X - bl - br), (int)Styles.BorderBottom!.Value);
+                G.Fill();
+            }
+
+            // Corners (quarter-ring arcs).
+            if (Styles.BorderTopLeftRadius > 0)
+            {
+                RenderArc(x0 + tl, y0 + tl, tl, 180f, 270f, (int)(Styles.BorderTop?.Value ?? 0), borderColor);
+            }
+
+            if (Styles.BorderTopRightRadius > 0)
+            {
+                RenderArc(x1 - tr, y0 + tr, tr, 270f, 360f, (int)(Styles.BorderTop?.Value ?? 0), borderColor);
+            }
+
+            if (Styles.BorderBottomLeftRadius > 0)
+            {
+                RenderArc(x0 + bl, y1 - bl, bl, 90f, 180f, (int)(Styles.BorderBottom?.Value ?? 0), borderColor);
+            }
+
+            if (Styles.BorderBottomRightRadius > 0)
+            {
+                RenderArc(x1 - br, y1 - br, br, 0f, 90f, (int)(Styles.BorderBottom?.Value ?? 0), borderColor);
+            }
+            static void RenderArc(float cx, float cy, float radius, float startAngleDeg, float endAngleDeg, float thickness, Color color)
+            {
+                const float DegToRad = MathF.PI / 180f;
+
+                float arcRadius = Math.Max(radius - thickness * 0.5f, 0.5f);
+                G.BeginPath();
+                G.Arc(cx, cy, arcRadius, startAngleDeg * DegToRad, endAngleDeg * DegToRad, true);
+                G.SetColor(color);
+                G.SetStrokeWidth(thickness);
+                G.LineCapButt();
+                G.Stroke();
+            }
+
+        }
+    }
+
+    protected virtual void RenderContent(Vector2 position, Vector2 size)
+    {
+    }
+
+    public sealed override void Render(RenderContext context)
+    {
+        OnAnimationFrameBegan();
+        Root = context.TopLeft;
+        if (Styles.Display != Display.None && Styles.Visibility == Visibility.Visible && Styles.Opacity > 0f)
+        {
+            var ownOpacity = context.InheritedOpacity * Styles.Opacity;
+            G.Alpha = ownOpacity;
+            RenderBackground(LayoutPaddingPosition, LayoutPaddingSize);
+            RenderBorder(LayoutBorderPosition, LayoutBorderSize);
+            RenderContent(LayoutContentPosition, LayoutContentSize);
+            foreach (var child in GetChildSnapshot())
+            {
+                child.Render(new RenderContext(Root + new Vector2(LayoutX, LayoutY), ownOpacity)); // todo should this be LayoutContentPosition
+            }
+            G.Alpha = 1f;
+        }
+    }
+
+    private protected void OnAnimationFrameBegan()
+    {
+        AnimationFrameBegan?.Invoke();
+    }
+
+    protected virtual void GameTick()
+    {
+    }
+
+    public void LayoutAndRender(Vector2 availableSize, Vector2? origin = null)
+    {
+        NotifyUiScaleChanged();
+        NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
+        Render(new RenderContext(origin ?? Vector2.Zero));
+    }
+
+    public sealed override void Update()
+    {
+        GameTick();
+        base.Update();
+    }
+
+    protected virtual void OnMousePressed(MouseEvent @event)
+    {
+    }
+    
+    protected virtual void OnMouseReleased(MouseEvent @event)
+    {
+    }
+    
+    protected virtual void OnMouseDragged(MouseDragEvent @event)
+    {
+    }
+
+    protected virtual void OnMouseScrolled(MouseWheelEvent @event)
+    {
+    }
+
+    protected virtual void OnMouseMoved(MouseMoveEvent @event)
+    {
+    }
+
+    protected virtual void OnMouseEntered(MouseMoveEvent @event)
+    {
+    }
+
+    protected virtual void OnMouseLeft(MouseMoveEvent @event)
+    {
+    }
+
+    protected virtual void OnKeyTyped(KeyboardTypingEvent @event)
+    {
+    }
+
+    public override void DispatchMouseMoved(BaseMouseMoveEvent @event)
+    {
+        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        {
+            var relativeEvent = new MouseMoveEvent(
+                Position: @event.Position,
+                Buttons: @event.Buttons,
+                CtrlKey: @event.CtrlKey,
+                MetaKey: @event.AltKey,
+                ShiftKey: @event.ShiftKey,
+                RelativePosition: @event.Position - LayoutPaddingPosition
+            );
+            MouseMoved?.Invoke(relativeEvent);
+            OnMouseMoved(relativeEvent);
+        }
+        base.DispatchMouseMoved(@event);
+    }
+
+    public override void DispatchMouseEntered(BaseMouseMoveEvent @event)
+    {
+        Logging.Info(
+            $"[Node] DispatchMouseEntered {GetType().Name} Name='{Name}' " +
+            $"Pos=({LayoutPaddingPosition.X:F0},{LayoutPaddingPosition.Y:F0}) " +
+            $"Size=({LayoutPaddingSize.X:F0}x{LayoutPaddingSize.Y:F0}) " +
+            $"Mouse=({@event.Position.X:F0},{@event.Position.Y:F0}) " +
+            $"OldIsHovered={IsHovered}");
+        IsHovered = true;
+        var relativeEvent = new MouseMoveEvent(
+            Position: @event.Position,
+            Buttons: @event.Buttons,
+            CtrlKey: @event.CtrlKey,
+            MetaKey: @event.AltKey,
+            ShiftKey: @event.ShiftKey,
+            RelativePosition: @event.Position - LayoutPaddingPosition
+        );
+        MouseEntered?.Invoke(relativeEvent);
+        OnMouseEntered(relativeEvent);
+        base.DispatchMouseEntered(@event);
+    }
+
+    public override void DispatchMouseLeft(BaseMouseMoveEvent @event)
+    {
+        IsHovered = false;
+        var relativeEvent = new MouseMoveEvent(
+            Position: @event.Position,
+            Buttons: @event.Buttons,
+            CtrlKey: @event.CtrlKey,
+            MetaKey: @event.AltKey,
+            ShiftKey: @event.ShiftKey,
+            RelativePosition: @event.Position - LayoutPaddingPosition
+        );
+        MouseLeft?.Invoke(relativeEvent);
+        OnMouseLeft(relativeEvent);
+        base.DispatchMouseLeft(@event);
+    }
+
+    public sealed override void DispatchMousePressed(BaseMouseEvent @event)
+    {
+        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        {
+            var relativeEvent = new MouseEvent(
+                Position: @event.Position,
+                Button: @event.Button,
+                Buttons: @event.Buttons,
+                CtrlKey: @event.CtrlKey,
+                MetaKey: @event.AltKey,
+                ShiftKey: @event.ShiftKey,
+                RelativePosition: @event.Position - LayoutPaddingPosition
+            );
+            if (IsFocusable)
+            {
+                IsActive = true;
+            }
+
+            if (MousePressed != null)
+            {
+                Logging.Info(
+                    $"[Node] DispatchMousePressed EXECUTING {GetType().Name} Name='{Name}' " +
+                    $"Command={MousePressed.GetType().Name}");
+                MousePressed?.Invoke(relativeEvent);
+            }
+            else
+            {
+                Logging.Info(
+                    $"[Node] DispatchMousePressed SKIP {GetType().Name} Name='{Name}' " +
+                    $"MousePressed={(MousePressed is null ? "NULL" : MousePressed.GetType().Name)} " +
+                    $"Pos=({LayoutPaddingPosition.X:F0},{LayoutPaddingPosition.Y:F0}) " +
+                    $"Mouse=({@event.Position.X:F0},{@event.Position.Y:F0})");
+            }
+            OnMousePressed(relativeEvent);
+        }
+        base.DispatchMousePressed(@event);
+    }
+
+    public sealed override void DispatchMouseReleased(BaseMouseEvent @event)
+    {
+        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        {
+            var relativeEvent = new MouseEvent(
+                Position: @event.Position,
+                Button: @event.Button,
+                Buttons: @event.Buttons,
+                CtrlKey: @event.CtrlKey,
+                MetaKey: @event.AltKey,
+                ShiftKey: @event.ShiftKey,
+                RelativePosition: @event.Position - LayoutPaddingPosition
+            );
+            if (IsFocusable)
+            {
+                IsActive = false;
+            }
+
+            MouseReleased?.Invoke(relativeEvent);
+            OnMouseReleased(relativeEvent);
+        }
+        base.DispatchMouseReleased(@event);
+    }
+
+    public sealed override void DispatchMouseDragged(BaseMouseDragEvent @event)
+    {
+        if (@event.DragStart.X > LayoutPaddingPosition.X && @event.DragStart.Y > LayoutPaddingPosition.Y && @event.DragStart.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.DragStart.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        {
+            var relativeEvent = new MouseDragEvent(
+                DragStart: @event.DragStart,
+                RelativeDragStart: @event.DragStart - LayoutPaddingPosition,
+                Position: @event.Position,
+                Button: @event.Button,
+                Buttons: @event.Buttons,
+                CtrlKey: @event.CtrlKey,
+                MetaKey: @event.MetaKey,
+                ShiftKey: @event.ShiftKey,
+                RelativePosition: @event.Position - LayoutPaddingPosition
+            );
+            MouseDragged?.Invoke(relativeEvent);
+            OnMouseDragged(relativeEvent);
+        }
+        base.DispatchMouseDragged(@event);
+    }
+
+    public sealed override void DispatchMouseScrolled(BaseMouseWheelEvent @event)
+    {
+        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        {
+            var relativeEvent = new MouseWheelEvent(
+                Delta: @event.Delta,
+                Position: @event.Position,
+                Buttons: @event.Buttons,
+                CtrlKey: @event.CtrlKey,
+                MetaKey: @event.MetaKey,
+                ShiftKey: @event.ShiftKey,
+                RelativePosition: @event.Position - LayoutPaddingPosition
+            );
+            MouseScrolled?.Invoke(relativeEvent);
+            OnMouseScrolled(relativeEvent);
+        }
+        base.DispatchMouseScrolled(@event);
+    }
+
+    public virtual void OnKeyPressed(KeyboardEvent @event)
+    {
+    }
+
+    public virtual void OnKeyReleased(KeyboardEvent @event)
+    {
+    }
+
+    public sealed override void DispatchKeyPressed(KeyboardEvent @event)
+    {
+        if (IsFocusable && IsFocused)
+        {
+            KeyPressed?.Invoke(@event);
+            OnKeyPressed(@event);
+        }
+        base.DispatchKeyPressed(@event);
+    }
+
+    public sealed override void DispatchKeyReleased(KeyboardEvent @event)
+    {
+        if (IsFocusable && IsFocused)
+        {
+            KeyReleased?.Invoke(@event);
+            OnKeyReleased(@event);
+        }
+        base.DispatchKeyReleased(@event);
+    }
+
+    public sealed override void DispatchKeyTyped(KeyboardTypingEvent @event)
+    {
+        if (IsFocusable && IsFocused)
+        {
+            KeyTyped?.Invoke(@event);
+            OnKeyTyped(@event);
+        }
+        base.DispatchKeyTyped(@event);
+    }
+}
+
+public struct MeasurementMarginPosition : IEquatable<MeasurementMarginPosition>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementMarginPosition other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementMarginPosition other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementMarginPosition(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementMarginPosition(YGValue value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementMarginPosition value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementMarginPosition Auto =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitAuto
+            }
+        };
+
+    public static MeasurementMarginPosition Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementMarginPosition Percent(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementMarginPosition Point(float value)
+    {
+        return new MeasurementMarginPosition
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementMarginPosition Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+        
+    public static implicit operator MeasurementMarginPosition(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMarginPosition. Expected 'auto', '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
+{
+    public InlineArray4<MeasurementMarginPosition> Sides;
+
+    public bool Equals(MeasurementMultiMargin other) => Sides[0].Equals(other.Sides[0]) && Sides[1].Equals(other.Sides[1]) && Sides[2].Equals(other.Sides[2]) && Sides[3].Equals(other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiMargin other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public MeasurementMarginPosition Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public MeasurementMarginPosition Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public MeasurementMarginPosition Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public MeasurementMarginPosition Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiMargin Auto => MeasurementMarginPosition.Auto;
+
+    public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
+
+    public static MeasurementMultiMargin All(MeasurementMarginPosition value)
+    {
+        return new MeasurementMultiMargin
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
+    public static implicit operator MeasurementMultiMargin(float value) => All(value);
+
+    public static MeasurementMultiMargin? XY(float x, float y)
+    {
+        return new MeasurementMultiMargin
+        {
+            Left = x,
+            Right = x,
+            Top = y,
+            Bottom = y
+        };
+    }
+
+    public static implicit operator MeasurementMultiMargin(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementMarginPosition.Undefined);
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementMarginPosition.Auto);
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<MeasurementMarginPosition>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+            {
+                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Percent(percentValue);
+                }
+            }
+            else if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementMarginPosition.Point(pointValue);
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiMargin
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected 'auto', '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+    }
+}
+
+public struct MeasurementPadding : IEquatable<MeasurementPadding>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementPadding other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementPadding other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementPadding(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementPadding(YGValue value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementPadding value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementPadding Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementPadding Percent(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementPadding Point(float value)
+    {
+        return new MeasurementPadding
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementPadding Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementPadding(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementPadding. Expected '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementMultiPadding : IEquatable<MeasurementMultiPadding>
+{
+    public InlineArray4<MeasurementPadding> Sides;
+
+    public bool Equals(MeasurementMultiPadding other) => Sides[0].Equals(other.Sides[0]) && Sides[1].Equals(other.Sides[1]) && Sides[2].Equals(other.Sides[2]) && Sides[3].Equals(other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiPadding other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public MeasurementPadding Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public MeasurementPadding Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public MeasurementPadding Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public MeasurementPadding Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
+
+    public static MeasurementMultiPadding All(MeasurementPadding value)
+    {
+        return new MeasurementMultiPadding
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
+    public static implicit operator MeasurementMultiPadding(float value) => All(value);
+
+    public static MeasurementMultiPadding? XY(float x, float y)
+    {
+        return new MeasurementMultiPadding
+        {
+            Left = MeasurementPadding.Point(x),
+            Right = MeasurementPadding.Point(x),
+            Top = MeasurementPadding.Point(y),
+            Bottom = MeasurementPadding.Point(y)
+        };
+    }
+
+    public static implicit operator MeasurementMultiPadding(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return All(MeasurementPadding.Undefined);
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<MeasurementPadding>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+            {
+                if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+                {
+                    sides[idx] = MeasurementPadding.Percent(percentValue);
+                }
+            }
+            else if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementPadding.Point(pointValue);
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = MeasurementPadding.Point(pointValue);
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiPadding
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px', '<number>%', or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+
+    }
+}
+
+public struct MeasurementMultiBorder : IEquatable<MeasurementMultiBorder>
+{
+    public InlineArray4<float?> Sides;
+
+    public bool Equals(MeasurementMultiBorder other) => Nullable.Equals(Sides[0], other.Sides[0]) && Nullable.Equals(Sides[1], other.Sides[1]) && Nullable.Equals(Sides[2], other.Sides[2]) && Nullable.Equals(Sides[3], other.Sides[3]);
+    public override bool Equals(object? obj) => obj is MeasurementMultiBorder other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Sides[0], Sides[1], Sides[2], Sides[3]);
+    public float? Top
+    {
+        get => Sides[0];
+        set => Sides[0] = value;
+    }
+    public float? Bottom
+    {
+        get => Sides[1];
+        set => Sides[1] = value;
+    }
+    public float? Left
+    {
+        get => Sides[2];
+        set => Sides[2] = value;
+    }
+    public float? Right
+    {
+        get => Sides[3];
+        set => Sides[3] = value;
+    }
+
+    public static MeasurementMultiBorder Undefined => All(null);
+
+    public static MeasurementMultiBorder All(float? value)
+    {
+        return new MeasurementMultiBorder
+        {
+            Top = value,
+            Bottom = value,
+            Left = value,
+            Right = value
+        };
+    }
+
+    public static implicit operator MeasurementMultiBorder(float? value) => All(value);
+    public static MeasurementMultiBorder XY(float? x, float? y)
+    {
+        return new MeasurementMultiBorder
+        {
+            Left = x,
+            Right = x,
+            Top = y,
+            Bottom = y
+        };
+    }
+
+    public static implicit operator MeasurementMultiBorder(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+
+        var idx = 0;
+        var sides = new InlineArray4<float>();
+        foreach (var elementRange in trimmed.SplitAny(',', ' '))
+        {
+            var element = trimmed[elementRange];
+
+            if (element.EndsWith("px"))
+            {
+                if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = pointValue;
+                }
+            }
+            else
+            {
+                if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+                {
+                    sides[idx] = pointValue;
+                }
+            }
+
+            idx++;
+        }
+
+        if (idx == 1)
+        {
+            return All(sides[0]);
+        }
+
+        if (idx == 2)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = sides[0],
+                Bottom = sides[0],
+                Left = sides[1],
+                Right = sides[1]
+            };
+        }
+
+        if (idx == 4)
+        {
+            return new MeasurementMultiBorder
+            {
+                Top = sides[0],
+                Right = sides[1],
+                Bottom = sides[2],
+                Left = sides[3]
+            };
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementMultiMargin. Expected '<number>px' or '<number>', as 1, 2 or 4 elements, in order top-right-bottom-left, separated by comma or space.");
+    }
+}
+
+public struct MeasurementGap : IEquatable<MeasurementGap>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementGap other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementGap other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementGap(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementGap(YGValue value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementGap value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementGap Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementGap Percent(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementGap Point(float value)
+    {
+        return new MeasurementGap
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public MeasurementGap Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementGap(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementGap. Expected '<number>px', '<number>%', or '<number>'.");
+    }
+        
+    // ReSharper disable once CompareOfFloatsByEqualityOperator
+    public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.Unit == right.Unit && left.Value == right.Value;
+    public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
+}
+
+public readonly struct Pixels(float value) : IEquatable<Pixels>
+{
+    public readonly float Value = value;
+
+    public bool Equals(Pixels other) => Value == other.Value;
+    public override bool Equals(object? obj) => obj is Pixels other && Equals(other);
+    public override int GetHashCode() => Value.GetHashCode();
+        
+    public static implicit operator float(Pixels value) => value.Value;
+    public static implicit operator Pixels(float value) => new(value);
+
+    public static implicit operator Pixels(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return new Pixels(float.NaN);
+        }
+        if (trimmed.Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+        if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return pointValue;
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return pointValue;
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to pixels or undefined.");
+    }
+}
+
+public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementFlexBasis other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementFlexBasis other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementFlexBasis(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementFlexBasis(YGValue value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementFlexBasis value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementFlexBasis Undefined = new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementFlexBasis Auto =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+
+    public static MeasurementFlexBasis MaxContent =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitMaxContent
+            }
+        };
+
+    public static MeasurementFlexBasis Stretch =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitStretch
+            }
+        };
+
+    public static MeasurementFlexBasis Percent(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementFlexBasis Point(float value)
+    {
+        return new MeasurementFlexBasis
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementFlexBasis FitContent =>
+        new()
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+
+    public MeasurementFlexBasis Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementFlexBasis(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+        if (trimmed.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            return Undefined;
+        }
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto;
+        }
+        if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return MaxContent;
+        }
+        if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+        {
+            return Stretch;
+        }
+        if (trimmed.EndsWith("%", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px"))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+        else
+        {
+            if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var pointValue))
+            {
+                return Point(pointValue);
+            }
+        }
+
+        throw new FormatException($"Cannot convert '{str}' to MeasurementFlexBasis. Expected 'auto', 'max-content', 'stretch', '<number>px', '<number>%', or '<number>'.");
+    }
+}
+
+public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
+{
+    internal YGValue InternalValue;
+    public YGUnit Unit => InternalValue.unit;
+    public float Value => InternalValue.value;
+    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
+    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+
+    public bool Equals(MeasurementWidthHeight other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public override bool Equals(object? obj) => obj is MeasurementWidthHeight other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+
+    public static implicit operator MeasurementWidthHeight(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+    public static implicit operator MeasurementWidthHeight(YGValue value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = value
+        };
+    }
+    public static implicit operator YGValue(MeasurementWidthHeight value)
+    {
+        return value.InternalValue;
+    }
+
+    public static MeasurementWidthHeight Undefined => new()
+    {
+        InternalValue = new YGValue
+        {
+            unit = YGUnit.YGUnitUndefined
+        }
+    };
+
+    public static MeasurementWidthHeight Auto()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitAuto
+            }
+        };
+    }
+    public static MeasurementWidthHeight Percent(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPercent,
+                value = value
+            }
+        };
+    }
+    public static MeasurementWidthHeight Point(float value)
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitPoint,
+                value = value
+            }
+        };
+    }
+
+    public static MeasurementWidthHeight FitContent()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitFitContent
+            }
+        };
+    }
+    public static MeasurementWidthHeight MaxContent()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitMaxContent
+            }
+        };
+    }
+
+    public static MeasurementWidthHeight Stretch()
+    {
+        return new MeasurementWidthHeight
+        {
+            InternalValue = new YGValue
+            {
+                unit = YGUnit.YGUnitStretch
+            }
+        };
+    }
+
+    public MeasurementWidthHeight Scale(float scale)
+    {
+        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        {
+            return Point(InternalValue.value * scale);
+        }
+
+        return this;
+    }
+
+    public static implicit operator MeasurementWidthHeight(ReadOnlySpan<char> str)
+    {
+        var trimmed = str.Trim();
+
+        if (trimmed.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return Auto();
+        }
+        if (trimmed.Equals("stretch", StringComparison.OrdinalIgnoreCase))
+        {
+            return Stretch();
+        }
+        if (trimmed.Equals("fit-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("fitcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return FitContent();
+        }
+        if (trimmed.Equals("max-content", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("maxcontent", StringComparison.OrdinalIgnoreCase))
+        {
+            return MaxContent();
+        }
+        if (trimmed.EndsWith('%'))
+        {
+            if (float.TryParse(trimmed[..^1], NumberStyles.Float, CultureInfo.InvariantCulture, out var percentValue))
+            {
+                return Percent(percentValue);
+            }
+        }
+        else if (trimmed.EndsWith("px", StringComparison.OrdinalIgnoreCase))
+        {
+            if (float.TryParse(trimmed[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+            {
+                return Point(floatValue);
+            }
+        }
+        else if (float.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+        {
+            return Point(floatValue);
+        }
+
+        throw new FormatException($"Cannot convert {str} to MeasurementWidthHeight. Expected a number, percentage, 'auto', 'stretch', 'fit-content', or 'max-content'.");
+    }
+}

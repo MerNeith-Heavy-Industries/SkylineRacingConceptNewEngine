@@ -32,6 +32,7 @@
         <None Include="src\**\*" CopyToOutputDirectory="Always" />
         <None Remove="src\data\.git\**" CopyToOutputDirectory="Never" />
         <None Remove="src\data\.git" CopyToOutputDirectory="Never" />
+        <PackageReference Include="Yoga-CS" Version="1.0.0" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
         <ProjectReference Include="..\ClaySharp\ClaySharp.csproj" />
         <ProjectReference Include="..\ClaySharp\plugins\ClaySharp.Plugin.TextInput\ClaySharp.Plugin.TextInput.csproj" />
@@ -45,6 +46,7 @@
         <ProjectReference Include="..\NFMWorld.OpcodeSourceGen\NFMWorld.OpcodeSourceGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\NFMWorld.PhysicsFS\NFMWorld.PhysicsFS.csproj" />
+        <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
         <ProjectReference Include="..\NFMWorld.Sentry\NFMWorld.Sentry.csproj" />
         <ProjectReference Include="..\Lua-CSharp\src\Lua.SourceGenerator\Lua.SourceGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\Lua-CSharp\src\Lua\Lua.csproj" />
