@@ -1,4 +1,5 @@
-﻿using NFMWorld.DriverInterface.DriverInterface;
+﻿using nfm_world_library.Lua;
+using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
@@ -6,10 +7,13 @@ namespace NFMWorld.Reactor;
 /// <summary>
 /// A node containing text. This is a leaf node; it contains no children.
 /// </summary>
-public class TextNode : Node, IReceivesTextInvalidation, IRichTextElement
+[LuaVisible]
+public partial class TextNode : Node, IReceivesTextInvalidation, IRichTextElement
 {
+    [LuaName]
     public override ReadOnlyLuaArray<Node> VisualChildren => ReadOnlyLuaArray<Node>.Empty;
 
+    [LuaName]
     public string? Text
     {
         get;

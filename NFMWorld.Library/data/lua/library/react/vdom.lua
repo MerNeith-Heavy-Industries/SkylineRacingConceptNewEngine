@@ -97,6 +97,93 @@ function vdom.normalize(result)
   return out
 end
 
+---@class TextStyles : Styles
+---@field color? string
+---@field stroke? string
+---@field fontFamily? string
+---@field fontSize? string
+---@field fontStyle? string
+---@field verticalAlign? "top"|"bottom"|"middle"
+---@field horizontalAlign? "left"|"right"|"center"
+
+---@class Styles
+---@field direction? "ltr"|"rtl"|"inherit"
+---@field flexDirection? "row"|"row-reverse"|"column"|"column-reverse"
+---@field justifyContent? "flex-start"|"center"|"flex-end"|"space-between"|"space-around"|"space-evenly"
+---@field alignItems? "flex-start"|"center"|"flex-end"|"stretch"|"baseline"|"space-between"|"space-around"|"space-evenly"
+---@field alignSelf? "auto"|"flex-start"|"center"|"flex-end"|"stretch"|"baseline"
+---@field alignContent? "flex-start"|"center"|"flex-end"|"stretch"|"baseline"
+---@field position? "static"|"relative"|"absolute"
+---@field flexWrap? "nowrap"|"wrap"|"wrap-reverse"
+---@field overflow? "visible"|"hidden"|"scroll"
+---@field display? "flex"|"none"|"contents"
+---@field boxSizing? "border-box"|"content-box"
+---@field visibility? "visible"|"hidden"|"collapse"
+---@field flex? number|nil
+---@field flexGrow? number|nil
+---@field flexShrink? number|nil
+---@field flexBasis? string|nil
+---@field left? string|"undefined"|"auto" accepts % and px
+---@field top? string|"undefined"|"auto" accepts % and px
+---@field right? string|"undefined"|"auto" accepts % and px
+---@field bottom? string|"undefined"|"auto" accepts % and px
+---@field marginTop? string|number|"undefined"|"auto" accepts % and px
+---@field marginBottom? string|number|"undefined"|"auto" accepts % and px
+---@field marginLeft? string|number|"undefined"|"auto" accepts % and px
+---@field marginRight? string|number|"undefined"|"auto" accepts % and px
+---@field margin? string|number|"undefined"|"auto" accepts % and px
+---@field paddingTop? string|number|"undefined" accepts % and px
+---@field paddingBottom? string|number|"undefined" accepts % and px
+---@field paddingLeft? string|number|"undefined" accepts % and px
+---@field paddingRight? string|number|"undefined" accepts % and px
+---@field padding? string|number|"undefined" accepts % and px
+---@field borderTopWidth? string|number|"undefined"|"none" accepts px
+---@field borderBottomWidth? string|number|"undefined"|"none" accepts px
+---@field borderLeftWidth? string|number|"undefined"|"none" accepts px
+---@field borderRightWidth? string|number|"undefined"|"none" accepts px
+---@field borderWidth? string|number|"undefined"|"none" accepts px
+---@field borderTopLeftRadius? string|number accepts px
+---@field borderTopRightRadius? string|number accepts px
+---@field borderBottomLeftRadius? string|number accepts px
+---@field borderBottomRightRadius? string|number accepts px
+---@field borderRadius? string|number accepts px
+
+---@class ViewProps
+---@field style? Styles
+---@field onanimationframebegan? fun(): nil
+---@field active? boolean
+---@field focused? boolean
+---@field taborder? integer
+---@field onmousedown? fun(event: MouseEvent): nil
+---@field onmouseup? fun(event: MouseEvent): nil
+---@field onmousedrag? fun(event: MouseDragEvent): nil
+---@field onmousescroll? fun(event: MouseWheelEvent): nil
+---@field onmousemove? fun(event: MouseMoveEvent): nil
+---@field onmouseenter? fun(event: MouseMoveEvent): nil
+---@field onmouseleave? fun(event: MouseMoveEvent): nil
+---@field onkeytype? fun(event: KeyboardTypingEvent): nil
+---@field onkeypress? fun(event: KeyboardEvent): nil
+---@field onkeyup? fun(event: KeyboardEvent): nil
+
+---@class ImageProps : ViewProps
+---@field src? string
+---@field scale? number
+
+---@class TextProps : ViewProps
+---@field style? TextStyles
+
+---@class TextInputStyles : TextStyles
+---@field cursorColor? string
+---@field selectionColor? string
+---@field placeholderColor? string
+
+---@class TextInputProps : ViewProps
+---@field style? TextInputStyles
+---@field value? string
+---@field placeholder? string
+---@field onsubmit? fun(value: string): nil
+---@field onchange? fun(value: string): nil
+
 --- Create a virtual element.
 ---
 ---     h("div", { id = "x" }, "hello")
@@ -109,6 +196,10 @@ end
 ---@param props VNodeProps|Child|Children?
 ---@param ... Child|Children
 ---@return VNode
+---@overload fun(vtype: "view", props: ViewProps, ...: Child|Children): VNode
+---@overload fun(vtype: "text", props: TextProps, ...: Child|Children): VNode
+---@overload fun(vtype: "image", props: ImageProps, ...: Child|Children): VNode
+---@overload fun(vtype: "textinput", props: TextInputProps, ...: Child|Children): VNode
 function vdom.h(vtype, props, ...)
   local children = { ... }
   local count = select("#", ...)

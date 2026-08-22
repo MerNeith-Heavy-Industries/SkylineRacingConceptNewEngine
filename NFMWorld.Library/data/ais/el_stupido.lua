@@ -3,8 +3,8 @@
 -- ElStupido AI implementation
 -- Handles AI decision making, path finding, and control inputs based on difficulty and race conditions.
 
--- Static helper function: Pythagorean distance squared (fix64 version)
--- Used for fast distance comparisons without square root
+--- Static helper function: Pythagorean distance squared (fix64 version)
+--- Used for fast distance comparisons without square root
 ---@generic T : fixed64 | number
 ---@param x1 T
 ---@param x2 T
@@ -17,7 +17,10 @@ local function pyo(x1, x2, z1, z2)
     return (dx * dx) + (dz * dz)
 end
 
--- Calculate angle difference, normalized to -180 to 180 range
+--- Calculate angle difference, normalized to -180 to 180 range
+---@param a fixed64
+---@param b fixed64
+---@return fixed64
 local function angleDiff(a, b)
     local diff = a - b
     diff = ((diff + fixed64(180)) % fixed64(360)) - fixed64(180)

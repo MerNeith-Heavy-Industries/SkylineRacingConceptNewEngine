@@ -150,20 +150,6 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         return $"Component(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
 
-    #region Animations
-
-    /// <summary>
-    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Visible"/>
-    /// </summary>
-    public Action? Shown { get; set; }
-    
-    /// <summary>
-    /// Triggered when <see cref="Reactor.Visibility"/> is set to <see cref="Visibility.Hidden"/>
-    /// </summary>
-    public Action? Hidden { get; set; }
-
-    #endregion
-
     #region Focus
     
     [LuaName]
@@ -1286,7 +1272,9 @@ public struct MeasurementMarginPosition : IEquatable<MeasurementMarginPosition>
 
         return this;
     }
-        
+            
+    public static MeasurementMarginPosition FromString(ReadOnlySpan<char> str) => str;
+
     public static implicit operator MeasurementMarginPosition(ReadOnlySpan<char> str)
     {
         var trimmed = str.Trim();
@@ -1380,6 +1368,8 @@ public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
             Bottom = y
         };
     }
+    
+    public static MeasurementMultiMargin FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementMultiMargin(ReadOnlySpan<char> str)
     {
@@ -1530,6 +1520,8 @@ public struct MeasurementPadding : IEquatable<MeasurementPadding>
 
         return this;
     }
+    
+    public static MeasurementPadding FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementPadding(ReadOnlySpan<char> str)
     {
@@ -1618,6 +1610,8 @@ public struct MeasurementMultiPadding : IEquatable<MeasurementMultiPadding>
             Bottom = MeasurementPadding.Point(y)
         };
     }
+
+    public static MeasurementMultiPadding FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementMultiPadding(ReadOnlySpan<char> str)
     {
@@ -1742,6 +1736,8 @@ public struct MeasurementMultiBorder : IEquatable<MeasurementMultiBorder>
             Bottom = y
         };
     }
+
+    public static MeasurementMultiBorder FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementMultiBorder(ReadOnlySpan<char> str)
     {
@@ -1882,6 +1878,8 @@ public struct MeasurementGap : IEquatable<MeasurementGap>
         return this;
     }
 
+    public static MeasurementGap FromString(ReadOnlySpan<char> str) => str;
+
     public static implicit operator MeasurementGap(ReadOnlySpan<char> str)
     {
         var trimmed = str.Trim();
@@ -1929,6 +1927,8 @@ public readonly struct Pixels(float value) : IEquatable<Pixels>
         
     public static implicit operator float(Pixels value) => value.Value;
     public static implicit operator Pixels(float value) => new(value);
+
+    public static Pixels FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator Pixels(ReadOnlySpan<char> str)
     {
@@ -2072,6 +2072,8 @@ public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
 
         return this;
     }
+
+    public static MeasurementFlexBasis FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementFlexBasis(ReadOnlySpan<char> str)
     {
@@ -2236,6 +2238,8 @@ public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
 
         return this;
     }
+
+    public static MeasurementWidthHeight FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementWidthHeight(ReadOnlySpan<char> str)
     {
