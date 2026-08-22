@@ -343,6 +343,17 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
 #pragma warning disable RS1035
                     File.WriteAllText(Path.Combine(stubsOutputDir ?? "", asmName + ".lua"), codes.ToString());
 #pragma warning restore RS1035
+
+                    codes.Clear();
+                    foreach (var type in list.Values)
+                    {
+                        var initGenerator = new LuauStubsGenerator(type);
+                        var code = initGenerator.GenerateCode();
+                        codes.AppendLine(code);
+                    }
+#pragma warning disable RS1035
+                    File.WriteAllText(Path.Combine(stubsOutputDir ?? "", asmName + ".d.luau"), codes.ToString());
+#pragma warning restore RS1035
                 }
             });
     }
