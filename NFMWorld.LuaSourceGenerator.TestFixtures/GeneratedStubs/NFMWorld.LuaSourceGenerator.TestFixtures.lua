@@ -349,8 +349,8 @@ TypeWithNestedGeneric = {}
 ---@field processNumber fun(self: TypeWithOverloads, x: integer): string
 ---@field processNumber fun(self: TypeWithOverloads, x: number): string
 ---@field processData fun(self: TypeWithOverloads, s: string): string
----@field processData fun(self: TypeWithOverloads, arr: { [integer]: integer}): string
----@field processData fun(self: TypeWithOverloads, arr: { [integer]: number}): string
+---@field processData fun(self: TypeWithOverloads, arr: { [integer|number]: integer}): string
+---@field processData fun(self: TypeWithOverloads, arr: { [integer|number]: number}): string
 ---@field processData fun(self: TypeWithOverloads, flag: boolean): string
 ---@field combine fun(self: TypeWithOverloads, a: integer, b: integer): string
 ---@field combine fun(self: TypeWithOverloads, a: number, b: number): string

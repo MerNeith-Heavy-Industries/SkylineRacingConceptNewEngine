@@ -66,6 +66,41 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                         }
                         
                         sb.Append("((");
+                        sb.Append($"self: {ToLuaTypeName(type)}");
+                        foreach (var (p, idx) in m.Parameters.Select((e, idx) => (e, idx)))
+                        {
+                            sb.Append($", {ParamName(p, idx)}: {ToLuaTypeName(p.Type)}");
+                        }
+
+                        sb.Append(") -> ");
+                        if (!m.IsVoid)
+                        {
+                            sb.Append(ToLuaTypeName(m.ReturnType));
+                        }
+                        else
+                        {
+                            sb.Append("nil");
+                        }
+
+                        sb.Append(")");
+                    }
+
+                    sb.AppendLine();
+                }
+                
+                foreach (var group in luaTypeMetadata.Operators.GroupBy(op => op.MetamethodName))
+                {
+                    sb.Append($"{group.Key}: ");
+                    
+                    // overloads
+                    foreach (var (m, gidx) in group.Select((e, idx) => (e, idx)))
+                    {
+                        if (gidx != 0)
+                        {
+                            sb.Append(" & ");
+                        }
+                        
+                        sb.Append("((");
                         foreach (var (p, idx) in m.Parameters.Select((e, idx) => (e, idx)))
                         {
                             if (idx != 0) sb.Append(", ");
@@ -111,9 +146,17 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                     sb.AppendLine($"{prop.LuaName}: {ToLuaTypeName(prop.PropertyType)},");
                 }
 
-                foreach (var field in luaTypeMetadata.StaticFields)
+                if (!type.IsEnum) // need a better fix, but when you add [LuaName] to an enum member it gets exposed as a static field
                 {
-                    sb.AppendLine($"{field.LuaName}: {ToLuaTypeName(field.FieldType)},");
+                    foreach (var field in luaTypeMetadata.StaticFields)
+                    {
+                        sb.AppendLine($"{field.LuaName}: {ToLuaTypeName(field.FieldType)},");
+                    }
+                }
+
+                foreach (var enumMember in luaTypeMetadata.EnumMembers)
+                {
+                    sb.AppendLine($"{enumMember.LuaName}: {ToLuaTypeName(enumMember.FieldType)},");
                 }
 
                 // Constructors
@@ -185,15 +228,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                     sb.Append($"{ParamName(p, idx)}: {ToLuaTypeName(p.Type)}");
                 }
 
-                sb.Append(") -> ");
-                if (!m.IsVoid)
-                {
-                    sb.Append(ToLuaTypeName(m.ReturnType));
-                }
-                else
-                {
-                    sb.Append("nil");
-                }
+                sb.Append($") -> {ToLuaTypeName(m.DeclaringType!)}");
 
                 sb.Append(")");
             }
@@ -240,11 +275,11 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
 
         if (t.IsArray)
         {
-            return $"{{ [integer]: {ToLuaTypeName(t.IEnumerableType)}}}{suff}";
+            return $"{{ [integer|number]: {ToLuaTypeName(t.IEnumerableType)}}}{suff}";
         }
         if (t.IsInlineArray)
         {
-            return $"{{ [integer]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
+            return $"{{ [integer|number]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
         }
 
         if (t.FullTypeName == "global::Lua.LuaTable") return $"{{ [any]: any }}{suff}";

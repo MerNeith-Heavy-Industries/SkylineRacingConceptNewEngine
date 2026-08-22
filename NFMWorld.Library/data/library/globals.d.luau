@@ -1,21 +1,4 @@
-export type integer = typeof(setmetatable(
-	{},
-	{} :: integerMt
-))
-
-export type integerMt = {
-	__add: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__sub: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__mul: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__div: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__mod: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__pow: ((integer, integer) -> integer) & ((integer, number) -> number) & ((number, integer) -> number),
-	__unm: ((integer) -> integer),
-	__tostring: ((integer) -> string),
-	__eq: ((integer, integer) -> boolean) & ((integer, number) -> boolean) & ((number, integer) -> boolean),
-	__lt: ((integer, integer) -> boolean) & ((integer, number) -> boolean) & ((number, integer) -> boolean),
-	__le: ((integer, integer) -> boolean) & ((integer, number) -> boolean) & ((number, integer) -> boolean),
-}
+export type integer = number;
 
 export type Array<T> = { [number]: T }
 
@@ -67,9 +50,9 @@ export type fixed64Vector3Mt = {
 	__mod: ((fixed64vector3, fixed64vector3) -> fixed64vector3) & ((fixed64vector3, number) -> fixed64vector3) & ((number, fixed64vector3) -> fixed64vector3),
 	__unm: ((fixed64vector3) -> fixed64vector3),
 	__tostring: ((fixed64vector3) -> string),
-	__eq: ((fixed64vector3, fixed64vector3) -> boolean) & ((fixed64vector3, number) -> boolean) & ((number, fixed64vector3) -> boolean),
-	__lt: ((fixed64vector3, fixed64vector3) -> boolean) & ((fixed64vector3, number) -> boolean) & ((number, fixed64vector3) -> boolean),
-	__le: ((fixed64vector3, fixed64vector3) -> boolean) & ((fixed64vector3, number) -> boolean) & ((number, fixed64vector3) -> boolean),
+	__eq: ((fixed64vector3, fixed64vector3) -> boolean),
+	__lt: ((fixed64vector3, fixed64vector3) -> boolean),
+	__le: ((fixed64vector3, fixed64vector3) -> boolean),
 }
 
 --- Creates a Fixed64 value.
@@ -420,41 +403,31 @@ declare Key: {
     Alt    : number,
 }
 
-declare UiLib: {
-	createInstance: ((vtype: string, props: { [string]: any }) -> any),
-	createTextInstance: ((text: string) -> any),
-	appendChild: ((parent: any, child: any) -> nil),
-	insertBefore: ((parent: any, child: any, before: any) -> nil),
-	removeChild: ((parent: any, child: any) -> nil),
-	setProperty: ((instance: any, key: string, value: any) -> nil),
-	commitTextUpdate: ((textInstance: any, oldText: string, newText: string) -> nil),
-}
-
-declare extern type UDim with
-	Offset: number
-	Scale: number
-	__add: ((self: UDim, other: UDim) -> UDim) & ((self: UDim, other: number) -> number)
-	function __sub(self, other: UDim): UDim
-	function __unm(self): UDim
-end
-
-declare extern type UDim2 with
-	Height: UDim
-	Width: UDim
-	X: UDim
-	Y: UDim
-	function Lerp(self, goal: UDim2, alpha: number): UDim2
-	function __add(self, other: UDim2): UDim2
-	function __sub(self, other: UDim2): UDim2
-	function __unm(self): UDim2
-end
-
-declare UDim: {
-	new: ((Scale: number?, Offset: number?) -> UDim),
-}
-
-declare UDim2: {
-	fromScale: ((xScale: number, yScale: number) -> UDim2),
-	fromOffset: ((xOffset: number, yOffset: number) -> UDim2),
-	new: ((x: UDim, y: UDim) -> UDim2) & ((xScale: number?, xOffset: number?, yScale: number?, yOffset: number?) -> UDim2),
-}
+--declare extern type UDim with
+--	Offset: number
+--	Scale: number
+--	__add: ((self: UDim, other: UDim) -> UDim) & ((self: UDim, other: number) -> number)
+--	function __sub(self, other: UDim): UDim
+--	function __unm(self): UDim
+--end
+--
+--declare extern type UDim2 with
+--	Height: UDim
+--	Width: UDim
+--	X: UDim
+--	Y: UDim
+--	function Lerp(self, goal: UDim2, alpha: number): UDim2
+--	function __add(self, other: UDim2): UDim2
+--	function __sub(self, other: UDim2): UDim2
+--	function __unm(self): UDim2
+--end
+--
+--declare UDim: {
+--	new: ((Scale: number?, Offset: number?) -> UDim),
+--}
+--
+--declare UDim2: {
+--	fromScale: ((xScale: number, yScale: number) -> UDim2),
+--	fromOffset: ((xOffset: number, yOffset: number) -> UDim2),
+--	new: ((x: UDim, y: UDim) -> UDim2) & ((xScale: number?, xOffset: number?, yScale: number?, yOffset: number?) -> UDim2),
+--}

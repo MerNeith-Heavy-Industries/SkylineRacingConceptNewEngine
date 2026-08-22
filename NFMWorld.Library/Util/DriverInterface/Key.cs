@@ -73,7 +73,7 @@ public enum Key
     /// <summary>
     ///  The RETURN key.
     /// </summary>
-    Return = 0x0D,
+    [LuaName("returnKey")] Return = 0x0D,
 
     /// <summary>
     ///  The ENTER key.
@@ -203,7 +203,7 @@ public enum Key
     /// <summary>
     ///  The END key.
     /// </summary>
-    End = 0x23,
+    [LuaName("endKey")] End = 0x23,
 
     /// <summary>
     ///  The HOME key.

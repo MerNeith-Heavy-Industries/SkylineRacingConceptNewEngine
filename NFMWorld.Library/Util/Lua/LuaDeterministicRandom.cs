@@ -4,7 +4,7 @@ using nfm_world_library.Lua;
 
 namespace NFMWorldLibrary.Util.Lua;
 
-[LuaVisible, LuaName("DeterministicRandom")]
+[LuaVisible, LuaName("DeterministicRandom")] [method: LuaName]
 public partial class LuaDeterministicRandom(fix64 value)
 {
     private DeterministicRandom _random = new((ulong)value.rawValue);

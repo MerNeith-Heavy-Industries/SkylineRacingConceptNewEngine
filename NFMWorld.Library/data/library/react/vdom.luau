@@ -163,6 +163,7 @@ type ViewProps = {
   onkeytype: ((event: KeyboardTypingEvent) -> nil)?,
   onkeypress: ((event: KeyboardEvent) -> nil)?,
   onkeyup: ((event: KeyboardEvent) -> nil)?,
+  children: R.Child?,
 }
 
 type ImageProps = ViewProps & {
@@ -188,7 +189,13 @@ type TextInputProps = ViewProps & {
   onchange: ((value: string) -> nil)?,
 }
 
-type h = ((vtype: R.ElementType, props: R.VNodeProps | R.Child | R.Children?, ...R.Child) -> R.VNode)
+export type React_StatelessFunctionalComponent<Props> = (
+	props: Props,
+	context: any
+) -> R.VNode
+
+type h
+  = (<P>((vtype: React_StatelessFunctionalComponent<P>, props: P, ...R.Child) -> R.VNode) -> R.VNode)
   & ((vtype: "view", props: ViewProps, ...R.Child) -> R.VNode)
   & ((vtype: "text", props: TextProps, ...R.Child) -> R.VNode)
   & ((vtype: "image", props: ImageProps, ...R.Child) -> R.VNode)
@@ -202,10 +209,6 @@ type h = ((vtype: R.ElementType, props: R.VNodeProps | R.Child | R.Children?, ..
 ---
 --- The second argument is optional. If it is a child (string, number, VNode
 --- or array of children) it is shifted into the children list.
----@param vtype ElementType
----@param props VNodeProps|Child|Children?
----@param ... Child|Children
----@return VNode
 vdom.h = (function(vtype, props, ...)
   local children = { ... }
   local count = select("#", ...)

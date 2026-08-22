@@ -523,6 +523,8 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
             .Where(m => IsLuaOperatorMethodName(m.Name))
             // .Where(m => m.GetAttributes().Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, references.LuaNameAttribute)))
             .Select(m => new LuaOperatorMetadata(m, references))
+            // todo put this check before the instantiation!
+            .Where(m => m.Parameters.All(p => p.Type.HasLuaVisibleAttr || p.Type.IsBuiltIn))
             .ToArray();
     }
 

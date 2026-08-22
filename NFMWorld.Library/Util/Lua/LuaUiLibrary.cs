@@ -8,10 +8,17 @@ namespace NFMWorldLibrary.Util;
 
 public static class LuaUiLibrary
 {
+    public static View ActiveRoot { get; set; }
+
     public static void Register(LuaState state)
     {
         state.Environment["UiLib"] = Library;
     }
+
+    internal static readonly LuaFunction CreateRoot = new("createRoot", (context, ct) =>
+    {
+        return new ValueTask<int>(context.Return( new View()));
+    });
 
     internal static readonly LuaFunction CreateInstance = new("createInstance", (context, ct) =>
     {
@@ -84,6 +91,14 @@ public static class LuaUiLibrary
     {
         var text = context.GetArgument<string>(0);
         return new ValueTask<int>(context.Return( new TextNode() { Text = text }));
+    });
+
+    internal static readonly LuaFunction SetActiveRoot = new("setActiveRoot", (context, ct) =>
+    {
+        var view = context.GetArgument<View>(0);
+        ActiveRoot = view;
+        
+        return new ValueTask<int>(context.Return());
     });
 
     internal static readonly LuaFunction AppendChild = new("appendChild", (context, ct) =>
@@ -271,6 +286,7 @@ public static class LuaUiLibrary
 
     private static LuaTable Library = new LuaTable()
     {
+        ["createRoot"] = CreateRoot,
         ["createInstance"] = CreateInstance,
         ["createTextInstance"] = CreateTextInstance,
         ["appendChild"] = AppendChild,
@@ -278,6 +294,7 @@ public static class LuaUiLibrary
         ["removeChild"] = RemoveChild,
         ["setProperty"] = SetProperty,
         ["commitTextUpdate"] = CommitTextUpdate,
+        ["setActiveRoot"] = SetActiveRoot,
     };
 
     private static TextInputStyles AssignTextInputStylesProps(LuaTable props)
