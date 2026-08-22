@@ -121,6 +121,7 @@
   <Project Path="NFMWorld.NativeLibs/NFMWorld.NativeLibs.csproj" />
   <Project Path="NFMWorld.OpcodeSourceGen/NFMWorld.OpcodeSourceGen.csproj" />
   <Project Path="NFMWorld.PhysicsFS/NFMWorld.PhysicsFS.csproj" />
+  <Project Path="NFMWorld.Reactor.ObservableCollections/NFMWorld.Reactor.ObservableCollections.csproj" />
   <Project Path="NFMWorld.RustBindGen/NFMWorld.RustBindGen.csproj" />
   <Project Path="NFMWorld.Server.Game/NFMWorld.Server.Game.csproj" />
   <Project Path="NFMWorld.Server.Lobby/NFMWorld.Server.Lobby.csproj" />
