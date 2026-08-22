@@ -481,7 +481,7 @@ public static class LuaUiLibrary
                 "border-bottom-width" or "borderBottomWidth" => styles with { BorderBottom = ParsePixels(rawvalue, styles.BorderBottom) },
                 "border-left-width" or "borderLeftWidth" => styles with { BorderLeft = ParsePixels(rawvalue, styles.BorderLeft) },
                 "border-right-width" or "borderRightWidth" => styles with { BorderRight = ParsePixels(rawvalue, styles.BorderRight) },
-                "border-width" => styles with
+                "border-width" or "borderWidth" => styles with
                 {
                     BorderTop = ParsePixels(rawvalue, styles.BorderTop),
                     BorderBottom = ParsePixels(rawvalue, styles.BorderBottom),
