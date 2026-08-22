@@ -1,4 +1,5 @@
-﻿using NFMWorld.ClayDom.Events;
+﻿using nfm_world_library.Lua;
+using NFMWorld.ClayDom.Events;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Reactor;
@@ -13,6 +14,7 @@ namespace NFMWorld.Reactor;
 /// layout and measurement, plus a cursor overlay child rendered on top for
 /// the blinking cursor and selection highlight.
 /// </summary>
+[LuaVisible]
 public partial class TextInput : Component
 {
     // ── Internal children ──────────────────────────────────────────
@@ -68,6 +70,7 @@ public partial class TextInput : Component
     /// <summary>
     /// Placeholder text shown when <see cref="Text"/> is empty and the input is not focused.
     /// </summary>
+    [LuaName]
     public string Placeholder
     {
         get;
@@ -92,6 +95,7 @@ public partial class TextInput : Component
     // ── Proxied TextRun properties ─────────────────────────────────
 
     /// <inheritdoc cref="Reactor.Text.TextContent"/>
+    [LuaName]
     public string? Text
     {
         get;

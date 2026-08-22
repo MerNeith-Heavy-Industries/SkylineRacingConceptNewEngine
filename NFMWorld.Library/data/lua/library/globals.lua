@@ -535,3 +535,13 @@ Key = {
     Control = 0x00020000,
     Alt     = 0x00040000,
 }
+
+---@class UiLib
+---@field createInstance fun(vtype: string, props: table): any
+---@field createTextInstance fun(text: string): any
+---@field appendChild fun(parent: any, child: any): nil
+---@field insertBefore fun(parent: any, child: any, before: any): nil
+---@field removeChild fun(parent: any, child: any): nil
+---@field setProperty fun(instance: any, key: string, value: any): nil -- value == nil removes the property
+---@field commitTextUpdate fun(textInstance: any, oldText: string, newText: string): nil
+UiLib = {}
