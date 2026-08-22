@@ -178,11 +178,11 @@ internal sealed class LuaStubsGenerator(BaseLuaTypeMetadata type)
 
         if (t.IsArray)
         {
-            return $"{{ [integer]: {ToLuaTypeName(t.IEnumerableType)}}}{suff}";
+            return $"{{ [integer|number]: {ToLuaTypeName(t.IEnumerableType)}}}{suff}";
         }
         if (t.IsInlineArray)
         {
-            return $"{{ [integer]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
+            return $"{{ [integer|number]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
         }
 
         if (t.FullTypeName == "global::Lua.LuaTable") return $"table{suff}";

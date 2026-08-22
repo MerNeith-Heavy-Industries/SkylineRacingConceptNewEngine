@@ -12,7 +12,7 @@ using nfm_world_library.Lua;
 namespace NFMWorldLibrary.Util;
 
 [MemoryPackable(GenerateType.Collection)]
-[LuaShimType("{ [integer]: TView }")]
+[LuaShimType("{ [integer|number]: T }")]
 public partial class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, ILuaUserData
 {
     private protected T[] _items = [];

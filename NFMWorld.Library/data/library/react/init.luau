@@ -14,7 +14,6 @@
 local vdom = require('./react/vdom')
 local core = require('./react/core')
 
----@class ReactModule
 local React = {}
 
 React.version = "0.1.0"
@@ -45,5 +44,10 @@ React.useCallback = core.useCallback
 React.useRef = core.useRef
 React.useSyncExternalStore = core.useSyncExternalStore
 React.useContext = core.useContext
+
+React.View = 'view'
+React.Text = 'text'
+React.Image = 'image'
+React.TextInput = 'textinput'
 
 return React

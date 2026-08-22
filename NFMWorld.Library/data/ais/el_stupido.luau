@@ -5,43 +5,20 @@
 
 --- Static helper function: Pythagorean distance squared (fix64 version)
 --- Used for fast distance comparisons without square root
----@generic T : fixed64 | number
----@param x1 T
----@param x2 T
----@param z1 T
----@param z2 T
----@return T
-local function pyo(x1, x2, z1, z2)
+local function pyo(x1: fixed64, x2: fixed64, z1: fixed64, z2: fixed64): fixed64
     local dx = x1 - x2
     local dz = z1 - z2
     return (dx * dx) + (dz * dz)
 end
 
 --- Calculate angle difference, normalized to -180 to 180 range
----@param a fixed64
----@param b fixed64
----@return fixed64
-local function angleDiff(a, b)
+local function angleDiff(a: fixed64, b: fixed64): fixed64
     local diff = a - b
     diff = ((diff + fixed64(180)) % fixed64(360)) - fixed64(180)
     if diff < fixed64(-180) then
         diff = diff + fixed64(360)
     end
     return diff
-end
-
----Compare two values
----@param a number
----@param b number
----@return number
-function compare(a, b)
-    if a < b then
-        return -1
-    elseif a > b then
-        return 1
-    else
-        return 0
-    end
 end
 
 -- Initialize state
@@ -62,12 +39,7 @@ local _avoidanceTimer = 0
 local smallturn = false
 
 ---Estimates clearance in a given direction by finding the nearest node.
----@param car BackendCar
----@param targetX fixed64
----@param targetZ fixed64
----@param stage BackendStage
----@return fixed64
-local function getClearanceInDirection(car, targetX, targetZ, stage)
+local function getClearanceInDirection(car: BackendCar, targetX: fixed64, targetZ: fixed64, stage: BackendStage): fixed64
     local minDistSq = f64math.maxValue
 
     for i = 1, #stage.nodes do
@@ -82,10 +54,7 @@ local function getClearanceInDirection(car, targetX, targetZ, stage)
 end
 
 ---Detects when the car is stuck against a wall and applies avoidance steering.
----@param car BackendCar
----@param mad CarPhysics
----@param stage BackendStage
-local function detectAndAvoidObstacles(car, mad, stage)
+local function detectAndAvoidObstacles(car: BackendCar, mad: CarPhysics, stage: BackendStage)
     -- Decrease avoidance timer
     if _avoidanceTimer > 0 then
         _avoidanceTimer = _avoidanceTimer - 1
@@ -97,7 +66,7 @@ local function detectAndAvoidObstacles(car, mad, stage)
 
     -- Check if car is stuck (low speed despite wanting to go forward)
     local isThrottling = car.control.up
-    local isStuck = isThrottling and mad.speed - fixed64(20) < 0
+    local isStuck = isThrottling and mad.speed - fixed64(20) < fixed64(0)
 
     if isStuck then
         _stuckCounter = _stuckCounter + 1
@@ -147,9 +116,7 @@ local function detectAndAvoidObstacles(car, mad, stage)
 end
 
 ---Calculates target angle to drive toward a position
----@param car BackendCar
----@param position fixed64vector3
-local function target(car, position)
+local function target(car: BackendCar, position: fixed64vector3)
     -- Calculate direction vector
     local dx = position.x - car.position.x
     local dz = position.z - car.position.z
@@ -161,11 +128,7 @@ local function target(car, position)
 end
 
 ---Finds the target node to drive toward
----@param car BackendCar
----@param rubberbandingFactor fixed64
----@param mad CarPhysics
----@param random DeterministicRandom
-local function findDrivingTarget(car, rubberbandingFactor, mad, random)
+local function findDrivingTarget(car: BackendCar, rubberbandingFactor: fixed64, mad: CarPhysics, random: DeterministicRandom)
     -- stage.nodes / stage.checkpoints are 1-based in Lua, but car.lastCheckpointNode
     -- and car.currentCheckpoint are 0-based C# values, so convert at the boundary.
     local numNodes = #AI.stage.nodes
@@ -239,8 +202,8 @@ local function findDrivingTarget(car, rubberbandingFactor, mad, random)
 
             -- Check if it's a non-drivable node type
             if kind ~= AiNodeKind.road and kind ~= AiNodeKind.checkPoint and
-            kind ~= AiNodeKind.ramp and kind ~= AiNodeKind.halfpipe and
-            kind ~= AiNodeKind.auto then
+                kind ~= AiNodeKind.ramp and kind ~= AiNodeKind.halfpipe and
+                kind ~= AiNodeKind.auto then
                 targetNodeIndex = targetNodeIndex + 1
                 if targetNodeIndex > numNodes then
                     targetNodeIndex = 1
@@ -274,7 +237,7 @@ local function findDrivingTarget(car, rubberbandingFactor, mad, random)
         for i = 1, nodesToSkip do
             local kind = AI.stage.nodes[targetNodeIndex].nodeKind
             if kind == AiNodeKind.auto or kind == AiNodeKind.road or
-            kind == AiNodeKind.ramp or kind == AiNodeKind.halfpipe then
+                kind == AiNodeKind.ramp or kind == AiNodeKind.halfpipe then
                 -- Don't skip ramps when low on power
                 if mad.power < fixed64(80) and (kind == AiNodeKind.ramp or kind == AiNodeKind.halfpipe) then
                     break
@@ -303,7 +266,7 @@ local function findDrivingTarget(car, rubberbandingFactor, mad, random)
         end
 
         -- Check if we should look for a fix road
-        local maxmagThreshold = mad.stat.maxmag * fixed64(0.8)
+        local maxmagThreshold = fixed64(mad.stat.maxmag) * fixed64(0.8)
         local wantFix = mad.hitmag > maxmagThreshold and random:nextf64() < rubberbandingFactor
 
         if wantFix then

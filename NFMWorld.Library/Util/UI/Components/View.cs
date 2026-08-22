@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using nfm_world_library.Lua;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
@@ -9,8 +10,8 @@ namespace NFMWorld.Reactor;
 /// Represents a container node that can hold multiple child nodes and arrange them according to the Flexbox layout
 /// algorithm.
 /// </summary>
-[DebuggerDisplay("{DebugToString()}")]
-public class View : Component
+[DebuggerDisplay("{DebugToString()}"), LuaVisible]
+public partial class View : Component
 {
     public ComponentChildCollection Children { get; }
 

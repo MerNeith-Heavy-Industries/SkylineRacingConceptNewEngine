@@ -5,7 +5,7 @@ BaseAi = {}
 
 
 ---@class AiContext
----@field players { [integer]: ClientSidePlayer }
+---@field players { [integer|number]: ClientSidePlayer }
 ---@field player ClientSidePlayer
 ---@field stage BackendStage
 ---@field config table|nil
@@ -18,7 +18,7 @@ AiContext = {}
 ---@field maxRadius integer
 ---@field wheelAngle f64euler
 ---@field turningWheelAngle f64euler
----@field wheels { [integer]: Rad3dWheelDef }
+---@field wheels { [integer|number]: Rad3dWheelDef }
 ---@field carPhysics CarPhysics
 ---@field control Control
 ---@field currentCheckpoint integer
@@ -30,7 +30,7 @@ AiContext = {}
 ---@field stats CarStats
 ---@field wasted boolean
 ---@field player ClientSidePlayerInfo
----@field children { [integer]: BackendGameObject }
+---@field children { [integer|number]: BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -40,7 +40,7 @@ BackendCar = {}
 
 
 ---@class BackendGameObject : NFMWorldLibrary.ITransform
----@field children { [integer]: BackendGameObject }
+---@field children { [integer|number]: BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -49,10 +49,10 @@ BackendGameObject = {}
 
 
 ---@class BackendStage
----@field pieces { [integer]: BackendGameObject }
----@field nodes { [integer]: StageObject }
----@field checkpoints { [integer]: StageObject }
----@field fixHoops { [integer]: StageObject }
+---@field pieces { [integer|number]: BackendGameObject }
+---@field nodes { [integer|number]: StageObject }
+---@field checkpoints { [integer|number]: StageObject }
+---@field fixHoops { [integer|number]: StageObject }
 ---@field nlaps integer
 ---@field name string
 ---@field path string
@@ -62,9 +62,9 @@ BackendStage = {}
 
 
 ---@class WallCollision : BackendGameObject, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
----@field boxes { [integer]: Rad3dBoxDef }
+---@field boxes { [integer|number]: Rad3dBoxDef }
 ---@field maxRadius integer
----@field children { [integer]: BackendGameObject }
+---@field children { [integer|number]: BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -77,10 +77,10 @@ WallCollision = {}
 ---@field rad Rad3d
 ---@field nodeKind AiNodeKind
 ---@field isSpecial boolean
----@field boxes { [integer]: Rad3dBoxDef }
+---@field boxes { [integer|number]: Rad3dBoxDef }
 ---@field maxRadius integer
 ---@field fileName string
----@field children { [integer]: BackendGameObject }
+---@field children { [integer|number]: BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -93,13 +93,79 @@ StageObject = {}
 IGamemodeContext = {}
 
 
----@class FrameTrace
+---@class LuaClientContext
+---@field resetCheckpointGlow fun(self: LuaClientContext)
+---@field updateCheckpointGlow fun(self: LuaClientContext, currentCheckpoint: integer, isFinish: boolean)
+---@field getClientCarCallbacks fun(self: LuaClientContext, car: BackendCar): LuaClientCarContext
 
-FrameTrace = {}
+LuaClientContext = {}
 
 
----@param message string
-function FrameTrace.addMessage(message) end
+---@class LuaClientCarContext
+---@field castsShadow boolean
+---@field getsShadowed boolean|nil
+---@field alphaOverride number|nil
+---@field glow boolean|nil
+---@field finish boolean|nil
+
+LuaClientCarContext = {}
+
+
+---@class GamemodeContext
+---@field stage BackendStage
+---@field players { [integer|number]: ClientSidePlayer }
+---@field clientPlayer ClientSidePlayer
+---@field hudState HudStateData
+---@field physics PhysicsController
+---@field config table|nil
+---@field client LuaClientContext
+---@field countdownInterval integer
+---@field createCar fun(self: GamemodeContext, playerIndex: integer, x: fixed64, z: fixed64): BackendCar
+---@field calculatePositions fun(self: GamemodeContext)
+---@field handleCheckPoint fun(self: GamemodeContext, car: BackendCar): boolean
+---@field handleFixHoops fun(self: GamemodeContext, car: BackendCar): boolean
+---@field clientReset fun(self: GamemodeContext)
+---@field sendEvent fun(self: GamemodeContext, type: string, payload: table)
+---@field updateHudAndSounds fun(self: GamemodeContext, car: BackendCar)
+---@field removeFakePlayers fun(self: GamemodeContext)
+---@field clonePlayer fun(self: GamemodeContext, basedOnPlayer: ClientSidePlayer): ClientSidePlayer
+
+GamemodeContext = {}
+
+
+---@class ServerGamemodeContext
+---@field currentStage BackendStage
+---@field players { [integer|number]: ServerSidePlayerInfo }
+---@field config table|nil
+---@field countdownInterval integer
+---@field getPlayerPosition fun(self: ServerGamemodeContext, playerId: string): fixed64vector3|nil
+---@field broadcastEvent fun(self: ServerGamemodeContext, type: string, payload: table)
+---@field finishRace fun(self: ServerGamemodeContext, standings: RaceStandings)
+
+ServerGamemodeContext = {}
+
+
+---@class TimeTrial
+---@field hasGhost boolean
+---@field begin fun(self: TimeTrial, car: BackendCar)
+---@field applyGhost fun(self: TimeTrial, ghostCar: BackendCar, tick: integer)
+---@field getSplitDiff fun(self: TimeTrial, splitIndex: integer): number|nil
+---@field getLastSplitDiff fun(self: TimeTrial): number|nil
+---@field getLapDiff fun(self: TimeTrial, lapIndex: integer): number|nil
+---@field recordSplit fun(self: TimeTrial, splitTime: number)
+---@field getLapTime fun(self: TimeTrial, lapIndex: integer): number|nil
+---@field getLastSplitTime fun(self: TimeTrial): number|nil
+---@field getBestLastSplitTime fun(self: TimeTrial): number|nil
+---@field record fun(self: TimeTrial, car: BackendCar)
+---@field save fun(self: TimeTrial)
+
+TimeTrial = {}
+
+
+---Creates a new TimeTrial
+---@param stage BackendStage
+---@return TimeTrial
+function TimeTrial.new(stage) end
 
 ---@class ClientSidePlayer
 ---@field info ClientSidePlayerInfo
@@ -141,84 +207,97 @@ ClientSidePlayerInfo = {}
 HudStateData = {}
 
 
----@class LuaClientContext
----@field resetCheckpointGlow fun(self: LuaClientContext)
----@field updateCheckpointGlow fun(self: LuaClientContext, currentCheckpoint: integer, isFinish: boolean)
----@field getClientCarCallbacks fun(self: LuaClientContext, car: BackendCar): LuaClientCarContext
-
-LuaClientContext = {}
-
-
----@class LuaClientCarContext
----@field castsShadow boolean
----@field getsShadowed boolean|nil
----@field alphaOverride number|nil
----@field glow boolean|nil
----@field finish boolean|nil
-
-LuaClientCarContext = {}
-
-
----@class GamemodeContext
----@field stage BackendStage
----@field players { [integer]: ClientSidePlayer }
----@field clientPlayer ClientSidePlayer
----@field hudState HudStateData
----@field physics PhysicsController
----@field config table|nil
----@field client LuaClientContext
----@field countdownInterval integer
----@field createCar fun(self: GamemodeContext, playerIndex: integer, x: fixed64, z: fixed64): BackendCar
----@field calculatePositions fun(self: GamemodeContext)
----@field handleCheckPoint fun(self: GamemodeContext, car: BackendCar): boolean
----@field handleFixHoops fun(self: GamemodeContext, car: BackendCar): boolean
----@field clientReset fun(self: GamemodeContext)
----@field sendEvent fun(self: GamemodeContext, type: string, payload: table)
----@field updateHudAndSounds fun(self: GamemodeContext, car: BackendCar)
----@field removeFakePlayers fun(self: GamemodeContext)
----@field clonePlayer fun(self: GamemodeContext, basedOnPlayer: ClientSidePlayer): ClientSidePlayer
-
-GamemodeContext = {}
-
-
----@class ServerGamemodeContext
----@field currentStage BackendStage
----@field players { [integer]: ServerSidePlayerInfo }
----@field config table|nil
----@field countdownInterval integer
----@field getPlayerPosition fun(self: ServerGamemodeContext, playerId: string): fixed64vector3|nil
----@field broadcastEvent fun(self: ServerGamemodeContext, type: string, payload: table)
----@field finishRace fun(self: ServerGamemodeContext, standings: RaceStandings)
-
-ServerGamemodeContext = {}
-
-
----@class TimeTrial
----@field hasGhost boolean
----@field begin fun(self: TimeTrial, car: BackendCar)
----@field applyGhost fun(self: TimeTrial, ghostCar: BackendCar, tick: integer)
----@field getSplitDiff fun(self: TimeTrial, splitIndex: integer): number|nil
----@field getLastSplitDiff fun(self: TimeTrial): number|nil
----@field getLapDiff fun(self: TimeTrial, lapIndex: integer): number|nil
----@field recordSplit fun(self: TimeTrial, splitTime: number)
----@field getLapTime fun(self: TimeTrial, lapIndex: integer): number|nil
----@field getLastSplitTime fun(self: TimeTrial): number|nil
----@field getBestLastSplitTime fun(self: TimeTrial): number|nil
----@field record fun(self: TimeTrial, car: BackendCar)
----@field save fun(self: TimeTrial)
-
-TimeTrial = {}
-
-
----Creates a new TimeTrial
----@param stage BackendStage
----@return TimeTrial
-function TimeTrial.new(stage) end
-
 ---@class PhysicsController
 ---@field gameTick fun(self: PhysicsController)
 
 PhysicsController = {}
+
+
+---@class ServerSidePlayerInfo
+---@field id string
+---@field playerName string
+---@field carName string
+---@field color Color3
+
+ServerSidePlayerInfo = {}
+
+
+---@class AttachmentLineDirection : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+AttachmentLineDirection = {}
+
+
+---@class LineType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+LineType = {}
+
+
+---@class PolyType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+PolyType = {}
+
+
+---@class Rad3d
+---@field maxRadius integer
+---@field colors { [integer|number]: Color3 }
+---@field stats CarStats
+---@field wheels { [integer|number]: Rad3dWheelDef }
+---@field rims Rad3dRimsDef|nil
+---@field boxes { [integer|number]: Rad3dBoxDef }
+---@field polys { [integer|number]: Rad3dPoly }
+---@field castsShadow boolean
+---@field atp { [integer|number]: LuaVector2 }
+---@field fileName string
+---@field atLines { [integer|number]: Rad3dAttachmentLine }|nil
+
+Rad3d = {}
+
+
+---@class Rad3dAttachmentLine : System.IEquatable_Rad3dAttachmentLine
+---@field direction AttachmentLineDirection
+---@field offset fixed64
+
+Rad3dAttachmentLine = {}
+
+
+---@class Rad3dBoxDef : System.IEquatable_Rad3dBoxDef
+---@field xy integer
+---@field zy integer
+---@field radius fixed64vector3
+---@field translation fixed64vector3
+---@field surfaceType SurfaceType
+---@field damage integer
+---@field notWall boolean
+---@field color Color3
+---@field tractionMultiplier fixed64|nil
+
+Rad3dBoxDef = {}
+
+
+---@class Rad3dPoly : System.IEquatable_Rad3dPoly
+---@field color Color3
+---@field colNum integer|nil
+---@field polyType PolyType
+---@field lineType LineType|nil
+
+Rad3dPoly = {}
+
+
+---@class Rad3dRimsDef : System.IEquatable_Rad3dRimsDef
+---@field color Color3
+---@field size number
+---@field depth number
+
+Rad3dRimsDef = {}
+
+
+---@class Rad3dWheelDef : System.IEquatable_Rad3dWheelDef
+---@field position fixed64vector3
+---@field rotates integer
+---@field width fixed64
+---@field height fixed64
+
+Rad3dWheelDef = {}
 
 
 ---@class SurfaceType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
@@ -231,21 +310,21 @@ SurfaceType = {}
 ---@field btab boolean
 ---@field capcnt integer
 ---@field capsized boolean
----@field caught { [integer]: boolean }
+---@field caught { [integer|number]: boolean }
 ---@field stat CarStats
 ---@field cn integer
 ---@field cntdest integer
 ---@field cntouch integer
 ---@field collidingWithClientPlayer boolean
----@field crank { [integer]: integerView }
----@field lcrank { [integer]: integerView }
+---@field crank { [integer|number]: integer }
+---@field lcrank { [integer|number]: integer }
 ---@field cxz fixed64
 ---@field staticCameraXz fixed64
 ---@field dcnt integer
 ---@field dcomp fixed64
 ---@field lcomp fixed64
 ---@field wasted boolean
----@field dominate { [integer]: booleanView }
+---@field dominate { [integer|number]: boolean }
 ---@field drag fixed64
 ---@field fixes integer
 ---@field forca fixed64
@@ -278,9 +357,9 @@ SurfaceType = {}
 ---@field pzy fixed64
 ---@field rcomp fixed64
 ---@field rtab boolean
----@field scx { [integer]: fixed64 }
----@field scy { [integer]: fixed64 }
----@field scz { [integer]: fixed64 }
+---@field scx { [integer|number]: fixed64 }
+---@field scy { [integer|number]: fixed64 }
+---@field scz { [integer|number]: fixed64 }
 ---@field shakedam integer
 ---@field skid integer
 ---@field speed fixed64
@@ -368,93 +447,6 @@ Control = {}
 AiNodeKind = {}
 
 
----@class ServerSidePlayerInfo
----@field id string
----@field playerName string
----@field carName string
----@field color Color3
-
-ServerSidePlayerInfo = {}
-
-
----@class AttachmentLineDirection : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-AttachmentLineDirection = {}
-
-
----@class LineType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-LineType = {}
-
-
----@class PolyType : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-PolyType = {}
-
-
----@class Rad3d
----@field maxRadius integer
----@field colors { [integer]: Color3 }
----@field stats CarStats
----@field wheels { [integer]: Rad3dWheelDef }
----@field rims Rad3dRimsDef|nil
----@field boxes { [integer]: Rad3dBoxDef }
----@field polys { [integer]: Rad3dPoly }
----@field castsShadow boolean
----@field atp { [integer]: LuaVector2 }
----@field fileName string
----@field atLines { [integer]: Rad3dAttachmentLine }|nil
-
-Rad3d = {}
-
-
----@class Rad3dAttachmentLine : System.IEquatable_Rad3dAttachmentLine
----@field direction AttachmentLineDirection
----@field offset fixed64
-
-Rad3dAttachmentLine = {}
-
-
----@class Rad3dBoxDef : System.IEquatable_Rad3dBoxDef
----@field xy integer
----@field zy integer
----@field radius fixed64vector3
----@field translation fixed64vector3
----@field surfaceType SurfaceType
----@field damage integer
----@field notWall boolean
----@field color Color3
----@field tractionMultiplier fixed64|nil
-
-Rad3dBoxDef = {}
-
-
----@class Rad3dPoly : System.IEquatable_Rad3dPoly
----@field color Color3
----@field colNum integer|nil
----@field polyType PolyType
----@field lineType LineType|nil
-
-Rad3dPoly = {}
-
-
----@class Rad3dRimsDef : System.IEquatable_Rad3dRimsDef
----@field color Color3
----@field size number
----@field depth number
-
-Rad3dRimsDef = {}
-
-
----@class Rad3dWheelDef : System.IEquatable_Rad3dWheelDef
----@field position fixed64vector3
----@field rotates integer
----@field width fixed64
----@field height fixed64
-
-Rad3dWheelDef = {}
-
-
 ---@class PiecePlacement : System.IEquatable_PiecePlacement
 ---@field type PiecePlacementType
 ---@field object Rad3d
@@ -488,8 +480,8 @@ WallDirection = {}
 
 ---@class HierarchyGroup : System.IEquatable_HierarchyGroup
 ---@field name string
----@field pieces { [integer]: PiecePlacementView }
----@field coordinateKeys { [integer]: stringView }
+---@field pieces { [integer|number]: PiecePlacement }
+---@field coordinateKeys { [integer|number]: string }
 
 HierarchyGroup = {}
 
@@ -518,7 +510,7 @@ FogInstruction = {}
 
 
 ---@class CloudsInstruction : EnvironmentInstruction, System.IEquatable_EnvironmentInstruction, System.IEquatable_CloudsInstruction
----@field clouds { [integer]: integer }
+---@field clouds { [integer|number]: integer }
 
 CloudsInstruction = {}
 
@@ -530,7 +522,7 @@ GroundInstruction = {}
 
 
 ---@class TextureInstruction : EnvironmentInstruction, System.IEquatable_EnvironmentInstruction, System.IEquatable_TextureInstruction
----@field texture { [integer]: integer }
+---@field texture { [integer|number]: integer }
 
 TextureInstruction = {}
 
@@ -562,18 +554,51 @@ PolysInstruction = {}
 ---@field mountainSeed integer|nil
 ---@field mountainCoverage number|nil
 ---@field lightDirection LuaVector3|nil
----@field pieces { [integer]: PiecePlacement }
----@field walls { [integer]: Rad3dBoxDef }
+---@field pieces { [integer|number]: PiecePlacement }
+---@field walls { [integer|number]: Rad3dBoxDef }
 ---@field maxr integer
 ---@field maxl integer
 ---@field maxt integer
 ---@field maxb integer
----@field environmentInstructions { [integer]: EnvironmentInstruction }
+---@field environmentInstructions { [integer|number]: EnvironmentInstruction }
 ---@field drawPolys boolean
 ---@field drawClouds boolean
 
 StageLoader = {}
 
+
+---@class DeterministicRandom
+---@field next fun(self: DeterministicRandom): integer
+---@field nextBetween fun(self: DeterministicRandom, min: integer, max: integer): integer
+---@field nextf64 fun(self: DeterministicRandom): fixed64
+
+DeterministicRandom = {}
+
+
+---Creates a new DeterministicRandom
+---@param value fixed64
+---@return DeterministicRandom
+function DeterministicRandom.new(value) end
+
+---@class Stopwatch
+---@field isRunning boolean
+---@field elapsed number
+---@field elapsedMilliseconds integer
+---@field elapsedMicroseconds integer
+---@field stop fun(self: Stopwatch)
+---@field start fun(self: Stopwatch)
+---@field restart fun(self: Stopwatch)
+---@field reset fun(self: Stopwatch)
+
+Stopwatch = {}
+
+
+---Creates a new Stopwatch
+---@return Stopwatch
+function Stopwatch.new() end
+
+---@return Stopwatch
+function Stopwatch.startNew() end
 
 ---@class Color3 : System.IEquatable_Color3
 ---@field r integer
@@ -583,10 +608,22 @@ StageLoader = {}
 Color3 = {}
 
 
+---@class FrameTrace
+
+FrameTrace = {}
+
+
+---@param message string
+function FrameTrace.addMessage(message) end
+
 ---@class Key : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
 
 Key = {}
 
+---@type Key
+Key.returnKey = nil
+---@type Key
+Key.endKey = nil
 
 ---@class Keys : System.IEquatable_Keys, System.IComparable_Keys
 ---@field none boolean
@@ -807,145 +844,6 @@ LuaVector2 = {}
 LuaVector3 = {}
 
 
----@class DeterministicRandom
----@field next fun(self: DeterministicRandom): integer
----@field nextBetween fun(self: DeterministicRandom, min: integer, max: integer): integer
----@field nextf64 fun(self: DeterministicRandom): fixed64
-
-DeterministicRandom = {}
-
-
----@class Stopwatch
----@field isRunning boolean
----@field elapsed number
----@field elapsedMilliseconds integer
----@field elapsedMicroseconds integer
----@field stop fun(self: Stopwatch)
----@field start fun(self: Stopwatch)
----@field restart fun(self: Stopwatch)
----@field reset fun(self: Stopwatch)
-
-Stopwatch = {}
-
-
----Creates a new Stopwatch
----@return Stopwatch
-function Stopwatch.new() end
-
----@return Stopwatch
-function Stopwatch.startNew() end
-
----@class Component : Node, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
----@field visualChildren { [integer]: Node }
----@field canHaveChildren boolean
----@field name string
----@field isFocusable boolean
----@field layoutMarginPosition LuaVector2
----@field layoutMarginSize LuaVector2
----@field layoutBorderPosition LuaVector2
----@field layoutBorderSize LuaVector2
----@field layoutPaddingPosition LuaVector2
----@field layoutPaddingSize LuaVector2
----@field layoutContentPosition LuaVector2
----@field layoutContentSize LuaVector2
----@field layoutMargin LuaVector2
----@field layoutPadding LuaVector2
----@field layoutBorder LuaVector2
----@field layoutWidth number
----@field layoutHeight number
----@field layoutX number
----@field layoutY number
----@field layoutDirection Direction
----@field hadOverflow boolean
----@field layoutMarginTop number
----@field layoutMarginBottom number
----@field layoutMarginLeft number
----@field layoutMarginRight number
----@field layoutPaddingTop number
----@field layoutPaddingBottom number
----@field layoutPaddingLeft number
----@field layoutPaddingRight number
----@field layoutBorderTop number
----@field layoutBorderBottom number
----@field layoutBorderLeft number
----@field layoutBorderRight number
----@field hasNewLayout boolean
----@field isDirty boolean
----@field isReferenceBaseline boolean
----@field scrollLeft number
----@field scrollTop number
----@field scrollableWidth number
----@field scrollableHeight number
----@field isClipping boolean
----@field isDisplayed boolean
----@field visualParent Node|nil
----@field addChild fun(self: Component, child: Node)
----@field insertAt fun(self: Component, index: integer, child: Node)
----@field removeAt fun(self: Component, index: integer)
----@field scrollIntoView fun(self: Component)
-
-Component = {}
-
-
----@class TextInput : Component, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
----@field placeholder string
----@field text string
----@field visualChildren { [integer]: Node }
----@field canHaveChildren boolean
----@field name string
----@field isFocusable boolean
----@field layoutMarginPosition LuaVector2
----@field layoutMarginSize LuaVector2
----@field layoutBorderPosition LuaVector2
----@field layoutBorderSize LuaVector2
----@field layoutPaddingPosition LuaVector2
----@field layoutPaddingSize LuaVector2
----@field layoutContentPosition LuaVector2
----@field layoutContentSize LuaVector2
----@field layoutMargin LuaVector2
----@field layoutPadding LuaVector2
----@field layoutBorder LuaVector2
----@field layoutWidth number
----@field layoutHeight number
----@field layoutX number
----@field layoutY number
----@field layoutDirection Direction
----@field hadOverflow boolean
----@field layoutMarginTop number
----@field layoutMarginBottom number
----@field layoutMarginLeft number
----@field layoutMarginRight number
----@field layoutPaddingTop number
----@field layoutPaddingBottom number
----@field layoutPaddingLeft number
----@field layoutPaddingRight number
----@field layoutBorderTop number
----@field layoutBorderBottom number
----@field layoutBorderLeft number
----@field layoutBorderRight number
----@field hasNewLayout boolean
----@field isDirty boolean
----@field isReferenceBaseline boolean
----@field scrollLeft number
----@field scrollTop number
----@field scrollableWidth number
----@field scrollableHeight number
----@field isClipping boolean
----@field isDisplayed boolean
----@field visualParent Node|nil
----@field addChild fun(self: TextInput, child: Node)
----@field insertAt fun(self: TextInput, index: integer, child: Node)
----@field removeAt fun(self: TextInput, index: integer)
----@field scrollIntoView fun(self: TextInput)
-
-TextInput = {}
-
-
----@class Direction : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-Direction = {}
-
-
 ---@class BaseMouseDragEvent : System.IEquatable_BaseMouseDragEvent
 ---@field dragStart LuaVector2
 ---@field position LuaVector2
@@ -1053,15 +951,178 @@ MouseMoveEvent = {}
 MouseWheelEvent = {}
 
 
+---@class Direction : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+Direction = {}
+
+
 ---@class Node
 ---@field visualParent Node|nil
----@field visualChildren { [integer]: Node }
+---@field visualChildren { [integer|number]: Node }
 
 Node = {}
 
 
+---@class Component : Node, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
+---@field visualChildren { [integer|number]: Node }
+---@field canHaveChildren boolean
+---@field name string
+---@field isFocusable boolean
+---@field layoutMarginPosition LuaVector2
+---@field layoutMarginSize LuaVector2
+---@field layoutBorderPosition LuaVector2
+---@field layoutBorderSize LuaVector2
+---@field layoutPaddingPosition LuaVector2
+---@field layoutPaddingSize LuaVector2
+---@field layoutContentPosition LuaVector2
+---@field layoutContentSize LuaVector2
+---@field layoutMargin LuaVector2
+---@field layoutPadding LuaVector2
+---@field layoutBorder LuaVector2
+---@field layoutWidth number
+---@field layoutHeight number
+---@field layoutX number
+---@field layoutY number
+---@field layoutDirection Direction
+---@field hadOverflow boolean
+---@field layoutMarginTop number
+---@field layoutMarginBottom number
+---@field layoutMarginLeft number
+---@field layoutMarginRight number
+---@field layoutPaddingTop number
+---@field layoutPaddingBottom number
+---@field layoutPaddingLeft number
+---@field layoutPaddingRight number
+---@field layoutBorderTop number
+---@field layoutBorderBottom number
+---@field layoutBorderLeft number
+---@field layoutBorderRight number
+---@field hasNewLayout boolean
+---@field isDirty boolean
+---@field isReferenceBaseline boolean
+---@field scrollLeft number
+---@field scrollTop number
+---@field scrollableWidth number
+---@field scrollableHeight number
+---@field isClipping boolean
+---@field isDisplayed boolean
+---@field visualParent Node|nil
+---@field addChild fun(self: Component, child: Node)
+---@field insertAt fun(self: Component, index: integer, child: Node)
+---@field removeAt fun(self: Component, index: integer)
+---@field scrollIntoView fun(self: Component)
+
+Component = {}
+
+
+---@class View : Component, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
+---@field visualChildren { [integer|number]: Node }
+---@field canHaveChildren boolean
+---@field name string
+---@field isFocusable boolean
+---@field layoutMarginPosition LuaVector2
+---@field layoutMarginSize LuaVector2
+---@field layoutBorderPosition LuaVector2
+---@field layoutBorderSize LuaVector2
+---@field layoutPaddingPosition LuaVector2
+---@field layoutPaddingSize LuaVector2
+---@field layoutContentPosition LuaVector2
+---@field layoutContentSize LuaVector2
+---@field layoutMargin LuaVector2
+---@field layoutPadding LuaVector2
+---@field layoutBorder LuaVector2
+---@field layoutWidth number
+---@field layoutHeight number
+---@field layoutX number
+---@field layoutY number
+---@field layoutDirection Direction
+---@field hadOverflow boolean
+---@field layoutMarginTop number
+---@field layoutMarginBottom number
+---@field layoutMarginLeft number
+---@field layoutMarginRight number
+---@field layoutPaddingTop number
+---@field layoutPaddingBottom number
+---@field layoutPaddingLeft number
+---@field layoutPaddingRight number
+---@field layoutBorderTop number
+---@field layoutBorderBottom number
+---@field layoutBorderLeft number
+---@field layoutBorderRight number
+---@field hasNewLayout boolean
+---@field isDirty boolean
+---@field isReferenceBaseline boolean
+---@field scrollLeft number
+---@field scrollTop number
+---@field scrollableWidth number
+---@field scrollableHeight number
+---@field isClipping boolean
+---@field isDisplayed boolean
+---@field visualParent Node|nil
+---@field addChild fun(self: View, child: Node)
+---@field insertAt fun(self: View, index: integer, child: Node)
+---@field removeAt fun(self: View, index: integer)
+---@field scrollIntoView fun(self: View)
+
+View = {}
+
+
+---@class TextInput : Component, NFMWorld.Reactor.IAnimationCallback, System.IDisposable
+---@field placeholder string
+---@field text string
+---@field visualChildren { [integer|number]: Node }
+---@field canHaveChildren boolean
+---@field name string
+---@field isFocusable boolean
+---@field layoutMarginPosition LuaVector2
+---@field layoutMarginSize LuaVector2
+---@field layoutBorderPosition LuaVector2
+---@field layoutBorderSize LuaVector2
+---@field layoutPaddingPosition LuaVector2
+---@field layoutPaddingSize LuaVector2
+---@field layoutContentPosition LuaVector2
+---@field layoutContentSize LuaVector2
+---@field layoutMargin LuaVector2
+---@field layoutPadding LuaVector2
+---@field layoutBorder LuaVector2
+---@field layoutWidth number
+---@field layoutHeight number
+---@field layoutX number
+---@field layoutY number
+---@field layoutDirection Direction
+---@field hadOverflow boolean
+---@field layoutMarginTop number
+---@field layoutMarginBottom number
+---@field layoutMarginLeft number
+---@field layoutMarginRight number
+---@field layoutPaddingTop number
+---@field layoutPaddingBottom number
+---@field layoutPaddingLeft number
+---@field layoutPaddingRight number
+---@field layoutBorderTop number
+---@field layoutBorderBottom number
+---@field layoutBorderLeft number
+---@field layoutBorderRight number
+---@field hasNewLayout boolean
+---@field isDirty boolean
+---@field isReferenceBaseline boolean
+---@field scrollLeft number
+---@field scrollTop number
+---@field scrollableWidth number
+---@field scrollableHeight number
+---@field isClipping boolean
+---@field isDisplayed boolean
+---@field visualParent Node|nil
+---@field addChild fun(self: TextInput, child: Node)
+---@field insertAt fun(self: TextInput, index: integer, child: Node)
+---@field removeAt fun(self: TextInput, index: integer)
+---@field scrollIntoView fun(self: TextInput)
+
+TextInput = {}
+
+
 ---@class TextNode : Node, NFMWorld.Reactor.IReceivesTextInvalidation, NFMWorld.Reactor.IRichTextElement
----@field visualChildren { [integer]: Node }
+---@field visualChildren { [integer|number]: Node }
 ---@field text string
 ---@field visualParent Node|nil
 

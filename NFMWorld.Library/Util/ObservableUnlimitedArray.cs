@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using nfm_world_library.Lua;
 
 namespace NFMWorldLibrary.Util;
 
@@ -29,6 +30,7 @@ namespace NFMWorldLibrary.Util;
 /// appropriate events.
 /// </para>
 /// </remarks>
+[LuaShimType("{ [integer|number]: T }")]
 public class ObservableUnlimitedArray<T> : UnlimitedArray<T>,
     INotifyPropertyChanged,
     INotifyPropertyChanging,

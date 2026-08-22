@@ -58,10 +58,10 @@ declare IFixtureCar: {
 
 declare extern type IPerson with
     email: string
-    getName: (() -> string)
-    setName: ((name: string) -> nil)
-    getAge: (() -> integer)
-    setAge: ((age: integer) -> nil)
+    getName: ((self: IPerson) -> string)
+    setName: ((self: IPerson, name: string) -> nil)
+    getAge: ((self: IPerson) -> integer)
+    setAge: ((self: IPerson, age: integer) -> nil)
 end
 
 declare IPerson: {
@@ -70,11 +70,12 @@ declare IPerson: {
 declare extern type RecordStructType with
     x: integer
     y: integer
-    sum: (() -> integer)
+    sum: ((self: RecordStructType) -> integer)
+    __eq: ((left: RecordStructType, right: RecordStructType) -> boolean)
 end
 
 declare RecordStructType: {
-    new: (() -> nil) & ((x: integer, y: integer) -> nil),
+    new: (() -> RecordStructType) & ((x: integer, y: integer) -> RecordStructType),
 }
 
 declare extern type SampleClass with
@@ -89,22 +90,22 @@ declare extern type SampleClass with
     publicField: integer
     publicStringField: string
     nullableLongField: integer|nil
-    getDoubleId: (() -> integer)
-    getGreeting: ((prefix: string) -> string)
-    setValue: ((newValue: number) -> nil)
-    calculate: ((a: number, b: number, multiply: boolean) -> number)
-    clone: (() -> SampleClass)
-    setNullableValue: ((newValue: number|nil) -> nil)
-    multiplyByNullable: ((multiplier: integer|nil) -> integer|nil)
-    formatWithOptional: ((prefix: string, suffix: string) -> string)
-    customName: (() -> string)
+    getDoubleId: ((self: SampleClass) -> integer)
+    getGreeting: ((self: SampleClass, prefix: string) -> string)
+    setValue: ((self: SampleClass, newValue: number) -> nil)
+    calculate: ((self: SampleClass, a: number, b: number, multiply: boolean) -> number)
+    clone: ((self: SampleClass) -> SampleClass)
+    setNullableValue: ((self: SampleClass, newValue: number|nil) -> nil)
+    multiplyByNullable: ((self: SampleClass, multiplier: integer|nil) -> integer|nil)
+    formatWithOptional: ((self: SampleClass, prefix: string, suffix: string) -> string)
+    customName: ((self: SampleClass) -> string)
 end
 
 declare SampleClass: {
     staticCounter: integer,
     staticName: string,
     staticNullableDouble: number|nil,
-    new: (() -> nil) & ((id: integer, name: string) -> nil) & ((id: integer, name: string, isActive: boolean, value: number) -> nil) & ((nullableId: integer|nil, nullableName: string) -> nil),
+    new: (() -> SampleClass) & ((id: integer, name: string) -> SampleClass) & ((id: integer, name: string, isActive: boolean, value: number) -> SampleClass) & ((nullableId: integer|nil, nullableName: string) -> SampleClass),
     add: ((a: integer, b: integer) -> integer),
     concat: ((a: string, b: string) -> string),
     incrementCounter: (() -> nil),
@@ -113,6 +114,11 @@ declare SampleClass: {
 }
 
 declare extern type Vec2 with
+    __add: ((a: Vec2, b: Vec2) -> Vec2)
+    __sub: ((a: Vec2, b: Vec2) -> Vec2)
+    __div: ((v: Vec2, scalar: number) -> Vec2)
+    __unm: ((v: Vec2) -> Vec2)
+    __eq: ((a: Vec2, b: Vec2) -> boolean)
 end
 
 declare Vec2: {
@@ -135,11 +141,11 @@ declare StaticClass: {
 declare extern type TypeInLuaNamespace with
     name: string
     value: integer
-    getDescription: (() -> string)
+    getDescription: ((self: TypeInLuaNamespace) -> string)
 end
 
 declare TypeInLuaNamespace: {
-    new: (() -> nil) & ((name: string, value: integer) -> nil),
+    new: (() -> TypeInLuaNamespace) & ((name: string, value: integer) -> TypeInLuaNamespace),
 }
 
 declare extern type TypeWithArrays with
@@ -169,6 +175,10 @@ declare extern type TestColor with
 end
 
 declare TestColor: {
+    red: TestColor,
+    green: TestColor,
+    blue: TestColor,
+    yellow: TestColor,
 }
 
 declare extern type TypeWithEnum with
@@ -176,10 +186,10 @@ declare extern type TypeWithEnum with
     readOnlyColor: TestColor
     nullableColor: TestColor|nil
     defaultColor: TestColor
-    getColor: (() -> TestColor)
-    setColor: ((color: TestColor) -> nil)
-    isPrimary: ((color: TestColor) -> boolean)
-    getNullableColor: ((returnValue: boolean) -> TestColor|nil)
+    getColor: ((self: TypeWithEnum) -> TestColor)
+    setColor: ((self: TypeWithEnum, color: TestColor) -> nil)
+    isPrimary: ((self: TypeWithEnum, color: TestColor) -> boolean)
+    getNullableColor: ((self: TypeWithEnum, returnValue: boolean) -> TestColor|nil)
 end
 
 declare TypeWithEnum: {
@@ -214,11 +224,11 @@ declare extern type TypeWithFixedMathNullables with
     nullableVec3: fixed64vector3|nil
     normalFixed: fixed64
     normalVec3: fixed64vector3
-    getOptionalValue: ((returnValue: boolean) -> fixed64|nil)
+    getOptionalValue: ((self: TypeWithFixedMathNullables, returnValue: boolean) -> fixed64|nil)
 end
 
 declare TypeWithFixedMathNullables: {
-    new: (() -> nil),
+    new: (() -> TypeWithFixedMathNullables),
 }
 
 declare extern type InlineBuffer with
@@ -242,8 +252,8 @@ declare TypeWithIntIndexer: {
 declare extern type TypeWithMemberShimOverrides with
     myProperty: CustomProperty
     myField: CustomField
-    methodWithParamShim: ((value: CustomParam) -> integer)
-    methodWithReturnShim: (() -> CustomReturn)
+    methodWithParamShim: ((self: TypeWithMemberShimOverrides, value: CustomParam) -> integer)
+    methodWithReturnShim: ((self: TypeWithMemberShimOverrides) -> CustomReturn)
 end
 
 declare TypeWithMemberShimOverrides: {
@@ -288,13 +298,16 @@ declare TypeWithNestedGeneric: {
 declare extern type TypeWithOverloads with
     value: integer
     text: string
-    processNumber: ((x: integer) -> string) & ((x: number) -> string) & ((x: integer) -> string) & ((x: number) -> string)
-    processData: ((s: string) -> string) & ((arr: { [integer]: integer}) -> string) & ((arr: { [integer]: number}) -> string) & ((flag: boolean) -> string)
-    combine: ((a: integer, b: integer) -> string) & ((a: number, b: number) -> string) & ((a: string, b: string) -> string) & ((a: integer, b: string) -> string) & ((a: string, b: integer) -> string)
+    processNumber: ((self: TypeWithOverloads, x: integer) -> string) & ((self: TypeWithOverloads, x: number) -> string) & ((self: TypeWithOverloads, x: integer) -> string) & ((self: TypeWithOverloads, x: number) -> string)
+    processData: ((self: TypeWithOverloads, s: string) -> string) & ((self: TypeWithOverloads, arr: { [integer|number]: integer}) -> string) & ((self: TypeWithOverloads, arr: { [integer|number]: number}) -> string) & ((self: TypeWithOverloads, flag: boolean) -> string)
+    combine: ((self: TypeWithOverloads, a: integer, b: integer) -> string) & ((self: TypeWithOverloads, a: number, b: number) -> string) & ((self: TypeWithOverloads, a: string, b: string) -> string) & ((self: TypeWithOverloads, a: integer, b: string) -> string) & ((self: TypeWithOverloads, a: string, b: integer) -> string)
+    __unm: ((a: TypeWithOverloads) -> TypeWithOverloads)
+    __add: ((a: TypeWithOverloads, b: TypeWithOverloads) -> TypeWithOverloads) & ((a: TypeWithOverloads, b: integer) -> TypeWithOverloads) & ((a: integer, b: TypeWithOverloads) -> TypeWithOverloads)
+    __sub: ((a: TypeWithOverloads, b: TypeWithOverloads) -> TypeWithOverloads) & ((a: TypeWithOverloads, b: integer) -> TypeWithOverloads)
 end
 
 declare TypeWithOverloads: {
-    new: ((value: integer) -> nil) & ((value: number) -> nil) & ((text: string) -> nil),
+    new: ((value: integer) -> TypeWithOverloads) & ((value: number) -> TypeWithOverloads) & ((text: string) -> TypeWithOverloads),
     staticProcess: ((x: integer) -> string) & ((x: number) -> string) & ((s: string) -> string),
 }
 
@@ -306,11 +319,11 @@ declare TypeWithReferences: {
 
 declare extern type TypeWithSpanParameters with
     name: string
-    getName: (() -> string)
+    getName: ((self: TypeWithSpanParameters) -> string)
 end
 
 declare TypeWithSpanParameters: {
-    new: (() -> nil),
+    new: (() -> TypeWithSpanParameters),
 }
 
 declare extern type TypeWithStaticAbstractInterface with
@@ -326,16 +339,19 @@ declare TypeWithStringIndexer: {
 }
 
 declare extern type TypeWithTupleOverloads with
-    processTuple: ((coords: System.ValueTuple_int_int) -> string) & ((point: System.ValueTuple_int_int_int) -> string)
-    processMixed: ((id: integer, data: System.ValueTuple_string_bool) -> string)
-    combine: ((a: System.ValueTuple_int_int, b: System.ValueTuple_int_int) -> string) & ((a: System.ValueTuple_int_int_int, b: System.ValueTuple_int_int_int) -> string) & ((a: System.ValueTuple_int_int, scalar: integer) -> string)
+    processTuple: ((self: TypeWithTupleOverloads, coords: System.ValueTuple_int_int) -> string) & ((self: TypeWithTupleOverloads, point: System.ValueTuple_int_int_int) -> string)
+    processMixed: ((self: TypeWithTupleOverloads, id: integer, data: System.ValueTuple_string_bool) -> string)
+    combine: ((self: TypeWithTupleOverloads, a: System.ValueTuple_int_int, b: System.ValueTuple_int_int) -> string) & ((self: TypeWithTupleOverloads, a: System.ValueTuple_int_int_int, b: System.ValueTuple_int_int_int) -> string) & ((self: TypeWithTupleOverloads, a: System.ValueTuple_int_int, scalar: integer) -> string)
 end
 
 declare TypeWithTupleOverloads: {
-    new: (() -> nil),
+    new: (() -> TypeWithTupleOverloads),
 }
 
 declare extern type Vec3 with
+    __add: ((a: Vec3, b: Vec3) -> Vec3)
+    __sub: ((a: Vec3, b: Vec3) -> Vec3)
+    __unm: ((v: Vec3) -> Vec3)
 end
 
 declare Vec3: {
