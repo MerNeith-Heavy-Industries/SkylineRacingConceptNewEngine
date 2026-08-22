@@ -6,7 +6,18 @@ namespace NFMWorld.Reactor;
 
 public static class FocusManager
 {
-    public static Node? FocusedNode { get; set; }
+    public static Node? FocusedNode
+    {
+        get;
+        set
+        {
+            if (field is Component cmp)
+                cmp.Unfocused?.Invoke();
+            field = value;
+            if (value is Component cmp1)
+                cmp1.Focused?.Invoke();
+        }
+    }
     public static Node? ActiveNode { get; set; }
     
     /// <summary>Move focus to the next focusable element in Tab order.</summary>

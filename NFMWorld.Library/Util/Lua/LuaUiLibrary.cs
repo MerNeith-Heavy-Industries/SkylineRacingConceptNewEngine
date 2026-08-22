@@ -257,6 +257,18 @@ public static class LuaUiLibrary
                     state.Call(func, [@event]);
                 };
                 break;
+            case "onfocus" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.Focused += () =>
+                {
+                    state.Call(func, []);
+                };
+                break;
+            case "onblur" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.Unfocused += () =>
+                {
+                    state.Call(func, []);
+                };
+                break;
             case "src" when cmp is Image image && rawvalue.TryRead<string>(out var str):
                 image.ImageData = G.LoadImage(str);
                 break;
@@ -846,6 +858,11 @@ public static class LuaUiLibrary
             return ParseRgbColor(str);
         }
 
+        if (str.StartsWith("rgba", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseRgbaColor(str);
+        }
+
         return null;
     }
 
@@ -923,6 +940,34 @@ public static class LuaUiLibrary
         return new Color(r, g, b, a);
     }
 
+    private static Color? ParseRgbaColor(string str)
+    {
+        var open = str.IndexOf('(');
+        var close = str.LastIndexOf(')');
+        if (open < 0 || close <= open)
+        {
+            return null;
+        }
+
+        var parts = str[(open + 1)..close].Split(',');
+        if (parts.Length < 3)
+        {
+            return null;
+        }
+
+        var r = ParseColorChannel(parts[0]);
+        var g = ParseColorChannel(parts[1]);
+        var b = ParseColorChannel(parts[2]);
+        var a = parts.Length >= 4 ? ParseAlphaChannel(parts[3]) : 1;
+
+        if (r < 0 || g < 0 || b < 0 || a < 0)
+        {
+            return null;
+        }
+
+        return new Color(r, g, b, (byte)MathF.Round(a * 255f));
+    }
+
     private static int ParseColorChannel(string channel)
     {
         channel = channel.Trim();
@@ -940,6 +985,28 @@ public static class LuaUiLibrary
         if (float.TryParse(channel, NumberStyles.Float, CultureInfo.InvariantCulture, out var f))
         {
             return (int)MathF.Round(f);
+        }
+
+        return -1;
+    }
+
+    private static float ParseAlphaChannel(string channel)
+    {
+        channel = channel.Trim();
+
+        if (channel.EndsWith('%'))
+        {
+            if (float.TryParse(channel.AsSpan(0, channel.Length - 1), NumberStyles.Float, CultureInfo.InvariantCulture, out var percent))
+            {
+                return percent / 100f;
+            }
+
+            return -1;
+        }
+
+        if (float.TryParse(channel, NumberStyles.Float, CultureInfo.InvariantCulture, out var f))
+        {
+            return f;
         }
 
         return -1;

@@ -607,6 +607,8 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     public Action<KeyboardTypingEvent>? KeyTyped { get; set; }
     public Action<KeyboardEvent>? KeyPressed { get; set; }
     public Action<KeyboardEvent>? KeyReleased { get; set; }
+    public Action? Unfocused { get; set; }
+    public Action? Focused { get; set; }
 
     #endregion
     
