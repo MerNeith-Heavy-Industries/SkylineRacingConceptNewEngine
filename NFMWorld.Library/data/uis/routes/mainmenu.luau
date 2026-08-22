@@ -18,7 +18,7 @@ local function MainMenu()
 		style = {
 			flexDirection = "row",
 			alignItems = "stretch",
-			justifyContent = "stretch",
+			justifyContent = "center",
 			width = 100,
 			height = 100,
 		},
@@ -26,4 +26,4 @@ local function MainMenu()
 	})
 end
 
-dom.render(h(MainMenu))
+dom.render(h(MainMenu, {}))
