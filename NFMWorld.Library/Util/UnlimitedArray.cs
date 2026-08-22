@@ -7,10 +7,12 @@ using System.Runtime.CompilerServices;
 using Lua;
 using Lua.Runtime;
 using MemoryPack;
+using nfm_world_library.Lua;
 
 namespace NFMWorldLibrary.Util;
 
 [MemoryPackable(GenerateType.Collection)]
+[LuaShimType("{ [integer]: TView }")]
 public partial class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, ILuaUserData
 {
     private protected T[] _items = [];

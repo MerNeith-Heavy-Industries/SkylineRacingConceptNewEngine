@@ -69,7 +69,7 @@ public readonly partial struct Keys : IEquatable<Keys>, IComparable<Keys>
     /// <summary>
     ///  The RETURN key.
     /// </summary>
-    [LuaName] public bool Return => GetKey((int)Key.Return);
+    [LuaName("returnKey")] public bool Return => GetKey((int)Key.Return);
 
     /// <summary>
     ///  The ENTER key.
@@ -199,7 +199,7 @@ public readonly partial struct Keys : IEquatable<Keys>, IComparable<Keys>
     /// <summary>
     ///  The END key.
     /// </summary>
-    [LuaName] public bool End => GetKey((int)Key.End);
+    [LuaName("endKey")] public bool End => GetKey((int)Key.End);
 
     /// <summary>
     ///  The HOME key.
