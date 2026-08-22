@@ -12,7 +12,10 @@ public class LuaNfmwPlatform
             OsEnvironment: new SystemOsEnvironment(),
             StandardIO: new ConsoleStandardIO(),
             TimeProvider: TimeProvider.System
-        );
+        )
+        {
+            RequireByString = true
+        };
 
     public sealed class SystemOsEnvironment : ILuaOsEnvironment
     {
@@ -39,6 +42,11 @@ public class LuaNfmwPlatform
         public bool IsReadable(string path)
         {
             return VFS.FileExists(path);
+        }
+
+        public bool DirectoryExists(string path)
+        {
+            return VFS.DirectoryExists(path);
         }
 
         public ValueTask<ILuaStream> Open(string path, LuaFileOpenMode mode, CancellationToken cancellationToken)

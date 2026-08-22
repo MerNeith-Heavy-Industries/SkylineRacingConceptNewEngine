@@ -11,6 +11,8 @@
 --- flush immediately (no scheduler, no time-slicing). See README.md for the
 --- host config contract and the list of supported hooks.
 
+local R = require('./react/types')
+
 local vdom = require('./react/vdom')
 local core = require('./react/core')
 
@@ -45,9 +47,158 @@ React.useRef = core.useRef
 React.useSyncExternalStore = core.useSyncExternalStore
 React.useContext = core.useContext
 
-React.View = 'view'
-React.Text = 'text'
-React.Image = 'image'
-React.TextInput = 'textinput'
+-- Built-in components
+
+type Styles = {
+  direction: "ltr" | "rtl" | "inherit" | nil,
+  flexDirection: "row" | "row-reverse" | "column" | "column-reverse" | nil,
+  justifyContent: "flex-start" | "center" | "flex-end" | "space-between" | "space-around" | "space-evenly" | nil,
+  alignItems: "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | "space-between" | "space-around" | "space-evenly" | nil,
+  alignSelf: "auto" | "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
+  alignContent: "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
+  position: "static" | "relative" | "absolute" | nil,
+  flexWrap: "nowrap" | "wrap" | "wrap-reverse" | nil,
+  overflow: "visible" | "hidden" | "scroll" | nil,
+  display: "flex" | "none" | "contents" | nil,
+  boxSizing: "border-box" | "content-box" | nil,
+  visibility: "visible" | "hidden" | "collapse" | nil,
+  flex: number | nil,
+  flexGrow: number | nil,
+  flexShrink: number | nil,
+  flexBasis: string | nil,
+  --- accepts % and px
+  left: string | number | nil,
+  --- accepts % and px
+  top: string | number | nil,
+  --- accepts % and px
+  right: string | number | nil,
+  --- accepts % and px
+  bottom: string | number | nil,
+  --- accepts % and px
+  marginTop: string | number | "undefined" | "none" | "auto" | nil,
+  --- accepts % and px
+  marginBottom: string | number | "undefined" | "none" | "auto" | nil,
+  --- accepts % and px
+  marginLeft: string | number | "undefined" | "none" | "auto" | nil,
+  --- accepts % and px
+  marginRight: string | number | "undefined" | "none" | "auto" | nil,
+  --- accepts % and px
+  margin: string | number | "undefined" | "none" | "auto" | nil,
+  --- accepts % and px
+  paddingTop: string | number | "undefined" | "none" | nil,
+  --- accepts % and px
+  paddingBottom: string | number | "undefined" | "none" | nil,
+  --- accepts % and px
+  paddingLeft: string | number | "undefined" | "none" | nil,
+  --- accepts % and px
+  paddingRight: string | number | "undefined" | "none" | nil,
+  --- accepts % and px
+  padding: string | number | "undefined" | "none" | nil,
+  --- accepts px
+  borderTopWidth: string | number | "undefined" | "none" | nil,
+  --- accepts px
+  borderBottomWidth: string | number | "undefined" | "none" | nil,
+  --- accepts px
+  borderLeftWidth: string | number | "undefined" | "none" | nil,
+  --- accepts px
+  borderRightWidth: string | number | "undefined" | "none" | nil,
+  --- accepts px
+  borderWidth: string | number | "undefined" | "none" | nil,
+  --- accepts % and px
+  columnGap: string | number | "undefined" | nil,
+  --- accepts % and px
+  rowGap: string | number | "undefined" | nil,
+  --- accepts % and px
+  gap: string | number | "undefined" | nil,
+  --- accepts % and px
+  width: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- accepts % and px
+  height: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- accepts % and px
+  minWidth: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- accepts % and px
+  minHeight: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- accepts % and px
+  maxWidth: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- accepts % and px
+  maxHeight: string | number | "undefined" | "auto" | "stretch" | "fit-content" | "max-content" | nil,
+  --- a/b or number
+  aspectRatio: string | number | nil,
+  --- accepts px
+  borderTopLeftRadius: string | number | nil,
+  --- accepts px
+  borderTopRightRadius: string | number | nil,
+  --- accepts px
+  borderBottomLeftRadius: string | number | nil,
+  --- accepts px
+  borderBottomRightRadius: string | number | nil,
+  --- accepts px
+  borderRadius: string | number | nil,
+}
+
+type TextStyles = Styles & {
+  color: string?,
+  stroke: string?,
+  fontFamily: string?,
+  fontSize: string?,
+  fontStyle: string?,
+  verticalAlign: "top" | "bottom" | "middle",
+  horizontalAlign: "left" | "right" | "center",
+}
+
+type ViewProps = {
+  style: Styles?,
+  onanimationframebegan: (() -> nil)?,
+  active: boolean?,
+  focused: boolean?,
+  taborder: integer?,
+  onmousedown: ((event: MouseEvent) -> nil)?,
+  onmouseup: ((event: MouseEvent) -> nil)?,
+  onmousedrag: ((event: MouseDragEvent) -> nil)?,
+  onmousescroll: ((event: MouseWheelEvent) -> nil)?,
+  onmousemove: ((event: MouseMoveEvent) -> nil)?,
+  onmouseenter: ((event: MouseMoveEvent) -> nil)?,
+  onmouseleave: ((event: MouseMoveEvent) -> nil)?,
+  onkeytype: ((event: KeyboardTypingEvent) -> nil)?,
+  onkeypress: ((event: KeyboardEvent) -> nil)?,
+  onkeyup: ((event: KeyboardEvent) -> nil)?,
+  children: R.Children?,
+}
+
+type ImageProps = ViewProps & {
+  src: string?,
+  scale: number?,
+}
+
+type TextProps = ViewProps & {
+  style: TextStyles?,
+}
+
+type TextInputStyles = TextStyles & {
+  cursorColor: string?,
+  selectionColor: string?,
+  placeholderColor: string?,
+}
+
+type TextInputProps = ViewProps & {
+  style: TextInputStyles?,
+  value: string?,
+  placeholder: string?,
+  onsubmit: ((value: string) -> nil)?,
+  onchange: ((value: string) -> nil)?,
+}
+
+React.View = function(props: ViewProps, ...: R.Child): R.VNode
+    return (vdom.h :: any)("view", props, ...) :: R.VNode
+end
+React.Text = function(props: TextProps, ...: R.Child): R.VNode
+    return (vdom.h :: any)("text", props, ...) :: R.VNode
+end
+React.Image = function(props: ImageProps, ...: R.Child): R.VNode
+    return (vdom.h :: any)("image", props, ...) :: R.VNode
+end
+React.TextInput = function(props: TextInputProps, ...: R.Child): R.VNode
+    return (vdom.h :: any)("textinput", props, ...) :: R.VNode
+end
 
 return React
