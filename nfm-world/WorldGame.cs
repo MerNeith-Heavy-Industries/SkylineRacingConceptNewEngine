@@ -477,13 +477,13 @@ public class WorldGame : Game
         // Render based on game state
         GameSparker.CurrentPhase.Render(alpha);
 
-        FPSCounter.Render();
-        
         // Render UI overlay
         _uiRenderer?.Render();
 
         if (_yogaDebugPage >= 0)
             YogaDebugger.Render(_yogaDebugPage);
+
+        FPSCounter.Render();
 
         _nvg.Render();
 
