@@ -19,3 +19,10 @@ function OnClientEvent(playerId, type, payload)
     -- Echo the event back to everyone, tagged with the sender.
     SGM:broadcastEvent("echo", { from = playerId, type = type, payload = payload })
 end
+
+return {
+    OnBegin = OnBegin,
+    OnStartRace = OnStartRace,
+    OnGameTick = OnGameTick,
+    OnClientEvent = OnClientEvent,
+}

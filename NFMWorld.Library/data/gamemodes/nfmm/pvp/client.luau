@@ -1,15 +1,14 @@
 -- PvP racing gamemode (client). config.constraint: "racing" | "wasting" | "both".
 -- Client simulates locally, sends checkpoint events, receives authoritative standings.
 
-local state = "countdown"      -- countdown, inProgress, finished
+local state: "countdown" | "inProgress" | "finished" = "countdown"
 local countdown = 3
 local inner = 0
 local clientTick = 0
 local lastCheckpoint = -1
 local lastLap = 0
 
----@type { constraint: "racing" | "wasting" | "both" }
-local config = GM.config
+local config = GM.config :: { constraint: "racing" | "wasting" | "both" }
 
 local function setupCars()
     for i = 1, #GM.players do
@@ -25,7 +24,7 @@ local function setupCars()
     end
 end
 
-function OnBegin()
+local function OnBegin()
     GM:clientReset()
     setupCars()
     state = "countdown"
@@ -36,11 +35,11 @@ function OnBegin()
     lastLap = 0
 end
 
-function OnReset()
+local function OnReset()
     OnBegin()
 end
 
-function OnGameTick()
+local function OnGameTick()
     if state == "countdown" then
         inner = inner - 1
         if inner <= 0 then
@@ -99,9 +98,7 @@ function OnGameTick()
     end
 end
 
----@param type string
----@param payload table
-function OnServerEvent(type, payload)
+local function OnServerEvent(type: string, payload: { [string] : any })
     if type == "standings" and payload ~= nil then
         local me = payload[tostring(GM.clientPlayer.index)]
         if me ~= nil and me.position ~= nil then
@@ -114,3 +111,10 @@ function OnServerEvent(type, payload)
         state = "inProgress"
     end
 end
+
+return {
+    OnBegin = OnBegin,
+    OnReset = OnReset,
+    OnGameTick = OnGameTick,
+    OnServerEvent = OnServerEvent,
+}

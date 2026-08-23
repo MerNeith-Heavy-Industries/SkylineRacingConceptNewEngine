@@ -3,14 +3,14 @@
 
 local countdown = 3
 
-function OnBegin()
+local function OnBegin()
     GM.hudState.totalLaps = GM.stage.nlaps
     GM.hudState.lap = 1
     GM.hudState.position = 1
     GM.hudState.totalRacers = #GM.players
 end
 
-function OnReset()
+local function OnReset()
     countdown = 3
     local car = GM:createCar(0, fixed64(0), fixed64(0))
     car.currentCheckpoint = 0
@@ -19,7 +19,7 @@ function OnReset()
     GM.hudState.totalLaps = GM.stage.nlaps
 end
 
-function OnGameTick()
+local function OnGameTick()
     if countdown > 0 then
         countdown = countdown - 1
         GM.hudState.countdownTimer = countdown
@@ -38,6 +38,13 @@ function OnGameTick()
     end
 end
 
-function OnServerEvent(type, payload)
+local function OnServerEvent(type, payload)
     -- no-op: client-only test gamemode
 end
+
+return {
+    OnBegin = OnBegin,
+    OnReset = OnReset,
+    OnGameTick = OnGameTick,
+    OnServerEvent = OnServerEvent,
+}

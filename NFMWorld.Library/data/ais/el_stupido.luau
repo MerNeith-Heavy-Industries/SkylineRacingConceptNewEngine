@@ -452,3 +452,7 @@ function RunAi()
         steer(car, mad, u)
     end
 end
+
+return {
+    RunAi = RunAi,
+}

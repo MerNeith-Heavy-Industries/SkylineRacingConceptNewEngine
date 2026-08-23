@@ -20,8 +20,10 @@ declare function OnKeyReleased(key: integer)
 
 declare function OnKeyTyped(key: string)
 
+-- Server Gamemode
 declare SGM: ServerGamemodeContext;
 
+-- UI
 declare UiLib: {
 	--- Creates a new view that the root React node can be mounted onto.
 	createRoot: (() -> View),
@@ -46,3 +48,22 @@ declare UiLib: {
 	--- Registers a callback for an event from the C# bridge.
 	onEvent: (<T>(event: string, callback: ((payload: T) -> ())) -> () -> ()),
 }
+
+-- Gamemode config
+
+---Defines a property.
+export type ConfigProperty = {
+	name: string,
+	type: 'string' | 'number' | 'boolean',
+	description: string?,
+	options: { [number]: { label: string, value: string | number | boolean } }?,
+}
+
+export type Config = {
+	name: string,
+	description: string,
+	properties: {ConfigProperty},
+}
+
+---Defines the config for a gamemode
+declare function DefineGamemodeConfig(config: Config)

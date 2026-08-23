@@ -167,6 +167,7 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
 public sealed class LuaGamemode : BaseClientGamemode
 {
     private readonly LuaState _state;
+    private readonly LuaTable? _moduleTable;
 
     public LuaTable? Config { get; }
 
@@ -183,7 +184,11 @@ public sealed class LuaGamemode : BaseClientGamemode
 
         _state.Environment["GM"] = new LuaGamemodeContext(this);
 
-        _state.DoFile($"data/gamemodes/{gamemodeId}/client.lua");
+        var results = _state.DoFile($"data/gamemodes/{gamemodeId}/client.luau");
+        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        {
+            _moduleTable = resultTable;
+        }
     }
 
     public LuaGamemode(ClientGamemodeParameters clientGamemodeParameters, IGamemodeContext gamemodeContext, string gamemodeId, RadpackLua radpack, LuaTable? config = null)
@@ -198,7 +203,11 @@ public sealed class LuaGamemode : BaseClientGamemode
         _state.Environment["GM"] = new LuaGamemodeContext(this);
 
         _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
-        _state.DoString(radpack.Files["client"]);
+        var results = _state.DoString(radpack.Files["client"]);
+        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        {
+            _moduleTable = resultTable;
+        }
     }
 
     // ── Lifecycle callbacks ────────────────────────────────────────
@@ -290,7 +299,8 @@ public sealed class LuaGamemode : BaseClientGamemode
 
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
-        if (!_state.Environment.TryGetValue(name, out var value) ||
+        if (_moduleTable == null ||
+            !_moduleTable.TryGetValue(name, out var value) ||
             !value.TryRead<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];
