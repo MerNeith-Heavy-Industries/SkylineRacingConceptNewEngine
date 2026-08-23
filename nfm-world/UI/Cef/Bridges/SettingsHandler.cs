@@ -238,6 +238,8 @@ public sealed partial class SettingsSnapshot
 
     // Key bindings
     [LuaName] public LuaArray<KeyBindingData> KeyBindings { get; set; } = [];
+
+    [LuaName] public int DistantOutlineBehavior { get; set; }
 }
 
 /// <summary>
