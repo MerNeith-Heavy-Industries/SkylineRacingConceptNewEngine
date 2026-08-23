@@ -1054,8 +1054,8 @@ public class SettingsMenu(WorldGame game)
                     _lineWidth = fv;
                 break;
             case "distantOutlineBehavior":
-                if (args.TryGetProperty("value", out v) &&
-                    v.TryGetInt32(out iv) &&
+                if (args.TryGetValue("value", out v) &&
+                    v.TryRead<int>(out iv) &&
                     Enum.IsDefined(typeof(DistantOutlineBehavior), iv))
                     _distantOutlineBehavior = (DistantOutlineBehavior)iv;
                 break;
