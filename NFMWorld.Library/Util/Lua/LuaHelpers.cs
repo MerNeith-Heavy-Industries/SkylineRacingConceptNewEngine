@@ -18,6 +18,8 @@ public static class LuaHelpers
 
         state.ModuleLoader = new VfsModuleLoader();
 
+        state.Environment["unpack"] = new LuaFunction("unpack", TableLibrary.Unpack);
+
         return state;
     }
 
