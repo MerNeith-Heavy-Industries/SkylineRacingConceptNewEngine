@@ -30,7 +30,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         }
 
         if (item is Component cmp)
-            parent.NodeInternal.InsertChild(cmp.Contents, (uint)index);
+            parent.NodeInternal.InsertChild(cmp.Contents, index);
         item.VisualParent = parent;
         base.InsertItem(index, item);
     }
@@ -41,7 +41,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         var oldItem = Items[index];
         oldItem.VisualParent = null;
         if (item is Component cmp)
-            parent.NodeInternal.SwapChild(cmp.Contents, (uint)index);
+            parent.NodeInternal.ReplaceChild(cmp.Contents, index);
         else if (oldItem is Component cmp1)
             parent.NodeInternal.RemoveChild(cmp1.Contents);
         item.VisualParent = parent;
@@ -54,7 +54,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         {
             item.VisualParent = null;
         }
-        parent.NodeInternal.RemoveAllChildren();
+        parent.NodeInternal.ClearChildren();
         base.ClearItems();
     }
 

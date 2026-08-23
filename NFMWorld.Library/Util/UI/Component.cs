@@ -2,11 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Reactor.Layout;
 using nfm_world_library.Lua;
 using NFMWorld.ClayDom.Events;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
-using Yoga;
 
 namespace NFMWorld.Reactor;
 
@@ -15,10 +15,10 @@ namespace NFMWorld.Reactor;
 /// Represents a single node in the Yoga layout system.
 /// </summary>
 [DebuggerDisplay("{DebugToString()}"), LuaVisible]
-public abstract partial class Component : Node, IAnimationCallback, IDisposable
+public abstract partial class Component : Node, IAnimationCallback
 {
-    internal static readonly YGConfigPtr Config;
-    internal YGNodePtr NodeInternal = new(Config);
+    internal static readonly YogaConfig Config;
+    internal YogaNode NodeInternal = new(Config);
 
     internal readonly string __INTERNAL_CtorCallerFilePath = "";
     internal readonly int __INTERNAL_CtorCallerLineNumber = 0;
@@ -28,8 +28,9 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     static Component()
     {
-        Config = YGConfigPtr.GetDefault();
+        Config = new YogaConfig();
         Config.UseWebDefaults = true;
+        Config.SetExperimentalFeatureEnabled(YogaExperimentalFeature.FixFlexBasisFitContent, true);
     }
 
     // ── Visual abstracts ────────────────────────────────────────────────
@@ -42,7 +43,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// <summary>
     /// Gets the Yoga node associated with this visual element representing its contents.
     /// </summary>
-    internal virtual YGNodePtr Contents => NodeInternal;
+    internal virtual YogaNode Contents => NodeInternal;
 
     // ── Children API (no-op for leaf nodes) ──────────────────────────────
     /// <summary>
@@ -80,14 +81,6 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         return list;
     }
 
-    // ── IDisposable ─────────────────────────────────────────────────────
-    ~Component() { Dispose(false); }
-    public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
-    protected virtual void Dispose(bool disposing)
-    {
-        NodeInternal.Dispose();
-    }
-
     public Styles Styles
     {
         get;
@@ -100,7 +93,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     protected virtual void OnStylesChanged()
     {
-        NodeInternal.Direction = Styles.Direction.ToYogaDirection();
+        NodeInternal.Style.Direction = Styles.Direction.ToYogaDirection();
         NodeInternal.FlexDirection = Styles.FlexDirection.ToYogaFlexDirection();
         NodeInternal.JustifyContent = Styles.JustifyContent.ToYogaJustify();
         NodeInternal.AlignItems = Styles.AlignItems.ToYogaAlign();
@@ -110,29 +103,29 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         NodeInternal.FlexWrap = Styles.FlexWrap.ToYogaWrap();
         NodeInternal.Overflow = Styles.Overflow.ToYogaOverflow();
         NodeInternal.Display = Styles.Display.ToYogaDisplay();
-        NodeInternal.BoxSizing = Styles.BoxSizing.ToYogaBoxSizing();
-        NodeInternal.Flex = Styles.Flex ?? float.NaN;
+        NodeInternal.Style.BoxSizing = Styles.BoxSizing.ToYogaBoxSizing();
+        NodeInternal.Style.Flex = Styles.Flex ?? float.NaN;
         NodeInternal.FlexGrow = Styles.FlexGrow ?? float.NaN;
         NodeInternal.FlexShrink = Styles.FlexShrink ?? float.NaN;
         NodeInternal.FlexBasis = Styles.FlexBasis;
-        NodeInternal.Left = Styles.Left;
-        NodeInternal.Top = Styles.Top;
-        NodeInternal.Right = Styles.Right;
-        NodeInternal.Bottom = Styles.Bottom;
-        NodeInternal.MarginTop = Styles.MarginTop;
-        NodeInternal.MarginBottom = Styles.MarginBottom;
-        NodeInternal.MarginLeft = Styles.MarginLeft;
-        NodeInternal.MarginRight = Styles.MarginRight;
-        NodeInternal.PaddingTop = Styles.PaddingTop;
-        NodeInternal.PaddingBottom = Styles.PaddingBottom;
-        NodeInternal.PaddingLeft = Styles.PaddingLeft;
-        NodeInternal.PaddingRight = Styles.PaddingRight;
-        NodeInternal.BorderTop = Styles.BorderTop?.Value ?? float.NaN;
-        NodeInternal.BorderBottom = Styles.BorderBottom?.Value ?? float.NaN;
-        NodeInternal.BorderLeft = Styles.BorderLeft?.Value ?? float.NaN;
-        NodeInternal.BorderRight = Styles.BorderRight?.Value ?? float.NaN;
-        NodeInternal.GapColumn = Styles.GapColumn;
-        NodeInternal.GapRow = Styles.GapRow;
+        NodeInternal.SetPosition(YogaEdge.Left, Styles.Left);
+        NodeInternal.SetPosition(YogaEdge.Top, Styles.Top);
+        NodeInternal.SetPosition(YogaEdge.Right, Styles.Right);
+        NodeInternal.SetPosition(YogaEdge.Bottom, Styles.Bottom);
+        NodeInternal.SetMargin(YogaEdge.Top, Styles.MarginTop);
+        NodeInternal.SetMargin(YogaEdge.Bottom, Styles.MarginBottom);
+        NodeInternal.SetMargin(YogaEdge.Left, Styles.MarginLeft);
+        NodeInternal.SetMargin(YogaEdge.Right, Styles.MarginRight);
+        NodeInternal.SetPadding(YogaEdge.Top, Styles.PaddingTop);
+        NodeInternal.SetPadding(YogaEdge.Bottom, Styles.PaddingBottom);
+        NodeInternal.SetPadding(YogaEdge.Left, Styles.PaddingLeft);
+        NodeInternal.SetPadding(YogaEdge.Right, Styles.PaddingRight);
+        NodeInternal.SetBorder(YogaEdge.Top, Styles.BorderTop?.Value ?? float.NaN);
+        NodeInternal.SetBorder(YogaEdge.Bottom, Styles.BorderBottom?.Value ?? float.NaN);
+        NodeInternal.SetBorder(YogaEdge.Left, Styles.BorderLeft?.Value ?? float.NaN);
+        NodeInternal.SetBorder(YogaEdge.Right, Styles.BorderRight?.Value ?? float.NaN);
+        NodeInternal.SetGap(YogaGutter.Column, Styles.GapColumn);
+        NodeInternal.SetGap(YogaGutter.Row, Styles.GapRow);
         NodeInternal.Width = Styles.Width;
         NodeInternal.Height = Styles.Height;
         NodeInternal.MinWidth = Styles.MinWidth;
@@ -262,108 +255,108 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     /// <summary>
     /// Gets the width of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and does not include margins, borders, or padding.
+    /// This Value is in points and does not include margins, borders, or padding.
     /// </summary>
     [LuaName] public float LayoutWidth => NodeInternal.LayoutWidth;
 
     /// <summary>
     /// Gets the height of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and does not include margins, borders, or padding.
+    /// This Value is in points and does not include margins, borders, or padding.
     /// </summary>
     [LuaName] public float LayoutHeight => NodeInternal.LayoutHeight;
 
     /// <summary>
     /// Gets the X position of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the left edge of the parent node's content box to the left edge of this node's margin box.
+    /// This Value is in points and represents the distance from the left edge of the parent node's content box to the left edge of this node's margin box.
     /// </summary>
     [LuaName] public float LayoutX => NodeInternal.LayoutX;
 
     /// <summary>
     /// Gets the Y position of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the top edge of the parent node's content box to the top edge of this node's margin box.
+    /// This Value is in points and represents the distance from the top edge of the parent node's content box to the top edge of this node's margin box.
     /// </summary>
     [LuaName] public float LayoutY => NodeInternal.LayoutY;
 
     /// <summary>
     /// Gets the layout direction of the node as determined by the Yoga layout engine after a layout pass.
     /// </summary>
-    [LuaName] public Direction LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
+    [LuaName] public Direction LayoutDirection => NodeInternal.Style.Direction.ToNfmDirection();
 
     /// <summary>
-    /// Gets a value indicating whether the node's content overflowed its layout bounds during the last layout pass.
+    /// Gets a Value indicating whether the node's content overflowed its layout bounds during the last layout pass.
     /// </summary>
-    [LuaName] public bool HadOverflow => NodeInternal.HadOverflow;
+    [LuaName] public bool HadOverflow => NodeInternal.Layout.HadOverflow;
 
     /// <summary>
     /// Gets the top margin of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the top edge of this node's margin box to the top edge of its border box.
+    /// This Value is in points and represents the distance from the top edge of this node's margin box to the top edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
 
     /// <summary>
     /// Gets the bottom margin of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the bottom edge of this node's margin box to the bottom edge of its border box.
+    /// This Value is in points and represents the distance from the bottom edge of this node's margin box to the bottom edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
 
     /// <summary>
     /// Gets the left margin of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the left edge of this node's margin box to the left edge of its border box.
+    /// This Value is in points and represents the distance from the left edge of this node's margin box to the left edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginLeft => NodeInternal.LayoutMarginLeft;
 
     /// <summary>
     /// Gets the right margin of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
-    /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
+    /// This Value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
+    /// This Value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginRight => NodeInternal.LayoutMarginRight;
 
     /// <summary>
     /// Gets the top padding of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its padding box.
+    /// This Value is in points and represents the distance from the top edge of this node's border box to the top edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingTop => NodeInternal.LayoutPaddingTop;
 
     /// <summary>
     /// Gets the bottom padding of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its padding box.
+    /// This Value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingBottom => NodeInternal.LayoutPaddingBottom;
 
     /// <summary>
     /// Gets the left padding of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its padding box.
+    /// This Value is in points and represents the distance from the left edge of this node's border box to the left edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingLeft => NodeInternal.LayoutPaddingLeft;
 
     /// <summary>
     /// Gets the right padding of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its padding box.
+    /// This Value is in points and represents the distance from the right edge of this node's border box to the right edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingRight => NodeInternal.LayoutPaddingRight;
 
     /// <summary>
     /// Gets the top border of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its margin box.
+    /// This Value is in points and represents the distance from the top edge of this node's border box to the top edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderTop => NodeInternal.LayoutBorderTop;
 
     /// <summary>
     /// Gets the bottom border of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its margin box.
+    /// This Value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderBottom => NodeInternal.LayoutBorderBottom;
 
     /// <summary>
     /// Gets the left border of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its margin box.
+    /// This Value is in points and represents the distance from the left edge of this node's border box to the left edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderLeft => NodeInternal.LayoutBorderLeft;
 
     /// <summary>
     /// Gets the right border of the node's layout as determined by the Yoga layout engine after a layout pass.
-    /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its margin box.
+    /// This Value is in points and represents the distance from the right edge of this node's border box to the right edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderRight => NodeInternal.LayoutBorderRight;
 
@@ -382,7 +375,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     [LuaName] public bool IsDirty
     {
         get => NodeInternal.IsDirty;
-        set => NodeInternal.IsDirty = value;
+        set => NodeInternal.SetDirty(value);
     }
 
     /// <summary>
@@ -645,25 +638,25 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
             NodeInternal.MinHeight = Styles.MinHeight.Scale(G.Scale);
             NodeInternal.MaxWidth = Styles.MaxWidth.Scale(G.Scale);
             NodeInternal.MaxHeight = Styles.MaxHeight.Scale(G.Scale);
-            NodeInternal.MarginTop = Styles.MarginTop.Scale(G.Scale);
-            NodeInternal.MarginBottom = Styles.MarginBottom.Scale(G.Scale);
-            NodeInternal.MarginLeft = Styles.MarginLeft.Scale(G.Scale);
-            NodeInternal.MarginRight = Styles.MarginRight.Scale(G.Scale);
-            NodeInternal.PaddingTop = Styles.PaddingTop.Scale(G.Scale);
-            NodeInternal.PaddingBottom = Styles.PaddingBottom.Scale(G.Scale);
-            NodeInternal.PaddingLeft = Styles.PaddingLeft.Scale(G.Scale);
-            NodeInternal.PaddingRight = Styles.PaddingRight.Scale(G.Scale);
-            NodeInternal.BorderTop = Styles.BorderTop?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderBottom = Styles.BorderBottom?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderLeft = Styles.BorderLeft?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.BorderRight = Styles.BorderRight?.Value * G.Scale ?? YG.YGUndefined;
-            NodeInternal.GapColumn = Styles.GapColumn;
-            NodeInternal.GapRow = Styles.GapRow;
+            NodeInternal.SetPosition(YogaEdge.Left, Styles.Left);
+            NodeInternal.SetPosition(YogaEdge.Top, Styles.Top);
+            NodeInternal.SetPosition(YogaEdge.Right, Styles.Right);
+            NodeInternal.SetPosition(YogaEdge.Bottom, Styles.Bottom);
+            NodeInternal.SetMargin(YogaEdge.Top, Styles.MarginTop);
+            NodeInternal.SetMargin(YogaEdge.Bottom, Styles.MarginBottom);
+            NodeInternal.SetMargin(YogaEdge.Left, Styles.MarginLeft);
+            NodeInternal.SetMargin(YogaEdge.Right, Styles.MarginRight);
+            NodeInternal.SetPadding(YogaEdge.Top, Styles.PaddingTop);
+            NodeInternal.SetPadding(YogaEdge.Bottom, Styles.PaddingBottom);
+            NodeInternal.SetPadding(YogaEdge.Left, Styles.PaddingLeft);
+            NodeInternal.SetPadding(YogaEdge.Right, Styles.PaddingRight);
+            NodeInternal.SetBorder(YogaEdge.Top, Styles.BorderTop?.Value ?? float.NaN);
+            NodeInternal.SetBorder(YogaEdge.Bottom, Styles.BorderBottom?.Value ?? float.NaN);
+            NodeInternal.SetBorder(YogaEdge.Left, Styles.BorderLeft?.Value ?? float.NaN);
+            NodeInternal.SetBorder(YogaEdge.Right, Styles.BorderRight?.Value ?? float.NaN);
+            NodeInternal.SetGap(YogaGutter.Column, Styles.GapColumn);
+            NodeInternal.SetGap(YogaGutter.Row, Styles.GapRow);
             NodeInternal.FlexBasis = Styles.FlexBasis.Scale(G.Scale);
-            NodeInternal.Left = Styles.Left.Scale(G.Scale);
-            NodeInternal.Top = Styles.Top.Scale(G.Scale);
-            NodeInternal.Right = Styles.Right.Scale(G.Scale);
-            NodeInternal.Bottom = Styles.Bottom.Scale(G.Scale);
 #pragma warning restore CA2245
 
             _lastScale = G.Scale;
@@ -925,11 +918,11 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     public void LayoutAndRender(LuaVector2 availableSize, LuaVector2? origin = null)
     {
         NotifyUiScaleChanged();
-        NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
+        NodeInternal.CalculateLayout(availableSize.X, availableSize.Y);
         if (PostLayout())
         {
             // if the layout has changed by PostLayout, relayout
-            NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
+            NodeInternal.CalculateLayout(availableSize.X, availableSize.Y);
         }
 
         Render(new RenderContext(origin ?? default));
@@ -1219,84 +1212,84 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
 public struct MeasurementMarginPosition : IEquatable<MeasurementMarginPosition>
 {
-    internal YGValue InternalValue;
-    public YGUnit Unit => InternalValue.unit;
-    public float Value => InternalValue.value;
-    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+    internal YogaValue InternalValue;
+    internal YogaUnit Unit => InternalValue.Unit;
+    public float Value => InternalValue.Value;
+    public float? PointValue => InternalValue.Unit == YogaUnit.Point ? InternalValue.Value : null;
+    public float? PercentValue => InternalValue.Unit == YogaUnit.Percent ? InternalValue.Value : null;
 
-    public bool Equals(MeasurementMarginPosition other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public bool Equals(MeasurementMarginPosition other) => InternalValue.Unit == other.InternalValue.Unit && InternalValue.Value == other.InternalValue.Value;
     public override bool Equals(object? obj) => obj is MeasurementMarginPosition other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.Unit, InternalValue.Value);
 
-    public static implicit operator MeasurementMarginPosition(float value)
+    public static implicit operator MeasurementMarginPosition(float Value)
     {
         return new MeasurementMarginPosition
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
-    public static implicit operator MeasurementMarginPosition(YGValue value)
+    public static implicit operator MeasurementMarginPosition(YogaValue Value)
     {
         return new MeasurementMarginPosition
         {
-            InternalValue = value
+            InternalValue = Value
         };
     }
-    public static implicit operator YGValue(MeasurementMarginPosition value)
+    public static implicit operator YogaValue(MeasurementMarginPosition Value)
     {
-        return value.InternalValue;
+        return Value.InternalValue;
     }
 
     public static MeasurementMarginPosition Auto =>
         new()
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitAuto
+                Unit = YogaUnit.Auto
             }
         };
 
     public static MeasurementMarginPosition Undefined => new()
     {
-        InternalValue = new YGValue
+        InternalValue = new YogaValue
         {
-            unit = YGUnit.YGUnitUndefined
+            Unit = YogaUnit.Undefined
         }
     };
 
-    public static MeasurementMarginPosition Percent(float value)
+    public static MeasurementMarginPosition Percent(float Value)
     {
         return new MeasurementMarginPosition
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPercent,
-                value = value
+                Unit = YogaUnit.Percent,
+                Value = Value
             }
         };
     }
-    public static MeasurementMarginPosition Point(float value)
+    public static MeasurementMarginPosition Point(float Value)
     {
         return new MeasurementMarginPosition
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
 
     public MeasurementMarginPosition Scale(float scale)
     {
-        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        if (InternalValue.Unit == YogaUnit.Point)
         {
-            return Point(InternalValue.value * scale);
+            return Point(InternalValue.Value * scale);
         }
 
         return this;
@@ -1373,19 +1366,19 @@ public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
 
     public static MeasurementMultiMargin Undefined => MeasurementMarginPosition.Undefined;
 
-    public static MeasurementMultiMargin All(MeasurementMarginPosition value)
+    public static MeasurementMultiMargin All(MeasurementMarginPosition Value)
     {
         return new MeasurementMultiMargin
         {
-            Top = value,
-            Bottom = value,
-            Left = value,
-            Right = value
+            Top = Value,
+            Bottom = Value,
+            Left = Value,
+            Right = Value
         };
     }
 
-    public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition value) => All(value);
-    public static implicit operator MeasurementMultiMargin(float value) => All(value);
+    public static implicit operator MeasurementMultiMargin(MeasurementMarginPosition Value) => All(Value);
+    public static implicit operator MeasurementMultiMargin(float Value) => All(Value);
 
     public static MeasurementMultiMargin? XY(float x, float y)
     {
@@ -1476,75 +1469,75 @@ public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
 
 public struct MeasurementPadding : IEquatable<MeasurementPadding>
 {
-    internal YGValue InternalValue;
-    public YGUnit Unit => InternalValue.unit;
-    public float Value => InternalValue.value;
-    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+    internal YogaValue InternalValue;
+    public YogaUnit Unit => InternalValue.Unit;
+    public float Value => InternalValue.Value;
+    public float? PointValue => InternalValue.Unit == YogaUnit.Point ? InternalValue.Value : null;
+    public float? PercentValue => InternalValue.Unit == YogaUnit.Percent ? InternalValue.Value : null;
 
-    public bool Equals(MeasurementPadding other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public bool Equals(MeasurementPadding other) => InternalValue.Unit == other.InternalValue.Unit && InternalValue.Value == other.InternalValue.Value;
     public override bool Equals(object? obj) => obj is MeasurementPadding other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.Unit, InternalValue.Value);
 
-    public static implicit operator MeasurementPadding(float value)
+    public static implicit operator MeasurementPadding(float Value)
     {
         return new MeasurementPadding
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
-    public static implicit operator MeasurementPadding(YGValue value)
+    public static implicit operator MeasurementPadding(YogaValue Value)
     {
         return new MeasurementPadding
         {
-            InternalValue = value
+            InternalValue = Value
         };
     }
-    public static implicit operator YGValue(MeasurementPadding value)
+    public static implicit operator YogaValue(MeasurementPadding Value)
     {
-        return value.InternalValue;
+        return Value.InternalValue;
     }
 
     public static MeasurementPadding Undefined => new()
     {
-        InternalValue = new YGValue
+        InternalValue = new YogaValue
         {
-            unit = YGUnit.YGUnitUndefined
+            Unit = YogaUnit.Undefined
         }
     };
 
-    public static MeasurementPadding Percent(float value)
+    public static MeasurementPadding Percent(float Value)
     {
         return new MeasurementPadding
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPercent,
-                value = value
+                Unit = YogaUnit.Percent,
+                Value = Value
             }
         };
     }
-    public static MeasurementPadding Point(float value)
+    public static MeasurementPadding Point(float Value)
     {
         return new MeasurementPadding
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
 
     public MeasurementPadding Scale(float scale)
     {
-        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        if (InternalValue.Unit == YogaUnit.Point)
         {
-            return Point(InternalValue.value * scale);
+            return Point(InternalValue.Value * scale);
         }
 
         return this;
@@ -1615,19 +1608,19 @@ public struct MeasurementMultiPadding : IEquatable<MeasurementMultiPadding>
 
     public static MeasurementMultiPadding Undefined => MeasurementPadding.Undefined;
 
-    public static MeasurementMultiPadding All(MeasurementPadding value)
+    public static MeasurementMultiPadding All(MeasurementPadding Value)
     {
         return new MeasurementMultiPadding
         {
-            Top = value,
-            Bottom = value,
-            Left = value,
-            Right = value
+            Top = Value,
+            Bottom = Value,
+            Left = Value,
+            Right = Value
         };
     }
 
-    public static implicit operator MeasurementMultiPadding(MeasurementPadding value) => All(value);
-    public static implicit operator MeasurementMultiPadding(float value) => All(value);
+    public static implicit operator MeasurementMultiPadding(MeasurementPadding Value) => All(Value);
+    public static implicit operator MeasurementMultiPadding(float Value) => All(Value);
 
     public static MeasurementMultiPadding? XY(float x, float y)
     {
@@ -1743,18 +1736,18 @@ public struct MeasurementMultiBorder : IEquatable<MeasurementMultiBorder>
 
     public static MeasurementMultiBorder Undefined => All(null);
 
-    public static MeasurementMultiBorder All(float? value)
+    public static MeasurementMultiBorder All(float? Value)
     {
         return new MeasurementMultiBorder
         {
-            Top = value,
-            Bottom = value,
-            Left = value,
-            Right = value
+            Top = Value,
+            Bottom = Value,
+            Left = Value,
+            Right = Value
         };
     }
 
-    public static implicit operator MeasurementMultiBorder(float? value) => All(value);
+    public static implicit operator MeasurementMultiBorder(float? Value) => All(Value);
     public static MeasurementMultiBorder XY(float? x, float? y)
     {
         return new MeasurementMultiBorder
@@ -1833,75 +1826,75 @@ public struct MeasurementMultiBorder : IEquatable<MeasurementMultiBorder>
 
 public struct MeasurementGap : IEquatable<MeasurementGap>
 {
-    internal YGValue InternalValue;
-    public YGUnit Unit => InternalValue.unit;
-    public float Value => InternalValue.value;
-    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+    internal YogaValue InternalValue;
+    public YogaUnit Unit => InternalValue.Unit;
+    public float Value => InternalValue.Value;
+    public float? PointValue => InternalValue.Unit == YogaUnit.Point ? InternalValue.Value : null;
+    public float? PercentValue => InternalValue.Unit == YogaUnit.Percent ? InternalValue.Value : null;
 
-    public bool Equals(MeasurementGap other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public bool Equals(MeasurementGap other) => InternalValue.Unit == other.InternalValue.Unit && InternalValue.Value == other.InternalValue.Value;
     public override bool Equals(object? obj) => obj is MeasurementGap other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.Unit, InternalValue.Value);
 
-    public static implicit operator MeasurementGap(float value)
+    public static implicit operator MeasurementGap(float Value)
     {
         return new MeasurementGap
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
-    public static implicit operator MeasurementGap(YGValue value)
+    public static implicit operator MeasurementGap(YogaValue Value)
     {
         return new MeasurementGap
         {
-            InternalValue = value
+            InternalValue = Value
         };
     }
-    public static implicit operator YGValue(MeasurementGap value)
+    public static implicit operator YogaValue(MeasurementGap Value)
     {
-        return value.InternalValue;
+        return Value.InternalValue;
     }
 
     public static MeasurementGap Undefined => new()
     {
-        InternalValue = new YGValue
+        InternalValue = new YogaValue
         {
-            unit = YGUnit.YGUnitUndefined
+            Unit = YogaUnit.Undefined
         }
     };
 
-    public static MeasurementGap Percent(float value)
+    public static MeasurementGap Percent(float Value)
     {
         return new MeasurementGap
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPercent,
-                value = value
+                Unit = YogaUnit.Percent,
+                Value = Value
             }
         };
     }
-    public static MeasurementGap Point(float value)
+    public static MeasurementGap Point(float Value)
     {
         return new MeasurementGap
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
 
     public MeasurementGap Scale(float scale)
     {
-        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        if (InternalValue.Unit == YogaUnit.Point)
         {
-            return Point(InternalValue.value * scale);
+            return Point(InternalValue.Value * scale);
         }
 
         return this;
@@ -1946,16 +1939,16 @@ public struct MeasurementGap : IEquatable<MeasurementGap>
     public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
 }
 
-public readonly struct Pixels(float value) : IEquatable<Pixels>
+public readonly struct Pixels(float Value) : IEquatable<Pixels>
 {
-    public readonly float Value = value;
+    public readonly float Value = Value;
 
     public bool Equals(Pixels other) => Value == other.Value;
     public override bool Equals(object? obj) => obj is Pixels other && Equals(other);
     public override int GetHashCode() => Value.GetHashCode();
 
-    public static implicit operator float(Pixels value) => value.Value;
-    public static implicit operator Pixels(float value) => new(value);
+    public static implicit operator float(Pixels Value) => Value.Value;
+    public static implicit operator Pixels(float Value) => new(Value);
 
     public static Pixels FromString(ReadOnlySpan<char> str) => str;
 
@@ -1991,94 +1984,94 @@ public readonly struct Pixels(float value) : IEquatable<Pixels>
 
 public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
 {
-    internal YGValue InternalValue;
-    public YGUnit Unit => InternalValue.unit;
-    public float Value => InternalValue.value;
-    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+    internal YogaValue InternalValue;
+    public YogaUnit Unit => InternalValue.Unit;
+    public float Value => InternalValue.Value;
+    public float? PointValue => InternalValue.Unit == YogaUnit.Point ? InternalValue.Value : null;
+    public float? PercentValue => InternalValue.Unit == YogaUnit.Percent ? InternalValue.Value : null;
 
-    public bool Equals(MeasurementFlexBasis other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public bool Equals(MeasurementFlexBasis other) => InternalValue.Unit == other.InternalValue.Unit && InternalValue.Value == other.InternalValue.Value;
     public override bool Equals(object? obj) => obj is MeasurementFlexBasis other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.Unit, InternalValue.Value);
 
-    public static implicit operator MeasurementFlexBasis(float value)
+    public static implicit operator MeasurementFlexBasis(float Value)
     {
         return new MeasurementFlexBasis
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
-    public static implicit operator MeasurementFlexBasis(YGValue value)
+    public static implicit operator MeasurementFlexBasis(YogaValue Value)
     {
         return new MeasurementFlexBasis
         {
-            InternalValue = value
+            InternalValue = Value
         };
     }
-    public static implicit operator YGValue(MeasurementFlexBasis value)
+    public static implicit operator YogaValue(MeasurementFlexBasis Value)
     {
-        return value.InternalValue;
+        return Value.InternalValue;
     }
 
     public static MeasurementFlexBasis Undefined = new()
     {
-        InternalValue = new YGValue
+        InternalValue = new YogaValue
         {
-            unit = YGUnit.YGUnitUndefined
+            Unit = YogaUnit.Undefined
         }
     };
 
     public static MeasurementFlexBasis Auto =>
         new()
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitFitContent
+                Unit = YogaUnit.FitContent
             }
         };
 
     public static MeasurementFlexBasis MaxContent =>
         new()
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitMaxContent
+                Unit = YogaUnit.MaxContent
             }
         };
 
     public static MeasurementFlexBasis Stretch =>
         new()
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitStretch
+                Unit = YogaUnit.Stretch
             }
         };
 
-    public static MeasurementFlexBasis Percent(float value)
+    public static MeasurementFlexBasis Percent(float Value)
     {
         return new MeasurementFlexBasis
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPercent,
-                value = value
+                Unit = YogaUnit.Percent,
+                Value = Value
             }
         };
     }
 
-    public static MeasurementFlexBasis Point(float value)
+    public static MeasurementFlexBasis Point(float Value)
     {
         return new MeasurementFlexBasis
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
@@ -2086,17 +2079,17 @@ public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
     public static MeasurementFlexBasis FitContent =>
         new()
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitFitContent
+                Unit = YogaUnit.FitContent
             }
         };
 
     public MeasurementFlexBasis Scale(float scale)
     {
-        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        if (InternalValue.Unit == YogaUnit.Point)
         {
-            return Point(InternalValue.value * scale);
+            return Point(InternalValue.Value * scale);
         }
 
         return this;
@@ -2152,44 +2145,44 @@ public struct MeasurementFlexBasis : IEquatable<MeasurementFlexBasis>
 
 public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
 {
-    internal YGValue InternalValue;
-    public YGUnit Unit => InternalValue.unit;
-    public float Value => InternalValue.value;
-    public float? PointValue => InternalValue.unit == YGUnit.YGUnitPoint ? InternalValue.value : null;
-    public float? PercentValue => InternalValue.unit == YGUnit.YGUnitPercent ? InternalValue.value : null;
+    internal YogaValue InternalValue;
+    public YogaUnit Unit => InternalValue.Unit;
+    public float Value => InternalValue.Value;
+    public float? PointValue => InternalValue.Unit == YogaUnit.Point ? InternalValue.Value : null;
+    public float? PercentValue => InternalValue.Unit == YogaUnit.Percent ? InternalValue.Value : null;
 
-    public bool Equals(MeasurementWidthHeight other) => InternalValue.unit == other.InternalValue.unit && InternalValue.value == other.InternalValue.value;
+    public bool Equals(MeasurementWidthHeight other) => InternalValue.Unit == other.InternalValue.Unit && InternalValue.Value == other.InternalValue.Value;
     public override bool Equals(object? obj) => obj is MeasurementWidthHeight other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(InternalValue.unit, InternalValue.value);
+    public override int GetHashCode() => HashCode.Combine(InternalValue.Unit, InternalValue.Value);
 
-    public static implicit operator MeasurementWidthHeight(float value)
+    public static implicit operator MeasurementWidthHeight(float Value)
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
-    public static implicit operator MeasurementWidthHeight(YGValue value)
+    public static implicit operator MeasurementWidthHeight(YogaValue Value)
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = value
+            InternalValue = Value
         };
     }
-    public static implicit operator YGValue(MeasurementWidthHeight value)
+    public static implicit operator YogaValue(MeasurementWidthHeight Value)
     {
-        return value.InternalValue;
+        return Value.InternalValue;
     }
 
     public static MeasurementWidthHeight Undefined => new()
     {
-        InternalValue = new YGValue
+        InternalValue = new YogaValue
         {
-            unit = YGUnit.YGUnitUndefined
+            Unit = YogaUnit.Undefined
         }
     };
 
@@ -2197,31 +2190,31 @@ public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitAuto
+                Unit = YogaUnit.Auto
             }
         };
     }
-    public static MeasurementWidthHeight Percent(float value)
+    public static MeasurementWidthHeight Percent(float Value)
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPercent,
-                value = value
+                Unit = YogaUnit.Percent,
+                Value = Value
             }
         };
     }
-    public static MeasurementWidthHeight Point(float value)
+    public static MeasurementWidthHeight Point(float Value)
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitPoint,
-                value = value
+                Unit = YogaUnit.Point,
+                Value = Value
             }
         };
     }
@@ -2230,9 +2223,9 @@ public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitFitContent
+                Unit = YogaUnit.FitContent
             }
         };
     }
@@ -2240,9 +2233,9 @@ public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitMaxContent
+                Unit = YogaUnit.MaxContent
             }
         };
     }
@@ -2251,18 +2244,18 @@ public struct MeasurementWidthHeight : IEquatable<MeasurementWidthHeight>
     {
         return new MeasurementWidthHeight
         {
-            InternalValue = new YGValue
+            InternalValue = new YogaValue
             {
-                unit = YGUnit.YGUnitStretch
+                Unit = YogaUnit.Stretch
             }
         };
     }
 
     public MeasurementWidthHeight Scale(float scale)
     {
-        if (InternalValue.unit == YGUnit.YGUnitPoint)
+        if (InternalValue.Unit == YogaUnit.Point)
         {
-            return Point(InternalValue.value * scale);
+            return Point(InternalValue.Value * scale);
         }
 
         return this;

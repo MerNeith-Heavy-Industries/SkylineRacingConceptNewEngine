@@ -1,3 +1,4 @@
+using Microsoft.UI.Reactor.Layout;
 using nfm_world_library.Lua;
 
 namespace NFMWorld.Reactor;
@@ -90,24 +91,24 @@ public enum Visibility
 // Implicit conversions between these enums and Yoga-CS enums
 public static class Conversions
 {
-    public static Yoga.YGDirection ToYogaDirection(this Direction d) => (Yoga.YGDirection)d;
-    public static Direction ToNfmDirection(this Yoga.YGDirection d) => (Direction)d;
-    public static Yoga.YGFlexDirection ToYogaFlexDirection(this FlexDirection d) => (Yoga.YGFlexDirection)d;
-    public static FlexDirection ToNfmFlexDirection(this Yoga.YGFlexDirection d) => (FlexDirection)d;
-    public static Yoga.YGJustify ToYogaJustify(this Justify j) => (Yoga.YGJustify)j;
-    public static Justify ToNfmJustify(this Yoga.YGJustify j) => (Justify)j;
-    public static Yoga.YGAlign ToYogaAlign(this Align a) => (Yoga.YGAlign)a;
-    public static Align ToNfmAlign(this Yoga.YGAlign a) => (Align)a;
-    public static Yoga.YGPositionType ToYogaPositionType(this Position p) => (Yoga.YGPositionType)p;
-    public static Position ToNfmPositionType(this Yoga.YGPositionType p) => (Position)p;
-    public static Yoga.YGWrap ToYogaWrap(this Wrap w) => (Yoga.YGWrap)w;
-    public static Wrap ToNfmWrap(this Yoga.YGWrap w) => (Wrap)w;
-    public static Yoga.YGOverflow ToYogaOverflow(this Overflow o) => (Yoga.YGOverflow)o;
-    public static Overflow ToNfmOverflow(this Yoga.YGOverflow o) => (Overflow)o;
-    public static Yoga.YGDisplay ToYogaDisplay(this Display d) => (Yoga.YGDisplay)d;
-    public static Display ToNfmDisplay(this Yoga.YGDisplay d) => (Display)d;
-    public static Yoga.YGBoxSizing ToYogaBoxSizing(this BoxSizing b) => (Yoga.YGBoxSizing)b;
-    public static BoxSizing ToNfmBoxSizing(this Yoga.YGBoxSizing b) => (BoxSizing)b;
-    public static Yoga.YGNodeType ToYogaNodeType(this NodeType n) => (Yoga.YGNodeType)n;
-    public static NodeType ToNfmNodeType(this Yoga.YGNodeType n) => (NodeType)n;
+    public static FlexLayoutDirection ToYogaDirection(this Direction d) => (FlexLayoutDirection)d;
+    public static Direction ToNfmDirection(this FlexLayoutDirection d) => (Direction)d;
+    public static Microsoft.UI.Reactor.Layout.FlexDirection ToYogaFlexDirection(this FlexDirection d) => (Microsoft.UI.Reactor.Layout.FlexDirection)d;
+    public static FlexDirection ToNfmFlexDirection(this Microsoft.UI.Reactor.Layout.FlexDirection d) => (FlexDirection)d;
+    public static FlexJustify ToYogaJustify(this Justify j) => (FlexJustify)j;
+    public static Justify ToNfmJustify(this FlexJustify j) => (Justify)j;
+    public static FlexAlign ToYogaAlign(this Align a) => (FlexAlign)a;
+    public static Align ToNfmAlign(this FlexAlign a) => (Align)a;
+    public static FlexPositionType ToYogaPositionType(this Position p) => (FlexPositionType)p;
+    public static Position ToNfmPositionType(this FlexPositionType p) => (Position)p;
+    public static FlexWrap ToYogaWrap(this Wrap w) => (FlexWrap)w;
+    public static Wrap ToNfmWrap(this FlexWrap w) => (Wrap)w;
+    public static YogaOverflow ToYogaOverflow(this Overflow o) => (YogaOverflow)o;
+    public static Overflow ToNfmOverflow(this YogaOverflow o) => (Overflow)o;
+    public static YogaDisplay ToYogaDisplay(this Display d) => (YogaDisplay)d;
+    public static Display ToNfmDisplay(this YogaDisplay d) => (Display)d;
+    public static YogaBoxSizing ToYogaBoxSizing(this BoxSizing b) => (YogaBoxSizing)b;
+    public static BoxSizing ToNfmBoxSizing(this YogaBoxSizing b) => (BoxSizing)b;
+    public static YogaNodeType ToYogaNodeType(this NodeType n) => (YogaNodeType)n;
+    public static NodeType ToNfmNodeType(this YogaNodeType n) => (NodeType)n;
 }
