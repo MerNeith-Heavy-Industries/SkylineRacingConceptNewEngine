@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Lua;
 using Microsoft.Xna.Framework;
 using NFMWorld;
@@ -15,7 +16,7 @@ public class UiRenderer : IDisposable
     private uint _maxEvent = 0;
 
     private readonly Dictionary<string, MessageHandler> _toCsharpHandlers = new();
-    private readonly Dictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
+    private readonly ConcurrentDictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
     private LuaState _state;
 
     public View? ActiveRoot { get; private set; }
@@ -29,7 +30,7 @@ public class UiRenderer : IDisposable
     {
         var key = _maxEvent++;
         _toLuaHandlers[key] = (@event, callback);
-        return () => _toLuaHandlers.Remove(key);
+        return () => _toLuaHandlers.TryRemove(KeyValuePair.Create(key, (@event, callback)));
     }
 
     private void Call(string method, LuaValue payload)
