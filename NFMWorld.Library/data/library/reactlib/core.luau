@@ -904,6 +904,24 @@ flushRoot = function(root: R.Root)
   end
 end
 
+--- Flush pending updates synchronously.
+---
+--- `fn` runs first (so its `setState` calls mark the root dirty); then every
+--- dirty root is rendered immediately instead of waiting for the deferred
+--- scheduler. Use this for transitions that must be visible before the host
+--- pushes follow-up data — most importantly navigation, where the new phase's
+--- component must mount (and subscribe to events) before that phase pushes
+--- its initial state.
+function core.flushSync(fn: () -> ())
+  fn()
+  for _, root in pairs(roots) do
+    if root.dirty and root.current ~= nil and not root.rendering then
+      root.scheduled = false
+      flushRoot(root)
+    end
+  end
+end
+
 --- Render a VNode into a host container. Subsequent calls with the same
 --- container update the existing tree in place.
 function core.render(element: R.VNode, container: any)

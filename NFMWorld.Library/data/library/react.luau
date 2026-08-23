@@ -47,6 +47,10 @@ React.useRef = core.useRef
 React.useSyncExternalStore = core.useSyncExternalStore
 React.useContext = core.useContext
 
+-- `React.flushSync(fn)` runs `fn` then renders all pending updates
+-- synchronously (see reactlib/core.luau).
+React.flushSync = core.flushSync
+
 -- Render profiler (see reactlib/core.luau). `React.renderStats` is a live
 -- table: { flushes, renders, reentrantFlushes, maxPasses, abortedLoops }.
 -- Call `React.resetRenderStats()` to zero it before a measured interaction.
