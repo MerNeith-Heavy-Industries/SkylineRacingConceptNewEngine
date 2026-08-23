@@ -345,7 +345,7 @@ public static class LuaUiLibrary
                 image.Scale = f;
                 break;
             case "value" when cmp is TextInput textInput && rawvalue.TryRead<string>(out var str):
-                textInput.Text = str;
+                textInput.SetText(str);
                 break;
             case "placeholder" when cmp is TextInput textInput && rawvalue.TryRead<string>(out var str):
                 textInput.Placeholder = str;

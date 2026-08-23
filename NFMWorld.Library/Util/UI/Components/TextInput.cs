@@ -99,12 +99,23 @@ public partial class TextInput : Component
     public string? Text
     {
         get;
-        set
+        private set
         {
             field = value;
             _text.TextContent = value;
-            OnTextInvalidated();
         }
+    }
+
+    public void SetText(string text)
+    {
+        Text = text;
+        OnTextInvalidated(false);
+    }
+
+    public void SetTextFromUserInput(string text)
+    {
+        Text = text;
+        OnTextInvalidated();
     }
     
     // ── Constructor ───────────────────────────────────────────────
@@ -156,7 +167,7 @@ public partial class TextInput : Component
 
     // ── Text invalidation ─────────────────────────────────────────
 
-    private void OnTextInvalidated()
+    private void OnTextInvalidated(bool isFromUserInput = true)
     {
         var len = (Text ?? "").Length;
         if (_cursorIndex > len)
@@ -167,7 +178,8 @@ public partial class TextInput : Component
         _cursorBlinkTimer = 0;
         _cursorVisible = true;
 
-        TextChanged?.Invoke(Text ?? "");
+        if (isFromUserInput)
+            TextChanged?.Invoke(Text ?? "");
         
         // Draw placeholder when empty and not focused
         if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
@@ -212,7 +224,7 @@ public partial class TextInput : Component
             return false;
 
         var t = CurrentText;
-        Text = t[..range.start] + t[range.end..];
+        SetTextFromUserInput(t[..range.start] + t[range.end..]);
         _cursorIndex = range.start;
         ClearSelection();
         return true;
@@ -332,7 +344,7 @@ public partial class TextInput : Component
             {
                 var t = CurrentText;
                 var ci = Math.Min(_cursorIndex, t.Length);
-                Text = t[..(ci - 1)] + t[ci..];
+                SetTextFromUserInput(t[..(ci - 1)] + t[ci..]);
                 _cursorIndex = ci - 1;
             }
             return;
@@ -353,7 +365,7 @@ public partial class TextInput : Component
         DeleteSelection();
         var t2 = CurrentText;
         var idx = Math.Min(_cursorIndex, t2.Length);
-        Text = t2[..idx] + c + t2[idx..];
+        SetTextFromUserInput(t2[..idx] + c + t2[idx..]);
         _cursorIndex = idx + 1;
     }
 
@@ -432,7 +444,7 @@ public partial class TextInput : Component
         var idx = Math.Min(_cursorIndex, t.Length);
         if (idx < t.Length)
         {
-            Text = t[..idx] + t[(idx + 1)..];
+            SetTextFromUserInput(t[..idx] + t[(idx + 1)..]);
         }
     }
 
