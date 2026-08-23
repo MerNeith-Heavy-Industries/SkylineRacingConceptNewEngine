@@ -620,7 +620,7 @@ internal abstract class BaseLuaTypeGenerator
         }
         
         // safe across assemblies
-        return $"global::NFMWorld.LuaSourceGenerator.Generator.LuaVisibleTypeMetatableRegistry<{variableType.FullTypeName}>.Metatable";
+        return $"global::Lua.LuaValue.FromUserData({variable}, global::NFMWorld.LuaSourceGenerator.Generator.LuaVisibleTypeMetatableRegistry<{variableType.FullTypeName}>.Metatable)";
     }
     
     [return: NotNullIfNotNull(nameof(ns))]
