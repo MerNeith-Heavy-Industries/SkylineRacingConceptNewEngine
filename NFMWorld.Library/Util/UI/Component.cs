@@ -196,7 +196,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         }
     }
 
-    public int TabOrder { get; set; }
+    public int? TabIndex { get; set; }
 
     #endregion
 

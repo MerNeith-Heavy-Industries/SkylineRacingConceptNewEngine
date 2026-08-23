@@ -239,8 +239,9 @@ public static class LuaUiLibrary
             case "focused" when rawvalue.TryRead<bool>(out var b):
                 cmp.IsFocused = b;
                 break;
-            case "taborder" when rawvalue.TryRead<int>(out var i):
-                cmp.TabOrder = i;
+            case "tabindex" when rawvalue.TryRead<int>(out var i):
+                cmp.IsFocusable = true;
+                cmp.TabIndex = i;
                 break;
             // NOTE: These bindings must REPLACE the previous handler rather than
             // accumulate with +=. React re-creates Lua closures on every parent
@@ -347,12 +348,14 @@ public static class LuaUiLibrary
                 textInput.Placeholder = str;
                 break;
             case "onsubmit" when cmp is TextInput textInput && rawvalue.TryRead<LuaFunction>(out var func):
+                textInput.Submitted = null;
                 textInput.Submitted += value =>
                 {
                     state.Call(func, [value]);
                 };
                 break;
             case "onchange" when cmp is TextInput textInput && rawvalue.TryRead<LuaFunction>(out var func):
+                textInput.TextChanged = null;
                 textInput.TextChanged += value =>
                 {
                     state.Call(func, [value]);
