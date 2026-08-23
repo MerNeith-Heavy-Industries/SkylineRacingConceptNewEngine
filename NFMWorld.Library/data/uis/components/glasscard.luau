@@ -89,20 +89,21 @@ local function StatBar(props: { value: number?, color: string?, height: number?,
 	local pct = math.floor(value * 100 + 0.5)
 
 	return x(View) {
-		style = { marginBottom = 8 },
+		style = { marginBottom = 8, flexDirection = "column", gap = 4 },
 		x(View) {
 			style = {
 				display = "flex",
 				flexDirection = "row",
 				justifyContent = "space-between",
+				alignItems = "center",
 				marginBottom = 4,
 			},
 			x(Text) {
-				style = { fontSize = 12, color = "rgba(255,255,255,0.7)" },
+				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
 				label,
 			},
 			x(Text) {
-				style = { fontSize = 12, color = "rgba(255,255,255,0.7)" },
+				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
 				("%d%%"):format(pct),
 			},
 		},
