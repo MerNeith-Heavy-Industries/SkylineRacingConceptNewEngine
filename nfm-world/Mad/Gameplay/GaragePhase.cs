@@ -60,12 +60,12 @@ public class GaragePhase : BaseStageRenderingPhase
         CefBridge = _bridge;
 
         // Car selected from CEF — search ALL collections, switch if needed.
-        _bridge.CarSelected += (collection, carName) =>
+        _bridge.CarSelected += (collection, fileName) =>
         {
             if (Enum.TryParse<Collection>(collection, out var col)
                 && BackendGameSparker.cars.TryGetValue(col, out var cars))
             {
-                var idx = cars.ToList().FindIndex(c => c.Stats.Name == carName);
+                var idx = cars.ToList().FindIndex(c => c.FileName == fileName);
                 if (idx >= 0)
                 {
                     _currentCollection = col;
@@ -139,6 +139,7 @@ public class GaragePhase : BaseStageRenderingPhase
         // Push car stats to the CEF garage page
         _bridge.PushCurrentCar(new CarStatsData
         {
+            FileName = _cars[_selectedCarIdx].FileName,
             Name = _cars[_selectedCarIdx].Stats.Name,
             Collection = _currentCollection,
             TopSpeed = switsLevel,
@@ -171,6 +172,7 @@ public class GaragePhase : BaseStageRenderingPhase
                 Cars = kv.Value
                     .Select(c => new CarStatsData
                     {
+                        FileName = c.FileName,
                         Name = c.Stats.Name,
                         Collection = kv.Key,
                     })

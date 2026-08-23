@@ -22,7 +22,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
             case "selectCar":
                 if (args.TryRead<LuaTable>(out var a)
                     && a.TryGetValue("collection", out var col)
-                    && a.TryGetValue("carName", out var car))
+                    && a.TryGetValue("fileName", out var car))
                 {
                     CarSelected?.Invoke(col.ReadOrDefault<string>() ?? "", car.ReadOrDefault<string>() ?? "");
                 }
@@ -90,6 +90,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
 [LuaVisible]
 public sealed partial class CarStatsData
 {
+    [LuaName] public string FileName { get; set; } = "";
     [LuaName] public string Name { get; set; } = "";
     [LuaName] public Collection Collection { get; set; } = Collection.User;
     [LuaName] public double TopSpeed { get; set; }

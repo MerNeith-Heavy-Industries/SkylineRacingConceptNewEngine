@@ -140,8 +140,8 @@ local function Garage(): React.VNode
 		if rootRef.current ~= nil then rootRef.current:focus() end
 	end, {})
 
-	local function handleSelectCar(collection: string, carName: string)
-		UiLib.call("selectCar", { collection = collection, carName = carName })
+	local function handleSelectCar(collection: string, fileName: string)
+		UiLib.call("selectCar", { collection = collection, fileName = fileName })
 	end
 
 	local function handleGlobalKey(event: any)
@@ -215,7 +215,7 @@ local function Garage(): React.VNode
 					if #filteredCollections > 0 then
 						local firstCol = filteredCollections[1]
 						if firstCol.cars ~= nil and #firstCol.cars > 0 then
-							handleSelectCar(firstCol.name, firstCol.cars[1].name)
+							handleSelectCar(firstCol.name, firstCol.cars[1].fileName)
 							setSearchQuery("")
 							if rootRef.current ~= nil then rootRef.current:focus() end
 						end
@@ -247,8 +247,10 @@ local function Garage(): React.VNode
 			map(filteredCollections, function(col: any): React.VNode
 				local active = currentCollection ~= nil and currentCollection.id == col.id
 				return x(View) {
+					name = 'view ' .. col.name,
 					key = col.name,
 					x(View) {
+						name = 'inner view ' .. col.name,
 						style = {
 							marginBottom = 6,
 							paddingTop = 4,
@@ -269,19 +271,20 @@ local function Garage(): React.VNode
 						},
 					},
 					map(col.cars, function(car: any): React.VNode
-						local selected = currentCar ~= nil and currentCar.name == car.name
+						local selected = currentCar ~= nil and currentCar.fileName == car.fileName
 						return x(GlassCard) {
-							key = car.name,
+							name = 'glasscard ' .. car.name,
+							key = car.fileName,
 							color = selected and "#4fc3f7" or "rgba(255,255,255,0.15)",
 							style = {
 								marginBottom = 8,
 								opacity = selected and 1 or 0.7,
 							},
 							onmousedown = function()
-								handleSelectCar(col.name, car.name)
+								handleSelectCar(col.name, car.fileName)
 							end,
-							x(CarCardName) { car.name },
-							x(CarCardCollection) { col.name },
+							x(CarCardName) { name = 'carcardname ' .. car.name, car.name },
+							x(CarCardCollection) { name = 'carcardcollection ' .. col.name, col.name },
 						}
 					end),
 				}
