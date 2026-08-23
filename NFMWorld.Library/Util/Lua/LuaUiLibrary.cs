@@ -49,6 +49,18 @@ public static class LuaUiLibrary
                     unregister();
                     return new ValueTask<int>(context.Return());
                 })));
+            }),
+            ["defer"] = new LuaFunction("defer", (context, ct) =>
+            {
+                var callback = context.GetArgument<LuaFunction>(0);
+
+                // Queue the callback on the game-thread SynchronizationContext;
+                // it runs in GameThreadContext.ExecutePendingTasks() at the end
+                // of the frame's Update, so every setState in a frame coalesces
+                // into a single deferred re-render (scheduler batching).
+                GameThreadContext.Current.Post(_ => { state.Call(callback, []); }, null);
+
+                return new ValueTask<int>(context.Return());
             })
         };
 
