@@ -14,7 +14,6 @@ public static class LuaHelpers
         var state = LuaState.Create(LuaNfmwPlatform.Instance);
         state.OpenStandardLibraries();
         LuaVisibleTypeRegistry.RegisterAll(state);
-        LuaKeysLibrary.Register(state);
 
         state.ModuleLoader = new VfsModuleLoader();
 

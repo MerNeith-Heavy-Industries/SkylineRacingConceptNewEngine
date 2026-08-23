@@ -240,13 +240,13 @@ public sealed class LuaGamemode : BaseClientGamemode
     public override void KeyPressed(Key key, in Keys keys)
     {
         base.KeyPressed(key, keys);
-        Call("OnKeyPressed", (int)key);
+        Call("OnKeyPressed", LuaVisibleHelper.Wrap(key));
     }
 
     public override void KeyReleased(Key key, in Keys keys)
     {
         base.KeyReleased(key, keys);
-        Call("OnKeyReleased", (int)key);
+        Call("OnKeyReleased", LuaVisibleHelper.Wrap(key));
     }
 
     public override void KeyTyped(char character)
