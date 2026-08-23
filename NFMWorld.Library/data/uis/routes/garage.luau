@@ -36,7 +36,6 @@ local Sidebar = styled(View) {
 	backgroundColor = "rgba(0,0,0,0.3)",
 	borderRightWidth = 1,
 	borderColor = "rgba(255,255,255,0.06)",
-	overflow = "scroll",
 }
 
 local Header = styled(Text) {
@@ -44,8 +43,16 @@ local Header = styled(Text) {
 	fontStyle = "bold",
 }
 
-local StatsPanel = styled(View) {
+local CollectionList = styled(View) {
 	flex = 1,
+	display = "flex",
+	flexDirection = "column",
+	overflow = "scroll",
+	gap = 8,
+}
+
+local StatsPanel = styled(View) {
+	flexShrink = 0,
 	display = "flex",
 	alignItems = "center",
 	justifyContent = "center",
@@ -54,6 +61,7 @@ local StatsPanel = styled(View) {
 local StatsCard = styled(View) {
 	width = 280,
 	padding = 24,
+	flexDirection = "column",
 }
 
 local CarName = styled(Text) {
@@ -101,7 +109,6 @@ local BackBtn = styled(View) {
 	paddingBottom = 10,
 	paddingLeft = 24,
 	paddingRight = 24,
-	marginTop = "auto",
 	alignItems = "center",
 	backgroundColor = "rgba(255,255,255,0.06)",
 	borderWidth = 1,
@@ -126,9 +133,15 @@ local function Garage(): React.VNode
 	local rootRef = useRef<<Component | nil>>(nil)
 
 	useEffect(function()
-		local u1 = UiLib.onEvent("garage:currentCar", function(data: any) setCurrentCar(data) end)
-		local u2 = UiLib.onEvent("garage:collections", function(data: any) setCollections(data) end)
-		local u3 = UiLib.onEvent("garage:currentCollection", function(data: any) setCurrentCollection(data) end)
+		local u1 = UiLib.onEvent("garage:currentCar", function(data: any)
+			setCurrentCar(data)
+		end)
+		local u2 = UiLib.onEvent("garage:collections", function(data: any)
+			setCollections(data)
+		end)
+		local u3 = UiLib.onEvent("garage:currentCollection", function(data: any)
+			setCurrentCollection(data)
+		end)
 		return function()
 			u1()
 			u2()
@@ -137,7 +150,9 @@ local function Garage(): React.VNode
 	end, {})
 
 	useEffect(function()
-		if rootRef.current ~= nil then rootRef.current:focus() end
+		if rootRef.current ~= nil then
+			rootRef.current:focus()
+		end
 	end, {})
 
 	local function handleSelectCar(collection: string, fileName: string)
@@ -194,6 +209,21 @@ local function Garage(): React.VNode
 		x(Sidebar) {
 			x(Header) { "Garage" },
 
+			x(StatsPanel) {
+				currentCar ~= nil and x(StatsCard) {
+					x(CarName) { currentCar.name },
+					x(StatBar) { label = "Top Speed", value = currentCar.topSpeed, color = "#ff6e40" },
+					x(StatBar) { label = "Acceleration", value = currentCar.acceleration, color = "#ffd740" },
+					x(StatBar) { label = "Handling", value = currentCar.handling, color = "#69f0ae" },
+					x(StatBar) { label = "Power Save", value = currentCar.powerSave, color = "#40c4ff" },
+					x(StatBar) { label = "Strength", value = currentCar.strength, color = "#ff4081" },
+					x(StatBar) { label = "Max Health", value = currentCar.maxHealth, color = "#e040fb" },
+					x(StatBar) { label = "Stunting", value = currentCar.stunting, color = "#ff6e40" },
+					x(StatBar) { label = "Hypergliding", value = currentCar.hypergliding, color = "#7c4dff" },
+					x(StatBar) { label = "AB'ing", value = currentCar.abing, color = "#448aff" },
+				} or x(Placeholder) { "Select a car to view stats" },
+			},
+
 			x(TextInput) {
 				style = {
 					width = "100%",
@@ -217,86 +247,83 @@ local function Garage(): React.VNode
 						if firstCol.cars ~= nil and #firstCol.cars > 0 then
 							handleSelectCar(firstCol.name, firstCol.cars[1].fileName)
 							setSearchQuery("")
-							if rootRef.current ~= nil then rootRef.current:focus() end
+							if rootRef.current ~= nil then
+								rootRef.current:focus()
+							end
 						end
 					end
 				end,
 				onkeydown = function(event: any)
 					if event.keyCode == Key.escape then
 						setSearchQuery("")
-						if rootRef.current ~= nil then rootRef.current:focus() end
+						if rootRef.current ~= nil then
+							rootRef.current:focus()
+						end
 					end
 				end,
 			},
 
-			x(StatsPanel) {
-				currentCar ~= nil and x(StatsCard) {
-					x(CarName) { currentCar.name },
-					x(StatBar) { label = "Top Speed", value = currentCar.topSpeed, color = "#ff6e40" },
-					x(StatBar) { label = "Acceleration", value = currentCar.acceleration, color = "#ffd740" },
-					x(StatBar) { label = "Handling", value = currentCar.handling, color = "#69f0ae" },
-					x(StatBar) { label = "Power Save", value = currentCar.powerSave, color = "#40c4ff" },
-					x(StatBar) { label = "Strength", value = currentCar.strength, color = "#ff4081" },
-					x(StatBar) { label = "Max Health", value = currentCar.maxHealth, color = "#e040fb" },
-					x(StatBar) { label = "Stunting", value = currentCar.stunting, color = "#ff6e40" },
-					x(StatBar) { label = "Hypergliding", value = currentCar.hypergliding, color = "#7c4dff" },
-					x(StatBar) { label = "AB'ing", value = currentCar.abing, color = "#448aff" },
-				} or x(Placeholder) { "Select a car to view stats" },
-			},
-
-			map(filteredCollections, function(col: any): React.VNode
-				local active = currentCollection ~= nil and currentCollection.id == col.id
-				return x(View) {
-					name = 'view ' .. col.name,
-					key = col.name,
-					x(View) {
-						name = 'inner view ' .. col.name,
-						style = {
-							marginBottom = 6,
-							paddingTop = 4,
-							paddingBottom = 4,
-							paddingLeft = 8,
-							paddingRight = 8,
-							borderRadius = 4,
-							borderLeftWidth = 2,
-							borderColor = active and "#4fc3f7" or "transparent",
-							backgroundColor = active and "rgba(79,195,247,0.08)" or "transparent",
-						},
-						onmousedown = function()
-							UiLib.call("selectCollection", { collection = col.name })
-						end,
-						x(Text) {
-							style = { fontSize = 12, color = active and "#4fc3f7" or "rgba(255,255,255,0.4)" },
-							col.name,
-						},
-					},
-					map(col.cars, function(car: any): React.VNode
-						local selected = currentCar ~= nil and currentCar.fileName == car.fileName
-						return x(GlassCard) {
-							name = 'glasscard ' .. car.name,
-							key = car.fileName,
-							color = selected and "#4fc3f7" or "rgba(255,255,255,0.15)",
+			x(CollectionList) {
+				map(filteredCollections, function(col: any): React.VNode
+					local active = currentCollection ~= nil and currentCollection.id == col.id
+					return x(View) {
+						name = "view " .. col.name,
+						key = col.name,
+						style = { flexDirection = "column", flexShrink = 0 },
+						x(View) {
+							name = "inner view " .. col.name,
 							style = {
-								marginBottom = 8,
-								opacity = selected and 1 or 0.7,
+								marginBottom = 6,
+								paddingTop = 4,
+								paddingBottom = 4,
+								paddingLeft = 8,
+								paddingRight = 8,
+								borderRadius = 4,
+								borderLeftWidth = 2,
+								borderColor = active and "#4fc3f7" or "transparent",
+								backgroundColor = active and "rgba(79,195,247,0.08)" or "transparent",
 							},
 							onmousedown = function()
-								handleSelectCar(col.name, car.fileName)
+								UiLib.call("selectCollection", { collection = col.name })
 							end,
-							x(CarCardName) { name = 'carcardname ' .. car.name, car.name },
-							x(CarCardCollection) { name = 'carcardcollection ' .. col.name, col.name },
-						}
-					end),
-				}
-			end),
+							x(Text) {
+								style = { fontSize = 12, color = active and "#4fc3f7" or "rgba(255,255,255,0.4)" },
+								col.name,
+							},
+						},
+						map(col.cars, function(car: any): React.VNode
+							local selected = currentCar ~= nil and currentCar.fileName == car.fileName
+							return x(GlassCard) {
+								name = "glasscard " .. car.name,
+								key = car.fileName,
+								color = selected and "#4fc3f7" or "rgba(255,255,255,0.15)",
+								style = {
+									marginBottom = 8,
+									opacity = selected and 1 or 0.7,
+								},
+								onmousedown = function()
+									handleSelectCar(col.name, car.fileName)
+								end,
+								x(CarCardName) { name = "carcardname " .. car.name, car.name },
+								x(CarCardCollection) { name = "carcardcollection " .. col.name, col.name },
+							}
+						end),
+					}
+				end),
 
-			query ~= "" and #filteredCollections == 0 and x(NoResults) {
-				('No cars match "%s"'):format(searchQuery),
+				query ~= "" and #filteredCollections == 0 and x(NoResults) {
+					('No cars match "%s"'):format(searchQuery),
+				},
 			},
 
 			x(BackBtn) {
-				onmousedown = function() UiLib.call("back", {}) end,
-				x(Text) { style = { fontSize = 14, fontStyle = "bold", color = "rgba(255,255,255,0.6)" }, "← Back to Menu" },
+				onmousedown = function()
+					UiLib.call("back", {})
+				end,
+				x(Text) {
+					style = { fontSize = 14, fontStyle = "bold", color = "rgba(255,255,255,0.6)" },
+					"← Back to Menu",
+				},
 			},
 		},
 	}
