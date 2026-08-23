@@ -1,3 +1,4 @@
+using Microsoft.UI.Reactor.Layout;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.Reactor;
 using NFMWorldLibrary.Backend.Gamemodes;
@@ -9,18 +10,15 @@ public partial class Image : Component
 {
     public override bool DebugIsContentfulNode => true;
 
-    private View _imageSlot;
-    private Node[] _children;
-
     public Image()
     {
-        _imageSlot = new View();
-        _children = [_imageSlot];
-        VisualChildren = new ReadOnlyLuaArray<Node>(_children);
-        NodeInternal.InsertChild(_imageSlot.NodeInternal, 0);
+        NodeInternal.MeasureFunction += Measure;
     }
 
-    public override ReadOnlyLuaArray<Node> VisualChildren { get; }
+    private YogaSize Measure(YogaNode node, float availableWidth, YogaMeasureMode widthMode, float availableHeight, YogaMeasureMode heightMode)
+    {
+        return new YogaSize(Scale * ImageData?.Width ?? availableWidth, Scale * ImageData?.Height ?? availableHeight);
+    }
 
     [ClientOnly]
     public IImage? ImageData
@@ -29,11 +27,7 @@ public partial class Image : Component
         set
         {
             field = value;
-            _imageSlot.Styles = _imageSlot.Styles with
-            {
-                Width = Scale * value?.Width ?? 0,
-                Height = Scale * value?.Height ?? 0
-            };
+            NodeInternal.MarkDirty();
         }
     }
 
@@ -44,14 +38,7 @@ public partial class Image : Component
         set
         {
             field = value;
-            if (ImageData is { } imageData)
-            {
-                _imageSlot.Styles = _imageSlot.Styles with
-                {
-                    Width = value * imageData.Width,
-                    Height = value * imageData.Height
-                };
-            }
+            NodeInternal.MarkDirty();
         }
     } = 1f;
 

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using Microsoft.UI.Reactor.Layout;
 using Microsoft.Xna.Framework;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
@@ -36,7 +37,7 @@ public interface IReceivesTextInvalidation
 /// </summary>
 public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
 {
-    protected bool Invalidated { get; private set; }= true;
+    protected bool Invalidated { get; private set; } = true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
 
     public override bool DebugIsContentfulNode => true;
@@ -66,6 +67,8 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
         VisualChildren = new ReadOnlyLuaArray<Node>(Children);
 
         Children.CollectionChanged += OnChildrenChanged;
+
+        NodeInternal.MeasureFunction += Measure;
     }
 
     private void OnChildrenChanged(in NotifyCollectionChangedEventArgs<Node> e)
@@ -108,8 +111,14 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
         InvalidateText();
     }
 
+    private YogaSize Measure(YogaNode node, float availableWidth, YogaMeasureMode widthMode, float availableHeight, YogaMeasureMode heightMode)
+    {
+        RelayoutText(new Vector2(availableWidth, availableHeight), out var width, out var height);
+        return new YogaSize(width, height);
+    }
+
     [ClientOnly]
-    protected void RelayoutText(Vector2 size)
+    protected void RelayoutText(Vector2 size, out float width, out float height)
     {
         var flattened = ComplexTextMetrics.FlattenText(Children.OfType<IRichTextElement>());
         
@@ -120,11 +129,9 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
         }
         var measurements = ComplexTextMetrics.MeasureRichText(flattened, font);
 
-        if (TextStyles.OverflowBehavior is OverflowBehavior.Stretch)
-        {
-            Styles = Styles with { Width = measurements.Size.X, Height = measurements.Size.Y };
-        }
-
+        width = measurements.Size.X;
+        height = measurements.Size.Y;
+        
         LaidOutComplexText = measurements;
 
         Invalidated = false;
@@ -153,7 +160,7 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
         if (Invalidated)
         {
             OnInvalidated();
-            RelayoutText(LayoutContentSize);
+            RelayoutText(LayoutContentSize, out _, out _);
             return true;
         }
 
@@ -211,5 +218,6 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
     public void InvalidateText()
     {
         Invalidated = true;
+        NodeInternal.MarkDirty();
     }
 }
