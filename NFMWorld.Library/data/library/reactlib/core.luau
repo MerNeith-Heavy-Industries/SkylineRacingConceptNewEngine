@@ -134,6 +134,22 @@ function core.useState<T>(initial: T): (T, ((T|((T) -> T))?) -> ())
   local fiber = assert(currentFiber, "no fiber in useState")
   return hook.state, function(action)
     if action ~= nil then
+      -- Bail out when the value is unchanged (e.g. a hover handler firing
+      -- setIsHover(true) while the element is already hovered). Without this,
+      -- every such call still schedules a full tree re-render.
+      if type(action) ~= "function" then
+        local effective = hook.state
+        local pending = hook.queue
+        if pending ~= nil then
+          for i = 1, #pending do
+            local a = pending[i]
+            if type(a) == "function" then effective = a(effective) else effective = a end
+          end
+        end
+        if effective == action then
+          return
+        end
+      end
       hook.queue = hook.queue or {}
       hook.queue[#hook.queue + 1] = action
     end
