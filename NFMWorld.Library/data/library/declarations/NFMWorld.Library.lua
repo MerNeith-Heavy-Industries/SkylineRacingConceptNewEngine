@@ -1016,6 +1016,8 @@ Node = {}
 ---@field insertAt fun(self: Component, index: integer, child: Node)
 ---@field removeAt fun(self: Component, index: integer)
 ---@field scrollIntoView fun(self: Component)
+---@field focus fun(self: Component)
+---@field blur fun(self: Component)
 
 Component = {}
 
@@ -1068,6 +1070,8 @@ Component = {}
 ---@field insertAt fun(self: View, index: integer, child: Node)
 ---@field removeAt fun(self: View, index: integer)
 ---@field scrollIntoView fun(self: View)
+---@field focus fun(self: View)
+---@field blur fun(self: View)
 
 View = {}
 
@@ -1122,6 +1126,8 @@ View = {}
 ---@field insertAt fun(self: TextInput, index: integer, child: Node)
 ---@field removeAt fun(self: TextInput, index: integer)
 ---@field scrollIntoView fun(self: TextInput)
+---@field focus fun(self: TextInput)
+---@field blur fun(self: TextInput)
 
 TextInput = {}
 

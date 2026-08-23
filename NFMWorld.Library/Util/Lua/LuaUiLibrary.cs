@@ -243,6 +243,9 @@ public static class LuaUiLibrary
                 cmp.IsFocusable = true;
                 cmp.TabIndex = i;
                 break;
+            case "ref" when rawvalue.TryRead<LuaTable>(out var tab):
+                tab["current"] = cmp;
+                break;
             // NOTE: These bindings must REPLACE the previous handler rather than
             // accumulate with +=. React re-creates Lua closures on every parent
             // render, and diffProps re-sets any prop whose value changed, so a

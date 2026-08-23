@@ -597,6 +597,18 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     #region Focus
 
+    [LuaName]
+    public void Focus()
+    {
+        IsFocused = true;
+    }
+
+    [LuaName]
+    public void Blur()
+    {
+        IsFocused = false;
+    }
+
     public Action<MouseEvent>? MousePressed { get; set; }
     public Action<MouseEvent>? MouseReleased { get; set; }
     public Action<MouseDragEvent>? MouseDragged { get; set; }
