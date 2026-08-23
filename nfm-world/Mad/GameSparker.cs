@@ -14,6 +14,7 @@ using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;
 using Path = System.IO.Path;
 using NFMWorld.Sentry;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld;
 
@@ -25,10 +26,10 @@ public static partial class GameSparker
     public static AccountManager AccountManager = new AccountManager();
 
     /// <summary>
-    /// The shared CEF renderer. Set by WorldGame.Initialize(). Phases access
+    /// The shared UI renderer. Set by WorldGame.Initialize(). Phases access
     /// this to register/unregister their <see cref="PhaseBridge"/> instances.
     /// </summary>
-    public static CefRenderer? CefRenderer { get; set; }
+    public static UiRenderer? UiRenderer { get; set; }
 
     private static string GetVersionString()
     {
@@ -302,7 +303,6 @@ public static partial class GameSparker
     {
         devConsole.Render();
         MessageWindow.Render();
-        SettingsMenu.Render();
         CurrentPhase.RenderImgui();
     }
 

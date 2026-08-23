@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Lua;
 using MemoryPack;
+using nfm_world_library.Lua;
 
 namespace NFMWorld.UI.Cef;
 
@@ -10,7 +12,7 @@ public sealed class TestPhaseBridge() : PhaseBridge("test")
 {
     public override bool EnableInput => true;
 
-    protected override void OnMessage(string type, JsonElement? args)
+    protected override void OnMessage(string type, LuaValue args)
     {
         switch (type)
         {
@@ -28,16 +30,15 @@ public sealed class TestPhaseBridge() : PhaseBridge("test")
     /// </summary>
     public void PushCounter(int value)
     {
-        PushMemoryPack("counter", new CounterData { Value = value });
+        Push("counter", new CounterData { Value = value });
     }
 
     public event Action? IncrementRequested;
     public event Action? BackRequested;
 }
 
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class CounterData
 {
-    public int Value { get; set; }
+    [LuaName] public int Value { get; set; }
 }

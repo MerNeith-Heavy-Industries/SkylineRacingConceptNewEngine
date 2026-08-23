@@ -2,9 +2,7 @@
 
 namespace NFMWorld.LuaSourceGenerator;
 
-internal sealed class LuaBindingInitGenerator(
-    IReadOnlyList<BaseLuaTypeMetadata> types
-) : BaseLuaTypeGenerator
+internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata> types, string ns) : BaseLuaTypeGenerator
 {
     public string GenerateCode()
     {
@@ -18,15 +16,16 @@ internal sealed class LuaBindingInitGenerator(
         sb.AppendLine("#pragma warning disable CS8604");
         sb.AppendLine("#pragma warning disable CS8631");
         sb.AppendLine();
-        sb.AppendLine("namespace NFMWorld.LuaSourceGenerator.Generator");
+        sb.AppendLine($"namespace {ns}");
         using (sb.Block())
         {
             sb.AppendLine("partial class GeneratorGenerated");
             using (sb.Block())
             {
                 EmitNamespaceTreeInit(sb, CollectNamespaceTables());
-
-                sb.AppendLine("static GeneratorGenerated()");
+                
+                sb.AppendLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
+                sb.AppendLine("public static void _init()");
                 using (sb.Block())
                 {
                     foreach (var type in types)
@@ -42,23 +41,18 @@ internal sealed class LuaBindingInitGenerator(
 
                     sb.AppendLine("init_Namespaces();");
                 }
+                
+                sb.AppendLine("static GeneratorGenerated()");
+                using (sb.Block())
+                {
+                    sb.AppendLine("_init();");
+                }
             }
 
             sb.AppendLine("public static class LuaVisibleTypeRegistry");
             using (sb.Block())
             {
                 EmitRegisterAll(sb);
-            }
-            
-            sb.AppendLine("/// <summary>");
-            sb.AppendLine("/// Thread-safe registry mapping each <typeparamref name=\"T\"/> to its code-generated StructUserData metatable.");
-            sb.AppendLine("/// Populated at assembly load time by the source-generated <see cref=\"StructUserDataMetatableInitializer\"/>.");
-            sb.AppendLine("/// </summary>");
-            sb.AppendLine("public static class LuaVisibleTypeMetatableRegistry<T>");
-            using (sb.Block())
-            {
-                sb.AppendLine("public static global::Lua.LuaTable? Metatable { get; private set; }");
-                sb.AppendLine("internal static void Register(global::Lua.LuaTable metatable) => Metatable = metatable;");
             }
         }
 
@@ -72,12 +66,12 @@ internal sealed class LuaBindingInitGenerator(
         return sb.ToString();
     }
     
-    private static void EmitRegisterAll(IndentedStringBuilder sb)
+    private void EmitRegisterAll(IndentedStringBuilder sb)
     {
         sb.AppendLine("public static void RegisterAll(global::Lua.LuaState state)");
         using (sb.Block())
         {
-            sb.AppendLine("foreach (var (k, v) in global::NFMWorld.LuaSourceGenerator.Generator.GeneratorGenerated.__namespaceTable_G)");
+            sb.AppendLine($"foreach (var (k, v) in global::{ns}.GeneratorGenerated.__namespaceTable_G)");
             using (sb.Block())
             {
                 sb.AppendLine("state.Environment[k] = v;");

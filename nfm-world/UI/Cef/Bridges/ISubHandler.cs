@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Lua;
 using NFMWorld.DriverInterface;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI.Cef;
 
@@ -19,14 +21,14 @@ public interface ISubHandler
     /// message was consumed; otherwise the parent bridge's OnMessage will
     /// receive it.
     /// </summary>
-    bool TryHandleMessage(string type, JsonElement? args);
+    bool TryHandleMessage(string type, LuaValue args);
 
     /// <summary>
     /// Called when the parent <see cref="PhaseBridge"/> is registered with a
-    /// <see cref="CefRenderer"/>. The sub-handler should store the renderer
+    /// <see cref="UiRenderer"/>. The sub-handler should store the renderer
     /// reference for Push calls and subscribe to any global events.
     /// </summary>
-    void OnActivated(CefRenderer renderer);
+    void OnActivated(UiRenderer renderer);
 
     /// <summary>
     /// Called when the parent <see cref="PhaseBridge"/> is unregistered.

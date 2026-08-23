@@ -8,16 +8,56 @@ namespace NFMWorldLibrary.Util;
 
 public static class LuaUiLibrary
 {
-    public static View ActiveRoot { get; set; }
-
-    public static void Register(LuaState state)
+    public static void Register(LuaState state, Action<View> setActiveRoot, Action<string, LuaValue> call, Func<string, Action<LuaValue>, Action> onEvent)
     {
-        state.Environment["UiLib"] = Library;
+        var library = new LuaTable()
+        {
+            ["createRoot"] = CreateRoot,
+            ["createInstance"] = CreateInstance,
+            ["createTextInstance"] = CreateTextInstance,
+            ["appendChild"] = AppendChild,
+            ["insertBefore"] = InsertBefore,
+            ["removeChild"] = RemoveChild,
+            ["setProperty"] = SetProperty,
+            ["commitTextUpdate"] = CommitTextUpdate,
+            ["setActiveRoot"] = new LuaFunction("setActiveRoot", (context, ct) =>
+            {
+                var view = context.GetArgument<View>(0);
+                setActiveRoot(view);
+                
+                return new ValueTask<int>(context.Return());
+            }),
+            ["call"] = new LuaFunction("call", (context, ct) =>
+            {
+                var method = context.GetArgument<string>(0);
+                var payload = context.GetArgument(1);
+                call(method, payload);
+                return new ValueTask<int>(context.Return());
+            }),
+            ["onEvent"] = new LuaFunction("onEvent", (context, ct) =>
+            {
+                var @event = context.GetArgument<string>(0);
+                var callback = context.GetArgument<LuaFunction>(1);
+
+                var unregister = onEvent(@event, value =>
+                {
+                    state.Call(callback, [value]);
+                });
+                
+                return new ValueTask<int>(context.Return(new LuaFunction("unregister", (context, ct) =>
+                {
+                    unregister();
+                    return new ValueTask<int>(context.Return());
+                })));
+            })
+        };
+
+        state.Environment["UiLib"] = library;
     }
 
     internal static readonly LuaFunction CreateRoot = new("createRoot", (context, ct) =>
     {
-        return new ValueTask<int>(context.Return( new View()));
+        return new ValueTask<int>(context.Return(new View()));
     });
 
     internal static readonly LuaFunction CreateInstance = new("createInstance", (context, ct) =>
@@ -91,14 +131,6 @@ public static class LuaUiLibrary
     {
         var text = context.GetArgument<string>(0);
         return new ValueTask<int>(context.Return( new TextNode() { Text = text }));
-    });
-
-    internal static readonly LuaFunction SetActiveRoot = new("setActiveRoot", (context, ct) =>
-    {
-        var view = context.GetArgument<View>(0);
-        ActiveRoot = view;
-        
-        return new ValueTask<int>(context.Return());
     });
 
     internal static readonly LuaFunction AppendChild = new("appendChild", (context, ct) =>
@@ -295,19 +327,6 @@ public static class LuaUiLibrary
                 break;
         }
     }
-
-    private static LuaTable Library = new LuaTable()
-    {
-        ["createRoot"] = CreateRoot,
-        ["createInstance"] = CreateInstance,
-        ["createTextInstance"] = CreateTextInstance,
-        ["appendChild"] = AppendChild,
-        ["insertBefore"] = InsertBefore,
-        ["removeChild"] = RemoveChild,
-        ["setProperty"] = SetProperty,
-        ["commitTextUpdate"] = CommitTextUpdate,
-        ["setActiveRoot"] = SetActiveRoot,
-    };
 
     private static TextInputStyles AssignTextInputStylesProps(LuaTable props)
     {

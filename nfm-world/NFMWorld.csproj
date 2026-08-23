@@ -107,6 +107,8 @@
 
         <ProjectReference Include="..\MemoryPack\src\MemoryPack.Generator\MemoryPack.Generator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
         <ProjectReference Include="..\SoundTouch.Net.NAudioSupport\SoundTouch.Net.NAudioSupport.csproj" />
+
+        <ProjectReference Include="..\NFMWorld.LuaSourceGenerator\NFMWorld.LuaSourceGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
     <Import Project="../NFMWorld.ShaderSourceGen/NFMWorld.ShaderSourceGen.props" />
@@ -244,4 +246,14 @@
         </ItemGroup>
         <Copy SourceFiles="@(ShaderFiles)" DestinationFolder="$(PublishDir)/data/shaders" />
     </Target>
+
+    <!-- LuaCATS definition file output -->
+    <ItemGroup>
+        <CompilerVisibleProperty Include="LuaSourceGenerator_LuaCATSOutputDirectory" />
+        <CompilerVisibleProperty Include="LuaVisibleGenerator_StubsOutputDirectory" />
+    </ItemGroup>
+    <PropertyGroup>
+        <LuaSourceGenerator_LuaCATSOutputDirectory>$(MSBuildProjectDirectory)\..\NFMWorld.Library\data\library\declarations</LuaSourceGenerator_LuaCATSOutputDirectory>
+        <LuaVisibleGenerator_StubsOutputDirectory>$(MSBuildProjectDirectory)\..\NFMWorld.Library\data\library\declarations</LuaVisibleGenerator_StubsOutputDirectory>
+    </PropertyGroup>
 </Project>

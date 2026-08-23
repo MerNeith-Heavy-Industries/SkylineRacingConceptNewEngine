@@ -71,8 +71,7 @@ function vdom.normalize(result: R.VNode|string|number|boolean|nil|Array<R.VNode>
 end
 
 export type React_StatelessFunctionalComponent<Props> = (
-	props: Props,
-	context: any
+	props: Props
 ) -> R.VNode
 
 --- Create a virtual element.
@@ -126,6 +125,6 @@ function vdom.h<P>(vtype: React_StatelessFunctionalComponent<P>, props: P, ...: 
   end
 
   return markVNode({ type = vtype, props = p, key = p.key })
-end) :: h
+end
 
 return vdom

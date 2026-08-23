@@ -1,14 +1,12 @@
 using System.Globalization;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
+using Lua;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.UI.Cef;
-using NFMWorld.Util;
 using NFMWorldLibrary;
-using NFMWorldLibrary.Util;
 using SDL3;
 using NFMWorld.Sentry;
 
@@ -23,7 +21,7 @@ public class SettingsMenu(WorldGame game)
     private bool _isOpen;
     private int _selectedTab = 0;
 
-    private readonly string[] _tabNames = { "Keyboard", "Video", "Audio", "Game" };
+    private readonly string[] _tabNames = ["Keyboard", "Video", "Audio", "Game"];
 
     // Keyboard bindings
     public class KeyBindings
@@ -98,8 +96,6 @@ public class SettingsMenu(WorldGame game)
     /// <summary>Fired when the resolutions list changes (window resize, fullscreen toggle).</summary>
     public static event Action? ResolutionsChanged;
 
-    public bool IsOpen => _isOpen;
-
     private static Vector4 RGB(int r, int g, int b, float a = 1.0f) => new Vector4(r / 255f, g / 255f, b / 255f, a);
 
     private static string[] GetSupportedResolutions()
@@ -155,104 +151,6 @@ public class SettingsMenu(WorldGame game)
         ResolutionsChanged?.Invoke();
     }
 
-    public void Open()
-    {
-        _isOpen = true;
-
-        // Load current game settings
-        _fov = CameraSettings.Fov;
-        _followY = FollowCamera.FollowYOffset;
-        _followZ = FollowCamera.FollowZOffset;
-        _smoothFov = CameraSettings.SmoothFov;
-    }
-
-    public void Close()
-    {
-        _isOpen = false;
-    }
-
-    public void Render()
-    {
-        if (!_isOpen)
-            return;
-
-        // Set window size and position
-        var viewport = ImGui.GetMainViewport();
-        var center = ImGui.GetCenter(viewport);
-        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
-        ImGui.SetNextWindowSize(new Vector2(570, 390), ImGuiCond.Appearing);
-
-        var flags = ImGuiWindowFlags.NoCollapse;
-
-        if (ImGui.Begin("Options", ref _isOpen, flags))
-        {
-            DrawTabs();
-
-            ImGui.Spacing();
-
-            // Calculate height for scrollable content area (leave room for bottom buttons)
-            var bottomButtonsHeight = 60f; // Height for separator + buttons + padding
-            var availableHeight = ImGui.GetContentRegionAvail().Y - bottomButtonsHeight;
-
-            // Scrollable content area
-            if (ImGui.BeginChild("SettingsContent", new Vector2(0, availableHeight)))
-            {
-                // Draw content based on selected tab
-                switch (_selectedTab)
-                {
-                    case 0: DrawKeyboardTab(); break;
-                    case 1: DrawVideoTab(); break;
-                    case 2: DrawAudioTab(); break;
-                    case 3: DrawGameTab(); break;
-                }
-            }
-            ImGui.EndChild();
-
-            // Static bottom section
-            ImGui.Separator();
-            DrawBottomButtons();
-
-            ImGui.End();
-        }
-    }
-
-    private void DrawTabs()
-    {
-        if (ImGui.BeginTabBar("SettingsTabs", ImGuiTabBarFlags.None))
-        {
-            for (var i = 0; i < _tabNames.Length; i++)
-            {
-                if (ImGui.BeginTabItem(_tabNames[i]))
-                {
-                    _selectedTab = i;
-                    ImGui.EndTabItem();
-                }
-            }
-            ImGui.EndTabBar();
-        }
-    }
-
-    private void DrawAudioTab()
-    {
-        ImGui.Text("Audio Settings");
-        ImGui.Spacing();
-
-        ImGui.Checkbox("Mute All", ref _muteAll);
-        ImGui.Spacing();
-
-        ImGui.Checkbox("Use Remastered Music if Available", ref _remasteredMusic);
-        ImGui.Spacing();
-
-        ImGui.Text("Master Volume");
-        ImGui.SliderFloat("##MasterVolume", ref _masterVolume, 0.0f, 1.0f, "%.2f");
-
-        ImGui.Text("Music Volume");
-        ImGui.SliderFloat("##MusicVolume", ref _musicVolume, 0.0f, 1.0f, "%.2f");
-
-        ImGui.Text("Effects Volume");
-        ImGui.SliderFloat("##EffectsVolume", ref _effectsVolume, 0.0f, 1.0f, "%.2f");
-    }
-
     public void HandleKeyCapture(Key key)
     {
         if (_capturingAction == null || !_isOpen)
@@ -298,156 +196,6 @@ public class SettingsMenu(WorldGame game)
     }
 
     public bool IsCapturingKey() => _capturingAction != null;
-
-    private void DrawVideoTab()
-    {
-        ImGui.Text("Video Settings");
-        ImGui.Spacing();
-
-        ImGui.Text("Renderer");
-        ImGui.Combo("##Renderer", ref _selectedRenderer, Renderers, Renderers.Length);
-
-        ImGui.Text("Resolution");
-        ImGui.Combo("##Resolution", ref _selectedResolution, Resolutions, Resolutions.Length);
-
-        ImGui.Text("Display Mode");
-        ImGui.Combo("##DisplayMode", ref _selectedDisplayMode, DisplayModes, DisplayModes.Length);
-
-        ImGui.Spacing();
-        ImGui.Checkbox("Wait for vertical sync", ref _vsync);
-
-        ImGui.Text("FPS Limit");
-        var sliderWidth = ImGui.GetContentRegionAvail().X;
-        ImGui.SetNextItemWidth(sliderWidth);
-        ImGui.SliderInt("##FPSLimit", ref _fpsLimit, 0, 240, "%d FPS (0 = Unlimited)");
-
-        ImGui.Text("Antialiasing");
-        ImGui.Combo("##Antialiasing", ref _antialias, AntialiasModes, AntialiasModes.Length);
-
-        ImGui.Text("Shadow Distance");
-        ImGui.Combo("##ShadowCascadeLevel", ref _shadowCascadeLevel, ShadowCascadeLevelNames, ShadowCascadeLevelNames.Length);
-
-        ImGui.Text("Shadow Resolution");
-        ImGui.Combo("##ShadowResolution", ref _shadowResolution, ShadowResolutionNames, ShadowResolutionNames.Length);
-
-        ImGui.Text("Render Distance");
-        ImGui.Combo("##RenderDistance", ref _renderDistance, RenderDistanceNames, RenderDistanceNames.Length);
-
-        ImGui.Checkbox("Low Latency (Disable interpolation)", ref _lowLatency);
-
-        ImGui.Spacing();
-        ImGui.Text("Outline Width");
-        ImGui.SetNextItemWidth(sliderWidth);
-        ImGui.SliderFloat("##LineWidth", ref _lineWidth, 0.5f, 4f, "%.1f");
-        // ImGui.TextColored(new Vector4(1.0f, 0.8f, 0.4f, 1.0f),
-        //     "Note: changing some video options will cause the game to exit and restart.");
-    }
-
-    private void DrawKeyboardTab()
-    {
-        ImGui.Text("Key Bindings");
-        ImGui.Spacing();
-
-        if (ImGui.Button("Reset All to Defaults", new Vector2(-1, 0)))
-        {
-            GameSparker.MessageWindow.ShowYesNo("Reset Key Binds", "Are you sure you want to reset key binds to default?",
-            result => {
-                if (result == MessageWindow.MessageResult.Yes) {
-                    ResetKeyBindings();
-                }
-            });
-        }
-
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        // Draw key binding table
-        var bindings = new (string Action, string PropertyName, Key Key)[]
-        {
-            ("Accelerate", "Accelerate", Bindings.Accelerate),
-            ("Brake / Reverse", "Brake", Bindings.Brake),
-            ("Turn Left", "TurnLeft", Bindings.TurnLeft),
-            ("Turn Right", "TurnRight", Bindings.TurnRight),
-            ("Handbrake / Stunt", "Handbrake", Bindings.Handbrake),
-            ("Cycle View", "CycleView", Bindings.CycleView),
-            ("Aerial boost / bounce", "AerialBounce", Bindings.AerialBounce),
-            ("Aerial strafe, Smooth turn", "AerialStrafe", Bindings.AerialStrafe),
-            //("Enter", "Enter", Bindings.Enter),       //iirc previously this would bring up pause menu in game and also used as keyboard navigation through menus, perhaps not needed to be able to be binded here
-            ("Look Back", "LookBack", Bindings.LookBack),
-            ("Look Left", "LookLeft", Bindings.LookLeft),
-            ("Look Right", "LookRight", Bindings.LookRight),
-            ("Toggle Music", "ToggleMusic", Bindings.ToggleMusic),
-            ("Toggle SFX", "ToggleSFX", Bindings.ToggleSFX),
-            ("Toggle Arrow Mode", "ToggleArrace", Bindings.ToggleArrace),
-            ("Toggle Radar", "ToggleRadar", Bindings.ToggleRadar),
-            ("Toggle Developer Console", "ToggleDevConsole", Bindings.ToggleDevConsole),
-        };
-
-        ImGui.Columns(2, "KeyBindings", true);
-        ImGui.SetColumnWidth(0, 200);
-
-        for (var i = 0; i < bindings.Length; i++)
-        {
-            var (action, propName, key) = bindings[i];
-
-            ImGui.Text(action);
-            ImGui.NextColumn();
-
-            var isCapturing = _capturingAction == propName;
-            var buttonLabel = isCapturing ? "Press any key..." : key.ToString();
-
-            if (isCapturing)
-                ImGui.PushStyleColor(ImGuiCol.Button, RGB(128, 77, 3, 0.8f));
-
-            if (ImGui.Button($"{buttonLabel}##{propName}", new Vector2(-1, 0)))
-            {
-                _capturingAction = propName;
-                _selectedBindingIndex = i;
-            }
-
-            if (isCapturing)
-                ImGui.PopStyleColor();
-
-            ImGui.NextColumn();
-        }
-
-        ImGui.Columns(1);
-    }
-
-    private void DrawGameTab()
-    {
-        ImGui.Text("Camera Settings");
-        ImGui.Spacing();
-
-        ImGui.Text("Field of View");
-        ImGui.SliderFloat("##FOV", ref _fov, 58.7f, 120.0f, "%.1f°");
-
-        ImGui.Spacing();
-        ImGui.Checkbox("Smooth FOV Changes", ref _smoothFov);
-
-        ImGui.Spacing();
-        ImGui.Text("Follow Y Offset");
-        ImGui.SliderInt("##FollowY", ref _followY, -160, 500);
-
-        ImGui.Spacing();
-        ImGui.Text("Follow Z Offset");
-        ImGui.SliderInt("##FollowZ", ref _followZ, -500, 500);
-
-        ImGui.Spacing();
-        if (ImGui.Button("Reset Camera Defaults", new Vector2(-1, 0)))
-        {
-            GameSparker.MessageWindow.ShowYesNo("Reset Camera", "Are you sure you want to reset camera settings to default?",
-            result => {
-                if (result == MessageWindow.MessageResult.Yes) {
-                    _fov = 90.0f;
-                    _smoothFov = true;
-                    _followY = 0;
-                    _followZ = 0;
-                }
-            });
-        }
-    }
 
     private void DrawBottomButtons()
     {
@@ -1193,103 +941,103 @@ public class SettingsMenu(WorldGame game)
     /// Apply a single setting change from JS. Key is the setting name,
     /// value is parsed from the JsonElement.
     /// </summary>
-    public static void ApplySetting(string key, System.Text.Json.JsonElement args)
+    public static void ApplySetting(string key, LuaTable args)
     {
         switch (key)
         {
             // Video
             case "selectedRenderer":
-                if (args.TryGetProperty("value", out var v) && v.TryGetInt32(out var iv))
+                if (args.TryGetValue("value", out var v) && v.TryRead<int>(out var iv))
                     _selectedRenderer = iv;
                 break;
             case "selectedResolution":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _selectedResolution = iv;
                 break;
             case "selectedDisplayMode":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _selectedDisplayMode = iv;
                 break;
             case "vsync":
-                if (args.TryGetProperty("value", out v) && v.ValueKind == System.Text.Json.JsonValueKind.True || v.ValueKind == System.Text.Json.JsonValueKind.False)
-                    _vsync = v.GetBoolean();
+                if (args.TryGetValue("value", out v) && v.Type is LuaValueType.Boolean)
+                    _vsync = v.Read<bool>();
                 break;
             case "fpsLimit":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _fpsLimit = iv;
                 break;
             case "antialias":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _antialias = iv;
                 break;
             case "shadowCascadeLevel":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _shadowCascadeLevel = iv;
                 break;
             case "shadowResolution":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _shadowResolution = iv;
                 break;
             case "renderDistance":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _renderDistance = iv;
                 break;
             case "lowLatency":
-                if (args.TryGetProperty("value", out v))
-                    _lowLatency = v.GetBoolean();
+                if (args.TryGetValue("value", out v))
+                    _lowLatency = v.Read<bool>();
                 break;
             case "lineWidth":
-                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out var fv))
+                if (args.TryGetValue("value", out v) && v.TryRead<float>(out var fv))
                     _lineWidth = fv;
                 break;
 
             // Audio
             case "masterVolume":
-                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
                     _masterVolume = fv;
                 break;
             case "musicVolume":
-                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
                     _musicVolume = fv;
                 break;
             case "effectsVolume":
-                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
                     _effectsVolume = fv;
                 break;
             case "muteAll":
-                if (args.TryGetProperty("value", out v))
-                    _muteAll = v.GetBoolean();
+                if (args.TryGetValue("value", out v))
+                    _muteAll = v.Read<bool>();
                 break;
             case "remasteredMusic":
-                if (args.TryGetProperty("value", out v))
-                    _remasteredMusic = v.GetBoolean();
+                if (args.TryGetValue("value", out v))
+                    _remasteredMusic = v.Read<bool>();
                 break;
 
             // Camera
             case "fov":
-                if (args.TryGetProperty("value", out v) && v.TryGetSingle(out fv))
+                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
                     _fov = fv;
                 break;
             case "followY":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _followY = iv;
                 break;
             case "followZ":
-                if (args.TryGetProperty("value", out v) && v.TryGetInt32(out iv))
+                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
                     _followZ = iv;
                 break;
             case "smoothFov":
-                if (args.TryGetProperty("value", out v))
-                    _smoothFov = v.GetBoolean();
+                if (args.TryGetValue("value", out v))
+                    _smoothFov = v.Read<bool>();
                 break;
 
             // Key binding
             case "keyBinding":
-                if (args.TryGetProperty("action", out var actionProp)
-                    && args.TryGetProperty("keyCode", out var codeProp)
-                    && codeProp.TryGetInt32(out var keyCode))
+                if (args.TryGetValue("action", out var actionProp)
+                    && args.TryGetValue("keyCode", out var codeProp)
+                    && codeProp.TryRead<int>(out var keyCode))
                 {
-                    var action = actionProp.GetString() ?? "";
+                    var action = actionProp.ReadOrDefault<string>() ?? "";
                     var prop = typeof(KeyBindings).GetProperty(action);
                     prop?.SetValue(Bindings, (Key)keyCode);
                 }

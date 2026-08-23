@@ -2,7 +2,7 @@
 declare AI: AiContext;
 
 -- Gamemode
-declare Gamemode: GamemodeContext;
+declare GM: GamemodeContext;
 
 declare function OnServerEvent(type: string, payload: { [any]: any })
 
@@ -41,4 +41,8 @@ declare UiLib: {
 	commitTextUpdate: ((textInstance: TextNode, oldText: string, newText: string) -> nil),
 	--- Sets the active root node. This is the root node that gets rendered on screen.
 	setActiveRoot: ((root: View) -> nil),
+	--- Calls a method registered on the C# bridge of the current phase.
+	call: ((method: string, payload: any) -> nil),
+	--- Registers a callback for an event from the C# bridge.
+	onEvent: (<T>(event: string, callback: ((payload: T) -> ())) -> () -> ()),
 }

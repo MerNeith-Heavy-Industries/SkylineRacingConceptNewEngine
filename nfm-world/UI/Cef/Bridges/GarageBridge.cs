@@ -1,7 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Lua;
 using MemoryPack;
+using nfm_world_library.Lua;
 using NFMWorldLibrary;
+using NFMWorldLibrary.Util;
 
 namespace NFMWorld.UI.Cef;
 
@@ -12,28 +15,28 @@ public sealed class GarageBridge() : PhaseBridge("garage")
 {
     public override bool EnableInput => true;
 
-    protected override void OnMessage(string type, JsonElement? args)
+    protected override void OnMessage(string type, LuaValue args)
     {
         switch (type)
         {
             case "selectCar":
-                if (args is { } a
-                    && a.TryGetProperty("collection", out var col)
-                    && a.TryGetProperty("carName", out var car))
+                if (args.TryRead<LuaTable>(out var a)
+                    && a.TryGetValue("collection", out var col)
+                    && a.TryGetValue("carName", out var car))
                 {
-                    CarSelected?.Invoke(col.GetString() ?? "", car.GetString() ?? "");
+                    CarSelected?.Invoke(col.ReadOrDefault<string>() ?? "", car.ReadOrDefault<string>() ?? "");
                 }
                 break;
             case "selectCollection":
-                if (args is { } b && b.TryGetProperty("collection", out var selCol))
+                if (args.TryRead<LuaTable>(out var b) && b.TryGetValue("collection", out var selCol))
                 {
-                    CollectionSelected?.Invoke(selCol.GetString() ?? "");
+                    CollectionSelected?.Invoke(selCol.ReadOrDefault<string>() ?? "");
                 }
                 break;
             case "cycleCar":
-                if (args is { } c && c.TryGetProperty("direction", out var dir))
+                if (args.TryRead<LuaTable>(out var c) && c.TryGetValue("direction", out var dir))
                 {
-                    var direction = dir.GetString() ?? "";
+                    var direction = dir.ReadOrDefault<string>() ?? "";
                     CycleCarRequested?.Invoke(direction == "right" ? 1 : -1);
                 }
                 break;
@@ -54,7 +57,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     /// </summary>
     public void PushCurrentCar(CarStatsData car)
     {
-        PushMemoryPack("currentCar", car);
+        Push("currentCar", car);
     }
 
     /// <summary>
@@ -62,7 +65,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     /// </summary>
     public void PushCollections(CarCollectionData[] collections)
     {
-        PushMemoryPack("collections", new CarCollectionsData { Collections = collections });
+        Push("collections", new CarCollectionsData { Collections = collections });
     }
 
     /// <summary>
@@ -70,7 +73,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     /// </summary>
     public void PushCurrentCollection(Collection collection)
     {
-        PushMemoryPack("currentCollection", new CurrentCollectionData { Id = collection });
+        Push("currentCollection", new CurrentCollectionData { Id = collection });
     }
 
     public event Action<string, string>? CarSelected;
@@ -84,48 +87,44 @@ public sealed class GarageBridge() : PhaseBridge("garage")
 /// <summary>
 /// Car stats sent to the garage JS page.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class CarStatsData
 {
-    public string Name { get; set; } = "";
-    public Collection Collection { get; set; } = Collection.User;
-    public double TopSpeed { get; set; }
-    public double Acceleration { get; set; }
-    public double Handling { get; set; }
-    public double PowerSave { get; set; }
-    public double Strength { get; set; }
-    public double MaxHealth { get; set; }
-    public double Stunting { get; set; }
-    public double Hypergliding { get; set; }
-    public double Abing { get; set; }
+    [LuaName] public string Name { get; set; } = "";
+    [LuaName] public Collection Collection { get; set; } = Collection.User;
+    [LuaName] public double TopSpeed { get; set; }
+    [LuaName] public double Acceleration { get; set; }
+    [LuaName] public double Handling { get; set; }
+    [LuaName] public double PowerSave { get; set; }
+    [LuaName] public double Strength { get; set; }
+    [LuaName] public double MaxHealth { get; set; }
+    [LuaName] public double Stunting { get; set; }
+    [LuaName] public double Hypergliding { get; set; }
+    [LuaName] public double Abing { get; set; }
 }
 
 /// <summary>
 /// Collection of cars sent to the garage JS page.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class CarCollectionsData
 {
-    public CarCollectionData[] Collections { get; set; } = [];
+    [LuaName] public LuaArray<CarCollectionData> Collections { get; set; } = [];
 }
 
 /// <summary>
 /// Collection of cars sent to the garage JS page.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class CarCollectionData
 {
-    public Collection Id { get; set; } = Collection.User;
-    public string Name { get; set; } = "";
-    public CarStatsData[] Cars { get; set; } = [];
+    [LuaName] public Collection Id { get; set; } = Collection.User;
+    [LuaName] public string Name { get; set; } = "";
+    [LuaName] public LuaArray<CarStatsData> Cars { get; set; } = [];
 }
 
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class CurrentCollectionData
 {
-    public required Collection Id { get; set; }
+    [LuaName] public required Collection Id { get; set; }
 }

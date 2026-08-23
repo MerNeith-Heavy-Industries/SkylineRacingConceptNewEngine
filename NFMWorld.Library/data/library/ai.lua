@@ -1,2 +1,0 @@
----@type AiContext
-AI = nil

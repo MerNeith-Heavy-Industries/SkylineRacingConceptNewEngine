@@ -2,6 +2,7 @@
 using Lua;
 using Lua.Standard;
 using NFMWorld.LuaSourceGenerator.Generator;
+using NFMWorld.LuaSourceGenerator.Generator.NFMWorld.Library;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Util;

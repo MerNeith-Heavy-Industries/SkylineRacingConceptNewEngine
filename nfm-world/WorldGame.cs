@@ -1,32 +1,25 @@
-﻿using System.Collections;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Opus;
-using Maxine.Extensions;
 using Maxine.Extensions.Mathematics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoGame.ImGuiNet;
-using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
-using NFMWorld.DriverInterface.DriverInterface;
-using NFMWorld.Reactor;
 using NFMWorld.UI;
-using NFMWorld.UI.Cef;
-using NFMWorld.UI.Hud;
 using NFMWorld.Util;
 using NFMWorldLibrary;
-using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
 using Keys = NFMWorld.DriverInterface.Keys;
 using Logging = NFMWorldLibrary.Logging;
 using NFMWorld.Sentry;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld;
 
@@ -40,7 +33,7 @@ public class WorldGame : Game
 
     public GraphicsDeviceManager Graphics;
     public static ImGuiRenderer ImguiRenderer;
-    private CefRenderer _cefRenderer;
+    private UiRenderer? _uiRenderer;
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
@@ -87,7 +80,6 @@ public class WorldGame : Game
             GameSparker.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             GameSparker.CurrentPhase.WindowSizeChanged(Window.ClientBounds.Width, Window.ClientBounds.Height);
             G.Scale = Window.ClientBounds.Height / 720f;
-            _cefRenderer?.Resize(Window.ClientBounds.Width, Window.ClientBounds.Height);
         };
 
         TextInputEXT.TextInput += character =>
@@ -104,7 +96,7 @@ public class WorldGame : Game
         UpdateInput();
         UpdateMouse();
 
-        _cefRenderer.Update(gameTime);
+        _uiRenderer?.Update(gameTime);
 
         if (!_loaded)
         {
@@ -149,13 +141,8 @@ public class WorldGame : Game
     {
         ImguiRenderer = new ImGuiRenderer(this);
 
-        // Initialize CEF renderer after GraphicsDevice is ready.
-        // Load the single-page app (hash router) as the initial URL.
-        // Phase bridges use ExecuteJavaScript to change the hash on enter.
-        var baseUrl = CefRenderer.ResolveBasePageUrl();
-        _cefRenderer = new CefRenderer(this, baseUrl);
-        _cefRenderer.Initialize();
-        GameSparker.CefRenderer = _cefRenderer;
+        // Initialize UI renderer after GraphicsDevice is ready.
+        _uiRenderer = new UiRenderer(this);
 
         _oldKeyState = Keys.FromState(Keyboard.GetState());
         var mouseState = Mouse.GetState();
@@ -185,7 +172,7 @@ public class WorldGame : Game
             // Dispose all phases before tearing down CEF and graphics.
             GameSparker.Phases.Shutdown();
 
-            _cefRenderer?.Dispose();
+            _uiRenderer?.Dispose();
             foreach (var shadowRenderTarget in ShadowRenderTargets)
             {
                 shadowRenderTarget?.Dispose();
@@ -430,10 +417,11 @@ public class WorldGame : Game
         GameSparker.CurrentPhase.Render(alpha);
 
         FPSCounter.Render();
-        _nvg.Render();
+        
+        // Render UI overlay
+        _uiRenderer?.Render();
 
-        // Render CEF browser overlay (between NanoVG and ImGui)
-        _cefRenderer.Render();
+        _nvg.Render();
 
         GameSparker.Render3DOverlays();
 

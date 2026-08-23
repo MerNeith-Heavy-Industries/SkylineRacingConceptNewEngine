@@ -2,7 +2,7 @@
 
 namespace NFMWorld.LuaSourceGenerator;
 
-internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type) : BaseLuaTypeGenerator
+internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type, string ns) : BaseLuaTypeGenerator
 {
     public string GenerateCode()
     {
@@ -18,7 +18,7 @@ internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type) : BaseLu
         sb.AppendLine("#pragma warning disable CS0108");
         sb.AppendLine("#pragma warning disable CS8625");
         sb.AppendLine();
-        sb.AppendLine("namespace NFMWorld.LuaSourceGenerator.Generator;");
+        sb.AppendLine($"namespace {ns};");
         sb.AppendLine("partial class GeneratorGenerated");
         using (sb.Block())
         {
