@@ -15,6 +15,9 @@ local Image = React.Image
 local TextInput = React.TextInput
 
 local MainMenu = require("./routes/mainmenu")
+local Garage = require("./routes/garage")
+local RaceHud = require("./routes/racehud")
+local TestPage = require("./routes/test")
 
 -- ── Simple hash-based router ─────────────────────────────────────
 -- Reads window.location.hash to determine which page component to
@@ -23,10 +26,9 @@ local MainMenu = require("./routes/mainmenu")
 
 local routes: { [string]: React.StatelessFunctionalComponent<any> } = {
 	["main-menu"] = MainMenu,
-	-- "garage": Garage,
-	-- "race": RaceHud,
-	-- "test": TestPage,
-	-- 'empty': () => <div style={{ width: "100%", height: "100%" }}></div>
+	["garage"] = Garage,
+	["race"] = RaceHud,
+	["test"] = TestPage,
 }
 
 local defaultRoute = "main-menu"

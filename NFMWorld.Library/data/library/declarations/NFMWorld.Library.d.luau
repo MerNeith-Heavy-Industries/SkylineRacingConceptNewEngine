@@ -101,6 +101,56 @@ end
 declare IGamemodeContext: {
 }
 
+declare extern type FrameTrace with
+end
+
+declare FrameTrace: {
+    addMessage: ((message: string) -> nil),
+}
+
+declare extern type ClientSidePlayer with
+    info: ClientSidePlayerInfo
+    index: integer
+    car: BackendCar|nil
+    bot: BaseAi|nil
+    isFake: boolean
+end
+
+declare ClientSidePlayer: {
+}
+
+declare extern type ClientSidePlayerInfo with
+    playerName: string
+    carName: string
+    color: Color3
+    isBot: boolean
+    isClientPlayer: boolean
+end
+
+declare ClientSidePlayerInfo: {
+}
+
+declare extern type HudStateData with
+    speed: number
+    power: number
+    damage: number
+    lap: integer
+    totalLaps: integer
+    lapTime: integer
+    position: integer
+    totalRacers: integer
+    stateText: string
+    lapDiffMs: integer|nil
+    lastLapDiffMs: integer|nil
+    chkDiffMs: integer|nil
+    lastChkDiffMs: integer|nil
+    countdownTimer: integer
+    stateTextEndsAt: number|nil
+end
+
+declare HudStateData: {
+}
+
 declare extern type LuaClientContext with
     resetCheckpointGlow: ((self: LuaClientContext) -> nil)
     updateCheckpointGlow: ((self: LuaClientContext, currentCheckpoint: integer, isFinish: boolean) -> nil)
@@ -176,172 +226,11 @@ declare TimeTrial: {
     new: ((stage: BackendStage) -> TimeTrial),
 }
 
-declare extern type ClientSidePlayer with
-    info: ClientSidePlayerInfo
-    index: integer
-    car: BackendCar|nil
-    bot: BaseAi|nil
-    isFake: boolean
-end
-
-declare ClientSidePlayer: {
-}
-
-declare extern type ClientSidePlayerInfo with
-    playerName: string
-    carName: string
-    color: Color3
-    isBot: boolean
-    isClientPlayer: boolean
-end
-
-declare ClientSidePlayerInfo: {
-}
-
-declare extern type HudStateData with
-    speed: number
-    power: number
-    damage: number
-    lap: integer
-    totalLaps: integer
-    lapTime: integer
-    position: integer
-    totalRacers: integer
-    stateText: string
-    lapDiffMs: integer|nil
-    lastLapDiffMs: integer|nil
-    chkDiffMs: integer|nil
-    lastChkDiffMs: integer|nil
-    countdownTimer: integer
-    stateTextEndsAt: number|nil
-end
-
-declare HudStateData: {
-}
-
 declare extern type PhysicsController with
     gameTick: ((self: PhysicsController) -> nil)
 end
 
 declare PhysicsController: {
-}
-
-declare extern type ServerSidePlayerInfo with
-    id: string
-    playerName: string
-    carName: string
-    color: Color3
-end
-
-declare ServerSidePlayerInfo: {
-}
-
-declare extern type AttachmentLineDirection with
-end
-
-declare AttachmentLineDirection: {
-    x: AttachmentLineDirection,
-    z: AttachmentLineDirection,
-}
-
-declare extern type LineType with
-end
-
-declare LineType: {
-    flat: LineType,
-    charged: LineType,
-    colored: LineType,
-    brightColored: LineType,
-    maxValue: LineType,
-}
-
-declare extern type PolyType with
-end
-
-declare PolyType: {
-    flat: PolyType,
-    light: PolyType,
-    brakeLight: PolyType,
-    reverseLight: PolyType,
-    finish: PolyType,
-    fullbright: PolyType,
-    cGround: PolyType,
-    glass: PolyType,
-    maxValue: PolyType,
-}
-
-declare extern type Rad3d with
-    maxRadius: integer
-    colors: { [integer|number]: Color3 }
-    stats: CarStats
-    wheels: { [integer|number]: Rad3dWheelDef }
-    rims: Rad3dRimsDef|nil
-    boxes: { [integer|number]: Rad3dBoxDef }
-    polys: { [integer|number]: Rad3dPoly }
-    castsShadow: boolean
-    atp: { [integer|number]: LuaVector2 }
-    fileName: string
-    atLines: { [integer|number]: Rad3dAttachmentLine }|nil
-end
-
-declare Rad3d: {
-}
-
-declare extern type Rad3dAttachmentLine with
-    direction: AttachmentLineDirection
-    offset: fixed64
-    __eq: ((left: Rad3dAttachmentLine, right: Rad3dAttachmentLine) -> boolean)
-end
-
-declare Rad3dAttachmentLine: {
-}
-
-declare extern type Rad3dBoxDef with
-    xy: integer
-    zy: integer
-    radius: fixed64vector3
-    translation: fixed64vector3
-    surfaceType: SurfaceType
-    damage: integer
-    notWall: boolean
-    color: Color3
-    tractionMultiplier: fixed64|nil
-    __eq: ((left: Rad3dBoxDef, right: Rad3dBoxDef) -> boolean)
-end
-
-declare Rad3dBoxDef: {
-}
-
-declare extern type Rad3dPoly with
-    color: Color3
-    colNum: integer|nil
-    polyType: PolyType
-    lineType: LineType|nil
-    __eq: ((left: Rad3dPoly, right: Rad3dPoly) -> boolean)
-end
-
-declare Rad3dPoly: {
-}
-
-declare extern type Rad3dRimsDef with
-    color: Color3
-    size: number
-    depth: number
-    __eq: ((left: Rad3dRimsDef, right: Rad3dRimsDef) -> boolean)
-end
-
-declare Rad3dRimsDef: {
-}
-
-declare extern type Rad3dWheelDef with
-    position: fixed64vector3
-    rotates: integer
-    width: fixed64
-    height: fixed64
-    __eq: ((left: Rad3dWheelDef, right: Rad3dWheelDef) -> boolean)
-end
-
-declare Rad3dWheelDef: {
 }
 
 declare extern type SurfaceType with
@@ -533,6 +422,124 @@ declare AiNodeKind: {
     reset: AiNodeKind,
 }
 
+declare extern type ServerSidePlayerInfo with
+    id: string
+    playerName: string
+    carName: string
+    color: Color3
+end
+
+declare ServerSidePlayerInfo: {
+}
+
+declare extern type AttachmentLineDirection with
+end
+
+declare AttachmentLineDirection: {
+    x: AttachmentLineDirection,
+    z: AttachmentLineDirection,
+}
+
+declare extern type LineType with
+end
+
+declare LineType: {
+    flat: LineType,
+    charged: LineType,
+    colored: LineType,
+    brightColored: LineType,
+    maxValue: LineType,
+}
+
+declare extern type PolyType with
+end
+
+declare PolyType: {
+    flat: PolyType,
+    light: PolyType,
+    brakeLight: PolyType,
+    reverseLight: PolyType,
+    finish: PolyType,
+    fullbright: PolyType,
+    cGround: PolyType,
+    glass: PolyType,
+    maxValue: PolyType,
+}
+
+declare extern type Rad3d with
+    maxRadius: integer
+    colors: { [integer|number]: Color3 }
+    stats: CarStats
+    wheels: { [integer|number]: Rad3dWheelDef }
+    rims: Rad3dRimsDef|nil
+    boxes: { [integer|number]: Rad3dBoxDef }
+    polys: { [integer|number]: Rad3dPoly }
+    castsShadow: boolean
+    atp: { [integer|number]: LuaVector2 }
+    fileName: string
+    atLines: { [integer|number]: Rad3dAttachmentLine }|nil
+end
+
+declare Rad3d: {
+}
+
+declare extern type Rad3dAttachmentLine with
+    direction: AttachmentLineDirection
+    offset: fixed64
+    __eq: ((left: Rad3dAttachmentLine, right: Rad3dAttachmentLine) -> boolean)
+end
+
+declare Rad3dAttachmentLine: {
+}
+
+declare extern type Rad3dBoxDef with
+    xy: integer
+    zy: integer
+    radius: fixed64vector3
+    translation: fixed64vector3
+    surfaceType: SurfaceType
+    damage: integer
+    notWall: boolean
+    color: Color3
+    tractionMultiplier: fixed64|nil
+    __eq: ((left: Rad3dBoxDef, right: Rad3dBoxDef) -> boolean)
+end
+
+declare Rad3dBoxDef: {
+}
+
+declare extern type Rad3dPoly with
+    color: Color3
+    colNum: integer|nil
+    polyType: PolyType
+    lineType: LineType|nil
+    __eq: ((left: Rad3dPoly, right: Rad3dPoly) -> boolean)
+end
+
+declare Rad3dPoly: {
+}
+
+declare extern type Rad3dRimsDef with
+    color: Color3
+    size: number
+    depth: number
+    __eq: ((left: Rad3dRimsDef, right: Rad3dRimsDef) -> boolean)
+end
+
+declare Rad3dRimsDef: {
+}
+
+declare extern type Rad3dWheelDef with
+    position: fixed64vector3
+    rotates: integer
+    width: fixed64
+    height: fixed64
+    __eq: ((left: Rad3dWheelDef, right: Rad3dWheelDef) -> boolean)
+end
+
+declare Rad3dWheelDef: {
+}
+
 declare extern type PiecePlacement with
     type: PiecePlacementType
     object: Rad3d
@@ -685,32 +692,6 @@ end
 declare StageLoader: {
 }
 
-declare extern type DeterministicRandom with
-    next: ((self: DeterministicRandom) -> integer)
-    nextBetween: ((self: DeterministicRandom, min: integer, max: integer) -> integer)
-    nextf64: ((self: DeterministicRandom) -> fixed64)
-end
-
-declare DeterministicRandom: {
-    new: ((value: fixed64) -> DeterministicRandom),
-}
-
-declare extern type Stopwatch with
-    isRunning: boolean
-    elapsed: number
-    elapsedMilliseconds: integer
-    elapsedMicroseconds: integer
-    stop: ((self: Stopwatch) -> nil)
-    start: ((self: Stopwatch) -> nil)
-    restart: ((self: Stopwatch) -> nil)
-    reset: ((self: Stopwatch) -> nil)
-end
-
-declare Stopwatch: {
-    new: (() -> Stopwatch),
-    startNew: (() -> Stopwatch),
-}
-
 declare extern type Color3 with
     r: integer
     g: integer
@@ -722,13 +703,6 @@ declare extern type Color3 with
 end
 
 declare Color3: {
-}
-
-declare extern type FrameTrace with
-end
-
-declare FrameTrace: {
-    addMessage: ((message: string) -> nil),
 }
 
 declare extern type Key with
@@ -1177,6 +1151,216 @@ end
 declare LuaVector3: {
 }
 
+declare extern type DeterministicRandom with
+    next: ((self: DeterministicRandom) -> integer)
+    nextBetween: ((self: DeterministicRandom, min: integer, max: integer) -> integer)
+    nextf64: ((self: DeterministicRandom) -> fixed64)
+end
+
+declare DeterministicRandom: {
+    new: ((value: fixed64) -> DeterministicRandom),
+}
+
+declare extern type Stopwatch with
+    isRunning: boolean
+    elapsed: number
+    elapsedMilliseconds: integer
+    elapsedMicroseconds: integer
+    stop: ((self: Stopwatch) -> nil)
+    start: ((self: Stopwatch) -> nil)
+    restart: ((self: Stopwatch) -> nil)
+    reset: ((self: Stopwatch) -> nil)
+end
+
+declare Stopwatch: {
+    new: (() -> Stopwatch),
+    startNew: (() -> Stopwatch),
+}
+
+declare extern type Node with
+    visualParent: Node|nil
+    visualChildren: { [integer|number]: Node }
+end
+
+declare Node: {
+}
+
+declare extern type Component extends Node with
+    visualChildren: { [integer|number]: Node }
+    canHaveChildren: boolean
+    name: string
+    isFocusable: boolean
+    layoutMarginPosition: LuaVector2
+    layoutMarginSize: LuaVector2
+    layoutBorderPosition: LuaVector2
+    layoutBorderSize: LuaVector2
+    layoutPaddingPosition: LuaVector2
+    layoutPaddingSize: LuaVector2
+    layoutContentPosition: LuaVector2
+    layoutContentSize: LuaVector2
+    layoutMargin: LuaVector2
+    layoutPadding: LuaVector2
+    layoutBorder: LuaVector2
+    layoutWidth: number
+    layoutHeight: number
+    layoutX: number
+    layoutY: number
+    layoutDirection: Direction
+    hadOverflow: boolean
+    layoutMarginTop: number
+    layoutMarginBottom: number
+    layoutMarginLeft: number
+    layoutMarginRight: number
+    layoutPaddingTop: number
+    layoutPaddingBottom: number
+    layoutPaddingLeft: number
+    layoutPaddingRight: number
+    layoutBorderTop: number
+    layoutBorderBottom: number
+    layoutBorderLeft: number
+    layoutBorderRight: number
+    hasNewLayout: boolean
+    isDirty: boolean
+    isReferenceBaseline: boolean
+    scrollLeft: number
+    scrollTop: number
+    scrollableWidth: number
+    scrollableHeight: number
+    isClipping: boolean
+    isDisplayed: boolean
+    visualParent: Node|nil
+    addChild: ((self: Component, child: Node) -> nil)
+    insertAt: ((self: Component, index: integer, child: Node) -> nil)
+    removeAt: ((self: Component, index: integer) -> nil)
+    scrollIntoView: ((self: Component) -> nil)
+    focus: ((self: Component) -> nil)
+    blur: ((self: Component) -> nil)
+end
+
+declare Component: {
+}
+
+declare extern type TextInput extends Component with
+    placeholder: string
+    text: string
+    visualChildren: { [integer|number]: Node }
+    canHaveChildren: boolean
+    name: string
+    isFocusable: boolean
+    layoutMarginPosition: LuaVector2
+    layoutMarginSize: LuaVector2
+    layoutBorderPosition: LuaVector2
+    layoutBorderSize: LuaVector2
+    layoutPaddingPosition: LuaVector2
+    layoutPaddingSize: LuaVector2
+    layoutContentPosition: LuaVector2
+    layoutContentSize: LuaVector2
+    layoutMargin: LuaVector2
+    layoutPadding: LuaVector2
+    layoutBorder: LuaVector2
+    layoutWidth: number
+    layoutHeight: number
+    layoutX: number
+    layoutY: number
+    layoutDirection: Direction
+    hadOverflow: boolean
+    layoutMarginTop: number
+    layoutMarginBottom: number
+    layoutMarginLeft: number
+    layoutMarginRight: number
+    layoutPaddingTop: number
+    layoutPaddingBottom: number
+    layoutPaddingLeft: number
+    layoutPaddingRight: number
+    layoutBorderTop: number
+    layoutBorderBottom: number
+    layoutBorderLeft: number
+    layoutBorderRight: number
+    hasNewLayout: boolean
+    isDirty: boolean
+    isReferenceBaseline: boolean
+    scrollLeft: number
+    scrollTop: number
+    scrollableWidth: number
+    scrollableHeight: number
+    isClipping: boolean
+    isDisplayed: boolean
+    visualParent: Node|nil
+    addChild: ((self: TextInput, child: Node) -> nil)
+    insertAt: ((self: TextInput, index: integer, child: Node) -> nil)
+    removeAt: ((self: TextInput, index: integer) -> nil)
+    scrollIntoView: ((self: TextInput) -> nil)
+    focus: ((self: TextInput) -> nil)
+    blur: ((self: TextInput) -> nil)
+end
+
+declare TextInput: {
+}
+
+declare extern type View extends Component with
+    visualChildren: { [integer|number]: Node }
+    canHaveChildren: boolean
+    name: string
+    isFocusable: boolean
+    layoutMarginPosition: LuaVector2
+    layoutMarginSize: LuaVector2
+    layoutBorderPosition: LuaVector2
+    layoutBorderSize: LuaVector2
+    layoutPaddingPosition: LuaVector2
+    layoutPaddingSize: LuaVector2
+    layoutContentPosition: LuaVector2
+    layoutContentSize: LuaVector2
+    layoutMargin: LuaVector2
+    layoutPadding: LuaVector2
+    layoutBorder: LuaVector2
+    layoutWidth: number
+    layoutHeight: number
+    layoutX: number
+    layoutY: number
+    layoutDirection: Direction
+    hadOverflow: boolean
+    layoutMarginTop: number
+    layoutMarginBottom: number
+    layoutMarginLeft: number
+    layoutMarginRight: number
+    layoutPaddingTop: number
+    layoutPaddingBottom: number
+    layoutPaddingLeft: number
+    layoutPaddingRight: number
+    layoutBorderTop: number
+    layoutBorderBottom: number
+    layoutBorderLeft: number
+    layoutBorderRight: number
+    hasNewLayout: boolean
+    isDirty: boolean
+    isReferenceBaseline: boolean
+    scrollLeft: number
+    scrollTop: number
+    scrollableWidth: number
+    scrollableHeight: number
+    isClipping: boolean
+    isDisplayed: boolean
+    visualParent: Node|nil
+    addChild: ((self: View, child: Node) -> nil)
+    insertAt: ((self: View, index: integer, child: Node) -> nil)
+    removeAt: ((self: View, index: integer) -> nil)
+    scrollIntoView: ((self: View) -> nil)
+    focus: ((self: View) -> nil)
+    blur: ((self: View) -> nil)
+end
+
+declare View: {
+}
+
+declare extern type Direction with
+end
+
+declare Direction: {
+    inherit: Direction,
+    ltr: Direction,
+    rtl: Direction,
+}
+
 declare extern type BaseMouseDragEvent with
     dragStart: LuaVector2
     position: LuaVector2
@@ -1302,190 +1486,6 @@ declare extern type MouseWheelEvent with
 end
 
 declare MouseWheelEvent: {
-}
-
-declare extern type Direction with
-end
-
-declare Direction: {
-    inherit: Direction,
-    ltr: Direction,
-    rtl: Direction,
-}
-
-declare extern type Node with
-    visualParent: Node|nil
-    visualChildren: { [integer|number]: Node }
-end
-
-declare Node: {
-}
-
-declare extern type Component extends Node with
-    visualChildren: { [integer|number]: Node }
-    canHaveChildren: boolean
-    name: string
-    isFocusable: boolean
-    layoutMarginPosition: LuaVector2
-    layoutMarginSize: LuaVector2
-    layoutBorderPosition: LuaVector2
-    layoutBorderSize: LuaVector2
-    layoutPaddingPosition: LuaVector2
-    layoutPaddingSize: LuaVector2
-    layoutContentPosition: LuaVector2
-    layoutContentSize: LuaVector2
-    layoutMargin: LuaVector2
-    layoutPadding: LuaVector2
-    layoutBorder: LuaVector2
-    layoutWidth: number
-    layoutHeight: number
-    layoutX: number
-    layoutY: number
-    layoutDirection: Direction
-    hadOverflow: boolean
-    layoutMarginTop: number
-    layoutMarginBottom: number
-    layoutMarginLeft: number
-    layoutMarginRight: number
-    layoutPaddingTop: number
-    layoutPaddingBottom: number
-    layoutPaddingLeft: number
-    layoutPaddingRight: number
-    layoutBorderTop: number
-    layoutBorderBottom: number
-    layoutBorderLeft: number
-    layoutBorderRight: number
-    hasNewLayout: boolean
-    isDirty: boolean
-    isReferenceBaseline: boolean
-    scrollLeft: number
-    scrollTop: number
-    scrollableWidth: number
-    scrollableHeight: number
-    isClipping: boolean
-    isDisplayed: boolean
-    visualParent: Node|nil
-    addChild: ((self: Component, child: Node) -> nil)
-    insertAt: ((self: Component, index: integer, child: Node) -> nil)
-    removeAt: ((self: Component, index: integer) -> nil)
-    scrollIntoView: ((self: Component) -> nil)
-    focus: ((self: Component) -> nil)
-    blur: ((self: Component) -> nil)
-end
-
-declare Component: {
-}
-
-declare extern type View extends Component with
-    visualChildren: { [integer|number]: Node }
-    canHaveChildren: boolean
-    name: string
-    isFocusable: boolean
-    layoutMarginPosition: LuaVector2
-    layoutMarginSize: LuaVector2
-    layoutBorderPosition: LuaVector2
-    layoutBorderSize: LuaVector2
-    layoutPaddingPosition: LuaVector2
-    layoutPaddingSize: LuaVector2
-    layoutContentPosition: LuaVector2
-    layoutContentSize: LuaVector2
-    layoutMargin: LuaVector2
-    layoutPadding: LuaVector2
-    layoutBorder: LuaVector2
-    layoutWidth: number
-    layoutHeight: number
-    layoutX: number
-    layoutY: number
-    layoutDirection: Direction
-    hadOverflow: boolean
-    layoutMarginTop: number
-    layoutMarginBottom: number
-    layoutMarginLeft: number
-    layoutMarginRight: number
-    layoutPaddingTop: number
-    layoutPaddingBottom: number
-    layoutPaddingLeft: number
-    layoutPaddingRight: number
-    layoutBorderTop: number
-    layoutBorderBottom: number
-    layoutBorderLeft: number
-    layoutBorderRight: number
-    hasNewLayout: boolean
-    isDirty: boolean
-    isReferenceBaseline: boolean
-    scrollLeft: number
-    scrollTop: number
-    scrollableWidth: number
-    scrollableHeight: number
-    isClipping: boolean
-    isDisplayed: boolean
-    visualParent: Node|nil
-    addChild: ((self: View, child: Node) -> nil)
-    insertAt: ((self: View, index: integer, child: Node) -> nil)
-    removeAt: ((self: View, index: integer) -> nil)
-    scrollIntoView: ((self: View) -> nil)
-    focus: ((self: View) -> nil)
-    blur: ((self: View) -> nil)
-end
-
-declare View: {
-}
-
-declare extern type TextInput extends Component with
-    placeholder: string
-    text: string
-    visualChildren: { [integer|number]: Node }
-    canHaveChildren: boolean
-    name: string
-    isFocusable: boolean
-    layoutMarginPosition: LuaVector2
-    layoutMarginSize: LuaVector2
-    layoutBorderPosition: LuaVector2
-    layoutBorderSize: LuaVector2
-    layoutPaddingPosition: LuaVector2
-    layoutPaddingSize: LuaVector2
-    layoutContentPosition: LuaVector2
-    layoutContentSize: LuaVector2
-    layoutMargin: LuaVector2
-    layoutPadding: LuaVector2
-    layoutBorder: LuaVector2
-    layoutWidth: number
-    layoutHeight: number
-    layoutX: number
-    layoutY: number
-    layoutDirection: Direction
-    hadOverflow: boolean
-    layoutMarginTop: number
-    layoutMarginBottom: number
-    layoutMarginLeft: number
-    layoutMarginRight: number
-    layoutPaddingTop: number
-    layoutPaddingBottom: number
-    layoutPaddingLeft: number
-    layoutPaddingRight: number
-    layoutBorderTop: number
-    layoutBorderBottom: number
-    layoutBorderLeft: number
-    layoutBorderRight: number
-    hasNewLayout: boolean
-    isDirty: boolean
-    isReferenceBaseline: boolean
-    scrollLeft: number
-    scrollTop: number
-    scrollableWidth: number
-    scrollableHeight: number
-    isClipping: boolean
-    isDisplayed: boolean
-    visualParent: Node|nil
-    addChild: ((self: TextInput, child: Node) -> nil)
-    insertAt: ((self: TextInput, index: integer, child: Node) -> nil)
-    removeAt: ((self: TextInput, index: integer) -> nil)
-    scrollIntoView: ((self: TextInput) -> nil)
-    focus: ((self: TextInput) -> nil)
-    blur: ((self: TextInput) -> nil)
-end
-
-declare TextInput: {
 }
 
 declare extern type TextNode extends Node with

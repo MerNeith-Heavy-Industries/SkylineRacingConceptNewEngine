@@ -94,6 +94,7 @@ declare extern type SettingsSnapshot with
 end
 
 declare SettingsSnapshot: {
+    new: (() -> SettingsSnapshot),
 }
 
 declare extern type KeyBindingData with
@@ -103,6 +104,7 @@ declare extern type KeyBindingData with
 end
 
 declare KeyBindingData: {
+    new: (() -> KeyBindingData),
 }
 
 declare extern type AvailableOptions with

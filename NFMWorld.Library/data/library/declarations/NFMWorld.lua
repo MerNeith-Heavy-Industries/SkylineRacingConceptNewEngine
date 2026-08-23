@@ -87,6 +87,10 @@ CapturedKey = {}
 SettingsSnapshot = {}
 
 
+---Creates a new SettingsSnapshot
+---@return SettingsSnapshot
+function SettingsSnapshot.new() end
+
 ---@class KeyBindingData
 ---@field action string
 ---@field displayName string
@@ -94,6 +98,10 @@ SettingsSnapshot = {}
 
 KeyBindingData = {}
 
+
+---Creates a new KeyBindingData
+---@return KeyBindingData
+function KeyBindingData.new() end
 
 ---@class AvailableOptions
 ---@field renderers { [integer|number]: string }

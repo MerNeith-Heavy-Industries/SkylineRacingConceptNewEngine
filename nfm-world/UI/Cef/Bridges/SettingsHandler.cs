@@ -240,6 +240,11 @@ public sealed partial class SettingsSnapshot
     [LuaName] public LuaArray<KeyBindingData> KeyBindings { get; set; } = [];
 
     [LuaName] public int DistantOutlineBehavior { get; set; }
+
+    [LuaName]
+    public SettingsSnapshot()
+    {
+    }
 }
 
 /// <summary>
@@ -256,6 +261,11 @@ public sealed partial class KeyBindingData
 
     /// <summary>SDL Key enum integer value.</summary>
     [LuaName] public int KeyCode { get; set; }
+    
+    [LuaName]
+    public KeyBindingData()
+    {
+    }
 }
 
 /// <summary>
