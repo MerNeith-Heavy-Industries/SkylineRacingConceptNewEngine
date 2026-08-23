@@ -165,7 +165,7 @@ export type ViewProps = {
 	onanimationframebegan: (() -> ())?,
 	active: boolean?,
 	focused: boolean?,
-	taborder: integer?,
+	tabindex: integer?,
 	onmousedown: ((event: MouseEvent) -> ())?,
 	onmouseup: ((event: MouseEvent) -> ())?,
 	onmousedrag: ((event: MouseDragEvent) -> ())?,
