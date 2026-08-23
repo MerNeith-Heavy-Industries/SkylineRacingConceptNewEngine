@@ -11,8 +11,19 @@
         "type-check": "Warning"
     },
     "luau-lsp.types.definitionFiles": {
-        "globals": "NFMWorld.Library/data/library/globals.d.luau",
-        "NFMWorld": "NFMWorld.Library/data/library/NFMWorld.Library.d.luau",
-        "exports": "NFMWorld.Library/data/library/exports.d.luau",
-    }
+        "globals": "NFMWorld.Library/data/library/declarations/globals.d.luau",
+        "NFMWorldLibrary": "NFMWorld.Library/data/library/declarations/NFMWorld.Library.d.luau",
+        "NFMWorld": "NFMWorld.Library/data/library/declarations/NFMWorld.d.luau",
+        "exports": "NFMWorld.Library/data/library/declarations/exports.d.luau",
+    },
+    "luau-lsp.fflags.enableNewSolver": true,
+    "[luau]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua"
+    },
+    "luau-lsp.completion.imports.stringRequires.enabled": true,
+    "luau-lsp.completion.imports.requireStyle": "alwaysRelative",
+    "luau-lsp.inlayHints.functionReturnTypes": true,
+    "luau-lsp.inlayHints.hideHintsForErrorTypes": true,
+    "luau-lsp.inlayHints.parameterNames": "literals",
+    "luau-lsp.inlayHints.parameterTypes": true,
 }
