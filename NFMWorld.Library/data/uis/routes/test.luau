@@ -33,7 +33,7 @@ local Counter = styled(Text) {
 }
 
 local function TestPage(): React.VNode
-	local counter, setCounter = useState<integer>(0)
+	local counter, setCounter = useState<<integer>>(0)
 
 	useEffect(function()
 		return UiLib.onEvent("test:counter", function(data: any)
