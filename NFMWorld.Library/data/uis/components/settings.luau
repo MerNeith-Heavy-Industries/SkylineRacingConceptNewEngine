@@ -33,34 +33,34 @@ end
 local function keyCodeToName(code: number): string
 	if code == 0 then return "None" end
 	local names: { [number]: string } = {
-		[0x08] = "Backspace", [0x09] = "Tab", [0x0d] = "Enter",
-		[0x10] = "Shift", [0x11] = "Ctrl", [0x12] = "Alt",
-		[0x1b] = "Escape", [0x20] = "Space",
-		[0x21] = "PageUp", [0x22] = "PageDown", [0x23] = "End", [0x24] = "Home",
-		[0x25] = "Left", [0x26] = "Up", [0x27] = "Right", [0x28] = "Down",
-		[0x2c] = "PrintScreen", [0x2d] = "Insert", [0x2e] = "Delete",
-		[0x5b] = "LWin", [0x5c] = "RWin",
-		[0x70] = "F1", [0x71] = "F2", [0x72] = "F3", [0x73] = "F4",
-		[0x74] = "F5", [0x75] = "F6", [0x76] = "F7", [0x77] = "F8",
-		[0x78] = "F9", [0x79] = "F10", [0x7a] = "F11", [0x7b] = "F12",
-		[0x90] = "NumLock", [0x91] = "ScrollLock",
-		[0xa0] = "LShift", [0xa1] = "RShift",
-		[0xa2] = "LCtrl", [0xa3] = "RCtrl",
-		[0xa4] = "LAlt", [0xa5] = "RAlt",
-		[0xba] = ";", [0xbb] = "=", [0xbc] = ",", [0xbd] = "-", [0xbe] = ".", [0xbf] = "/",
-		[0xc0] = "`",
-		[0xdb] = "[", [0xdc] = "\\", [0xdd] = "]", [0xde] = "'",
+		[8] = "Backspace", [9] = "Tab", [13] = "Enter",
+		[16] = "Shift", [17] = "Ctrl", [18] = "Alt",
+		[27] = "Escape", [32] = "Space",
+		[33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home",
+		[37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down",
+		[44] = "PrintScreen", [45] = "Insert", [46] = "Delete",
+		[91] = "LWin", [92] = "RWin",
+		[112] = "F1", [113] = "F2", [114] = "F3", [115] = "F4",
+		[116] = "F5", [117] = "F6", [118] = "F7", [119] = "F8",
+		[120] = "F9", [121] = "F10", [122] = "F11", [123] = "F12",
+		[144] = "NumLock", [145] = "ScrollLock",
+		[160] = "LShift", [161] = "RShift",
+		[162] = "LCtrl", [163] = "RCtrl",
+		[164] = "LAlt", [165] = "RAlt",
+		[186] = ";", [187] = "=", [188] = ",", [189] = "-", [190] = ".", [191] = "/",
+		[192] = "`",
+		[219] = "[", [220] = "\\", [221] = "]", [222] = "'",
 	}
 	local name = names[code]
 	if name ~= nil then return name end
-	if code >= 0x41 and code <= 0x5a then return string.char(code) end
-	if code >= 0x30 and code <= 0x39 then return string.char(code) end
-	if code >= 0x60 and code <= 0x69 then return ("NumPad%d"):format(code - 0x60) end
-	if code == 0x6a then return "NumPad*" end
-	if code == 0x6b then return "NumPad+" end
-	if code == 0x6d then return "NumPad-" end
-	if code == 0x6e then return "NumPad." end
-	if code == 0x6f then return "NumPad/" end
+	if code >= 65 and code <= 90 then return string.char(code) end
+	if code >= 48 and code <= 57 then return string.char(code) end
+	if code >= 96 and code <= 105 then return ("NumPad%d"):format(code - 96) end
+	if code == 106 then return "NumPad*" end
+	if code == 107 then return "NumPad+" end
+	if code == 109 then return "NumPad-" end
+	if code == 110 then return "NumPad." end
+	if code == 111 then return "NumPad/" end
 	return ("Key(0x%x)"):format(code)
 end
 
@@ -554,7 +554,7 @@ local function KeyboardTab(props: { config: SettingsSnapshot, capturingAction: s
 
 		x(Divider) {},
 
-		map(config.keyBindings, function(b: any): React.VNode
+		map(config.keyBindings, function(b: KeyBindingData): React.VNode
 			local capturing = capturingAction == b.action
 			return x(KeyBindingRow) {
 				key = b.action,
