@@ -1,5 +1,4 @@
 ﻿using NFMWorld.ClayDom.Events;
-using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
@@ -19,7 +18,7 @@ public static class FocusManager
         }
     }
     public static Node? ActiveNode { get; set; }
-    
+
     /// <summary>Move focus to the next focusable element in Tab order.</summary>
     public static bool FocusNext(Node root)
     {
@@ -85,12 +84,7 @@ public static class FocusManager
             return null;
 
         // Walk children back-to-front for correct z-order
-        var children = node.VisualChildren
-            .OfType<Component>()
-            .OrderBy(c => c.TabOrder)
-            .Reverse();
-    
-        foreach (var visual in children)
+        foreach (var visual in GetTopmostFirst(node))
         {
             if (!visual.IsDisplayed)
                 continue;
@@ -98,7 +92,7 @@ public static class FocusManager
             var result = HitTestRecursive(visual, pos);
             if (result is not null) return result;
         }
-        
+
         // Check self
         var bounds = new RectangleF(
             node.FocusOrigin.X, node.FocusOrigin.Y,
@@ -111,14 +105,31 @@ public static class FocusManager
     }
 
     /// <summary>
-    /// Hit-tests and returns the full ancestor chain (root→leaf) of focusable
-    /// elements at <paramref name="screenPos"/>. Empty when nothing hit.
+    /// Hit-tests and returns the full ancestor chain (root→leaf) of nodes at
+    /// <paramref name="screenPos"/>. Empty when nothing hit.
     /// </summary>
     public static List<Component> HitTestChain(Component root, LuaVector2 screenPos)
     {
         var chain = new List<Component>();
         HitTestChainRecursive(root, screenPos, chain);
         return chain;
+    }
+
+    /// <summary>
+    /// Enumerates a node's visual children back-to-front (topmost rendered
+    /// last), which is the standard z-order. Equivalent to the previous
+    /// <c>OrderBy(TabOrder).Reverse()</c> when TabOrder is uniform (the common
+    /// case for the Lua UI, which never sets it), but without per-node LINQ
+    /// allocation on every mouse move.
+    /// </summary>
+    private static IEnumerable<Component> GetTopmostFirst(Component node)
+    {
+        var children = node.VisualChildren;
+        for (int i = children.Count - 1; i >= 0; i--)
+        {
+            if (children[i] is Component c)
+                yield return c;
+        }
     }
 
     private static bool HitTestChainRecursive(Component node, LuaVector2 pos, List<Component> chain)
@@ -144,12 +155,7 @@ public static class FocusManager
         if (!selfHit && node.IsFocusable)
             return false;
 
-        var children = node.VisualChildren
-            .OfType<Component>()
-            .OrderBy(c => c.TabOrder)
-            .Reverse();
-
-        foreach (var visual in children)
+        foreach (var visual in GetTopmostFirst(node))
         {
             if (!visual.IsDisplayed)
                 continue;
@@ -164,41 +170,39 @@ public static class FocusManager
     private static List<Component> _hoveredChain = [];
 
     /// <summary>
-    /// Hit-tests under the cursor, diffs against the previous ancestor chain,
+    /// Hit-tests under the cursor, diffs against the previous hover chain,
     /// and dispatches MouseEntered / MouseLeft / MouseMoved as appropriate.
     /// Call once per frame from your MouseMoved handler.
+    ///
+    /// The hit-test chain already contains exactly the nodes under the cursor
+    /// (every ancestor of the topmost hit node), so hover changes are
+    /// dispatched only for nodes that actually entered or left the cursor.
+    /// Each node's <see cref="Component.DispatchMouseEntered"/> /
+    /// <see cref="Component.DispatchMouseLeft"/> are self-only (they do not
+    /// recurse into children), so siblings and un-hit descendants are never
+    /// spuriously hovered.
     /// </summary>
     public static void DispatchMouseMove(Component root, BaseMouseMoveEvent @event)
     {
         var newChain = HitTestChain(root, @event.Position);
 
-        // Find divergence index — first position where chains differ
-        int diverge = 0;
-        while (diverge < _hoveredChain.Count && diverge < newChain.Count
-               && _hoveredChain[diverge] == newChain[diverge])
-            diverge++;
-
-        // MouseLeft — fire on old chain from leaf up to (not including) divergence
-        for (int i = _hoveredChain.Count - 1; i >= diverge; i--)
-            _hoveredChain[i].DispatchMouseLeft(@event);
-
-        // MouseEntered — fire on new chain from divergence down to leaf
-        for (int i = diverge; i < newChain.Count; i++)
+        // MouseLeft — nodes that were hovered but no longer are (leaf→root).
+        for (int i = _hoveredChain.Count - 1; i >= 0; i--)
         {
-            Logging.Info(
-                $"[FocusManager] MouseEntered chain[{i}]={newChain[i].GetType().Name} " +
-                $"IsFocusable={newChain[i].IsFocusable} " +
-                $"FocusOrigin={newChain[i].FocusOrigin} FocusSize={newChain[i].FocusSize}");
-            newChain[i].DispatchMouseEntered(@event);
+            var node = _hoveredChain[i];
+            if (!newChain.Contains(node))
+                node.DispatchMouseLeft(@event);
         }
 
-        var oldLeaf = _hoveredChain.Count > 0 ? _hoveredChain[^1] : null;
-        var newLeaf = newChain.Count > 0 ? newChain[^1] : null;
+        // MouseEntered — nodes under the cursor that weren't before (root→leaf).
+        for (int i = 0; i < newChain.Count; i++)
+        {
+            var node = newChain[i];
+            if (!_hoveredChain.Contains(node))
+                node.DispatchMouseEntered(@event);
+        }
 
         _hoveredChain = newChain;
-
-        // if (oldLeaf != newLeaf)
-        //     HoveredChanged?.Invoke(newLeaf);
 
         // MouseMoved — always fire from root so it propagates to all children
         root.DispatchMouseMoved(@event);
@@ -212,18 +216,30 @@ public static class FocusManager
     }
 
     /// <summary>
-    /// Clear the hover chain, resetting <see cref="Component.IsHovered"/>
-    /// on all currently-hovered elements.
+    /// Clear the hover chain, resetting <see cref="Component.IsHovered"/> on
+    /// all currently-hovered elements. Does not fire MouseLeft events — host
+    /// side state (e.g. React styled components) is reset by React's own
+    /// unmount effect when the tree is torn down. Use when deactivating the
+    /// UI (phase change) or when the tree is structurally mutated.
     /// </summary>
     public static void ClearHover()
     {
+        ResetHover();
+    }
+
+    /// <summary>
+    /// Silently drop the hover chain without firing events. Use during
+    /// structural DOM mutations (React unmount/remount) where hovered nodes
+    /// are being torn down and the chain would otherwise hold stale
+    /// references to disposed components.
+    /// </summary>
+    public static void ResetHover()
+    {
         if (_hoveredChain.Count == 0) return;
 
-        // Walk leaf→root so MouseLeft propagates naturally
         for (int i = _hoveredChain.Count - 1; i >= 0; i--)
             _hoveredChain[i].IsHovered = false;
 
         _hoveredChain.Clear();
-        // HoveredChanged?.Invoke(null);
     }
 }
