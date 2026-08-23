@@ -46,3 +46,6 @@
 [submodule "ClaySharp"]
 	path = ClaySharp
 	url = https://github.com/uwx/ClaySharp
+[submodule "NanoSvgSharp"]
+	path = NanoSvgSharp
+	url = https://github.com/uwx/NanoSVGSharp
