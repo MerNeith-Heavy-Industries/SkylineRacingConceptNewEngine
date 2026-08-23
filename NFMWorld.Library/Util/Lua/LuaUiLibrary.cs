@@ -24,7 +24,7 @@ public static class LuaUiLibrary
             {
                 var view = context.GetArgument<View>(0);
                 setActiveRoot(view);
-                
+
                 return new ValueTask<int>(context.Return());
             }),
             ["call"] = new LuaFunction("call", (context, ct) =>
@@ -43,7 +43,7 @@ public static class LuaUiLibrary
                 {
                     state.Call(callback, [value]);
                 });
-                
+
                 return new ValueTask<int>(context.Return(new LuaFunction("unregister", (context, ct) =>
                 {
                     unregister();
@@ -68,7 +68,7 @@ public static class LuaUiLibrary
         {
             case "view":
                 var view = new View();
-                
+
                 foreach (var (rawkey, rawvalue) in props)
                 {
                     if (!rawkey.TryRead<string>(out var key))
@@ -82,7 +82,7 @@ public static class LuaUiLibrary
                 return new ValueTask<int>(context.Return(view));
             case "image":
                 var image = new Image();
-                
+
                 foreach (var (rawkey, rawvalue) in props)
                 {
                     if (!rawkey.TryRead<string>(out var key))
@@ -96,7 +96,7 @@ public static class LuaUiLibrary
                 return new ValueTask<int>(context.Return(image));
             case "text":
                 var text = new Text();
-                
+
                 foreach (var (rawkey, rawvalue) in props)
                 {
                     if (!rawkey.TryRead<string>(out var key))
@@ -110,7 +110,7 @@ public static class LuaUiLibrary
                 return new ValueTask<int>(context.Return(text));
             case "textinput":
                 var textinput = new TextInput();
-                
+
                 foreach (var (rawkey, rawvalue) in props)
                 {
                     if (!rawkey.TryRead<string>(out var key))
@@ -126,7 +126,7 @@ public static class LuaUiLibrary
 
         throw new LuaRuntimeException(context.State, new InvalidOperationException($"Unknown vnode type {vtype}"));
     });
-    
+
     internal static readonly LuaFunction CreateTextInstance = new("createTextInstance", (context, ct) =>
     {
         var text = context.GetArgument<string>(0);
@@ -142,7 +142,13 @@ public static class LuaUiLibrary
         {
             cmp.AddChild(child);
         }
-        
+
+        // Any structural change can invalidate hovered positions or dispose
+        // nodes still referenced by the hover chain (e.g. React unmounting
+        // menu items during navigation). Drop it so the next mouse move
+        // recomputes from scratch instead of diffing against stale nodes.
+        FocusManager.ResetHover();
+
         return new ValueTask<int>(context.Return());
     });
 
@@ -156,7 +162,9 @@ public static class LuaUiLibrary
         {
             cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
         }
-        
+
+        FocusManager.ResetHover();
+
         return new ValueTask<int>(context.Return());
     });
 
@@ -169,7 +177,9 @@ public static class LuaUiLibrary
         {
             cmp.RemoveAt(parent.VisualChildren.IndexOf(child));
         }
-        
+
+        FocusManager.ResetHover();
+
         return new ValueTask<int>(context.Return());
     });
 
@@ -183,10 +193,10 @@ public static class LuaUiLibrary
         {
             AssignComponentProperty(key, value, cmp, context.State);
         }
-        
+
         return new ValueTask<int>(context.Return());
     });
-    
+
     internal static readonly LuaFunction CommitTextUpdate = new("commitTextUpdate", (context, ct) =>
     {
         var textInstance = context.GetArgument<TextNode>(0);
@@ -194,7 +204,7 @@ public static class LuaUiLibrary
         var newText = context.GetArgumentOrNullClass<string>(2);
 
         textInstance.Text = newText;
-        
+
         return new ValueTask<int>(context.Return());
     });
 
@@ -232,73 +242,93 @@ public static class LuaUiLibrary
             case "taborder" when rawvalue.TryRead<int>(out var i):
                 cmp.TabOrder = i;
                 break;
+            // NOTE: These bindings must REPLACE the previous handler rather than
+            // accumulate with +=. React re-creates Lua closures on every parent
+            // render, and diffProps re-sets any prop whose value changed, so a
+            // plain += would stack a new handler on each render — causing a
+            // single click to fire the action N times (e.g. navigation firing
+            // multiple times, popping several menu pages at once). These event
+            // props map one-to-one to a single host delegate, so clearing first
+            // is correct.
             case "onmousedown" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MousePressed = null;
                 cmp.MousePressed += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmouseup" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseReleased = null;
                 cmp.MouseReleased += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmousedrag" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseDragged = null;
                 cmp.MouseDragged += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmousescroll" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseScrolled = null;
                 cmp.MouseScrolled += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmousemove" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseMoved = null;
                 cmp.MouseMoved += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmouseenter" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseEntered = null;
                 cmp.MouseEntered += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onmouseleave" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.MouseLeft = null;
                 cmp.MouseLeft += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onkeytype" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.KeyTyped = null;
                 cmp.KeyTyped += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onkeydown" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.KeyPressed = null;
                 cmp.KeyPressed += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onkeyup" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.KeyReleased = null;
                 cmp.KeyReleased += @event =>
                 {
                     state.Call(func, [@event]);
                 };
                 break;
             case "onfocus" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.Focused = null;
                 cmp.Focused += () =>
                 {
                     state.Call(func, []);
                 };
                 break;
             case "onblur" when rawvalue.TryRead<LuaFunction>(out var func):
+                cmp.Unfocused = null;
                 cmp.Unfocused += () =>
                 {
                     state.Call(func, []);
@@ -669,7 +699,7 @@ public static class LuaUiLibrary
             var span = s.AsSpan();
             if (span.EndsWith("px"))
                 span = span[..^2];
-            
+
             if (float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out f))
             {
                 return f;
@@ -691,7 +721,7 @@ public static class LuaUiLibrary
             var span = s.AsSpan();
             if (span.EndsWith("pt"))
                 span = span[..^2];
-            
+
             if (float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out f))
             {
                 return f;
@@ -707,7 +737,7 @@ public static class LuaUiLibrary
         {
             return null;
         }
-        
+
         if (value.TryRead<float>(out var f))
         {
             return f;

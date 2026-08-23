@@ -38,7 +38,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// </summary>
     [LuaName]
     public override ReadOnlyLuaArray<Node> VisualChildren { get; } = [];
-    
+
     /// <summary>
     /// Gets the Yoga node associated with this visual element representing its contents.
     /// </summary>
@@ -51,19 +51,19 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// </summary>
     [LuaName]
     public virtual bool CanHaveChildren => false;
-    
+
     /// <summary>Add a child to the end of the children list.</summary>
     [LuaName]
     public virtual void AddChild(Node child) { }
-    
+
     /// <summary>Insert a child at the given index.</summary>
     [LuaName]
     public virtual void InsertAt(int index, Node child) { }
-    
+
     /// <summary>Remove the child at the given index.</summary>
     [LuaName]
     public virtual void RemoveAt(int index) { }
-    
+
     [LuaName]
     public string? Name { get; set; }
 
@@ -79,7 +79,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         list.AddRange(VisualChildren);
         return list;
     }
-    
+
     // ── IDisposable ─────────────────────────────────────────────────────
     ~Component() { Dispose(false); }
     public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
@@ -138,7 +138,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         NodeInternal.MinWidth = Styles.MinWidth;
         NodeInternal.MinHeight = Styles.MinHeight;
         NodeInternal.MaxWidth = Styles.MaxWidth;
-        NodeInternal.MaxHeight = Styles.MaxHeight; 
+        NodeInternal.MaxHeight = Styles.MaxHeight;
         NodeInternal.AspectRatio = Styles.AspectRatio?.Value ?? float.NaN;
     }
 
@@ -151,7 +151,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     }
 
     #region Focus
-    
+
     [LuaName]
     public bool IsFocusable { get; set; }
 
@@ -204,42 +204,42 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
 
     // https://www.w3schools.com/css/css_boxmodel.asp
     private protected LuaVector2 Root;
-    
+
     /// <summary>
     /// In the CSS box model, gets the top-left position of the margin box.
     /// </summary>
     [LuaName] public LuaVector2 LayoutMarginPosition => Root + new LuaVector2(LayoutX, LayoutY);
-    
+
     /// <summary>
     /// In the CSS box model, gets the size of the margin box, from the top-left to the bottom-right.
     /// </summary>
     [LuaName] public LuaVector2 LayoutMarginSize => new(LayoutWidth, LayoutHeight);
-    
+
     /// <summary>
     /// In the CSS box model, gets the top-left position of the border box.
     /// </summary>
     [LuaName] public LuaVector2 LayoutBorderPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft, LayoutY + LayoutMarginTop);
-    
+
     /// <summary>
     /// In the CSS box model, gets the size of the border box, from the top-left to the bottom-right.
     /// </summary>
     [LuaName] public LuaVector2 LayoutBorderSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom));
-    
+
     /// <summary>
     /// In the CSS box model, gets the top-left position of the padding box.
     /// </summary>
     [LuaName] public LuaVector2 LayoutPaddingPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft, LayoutY + LayoutMarginTop + LayoutBorderTop);
-    
+
     /// <summary>
     /// In the CSS box model, gets the size of the padding box, from the top-left to the bottom-right.
     /// </summary>
     [LuaName] public LuaVector2 LayoutPaddingSize => new(LayoutWidth - (LayoutMarginLeft + LayoutMarginRight + LayoutBorderLeft + LayoutBorderRight), LayoutHeight - (LayoutMarginTop + LayoutMarginBottom + LayoutBorderTop + LayoutBorderBottom));
-    
+
     /// <summary>
     /// In the CSS box model, gets the top-left position of the content box.
     /// </summary>
     [LuaName] public LuaVector2 LayoutContentPosition => Root + new LuaVector2(LayoutX + LayoutMarginLeft + LayoutBorderLeft + LayoutPaddingLeft, LayoutY + LayoutMarginTop + LayoutBorderTop + LayoutPaddingTop);
-    
+
     /// <summary>
     /// In the CSS box model, gets the size of the content box, from the top-left to the bottom-right.
     /// </summary>
@@ -249,12 +249,12 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// Gets the margin width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
     [LuaName] public LuaVector2 LayoutMargin => new(LayoutMarginLeft + LayoutMarginRight, LayoutMarginTop + LayoutMarginBottom);
-    
+
     /// <summary>
     /// Gets the padding width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
     [LuaName] public LuaVector2 LayoutPadding => new(LayoutPaddingLeft + LayoutPaddingRight, LayoutPaddingTop + LayoutPaddingBottom);
-    
+
     /// <summary>
     /// Gets the border width and height of the node as a <see cref="LuaVector2"/>.
     /// </summary>
@@ -265,102 +265,102 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     /// This value is in points and does not include margins, borders, or padding.
     /// </summary>
     [LuaName] public float LayoutWidth => NodeInternal.LayoutWidth;
-    
+
     /// <summary>
     /// Gets the height of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and does not include margins, borders, or padding.
     /// </summary>
     [LuaName] public float LayoutHeight => NodeInternal.LayoutHeight;
-    
+
     /// <summary>
     /// Gets the X position of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of the parent node's content box to the left edge of this node's margin box.
     /// </summary>
     [LuaName] public float LayoutX => NodeInternal.LayoutX;
-    
+
     /// <summary>
     /// Gets the Y position of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of the parent node's content box to the top edge of this node's margin box.
     /// </summary>
     [LuaName] public float LayoutY => NodeInternal.LayoutY;
-    
+
     /// <summary>
     /// Gets the layout direction of the node as determined by the Yoga layout engine after a layout pass.
     /// </summary>
     [LuaName] public Direction LayoutDirection => NodeInternal.LayoutDirection.ToNfmDirection();
-    
+
     /// <summary>
     /// Gets a value indicating whether the node's content overflowed its layout bounds during the last layout pass.
     /// </summary>
     [LuaName] public bool HadOverflow => NodeInternal.HadOverflow;
-    
+
     /// <summary>
     /// Gets the top margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's margin box to the top edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginTop => NodeInternal.LayoutMarginTop;
-    
+
     /// <summary>
     /// Gets the bottom margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's margin box to the bottom edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginBottom => NodeInternal.LayoutMarginBottom;
-    
+
     /// <summary>
     /// Gets the left margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's margin box to the left edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginLeft => NodeInternal.LayoutMarginLeft;
-    
+
     /// <summary>
     /// Gets the right margin of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
     /// This value is in points and represents the distance from the right edge of this node's margin box to the right edge of its border box.
     /// </summary>
     [LuaName] public float LayoutMarginRight => NodeInternal.LayoutMarginRight;
-    
+
     /// <summary>
     /// Gets the top padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingTop => NodeInternal.LayoutPaddingTop;
-    
+
     /// <summary>
     /// Gets the bottom padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingBottom => NodeInternal.LayoutPaddingBottom;
-    
+
     /// <summary>
     /// Gets the left padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingLeft => NodeInternal.LayoutPaddingLeft;
-    
+
     /// <summary>
     /// Gets the right padding of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its padding box.
     /// </summary>
     [LuaName] public float LayoutPaddingRight => NodeInternal.LayoutPaddingRight;
-    
+
     /// <summary>
     /// Gets the top border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the top edge of this node's border box to the top edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderTop => NodeInternal.LayoutBorderTop;
-    
+
     /// <summary>
     /// Gets the bottom border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the bottom edge of this node's border box to the bottom edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderBottom => NodeInternal.LayoutBorderBottom;
-    
+
     /// <summary>
     /// Gets the left border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the left edge of this node's border box to the left edge of its margin box.
     /// </summary>
     [LuaName] public float LayoutBorderLeft => NodeInternal.LayoutBorderLeft;
-    
+
     /// <summary>
     /// Gets the right border of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This value is in points and represents the distance from the right edge of this node's border box to the right edge of its margin box.
@@ -596,7 +596,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     #endregion
 
     #region Focus
-    
+
     public Action<MouseEvent>? MousePressed { get; set; }
     public Action<MouseEvent>? MouseReleased { get; set; }
     public Action<MouseDragEvent>? MouseDragged { get; set; }
@@ -611,7 +611,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     public Action? Focused { get; set; }
 
     #endregion
-    
+
     [LuaName]
     public bool IsDisplayed => Styles.Display != Display.None && Styles.Opacity > 0 && Styles.Visibility != Visibility.Hidden;
 
@@ -687,7 +687,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         {
             layoutChanged = true;
         }
-        
+
         foreach (var child in GetChildSnapshot())
         {
             if (child is Component cmp)
@@ -727,7 +727,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
             G.SetColor(borderColor);
-            
+
             float minRadius = Math.Min(size.X, size.Y) / 2f;
             int tl = (int)Math.Min(Styles.BorderTopLeftRadius, minRadius);
             int tr = (int)Math.Min(Styles.BorderTopRightRadius, minRadius);
@@ -936,11 +936,11 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     protected virtual void OnMousePressed(MouseEvent @event)
     {
     }
-    
+
     protected virtual void OnMouseReleased(MouseEvent @event)
     {
     }
-    
+
     protected virtual void OnMouseDragged(MouseDragEvent @event)
     {
     }
@@ -990,14 +990,15 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         }
     }
 
+    /// <summary>
+    /// Marks this node as hovered and fires its MouseEntered event / callback.
+    /// Self-only: it does NOT propagate to children. Hover propagation is
+    /// driven by <see cref="FocusManager.DispatchMouseMove"/>, which hit-tests
+    /// the exact ancestor chain under the cursor, so recursing here would
+    /// spuriously hover every sibling/descendant (e.g. all menu buttons).
+    /// </summary>
     public void DispatchMouseEntered(BaseMouseMoveEvent @event)
     {
-        Logging.Info(
-            $"[Node] DispatchMouseEntered {GetType().Name} Name='{Name}' " +
-            $"Pos=({LayoutPaddingPosition.X:F0},{LayoutPaddingPosition.Y:F0}) " +
-            $"Size=({LayoutPaddingSize.X:F0}x{LayoutPaddingSize.Y:F0}) " +
-            $"Mouse=({@event.Position.X:F0},{@event.Position.Y:F0}) " +
-            $"OldIsHovered={IsHovered}");
         IsHovered = true;
         var relativeEvent = new MouseMoveEvent(
             Position: @event.Position,
@@ -1009,13 +1010,12 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         );
         MouseEntered?.Invoke(relativeEvent);
         OnMouseEntered(relativeEvent);
-        foreach (var child in GetChildSnapshot())
-        {
-            if (child is Component cmp)
-                cmp.DispatchMouseEntered(@event);
-        }
     }
 
+    /// <summary>
+    /// Marks this node as no longer hovered and fires its MouseLeft event /
+    /// callback. Self-only — see <see cref="DispatchMouseEntered"/>.
+    /// </summary>
     public void DispatchMouseLeft(BaseMouseMoveEvent @event)
     {
         IsHovered = false;
@@ -1029,11 +1029,6 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         );
         MouseLeft?.Invoke(relativeEvent);
         OnMouseLeft(relativeEvent);
-        foreach (var child in GetChildSnapshot())
-        {
-            if (child is Component cmp)
-                cmp.DispatchMouseLeft(@event);
-        }
     }
 
     public void DispatchMousePressed(BaseMouseEvent @event)
@@ -1057,21 +1052,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
                 IsActive = true;
             }
 
-            if (MousePressed != null)
-            {
-                Logging.Info(
-                    $"[Node] DispatchMousePressed EXECUTING {GetType().Name} Name='{Name}' " +
-                    $"Command={MousePressed.GetType().Name}");
-                MousePressed?.Invoke(relativeEvent);
-            }
-            else
-            {
-                Logging.Info(
-                    $"[Node] DispatchMousePressed SKIP {GetType().Name} Name='{Name}' " +
-                    $"MousePressed={(MousePressed is null ? "NULL" : MousePressed.GetType().Name)} " +
-                    $"Pos=({LayoutPaddingPosition.X:F0},{LayoutPaddingPosition.Y:F0}) " +
-                    $"Mouse=({@event.Position.X:F0},{@event.Position.Y:F0})");
-            }
+            MousePressed?.Invoke(relativeEvent);
             OnMousePressed(relativeEvent);
         }
         foreach (var child in GetChildSnapshot())
@@ -1308,7 +1289,7 @@ public struct MeasurementMarginPosition : IEquatable<MeasurementMarginPosition>
 
         return this;
     }
-            
+
     public static MeasurementMarginPosition FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementMarginPosition(ReadOnlySpan<char> str)
@@ -1404,7 +1385,7 @@ public struct MeasurementMultiMargin : IEquatable<MeasurementMultiMargin>
             Bottom = y
         };
     }
-    
+
     public static MeasurementMultiMargin FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementMultiMargin(ReadOnlySpan<char> str)
@@ -1556,7 +1537,7 @@ public struct MeasurementPadding : IEquatable<MeasurementPadding>
 
         return this;
     }
-    
+
     public static MeasurementPadding FromString(ReadOnlySpan<char> str) => str;
 
     public static implicit operator MeasurementPadding(ReadOnlySpan<char> str)
@@ -1947,7 +1928,7 @@ public struct MeasurementGap : IEquatable<MeasurementGap>
 
         throw new FormatException($"Cannot convert '{str}' to MeasurementGap. Expected '<number>px', '<number>%', or '<number>'.");
     }
-        
+
     // ReSharper disable once CompareOfFloatsByEqualityOperator
     public static bool operator ==(MeasurementGap left, MeasurementGap right) => left.Unit == right.Unit && left.Value == right.Value;
     public static bool operator !=(MeasurementGap left, MeasurementGap right) => !(left == right);
@@ -1960,7 +1941,7 @@ public readonly struct Pixels(float value) : IEquatable<Pixels>
     public bool Equals(Pixels other) => Value == other.Value;
     public override bool Equals(object? obj) => obj is Pixels other && Equals(other);
     public override int GetHashCode() => Value.GetHashCode();
-        
+
     public static implicit operator float(Pixels value) => value.Value;
     public static implicit operator Pixels(float value) => new(value);
 
