@@ -27,7 +27,7 @@ public class LuaGamemodeConfig
             return ValueTask.FromResult(context.Return());
         });
 
-        state.DoFile($"data/gamemodes/{path}/config.lua");
+        state.DoFile($"data/gamemodes/{path}/config.luau");
 
         return config ?? new LuaGamemodeConfig()
         {

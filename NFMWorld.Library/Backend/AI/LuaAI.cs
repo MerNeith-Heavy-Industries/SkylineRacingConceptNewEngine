@@ -29,6 +29,7 @@ public class LuaAi : BaseAi
 {
     private readonly string _scriptPath;
     private readonly LuaState _state;
+    private readonly LuaTable? _moduleTable;
 
     public LuaTable? Config { get; set; }
 
@@ -42,7 +43,11 @@ public class LuaAi : BaseAi
 
         Config = config;
 
-        _state.DoFile($"data/ais/{_scriptPath}.lua");
+        var results = _state.DoFile($"data/ais/{_scriptPath}.luau");
+        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        {
+            _moduleTable = resultTable;
+        }
     }
 
     public override void RunAi()
@@ -57,7 +62,8 @@ public class LuaAi : BaseAi
 
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
-        if (!_state.Environment.TryGetValue(name, out var value) ||
+        if (_moduleTable == null ||
+            !_moduleTable.TryGetValue(name, out var value) ||
             !value.TryRead<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];

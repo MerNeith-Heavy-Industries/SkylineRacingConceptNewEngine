@@ -1,8 +1,7 @@
 -- Time trial gamemode (client-only).
 -- State machine: notStarted -> countdown -> inProgress -> finished.
 
----@type { simulation?: boolean }
-local config = GM.config
+local config: { simulation: boolean? } = GM.config
 
 -- Headless replay-validation mode (set by the TT simulator). Skips the
 -- countdown and disables recording/ghost/save -- inputs are applied externally.
@@ -15,8 +14,7 @@ local tick = 0
 local written = false
 local timer = Stopwatch.new()
 
----@type TimeTrial?
-local timeTrial
+local timeTrial: TimeTrial?
 if not simulation then
     timeTrial = TimeTrial.new(GM.stage)
 end
@@ -128,7 +126,7 @@ local function renderFinishedText()
     GM.hudState.stateText = text
 end
 
-function OnBegin()
+local function OnBegin()
     state = "notStarted"
     GM.hudState.lap = 1
     GM.hudState.totalLaps = GM.stage.nlaps
@@ -137,7 +135,7 @@ function OnBegin()
     GM.hudState.stateText = nil
 end
 
-function OnReset()
+local function OnReset()
     tick = 0
     written = false
     timer:reset()
@@ -167,7 +165,7 @@ function OnReset()
     end
 end
 
-function OnGameTick()
+local function OnGameTick()
     if state == "notStarted" then
         OnReset()
         return
@@ -270,9 +268,15 @@ function OnGameTick()
     end
 end
 
----@param key integer
-function OnKeyPressed(key)
-    if key == Key.R then
+local function OnKeyPressed(key: Key)
+    if key == Key.r then
         OnReset()
     end
 end
+
+return {
+    OnBegin = OnBegin,
+    OnReset = OnReset,
+    OnGameTick = OnGameTick,
+    OnKeyPressed = OnKeyPressed,
+}

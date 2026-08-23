@@ -4,10 +4,7 @@ function OnStartRace()
     SGM:broadcastEvent("started", { serverTime = 0 })
 end
 
----@param playerId string
----@param type string
----@param payload table
-function OnClientEvent(playerId, type, payload)
+function OnClientEvent(playerId: string, type: string, payload: { [string]: any })
     if type == 'finished' then
         SGM:finishRace({
             {
@@ -18,3 +15,8 @@ function OnClientEvent(playerId, type, payload)
         })
     end
 end
+
+return {
+    OnStartRace = OnStartRace,
+    OnClientEvent = OnClientEvent,
+}

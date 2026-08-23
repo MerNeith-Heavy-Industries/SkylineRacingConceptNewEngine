@@ -108,9 +108,10 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
 /// </summary>
 public sealed class LuaServerGamemode : BaseServerGamemode
 {
-    private LuaState? _state;
+    private LuaState _state;
     private IServerGamemodeData? _data;
     internal GameStateSnapshot? _snapshot;
+    private readonly LuaTable? _moduleTable;
     public LuaTable? Config { get; }
 
     public override string GamemodeId { get; }
@@ -129,7 +130,11 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
         _state.Environment["SGM"] = new LuaServerGamemodeContext(this, data);
 
-        _state.DoFile($"data/gamemodes/{gamemodeId}/server.lua");
+        var results = _state.DoFile($"data/gamemodes/{gamemodeId}/server.luau");
+        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        {
+            _moduleTable = resultTable;
+        }
     }
 
     public LuaServerGamemode(ServerGamemodeParameters parameters, IServerGamemodeData data, string gamemodeId,
@@ -145,7 +150,11 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         _state.Environment["SGM"] = new LuaServerGamemodeContext(this, data);
 
         _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
-        _state.DoString(radpack.Files["server"]);
+        var results = _state.DoString(radpack.Files["server"]);
+        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        {
+            _moduleTable = resultTable;
+        }
     }
 
     public override void Begin()
@@ -179,9 +188,8 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
-        var state = _state;
-        if (state == null ||
-            !state.Environment.TryGetValue(name, out var value) ||
+        if (_moduleTable == null ||
+            !_moduleTable.TryGetValue(name, out var value) ||
             !value.TryRead<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];
@@ -189,7 +197,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
         try
         {
-            return state.Call(function, arguments);
+            return _state.Call(function, arguments);
         }
         catch (Exception ex)
         {

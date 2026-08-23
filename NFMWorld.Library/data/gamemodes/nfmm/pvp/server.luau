@@ -8,7 +8,7 @@ local perPlayer = {}          -- playerId -> { lap, checkpoint, finished, positi
 local finishCounter = 0
 local done = false
 
-function OnBegin()
+local function OnBegin()
     perPlayer = {}
     finishCounter = 0
     done = false
@@ -20,13 +20,13 @@ function OnBegin()
     end
 end
 
-function OnStartRace()
+local function OnStartRace()
     state = "countdown"
     countdown = 3
     inner = 0
 end
 
-function OnGameTick()
+local function OnGameTick()
     if state == "countdown" then
         inner = inner - 1
         if inner <= 0 then
@@ -74,7 +74,7 @@ end
 ---@param playerId string
 ---@param type string
 ---@param payload table
-function OnClientEvent(playerId, type, payload)
+local function OnClientEvent(playerId, type, payload)
     if state ~= "inProgress" or type ~= "checkpoint" or payload == nil then
         return
     end
@@ -119,3 +119,10 @@ function OnClientEvent(playerId, type, payload)
         broadcast_standings()
     end
 end
+
+return {
+    OnBegin = OnBegin,
+    OnStartRace = OnStartRace,
+    OnGameTick = OnGameTick,
+    OnClientEvent = OnClientEvent,
+}
