@@ -177,9 +177,7 @@ end
 
 -- ── Component ────────────────────────────────────────────────────
 
-local function PauseMenu(props: any): React.VNode | nil
-	local visible = props.visible
-
+local function PauseMenu(): React.VNode
 	local view, setView = useState<<string>>("menu")
 	local pauseState, setPauseState = useState<<any>>(nil)
 
@@ -190,19 +188,12 @@ local function PauseMenu(props: any): React.VNode | nil
 	end, {})
 
 	useEffect(function()
-		if not visible then setView("menu") end
-	end, { visible })
-
-	useEffect(function()
-		if not visible then return end
 		if view == "settings" then
 			UiLib.call("settingsOpened", {})
 		else
 			UiLib.call("settingsClosed", {})
 		end
-	end, { view, visible })
-
-	if not visible then return nil end
+	end, { view })
 
 	if view == "settings" then
 		return x(View) {
