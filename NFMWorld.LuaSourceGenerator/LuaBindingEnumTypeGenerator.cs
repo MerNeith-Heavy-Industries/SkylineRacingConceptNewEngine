@@ -29,11 +29,17 @@ internal sealed class LuaBindingEnumTypeGenerator(LuaTypeMetadata type, string n
 
                 internal static void init_{{GetMetatableName(type)}}()
                 {
-                    {{GetMetatableName(type)}} = new global::Lua.LuaTable(0, 1);
+                    {{GetMetatableName(type)}} = new global::Lua.LuaTable(0, 2);
                     {{GetMetatableName(type)}}[global::Lua.Runtime.Metamethods.ToString] = new global::Lua.LuaFunction("{{Metamethods.ToString}}", (context, ct) =>
                     {
                         var instance = context.GetArgument<{{type.FullTypeName}}>(0);
                         return new(context.Return(global::System.Enum.GetName(typeof({{type.FullTypeName}}), instance) ?? instance.ToString()));
+                    });
+                    {{GetMetatableName(type)}}[global::Lua.Runtime.Metamethods.Eq] = new global::Lua.LuaFunction("__eq", (context, ct) =>
+                    {
+                        var arg0 = context.GetArgument<{{type.FullTypeName}}>(0);
+                        var arg1 = context.GetArgument<{{type.FullTypeName}}>(1);
+                        return new(context.Return(global::System.Collections.Generic.EqualityComparer<{{type.FullTypeName}}>.Default.Equals(arg0, arg1)));
                     });
                 }
                 """);
