@@ -141,7 +141,10 @@ public class UiRenderer : IDisposable
     public void HandleMousePressed(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         if (ActiveRoot == null) return;
-        if (FocusManager.HitTest(ActiveRoot, new Vector2(x, y)) is { } visual)
+        // Only focusable nodes should take keyboard focus on click. Non-focusable
+        // controls (buttons, containers) must not steal focus from a focused root
+        // that is handling global key input (e.g. arrow keys, Escape).
+        if (FocusManager.HitTest(ActiveRoot, new Vector2(x, y)) is Component { IsFocusable: true } visual)
         {
             FocusManager.FocusedNode = visual;
         }
