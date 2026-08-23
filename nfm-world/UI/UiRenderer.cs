@@ -6,6 +6,7 @@ using NFMWorld;
 using NFMWorld.ClayDom.Events;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
+using NFMWorld.LuaSourceGenerator.Generator.NFMWorld;
 using NFMWorld.Reactor;
 using NFMWorldLibrary.Util;
 
@@ -115,6 +116,7 @@ public class UiRenderer : IDisposable
     public void Reload()
     {
         _state = LuaHelpers.OpenState();
+        LuaVisibleTypeRegistry.RegisterAll(_state);
         LuaUiLibrary.Register(_state, SetActiveRoot, Call, OnEvent);
         _state.DoFile("data/uis/router.luau");
         Navigate(_currentPhaseId);
