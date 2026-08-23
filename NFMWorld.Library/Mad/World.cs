@@ -4,7 +4,7 @@ using NFMWorldLibrary.Util;
 
 namespace NFMWorldLibrary;
 
-public static class World
+public static partial class World
 {
     /// <summary>
     /// Adds extra collision radius and damage to compensate for lag.

@@ -90,6 +90,7 @@ declare extern type SettingsSnapshot with
     followZ: integer
     smoothFov: boolean
     keyBindings: { [integer|number]: KeyBindingData }
+    distantOutlineBehavior: integer
 end
 
 declare SettingsSnapshot: {

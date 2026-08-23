@@ -82,6 +82,7 @@ CapturedKey = {}
 ---@field followZ integer
 ---@field smoothFov boolean
 ---@field keyBindings { [integer|number]: KeyBindingData }
+---@field distantOutlineBehavior integer
 
 SettingsSnapshot = {}
 
