@@ -166,44 +166,65 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
             end
 
             outprops.style = merge(outprops.style, plain)
-            if isHover then
+            if isHover and hover ~= nil then
                 outprops.style = merge(outprops.style, hover)
             end
-            if isFocus then
+            if isFocus and focus ~= nil then
                 outprops.style = merge(outprops.style, focus)
             end
 
-            if outprops.onmouseenter ~= nil then
-                outprops.onmouseenter = function()
-                    onHover()
-                    ;(outprops.onmouseenter :: any)()
+            -- Only wire hover/focus listeners when the corresponding variant
+            -- actually exists. Wiring them unconditionally made EVERY styled
+            -- component (even those with no hover/focus style) fire
+            -- setIsHover/setIsFocus on cursor enter/leave, forcing a full tree
+            -- re-render on every hover transition and steadily degrading the
+            -- frame rate the more the user hovers.
+            --
+            -- Capture the user's own handlers first so the wrappers chain to
+            -- the ORIGINAL function instead of recursively calling themselves
+            -- (the old code re-read `outprops.onmouseenter` after overwriting
+            -- it, which tail-call-looped when a styled component was also given
+            -- its own enter/leave/focus/blur handler).
+            local userEnter = outprops.onmouseenter
+            local userLeave = outprops.onmouseleave
+            local userFocus = outprops.onfocus
+            local userBlur = outprops.onblur
+
+            if hover ~= nil then
+                if userEnter ~= nil then
+                    outprops.onmouseenter = function()
+                        onHover()
+                        userEnter()
+                    end
+                else
+                    outprops.onmouseenter = onHover
                 end
-            else
-                outprops.onmouseenter = onHover
+                if userLeave ~= nil then
+                    outprops.onmouseleave = function()
+                        onLeave()
+                        userLeave()
+                    end
+                else
+                    outprops.onmouseleave = onLeave
+                end
             end
-            if outprops.onmouseleave ~= nil then
-                outprops.onmouseleave = function()
-                    onLeave()
-                    ;(outprops.onmouseleave :: any)()
+            if focus ~= nil then
+                if userFocus ~= nil then
+                    outprops.onfocus = function()
+                        onFocus()
+                        userFocus()
+                    end
+                else
+                    outprops.onfocus = onFocus
                 end
-            else
-                outprops.onmouseleave = onLeave
-            end
-            if outprops.onfocus ~= nil then
-                outprops.onfocus = function()
-                    onFocus()
-                    ;(outprops.onfocus :: any)()
+                if userBlur ~= nil then
+                    outprops.onblur = function()
+                        onBlur()
+                        userBlur()
+                    end
+                else
+                    outprops.onblur = onBlur
                 end
-            else
-                outprops.onfocus = onFocus
-            end
-            if outprops.onblur ~= nil then
-                outprops.onblur = function()
-                    onBlur()
-                    ;(outprops.onblur :: any)()
-                end
-            else
-                outprops.onblur = onBlur
             end
 
             return h(vtype, (outprops :: any) :: P)
