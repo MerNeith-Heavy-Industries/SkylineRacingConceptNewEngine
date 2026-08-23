@@ -186,10 +186,17 @@ public static class FocusManager
     {
         var newChain = HitTestChain(root, @event.Position);
 
+        // Snapshot the previous hover chain before dispatching. MouseLeft /
+        // MouseEntered callbacks can re-entrantly mutate _hoveredChain (a React
+        // commit triggered by an event handler calls ResetHover, which clears
+        // the list), so iterate over a stable copy instead of indexing the
+        // live list while it shrinks.
+        var prevChain = new List<Component>(_hoveredChain);
+
         // MouseLeft — nodes that were hovered but no longer are (leaf→root).
-        for (int i = _hoveredChain.Count - 1; i >= 0; i--)
+        for (int i = prevChain.Count - 1; i >= 0; i--)
         {
-            var node = _hoveredChain[i];
+            var node = prevChain[i];
             if (!newChain.Contains(node))
                 node.DispatchMouseLeft(@event);
         }
@@ -198,7 +205,7 @@ public static class FocusManager
         for (int i = 0; i < newChain.Count; i++)
         {
             var node = newChain[i];
-            if (!_hoveredChain.Contains(node))
+            if (!prevChain.Contains(node))
                 node.DispatchMouseEntered(@event);
         }
 
