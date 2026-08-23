@@ -119,7 +119,7 @@ function core.useState<T>(initial: T): (T, ((T|((T) -> T))?) -> ())
     hook.state = (type(initial) == "function") and initial() or initial
   elseif hook.queue ~= nil then
     local state = hook.state
-    local queue = assert(hook.queue)
+    local queue = assert(hook.queue, "no hook.queue")
     hook.queue = nil
     for i = 1, #queue do
       local action = queue[i]
@@ -131,7 +131,7 @@ function core.useState<T>(initial: T): (T, ((T|((T) -> T))?) -> ())
     end
     hook.state = state
   end
-  local fiber = assert(currentFiber)
+  local fiber = assert(currentFiber, "no fiber in useState")
   return hook.state, function(action)
     if action ~= nil then
       hook.queue = hook.queue or {}
@@ -200,7 +200,7 @@ function core.useSyncExternalStore<T>(subscribe: (listener: () -> nil) -> (() ->
     hook.subscribe = subscribe
     hook.getSnapshot = getSnapshot
     hook.state = getSnapshot()
-    local fiber = assert(currentFiber)
+    local fiber = assert(currentFiber, "no fiber in useSyncExternalStore")
     local unsubscribe = subscribe(function()
       scheduleUpdate(fiber)
     end)
@@ -438,7 +438,7 @@ local function beginWork(fiber: R.Fiber)
     if type(renderFn) ~= "function" then
       error("React: Context.Consumer expects a function as its child", 2)
     end
-    local value = core.useContext(assert(fiber.context))
+    local value = core.useContext(assert(fiber.context, "no fiber context in consumer"))
     reconcileChildren(fiber, vdom.normalize(renderFn(value)))
   elseif tag == "fragment" then
     reconcileChildren(fiber, fiber.props.children or {})
@@ -744,10 +744,20 @@ local function performRender(root: R.Root)
     commitRoot(wip)
   end, function(e)
     local dbg = rawget(_G, "debug")
-    if dbg ~= nil and dbg.traceback ~= nil then
-      return dbg.traceback(e, 2)
+    local msg
+    if type(e) == "string" then
+      msg = e
+    elseif e == nil then
+      msg = "<nil error>"
+    else
+      msg = tostring(e)
     end
-    return tostring(e)
+    -- Managed exceptions already carry their full traceback; only wrap raw
+    -- Lua error objects with the current stack trace.
+    if dbg ~= nil and dbg.traceback ~= nil and msg:find("stack traceback", 1, true) == nil then
+      return dbg.traceback(msg, 2)
+    end
+    return msg
   end)
 
   wipFiber = nil
