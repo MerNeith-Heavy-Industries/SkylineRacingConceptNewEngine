@@ -42,38 +42,52 @@ local function formatTime(ms: number): string
 end
 
 local function RaceHud(): React.VNode
-	local hud, setHud = useState<<any>>(nil)
+    local speed, setSpeed = useState(0)
+	local power, setPower = useState(1)
+	local damage, setDamage = useState(0)
+	local lap, setLap = useState(1)
+	local totalLaps, setTotalLaps = useState(3)
+	local position, setPosition = useState(1)
+	local totalRacers, setTotalRacers = useState(1)
+	local lapTime, setLapTime = useState(0)
+	local chkDiffMs, setChkDiffMs = useState<<number?>>(nil)
+	local lastChkDiffMs, setLastChkDiffMs = useState<<number?>>(nil)
+	local lapDiffMs, setLapDiffMs = useState<<number?>>(nil)
+	local lastLapDiffMs, setLastLapDiffMs = useState<<number?>>(nil)
+	local countdownTimer, setCountdownTimer = useState(0)
+	local stateText, setStateText = useState('')
+	local stateTextEndsAt, setStateTextEndsAt = useState<<number?>>(nil)
+
 	local isPaused, setIsPaused = useState<<boolean>>(false)
 
 	useEffect(function()
-		return UiLib.onEvent("race:hudState", function(data: any)
-			if data ~= nil then setHud(data) end
+		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+			if data ~= nil then
+				setSpeed(data.speed)
+				setPower(data.power)
+				setDamage(data.damage)
+				setLap(data.lap)
+				setTotalLaps(data.totalLaps)
+				setPosition(data.position)
+				setTotalRacers(data.totalRacers)
+				setLapTime(data.lapTime)
+				setChkDiffMs(data.chkDiffMs)
+				setLastChkDiffMs(data.lastChkDiffMs)
+				setLapDiffMs(data.lapDiffMs)
+				setLastLapDiffMs(data.lastLapDiffMs)
+				setCountdownTimer(data.countdownTimer)
+				setStateText(data.stateText)
+				setStateTextEndsAt(data.stateTextEndsAt)
+			end
 		end)
 	end, {})
 
 	useEffect(function()
-		return UiLib.onEvent("race:paused", function(data: any)
+		return UiLib.onEvent("race:paused", function(data: boolean)
 			setIsPaused(data)
 		end)
 	end, {})
 
-	-- Derived values (computed each render; C# pushes hudState each tick).
-	local speed = hud ~= nil and hud.speed or 0
-	local power = hud ~= nil and hud.power or 1
-	local damage = hud ~= nil and hud.damage or 0
-	local lap = hud ~= nil and hud.lap or 1
-	local totalLaps = hud ~= nil and hud.totalLaps or 3
-	local position = hud ~= nil and hud.position or 1
-	local totalRacers = hud ~= nil and hud.totalRacers or 1
-	local lapTime = hud ~= nil and hud.lapTime or 0
-	local chkDiffMs = hud ~= nil and hud.chkDiffMs or nil
-	local lastChkDiffMs = hud ~= nil and hud.lastChkDiffMs or nil
-	local lapDiffMs = hud ~= nil and hud.lapDiffMs or nil
-	local lastLapDiffMs = hud ~= nil and hud.lastLapDiffMs or nil
-	local countdownTimer = hud ~= nil and hud.countdownTimer or 0
-
-	local stateText = hud ~= nil and hud.stateText or nil
-	local stateTextEndsAt = hud ~= nil and hud.stateTextEndsAt or nil
 	if stateTextEndsAt ~= nil and os.time() >= stateTextEndsAt then
 		stateText = nil
 	end
@@ -153,7 +167,7 @@ local function RaceHud(): React.VNode
 			x(Text) { style = { fontSize = 12, color = "rgba(255,255,255,0.5)" }, "POSITION" },
 		},
 
-		x(PauseMenu) { visible = isPaused },
+		isPaused and x(PauseMenu) {},
 	}
 end
 
