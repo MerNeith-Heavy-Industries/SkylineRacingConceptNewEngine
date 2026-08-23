@@ -42,8 +42,8 @@ local function formatTime(ms: number): string
 end
 
 local function RaceHud(): React.VNode
-	local hud, setHud = useState<any>(nil)
-	local isPaused, setIsPaused = useState<boolean>(false)
+	local hud, setHud = useState<<any>>(nil)
+	local isPaused, setIsPaused = useState<<boolean>>(false)
 
 	useEffect(function()
 		return UiLib.onEvent("race:hudState", function(data: any)
