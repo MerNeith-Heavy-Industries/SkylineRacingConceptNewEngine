@@ -161,6 +161,7 @@ export type TextStyles = Styles & {
 export type ViewProps = {
 	name: string?,
 	key: any?,
+	ref: { current: Component? },
 	style: Styles?,
 	onanimationframebegan: (() -> ())?,
 	active: boolean?,

@@ -1369,6 +1369,8 @@ declare extern type Component extends Node with
     insertAt: ((self: Component, index: integer, child: Node) -> nil)
     removeAt: ((self: Component, index: integer) -> nil)
     scrollIntoView: ((self: Component) -> nil)
+    focus: ((self: Component) -> nil)
+    blur: ((self: Component) -> nil)
 end
 
 declare Component: {
@@ -1422,6 +1424,8 @@ declare extern type View extends Component with
     insertAt: ((self: View, index: integer, child: Node) -> nil)
     removeAt: ((self: View, index: integer) -> nil)
     scrollIntoView: ((self: View) -> nil)
+    focus: ((self: View) -> nil)
+    blur: ((self: View) -> nil)
 end
 
 declare View: {
@@ -1477,6 +1481,8 @@ declare extern type TextInput extends Component with
     insertAt: ((self: TextInput, index: integer, child: Node) -> nil)
     removeAt: ((self: TextInput, index: integer) -> nil)
     scrollIntoView: ((self: TextInput) -> nil)
+    focus: ((self: TextInput) -> nil)
+    blur: ((self: TextInput) -> nil)
 end
 
 declare TextInput: {
