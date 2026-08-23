@@ -53,7 +53,7 @@ public partial class TextInput : Component
         {
             field = value;
             _text.TextStyles = TextStyles;
-            OnTextInvalidated();
+            OnTextInvalidated(false);
         }
     } = new();
 
@@ -63,7 +63,7 @@ public partial class TextInput : Component
         set
         {
             field = value;
-            OnTextInvalidated();
+            OnTextInvalidated(false);
         }
     } = new();
 
@@ -77,7 +77,7 @@ public partial class TextInput : Component
         set
         {
             field = value;
-            OnTextInvalidated();
+            OnTextInvalidated(false);
         }
     } = "";
 
@@ -117,11 +117,16 @@ public partial class TextInput : Component
         Text = text;
         OnTextInvalidated();
     }
-    
+
     // ── Constructor ───────────────────────────────────────────────
 
     public TextInput()
     {
+        // Create the internal text/cursor children first: the style property
+        // setters below call OnTextInvalidated(), which dereferences `_text`.
+        _text = new Text { IsFocusable = false };
+        _cursorOverlay = new CursorOverlay(this);
+
         Styles = Styles with
         {
             BorderColor = new Color(255, 255, 255, 255),
@@ -144,11 +149,8 @@ public partial class TextInput : Component
             HorizontalAlignment = TextHorizontalAlignment.Left,
             VerticalAlignment = TextVerticalAlignment.Top
         };
-        
-        IsFocusable = true;
 
-        _text = new Text { IsFocusable = false };
-        _cursorOverlay = new CursorOverlay(this);
+        IsFocusable = true;
 
         NodeInternal.InsertChild(_text.Contents, 0);
         _text.VisualParent = this;
@@ -180,7 +182,7 @@ public partial class TextInput : Component
 
         if (isFromUserInput)
             TextChanged?.Invoke(Text ?? "");
-        
+
         // Draw placeholder when empty and not focused
         if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
         {
@@ -537,7 +539,7 @@ public partial class TextInput : Component
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
             G.SetColor(borderColor);
-            
+
             float minRadius = Math.Min(size.X, size.Y) / 2f;
             int tl = (int)Math.Min(Styles.BorderTopLeftRadius, minRadius);
             int tr = (int)Math.Min(Styles.BorderTopRightRadius, minRadius);
