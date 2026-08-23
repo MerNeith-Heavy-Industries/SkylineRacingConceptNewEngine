@@ -29,6 +29,7 @@ local core = {}
 --------------------------------------------------------------------------
 
 local host: R.HostConfig
+local defer = nil -- optional scheduler hook (host-provided; see setHostConfig)
 
 function core.setHostConfig(config: R.HostConfig)
   local required = {
@@ -41,6 +42,7 @@ function core.setHostConfig(config: R.HostConfig)
     end
   end
   host = config
+  defer = config.defer
   return config
 end
 
@@ -71,6 +73,27 @@ end
 --- Maximum render passes per synchronous flush before we assume an
 --- infinite render loop and abort.
 local MAX_RENDERS = 50
+
+--- Lightweight render profiler. A "flush" is one call into `flushRoot`
+--- (i.e. one setState / event); "passes" counts how many full tree renders
+--- that flush needed. A pass > 1 means a render triggered another render
+--- (reentrant / cascading update) — the number to watch when the frame rate
+--- degrades after an interaction. Inspect via `React.renderStats`.
+core.renderStats = {
+    flushes = 0,
+    renders = 0,
+    reentrantFlushes = 0,   -- flushes that required more than one pass
+    maxPasses = 0,
+    abortedLoops = 0,
+}
+
+function core.resetRenderStats()
+    core.renderStats.flushes = 0
+    core.renderStats.renders = 0
+    core.renderStats.reentrantFlushes = 0
+    core.renderStats.maxPasses = 0
+    core.renderStats.abortedLoops = 0
+end
 
 --------------------------------------------------------------------------
 -- Hooks
@@ -345,10 +368,30 @@ local function reconcileChildren(fiber: R.Fiber, children: Array<R.VNode>)
 
   local lastPlacedIndex = 0
   local firstChild, prevChild = nil, nil
+  local seenKeys = {} -- duplicate-key detection (mirrors React's warning)
 
   for i, vnode in ipairs(children) do
     local k = vnode.key
     if k == nil then k = i end
+
+    -- Warn on duplicate explicit keys. Duplicate keys make reconciliation
+    -- collide: the later child overwrites the earlier in `existing`, the
+    -- overwritten fiber is never deleted, and the colliding child creates a
+    -- fresh host node each render (the "components multiply" bug). Auto
+    -- assigned positional keys are unique by construction, so only explicit
+    -- (`key = ...`) collisions are reported.
+    if vnode.key ~= nil then
+      if seenKeys[vnode.key] then
+        warn(
+          ("Encountered two children with the same key, '%s'. Keys should be unique so that components maintain their identity across updates."):format(
+            tostring(vnode.key)
+          )
+        )
+      else
+        seenKeys[vnode.key] = true
+      end
+    end
+
     local old = existing[k]
     existing[k] = nil
 
@@ -785,6 +828,7 @@ local function performRender(root: R.Root)
   end
 
   root.current = wip
+  core.renderStats.renders = core.renderStats.renders + 1
 end
 
 scheduleUpdate = function(fiber: R.Fiber)
@@ -801,23 +845,62 @@ scheduleUpdate = function(fiber: R.Fiber)
     return -- component was unmounted; ignore
   end
   root.dirty = true
-  flushRoot(root)
+
+  if defer ~= nil then
+    -- Scheduler-based batching (like React/Preact): the first update enqueues
+    -- ONE deferred render; subsequent updates in the same frame only set
+    -- `dirty` and are coalesced into that render. `defer` (UiLib.defer) posts
+    -- to the game-thread SynchronizationContext, which runs the callback at
+    -- the end of the frame's update.
+    if not root.scheduled then
+      root.scheduled = true
+      defer(function()
+        root.scheduled = false
+        flushRoot(root)
+      end)
+    end
+  else
+    -- No scheduler available: flush synchronously. A reentrant setState during
+    -- a render hits flushRoot's `root.rendering` guard and is picked up by the
+    -- in-flight flush's own `while root.dirty` loop.
+    flushRoot(root)
+  end
 end
 
 flushRoot = function(root: R.Root)
+  if root.current == nil then
+    -- Unmounted before the deferred flush ran — nothing to render.
+    root.dirty = false
+    return
+  end
   if root.rendering then
-    return -- a pass is already in flight; its loop will pick up `dirty`
+    -- A pass is already in flight; its loop will pick up `dirty`. This is the
+    -- signature of a REENTRANT update (setState fired while rendering) — the
+    -- in-flight flush then needs an extra pass, which is reflected in
+    -- `renderStats.reentrantFlushes` via the `passes > 1` check below.
+    return
   end
   local passes = 0
   while root.dirty do
     passes = passes + 1
     if passes > MAX_RENDERS then
       warn("Aborting update: too many re-renders (possible infinite render loop).")
+      core.renderStats.abortedLoops = core.renderStats.abortedLoops + 1
       root.dirty = false
       return
     end
     root.dirty = false
     performRender(root)
+  end
+  core.renderStats.flushes = core.renderStats.flushes + 1
+  if passes > core.renderStats.maxPasses then
+    core.renderStats.maxPasses = passes
+  end
+  if passes > 1 then
+    core.renderStats.reentrantFlushes = core.renderStats.reentrantFlushes + 1
+  end
+  if passes > 5 then
+    warn(("Update took %d render passes (cascading re-render?)"):format(passes))
   end
 end
 
@@ -835,6 +918,7 @@ function core.render(element: R.VNode, container: any)
       pendingElement = nil,
       dirty = false,
       rendering = false,
+      scheduled = false,
     }
     roots[container] = root
   end
