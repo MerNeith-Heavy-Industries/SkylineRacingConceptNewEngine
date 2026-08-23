@@ -202,6 +202,9 @@ public static class LuaUiLibrary
     {
         switch (key)
         {
+            case "name" when rawvalue.TryRead<string>(out var str) :
+                cmp.Name = str;
+                break;
             case "style" when rawvalue.TryRead<LuaTable>(out var value):
                 cmp.Styles = AssignStylesProps(value);
                 if (cmp is Text text)
@@ -872,14 +875,14 @@ public static class LuaUiLibrary
             return ParseHexColor(str.AsSpan(1));
         }
 
-        if (str.StartsWith("rgb", StringComparison.OrdinalIgnoreCase))
-        {
-            return ParseRgbColor(str);
-        }
-
         if (str.StartsWith("rgba", StringComparison.OrdinalIgnoreCase))
         {
             return ParseRgbaColor(str);
+        }
+
+        if (str.StartsWith("rgb", StringComparison.OrdinalIgnoreCase))
+        {
+            return ParseRgbColor(str);
         }
 
         return null;

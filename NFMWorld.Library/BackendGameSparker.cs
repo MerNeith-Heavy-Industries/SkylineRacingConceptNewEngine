@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using Maxine.Extensions;
 using NFMWorld.CrashReporter;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
@@ -278,6 +279,15 @@ public static class BackendGameSparker
         if (!isHeadless && !System.Diagnostics.Debugger.IsAttached)
         {
             CrashReportLibrary.Hook(Logging.SentryDsn, Logging.Release);
+        }
+#endif
+
+#if DEBUG
+        // mount live project path for debug
+        if (ProjectUtils.TryGetProjectDirectory() is {} projectDirectory)
+        {
+            VFS.MountDirectory(projectDirectory);
+            VFS.MountDirectory(Path.GetFullPath(Path.Combine(projectDirectory, "..", "NFMWorld.Library")));
         }
 #endif
         

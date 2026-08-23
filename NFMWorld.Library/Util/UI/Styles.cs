@@ -31,7 +31,7 @@ public struct Styles()
     /// <summary>
     /// CSS: align-items - Defines default alignment for all children along the cross axis
     /// </summary>
-    public Align AlignItems = Align.Auto;
+    public Align AlignItems = Align.Stretch;
 
     /// <summary>
     /// CSS: align-self - Allows a child to override the default cross-axis alignment
@@ -41,7 +41,7 @@ public struct Styles()
     /// <summary>
     /// CSS: align-content - Aligns flex container's lines when there is extra space in the cross-axis
     /// </summary>
-    public Align AlignContent = Align.Auto;
+    public Align AlignContent = Align.FlexStart;
 
     /// <summary>
     /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)

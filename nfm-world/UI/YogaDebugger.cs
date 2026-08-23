@@ -1,4 +1,4 @@
-﻿﻿using Maxine.Extensions;
+﻿using Maxine.Extensions;
 using NFMWorld;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;

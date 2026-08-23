@@ -70,6 +70,47 @@ public static class FocusManager
     }
 
     /// <summary>
+    /// Hit-test: find the topmost focusable Node at a screen position.
+    /// Walks children in reverse (topmost rendered last).
+    /// </summary>
+    public static Node? HitTest(Component root, Vector2 screenPos)
+    {
+        return HitTestRecursive(root, screenPos);
+    }
+
+    private static Component? HitTestRecursive(Component node, Vector2 pos)
+    {
+        // Skip nodes (and their descendants) clipped out by an overflow ancestor.
+        if (node.ClipRect is { } clip && !clip.Contains(pos.X, pos.Y))
+            return null;
+
+        // Walk children back-to-front for correct z-order
+        var children = node.VisualChildren
+            .OfType<Component>()
+            .OrderBy(c => c.TabOrder)
+            .Reverse();
+    
+        foreach (var visual in children)
+        {
+            if (!visual.IsDisplayed)
+                continue;
+
+            var result = HitTestRecursive(visual, pos);
+            if (result is not null) return result;
+        }
+        
+        // Check self
+        var bounds = new RectangleF(
+            node.FocusOrigin.X, node.FocusOrigin.Y,
+            node.FocusSize.X, node.FocusSize.Y);
+
+        if (bounds.Contains(pos.X, pos.Y))
+            return node;
+
+        return null;
+    }
+
+    /// <summary>
     /// Hit-tests and returns the full ancestor chain (root→leaf) of focusable
     /// elements at <paramref name="screenPos"/>. Empty when nothing hit.
     /// </summary>
@@ -88,17 +129,14 @@ public static class FocusManager
 
         var selfHit = false;
 
-        if (node.IsFocusable)
-        {
-            var bounds = new RectangleF(
-                node.FocusOrigin.X, node.FocusOrigin.Y,
-                node.FocusSize.X, node.FocusSize.Y);
+        var bounds = new RectangleF(
+            node.FocusOrigin.X, node.FocusOrigin.Y,
+            node.FocusSize.X, node.FocusSize.Y);
 
-            if (bounds.Contains(pos.X, pos.Y))
-            {
-                chain.Add(node);       // ancestor added before children
-                selfHit = true;
-            }
+        if (bounds.Contains(pos.X, pos.Y))
+        {
+            chain.Add(node);       // ancestor added before children
+            selfHit = true;
         }
 
         // If self isn't hit, children can't be hit either (they're contained within self).

@@ -23,9 +23,4 @@ public static class NodeDebugger
             component.__INTERNAL_CtorCallerMemberName
         );
     }
-
-    public static void NewFrame()
-    {
-        YogaRoot = null;
-    }
 }

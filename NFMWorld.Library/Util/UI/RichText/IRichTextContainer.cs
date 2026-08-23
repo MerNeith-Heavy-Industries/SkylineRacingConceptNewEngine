@@ -2,5 +2,5 @@
 
 public interface IRichTextContainer : IRichTextElement
 {
-    IReadOnlyList<IRichTextElement> Children { get; }
+    IEnumerable<IRichTextElement> Children { get; }
 }

@@ -2,6 +2,7 @@ using NFMWorld.DriverInterface;
 using NFMWorld.UI.Cef;
 using NFMWorld.UI.Cef.Bridges;
 using NFMWorldLibrary.Backend.Gamemodes;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.Gameplay;
 
@@ -89,7 +90,7 @@ public abstract class BasePhase : IDisposable
     /// </summary>
     public virtual void Enter()
     {
-        // Register the phase's CEF bridge if one is set
+        // Register the phase's Lua bridge if one is set
         if (CefBridge != null && GameSparker.UiRenderer != null)
         {
             CefBridge.Register(GameSparker.UiRenderer);
@@ -117,12 +118,10 @@ public abstract class BasePhase : IDisposable
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyPressed(Key key, bool imguiWantsKeyboard, in Keys keys)
     {
-        // CEF handles input
     }
 
     public virtual void KeyTyped(char character, bool imguiWantsKeyboard)
     {
-        // CEF handles input
     }
 
     /// <summary>
@@ -132,7 +131,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="imguiWantsKeyboard">If Imgui wants the keyboard.</param>
     /// <param name="keys">The state of all keys.</param>
     public virtual void KeyReleased(Key key, bool imguiWantsKeyboard, in Keys keys)
-    { // CEF handles input
+    {
     }
 
     /// <summary>
@@ -147,7 +146,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MouseMoved(int x, int y, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
-    { // CEF handles input
+    {
     }
 
     /// <summary>
@@ -178,7 +177,7 @@ public abstract class BasePhase : IDisposable
     /// <param name="shiftKey">Whether the Shift key is being held.</param>
     /// <param name="altKey">Whether the Alt key is being held.</param>
     public virtual void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
-    { // CEF handles input
+    {
     }
 
     /// <summary>
@@ -195,7 +194,6 @@ public abstract class BasePhase : IDisposable
     public virtual void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey,
         bool shiftKey, bool altKey)
     {
-        // CEF handles scroll input
     }
 
     public virtual void WindowSizeChanged(int width, int height)

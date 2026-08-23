@@ -53,17 +53,19 @@ export type Styles = {
 	direction: "ltr" | "rtl" | "inherit" | nil,
 	flexDirection: "row" | "row-reverse" | "column" | "column-reverse" | nil,
 	justifyContent: "flex-start" | "center" | "flex-end" | "space-between" | "space-around" | "space-evenly" | nil,
-	alignItems: "flex-start"
+	-- YGAlign exposes more items than this but they don't seem to be valid.
+	alignItems: "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
+	-- YGAlign exposes more items than this but they don't seem to be valid.
+	alignSelf: "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
+	-- YGAlign exposes more items than this but they don't seem to be valid.
+	alignContent: "flex-start"
 		| "center"
 		| "flex-end"
 		| "stretch"
-		| "baseline"
 		| "space-between"
 		| "space-around"
 		| "space-evenly"
 		| nil,
-	alignSelf: "auto" | "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
-	alignContent: "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | nil,
 	position: "static" | "relative" | "absolute" | nil,
 	flexWrap: "nowrap" | "wrap" | "wrap-reverse" | nil,
 	overflow: "visible" | "hidden" | "scroll" | nil,
@@ -157,6 +159,7 @@ export type TextStyles = Styles & {
 }
 
 export type ViewProps = {
+	name: string?,
 	key: any?,
 	style: Styles?,
 	onanimationframebegan: (() -> ())?,
@@ -263,10 +266,10 @@ end
 ---         }
 ---       }
 ---     }
-function React.x<P>(vtype: StatelessFunctionalComponent<P>): (WithChildren<P, R.Child>) -> R.VNode
-	return function(props: WithChildren<P, R.Child>): R.VNode
+function React.x<P>(vtype: StatelessFunctionalComponent<P>): (WithChildren<P, R.Children>) -> R.VNode
+	return function(props: WithChildren<P, R.Children>): R.VNode
 		local children = {}
-		local props1 = (props :: any) :: { [number]: R.Child } -- type fix
+		local props1 = (props :: any) :: { [number]: R.Children } -- type fix
 		for i = 1, #props1 do
 			children[#children + 1] = props1[i] -- add to children
 			props1[i] = nil -- remove from props so it doesn't get passed to the component

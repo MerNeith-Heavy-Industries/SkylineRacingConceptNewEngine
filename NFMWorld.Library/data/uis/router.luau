@@ -39,11 +39,11 @@ function Router()
 	end, {})
 
 	local Page = routes[hash] or routes[defaultRoute]
-	return x(Page)({})
+	return x(Page) {}
 end
 
 function App()
-	return x(Router)({})
+	return x(Router) {}
 end
 
-dom.render(x(App)({}))
+dom.render(x(App) {})
