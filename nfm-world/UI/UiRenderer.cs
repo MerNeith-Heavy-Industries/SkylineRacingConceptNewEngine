@@ -13,15 +13,15 @@ namespace WorldXaml.UI.Yoga;
 public class UiRenderer : IDisposable
 {
     private uint _maxEvent = 0;
-    
+
     private readonly Dictionary<string, MessageHandler> _toCsharpHandlers = new();
     private readonly Dictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
     private LuaState _state;
 
     public View? ActiveRoot { get; private set; }
-    
+
     public UiRenderer(WorldGame worldGame)
-    { 
+    {
         Reload();
     }
 
@@ -47,6 +47,7 @@ public class UiRenderer : IDisposable
     {
         FocusManager.ActiveNode = null;
         FocusManager.FocusedNode = null;
+        FocusManager.ClearHover();
         ActiveRoot = view;
     }
 
@@ -59,7 +60,7 @@ public class UiRenderer : IDisposable
         NodeDebugger.YogaRoot = ActiveRoot;
         ActiveRoot?.LayoutAndRender(G.Viewport);
     }
-    
+
     /// <summary>
     /// Delegate for handling Lua → C# messages.
     /// </summary>
@@ -87,7 +88,7 @@ public class UiRenderer : IDisposable
     public void PushToLua(string phaseId, string eventType, LuaValue payload)
     {
         var fullEventId = $"{phaseId}:{eventType}";
-        
+
         foreach (var (_, (@event, handler)) in _toLuaHandlers)
         {
             if (@event == fullEventId)
@@ -104,7 +105,7 @@ public class UiRenderer : IDisposable
 
     public void Dispose()
     {
-        
+
     }
 
     [MemberNotNull(nameof(_state))]
@@ -114,7 +115,7 @@ public class UiRenderer : IDisposable
         LuaUiLibrary.Register(_state, SetActiveRoot, Call, OnEvent);
         _state.DoFile("data/uis/router.luau");
     }
-    
+
     public void HandleKeyPressed(Key key, in Keys keys)
     {
         ActiveRoot?.DispatchKeyPressed(new KeyboardEvent(key, IBackend.Backend.GetKeyFromScancode(key), keys));
