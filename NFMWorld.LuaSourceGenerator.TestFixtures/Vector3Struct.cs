@@ -88,3 +88,4 @@ public partial struct Vector3Struct
         return $"Vec3({X}, {Y}, {Z})";
     }
 }
+

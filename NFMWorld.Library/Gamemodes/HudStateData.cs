@@ -7,8 +7,6 @@ namespace NFMWorld.DriverInterface;
 /// <summary>
 /// Per-frame HUD state sent from the gamemode to the CEF race overlay.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
 [LuaVisible]
 public partial class HudStateData
 {
@@ -28,7 +26,6 @@ public partial class HudStateData
     [LuaName("lastChkDiffMs")] public int? LastChkDiffMs { get; set; }
     [LuaName("countdownTimer")] public int CountdownTimer { get; set; }
 
-    [MemoryPackIgnore]
     [LuaName("stateTextEndsAt")]
     public double? LuaStateTextEndsAt
     {

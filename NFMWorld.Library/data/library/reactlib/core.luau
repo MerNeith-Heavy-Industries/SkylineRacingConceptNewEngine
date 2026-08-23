@@ -19,73 +19,18 @@
 ---   * State updates flush synchronously; there is no scheduler. A per-root
 ---     pass counter detects infinite render loops and aborts gracefully.
 
-local vdom = require("react.vdom")
+local R = require('./types')
+local vdom = require("./vdom")
 
 local core = {}
-
----@class Fiber
----@field type string|function|table  -- element type (tag string, component function, marker table)
----@field tag string                  -- "host"|"function"|"text"|"fragment"|"provider"|"consumer"|"root"
----@field props table                 -- element props (children array included)
----@field key any                     -- reconciliation key
----@field stateNode any               -- host instance (host/text) or container (root)
----@field parent Fiber?               -- parent fiber
----@field child Fiber?                -- first child fiber
----@field sibling Fiber?              -- next sibling fiber
----@field alternate Fiber?            -- the committed fiber this one was built from
----@field placement boolean?          -- insert this subtree into the host tree
----@field update boolean?             -- props / text changed on an existing node
----@field deletions Fiber[]?          -- old child fibers to remove
----@field hooks Hook[]?               -- hook state (function components)
----@field index integer               -- position among siblings (1-based)
----@field context Context?            -- provider / consumer fibers
----@field pendingElement VNode?       -- element waiting on a host root fiber
-
----@class Hook
----@field state any
----@field queue any[]?           -- pending useState actions
----@field deps any[]?            -- last dependency array
----@field effectFn function?
----@field effectDirty boolean?
----@field destroy function?      -- cleanup returned by the last effect run
----@field ref table?
----@field subscribe function?
----@field getSnapshot function?
----@field unsubscribe function?
----@field isStateHook boolean?
-
----@class Context
----@field defaultValue any
----@field Provider table
----@field Consumer table
-
---- Functions the host environment (e.g. an RmlUI DOM adapter) must provide.
----@class HostConfig
----@field createInstance fun(vtype: string, props: table): any
----@field createTextInstance fun(text: string): any
----@field appendChild fun(parent: any, child: any): nil
----@field insertBefore fun(parent: any, child: any, before: any): nil
----@field removeChild fun(parent: any, child: any): nil
----@field setProperty fun(instance: any, key: string, value: any): nil -- value == nil removes the property
----@field commitTextUpdate fun(textInstance: any, oldText: string, newText: string): nil
-
----@class Root
----@field container any
----@field current Fiber
----@field pendingElement VNode?
----@field dirty boolean
----@field rendering boolean
 
 --------------------------------------------------------------------------
 -- Host config
 --------------------------------------------------------------------------
 
----@type HostConfig
-local host
+local host: R.HostConfig
 
----@param config HostConfig
----@return HostConfig
-function core.setHostConfig(config)
+function core.setHostConfig(config: R.HostConfig)
   local required = {
     "createInstance", "createTextInstance", "appendChild",
     "insertBefore", "removeChild", "setProperty", "commitTextUpdate",
@@ -103,22 +48,17 @@ end
 -- Render context (rendering is synchronous, so module locals are safe)
 --------------------------------------------------------------------------
 
----@type table<any, Root>
-local roots = {}
+local roots: { [any]: R.Root } = {}
 
----@type Fiber?
-local wipFiber = nil
+local wipFiber: R.Fiber? = nil
 
----@type Fiber?
-local currentFiber = nil -- fiber whose hooks are currently running
+local currentFiber: R.Fiber? = nil -- fiber whose hooks are currently running
 local currentHookIndex = 0
 
----@type {ctx: Context, value: any}[]
-local contextStack = {}
+local contextStack: Array<{ctx: R.Context<any>, value: any}> = {}
 
 -- Forward declarations: hooks capture these before their definitions below.
----@type fun(fiber: Fiber)
-local scheduleUpdate
+local scheduleUpdate: ((fiber: R.Fiber) -> nil)
 
 ---@type fun(root: Root)
 local flushRoot
@@ -136,8 +76,7 @@ local MAX_RENDERS = 50
 -- Hooks
 --------------------------------------------------------------------------
 
----@return Hook
-local function getHook()
+local function getHook(): R.Hook
   local fiber = assert(currentFiber, "Hooks can only be called while a component is rendering")
   currentHookIndex = currentHookIndex + 1
   local hooks = fiber.hooks or {}
@@ -152,11 +91,7 @@ local function getHook()
 end
 
 --- Shallow value comparison used for hook dependency arrays.
----@generic T
----@param a T
----@param b T
----@return boolean
-local function shallowEqual(a, b)
+local function shallowEqual<T>(a: T, b: T): boolean
   if a == b then return true end
   if type(a) ~= "table" or type(b) ~= "table" then return false end
   for k, v in pairs(a) do
@@ -177,7 +112,7 @@ end
 ---@param initial T
 ---@return T state
 ---@return fun(action?: T|fun(prev: T): T) setState
-function core.useState(initial)
+function core.useState<T>(initial: T): (T, ((T|((T) -> T))?) -> ())
   local hook = getHook()
   if not hook.isStateHook then
     hook.isStateHook = true
@@ -211,9 +146,7 @@ end
 --- `fn` runs after every commit for which `deps` changed (or every commit if
 --- `deps` is nil). `fn` may return a cleanup function; the previous cleanup
 --- runs immediately before the next run of the same effect.
----@param fn fun(): (fun()|nil)
----@param deps? any[]
-function core.useEffect(fn, deps)
+function core.useEffect(fn: (() -> (() -> ()) | nil), deps: Array<any>?)
   local hook = getHook()
   local changed = deps == nil or hook.effectFn == nil or not shallowEqual(hook.deps, deps)
   if changed then
@@ -226,11 +159,7 @@ function core.useEffect(fn, deps)
 end
 
 --- useMemo(fn, deps?) -> memoized value
----@generic T
----@param fn fun(): T
----@param deps? any[]
----@return T
-function core.useMemo(fn, deps)
+function core.useMemo<T>(fn: (() -> T), deps: Array<any>?): T
   local hook = getHook()
   if deps == nil or not shallowEqual(hook.deps, deps) then
     hook.deps = deps
@@ -240,11 +169,7 @@ function core.useMemo(fn, deps)
 end
 
 --- useCallback(fn, deps?) -> memoized function
----@generic T
----@param fn T
----@param deps? any[]
----@return T
-function core.useCallback(fn, deps)
+function core.useCallback<T>(fn: T, deps: Array<any>?): T
   local hook = getHook()
   if deps == nil or not shallowEqual(hook.deps, deps) then
     hook.deps = deps
@@ -256,10 +181,7 @@ end
 --- useRef(initial) -> `{ current = initial }`
 ---
 --- The returned table keeps its identity across renders.
----@generic T
----@param initial T
----@return { current: T }
-function core.useRef(initial)
+function core.useRef<T>(initial: T): { current: T }
   local hook = getHook()
   if hook.ref == nil then
     hook.ref = { current = initial }
@@ -272,11 +194,7 @@ end
 --- `subscribe(listener)` is called once on mount and may return an
 --- unsubscribe function (invoked on unmount). The snapshot is re-read on
 --- every render and compared with `==`.
----@generic T
----@param subscribe function
----@param getSnapshot fun(): T
----@return T
-function core.useSyncExternalStore(subscribe, getSnapshot)
+function core.useSyncExternalStore<T>(subscribe: (listener: () -> nil) -> (() -> nil)?, getSnapshot: () -> T): T
   local hook = getHook()
   if hook.subscribe == nil then
     hook.subscribe = subscribe
@@ -300,10 +218,7 @@ end
 --- useContext(ctx) -> current context value
 ---
 --- Reads the innermost enclosing Provider's value, or the default value.
----@generic T
----@param context Context
----@return T
-function core.useContext(context)
+function core.useContext<T>(context: R.Context<T>): T
   for i = #contextStack, 1, -1 do
     local entry = contextStack[i]
     if entry.ctx == context then
@@ -313,10 +228,7 @@ function core.useContext(context)
   return context.defaultValue
 end
 
----@generic T
----@param defaultValue T
----@return Context
-function core.createContext(defaultValue)
+function core.createContext<T>(defaultValue: T): R.Context<T>
   local ctx = { defaultValue = defaultValue }
   ctx.Provider = { __reactProvider = ctx }
   ctx.Consumer = { __reactConsumer = ctx }
@@ -324,11 +236,7 @@ function core.createContext(defaultValue)
 end
 
 --- Render a function component, running its hooks against `fiber`.
----@param component Component
----@param fiber Fiber
----@param props VNodeProps
----@return any result
-local function renderWithHooks(component, fiber, props)
+local function renderWithHooks(component: R.Component, fiber: R.Fiber, props: R.VNodeProps): any
   local prevFiber, prevIndex = currentFiber, currentHookIndex
   currentFiber = fiber
   currentHookIndex = 0
@@ -342,9 +250,7 @@ end
 -- Fibers
 --------------------------------------------------------------------------
 
----@param vtype any
----@return string tag
-local function tagOf(vtype)
+local function tagOf(vtype: any): string
   if vtype == vdom.TEXT then return "text" end
   if vtype == vdom.FRAGMENT then return "fragment" end
   if vtype == vdom.FUNCTION then
@@ -361,23 +267,17 @@ local function tagOf(vtype)
   error("React: invalid element type '" .. t .. "'", 2)
 end
 
----@param container any
----@return Fiber
-local function createHostRootFiber(container)
+local function createHostRootFiber(container: any): R.Fiber
   return {
     type = nil, tag = "root", props = {}, key = nil,
     stateNode = container, parent = nil, child = nil, sibling = nil,
     alternate = nil, placement = false, update = false, deletions = nil,
-    hooks = nil, index = 0,
+    hooks = nil, index = 0, context = nil
   }
 end
 
----@param vnode VNode
----@param parent Fiber?
----@param old Fiber?
----@return Fiber
-local function createFiber(vnode, parent, old)
-  local fiber = {
+local function createFiber(vnode: R.VNode, parent: R.Fiber?, old: R.Fiber?): R.Fiber
+  local fiber: R.Fiber = {
     type = vnode.type,
     tag = tagOf(vnode.type),
     props = vnode.props,
@@ -392,29 +292,27 @@ local function createFiber(vnode, parent, old)
     deletions = nil,
     hooks = nil,
     index = 0,
+    context = nil,
   }
   if old ~= nil then
     fiber.stateNode = old.stateNode
     old.alternate = fiber
   end
   if fiber.tag == "provider" or fiber.tag == "consumer" then
-    fiber.context = vnode.type.__reactProvider or vnode.type.__reactConsumer
+    fiber.context = (vnode.type :: any).__reactProvider or (vnode.type :: any).__reactConsumer
   end
   return fiber
 end
 
----@param fiber Fiber
----@param deleted Fiber
-local function markDeletion(fiber, deleted)
-  fiber.deletions = fiber.deletions or {}
-  fiber.deletions[#fiber.deletions + 1] = deleted
+local function markDeletion(fiber: R.Fiber, deleted: R.Fiber)
+  local deletions = fiber.deletions or {}
+  fiber.deletions = deletions
+  deletions[#deletions + 1] = deleted
 end
 
 --- Reconcile `children` against the fiber's previous child list, producing
 --- the new child fiber chain. Keyed moves are detected via lastPlacedIndex.
----@param fiber Fiber
----@param children VNode[]
-local function reconcileChildren(fiber, children)
+local function reconcileChildren(fiber: R.Fiber, children: Array<R.VNode>)
   local alternate = fiber.alternate
 
   -- index old children by key (unkeyed children fall back to their position)
@@ -467,10 +365,7 @@ local function reconcileChildren(fiber, children)
   fiber.child = firstChild
 end
 
----@param oldProps table
----@param newProps table
----@return boolean
-local function propsDiffer(oldProps, newProps)
+local function propsDiffer(oldProps: { [string]: any }, newProps: { [string]: any }): boolean
   for k, v in pairs(oldProps) do
     if k ~= "children" and k ~= "key" and k ~= "ref" then
       if newProps[k] ~= v then return true end
@@ -484,10 +379,7 @@ local function propsDiffer(oldProps, newProps)
   return false
 end
 
----@param oldProps table
----@param newProps table
----@param instance any
-local function diffProps(oldProps, newProps, instance)
+local function diffProps(oldProps: { [string]: any }, newProps: { [string]: any }, instance: any)
   for k, v in pairs(newProps) do
     if k ~= "children" and k ~= "key" and k ~= "ref" then
       if oldProps[k] ~= v then
@@ -504,8 +396,7 @@ local function diffProps(oldProps, newProps, instance)
   end
 end
 
----@param fiber Fiber
-local function attachRef(fiber)
+local function attachRef(fiber: R.Fiber)
   local ref = fiber.props and fiber.props.ref
   if ref == nil then return end
   if type(ref) == "function" then
@@ -515,8 +406,7 @@ local function attachRef(fiber)
   end
 end
 
----@param fiber Fiber
-local function detachRef(fiber)
+local function detachRef(fiber: R.Fiber)
   local ref = fiber.props and fiber.props.ref
   if ref == nil then return end
   if type(ref) == "function" then
@@ -530,15 +420,13 @@ end
 -- Render phase: begin / complete work
 --------------------------------------------------------------------------
 
----@param fiber Fiber
-local function beginWork(fiber)
+local function beginWork(fiber: R.Fiber)
   local tag = fiber.tag
   if tag == "root" then
     local element = fiber.pendingElement
     reconcileChildren(fiber, element and { element } or {})
   elseif tag == "function" then
-    ---@cast fiber { type: Component, props: VNodeProps }
-    local result = renderWithHooks(fiber.type, fiber, fiber.props)
+    local result = renderWithHooks(fiber.type :: R.Component, fiber, fiber.props)
     reconcileChildren(fiber, vdom.normalize(result))
   elseif tag == "provider" then
     contextStack[#contextStack + 1] = { ctx = fiber.context, value = fiber.props.value }
@@ -568,8 +456,7 @@ local function beginWork(fiber)
   end
 end
 
----@param fiber Fiber
-local function completeWork(fiber)
+local function completeWork(fiber: R.Fiber)
   local tag = fiber.tag
   if tag == "provider" then
     table.remove(contextStack)
@@ -577,8 +464,7 @@ local function completeWork(fiber)
     -- Note: a moved fiber keeps its existing stateNode; only truly new
     -- fibers create a host instance.
     if fiber.stateNode == nil then
-      ---@cast fiber { type: string, props: VNodeProps, stateNode: any }
-      fiber.stateNode = host.createInstance(fiber.type, fiber.props)
+      fiber.stateNode = host.createInstance(fiber.type :: string, fiber.props)
     else
       local alternate = fiber.alternate
       if fiber.update and alternate ~= nil then
@@ -601,9 +487,7 @@ local function completeWork(fiber)
   end
 end
 
----@param fiber Fiber
----@return Fiber?
-local function performUnitOfWork(fiber)
+local function performUnitOfWork(fiber: R.Fiber): R.Fiber?
   beginWork(fiber)
   if fiber.child ~= nil then
     return fiber.child
@@ -630,9 +514,7 @@ end
 --------------------------------------------------------------------------
 
 --- Nearest host ancestor's stateNode (container for host roots).
----@param fiber Fiber
----@return any?
-local function nearestHostAncestor(fiber)
+local function nearestHostAncestor(fiber: R.Fiber): any?
   local p = fiber.parent
   while p ~= nil do
     if p.tag == "host" or p.tag == "root" then
@@ -645,9 +527,7 @@ end
 
 --- Find the committed host node this placement should be inserted before,
 --- or nil to append at the end.
----@param fiber Fiber
----@return any?
-local function getHostSibling(fiber)
+local function getHostSibling(fiber: R.Fiber): any?
   local node = fiber
   while true do
     -- climb until we find a sibling, or hit a host parent boundary
@@ -680,10 +560,7 @@ end
 --- For a host/text fiber inside a deleted subtree: return the stateNode it
 --- should be removed from, or nil if it is nested under another host node
 --- that is itself being removed.
----@param fiber Fiber
----@param deletedRoot Fiber
----@return any?
-local function hostParentOutside(fiber, deletedRoot)
+local function hostParentOutside(fiber: R.Fiber, deletedRoot: R.Fiber): any?
   local p = fiber.parent
   while p ~= nil and p ~= deletedRoot do
     if p.tag == "host" or p.tag == "root" then
@@ -708,10 +585,9 @@ end
 --- Unmount a deleted subtree: run effect cleanups (children before
 --- parents), unsubscribe stores, detach refs, and remove host nodes
 --- exactly once.
----@param deletedRoot Fiber
-local function unmountSubtree(deletedRoot)
-  local stack = {} ---@type Fiber[]
-  local node = deletedRoot ---@type Fiber?
+local function unmountSubtree(deletedRoot: R.Fiber)
+  local stack: Array<R.Fiber> = {}
+  local node = deletedRoot
   while true do
     if node ~= nil then
       stack[#stack + 1] = node
@@ -757,8 +633,7 @@ local function unmountSubtree(deletedRoot)
   end
 end
 
----@param rootFiber Fiber
-local function commitDeletions(rootFiber)
+local function commitDeletions(rootFiber: R.Fiber)
   local stack = { rootFiber }
   while #stack > 0 do
     local fiber = stack[#stack]
@@ -778,8 +653,7 @@ local function commitDeletions(rootFiber)
   end
 end
 
----@param rootFiber Fiber
-local function commitPlacements(rootFiber)
+local function commitPlacements(rootFiber: R.Fiber)
   local stack = { rootFiber }
   while #stack > 0 do
     local fiber = stack[#stack]
@@ -809,8 +683,7 @@ local function commitPlacements(rootFiber)
 end
 
 --- Run passive effects (useEffect), children before parents.
----@param rootFiber Fiber
-local function commitPassiveEffects(rootFiber)
+local function commitPassiveEffects(rootFiber: R.Fiber)
   local stack = {} ---@type Fiber[]
   local node = rootFiber ---@type Fiber?
   while true do
@@ -845,8 +718,7 @@ local function commitPassiveEffects(rootFiber)
   end
 end
 
----@param wip Fiber
-local function commitRoot(wip)
+local function commitRoot(wip: R.Fiber)
   commitDeletions(wip)
   commitPlacements(wip)
   commitPassiveEffects(wip)
@@ -856,8 +728,7 @@ end
 -- Rendering / scheduling
 --------------------------------------------------------------------------
 
----@param root Root
-local function performRender(root)
+local function performRender(root: R.Root)
   local current = root.current
   local wip = createHostRootFiber(root.container)
   wip.alternate = current
@@ -890,8 +761,7 @@ local function performRender(root)
   root.current = wip
 end
 
----@param fiber Fiber
-scheduleUpdate = function(fiber)
+scheduleUpdate = function(fiber: R.Fiber)
   local root = nil
   local p = fiber
   while p ~= nil do
@@ -908,8 +778,7 @@ scheduleUpdate = function(fiber)
   flushRoot(root)
 end
 
----@param root Root
-flushRoot = function(root)
+flushRoot = function(root: R.Root)
   if root.rendering then
     return -- a pass is already in flight; its loop will pick up `dirty`
   end
@@ -928,9 +797,7 @@ end
 
 --- Render a VNode into a host container. Subsequent calls with the same
 --- container update the existing tree in place.
----@param element VNode
----@param container any
-function core.render(element, container)
+function core.render(element: R.VNode, container: any)
   if host == nil then
     error("React: setHostConfig() must be called before render()", 2)
   end
@@ -951,8 +818,7 @@ function core.render(element, container)
 end
 
 --- Remove the rendered tree from a container and run all cleanups.
----@param container any
-function core.unmount(container)
+function core.unmount(container: any)
   local root = roots[container]
   if root == nil then
     return

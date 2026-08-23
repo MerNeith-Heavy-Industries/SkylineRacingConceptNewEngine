@@ -2,6 +2,7 @@ using Lua;
 using Lua.Runtime;
 using Lua.Standard;
 using NFMWorld.LuaSourceGenerator.Generator;
+using NFMWorld.LuaSourceGenerator.Generator.NFMWorld.LuaSourceGenerator.TestFixtures;
 using NFMWorld.LuaSourceGenerator.Test.SampleTypes;
 using NFMWorld.LuaSourceGenerator.TestFixtures;
 using NFMWorld.LuaSourceGenerator.TestFixtures.Lua;

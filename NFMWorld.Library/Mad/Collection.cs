@@ -1,5 +1,8 @@
+using nfm_world_library.Lua;
+
 namespace NFMWorldLibrary;
 
+[LuaVisible]
 public enum Collection
 {
     /// Game cars

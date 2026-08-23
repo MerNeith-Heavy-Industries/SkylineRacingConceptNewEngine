@@ -36,9 +36,7 @@ public class LuaAi : BaseAi
     {
         _scriptPath = scriptPath;
 
-        _state = LuaState.Create(LuaNfmwPlatform.Instance);
-        _state.OpenStandardLibraries();
-        LuaVisibleTypeRegistry.RegisterAll(_state);
+        _state = LuaHelpers.OpenState();
 
         _state.Environment["AI"] = new LuaAiContext(gamemode, aiPlayer, this);
 

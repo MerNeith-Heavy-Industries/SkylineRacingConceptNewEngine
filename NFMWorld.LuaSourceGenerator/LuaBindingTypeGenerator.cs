@@ -5,7 +5,7 @@ using WorldXaml.Generator.Common;
 namespace NFMWorld.LuaSourceGenerator;
 
 // TODO: lua/ts stubs, global static initializer on GeneratorGenerated
-internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTypeGenerator
+internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) : BaseLuaTypeGenerator
 {
     public string GenerateCode()
     {
@@ -21,7 +21,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
         sb.AppendLine("#pragma warning disable CS0108");
         sb.AppendLine("#pragma warning disable CS8625");
         sb.AppendLine();
-        sb.AppendLine("namespace NFMWorld.LuaSourceGenerator.Generator");
+        sb.AppendLine($"namespace {ns}");
         using (sb.Block())
         {
             sb.AppendLine("partial class GeneratorGenerated");
@@ -97,14 +97,14 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type) : BaseLuaTyp
                         sb.AppendLine("global::Lua.LuaTable? global::Lua.ILuaUserData.Metatable");
                         using (sb.Block())
                         {
-                            sb.AppendLine($"get => global::NFMWorld.LuaSourceGenerator.Generator.GeneratorGenerated.{GetMetatableName(type)};");
+                            sb.AppendLine($"get => global::{ns}.GeneratorGenerated.{GetMetatableName(type)};");
                             sb.AppendLine("set => throw new System.InvalidOperationException(\"The metatable of a [LuaVisible] type cannot be assigned to.\");");
                         }
                         
-                        sb.AppendLine($"public static global::Lua.LuaTable Metatable => global::NFMWorld.LuaSourceGenerator.Generator.GeneratorGenerated.{GetMetatableName(type)};");
+                        sb.AppendLine($"public static global::Lua.LuaTable Metatable => global::{ns}.GeneratorGenerated.{GetMetatableName(type)};");
                     }
 
-                    sb.AppendLine($"public static global::Lua.LuaTable TypeTable => global::NFMWorld.LuaSourceGenerator.Generator.GeneratorGenerated.{GetTypeTableName(type)};");
+                    sb.AppendLine($"public static global::Lua.LuaTable TypeTable => global::{ns}.GeneratorGenerated.{GetTypeTableName(type)};");
 
                     if (!type.IsInterface && !type.IsStatic)
                     {
@@ -619,7 +619,8 @@ internal abstract class BaseLuaTypeGenerator
             return $"global::Lua.LuaValue.FromUserData({variable})";
         }
         
-        return $"global::Lua.LuaValue.FromUserData({variable}, {GetMetatableName(variableType)})";
+        // safe across assemblies
+        return $"global::NFMWorld.LuaSourceGenerator.Generator.LuaVisibleTypeMetatableRegistry<{variableType.FullTypeName}>.Metatable";
     }
     
     [return: NotNullIfNotNull(nameof(ns))]

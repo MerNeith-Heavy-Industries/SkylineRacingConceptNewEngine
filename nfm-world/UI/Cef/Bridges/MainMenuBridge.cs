@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Lua;
 using MemoryPack;
+using nfm_world_library.Lua;
 
 namespace NFMWorld.UI.Cef;
 
@@ -26,14 +28,14 @@ public sealed class MainMenuBridge : PhaseBridge
     /// </summary>
     public SettingsHandler Settings => _settings;
 
-    protected override void OnMessage(string type, JsonElement? args)
+    protected override void OnMessage(string type, LuaValue args)
     {
         switch (type)
         {
             case "navigate":
-                if (args is { } a && a.TryGetProperty("page", out var page))
+                if (args.TryRead<LuaTable>(out var a) && a.TryGetValue("page", out var page))
                 {
-                    NavigateRequested?.Invoke(page.GetString() ?? "");
+                    NavigateRequested?.Invoke(page.ReadOrDefault<string>() ?? "");
                 }
                 break;
             case "logout":
@@ -47,7 +49,7 @@ public sealed class MainMenuBridge : PhaseBridge
     /// </summary>
     public void PushAccount(string? name, bool isLoggedIn)
     {
-        Push("account", new AccountData(name ?? "", isLoggedIn, (string?)null));
+        Push("account", new AccountData(name ?? "", isLoggedIn, null));
     }
 
     public event Action<string>? NavigateRequested;
@@ -60,6 +62,5 @@ public sealed class MainMenuBridge : PhaseBridge
     public event Action? SettingsRestartConfirmed;
 }
 
-[MemoryPackable]
-[GenerateTypeScript]
-public partial record AccountData(string Name, bool IsLoggedIn, string? AvatarUrl);
+[LuaVisible]
+public partial record AccountData([property: LuaName] string Name, [property: LuaName] bool IsLoggedIn, [property: LuaName] string? AvatarUrl);

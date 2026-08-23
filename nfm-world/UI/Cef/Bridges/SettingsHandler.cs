@@ -1,6 +1,10 @@
 using System.Text.Json;
+using Lua;
 using MemoryPack;
+using nfm_world_library.Lua;
 using NFMWorld.DriverInterface;
+using NFMWorldLibrary.Util;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI.Cef;
 
@@ -15,7 +19,7 @@ namespace NFMWorld.UI.Cef;
 /// </summary>
 public sealed class SettingsHandler : ISubHandler
 {
-    private CefRenderer? _renderer;
+    private UiRenderer? _renderer;
     private string? _capturingAction;
     private string? _originalConfig;
 
@@ -23,7 +27,7 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── ISubHandler ──────────────────────────────────────────────
 
-    public bool TryHandleMessage(string type, JsonElement? args)
+    public bool TryHandleMessage(string type, LuaValue args)
     {
         switch (type)
         {
@@ -50,8 +54,8 @@ public sealed class SettingsHandler : ISubHandler
                 RestartConfirmed?.Invoke();
                 return true;
             case "startCapture":
-                if (args is { } a && a.TryGetProperty("action", out var action))
-                    _capturingAction = action.GetString();
+                if (args.TryRead<LuaTable>(out var a) && a.TryGetValue("action", out var action))
+                    _capturingAction = action.ReadOrDefault<string>();
                 return true;
             case "stopCapture":
                 _capturingAction = null;
@@ -64,7 +68,7 @@ public sealed class SettingsHandler : ISubHandler
         }
     }
 
-    public void OnActivated(CefRenderer renderer)
+    public void OnActivated(UiRenderer renderer)
     {
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         SettingsMenu.ResolutionsChanged += OnResolutionsChanged;
@@ -94,10 +98,10 @@ public sealed class SettingsHandler : ISubHandler
         _originalConfig ??= SettingsMenu.SaveConfigToString();
 
         var snapshot = SettingsMenu.GetCurrentSnapshot();
-        PushMemoryPack("config", snapshot);
+        Push("config", snapshot);
 
         var options = SettingsMenu.GetAvailableOptions();
-        PushMemoryPack("options", options);
+        Push("options", options);
     }
 
     /// <summary>
@@ -112,7 +116,7 @@ public sealed class SettingsHandler : ISubHandler
         if (key == Key.Escape)
         {
             _capturingAction = null;
-            Push("keyCaptured", new { action = (string?)null, keyCode = (int)Key.None, cancelled = true });
+            Push("keyCaptured", new CapturedKey { Action = null, KeyCode = (int)Key.None, Cancelled = true });
             return;
         }
 
@@ -134,26 +138,26 @@ public sealed class SettingsHandler : ISubHandler
 
         var capturedAction = _capturingAction;
         _capturingAction = null;
-        Push("keyCaptured", new { action = capturedAction, keyCode = (int)key, cancelled = false });
+        Push("keyCaptured", new CapturedKey { Action = capturedAction, KeyCode = (int)key, Cancelled = false });
     }
 
     // ── Private helpers ───────────────────────────────────────────
 
-    private void ApplySettingFromJs(JsonElement? args)
+    private void ApplySettingFromJs(LuaValue args)
     {
-        if (args is not { } a || !a.TryGetProperty("key", out var keyProp))
+        if (!args.TryRead<LuaTable>(out var a) || !a.TryGetValue("key", out var keyProp))
             return;
 
-        var key = keyProp.GetString() ?? "";
+        var key = keyProp.ReadOrDefault<string>() ?? "";
         SettingsMenu.ApplySetting(key, a);
     }
 
-    private void HandleResetDefaults(JsonElement? args)
+    private void HandleResetDefaults(LuaValue args)
     {
-        if (args is not { } a || !a.TryGetProperty("section", out var sectionProp))
+        if (!args.TryRead<LuaTable>(out var a) || !a.TryGetValue("section", out var sectionProp))
             return;
 
-        var section = sectionProp.GetString() ?? "";
+        var section = sectionProp.ReadOrDefault<string>() ?? "";
         switch (section)
         {
             case "keyboard":
@@ -169,21 +173,16 @@ public sealed class SettingsHandler : ISubHandler
     private void OnResolutionsChanged()
     {
         var options = SettingsMenu.GetAvailableOptions();
-        PushMemoryPack("options", options);
+        Push("options", options);
         var snapshot = SettingsMenu.GetCurrentSnapshot();
-        PushMemoryPack("config", snapshot);
+        Push("config", snapshot);
     }
 
     // ── Push helpers (hardcoded "settings" prefix) ────────────────
 
-    private void PushMemoryPack<T>(string eventType, T? data)
+    private void Push(string eventType, LuaValue data)
     {
-        _renderer?.PushToJs("settings", eventType, MemoryPackSerializer.Serialize(data));
-    }
-
-    private void Push(string eventType, object? data)
-    {
-        _renderer?.PushToJs("settings", eventType, data);
+        _renderer?.PushToLua("settings", eventType, data);
     }
 
     // ── Events ────────────────────────────────────────────────────
@@ -197,72 +196,77 @@ public sealed class SettingsHandler : ISubHandler
 
 // ── MemoryPack data models ────────────────────────────────────────
 
+[LuaVisible]
+public sealed partial class CapturedKey
+{
+    [LuaName] public string? Action { get; set; }
+    [LuaName] public int KeyCode { get; set; }
+    [LuaName] public bool Cancelled { get; set; }
+}
+
 /// <summary>
 /// Complete snapshot of all current settings, sent from C# to JS.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class SettingsSnapshot
 {
     // Video
-    public int SelectedRenderer { get; set; }
-    public int SelectedResolution { get; set; }
-    public int SelectedDisplayMode { get; set; }
-    public bool Vsync { get; set; }
-    public int FpsLimit { get; set; }
-    public int Antialias { get; set; }
-    public int ShadowCascadeLevel { get; set; }
-    public int ShadowResolution { get; set; }
-    public int RenderDistance { get; set; }
-    public bool LowLatency { get; set; }
-    public float LineWidth { get; set; }
+    [LuaName] public int SelectedRenderer { get; set; }
+    [LuaName] public int SelectedResolution { get; set; }
+    [LuaName] public int SelectedDisplayMode { get; set; }
+    [LuaName] public bool Vsync { get; set; }
+    [LuaName] public int FpsLimit { get; set; }
+    [LuaName] public int Antialias { get; set; }
+    [LuaName] public int ShadowCascadeLevel { get; set; }
+    [LuaName] public int ShadowResolution { get; set; }
+    [LuaName] public int RenderDistance { get; set; }
+    [LuaName] public bool LowLatency { get; set; }
+    [LuaName] public float LineWidth { get; set; }
 
     // Audio
-    public float MasterVolume { get; set; }
-    public float MusicVolume { get; set; }
-    public float EffectsVolume { get; set; }
-    public bool MuteAll { get; set; }
-    public bool RemasteredMusic { get; set; }
+    [LuaName] public float MasterVolume { get; set; }
+    [LuaName] public float MusicVolume { get; set; }
+    [LuaName] public float EffectsVolume { get; set; }
+    [LuaName] public bool MuteAll { get; set; }
+    [LuaName] public bool RemasteredMusic { get; set; }
 
     // Game (Camera)
-    public float Fov { get; set; }
-    public int FollowY { get; set; }
-    public int FollowZ { get; set; }
-    public bool SmoothFov { get; set; }
+    [LuaName] public float Fov { get; set; }
+    [LuaName] public int FollowY { get; set; }
+    [LuaName] public int FollowZ { get; set; }
+    [LuaName] public bool SmoothFov { get; set; }
 
     // Key bindings
-    public KeyBindingData[] KeyBindings { get; set; } = [];
+    [LuaName] public LuaArray<KeyBindingData> KeyBindings { get; set; } = [];
 }
 
 /// <summary>
 /// Single key binding sent to JS.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class KeyBindingData
 {
     /// <summary>Property name on KeyBindings (e.g., "Accelerate").</summary>
-    public string Action { get; set; } = "";
+    [LuaName] public string Action { get; set; } = "";
 
     /// <summary>Human-readable display name (e.g., "Accelerate").</summary>
-    public string DisplayName { get; set; } = "";
+    [LuaName] public string DisplayName { get; set; } = "";
 
     /// <summary>SDL Key enum integer value.</summary>
-    public int KeyCode { get; set; }
+    [LuaName] public int KeyCode { get; set; }
 }
 
 /// <summary>
 /// Lists of valid choices for each dropdown/slider, sent once on enter.
 /// </summary>
-[MemoryPackable]
-[GenerateTypeScript]
+[LuaVisible]
 public sealed partial class AvailableOptions
 {
-    public string[] Renderers { get; set; } = [];
-    public string[] Resolutions { get; set; } = [];
-    public string[] DisplayModes { get; set; } = [];
-    public string[] AntialiasModes { get; set; } = [];
-    public string[] ShadowCascadeLevels { get; set; } = [];
-    public string[] ShadowResolutions { get; set; } = [];
-    public string[] RenderDistanceNames { get; set; } = [];
+    [LuaName] public LuaArray<string> Renderers { get; set; } = [];
+    [LuaName] public LuaArray<string> Resolutions { get; set; } = [];
+    [LuaName] public LuaArray<string> DisplayModes { get; set; } = [];
+    [LuaName] public LuaArray<string> AntialiasModes { get; set; } = [];
+    [LuaName] public LuaArray<string> ShadowCascadeLevels { get; set; } = [];
+    [LuaName] public LuaArray<string> ShadowResolutions { get; set; } = [];
+    [LuaName] public LuaArray<string> RenderDistanceNames { get; set; } = [];
 }

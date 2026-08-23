@@ -1,12 +1,14 @@
 using System.Text.Json;
+using Lua;
 using MemoryPack;
 using NFMWorld.DriverInterface;
+using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI.Cef;
 
 /// <summary>
-/// Abstract base for per-phase C#↔JS bridges. Each phase that uses CEF for UI
-/// creates a subclass, registers it with <see cref="CefRenderer"/> on Enter,
+/// Abstract base for per-phase C#↔Lua bridges. Each phase that uses Lua for UI
+/// creates a subclass, registers it with <see cref="UiRenderer"/> on Enter,
 /// and unregisters on Exit.
 ///
 /// Usage:
@@ -14,7 +16,7 @@ namespace NFMWorld.UI.Cef;
 ///   {
 ///       public MainMenuBridge() : base("main-menu") { }
 ///
-///       protected override void OnMessage(string type, JsonElement? args)
+///       protected override void OnMessage(string type, LuaValue args)
 ///       {
 ///           switch (type)
 ///           {
@@ -25,7 +27,7 @@ namespace NFMWorld.UI.Cef;
 ///
 ///   // In MainMenuPhase:
 ///   _bridge = new MainMenuBridge();
-///   _bridge.Register(_cefRenderer);
+///   _bridge.Register(_uiRenderer);
 ///   _bridge.Push("account", new { Name = "Player", ... });
 /// </summary>
 public abstract class PhaseBridge(string phaseId) : IDisposable
@@ -39,13 +41,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// <summary>
     /// The CefRenderer this bridge is registered with. Set by <see cref="Register"/>.
     /// </summary>
-    protected CefRenderer? Renderer { get; private set; }
-
-    /// <summary>
-    /// The URL to load when this phase becomes active. Subclasses override this
-    /// to return the phase-specific HTML page.
-    /// </summary>
-    public virtual string? PageUrl { get; } = $"#/{phaseId}";
+    protected UiRenderer? Renderer { get; private set; }
 
     /// <summary>
     /// Whether CEF input should be forwarded while this phase is active.
@@ -105,15 +101,12 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// Navigates to <see cref="PageUrl"/> if non-null. Uses ExecuteJavaScript
     /// for hash-only changes to avoid full page reloads.
     /// </summary>
-    public void Register(CefRenderer renderer)
+    public void Register(UiRenderer renderer)
     {
         Renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
-        Renderer.RegisterMessageHandler(PhaseId, DispatchMessage);
+        Renderer.Register(PhaseId, DispatchMessage);
 
-        if (PageUrl is { } url)
-        {
-            Renderer.ExecuteJavaScript($"window.location.href = '{url}';");
-        }
+        Renderer.Navigate(PhaseId);
 
         OnRegistered();
 
@@ -131,7 +124,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
         foreach (var handler in SubHandlers)
             handler.OnDeactivated();
 
-        Renderer?.UnregisterMessageHandler(PhaseId);
+        Renderer?.Unregister(PhaseId);
 
         OnUnregistered();
         Renderer = null;
@@ -142,45 +135,22 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
     /// </summary>
     /// <remarks>
-    /// This method pushes the value via MemoryPack serialization.
-    /// </remarks>
-    protected void PushMemoryPack<T>(string eventType, T? data)
-    {
-        Renderer?.PushToJs(PhaseId, eventType, MemoryPackSerializer.Serialize(data));
-    }
-
-    /// <summary>
-    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
-    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
-    /// </summary>
-    /// <remarks>
     /// This method pushes the value via JSON serialization.
     /// </remarks>
-    protected void Push(string eventType, object? data)
+    protected void Push(string eventType, LuaValue data)
     {
-        Renderer?.PushToJs(PhaseId, eventType, data);
+        Renderer?.PushToLua(PhaseId, eventType, data);
     }
 
     /// <summary>
-    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
-    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
-    /// Supports binary payloads (uint8array) natively through the process message.
-    /// </summary>
-    protected void Push(string eventType, byte[] binary)
-    {
-        Renderer?.PushToJs(PhaseId, eventType, binary);
-    }
-
-    /// <summary>
-    /// Called when the JS page sends a message via nfmw.call(methodName, ...).
+    /// Called when the Lua view sends a message via UiLib.call(methodName, ...).
     /// Subclasses override this to handle phase-specific messages.
     /// </summary>
-    /// <param name="type">The method name called from JS.</param>
-    /// <param name="args">
-    /// The first argument from JS, parsed as a JsonElement if the call included
-    /// a JSON-stringifiable object argument; otherwise null.
+    /// <param name="type">The method name called from Lua.</param>
+    /// <param name="payload">
+    /// The first argument from Lua.
     /// </param>
-    protected abstract void OnMessage(string type, JsonElement? args);
+    protected abstract void OnMessage(string type, LuaValue payload);
 
     /// <summary>
     /// Called after the bridge is successfully registered and the page URL
@@ -197,31 +167,16 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// Dispatch an incoming JS message. Packages the raw args into a JsonElement
     /// for subclasses to consume.
     /// </summary>
-    private void DispatchMessage(string messageType, string? rawJson)
+    private void DispatchMessage(string messageType, LuaValue payload)
     {
-        JsonElement? parsed = null;
-        if (rawJson != null)
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(rawJson);
-                parsed = doc.RootElement.Clone();
-            }
-            catch (JsonException)
-            {
-                // If parsing fails, pass null — the subclass can handle raw args
-                // via the raw string if needed (but most will use the typed path).
-            }
-        }
-
         // Try sub-handlers first; if any consumes the message, stop.
         foreach (var handler in SubHandlers)
         {
-            if (handler.TryHandleMessage(messageType, parsed))
+            if (handler.TryHandleMessage(messageType, payload))
                 return;
         }
 
-        OnMessage(messageType, parsed);
+        OnMessage(messageType, payload);
     }
 
     public virtual void Dispose()

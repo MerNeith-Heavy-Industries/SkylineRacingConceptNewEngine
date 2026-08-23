@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Lua;
 using MemoryPack;
+using nfm_world_library.Lua;
 using NFMWorld.DriverInterface;
 
 namespace NFMWorld.UI.Cef;
@@ -37,7 +39,7 @@ public sealed class HudBridge : PhaseBridge
     /// </summary>
     public bool IsSettingsOpen { get; private set; }
 
-    protected override void OnMessage(string type, JsonElement? args)
+    protected override void OnMessage(string type, LuaValue args)
     {
         switch (type)
         {
@@ -64,7 +66,7 @@ public sealed class HudBridge : PhaseBridge
     /// </summary>
     public void PushHudState(HudStateData state)
     {
-        PushMemoryPack("hudState", state);
+        Push("hudState", state);
     }
 
     /// <summary>
@@ -74,13 +76,13 @@ public sealed class HudBridge : PhaseBridge
     /// </summary>
     public void PushPauseState(int lap, int totalLaps, int position, int totalRacers, string stageName)
     {
-        Push("pauseState", new
+        Push("pauseState", new PauseState
         {
-            lap,
-            totalLaps,
-            position,
-            totalRacers,
-            stageName
+            Lap = lap,
+            TotalLaps = totalLaps,
+            Position = position,
+            TotalRacers = totalRacers,
+            StageName = stageName
         });
     }
 
@@ -106,4 +108,14 @@ public sealed class HudBridge : PhaseBridge
 
     /// <summary>Fired when the user closes settings from the pause menu.</summary>
     public event Action? SettingsCloseRequested;
+}
+
+[LuaVisible]
+public partial class PauseState
+{
+    [LuaName] public int Lap;
+    [LuaName] public int TotalLaps;
+    [LuaName] public int Position;
+    [LuaName] public int TotalRacers;
+    [LuaName] public string StageName;
 }

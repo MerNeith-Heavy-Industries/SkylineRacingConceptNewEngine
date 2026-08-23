@@ -90,22 +90,10 @@ public abstract class BasePhase : IDisposable
     public virtual void Enter()
     {
         // Register the phase's CEF bridge if one is set
-        if (CefBridge != null && GameSparker.CefRenderer != null)
+        if (CefBridge != null && GameSparker.UiRenderer != null)
         {
-            CefBridge.Register(GameSparker.CefRenderer);
+            CefBridge.Register(GameSparker.UiRenderer);
         }
-
-        // Enable/disable CEF input based on phase preference
-        if (GameSparker.CefRenderer != null)
-        {
-            GameSparker.CefRenderer.SetInputEnabled(EnableCefInput);
-        }
-
-        // Consume the current keyboard state to prevent key bleeding.
-        // When a phase transition is triggered by a key press (e.g., Enter on
-        // stage select → garage), the same physical key-down must not be
-        // forwarded to CEF as a new RawKeyDown for the incoming phase's page.
-        GameSparker.CefRenderer?.ConsumeKeyboardState();
     }
 
     /// <summary>

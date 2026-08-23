@@ -158,7 +158,6 @@ public class RacePhase : BaseStageRenderingPhase, IGamemodeContext, IClientCallb
         if (IsPaused) return;
         IsPaused = true;
         RaceState = RaceState.Paused;
-        GameSparker.CefRenderer?.SetInputEnabled(true);
 
         // Push pause context for the overlay (lap, position, stage name)
         if (GamemodeInstance is BaseClientGamemode gm)
@@ -183,9 +182,7 @@ public class RacePhase : BaseStageRenderingPhase, IGamemodeContext, IClientCallb
         if (!IsPaused) return;
         IsPaused = false;
         RaceState = RaceState.InProgress;
-        GameSparker.CefRenderer?.SetInputEnabled(false);
         HudBridge.PushPausedEvent(false);
-        GameSparker.CefRenderer?.ConsumeKeyboardState();
     }
 
     /// <summary>
@@ -199,7 +196,6 @@ public class RacePhase : BaseStageRenderingPhase, IGamemodeContext, IClientCallb
         if (IsPaused)
         {
             IsPaused = false;
-            GameSparker.CefRenderer?.SetInputEnabled(true); // Main menu needs input
         }
         Exited?.Invoke(this, EventArgs.Empty);
     }
