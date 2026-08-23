@@ -147,7 +147,7 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     [EditorBrowsable(EditorBrowsableState.Never)]
     public virtual string DebugToString()
     {
-        return $"Component(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
+        return $"{GetType().Name}(Name={Name}, LayoutX={LayoutX}, LayoutY={LayoutY}, LayoutWidth={LayoutWidth}, LayoutHeight={LayoutHeight})";
     }
 
     #region Focus
@@ -679,6 +679,34 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
         }
     }
 
+    internal bool PostLayout()
+    {
+        var layoutChanged = false;
+
+        if (OnPostLayout())
+        {
+            layoutChanged = true;
+        }
+        
+        foreach (var child in GetChildSnapshot())
+        {
+            if (child is Component cmp)
+            {
+                if (cmp.PostLayout())
+                {
+                    layoutChanged = true;
+                }
+            }
+        }
+
+        return layoutChanged;
+    }
+
+    protected virtual bool OnPostLayout()
+    {
+        return false;
+    }
+
     protected virtual void RenderBackground(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
@@ -886,6 +914,12 @@ public abstract partial class Component : Node, IAnimationCallback, IDisposable
     {
         NotifyUiScaleChanged();
         NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
+        if (PostLayout())
+        {
+            // if the layout has changed by PostLayout, relayout
+            NodeInternal.CalculateLayout(availableSize, YGDirection.YGDirectionLTR);
+        }
+
         Render(new RenderContext(origin ?? default));
     }
 

@@ -50,6 +50,8 @@ public class WorldGame : Game
 
     private static bool _loaded;
     private const int FrameDelay = (int) (1000 / 21.3f);
+    
+    private int _yogaDebugPage = -1;
 
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
 
@@ -84,7 +86,13 @@ public class WorldGame : Game
 
         TextInputEXT.TextInput += character =>
         {
-            GameSparker.CurrentPhase.KeyTyped(character, ImGui.GetIO().WantCaptureKeyboard);
+            var imguiWantsKeyboard = ImGui.GetIO().WantCaptureKeyboard;
+            if (!imguiWantsKeyboard)
+            {
+                GameSparker.UiRenderer?.HandleKeyTyped(character);
+            }
+
+            GameSparker.CurrentPhase.KeyTyped(character, imguiWantsKeyboard);
         };
     }
 
@@ -143,6 +151,7 @@ public class WorldGame : Game
 
         // Initialize UI renderer after GraphicsDevice is ready.
         _uiRenderer = new UiRenderer(this);
+        GameSparker.UiRenderer = _uiRenderer;
 
         _oldKeyState = Keys.FromState(Keyboard.GetState());
         var mouseState = Mouse.GetState();
@@ -344,15 +353,34 @@ public class WorldGame : Game
         foreach (var xnaKey in XnaKeys)
         {
             var nfmKey = Key.FromXna(xnaKey);
+            var imguiWantsKeyboard = ImGui.GetIO().WantCaptureKeyboard;
             if (keys[nfmKey] && !_oldKeyState[nfmKey])
             {
                 GameSparker.KeyPressed(nfmKey);
-                GameSparker.CurrentPhase.KeyPressed(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
+
+                if (!imguiWantsKeyboard)
+                {
+                    GameSparker.UiRenderer?.HandleKeyPressed(nfmKey, keys);
+                }
+
+                GameSparker.CurrentPhase.KeyPressed(nfmKey, imguiWantsKeyboard, keys);
+
+                if (nfmKey == Key.F9)
+                {
+                    _yogaDebugPage++;
+                    if (_yogaDebugPage > YogaDebugger.MaxPages) _yogaDebugPage = -1;
+                }
             }
             else if (!keys[nfmKey] && _oldKeyState[nfmKey])
             {
                 GameSparker.KeyReleased(nfmKey);
-                GameSparker.CurrentPhase.KeyReleased(nfmKey, ImGui.GetIO().WantCaptureKeyboard, keys);
+
+                if (!imguiWantsKeyboard)
+                {
+                    GameSparker.UiRenderer?.HandleKeyReleased(nfmKey, keys);
+                }
+
+                GameSparker.CurrentPhase.KeyReleased(nfmKey, imguiWantsKeyboard, keys);
             }
         }
 
@@ -375,24 +403,57 @@ public class WorldGame : Game
 
         foreach (var button in MouseButtonsArray)
         {
+            var nfmButton = button switch
+            {
+                MouseButtons.None => MouseButton.Primary,
+                MouseButtons.Primary => MouseButton.Primary,
+                MouseButtons.Secondary => MouseButton.Secondary,
+                MouseButtons.Middle => MouseButton.Middle,
+                MouseButtons.XButton1 => MouseButton.XButton1,
+                MouseButtons.XButton2 => MouseButton.XButton2,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            
             if (buttons.HasFlag(button) && !_oldMouseState.HasFlag(button))
             {
-                GameSparker.CurrentPhase.MousePressed(newState.X, newState.Y, wantCaptureMouse, MouseButton.Primary, buttons, ctrlKey, shiftKey, altKey);
+                if (!wantCaptureMouse)
+                {
+                    GameSparker.UiRenderer?.HandleMousePressed(newState.X, newState.Y, nfmButton, buttons, ctrlKey, shiftKey, altKey);
+                }
+
+                GameSparker.CurrentPhase.MousePressed(newState.X, newState.Y, wantCaptureMouse, nfmButton, buttons, ctrlKey, shiftKey, altKey);
             }
             else if (!buttons.HasFlag(button) && _oldMouseState.HasFlag(button))
             {
-                GameSparker.CurrentPhase.MouseReleased(newState.X, newState.Y, wantCaptureMouse, MouseButton.Primary, buttons, ctrlKey, shiftKey, altKey);
+                if (!wantCaptureMouse)
+                {
+                    GameSparker.UiRenderer?.HandleMouseReleased(newState.X, newState.Y, nfmButton, buttons, ctrlKey, shiftKey, altKey);
+                }
+
+                GameSparker.CurrentPhase.MouseReleased(newState.X, newState.Y, wantCaptureMouse, nfmButton, buttons, ctrlKey, shiftKey, altKey);
             }
         }
 
         if (mousePosition.X != _oldMousePosition.X || mousePosition.Y != _oldMousePosition.Y)
         {
+            if (!wantCaptureMouse)
+            {
+                GameSparker.UiRenderer?.HandleMouseMoved(newState.X, newState.Y, buttons, ctrlKey, shiftKey, altKey);
+            }
+
             GameSparker.CurrentPhase.MouseMoved(mousePosition.X, mousePosition.Y, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
+            YogaDebugger.MouseMove(mousePosition.X, mousePosition.Y);
         }
 
         if (scrollValue != _oldScrollValue)
         {
             var delta = scrollValue - _oldScrollValue;
+            
+            if (!wantCaptureMouse)
+            {
+                GameSparker.UiRenderer?.HandleMouseScrolled(newState.X, newState.Y, delta, buttons, ctrlKey, shiftKey, altKey);
+            }
+
             GameSparker.CurrentPhase.MouseScrolled(mousePosition.X, mousePosition.Y, delta, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
         }
 
@@ -420,6 +481,9 @@ public class WorldGame : Game
         
         // Render UI overlay
         _uiRenderer?.Render();
+
+        if (_yogaDebugPage >= 0)
+            YogaDebugger.Render(_yogaDebugPage);
 
         _nvg.Render();
 

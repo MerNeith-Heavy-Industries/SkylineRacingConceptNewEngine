@@ -8,7 +8,7 @@ namespace NFMWorld.Reactor;
 /// A node containing text. This is a leaf node; it contains no children.
 /// </summary>
 [LuaVisible]
-public partial class TextNode : Node, IReceivesTextInvalidation, IRichTextElement
+public partial class TextNode : Node, IReceivesTextInvalidation, IRichTextLeaf
 {
     [LuaName]
     public override ReadOnlyLuaArray<Node> VisualChildren => ReadOnlyLuaArray<Node>.Empty;
@@ -38,4 +38,5 @@ public partial class TextNode : Node, IReceivesTextInvalidation, IRichTextElemen
     FontFamily? IRichTextElement.FontFamily => null;
     float? IRichTextElement.FontSize => null;
     FontStyle? IRichTextElement.FontStyle => null;
+    public IReadOnlyList<IRichTextElement> Children { get; }
 }

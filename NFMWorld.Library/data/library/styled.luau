@@ -14,8 +14,11 @@ local function merge<T>(a: T, b: T): T
     if b == nil then return a end
     if type(a) == "table" and type(b) == "table" then
         local c = {}
-        for k, v in pairs(b) do
+        for k, v in pairs(a) do
             c[k] = merge((a :: any)[k], v)
+        end
+        for k, v in pairs(b) do
+            c[k] = merge((b :: any)[k], v)
         end
         return c
     end
@@ -149,7 +152,7 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
                     setIsHover(false)
                     setIsFocus(false)
                 end
-            end)
+            end, {})
 
             local onHover = useCallback(function() setIsHover(true) end, {})
             local onLeave = useCallback(function() setIsHover(false) end, {})

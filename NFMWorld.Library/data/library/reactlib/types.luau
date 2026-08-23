@@ -98,6 +98,6 @@ export type VNode = {
 export type Component = (props: VNodeProps) -> (VNode | string | number | boolean | nil | Array<VNode>)
 export type ElementType = string | Component | { [string]: any }
 export type Child = VNode | string | number | boolean | nil | ((value: any) -> any)
-export type Children = Child | Array<Child>
+export type Children = Child | {Child} | {VNode} | {string} | {number} | {boolean} | {nil} | {((value: any) -> any)}
 
 return nil

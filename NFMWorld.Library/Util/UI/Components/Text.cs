@@ -6,6 +6,7 @@ using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Util;
+using ObservableCollections;
 
 namespace NFMWorld.Reactor;
 
@@ -33,7 +34,7 @@ public interface IReceivesTextInvalidation
 /// A text element. Inside of Text, only other Text and <see cref="TextNode"/> can be nested. Nested <see cref="Text"/>
 /// and <see cref="TextNode"/> inherit the styles from their parent elements.
 /// </summary>
-public class Text : Component, IRichTextElement, IReceivesTextInvalidation
+public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
 {
     protected bool Invalidated { get; private set; }= true;
     public ComplexTextMetrics.RichTextContainer? LaidOutComplexText;
@@ -41,6 +42,8 @@ public class Text : Component, IRichTextElement, IReceivesTextInvalidation
     public override bool DebugIsContentfulNode => true;
     
     public ComponentChildCollection Children { get; }
+
+    IEnumerable<IRichTextElement> IRichTextContainer.Children => Children.OfType<IRichTextElement>();
 
     public override ReadOnlyLuaArray<Node> VisualChildren { get; }
 
@@ -61,8 +64,15 @@ public class Text : Component, IRichTextElement, IReceivesTextInvalidation
     {
         Children = new ComponentChildCollection(this);
         VisualChildren = new ReadOnlyLuaArray<Node>(Children);
+
+        Children.CollectionChanged += OnChildrenChanged;
     }
-    
+
+    private void OnChildrenChanged(in NotifyCollectionChangedEventArgs<Node> e)
+    {
+        InvalidateText();
+    }
+
     public TextStyles TextStyles
     {
         get;
@@ -130,10 +140,9 @@ public class Text : Component, IRichTextElement, IReceivesTextInvalidation
         base.RenderBackground(position, size);
     }
 
-    [ClientOnly]
-    protected override void RenderContent(LuaVector2 position, LuaVector2 size)
+    protected override bool OnPostLayout()
     {
-        base.RenderContent(position, size);
+        base.OnPostLayout();
         
         if (HasNewLayout && TextStyles.OverflowBehavior is not Reactor.OverflowBehavior.Stretch and not Reactor.OverflowBehavior.None && TextStyles.BreakType is not Reactor.BreakType.None)
         {
@@ -144,8 +153,17 @@ public class Text : Component, IRichTextElement, IReceivesTextInvalidation
         if (Invalidated)
         {
             OnInvalidated();
-            RelayoutText(size);
+            RelayoutText(LayoutContentSize);
+            return true;
         }
+
+        return false;
+    }
+
+    [ClientOnly]
+    protected override void RenderContent(LuaVector2 position, LuaVector2 size)
+    {
+        base.RenderContent(position, size);
 
         Debug.Assert(LaidOutComplexText != null, "Complex text layout should have been calculated in RelayoutText method.");
 

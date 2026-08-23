@@ -41,6 +41,7 @@ local Root = styled(View) {
 local PageTitle = styled(Text) {
 	fontSize = 48,
 	fontStyle = "bold",
+	fontFamily = "Adventure",
 	-- letterSpacing = 4,
 	-- textTransform = "uppercase",
 	marginBottom = 8,
@@ -58,24 +59,23 @@ local Items = styled(View) {
 	flexDirection = "column",
 	gap = 6,
 	minWidth = 320,
+	alignItems = "stretch",
 }
 
-local ItemBtn = styled(Text) {
+local ItemBtn = styled(View) {
 	display = "flex",
 	flexDirection = "column",
 	alignItems = "flex-start",
 	padding = 14,
-	color = "#fff",
-	backgroundColor = "rgba(255,255,255,0.06)",
+	backgroundColor = "rgba(60,60,60,0.12)",
 	borderWidth = "1px",
 	borderColor = "rgba(255,255,255,0.1)",
 	borderRadius = 8,
 	-- cursor = 'pointer',
 	-- transition = 'all 0.15s ease',
-	textAlign = "left",
-	width = "100%",
+	-- width = "100%",
 	hover = {
-		backgroundColor = "rgba(79,195,247,0.12)",
+		backgroundColor = "rgba(79,195,247,0.24)",
 		borderColor = "rgba(79,195,247,0.25)",
 		-- transform = 'translateY(-1px)',
 	},
@@ -83,6 +83,8 @@ local ItemBtn = styled(Text) {
 }
 
 local ItemLabel = styled(Text) {
+	color = "#fff",
+	textAlign = "left",
 	fontSize = 16,
 	fontStyle = "bold",
 	-- letterSpacing = 1,
@@ -138,6 +140,15 @@ local function map<T, V>(tbl: { T }, f: (T) -> V): { V }
 	return t
 end
 
+local function append<T>(a: { T }, b: T): { T }
+	local result = {}
+	for i = 1, #a do
+		result[i] = a[i]
+	end
+	result[#result + 1] = b
+	return result
+end
+
 local function MainMenu()
 	local account, setAccount = useState<<AccountData | nil>>(nil)
 	local pageStack, setPageStack = useState<<{ MenuPage }>> {}
@@ -155,7 +166,8 @@ local function MainMenu()
 
 	local pushPage = useCallback(function(page: MenuPage)
 		setPageStack(function(s)
-			return { table.unpack(s), page }
+			-- table.unpack returns nil on an empty table, so use append
+			return append(s, page)
 		end)
 	end, {})
 
@@ -389,31 +401,34 @@ local function MainMenu()
 
 	return (
 		x(Root) {
-			x(PageTitle) { currentPage.title },
+			x(PageTitle) { name = "PageTitle", currentPage.title },
 			x(Subtitle) {
-				#pageStack == 0
-						and (account and account.isLoggedIn and ("Welcome, %s"):format(account.name) or "Racing Simulator")
+				name = "Subtitle",
+				#pageStack == 0 and (account and account.isLoggedIn and ("Welcome, %s"):format(account.name) or "")
 					or "",
 			},
 			x(Items) {
-				unpack(map(currentPage.items, function(item)
+				name = "Items",
+				map(currentPage.items, function(item)
 					return x(ItemBtn) {
+						name = "ItemBtn",
 						key = item.label,
 						onmousedown = function(event)
 							item.action()
 						end,
-						x(ItemLabel) { item.label },
-						x(ItemDesc) { item.description },
+						x(ItemLabel) { name = "ItemLabel", item.label },
+						x(ItemDesc) { name = "ItemDesc", item.description },
 					}
-				end)),
+				end),
 				showBack and x(BackBtn) {
+					name = "BackBtn",
 					onmousedown = function(event)
 						goBack()
 					end,
 					"← BACK",
 				},
 			},
-			#pageStack == 0 and x(Footer) { "NFM World — CEF + Preact UI" },
+			#pageStack == 0 and x(Footer) { name = "Footer", "NFM World — Lua + React UI" },
 		}
 	)
 end
