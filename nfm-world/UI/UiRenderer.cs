@@ -18,6 +18,7 @@ public class UiRenderer : IDisposable
     private readonly Dictionary<string, MessageHandler> _toCsharpHandlers = new();
     private readonly ConcurrentDictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
     private LuaState _state;
+    private string _currentPhaseId = "main-menu";
 
     public View? ActiveRoot { get; private set; }
 
@@ -101,6 +102,7 @@ public class UiRenderer : IDisposable
 
     public void Navigate(string phaseId)
     {
+        _currentPhaseId = phaseId;
         PushToLua("nfmw", "navigate", phaseId);
     }
 
@@ -115,6 +117,7 @@ public class UiRenderer : IDisposable
         _state = LuaHelpers.OpenState();
         LuaUiLibrary.Register(_state, SetActiveRoot, Call, OnEvent);
         _state.DoFile("data/uis/router.luau");
+        Navigate(_currentPhaseId);
     }
 
     public void HandleKeyPressed(Key key, in Keys keys)
