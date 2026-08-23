@@ -169,7 +169,7 @@ public class CarVisual : MeshedGameObject, IDisposable
             if (++_fixTick == Physics.OriginalTicksPerNewTick) // delay all operations by 3 ticks because of the adjusted tickrate
             {
                 _fixTick = 0;
-                
+
                 if (Mesh.PolyFixState == 1)
                 {
                     Mesh.PolyFixState = 2;
@@ -256,6 +256,22 @@ public class CarVisual : MeshedGameObject, IDisposable
 
     private void ReleaseUnmanagedResources()
     {
+        // Unsubscribe from the backend car's events FIRST. The constructor
+        // subscribed `car.<event> += On...`, which makes `Car` reference this
+        // visual while `this.Car` references the car — a cycle that keeps the
+        // old car + its cloned polygon array + CarPhysics + MadSfx alive until
+        // the next GC. The garage phase swaps CarsInRace[0] on every click, so
+        // without breaking the cycle the dead cars accumulate and GC pressure
+        // steadily degrades the frame rate.
+        var car = Car;
+        car.DamagedX -= OnDamagedX;
+        car.DamagedY -= OnDamagedY;
+        car.DamagedZ -= OnDamagedZ;
+        car.Sparked -= OnSparked;
+        car.Dusted -= OnDusted;
+        car.CarPhysics.Distruct -= OnDistruct;
+        car.Fixed -= OnFixed;
+
         Chips.Dispose();
         Dust.Dispose();
         Flames.Dispose();
