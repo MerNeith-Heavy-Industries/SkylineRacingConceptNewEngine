@@ -146,7 +146,7 @@ end
 --- `fn` runs after every commit for which `deps` changed (or every commit if
 --- `deps` is nil). `fn` may return a cleanup function; the previous cleanup
 --- runs immediately before the next run of the same effect.
-function core.useEffect(fn: (() -> (() -> ()) | nil), deps: Array<any>?)
+function core.useEffect(fn: () -> () | () -> (() -> ()) | nil, deps: Array<any>?)
   local hook = getHook()
   local changed = deps == nil or hook.effectFn == nil or not shallowEqual(hook.deps, deps)
   if changed then

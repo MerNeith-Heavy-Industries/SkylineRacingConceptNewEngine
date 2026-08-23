@@ -161,7 +161,7 @@ export type TextStyles = Styles & {
 export type ViewProps = {
 	name: string?,
 	key: any?,
-	ref: { current: Component? },
+	ref: { current: Component? }?,
 	style: Styles?,
 	onanimationframebegan: (() -> ())?,
 	active: boolean?,
@@ -175,7 +175,7 @@ export type ViewProps = {
 	onmouseenter: ((event: MouseMoveEvent) -> ())?,
 	onmouseleave: ((event: MouseMoveEvent) -> ())?,
 	onkeytype: ((event: KeyboardTypingEvent) -> ())?,
-	onkeypress: ((event: KeyboardEvent) -> ())?,
+	onkeydown: ((event: KeyboardEvent) -> ())?,
 	onkeyup: ((event: KeyboardEvent) -> ())?,
 	onfocus: (() -> ())?,
 	onblur: (() -> ())?,
@@ -201,8 +201,8 @@ export type TextInputProps = ViewProps & {
 	style: TextInputStyles?,
 	value: string?,
 	placeholder: string?,
-	onsubmit: ((value: string) -> nil)?,
-	onchange: ((value: string) -> nil)?,
+	onsubmit: ((value: string) -> ())?,
+	onchange: ((value: string) -> ())?,
 }
 
 React.View = function(props: ViewProps, ...: R.Child): R.VNode
@@ -245,7 +245,11 @@ type function WithChildren(tbl, childType)
 
 	collect(tbl)
 
-	return types.newtable(props, { index = types.number, readresult = childType })
+	local tbl1 = types.newtable(props, { index = types.number, readresult = childType })
+
+    tbl1:setproperty(types.singleton("key"), types.any)
+
+	return tbl1
 end
 
 --- Luau DSL helper function to create a virtual element.
@@ -267,7 +271,7 @@ end
 ---         }
 ---       }
 ---     }
-function React.x<P>(vtype: StatelessFunctionalComponent<P>): (WithChildren<P, R.Children>) -> R.VNode
+function React.x<P>(vtype: StatelessFunctionalComponent<P> | typeof(vdom.FRAGMENT)): (WithChildren<P, R.Children>) -> R.VNode
 	return function(props: WithChildren<P, R.Children>): R.VNode
 		local children = {}
 		local props1 = (props :: any) :: { [number]: R.Children } -- type fix

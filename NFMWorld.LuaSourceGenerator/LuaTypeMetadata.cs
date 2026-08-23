@@ -19,11 +19,11 @@ internal class BaseLuaTypeMetadata
     public bool IsCandidate { get; }
     public bool HasLuaVisibleAttr { get; }
     public bool IsImplicitlyLuaVisible { get => field || HasLuaVisibleAttr; set; }
-    
+
     public bool IsILuaUserData { get; }
     public bool IsReferenceType { get; }
     public bool IsNullableReferenceType { get; }
-    
+
     [MemberNotNullWhen(true, nameof(NullableUnderlyingType))]
     public bool IsNullableValueType { get; }
 
@@ -36,7 +36,7 @@ internal class BaseLuaTypeMetadata
     public bool IsLuaFunction { get; }
     public bool IsLuaValue { get; }
     public bool IsLuaThread { get; }
-    
+
     [MemberNotNullWhen(true, nameof(IEnumerableType))]
     public bool IsArray { get; }
     public bool IsRefStruct { get; }
@@ -80,23 +80,23 @@ internal class BaseLuaTypeMetadata
                              IsLuaValue ||
                              IsLuaThread ||
                              NullableUnderlyingType?.IsBuiltIn == true;
-    
+
     public BaseLuaTypeMetadata? NullableUnderlyingType { get; }
-    
+
     [MemberNotNullWhen(true, nameof(InlineArrayLength))]
     [MemberNotNullWhen(true, nameof(InlineArrayElementType))]
     public bool IsInlineArray { get; }
     public int? InlineArrayLength { get; }
     public BaseLuaTypeMetadata? InlineArrayElementType { get; }
-    
+
     [MemberNotNullWhen(true, nameof(IEnumerableType))]
     public bool IsIEnumerable { get; }
     public BaseLuaTypeMetadata? IEnumerableType { get; }
-    
+
     [MemberNotNullWhen(true, nameof(IEnumerableKeyType))]
     [MemberNotNullWhen(true, nameof(IEnumerableValueType))]
     public bool IsIEnumerableOfKeyValuePair { get; }
-    
+
     public BaseLuaTypeMetadata? IEnumerableKeyType { get; }
     public BaseLuaTypeMetadata? IEnumerableValueType { get; }
 
@@ -167,7 +167,7 @@ internal class BaseLuaTypeMetadata
         }
         IsEnum = symbol is INamedTypeSymbol { EnumUnderlyingType: not null };
         SanitizedTypeName = sanitizedTypeName;
-        
+
         var inlineAttr = symbol.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, references.InlineArrayAttribute));
         if (inlineAttr != null)
         {
@@ -249,7 +249,7 @@ internal class BaseLuaTypeMetadata
 
         return null;
     }
-    
+
     private static bool TryGetKeyValuePairTypes(
         ITypeSymbol type,
         SymbolReferences references,
@@ -274,7 +274,7 @@ internal class BaseLuaTypeMetadata
         valueType = namedType.TypeArguments[1];
         return true;
     }
-    
+
     private static string SanitizeLongTypeName(string fullTypeName)
     {
         // Map primitives to short names
@@ -319,9 +319,9 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
 
     /// <summary>Implemented interface full names (with global::).</summary>
     public string[] InterfaceFullNames { get; }
-    
+
     public BaseLuaTypeMetadata[] Interfaces { get; }
-    
+
     /// <summary>True if the type has required properties/fields (no constructor should be generated).</summary>
     public bool HasRequiredMembers { get; }
 
@@ -336,7 +336,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
     public LuaFieldMetadata[] StaticFields { get; }
     public LuaConstructorMetadata[] Constructors { get; }
     public LuaEnumMemberMetadata[] EnumMembers { get; }
-    
+
     // Instance methods dispatch through __index too, so method-only types
     // (e.g. interfaces or calculators) still need an __index metamethod.
     public bool HasIndex => InstanceFields.Length > 0 || InstanceProperties.Length > 0 || InstanceMethods.Length > 0; // todo check if any readable members exist
@@ -459,7 +459,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
                     .Concat(InstanceFields.Select(f => f.LuaName))
                     .Concat(InstanceMethods.Select(m => m.LuaName))
             );
-            
+
             var inheritedProps = new List<LuaPropertyMetadata>();
             var inheritedFields = new List<LuaFieldMetadata>();
             var inheritedMethods = new List<LuaMethodMetadata>();
@@ -472,7 +472,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
                 var instanceMethods = CollectMethods(baseMembers, references, isStatic: false, symbol);
                 var instanceProperties = CollectProperties(baseMembers, references, isStatic: false);
                 var instanceFields = CollectFields(baseMembers, references, isStatic: false);
-                
+
                 foreach (var m in instanceMethods)
                 {
                     if (seenLuaNames.Add(m.LuaName))
@@ -484,7 +484,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
                     if (seenLuaNames.Add(p.LuaName))
                         inheritedProps.Add(p);
                 }
-                
+
                 foreach (var f in instanceFields)
                 {
                     if (seenLuaNames.Add(f.LuaName))
@@ -493,7 +493,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
 
                 baseType = baseType.BaseType;
             }
-            
+
             // Merge inherited members into the type's own lists
             InstanceProperties = [.. InstanceProperties, .. inheritedProps];
             InstanceFields = [.. InstanceFields, .. inheritedFields];
@@ -554,7 +554,7 @@ internal sealed class LuaTypeMetadata : BaseLuaTypeMetadata
 
         return methods;
     }
-    
+
     // Copied from https://github.com/dotnet/roslyn/blob/d2ff1d83e8fde6165531ad83f0e5b1ae95908289/src/Workspaces/SharedUtilitiesAndExtensions/Compiler/Core/Extensions/ISymbolExtensions.cs#L28-L73
     // Deviates from the original: Protected and ProtectedOrInternal are NOT treated as
     // public here. Lua bindings must only expose fully public members, so protected
@@ -799,7 +799,9 @@ internal class LuaPropertyMetadata(IPropertySymbol s, SymbolReferences reference
     public string PropertyTypeName { get; } = s.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     public BaseLuaTypeMetadata PropertyType { get; } = CreatePropertyType(s, references);
     public bool HasGetter { get; } = s.GetMethod != null;
-    public bool HasSetter { get; } = s.SetMethod != null && !s.SetMethod.IsInitOnly;
+    public bool HasSetter { get; } = s.SetMethod != null
+        && !s.SetMethod.IsInitOnly
+        && s.SetMethod.DeclaredAccessibility == Accessibility.Public;
     public bool IsNullableReferenceType { get; } = s.Type.IsReferenceType && s.Type.NullableAnnotation == NullableAnnotation.Annotated;
     public bool IsNullableValueType { get; } = s.Type.Name.EndsWith("?");
     public string LuaName { get; } = s

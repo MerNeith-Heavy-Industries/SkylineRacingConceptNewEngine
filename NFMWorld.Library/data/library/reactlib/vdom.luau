@@ -82,7 +82,7 @@ export type React_StatelessFunctionalComponent<Props> = (
 ---
 --- The second argument is optional. If it is a child (string, number, VNode
 --- or array of children) it is shifted into the children list.
-function vdom.h<P>(vtype: React_StatelessFunctionalComponent<P>, props: P, ...: R.Child): R.VNode
+function vdom.h<P>(vtype: React_StatelessFunctionalComponent<P>, props: P & { key: any? }, ...: R.Children): R.VNode
   local children = { ... }
   local count = select("#", ...)
 

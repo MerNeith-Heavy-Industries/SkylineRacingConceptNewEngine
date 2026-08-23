@@ -14,6 +14,8 @@ local Text = React.Text
 local Image = React.Image
 local TextInput = React.TextInput
 
+local Settings = require("../components/settings")
+
 -- ── Types ────────────────────────────────────────────────────────
 
 type MenuItem = {
@@ -395,9 +397,9 @@ local function MainMenu()
 	local showBack = #pageStack > 0
 
 	-- ── Embedded Settings view ────────────────────────────────────
-	-- if currentView == "settings" then
-	--   return x(Settings) onClose={() => setCurrentView("menu")} />;
-	-- end
+	if currentView == "settings" then
+		return x(Settings) { onClose = function() setCurrentView("menu") end }
+	end
 
 	return (
 		x(Root) {
