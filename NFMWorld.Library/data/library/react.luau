@@ -47,6 +47,14 @@ React.useRef = core.useRef
 React.useSyncExternalStore = core.useSyncExternalStore
 React.useContext = core.useContext
 
+-- Render profiler (see reactlib/core.luau). `React.renderStats` is a live
+-- table: { flushes, renders, reentrantFlushes, maxPasses, abortedLoops }.
+-- Call `React.resetRenderStats()` to zero it before a measured interaction.
+React.renderStats = core.renderStats
+React.resetRenderStats = core.resetRenderStats
+
+_G.renderStats = core.renderStats
+
 -- Built-in components
 
 export type Styles = {
