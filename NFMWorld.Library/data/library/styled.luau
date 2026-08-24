@@ -6,6 +6,7 @@ local React = require("./react")
 local useState = React.useState
 local useEffect = React.useEffect
 local useCallback = React.useCallback
+local useMemo = React.useMemo
 local h = React.h
 local View = React.View
 
@@ -165,19 +166,21 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
                 outprops[k] = merge(outprops[k], v)
             end
 
-            outprops.style = merge(outprops.style, plain)
-            if isHover and hover ~= nil then
-                outprops.style = merge(outprops.style, hover)
-            end
-            if isFocus and focus ~= nil then
-                outprops.style = merge(outprops.style, focus)
-            end
-
-            -- Only wire hover/focus listeners when the corresponding variant
-            -- actually exists. Wiring them unconditionally made EVERY styled
-            -- component (even those with no hover/focus style) fire
-            -- setIsHover/setIsFocus on cursor enter/leave, forcing a full tree
-            -- re-render on every hover transition and steadily degrading the
+			-- Memoize the merged style so its table identity is stable across
+			-- renders. React's `diffProps` uses reference equality, so a fresh
+			-- table every render made EVERY styled component re-run
+			-- `host.setProperty(style)` on every render (a Lua→C# crossing per
+			-- node). Stable identity lets diffProps skip unchanged styles.
+			outprops.style = useMemo(function()
+				local s = merge(outprops.style, plain)
+				if isHover and hover ~= nil then
+					s = merge(s, hover)
+				end
+				if isFocus and focus ~= nil then
+					s = merge(s, focus)
+				end
+				return s
+			end, { outprops.style, isHover, isFocus })
             -- frame rate the more the user hovers.
             --
             -- Capture the user's own handlers first so the wrappers chain to
