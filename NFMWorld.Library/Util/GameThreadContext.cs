@@ -125,7 +125,7 @@ public class GameThreadContext : SynchronizationContext
         Debug.Assert(Environment.CurrentManagedThreadId == _gameThread.ManagedThreadId);
     }
 
-    public void ExecutePendingTasks()
+    public bool ExecutePendingTasks()
     {
         AssertOnGameThread();
 
@@ -149,5 +149,7 @@ public class GameThreadContext : SynchronizationContext
 
             Logging.Debug($"Pending tasks: {stopwatch.Elapsed}");
         }
+
+        return hasTasks;
     }
 }

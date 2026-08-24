@@ -37,6 +37,7 @@ public class WorldGame : Game
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
+    internal static long LastAsyncTime;
     internal static int LastTickCount;
     private Keys _oldKeyState;
     private MouseButtons _oldMouseState;
@@ -99,7 +100,7 @@ public class WorldGame : Game
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
-        FPSCounter.Update(gameTime, LastTickTime, LastFrameTime);
+        FPSCounter.Update(gameTime, LastTickTime, LastFrameTime, LastAsyncTime);
 
         UpdateInput();
         UpdateMouse();
@@ -136,7 +137,10 @@ public class WorldGame : Game
 
         {
             var transaction = SentrySdk.StartTransaction("GameThreadContext", "gameloop.gamethread");
-            GameThreadContext.Current.ExecutePendingTasks();
+            var t = new MicroStopwatch();
+            t.Start();
+            if (GameThreadContext.Current.ExecutePendingTasks())
+                LastAsyncTime = t.ElapsedMicroseconds;
             transaction.Finish();
         }
 
