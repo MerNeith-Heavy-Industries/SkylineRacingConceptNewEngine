@@ -22,6 +22,7 @@
         <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+        <PackageReference Include="JetBrains.Profiler.Api" Version="1.4.13" />
         <PackageReference Include="LuzFaltex.Core.Collections" Version="0.1.0" />
         <PackageReference Include="MessagePack" Version="3.1.8" />
         <PackageReference Include="MessagePack.Experimental" Version="3.1.8" />
