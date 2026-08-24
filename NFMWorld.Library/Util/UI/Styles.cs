@@ -1,6 +1,6 @@
 ﻿namespace NFMWorld.Reactor;
 
-public struct Styles()
+public struct Styles() : IEquatable<Styles>
 {
     /// <summary>
     /// CSS: visibility - Controls whether the element is visible (visible/hidden/collapsed)
@@ -219,4 +219,78 @@ public struct Styles()
     public float BorderTopRightRadius = 0f;
     public float BorderBottomLeftRadius = 0f;
     public float BorderBottomRightRadius = 0f;
+
+    public bool Equals(Styles other)
+    {
+        return Visibility == other.Visibility && Opacity.Equals(other.Opacity) && Direction == other.Direction && FlexDirection == other.FlexDirection && JustifyContent == other.JustifyContent && AlignItems == other.AlignItems && AlignSelf == other.AlignSelf && AlignContent == other.AlignContent && Position == other.Position && FlexWrap == other.FlexWrap && Overflow == other.Overflow && Display == other.Display && BoxSizing == other.BoxSizing && Nullable.Equals(Flex, other.Flex) && Nullable.Equals(FlexGrow, other.FlexGrow) && Nullable.Equals(FlexShrink, other.FlexShrink) && FlexBasis.Equals(other.FlexBasis) && Left.Equals(other.Left) && Top.Equals(other.Top) && Right.Equals(other.Right) && Bottom.Equals(other.Bottom) && MarginTop.Equals(other.MarginTop) && MarginBottom.Equals(other.MarginBottom) && MarginLeft.Equals(other.MarginLeft) && MarginRight.Equals(other.MarginRight) && PaddingTop.Equals(other.PaddingTop) && PaddingBottom.Equals(other.PaddingBottom) && PaddingLeft.Equals(other.PaddingLeft) && PaddingRight.Equals(other.PaddingRight) && Nullable.Equals(BorderTop, other.BorderTop) && Nullable.Equals(BorderBottom, other.BorderBottom) && Nullable.Equals(BorderLeft, other.BorderLeft) && Nullable.Equals(BorderRight, other.BorderRight) && GapColumn.Equals(other.GapColumn) && GapRow.Equals(other.GapRow) && Width.Equals(other.Width) && Height.Equals(other.Height) && MinWidth.Equals(other.MinWidth) && MinHeight.Equals(other.MinHeight) && MaxWidth.Equals(other.MaxWidth) && MaxHeight.Equals(other.MaxHeight) && Nullable.Equals(AspectRatio, other.AspectRatio) && Nullable.Equals(BorderColor, other.BorderColor) && Nullable.Equals(BackgroundColor, other.BackgroundColor) && BorderTopLeftRadius.Equals(other.BorderTopLeftRadius) && BorderTopRightRadius.Equals(other.BorderTopRightRadius) && BorderBottomLeftRadius.Equals(other.BorderBottomLeftRadius) && BorderBottomRightRadius.Equals(other.BorderBottomRightRadius);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Styles other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+        hashCode.Add((int)Visibility);
+        hashCode.Add(Opacity);
+        hashCode.Add((int)Direction);
+        hashCode.Add((int)FlexDirection);
+        hashCode.Add((int)JustifyContent);
+        hashCode.Add((int)AlignItems);
+        hashCode.Add((int)AlignSelf);
+        hashCode.Add((int)AlignContent);
+        hashCode.Add((int)Position);
+        hashCode.Add((int)FlexWrap);
+        hashCode.Add((int)Overflow);
+        hashCode.Add((int)Display);
+        hashCode.Add((int)BoxSizing);
+        hashCode.Add(Flex);
+        hashCode.Add(FlexGrow);
+        hashCode.Add(FlexShrink);
+        hashCode.Add(FlexBasis);
+        hashCode.Add(Left);
+        hashCode.Add(Top);
+        hashCode.Add(Right);
+        hashCode.Add(Bottom);
+        hashCode.Add(MarginTop);
+        hashCode.Add(MarginBottom);
+        hashCode.Add(MarginLeft);
+        hashCode.Add(MarginRight);
+        hashCode.Add(PaddingTop);
+        hashCode.Add(PaddingBottom);
+        hashCode.Add(PaddingLeft);
+        hashCode.Add(PaddingRight);
+        hashCode.Add(BorderTop);
+        hashCode.Add(BorderBottom);
+        hashCode.Add(BorderLeft);
+        hashCode.Add(BorderRight);
+        hashCode.Add(GapColumn);
+        hashCode.Add(GapRow);
+        hashCode.Add(Width);
+        hashCode.Add(Height);
+        hashCode.Add(MinWidth);
+        hashCode.Add(MinHeight);
+        hashCode.Add(MaxWidth);
+        hashCode.Add(MaxHeight);
+        hashCode.Add(AspectRatio);
+        hashCode.Add(BorderColor);
+        hashCode.Add(BackgroundColor);
+        hashCode.Add(BorderTopLeftRadius);
+        hashCode.Add(BorderTopRightRadius);
+        hashCode.Add(BorderBottomLeftRadius);
+        hashCode.Add(BorderBottomRightRadius);
+        return hashCode.ToHashCode();
+    }
+
+    public static bool operator ==(Styles left, Styles right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Styles left, Styles right)
+    {
+        return !left.Equals(right);
+    }
 }
