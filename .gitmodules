@@ -55,3 +55,6 @@
 [submodule "NanoSvgSharp"]
 	path = NanoSvgSharp
 	url = https://github.com/uwx/NanoSVGSharp
+[submodule "NuLua"]
+	path = NuLua
+	url = https://github.com/uwx/NuLua
