@@ -1,4 +1,5 @@
 ---@class CarStatsData
+---@field fileName string
 ---@field name string
 ---@field collection Collection
 ---@field topSpeed number
