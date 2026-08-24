@@ -141,14 +141,14 @@ local CarCard = React.memo(function(props: {
 	collectionName: string,
 	fileName: string,
 	selected: boolean,
-	onSelect: ((string) -> ()),
+	onSelect: ((string, string) -> ()),
 }): React.VNode
 	local style = useMemo<<React.Style>>(function()
 		return { marginBottom = 8, opacity = props.selected and 1 or 0.7 }
 	end, { props.selected })
 	local onMousedown = useCallback(function()
-		props.onSelect(props.fileName)
-	end, { props.onSelect, props.fileName })
+		props.onSelect(props.collectionName, props.fileName)
+	end, { props.onSelect, props.collectionName, props.fileName })
 	return x(GlassCard) {
 		name = "glasscard " .. props.name,
 		color = props.selected and "#4fc3f7" or "rgba(255,255,255,0.15)",
