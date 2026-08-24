@@ -1,4 +1,5 @@
 declare extern type CarStatsData with
+    fileName: string
     name: string
     collection: Collection
     topSpeed: number
