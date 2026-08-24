@@ -1,5 +1,8 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
+using JetBrains.Profiler.Api;
 using Lua;
+using Microsoft.Extensions.Logging;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.DriverInterface.UI;
 using NFMWorld.Reactor;
@@ -76,6 +79,9 @@ public static class LuaUiLibrary
     {
         var vtype = context.GetArgument<string>(0);
         var props = context.GetArgument<LuaTable>(1);
+        
+        Logging.Debug($"createInstance {vtype}");
+
         switch (vtype)
         {
             case "view":
@@ -142,6 +148,9 @@ public static class LuaUiLibrary
     internal static readonly LuaFunction CreateTextInstance = new("createTextInstance", (context, ct) =>
     {
         var text = context.GetArgument<string>(0);
+        
+        Logging.Debug($"createTextInstance {text}");
+
         return new ValueTask<int>(context.Return( new TextNode() { Text = text }));
     });
 
@@ -149,6 +158,8 @@ public static class LuaUiLibrary
     {
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
+
+        Logging.Debug($"appendChild {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")}");
 
         if (parent is Component cmp)
         {
@@ -170,6 +181,8 @@ public static class LuaUiLibrary
         var child = context.GetArgument<Node>(1);
         var before = context.GetArgument<Node>(2);
 
+        Logging.Debug($"insertBefore {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")} b4 {(before is Component { Name: {} name3 } ? name3 : "Node")}");
+
         if (parent is Component cmp)
         {
             cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
@@ -184,6 +197,8 @@ public static class LuaUiLibrary
     {
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
+
+        Logging.Debug($"removeChild {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")}");
 
         if (parent is Component cmp)
         {
@@ -201,6 +216,8 @@ public static class LuaUiLibrary
         var key = context.GetArgument<string>(1);
         var value = context.GetArgument(2);
 
+        Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
+
         if (instance is Component cmp)
         {
             AssignComponentProperty(key, value, cmp, context.State);
@@ -214,6 +231,8 @@ public static class LuaUiLibrary
         var textInstance = context.GetArgument<TextNode>(0);
         var oldText = context.GetArgumentOrNullClass<string>(1);
         var newText = context.GetArgumentOrNullClass<string>(2);
+
+        Logging.Debug($"commitTextUpdate {oldText}->{newText}");
 
         textInstance.Text = newText;
 
@@ -312,7 +331,9 @@ public static class LuaUiLibrary
                 cmp.MouseLeft = null;
                 cmp.MouseLeft += @event =>
                 {
+                    var stopwatch = Stopwatch.StartNew();
                     state.Call(func, [@event]);
+                    Logging.Debug("MouseLeave: " + stopwatch.Elapsed);
                 };
                 break;
             case "onkeytype" when rawvalue.TryRead<LuaFunction>(out var func):
