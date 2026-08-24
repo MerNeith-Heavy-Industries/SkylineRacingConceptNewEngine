@@ -81,8 +81,11 @@ public class Text : Component, IRichTextContainer, IReceivesTextInvalidation
         get;
         set
         {
-            field = value;
-            InvalidateText();
+            if (field != value)
+            {
+                field = value;
+                InvalidateText();
+            }
         }
     } = new();
 
