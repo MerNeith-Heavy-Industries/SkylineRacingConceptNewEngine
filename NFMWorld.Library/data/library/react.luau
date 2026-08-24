@@ -46,6 +46,7 @@ React.useCallback = core.useCallback
 React.useRef = core.useRef
 React.useSyncExternalStore = core.useSyncExternalStore
 React.useContext = core.useContext
+React.memo = core.memo
 
 -- `React.flushSync(fn)` runs `fn` then renders all pending updates
 -- synchronously (see reactlib/core.luau).
