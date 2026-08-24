@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using JetBrains.Profiler.Api;
 
 namespace NFMWorldLibrary.Util;
 
@@ -128,9 +129,25 @@ public class GameThreadContext : SynchronizationContext
     {
         AssertOnGameThread();
 
+        var stopwatch = Stopwatch.StartNew();
+        var hasTasks = _tasks.Count > 0;
+        if (hasTasks)
+        {
+            MeasureProfiler.StartCollectingData();
+        }
+
         while (_tasks.TryDequeue(out var task))
         {
             task.d(task.state);
+        }
+
+        if (hasTasks)
+        {
+            MeasureProfiler.StopCollectingData();
+
+            MeasureProfiler.SaveData("ExecutePendingTasks");
+
+            Logging.Debug($"Pending tasks: {stopwatch.Elapsed}");
         }
     }
 }
