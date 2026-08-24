@@ -51,9 +51,12 @@ public partial class TextInput : Component
         get;
         set
         {
-            field = value;
-            _text.TextStyles = TextStyles;
-            OnTextInvalidated(false);
+            if (field != value)
+            {
+                field = value;
+                _text.TextStyles = TextStyles;
+                OnTextInvalidated(false);
+            }
         }
     } = new();
 
@@ -62,8 +65,11 @@ public partial class TextInput : Component
         get;
         set
         {
-            field = value;
-            OnTextInvalidated(false);
+            if (field != value)
+            {
+                field = value;
+                OnTextInvalidated(false);
+            }
         }
     } = new();
 
@@ -76,8 +82,11 @@ public partial class TextInput : Component
         get;
         set
         {
-            field = value;
-            OnTextInvalidated(false);
+            if (field != value)
+            {
+                field = value;
+                OnTextInvalidated(false);
+            }
         }
     } = "";
 
@@ -101,8 +110,11 @@ public partial class TextInput : Component
         get;
         private set
         {
-            field = value;
-            _text.TextContent = value;
+            if (field != value)
+            {
+                field = value;
+                _text.TextContent = value;
+            }
         }
     }
 
@@ -680,9 +692,34 @@ public partial class TextInput : Component
     }
 }
 
-public struct TextInputStyles
+public struct TextInputStyles : IEquatable<TextInputStyles>
 {
     public Color CursorColor;
     public Color SelectionColor;
     public Color PlaceholderColor;
+
+    public bool Equals(TextInputStyles other)
+    {
+        return CursorColor.Equals(other.CursorColor) && SelectionColor.Equals(other.SelectionColor) && PlaceholderColor.Equals(other.PlaceholderColor);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is TextInputStyles other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(CursorColor, SelectionColor, PlaceholderColor);
+    }
+
+    public static bool operator ==(TextInputStyles left, TextInputStyles right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(TextInputStyles left, TextInputStyles right)
+    {
+        return !left.Equals(right);
+    }
 }
