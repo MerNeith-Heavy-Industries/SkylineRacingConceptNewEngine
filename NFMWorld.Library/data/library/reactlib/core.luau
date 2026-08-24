@@ -274,6 +274,19 @@ function core.createContext<T>(defaultValue: T): R.Context<T>
   return ctx
 end
 
+--- React.memo(Component, compare?) -> memoized component.
+---
+--- The returned component skips re-rendering (and skips walking its whole
+--- subtree) when props compare equal (default: shallow equality). Bailouts
+--- are automatically invalidated when the subtree owns state or an in-scope
+--- context provider changed value, matching React's semantics.
+---
+--- Returns a table marker (Lua functions can't carry fields) tagged "memo"
+--- by tagOf; beginWork runs the wrapped render only when not bailing out.
+function core.memo<P>(component: R.Component, compare: ((P, P) -> boolean)?): any
+  return { __memo = { render = component, compare = compare } }
+end
+
 --- Render a function component, running its hooks against `fiber`.
 local function renderWithHooks(component: R.Component, fiber: R.Fiber, props: R.VNodeProps): any
   local prevFiber, prevIndex = currentFiber, currentHookIndex
@@ -299,6 +312,7 @@ local function tagOf(vtype: any): string
   if t == "function" then return "function" end
   if t == "string" then return "host" end
   if t == "table" then
+    if vtype.__memo then return "memo" end
     if vtype.__reactProvider then return "provider" end
     if vtype.__reactConsumer then return "consumer" end
     return "host"
@@ -479,6 +493,50 @@ end
 -- Render phase: begin / complete work
 --------------------------------------------------------------------------
 
+--- True if any in-scope context provider changed value this render. A
+--- bailout must be invalidated when context changes, because even with
+--- reference-identical props the subtree's output may depend on context.
+--- Providers push their per-render `changed` flag onto `contextStack`, which
+--- is reset on every render, so this reflects only the current pass.
+local function contextChanged(): boolean
+  for i = 1, #contextStack do
+    if contextStack[i].changed then
+      return true
+    end
+  end
+  return false
+end
+
+--- React.memo prop comparison: custom comparator, else shallow equality.
+local function memoPropsEqual(comp: any, oldProps: { [string]: any }, newProps: { [string]: any }): boolean
+  local compare = comp.__memo and comp.__memo.compare
+  if compare ~= nil then
+    return compare(oldProps, newProps) == true
+  end
+  return shallowEqual(oldProps, newProps)
+end
+
+--- Attempt to bail out: reuse the committed child tree (and hook state) and
+--- mark the fiber so the walk/commit passes skip it. Returns true if bailed.
+--- Bailouts are only allowed when the subtree has no PENDING state update
+--- (`pendingUpdate`, set on the fiber + ancestors by scheduleUpdate — so a
+--- component merely calling useState does NOT block, only a real setState
+--- does) and no in-scope context changed.
+local function tryBailout(fiber: R.Fiber, alternate: R.Fiber): boolean
+  if alternate.pendingUpdate or contextChanged() then
+    return false
+  end
+  fiber.hooks = alternate.hooks
+  fiber.child = alternate.child
+  fiber.bailout = true
+  local c = fiber.child
+  while c ~= nil do
+    c.parent = fiber
+    c = c.sibling
+  end
+  return true
+end
+
 local function beginWork(fiber: R.Fiber)
   local tag = fiber.tag
   if tag == "root" then
@@ -487,8 +545,21 @@ local function beginWork(fiber: R.Fiber)
   elseif tag == "function" then
     local result = renderWithHooks(fiber.type :: R.Component, fiber, fiber.props)
     reconcileChildren(fiber, vdom.normalize(result))
+  elseif tag == "memo" then
+    local comp = fiber.type :: any
+    local alternate = fiber.alternate
+    if alternate ~= nil and alternate.child ~= nil
+      and memoPropsEqual(comp, alternate.props, fiber.props)
+      and tryBailout(fiber, alternate)
+    then
+      return
+    end
+    local result = renderWithHooks(comp.__memo.render, fiber, fiber.props)
+    reconcileChildren(fiber, vdom.normalize(result))
   elseif tag == "provider" then
-    contextStack[#contextStack + 1] = { ctx = fiber.context, value = fiber.props.value }
+    local alt = fiber.alternate
+    local changed = alt ~= nil and alt.props.value ~= fiber.props.value
+    contextStack[#contextStack + 1] = { ctx = fiber.context, value = fiber.props.value, changed = changed }
     reconcileChildren(fiber, fiber.props.children or {})
   elseif tag == "consumer" then
     local children = fiber.props.children or {}
@@ -503,6 +574,14 @@ local function beginWork(fiber: R.Fiber)
     reconcileChildren(fiber, fiber.props.children or {})
   elseif tag == "host" then
     local alternate = fiber.alternate
+    if alternate ~= nil and fiber.props == alternate.props and tryBailout(fiber, alternate) then
+      -- Reference-identical props table: the ENTIRE subtree is unchanged
+      -- (host fibers run no user code; children come from props.children,
+      -- the same table). Reuse the committed child chain and bail out,
+      -- skipping the subtree walk. tryBailout also verifies the subtree
+      -- holds no state and no in-scope context changed.
+      return
+    end
     if alternate ~= nil and propsDiffer(alternate.props, fiber.props) then
       fiber.update = true
     end
@@ -548,7 +627,9 @@ end
 
 local function performUnitOfWork(fiber: R.Fiber): R.Fiber?
   beginWork(fiber)
-  if fiber.child ~= nil then
+  -- Bailout fibers reuse the committed child chain but are already complete;
+  -- do not descend into them (they will not be re-reconciled this pass).
+  if fiber.child ~= nil and not fiber.bailout then
     return fiber.child
   end
   local nextFiber = fiber
@@ -704,10 +785,14 @@ local function commitDeletions(rootFiber: R.Fiber)
       end
       fiber.deletions = nil
     end
-    local child = fiber.child
-    while child ~= nil do
-      stack[#stack + 1] = child
-      child = child.sibling
+    if fiber.bailout then
+      -- unchanged subtree: reused children carry no pending deletions
+    else
+      local child = fiber.child
+      while child ~= nil do
+        stack[#stack + 1] = child
+        child = child.sibling
+      end
     end
   end
 end
@@ -729,14 +814,18 @@ local function commitPlacements(rootFiber: R.Fiber)
       attachRef(fiber)
     end
 
-    -- push children in reverse so they are visited in order
-    local children, child = {}, fiber.child
-    while child ~= nil do
-      children[#children + 1] = child
-      child = child.sibling
-    end
-    for i = #children, 1, -1 do
-      stack[#stack + 1] = children[i]
+    if fiber.bailout then
+      -- unchanged subtree: reused children are already placed
+    else
+      -- push children in reverse so they are visited in order
+      local children, child = {}, fiber.child
+      while child ~= nil do
+        children[#children + 1] = child
+        child = child.sibling
+      end
+      for i = #children, 1, -1 do
+        stack[#stack + 1] = children[i]
+      end
     end
   end
 end
@@ -748,7 +837,12 @@ local function commitPassiveEffects(rootFiber: R.Fiber)
   while true do
     if node ~= nil then
       stack[#stack + 1] = node
-      node = node.child
+      if node.bailout then
+        -- unchanged subtree: no new dirty effects beneath it; pop next.
+        node = nil
+      else
+        node = node.child
+      end
     else
       if #stack == 0 then break end
       local fiber = stack[#stack]
@@ -835,6 +929,11 @@ scheduleUpdate = function(fiber: R.Fiber)
   local root = nil
   local p = fiber
   while p ~= nil do
+    -- Mark a transient "pending update" up the tree so ancestor bailouts
+    -- (memo / host props-identity) are invalidated for this flush. It
+    -- naturally expires: the fresh wip tree committed after the flush carries
+    -- no flags, so later renders are not blocked.
+    p.pendingUpdate = true
     if p.tag == "root" then
       root = roots[p.stateNode]
       break

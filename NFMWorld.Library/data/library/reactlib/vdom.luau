@@ -120,9 +120,12 @@ function vdom.h<P>(vtype: React_StatelessFunctionalComponent<P>, props: P & { ke
     local normalized = {}
     flattenInto(normalized, p.children)
     p.children = normalized
-  else
-    p.children = flat
   end
+  -- When there are no children we leave `p.children` UNSET (like React). The
+  -- old code assigned an empty table here, which gave every VNode a fresh
+  -- `children` table on every render — breaking React.memo's shallow prop
+  -- comparison (children never compared equal). The reconciler already treats
+  -- a nil children as `{}` (`fiber.props.children or {}`).
 
   return markVNode({ type = vtype, props = p, key = p.key })
 end
