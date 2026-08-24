@@ -12,6 +12,7 @@ local React = require("../../library/react")
 local x = React.x
 local View = React.View
 local Text = React.Text
+local useMemo = React.useMemo
 
 local function clamp01(v: number): number
 	if v < 0 then return 0 end
@@ -33,27 +34,32 @@ end
 local function GlassCard(props: { color: string?, style: React.Styles?, children: React.Children } & React.ViewProps): React.VNode
 	local color = props.color or "#4fc3f7"
 
-	local style: React.Styles = {
-		backgroundColor = "rgba(255,255,255,0.05)",
-		borderRadius = 12,
-		borderWidth = 1,
-		borderColor = "rgba(255,255,255,0.1)",
-		paddingTop = 16,
-		paddingBottom = 16,
-		paddingLeft = 20,
-		paddingRight = 20,
-		position = "relative",
-		overflow = "hidden",
-	}
-
-	if props.style ~= nil then
-		for k, v in pairs((props.style :: any)) do
-			(style :: any)[k] = v
+	-- Memoize the merged style so its table identity is stable across renders
+	-- (React's diffProps uses reference equality). props.style is the card's
+	-- memoized style, so this is stable unless the card's selection changes.
+	local style = useMemo(function()
+		local s: React.Styles = {
+			backgroundColor = "rgba(255,255,255,0.05)",
+			borderRadius = 12,
+			borderWidth = 1,
+			borderColor = "rgba(255,255,255,0.1)",
+			paddingTop = 16,
+			paddingBottom = 16,
+			paddingLeft = 20,
+			paddingRight = 20,
+			position = "relative",
+			overflow = "hidden",
+		}
+		if props.style ~= nil then
+			for k, v in pairs((props.style :: any)) do
+				(s :: any)[k] = v
+			end
 		end
-	end
+		return s
+	end, { props.style })
 
-	local bar = x(View) {
-		style = {
+	local barStyle = useMemo(function(): React.Styles
+		return {
 			position = "absolute",
 			top = 0,
 			left = 0,
@@ -62,7 +68,11 @@ local function GlassCard(props: { color: string?, style: React.Styles?, children
 			backgroundColor = color,
 			borderTopLeftRadius = 12,
 			borderTopRightRadius = 12,
-		},
+		}
+	end, { color })
+
+	local bar = x(View) {
+		style = barStyle,
 	}
 
 	-- Forward remaining props (onmousedown, key, ...) to the wrapper View.
