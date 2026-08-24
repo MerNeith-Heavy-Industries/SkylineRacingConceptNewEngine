@@ -86,8 +86,11 @@ public abstract partial class Component : Node, IAnimationCallback
         get;
         set
         {
-            field = value;
-            OnStylesChanged();
+            if (field != value)
+            {
+                field = value;
+                OnStylesChanged();
+            }
         }
     } = new();
 
