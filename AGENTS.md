@@ -138,11 +138,12 @@ Gamemodes are written in **Lua** and share one code path for singleplayer and mu
 
 ### Lua binding pipeline
 
-- `[LuaVisible]` / `[LuaName]` / `[LuaHidden]` (in `NFMWorld.Lua`). Marking a class/struct LuaVisible makes the `NFMWorld.LuaSourceGenerator` emit a partial `T : ILuaUserData` with metatables, type tables, and `data/lua/library/*.lua` stubs — **declare such types `partial`**.
+- `[LuaVisible]` / `[LuaName]` / `[LuaHidden]` (in `NFMWorld.Lua`). Marking a class/struct/interface/enum LuaVisible makes the `NFMWorld.LuaSourceGenerator` emit a partial `T : NuLua.ILuaUserData<T>` (NuLua.Luau target) with `TryGetIndex`/`TrySetIndex`/`SupportedMetamethods`, per-state type tables, and `data/lua/library/*.lua` stubs — **declare such types `partial`**. `[LuaVisible]` interfaces get these as default-interface methods (concrete impls needn't implement them).
 - Hidden ctor pattern: `[LuaHidden]` on constructors whose parameters the generator can't marshal.
-- `LuaVisibleTypeRegistry.RegisterAll(state)` installs namespaces/types into a `LuaState`; call it after `OpenStandardLibraries()`.
-- Cars cross to Lua via `LuaValue.FromUserData(car, LuaVisibleTypeMetatableRegistry<IInGameCar>.Metatable)` (see `LuaGamemode.ToLua`).
-- Lua-CSharp fork: sync execution via `DoString`/`DoFile`/`Run` (throws `LuaYieldException` on suspension); `LuaNfmwPlatform` is VFS-backed.
+- `LuaVisibleTypeRegistry.RegisterAll(NuLua.Luau.LuauState state)` creates all type tables/enum tables on the given state (no static tables); call it after opening libraries. Type tables are global by Lua name (`state["Name"] = ...`).
+- Marshalling: userdata via `state.CreateUserData<T>(value)`, enums via `state.CreateEnumUserData<T>(value)`, fixed64 family via `LuaValue.FromPrimitive(id, value)` (ids 0=Fixed64, 1=f64AngleSingle, 2=f64Euler, 3=Vector3d — metatables/read-back not wired yet). Non-`[LuaVisible]` referenced types (arrays, `List<T>`, BCL types, `[AssemblyLuaVisible]`) are NOT bound — such members are skipped.
+- NuLua.Luau: sync execution via `DoString`/`DoBuffer`; errors from C closures via `state.RaiseError(...)`.
+- NOTE: the GAME Lua runtime (LuaGamemode/LuaHelpers/UiRenderer, `LuaState`/`ILuaUserData` in `NFMWorld.Library`) still targets Lua-CSharp and is currently FROZEN — the generator analyzer was detached from `NFMWorld.Library`/`nfm-world` pending the game-side migration to NuLua.
 
 ### Gotchas
 
