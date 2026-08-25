@@ -311,12 +311,6 @@ declare TypeWithOverloads: {
     staticProcess: ((x: integer) -> string) & ((x: number) -> string) & ((s: string) -> string),
 }
 
-declare extern type TypeWithReferences with
-end
-
-declare TypeWithReferences: {
-}
-
 declare extern type TypeWithSpanParameters with
     name: string
     getName: ((self: TypeWithSpanParameters) -> string)
@@ -355,17 +349,5 @@ declare extern type Vec3 with
 end
 
 declare Vec3: {
-}
-
-declare extern type System.Collections.Generic.List_int_Enumerator with
-end
-
-declare System.Collections.Generic.List_int_Enumerator: {
-}
-
-declare extern type System.Collections.Generic.List_string_Enumerator with
-end
-
-declare System.Collections.Generic.List_string_Enumerator: {
 }
 

@@ -388,11 +388,6 @@ function TypeWithOverloads.staticProcess(x) end
 ---@return string
 function TypeWithOverloads.staticProcess(s) end
 
----@class TypeWithReferences
-
-TypeWithReferences = {}
-
-
 ---@class TypeWithSpanParameters
 ---@field name string
 ---@field getName fun(self: TypeWithSpanParameters): string
@@ -432,15 +427,5 @@ function TypeWithTupleOverloads.new() end
 ---@class Vec3
 
 Vec3 = {}
-
-
----@class System.Collections.Generic.List_int_Enumerator : System.Collections.Generic.IEnumerator_int, System.Collections.IEnumerator, System.IDisposable
-
-System.Collections.Generic.List_int_Enumerator = {}
-
-
----@class System.Collections.Generic.List_string_Enumerator : System.Collections.Generic.IEnumerator_string, System.Collections.IEnumerator, System.IDisposable
-
-System.Collections.Generic.List_string_Enumerator = {}
 
 

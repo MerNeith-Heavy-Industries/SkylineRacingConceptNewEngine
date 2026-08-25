@@ -1,10 +1,45 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using FixedMathSharp;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.FixedMath;
 
-public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquatable<f64AngleSingle>, ISpanFormattable
+public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquatable<f64AngleSingle>, ISpanFormattable, IPrimitiveUserData<f64AngleSingle>
 {
+    #region ILuaUserData
+    
+    public static int PrimitiveId => 2;
+
+    static LuaUserDataMetamethods ILuaUserData<f64AngleSingle>.SupportedMetamethods =>
+        LuaUserDataMetamethods.Unm |
+        LuaUserDataMetamethods.Add |
+        LuaUserDataMetamethods.Sub |
+        LuaUserDataMetamethods.Mul |
+        LuaUserDataMetamethods.Div |
+        LuaUserDataMetamethods.Eq |
+        LuaUserDataMetamethods.Lt |
+        LuaUserDataMetamethods.Le |
+        LuaUserDataMetamethods.ToString |
+        LuaUserDataMetamethods.Index;
+
+    bool ILuaUserData<f64AngleSingle>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    {
+        if (key.TryRead<string>(out var strKey))
+        {
+            if (strKey == "deg") value = LuaValue.FromPrimitive(Degrees);
+            if (strKey == "rad") value = LuaValue.FromPrimitive(Radians);
+        }
+
+        value = default;
+        return false;
+    }
+
+    string ILuaUserData<f64AngleSingle>.ToLuaString(LuauState state) => ToString();
+
+    #endregion
+    
     /// <summary>
     /// A value that specifies the size of a single degree.
     /// </summary>

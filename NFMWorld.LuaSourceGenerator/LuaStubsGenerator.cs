@@ -41,7 +41,7 @@ internal sealed class LuaStubsGenerator(BaseLuaTypeMetadata type)
             foreach (var iface in intfs)
             {
                 var ifaceStub = iface.LuaName;
-                if (ifaceStub != luaName && ifaceStub != "Lua.ILuaUserData")
+                if (ifaceStub != luaName && ifaceStub != "NuLua.Luau.ILuaUserData")
                     baseTypes.Add(ifaceStub);
             }
         }
@@ -173,7 +173,7 @@ internal sealed class LuaStubsGenerator(BaseLuaTypeMetadata type)
         if (t.IsFixed64AngleSingle) return "f64angle";
         if (t.IsFixed64Euler) return "f64euler";
         if (t.IsFixed64Vector3) return "fixed64vector3";
-        
+
         if (t.IsNullableValueType) return $"{ToLuaTypeName(t.NullableUnderlyingType!)}|nil";
 
         if (t.IsArray)
@@ -185,9 +185,9 @@ internal sealed class LuaStubsGenerator(BaseLuaTypeMetadata type)
             return $"{{ [integer|number]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
         }
 
-        if (t.FullTypeName == "global::Lua.LuaTable") return $"table{suff}";
-        if (t.FullTypeName == "global::Lua.LuaFunction") return $"function{suff}";
-        if (t.FullTypeName == "global::Lua.LuaValue") return $"any{suff}";
+        if (t.FullTypeName == "global::NuLua.LuaTable") return $"table{suff}";
+        if (t.FullTypeName == "global::NuLua.LuaFunction") return $"function{suff}";
+        if (t.FullTypeName == "global::NuLua.LuaValue") return $"any{suff}";
 
         return t.LuaName + suff;
     }

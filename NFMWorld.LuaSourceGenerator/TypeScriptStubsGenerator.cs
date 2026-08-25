@@ -102,9 +102,9 @@
 //             "void" => "void",
 //             "object" => "any",
 //             // Map Lua-CSharp base types
-//             "Lua.LuaTable" => "object",
-//             "Lua.LuaFunction" => "Function",
-//             "Lua.LuaValue" => "any",
+//             "NuLua.LuaTable" => "object",
+//             "NuLua.LuaFunction" => "Function",
+//             "NuLua.LuaValue" => "any",
 //             _ => IsFixedMathType(t) ? FixedMathToTSName(t) : StubTypeName(t)
 //         };
 //     }

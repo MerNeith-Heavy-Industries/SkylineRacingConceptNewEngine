@@ -56,7 +56,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                 foreach (var group in luaTypeMetadata.InstanceMethods.GroupBy(m => m.LuaName))
                 {
                     sb.Append($"{group.Key}: ");
-                    
+
                     // overloads
                     foreach (var (m, gidx) in group.Select((e, idx) => (e, idx)))
                     {
@@ -64,7 +64,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                         {
                             sb.Append(" & ");
                         }
-                        
+
                         sb.Append("((");
                         sb.Append($"self: {ToLuaTypeName(type)}");
                         foreach (var (p, idx) in m.Parameters.Select((e, idx) => (e, idx)))
@@ -87,11 +87,11 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
 
                     sb.AppendLine();
                 }
-                
+
                 foreach (var group in luaTypeMetadata.Operators.GroupBy(op => op.MetamethodName))
                 {
                     sb.Append($"{group.Key}: ");
-                    
+
                     // overloads
                     foreach (var (m, gidx) in group.Select((e, idx) => (e, idx)))
                     {
@@ -99,7 +99,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                         {
                             sb.Append(" & ");
                         }
-                        
+
                         sb.Append("((");
                         foreach (var (p, idx) in m.Parameters.Select((e, idx) => (e, idx)))
                         {
@@ -166,7 +166,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                 foreach (var group in luaTypeMetadata.StaticMethods.GroupBy(m => m.LuaName))
                 {
                     sb.Append($"{group.Key}: ");
-                    
+
                     // overloads
                     foreach (var (m, gidx) in group.Select((e, idx) => (e, idx)))
                     {
@@ -174,7 +174,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
                         {
                             sb.Append(" & ");
                         }
-                        
+
                         sb.Append("((");
                         foreach (var (p, idx) in m.Parameters.Select((e, idx) => (e, idx)))
                         {
@@ -270,7 +270,7 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
         if (t.IsFixed64AngleSingle) return "f64angle";
         if (t.IsFixed64Euler) return "f64euler";
         if (t.IsFixed64Vector3) return "fixed64vector3";
-        
+
         if (t.IsNullableValueType) return $"{ToLuaTypeName(t.NullableUnderlyingType!)}|nil";
 
         if (t.IsArray)
@@ -282,9 +282,9 @@ internal sealed class LuauStubsGenerator(BaseLuaTypeMetadata type)
             return $"{{ [integer|number]: {ToLuaTypeName(t.InlineArrayElementType)}}}{suff}";
         }
 
-        if (t.FullTypeName == "global::Lua.LuaTable") return $"{{ [any]: any }}{suff}";
-        if (t.FullTypeName == "global::Lua.LuaFunction") return $"((...any) -> any){suff}";
-        if (t.FullTypeName == "global::Lua.LuaValue") return $"any{suff}";
+        if (t.FullTypeName == "global::NuLua.LuaTable") return $"{{ [any]: any }}{suff}";
+        if (t.FullTypeName == "global::NuLua.LuaFunction") return $"((...any) -> any){suff}";
+        if (t.FullTypeName == "global::NuLua.LuaValue") return $"any{suff}";
 
         return t.LuaName + suff;
     }

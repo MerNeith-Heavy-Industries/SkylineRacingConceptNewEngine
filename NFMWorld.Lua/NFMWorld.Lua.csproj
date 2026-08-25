@@ -8,7 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Lua-CSharp\src\Lua\Lua.csproj" />
+      <ProjectReference Include="..\FixedMathSharp\src\FixedMathSharp\FixedMathSharp.csproj" />
+      <ProjectReference Include="..\NFMWorld.Math\NFMWorld.Math.csproj" />
+      <ProjectReference Include="..\NuLua\src\NuLua.Luau\NuLua.Luau.csproj" />
     </ItemGroup>
 
     <ItemGroup>

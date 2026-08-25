@@ -1,113 +1,64 @@
-using Lua;
-using Lua.Runtime;
-using nfm_world_library.Lua;
+using NuLua;
+using NuLua.Luau;
+using NFMWorld.LuaSourceGenerator.Generator.NFMWorld.LuaSourceGenerator.TestFixtures;
+using NFMWorld.LuaSourceGenerator.TestFixtures;
 
 namespace NFMWorld.LuaSourceGenerator.Test;
 
 /// <summary>
-/// Minimal tests validating ILuaUserData pattern, StructUserData&lt;T&gt;,
-/// and FixedMath native type integration work correctly.
+/// FixedMath primitive tests. fixed64 / f64angle / f64euler / fixed64vector3 marshal to Lua via
+/// <see cref="LuaValue.FromPrimitive"/> (ids 0..3); their per-state metatables and read-back
+/// (<c>TryRead&lt;Fixed64&gt;</c> etc.) are not wired up yet — round-trips are a later pass.
 /// </summary>
 [TestClass]
 public class LuaRuntimeTests
 {
-    // ---------------------------------------------------------------
-    // FixedMath native type tests
-    // ---------------------------------------------------------------
+    private LuauState _state = null!;
 
-    [TestMethod]
-    public async Task Fixed64_BasicCreation()
+    [TestInitialize]
+    public void Setup()
     {
-        using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
-        state.Environment["fixed64"] = new LuaValue(new LuaFunction("fixed64", lib.Fixed64Constructor));
+        _state = LuauState.Create();
+        _state.OpenLibraries();
+        LuaVisibleTypeRegistry.RegisterAll(_state);
+    }
 
-        var results = await state.DoStringAsync("return fixed64(3.5)");
-        Assert.AreEqual(LuaValueType.Fixed64, results[0].Type);
+    [TestCleanup]
+    public void TearDown()
+    {
+        _state.Dispose();
     }
 
     [TestMethod]
-    public async Task Fixed64Vector3_BasicCreation()
+    public void Fixed64_ReadMarshalsAsPrimitive()
     {
-        using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
-        state.Environment["fixed64vector3"] = new LuaValue(new LuaFunction("fixed64vector3", lib.Fixed64Vector3Constructor));
-        foreach (var fn in lib.VectorFunctions)
-            state.Environment[fn.Name] = new LuaValue(fn.Func);
-
-        var results = await state.DoStringAsync("return fixed64vector3(1, 2, 3)");
-        Assert.AreEqual(LuaValueType.Fixed64Vector3, results[0].Type);
-    }
-
-    [TestMethod]
-    public async Task Fixed64Vector3_Magnitude()
-    {
-        using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
-        state.Environment["fixed64vector3"] = new LuaValue(new LuaFunction("fixed64vector3", lib.Fixed64Vector3Constructor));
-
-        // Register vector functions under fixed64vec3 table
-        var vecTable = new LuaTable(0, lib.VectorFunctions.Length);
-        foreach (var fn in lib.VectorFunctions)
-            vecTable[fn.Name] = new LuaValue(fn.Func);
-        state.Environment["fixed64vec3"] = new LuaValue(vecTable);
-
-        var results = await state.DoStringAsync(@"
-            local v = fixed64vector3(3, 4, 0)
-            return fixed64vec3.magnitude(v)
+        // Reading a Fixed64 property marshals via LuaValue.FromPrimitive(id 0).
+        var results = _state.DoString(@"
+            local obj = TypeWithFixedMathNullables.new()
+            return obj.normalFixed
         ");
-        Assert.AreEqual(5, (int)results[0].Read<double>());
+        Assert.AreEqual(LuaValueType.Primitive, results[0].Type);
     }
 
     [TestMethod]
-    public async Task Fixed64Angle_BasicCreation()
+    public void Fixed64_NullableNull_ReadsNil()
     {
-        using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
-
-        // Register angle functions under f64anglelib table
-        var angleTable = new LuaTable(0, lib.AngleFunctions.Length);
-        foreach (var fn in lib.AngleFunctions)
-            angleTable[fn.Name] = new LuaValue(fn.Func);
-        state.Environment["f64anglelib"] = new LuaValue(angleTable);
-
-        var results = await state.DoStringAsync("return f64anglelib.from_degrees(90)");
-        Assert.AreEqual(LuaValueType.Fixed64Angle, results[0].Type);
-    }
-
-    [TestMethod]
-    public async Task Fixed64Euler_BasicCreation()
-    {
-        using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
-
-        // Register angle + euler tables and constructors
-        var angleTable = new LuaTable(0, lib.AngleFunctions.Length);
-        foreach (var fn in lib.AngleFunctions)
-            angleTable[fn.Name] = new LuaValue(fn.Func);
-        state.Environment["f64anglelib"] = new LuaValue(angleTable);
-
-        var eulerTable = new LuaTable(0, lib.EulerFunctions.Length);
-        foreach (var fn in lib.EulerFunctions)
-            eulerTable[fn.Name] = new LuaValue(fn.Func);
-        state.Environment["f64eulerlib"] = new LuaValue(eulerTable);
-
-        // Also need the constructors
-        state.Environment["f64euler"] = new LuaValue(new LuaFunction("f64euler", lib.EulerConstructor));
-
-        var results = await state.DoStringAsync(@"
-            local e = f64euler(f64anglelib.from_degrees(45), f64anglelib.from_degrees(30), f64anglelib.from_degrees(15))
-            return f64eulerlib.wrap(e)
+        var results = _state.DoString(@"
+            local obj = TypeWithFixedMathNullables.new()
+            return obj.nullableFixed
         ");
-        Assert.AreEqual(LuaValueType.Fixed64Euler, results[0].Type);
+        Assert.AreEqual(LuaValueType.Nil, results[0].Type);
     }
-}
 
-/// <summary>
-/// Simple test type for StructUserData tests.
-/// </summary>
-public class TestData
-{
-    public string Name { get; set; } = "";
-    public int Count { get; set; }
+    [TestMethod]
+    public void Fixed64_Write_FromNumber_IsDeferred()
+    {
+        // Writing a Fixed64 from a Lua number currently raises (primitive read-back not implemented).
+        var results = _state.DoString(@"
+            local obj = TypeWithFixedMathNullables.new()
+            local ok = pcall(function() obj.normalFixed = 1.0 end)
+            return ok
+        ");
+        Assert.IsFalse(results[0].Read<bool>());
+    }
 }

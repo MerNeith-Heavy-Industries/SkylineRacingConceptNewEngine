@@ -1,11 +1,42 @@
 ﻿using Maxine.Extensions.Mathematics;
 using NFMWorldLibrary.Util;
 using NFMWorldMath;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.FixedMath;
 
-public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle roll) : IEquatable<f64Euler>
+public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle roll) : IEquatable<f64Euler>, IPrimitiveUserData<f64Euler>
 {
+    #region ILuaUserData
+    
+    public static int PrimitiveId => 3;
+
+    static LuaUserDataMetamethods ILuaUserData<f64Euler>.SupportedMetamethods =>
+        LuaUserDataMetamethods.Unm |
+        LuaUserDataMetamethods.Add |
+        LuaUserDataMetamethods.Sub |
+        LuaUserDataMetamethods.Eq |
+        LuaUserDataMetamethods.ToString |
+        LuaUserDataMetamethods.Index;
+
+    bool ILuaUserData<f64Euler>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    {
+        if (key.TryRead<string>(out var strKey))
+        {
+            if (strKey == "pitch") value = LuaValue.FromPrimitive(Pitch);
+            if (strKey == "yaw") value = LuaValue.FromPrimitive(Yaw);
+            if (strKey == "roll") value = LuaValue.FromPrimitive(Roll);
+        }
+
+        value = default;
+        return false;
+    }
+
+    string? ILuaUserData<f64Euler>.ToLuaString(LuauState state) => ToString();
+    
+    #endregion
+    
     public f64AngleSingle Yaw { get; set; } = yaw;
     public f64AngleSingle Pitch { get; set; } = pitch;
     public f64AngleSingle Roll { get; set; } = roll;
