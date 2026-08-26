@@ -1,5 +1,7 @@
-using Lua;
 using LuauBenchmark;
+using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 
 // Quiet the game's per-node Debug logging (LuaUiLibrary logs every setProperty/commitTextUpdate),
 // which would otherwise flood stdout and skew the timing. Default to Warning; override to e.g.
@@ -16,31 +18,69 @@ if (Environment.GetEnvironmentVariable("NFMW_LOG_MIN_LEVEL") is null)
 var scenario = args.Length > 0 ? args[0] : "all";
 var runs = ParseInt(args, 1, 3);
 
-var root = FindRepoRoot();
-var libRoot = Path.Combine(root, "NFMWorld.Library", "data", "library");
-var scripts = Path.Combine(root, "bench", "luau-benchmark", "scripts");
-
-using var host = new BenchmarkHost(libRoot);
-
-Console.WriteLine("=== Luau VM benchmark (Lua-CSharp host) ===");
-Console.WriteLine($"Best of {runs} runs. CPU = os.clock (in-Lua), Wall = C# Stopwatch.\n");
-
-switch (scenario)
+// The preact scenarios trigger a native STACK OVERFLOW in luau.dll's reentrant userdata/GC
+// path (minidump: 0xC000001D, RIP poisoned to 0xAAAA...). As a stopgap, run on a dedicated
+// thread with a large stack reservation.
+const int MaxStackBytes = 512 * 1024 * 1024;
+Exception? runError = null;
+var runner = new Thread(
+    () =>
+    {
+        try
+        {
+            Run(scenario, runs, args);
+        }
+        catch (Exception ex)
+        {
+            runError = ex;
+        }
+    },
+    MaxStackBytes
+);
+runner.Start();
+runner.Join();
+if (runError is not null)
 {
-    case "fixed64":
-        RunFixed64(host, scripts, runs);
-        break;
-    case "preact-small":
-        RunPreact(host, scripts, runs, name: "preact-small", size: 16, fresh: true, iterations: 10000);
-        break;
-    case "preact-large":
-        RunPreact(host, scripts, runs, name: "preact-large", size: 1024, fresh: false, iterations: 100);
-        break;
-    default:
-        RunFixed64(host, scripts, runs);
-        RunPreact(host, scripts, runs, "preact-small", 16, true, 10000);
-        RunPreact(host, scripts, runs, "preact-large", 1024, false, 100);
-        break;
+    throw runError;
+}
+
+void Run(string scenario, int runs, string[] args)
+{
+    var root = FindRepoRoot();
+    // RepoModuleSource is rooted at NFMWorld.Library and uses VFS-style keys ("data/...").
+    var libraryRoot = Path.Combine(root, "NFMWorld.Library");
+    var scripts = Path.Combine(root, "bench", "luau-benchmark", "scripts");
+
+    var host = new BenchmarkHost(libraryRoot);
+
+    Console.WriteLine("=== Luau VM benchmark (NuLua / Luau host) ===");
+    Console.WriteLine($"Best of {runs} runs. CPU = os.clock (in-Lua), Wall = C# Stopwatch.\n");
+
+    switch (scenario)
+    {
+        case "fixed64":
+            RunFixed64(host, scripts, runs);
+            break;
+        case "preact-small":
+            RunPreact(host, scripts, runs, name: "preact-small", size: 16, fresh: true, iterations: 10000);
+            break;
+        case "preact-large":
+            RunPreact(host, scripts, runs, name: "preact-large", size: 1024, fresh: false, iterations: 100);
+            break;
+        case "diag":
+        {
+            var path = Path.Combine(scripts, "diag_create_root.luau");
+            var n = ParseInt(args, 2, 1000);
+            var (dcpu, dwall, _) = host.RunScript(path, LuaValue.FromNumber((double)n));
+            PrintResult("diag-top-level", dcpu, dwall);
+            break;
+        }
+        default:
+            RunFixed64(host, scripts, runs);
+            RunPreact(host, scripts, runs, "preact-small", 16, true, 10000);
+            RunPreact(host, scripts, runs, "preact-large", 1024, false, 100);
+            break;
+    }
 }
 
 // ---------------------------------------------------------------- scenarios
@@ -55,9 +95,9 @@ static void RunFixed64(BenchmarkHost host, string scripts, int runs)
     string? checksum = null;
     for (var r = 0; r < runs; r++)
     {
-        var (cpu, wall, rets) = host.RunScript(path, new LuaValue((double)iterations), new LuaValue((double)nodes));
+        var (cpu, wall, rets) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)nodes));
         if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
-        if (rets.Length > 1) checksum = rets[1].ToString();
+        if (rets.Length > 1 && rets[1].TryConvertLuaValue<string>(out var checksumStr)) checksum = checksumStr;
     }
     PrintResult("fixed64", bestCpu, bestWall);
     Console.WriteLine($"  checksum: {checksum}\n");
@@ -72,7 +112,7 @@ static void RunPreact(BenchmarkHost host, string scripts, int runs, string name,
     double bestCpu = double.MaxValue, bestWall = double.MaxValue;
     for (var r = 0; r < runs; r++)
     {
-        var (cpu, wall, _) = host.RunScript(path, new LuaValue((double)iterations), new LuaValue((double)size), new LuaValue(fresh));
+        var (cpu, wall, _) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)size), LuaValue.FromBoolean(fresh));
         if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
     }
     PrintResult(name, bestCpu, bestWall);

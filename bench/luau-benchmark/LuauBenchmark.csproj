@@ -16,12 +16,25 @@
     <!-- The real C# UI host (LuaUiLibrary), View/Component/Yoga, DummyBackend,
          LuaVisibleTypeRegistry, and the game's Lua helpers. -->
     <ProjectReference Include="..\..\NFMWorld.Library\NFMWorld.Library.csproj" />
-    <!-- The Lua VM. This is the reference that the Luau fork swaps for NuLua.Luau. -->
-    <ProjectReference Include="..\..\Lua-CSharp\src\Lua\Lua.csproj" />
+    <!-- The Lua VM: real Luau via NuLua.Luau (this branch). -->
+    <ProjectReference Include="..\..\NuLua\src\NuLua.Luau\NuLua.Luau.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="scripts\**\*.luau" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!--
+    NuLua.Luau's native luau.dll lands under runtimes/{rid}/native/, but DllImport("luau")
+    needs it on the probing path. Copy the current RID's binary to the output root
+    (mirrors NFMWorld.Library.Test / NuLua.Tests).
+  -->
+  <Target Name="CopyLuauNativeToRoot" AfterTargets="Build">
+    <ItemGroup>
+      <_LuauNative Include="$(OutDir)runtimes\$(NETCoreSdkRuntimeIdentifier)\native\luau.dll"
+                    Condition="'$(NETCoreSdkRuntimeIdentifier)' != '' and Exists('$(OutDir)runtimes\$(NETCoreSdkRuntimeIdentifier)\native\luau.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_LuauNative)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
