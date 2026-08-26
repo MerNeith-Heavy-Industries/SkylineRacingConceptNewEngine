@@ -1,7 +1,56 @@
----@class CounterData
----@field value integer
+---@class CarStatsData
+---@field fileName string
+---@field name string
+---@field collection Collection
+---@field topSpeed number
+---@field acceleration number
+---@field handling number
+---@field powerSave number
+---@field strength number
+---@field maxHealth number
+---@field stunting number
+---@field hypergliding number
+---@field abing number
 
-CounterData = {}
+CarStatsData = {}
+
+
+---@class CarCollectionsData
+---@field collections { [integer|number]: CarCollectionData }
+
+CarCollectionsData = {}
+
+
+---@class CarCollectionData
+---@field id Collection
+---@field name string
+---@field cars { [integer|number]: CarStatsData }
+
+CarCollectionData = {}
+
+
+---@class CurrentCollectionData
+---@field id Collection
+
+CurrentCollectionData = {}
+
+
+---@class PauseState
+---@field lap integer
+---@field totalLaps integer
+---@field position integer
+---@field totalRacers integer
+---@field stageName string
+
+PauseState = {}
+
+
+---@class AccountData : System.IEquatable_AccountData
+---@field name string
+---@field isLoggedIn boolean
+---@field avatarUrl string
+
+AccountData = {}
 
 
 ---@class CapturedKey
@@ -67,58 +116,9 @@ function KeyBindingData.new() end
 AvailableOptions = {}
 
 
----@class CarStatsData
----@field fileName string
----@field name string
----@field collection Collection
----@field topSpeed number
----@field acceleration number
----@field handling number
----@field powerSave number
----@field strength number
----@field maxHealth number
----@field stunting number
----@field hypergliding number
----@field abing number
+---@class CounterData
+---@field value integer
 
-CarStatsData = {}
-
-
----@class CarCollectionsData
----@field collections { [integer|number]: CarCollectionData }
-
-CarCollectionsData = {}
-
-
----@class CarCollectionData
----@field id Collection
----@field name string
----@field cars { [integer|number]: CarStatsData }
-
-CarCollectionData = {}
-
-
----@class CurrentCollectionData
----@field id Collection
-
-CurrentCollectionData = {}
-
-
----@class PauseState
----@field lap integer
----@field totalLaps integer
----@field position integer
----@field totalRacers integer
----@field stageName string
-
-PauseState = {}
-
-
----@class AccountData : System.IEquatable_AccountData
----@field name string
----@field isLoggedIn boolean
----@field avatarUrl string
-
-AccountData = {}
+CounterData = {}
 
 

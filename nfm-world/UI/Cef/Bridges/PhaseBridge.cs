@@ -1,7 +1,6 @@
-using System.Text.Json;
-using Lua;
-using MemoryPack;
 using NFMWorld.DriverInterface;
+using NuLua;
+using NuLua.Luau;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI.Cef;
@@ -98,7 +97,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
 
     /// <summary>
     /// Register this bridge with the given CefRenderer. Called from Phase.Enter().
-    /// Navigates to <see cref="PageUrl"/> if non-null. Uses ExecuteJavaScript
+    /// Navigates to <see cref="PhaseId"/> if non-null. Uses ExecuteJavaScript
     /// for hash-only changes to avoid full page reloads.
     /// </summary>
     public void Register(UiRenderer renderer)
@@ -131,13 +130,17 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     }
 
     /// <summary>
-    /// Push an event from C# to JS via CefProcessMessage. The JS side receives
-    /// this via window.__nfmwDispatch("{PhaseId}:{eventType}", data).
+    /// Push an event from C# to Lua.
     /// </summary>
-    /// <remarks>
-    /// This method pushes the value via JSON serialization.
-    /// </remarks>
     protected void Push(string eventType, LuaValue data)
+    {
+        Renderer?.PushToLua(PhaseId, eventType, data);
+    }
+
+    /// <summary>
+    /// Push an event from C# to Lua.
+    /// </summary>
+    protected void Push(string eventType, ILuaUserData data)
     {
         Renderer?.PushToLua(PhaseId, eventType, data);
     }

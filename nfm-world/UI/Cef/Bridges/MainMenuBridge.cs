@@ -1,7 +1,6 @@
-using System.Text.Json;
-using Lua;
-using MemoryPack;
 using nfm_world_library.Lua;
+using NFMWorldLibrary.Util;
+using NuLua;
 
 namespace NFMWorld.UI.Cef;
 
@@ -33,7 +32,7 @@ public sealed class MainMenuBridge : PhaseBridge
         switch (type)
         {
             case "navigate":
-                if (args.TryRead<LuaTable>(out var a) && a.TryGetValue("page", out var page))
+                if (args.TryConvertLuaValue<LuaTable>(out var a) && a.TryGetValue("page", out var page))
                 {
                     NavigateRequested?.Invoke(page.ReadOrDefault<string>() ?? "");
                 }

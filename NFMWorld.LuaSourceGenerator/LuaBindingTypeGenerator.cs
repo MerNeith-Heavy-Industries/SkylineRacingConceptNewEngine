@@ -399,7 +399,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     private void EmitTypePartial(IndentedStringBuilder sb)
     {
         sb.Append($"partial {(type.IsRecord ? "record " : "")}{(type.IsValueType ? "struct " : type.IsInterface ? "interface " : "class ")}{type.TypeName}");
-        sb.Append($" : global::NuLua.ILuaUserData");
+        sb.Append($" : global::NuLua.Luau.ILuaUserData");
         sb.AppendLine();
         using (sb.Block())
         {
@@ -416,17 +416,17 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
 
     private void EmitSupportedMetamethods(IndentedStringBuilder sb)
     {
-        sb.AppendLine("public global::NuLua.LuaUserDataMetamethods SupportedMetamethods =>");
+        sb.AppendLine("public global::NuLua.Luau.LuaUserDataMetamethods SupportedMetamethods =>");
         using (sb.Indent())
         {
             var flags = new List<string>();
-            if (type.HasIndex) flags.Add("global::NuLua.LuaUserDataMetamethods.Index");
-            if (type.HasNewIndex) flags.Add("global::NuLua.LuaUserDataMetamethods.NewIndex");
-            flags.Add("global::NuLua.LuaUserDataMetamethods.ToString");
+            if (type.HasIndex) flags.Add("global::NuLua.Luau.LuaUserDataMetamethods.Index");
+            if (type.HasNewIndex) flags.Add("global::NuLua.Luau.LuaUserDataMetamethods.NewIndex");
+            flags.Add("global::NuLua.Luau.LuaUserDataMetamethods.ToString");
             foreach (var op in type.Operators.Where(IsOperatorSupported))
             {
                 if (OperatorMetamethodFlag(op.MetamethodName) is { } flag)
-                    flags.Add($"global::NuLua.LuaUserDataMetamethods.{flag}");
+                    flags.Add($"global::NuLua.Luau.LuaUserDataMetamethods.{flag}");
             }
 
             for (var i = 0; i < flags.Count; i++)

@@ -48,7 +48,9 @@ public class LuaGamemodeConfig
             return 0;
         });
 
-        state.DoString(lua.Files["config"]);
+        var sourceId = lua.Metadata?.Name ?? "config";
+        LuaModuleLoading.RegisterRadpackSource(state, lua, sourceId);
+        state.DoString(lua.Files["config"], $"@radpack/{sourceId}/config");
 
         return config ?? new LuaGamemodeConfig()
         {
@@ -68,11 +70,11 @@ public class LuaGamemodeConfig
             Description = description.ToString()
         };
 
-        if (table.TryGetValue("properties", out var properties) && properties.TryRead<LuaTable>(out var propertiesTable))
+        if (table.TryGetValue("properties", out var properties) && properties.TryConvertLuaValue<LuaTable>(out var propertiesTable))
         {
             foreach (var (i, prop) in propertiesTable)
             {
-                if (prop.TryRead<LuaTable>(out var propTable))
+                if (prop.TryConvertLuaValue<LuaTable>(out var propTable))
                 {
                     propTable.TryGetValue("name", out var propName);
                     propTable.TryGetValue("type", out var propType);
@@ -89,11 +91,11 @@ public class LuaGamemodeConfig
                     config.Properties.Add(propValue);
 
                     if (propTable.TryGetValue("options", out var options) &&
-                        options.TryRead<LuaTable>(out var optionsTable))
+                        options.TryConvertLuaValue<LuaTable>(out var optionsTable))
                     {
                         foreach (var (j, option) in optionsTable)
                         {
-                            if (option.TryRead<LuaTable>(out var optionTable))
+                            if (option.TryConvertLuaValue<LuaTable>(out var optionTable))
                             {
                                 optionTable.TryGetValue("label", out var optionLabel);
                                 optionTable.TryGetValue("value", out var optionValue);

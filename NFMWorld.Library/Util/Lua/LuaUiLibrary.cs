@@ -217,7 +217,7 @@ public static class LuaUiLibrary
         var key = args[1].ConvertLuaValue<string>();
         var value = args[2];
 
-        Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
+        // Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
 
         if (instance is Component cmp)
         {

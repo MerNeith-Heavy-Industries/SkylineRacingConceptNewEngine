@@ -181,7 +181,7 @@ public sealed class LuaGamemode : BaseClientGamemode
         _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/client.luau");
-        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -193,13 +193,14 @@ public sealed class LuaGamemode : BaseClientGamemode
         GamemodeId = gamemodeId;
 
         _state = LuaHelpers.OpenState();
+        LuaModuleLoading.RegisterRadpackSource(_state, radpack, gamemodeId);
 
         Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
 
         _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
 
-        var results = _state.DoString(radpack.Files["client"]);
-        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        var results = _state.DoString(radpack.Files["client"], $"@radpack/{gamemodeId}/client");
+        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -292,7 +293,7 @@ public sealed class LuaGamemode : BaseClientGamemode
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryRead<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];
         }

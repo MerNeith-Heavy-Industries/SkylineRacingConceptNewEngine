@@ -1,9 +1,8 @@
-using System.Text.Json;
-using Lua;
-using MemoryPack;
 using nfm_world_library.Lua;
 using NFMWorld.DriverInterface;
 using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 using WorldXaml.UI.Yoga;
 
 namespace NFMWorld.UI.Cef;
@@ -54,7 +53,7 @@ public sealed class SettingsHandler : ISubHandler
                 RestartConfirmed?.Invoke();
                 return true;
             case "startCapture":
-                if (args.TryRead<LuaTable>(out var a) && a.TryGetValue("action", out var action))
+                if (args.TryConvertLuaValue<LuaTable>(out var a) && a.TryGetValue("action", out var action))
                     _capturingAction = action.ReadOrDefault<string>();
                 return true;
             case "stopCapture":
@@ -145,7 +144,7 @@ public sealed class SettingsHandler : ISubHandler
 
     private void ApplySettingFromJs(LuaValue args)
     {
-        if (!args.TryRead<LuaTable>(out var a) || !a.TryGetValue("key", out var keyProp))
+        if (!args.TryConvertLuaValue<LuaTable>(out var a) || !a.TryGetValue("key", out var keyProp))
             return;
 
         var key = keyProp.ReadOrDefault<string>() ?? "";
@@ -154,7 +153,7 @@ public sealed class SettingsHandler : ISubHandler
 
     private void HandleResetDefaults(LuaValue args)
     {
-        if (!args.TryRead<LuaTable>(out var a) || !a.TryGetValue("section", out var sectionProp))
+        if (!args.TryConvertLuaValue<LuaTable>(out var a) || !a.TryGetValue("section", out var sectionProp))
             return;
 
         var section = sectionProp.ReadOrDefault<string>() ?? "";
@@ -181,6 +180,11 @@ public sealed class SettingsHandler : ISubHandler
     // ── Push helpers (hardcoded "settings" prefix) ────────────────
 
     private void Push(string eventType, LuaValue data)
+    {
+        _renderer?.PushToLua("settings", eventType, data);
+    }
+
+    private void Push(string eventType, ILuaUserData data)
     {
         _renderer?.PushToLua("settings", eventType, data);
     }

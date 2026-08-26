@@ -67,16 +67,16 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
         var standings = new List<RaceStanding>();
         foreach (var (_, value) in table)
         {
-            if (!value.TryRead<LuaTable>(out var entry))
+            if (!value.TryConvertLuaValue<LuaTable>(out var entry))
                 continue;
 
-            var playerId = entry.TryGetValue("playerId", out var id) && id.TryRead<string>(out var s) && Guid.TryParse(s, out var guid)
+            var playerId = entry.TryGetValue("playerId", out var id) && id.TryConvertLuaValue<string>(out var s) && Guid.TryParse(s, out var guid)
                 ? guid
                 : Guid.Empty;
-            var position = entry.TryGetValue("position", out var pos) && pos.TryRead<double>(out var d)
+            var position = entry.TryGetValue("position", out var pos) && pos.TryConvertLuaValue<double>(out var d)
                 ? (int)d
                 : standings.Count;
-            var finished = entry.TryGetValue("finished", out var fin) && fin.TryRead<bool>(out var b) && b;
+            var finished = entry.TryGetValue("finished", out var fin) && fin.TryConvertLuaValue<bool>(out var b) && b;
 
             standings.Add(new RaceStanding
             {
@@ -130,7 +130,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/server.luau");
-        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -144,13 +144,14 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         Players = parameters.Players;
         
         _state = LuaHelpers.OpenState();
+        LuaModuleLoading.RegisterRadpackSource(_state, radpack, gamemodeId);
 
         Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
 
         _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
 
-        var results = _state.DoString(radpack.Files["server"]);
-        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        var results = _state.DoString(radpack.Files["server"], $"@radpack/{gamemodeId}/server");
+        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -186,7 +187,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryRead<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];
         }

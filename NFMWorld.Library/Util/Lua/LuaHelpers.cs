@@ -12,10 +12,18 @@ public static class LuaHelpers
 {
     public static LuauState OpenState()
     {
-        var state = LuauState.CreateSandbox();
+        // Deliberately NOT sandboxed: luaL_sandbox makes the globals table read-only, which
+        // conflicts with registering game globals here (type tables, fixed64 lib) and with the
+        // per-gamemode `GM`/`SGM` globals set after this returns. If script-side global lockdown
+        // is wanted later, keep this state writable and run scripts on a NewSandboxThread()
+        // (thread-local globals proxy reads from the main table) instead.
+        var state = LuauState.Create();
         state.OpenLibraries();
         LuaVisibleTypeRegistry.RegisterAll(state);
         state.OpenFixedMathLibrary();
+
+        // Installs the game's Luau-style `require` and a default VFS module source (rooted at data/).
+        LuaModuleLoading.Install(state);
 
         return state;
     }
@@ -139,7 +147,7 @@ public static class LuaHelpers
         }
 
         // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
-        if (value.TryRead<T>(out var result))
+        if (value.TryConvertLuaValue<T>(out var result))
             return result;
 
         ThrowInvalidOperationException();
@@ -151,7 +159,7 @@ public static class LuaHelpers
         }
     }
 
-    public static bool TryConvertLuaValue<T>(this LuaValue value, out T? outValue)
+    public static bool TryConvertLuaValue<T>(this LuaValue value, [NotNullWhen(true)] out T? outValue)
     {
         if (typeof(T) == typeof(fix64))
         {

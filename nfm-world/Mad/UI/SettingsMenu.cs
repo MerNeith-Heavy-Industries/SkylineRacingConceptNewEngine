@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
-using Lua;
 using Microsoft.Xna.Framework.Graphics;
 using NFMWorld.DriverInterface;
 using NFMWorld.DriverInterface.DriverInterface;
@@ -9,6 +8,8 @@ using NFMWorld.UI.Cef;
 using NFMWorldLibrary;
 using SDL3;
 using NFMWorld.Sentry;
+using NFMWorldLibrary.Util;
+using NuLua;
 
 namespace NFMWorld.UI;
 
@@ -1010,15 +1011,15 @@ public class SettingsMenu(WorldGame game)
         {
             // Video
             case "selectedRenderer":
-                if (args.TryGetValue("value", out var v) && v.TryRead<int>(out var iv))
+                if (args.TryGetValue("value", out var v) && v.TryConvertLuaValue<int>(out var iv))
                     _selectedRenderer = iv;
                 break;
             case "selectedResolution":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _selectedResolution = iv;
                 break;
             case "selectedDisplayMode":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _selectedDisplayMode = iv;
                 break;
             case "vsync":
@@ -1026,23 +1027,23 @@ public class SettingsMenu(WorldGame game)
                     _vsync = v.Read<bool>();
                 break;
             case "fpsLimit":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _fpsLimit = iv;
                 break;
             case "antialias":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _antialias = iv;
                 break;
             case "shadowCascadeLevel":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _shadowCascadeLevel = iv;
                 break;
             case "shadowResolution":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _shadowResolution = iv;
                 break;
             case "renderDistance":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _renderDistance = iv;
                 break;
             case "lowLatency":
@@ -1050,27 +1051,27 @@ public class SettingsMenu(WorldGame game)
                     _lowLatency = v.Read<bool>();
                 break;
             case "lineWidth":
-                if (args.TryGetValue("value", out v) && v.TryRead<float>(out var fv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<float>(out var fv))
                     _lineWidth = fv;
                 break;
             case "distantOutlineBehavior":
                 if (args.TryGetValue("value", out v) &&
-                    v.TryRead<int>(out iv) &&
+                    v.TryConvertLuaValue<int>(out iv) &&
                     Enum.IsDefined(typeof(DistantOutlineBehavior), iv))
                     _distantOutlineBehavior = (DistantOutlineBehavior)iv;
                 break;
 
             // Audio
             case "masterVolume":
-                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<float>(out fv))
                     _masterVolume = fv;
                 break;
             case "musicVolume":
-                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<float>(out fv))
                     _musicVolume = fv;
                 break;
             case "effectsVolume":
-                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<float>(out fv))
                     _effectsVolume = fv;
                 break;
             case "muteAll":
@@ -1084,15 +1085,15 @@ public class SettingsMenu(WorldGame game)
 
             // Camera
             case "fov":
-                if (args.TryGetValue("value", out v) && v.TryRead<float>(out fv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<float>(out fv))
                     _fov = fv;
                 break;
             case "followY":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _followY = iv;
                 break;
             case "followZ":
-                if (args.TryGetValue("value", out v) && v.TryRead<int>(out iv))
+                if (args.TryGetValue("value", out v) && v.TryConvertLuaValue<int>(out iv))
                     _followZ = iv;
                 break;
             case "smoothFov":
@@ -1104,7 +1105,7 @@ public class SettingsMenu(WorldGame game)
             case "keyBinding":
                 if (args.TryGetValue("action", out var actionProp)
                     && args.TryGetValue("keyCode", out var codeProp)
-                    && codeProp.TryRead<int>(out var keyCode))
+                    && codeProp.TryConvertLuaValue<int>(out var keyCode))
                 {
                     var action = actionProp.ReadOrDefault<string>() ?? "";
                     var prop = typeof(KeyBindings).GetProperty(action);

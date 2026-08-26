@@ -42,7 +42,7 @@ public class LuaAi : BaseAi
         Config = config;
 
         var results = _state.DoFile($"data/ais/{_scriptPath}.luau");
-        if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -59,7 +59,7 @@ public class LuaAi : BaseAi
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryRead<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunction>(out var function))
         {
             return [LuaValue.Nil];
         }

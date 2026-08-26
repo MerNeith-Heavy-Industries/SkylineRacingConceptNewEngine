@@ -1,10 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Lua;
-using MemoryPack;
 using nfm_world_library.Lua;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
+using NuLua;
 
 namespace NFMWorld.UI.Cef;
 
@@ -20,7 +17,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
         switch (type)
         {
             case "selectCar":
-                if (args.TryRead<LuaTable>(out var a)
+                if (args.TryConvertLuaValue<LuaTable>(out var a)
                     && a.TryGetValue("collection", out var col)
                     && a.TryGetValue("fileName", out var car))
                 {
@@ -28,13 +25,13 @@ public sealed class GarageBridge() : PhaseBridge("garage")
                 }
                 break;
             case "selectCollection":
-                if (args.TryRead<LuaTable>(out var b) && b.TryGetValue("collection", out var selCol))
+                if (args.TryConvertLuaValue<LuaTable>(out var b) && b.TryGetValue("collection", out var selCol))
                 {
                     CollectionSelected?.Invoke(selCol.ReadOrDefault<string>() ?? "");
                 }
                 break;
             case "cycleCar":
-                if (args.TryRead<LuaTable>(out var c) && c.TryGetValue("direction", out var dir))
+                if (args.TryConvertLuaValue<LuaTable>(out var c) && c.TryGetValue("direction", out var dir))
                 {
                     var direction = dir.ReadOrDefault<string>() ?? "";
                     CycleCarRequested?.Invoke(direction == "right" ? 1 : -1);

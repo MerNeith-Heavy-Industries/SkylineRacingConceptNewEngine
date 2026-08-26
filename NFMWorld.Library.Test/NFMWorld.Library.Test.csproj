@@ -24,4 +24,17 @@
         <ProjectReference Include="..\NFMWorld.ClientOnlyAnalyzer\NFMWorld.ClientOnlyAnalyzer.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
     </ItemGroup>
 
+    <!--
+      NuLua.Luau's native luau.dll lands under runtimes/{rid}/native/, but DllImport("luau")
+      needs it on the probing path. Copy the current RID's binary to the output root
+      (mirrors NuLua.Tests's osx/linux handling).
+    -->
+    <Target Name="CopyLuauNativeToRoot" AfterTargets="Build">
+        <ItemGroup>
+            <_LuauNative Include="$(OutDir)runtimes\$(NETCoreSdkRuntimeIdentifier)\native\luau.dll"
+                          Condition="'$(NETCoreSdkRuntimeIdentifier)' != '' and Exists('$(OutDir)runtimes\$(NETCoreSdkRuntimeIdentifier)\native\luau.dll')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_LuauNative)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    </Target>
+
 </Project>

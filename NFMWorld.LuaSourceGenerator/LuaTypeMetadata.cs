@@ -155,7 +155,7 @@ internal class BaseLuaTypeMetadata
         IsOpenGeneric = symbol is INamedTypeSymbol { IsGenericType: true, IsDefinition: true }; // List<>, GenericWrapper<>
         IsCandidate = !IsRefStruct && !IsOpenGeneric && !IsBuiltIn && !IsNullableValueType;
 
-        IsILuaUserData = symbol.AllInterfaces.Any(t => SymbolEqualityComparer.Default.Equals(t.OriginalDefinition, references.ILuaUserData));
+        IsILuaUserData = symbol.AllInterfaces.Any(t => SymbolEqualityComparer.Default.Equals(t, references.ILuaUserData));
 
         IsReferenceType = symbol.IsReferenceType;
         IsNullableReferenceType = symbol.IsReferenceType && symbol.NullableAnnotation == NullableAnnotation.Annotated;

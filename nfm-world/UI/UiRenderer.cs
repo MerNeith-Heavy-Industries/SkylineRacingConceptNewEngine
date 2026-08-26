@@ -22,6 +22,8 @@ public class UiRenderer : IDisposable
     private LuauState _state;
     private string _currentPhaseId = "main-menu";
 
+    public LuauState State => _state;
+
     public View? ActiveRoot { get; private set; }
 
     public UiRenderer(WorldGame worldGame)
@@ -63,6 +65,11 @@ public class UiRenderer : IDisposable
     {
         NodeDebugger.YogaRoot = ActiveRoot;
         ActiveRoot?.LayoutAndRender(G.Viewport);
+        
+        G.SetColor(Color.Black);
+        var renderStats = _state["renderStats"].ConvertLuaValue<LuaTable>();
+        
+        G.DrawString($"RenderStats:\nFlushes: {renderStats["flushes"].Read<double>()}\nRenders: {renderStats["renders"].Read<double>()}\nReentrantFlushes: {renderStats["reentrantFlushes"].Read<double>()}\nMaxPasses: {renderStats["maxPasses"].Read<double>()}\nAbortedLoops: {renderStats["abortedLoops"].Read<double>()}", 15, 150);
     }
 
     /// <summary>
@@ -84,6 +91,14 @@ public class UiRenderer : IDisposable
     public void Unregister(string phaseId)
     {
         _toCsharpHandlers.Remove(phaseId);
+    }
+
+    /// <summary>
+    /// Push an event from C# to Lua for a specific phase.
+    /// </summary>
+    public void PushToLua(string phaseId, string eventType, ILuaUserData payload)
+    {
+        PushToLua(phaseId, eventType, LuaHelpers.ToLuaValue(_state, payload));
     }
 
     /// <summary>
