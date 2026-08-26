@@ -37,12 +37,8 @@ function Router()
 	local hash, setHash = useState(defaultRoute)
 
 	useEffect(function()
-		-- Navigation must flush synchronously: the phase's component has to
-		-- mount (and subscribe to its `phase:*` events) BEFORE the C# phase
-		-- pushes its initial state (e.g. GaragePhase.Enter → PushCollections).
-		-- Otherwise the push arrives before the subscription and is lost.
 		return UiLib.onEvent("nfmw:navigate", function(hash: string)
-			React.flushSync(function() setHash(hash) end)
+			setHash(hash)
 		end)
 	end, {})
 
