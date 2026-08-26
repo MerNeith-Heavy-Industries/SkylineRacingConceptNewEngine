@@ -151,7 +151,7 @@ local function append<T>(a: { T }, b: T): { T }
 	return result
 end
 
-local function MainMenu()
+local MainMenu = React.memo(function(): React.VNode
 	local account, setAccount = useState<<AccountData | nil>>(nil)
 	local pageStack, setPageStack = useState<<{ MenuPage }>> {}
 	local currentView, setCurrentView = useState<<"menu" | "settings">>("menu")
@@ -433,6 +433,6 @@ local function MainMenu()
 			#pageStack == 0 and x(Footer) { name = "Footer", "NFM World — Lua + React UI" },
 		}
 	)
-end
+end)
 
 return MainMenu

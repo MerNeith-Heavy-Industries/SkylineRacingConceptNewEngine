@@ -11,56 +11,50 @@
 --- flush immediately (no scheduler, no time-slicing). See README.md for the
 --- host config contract and the list of supported hooks.
 
-local R = require("./reactlib/types")
+local preact = require('./preact-luau/src/index')
+local hooks = require('./preact-luau/hooks/src/index')
+local compat = require('./preact-luau/compat/src/index')
+local debug = require('./preact-luau/debug/src/index')
+local coreTypes = require('./preact-luau/types/core.d');
+local hooksTypes = require('./preact-luau/types/hooks.d');
+local debugTypes = require('./preact-luau/types/debug.d');
+local compatTypes = require('./preact-luau/types/compat.d');
 
-local vdom = require("./reactlib/vdom")
-local core = require("./reactlib/core")
+export type FunctionComponent<T> = coreTypes.FunctionComponent<T>
+export type VNode = coreTypes.VNode
+export type Options = coreTypes.Options
+export type RefObject<T> = coreTypes.RefObject<T>
+export type Ref<T> = coreTypes.Ref<T>
+export type Context<T> = coreTypes.Context<T>
+export type ComponentChild = coreTypes.ComponentChild
+export type ComponentChildren = coreTypes.ComponentChildren
 
-local React = {}
+local render = preact.render :: coreTypes.render
+local createElement = preact.createElement :: coreTypes.createElement
+local h = preact.h :: coreTypes.h
+local Fragment = preact.Fragment :: coreTypes.Fragment
+local createRef = preact.createRef :: coreTypes.createRef
+local cloneElement = preact.cloneElement :: coreTypes.cloneElement
+local isValidElement = preact.isValidElement :: coreTypes.isValidElement
+local createContext = preact.createContext :: coreTypes.createContext
+local createPortal = preact.createPortal :: coreTypes.createPortal
+local toChildArray = preact.toChildArray :: coreTypes.toChildArray
+local options = preact.options :: coreTypes.options
 
-React.version = "0.1.0"
+local useState = hooks.useState :: hooksTypes.useState
+local useReducer = hooks.useReducer :: hooksTypes.useReducer
+local useEffect = hooks.useEffect :: hooksTypes.useEffect
+local useLayoutEffect = hooks.useLayoutEffect :: hooksTypes.useLayoutEffect
+local useRef = hooks.useRef :: hooksTypes.useRef
+local useImperativeHandle = hooks.useImperativeHandle :: hooksTypes.useImperativeHandle
+local useMemo = hooks.useMemo :: hooksTypes.useMemo
+local useCallback = hooks.useCallback :: hooksTypes.useCallback
+local useContext = hooks.useContext :: hooksTypes.useContext
+local useDebugValue = hooks.useDebugValue :: hooksTypes.useDebugValue
+local useErrorBoundary = hooks.useErrorBoundary :: hooksTypes.useErrorBoundary
+local useId = hooks.useId :: hooksTypes.useId
 
---- Render-nothing element type; children render in place.
-React.Fragment = vdom.FRAGMENT
-
---- Create a virtual element. See `react/vdom.lua`.
-React.h = vdom.h
-React.createElement = vdom.h
-
---- Install the host environment adapter (DOM/RmlUI). Required before render.
-React.setHostConfig = core.setHostConfig
-
---- Mount `element` into `container` (updates in place on later calls).
-React.render = core.render
-
---- Remove the tree rendered into `container`, running effect cleanups.
-React.unmount = core.unmount
-
---- Create a context object: `{ defaultValue, Provider, Consumer }`.
-React.createContext = core.createContext
-
-React.useState = core.useState
-React.useEffect = core.useEffect
-React.useMemo = core.useMemo
-React.useCallback = core.useCallback
-React.useRef = core.useRef
-React.useSyncExternalStore = core.useSyncExternalStore
-React.useContext = core.useContext
-React.memo = core.memo
-
--- `React.flushSync(fn)` runs `fn` then renders all pending updates
--- synchronously (see reactlib/core.luau).
-React.flushSync = core.flushSync
-
--- Render profiler (see reactlib/core.luau). `React.renderStats` is a live
--- table: { flushes, renders, reentrantFlushes, maxPasses, abortedLoops }.
--- Call `React.resetRenderStats()` to zero it before a measured interaction.
-React.renderStats = core.renderStats
-React.resetRenderStats = core.resetRenderStats
-
-_G.renderStats = core.renderStats
-
--- Built-in components
+local memo = compat.memo :: compatTypes.memo
 
 export type Styles = {
 	direction: "ltr" | "rtl" | "inherit" | nil,
@@ -192,7 +186,7 @@ export type ViewProps = {
 	onkeyup: ((event: KeyboardEvent) -> ())?,
 	onfocus: (() -> ())?,
 	onblur: (() -> ())?,
-	children: R.Children?,
+	children: ComponentChildren?,
 }
 
 export type ImageProps = ViewProps & {
@@ -218,24 +212,22 @@ export type TextInputProps = ViewProps & {
 	onchange: ((value: string) -> ())?,
 }
 
-React.View = function(props: ViewProps, ...: R.Child): R.VNode
-	return (vdom.h :: any)("view", props, ...) :: R.VNode
+local View = function(props: ViewProps): VNode
+	-- NOTE: do NOT forward varargs to createElement. The preact-luau port invokes
+	-- function components as (props, context, self), so a `...` here would capture
+	-- `context` and `self` as fake children and REPLACE props.children (dropping the
+	-- real children). Children always arrive via props.children (set by `x()`).
+	return (createElement :: any)("view", props) :: VNode
 end
-React.Text = function(props: TextProps, ...: R.Child): R.VNode
-	return (vdom.h :: any)("text", props, ...) :: R.VNode
+local Text = function(props: TextProps): VNode
+	return (createElement :: any)("text", props) :: VNode
 end
-React.Image = function(props: ImageProps, ...: R.Child): R.VNode
-	return (vdom.h :: any)("image", props, ...) :: R.VNode
+local Image = function(props: ImageProps): VNode
+	return (createElement :: any)("image", props) :: VNode
 end
-React.TextInput = function(props: TextInputProps, ...: R.Child): R.VNode
-	return (vdom.h :: any)("textinput", props, ...) :: R.VNode
+local TextInput = function(props: TextInputProps): VNode
+	return (createElement :: any)("textinput", props) :: VNode
 end
-
-export type StatelessFunctionalComponent<Props> = vdom.React_StatelessFunctionalComponent<Props>
-export type VNode = R.VNode
-export type ElementType = R.ElementType
-export type Child = R.Child
-export type Children = R.Children
 
 -- P & { [number]: R.Child } will misbehave in Luau so we need a type function to augment P with a numeric indexer for children.
 type function WithChildren(tbl, childType)
@@ -284,17 +276,49 @@ end
 ---         }
 ---       }
 ---     }
-function React.x<P>(vtype: StatelessFunctionalComponent<P> | typeof(vdom.FRAGMENT)): (WithChildren<P, R.Children>) -> R.VNode
-	return function(props: WithChildren<P, R.Children>): R.VNode
+local function x<P>(vtype: FunctionComponent<P> | coreTypes.Fragment): (WithChildren<P, ComponentChildren>) -> VNode
+	return function(props: WithChildren<P, ComponentChildren>): VNode
 		local children = {}
-		local props1 = (props :: any) :: { [number]: R.Children } -- type fix
+		local props1 = (props :: any) :: { [number]: ComponentChildren } -- type fix
 		for i = 1, #props1 do
 			children[#children + 1] = props1[i] -- add to children
 			props1[i] = nil -- remove from props so it doesn't get passed to the component
 		end
 
-		return (vdom.h :: any)(vtype, props, unpack(children)) :: R.VNode
+		props1.children = children
+
+		return (createElement :: any)(vtype, props) :: VNode
 	end
 end
 
-return React
+return {
+	render = render,
+	createElement = createElement,
+	h = h,
+	Fragment = Fragment,
+	createRef = createRef,
+	cloneElement = cloneElement,
+	isValidElement = isValidElement,
+	createContext = createContext,
+	createPortal = createPortal,
+	toChildArray = toChildArray,
+	options = options,
+	memo = memo,
+	useState = useState,
+	useReducer = useReducer,
+	useEffect = useEffect,
+	useLayoutEffect = useLayoutEffect,
+	useRef = useRef,
+	useImperativeHandle = useImperativeHandle,
+	useMemo = useMemo,
+	useCallback = useCallback,
+	useContext = useContext,
+	useDebugValue = useDebugValue,
+	useErrorBoundary = useErrorBoundary,
+	useId = useId,
+	x = x,
+	View = View,
+	Text = Text,
+	Image = Image,
+	TextInput = TextInput,
+}
