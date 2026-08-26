@@ -49,3 +49,9 @@
 [submodule "NanoSvgSharp"]
 	path = NanoSvgSharp
 	url = https://github.com/uwx/NanoSVGSharp
+[submodule "NFMWorld.Library/data/library/preact-luau/upstream"]
+	path = NFMWorld.Library/data/library/preact-luau/upstream
+	url = https://github.com/preactjs/preact
+[submodule "NFMWorld.Library/data/library/preact-luau"]
+	path = NFMWorld.Library/data/library/preact-luau
+	url = https://github.com/uwx/preact-luau
