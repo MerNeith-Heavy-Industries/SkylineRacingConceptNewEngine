@@ -1,8 +1,6 @@
 local React = require('./react')
 
 local function render(node: React.VNode)
-    React.setHostConfig(UiLib)
-
     local root = UiLib.createRoot()
     React.render(node, root)
 

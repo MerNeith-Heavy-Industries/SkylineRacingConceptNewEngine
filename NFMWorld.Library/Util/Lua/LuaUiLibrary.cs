@@ -180,13 +180,20 @@ public static class LuaUiLibrary
     {
         var parent = args[0].ConvertLuaValue<Node>();
         var child = args[1].ConvertLuaValue<Node>();
-        var before = args[2].ConvertLuaValue<Node>();
+        var before = args[2].Type != LuaValueType.Nil ? args[2].ConvertLuaValue<Node>() : null;
 
         Logging.Debug($"insertBefore {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")} b4 {(before is Component { Name: {} name3 } ? name3 : "Node")}");
 
         if (parent is Component cmp)
         {
-            cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
+            if (before == null)
+            {
+                cmp.AddChild(child);
+            }
+            else
+            {
+                cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
+            }
         }
 
         FocusManager.ResetHover();

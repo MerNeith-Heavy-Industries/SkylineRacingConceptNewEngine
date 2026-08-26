@@ -47,6 +47,8 @@ declare UiLib: {
 	call: ((method: string, payload: any) -> nil),
 	--- Registers a callback for an event from the C# bridge.
 	onEvent: (<T>(event: string, callback: ((payload: T) -> ())) -> () -> ()),
+	--- Defers a function to be called at the end of the current frame.
+	defer: (fn: () -> ()) -> (),
 }
 
 -- Gamemode config
