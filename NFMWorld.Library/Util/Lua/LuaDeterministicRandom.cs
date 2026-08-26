@@ -1,5 +1,4 @@
 ﻿using FixedMathSharp.Utility;
-using Lua;
 using nfm_world_library.Lua;
 
 namespace NFMWorldLibrary.Util.Lua;

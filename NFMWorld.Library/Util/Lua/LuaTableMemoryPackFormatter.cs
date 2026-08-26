@@ -1,5 +1,4 @@
 ﻿using System.Buffers;
-using Lua;
 using MemoryPack;
 using MemoryPack.Internal;
 using NFMWorldLibrary.FixedMath;

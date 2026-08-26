@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Lua;
 using nfm_world_library.Lua;
 
 namespace NFMWorldLibrary.Gamemodes;
