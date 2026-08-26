@@ -58,3 +58,9 @@
 [submodule "NuLua"]
 	path = NuLua
 	url = https://github.com/uwx/NuLua
+[submodule "NFMWorld.Library/data/library/preact-luau/upstream"]
+	path = NFMWorld.Library/data/library/preact-luau/upstream
+	url = https://github.com/preactjs/preact
+[submodule "NFMWorld.Library/data/library/preact-luau"]
+	path = NFMWorld.Library/data/library/preact-luau
+	url = https://github.com/uwx/preact-luau
