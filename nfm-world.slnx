@@ -4,6 +4,10 @@
         <Platform Name="x64" />
         <Platform Name="x86" />
     </Configurations>
+  <Folder Name="/bench/" />
+  <Folder Name="/bench/luau-benchmark/">
+    <Project Path="bench/luau-benchmark/LuauBenchmark.csproj" />
+  </Folder>
     <Folder Name="/CefGlue/">
         <Project Path="CefGlue/CefGlue.BrowserProcess/CefGlue.BrowserProcess.csproj">
             <Platform Solution="*|Any CPU" Project="x64" />
