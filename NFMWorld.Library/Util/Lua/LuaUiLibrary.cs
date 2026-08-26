@@ -223,7 +223,7 @@ public static class LuaUiLibrary
         var key = context.GetArgument<string>(1);
         var value = context.GetArgument(2);
 
-        Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
+        // Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
 
         if (instance is Component cmp)
         {

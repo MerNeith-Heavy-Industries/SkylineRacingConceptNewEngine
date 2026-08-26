@@ -394,7 +394,6 @@ local MainMenu = React.memo(function(): React.VNode
 	}
 
 	local currentPage = #pageStack > 0 and pageStack[#pageStack] or mainPage
-	local showBack = #pageStack > 0
 
 	-- ── Embedded Settings view ────────────────────────────────────
 	if currentView == "settings" then
@@ -422,13 +421,6 @@ local MainMenu = React.memo(function(): React.VNode
 						x(ItemDesc) { name = "ItemDesc", item.description },
 					}
 				end),
-				showBack and x(BackBtn) {
-					name = "BackBtn",
-					onmousedown = function(event)
-						goBack()
-					end,
-					"← BACK",
-				},
 			},
 			#pageStack == 0 and x(Footer) { name = "Footer", "NFM World — Lua + React UI" },
 		}
