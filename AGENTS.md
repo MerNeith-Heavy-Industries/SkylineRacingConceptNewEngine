@@ -138,12 +138,26 @@ Gamemodes are written in **Lua** and share one code path for singleplayer and mu
 
 ### Lua binding pipeline
 
-- `[LuaVisible]` / `[LuaName]` / `[LuaHidden]` (in `NFMWorld.Lua`). Marking a class/struct/interface/enum LuaVisible makes the `NFMWorld.LuaSourceGenerator` emit a partial `T : NuLua.ILuaUserData<T>` (NuLua.Luau target) with `TryGetIndex`/`TrySetIndex`/`SupportedMetamethods`, per-state type tables, and `data/lua/library/*.lua` stubs — **declare such types `partial`**. `[LuaVisible]` interfaces get these as default-interface methods (concrete impls needn't implement them).
+- `[LuaVisible]` / `[LuaName]` / `[LuaHidden]` (in `NFMWorld.Lua`). Marking a class/struct/interface/enum LuaVisible makes the `NFMWorld.LuaSourceGenerator` emit a partial `T : NuLua.ILuaUserData` (NuLua.Luau target) with `TryGetIndex`/`TrySetIndex`/`SupportedMetamethods`, per-state type tables, and `data/lua/library/*.lua` stubs — **declare such types `partial`**. `[LuaVisible]` interfaces get these as default-interface methods (concrete impls needn't implement them).
 - Hidden ctor pattern: `[LuaHidden]` on constructors whose parameters the generator can't marshal.
 - `LuaVisibleTypeRegistry.RegisterAll(NuLua.Luau.LuauState state)` creates all type tables/enum tables on the given state (no static tables); call it after opening libraries. Type tables are global by Lua name (`state["Name"] = ...`).
 - Marshalling: userdata via `state.CreateUserData<T>(value)`, enums via `state.CreateEnumUserData<T>(value)`, fixed64 family via `LuaValue.FromPrimitive(id, value)` (ids 0=Fixed64, 1=f64AngleSingle, 2=f64Euler, 3=Vector3d — metatables/read-back not wired yet). Non-`[LuaVisible]` referenced types (arrays, `List<T>`, BCL types, `[AssemblyLuaVisible]`) are NOT bound — such members are skipped.
 - NuLua.Luau: sync execution via `DoString`/`DoBuffer`; errors from C closures via `state.RaiseError(...)`.
-- NOTE: the GAME Lua runtime (LuaGamemode/LuaHelpers/UiRenderer, `LuaState`/`ILuaUserData` in `NFMWorld.Library`) still targets Lua-CSharp and is currently FROZEN — the generator analyzer was detached from `NFMWorld.Library`/`nfm-world` pending the game-side migration to NuLua.
+
+### Luau binding specific notes
+
+- In Lua-CSharp, primitives (Fixed64, f64AngleSingle, f64Euler, Vector3d) were hardcoded in the interpreter. In NuLua, they are LuaValueType.Primitive. There is no way for NuLua to natively know the managed type of a primitive (it's an opaque ID in Luau), so you need to use LuaHelpers to bridge the gap.
+- LuaValue.Read<T>/TryRead<T> fails on LuaValueType.Primitive: use LuaHelpers.ConvertLuaValue to extract a value from a LuaValue with handling for primitives.
+- For converting from managed values to LuaValue, use LuaHelpers.ToLuaValue.
+- Enums are handled by Read/TryRead but when creating them you need to use state.CreateEnumUserData, because CreateUserData
+expects an ILuaUserData and enums can't implement interfaces.
+- Where possible use LuaHelpers instead of the methods directly on LuauState or LuaValue to avoid confusing yourself.
+
+To add a new primitive: Patch it into LuaHelpers, make it implement IPrimitive<T>, and register it on the LuauState with CreatePrimitiveMetaTable and SetPrimitiveMetatable.
+
+TODO: dispose gamemodes & server gamemodes & lua states
+TODO: migrate manual Push/return to state.Return()
+TODO: convert ReadArg to use LuaHelpers (TryRead can't handle Primitive)
 
 ### Gotchas
 
