@@ -179,13 +179,20 @@ public static class LuaUiLibrary
     {
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
-        var before = context.GetArgument<Node>(2);
+        var before = context.GetArgumentOrNullClass<Node>(2);
 
         Logging.Debug($"insertBefore {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")} b4 {(before is Component { Name: {} name3 } ? name3 : "Node")}");
 
         if (parent is Component cmp)
         {
-            cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
+            if (before == null)
+            {
+                cmp.AddChild(child);
+            }
+            else
+            {
+                cmp.InsertAt(parent.VisualChildren.IndexOf(before), child);
+            }
         }
 
         FocusManager.ResetHover();

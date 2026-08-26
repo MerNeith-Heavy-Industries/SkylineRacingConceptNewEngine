@@ -194,7 +194,7 @@ local CollectionSection = React.memo(function(props: {
 	}
 end)
 
-local function Garage(): React.VNode
+local Garage = React.memo(function(): React.VNode
 	local currentCar, setCurrentCar = useState<<CarStatsData | nil>>(nil)
 	local collections, setCollections = useState<<CarCollectionsData | nil>>(nil)
 	local currentCollection, setCurrentCollection = useState<<CarCollectionData | nil>>(nil)
@@ -390,6 +390,6 @@ local function Garage(): React.VNode
 			},
 		},
 	}
-end
+end)
 
 return Garage
