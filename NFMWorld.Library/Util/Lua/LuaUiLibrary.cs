@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using JetBrains.Profiler.Api;
-using Lua;
 using Microsoft.Extensions.Logging;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.DriverInterface.UI;
@@ -91,7 +90,7 @@ public static class LuaUiLibrary
 
                 foreach (var (rawkey, rawvalue) in props)
                 {
-                    if (!rawkey.TryRead<string>(out var key))
+                    if (!rawkey.TryConvertLuaValue<string>(out var key))
                     {
                         continue;
                     }
@@ -105,7 +104,7 @@ public static class LuaUiLibrary
 
                 foreach (var (rawkey, rawvalue) in props)
                 {
-                    if (!rawkey.TryRead<string>(out var key))
+                    if (!rawkey.TryConvertLuaValue<string>(out var key))
                     {
                         continue;
                     }
@@ -119,7 +118,7 @@ public static class LuaUiLibrary
 
                 foreach (var (rawkey, rawvalue) in props)
                 {
-                    if (!rawkey.TryRead<string>(out var key))
+                    if (!rawkey.TryConvertLuaValue<string>(out var key))
                     {
                         continue;
                     }
@@ -133,7 +132,7 @@ public static class LuaUiLibrary
 
                 foreach (var (rawkey, rawvalue) in props)
                 {
-                    if (!rawkey.TryRead<string>(out var key))
+                    if (!rawkey.TryConvertLuaValue<string>(out var key))
                     {
                         continue;
                     }
@@ -245,10 +244,10 @@ public static class LuaUiLibrary
     {
         switch (key)
         {
-            case "name" when rawvalue.TryRead<string>(out var str) :
+            case "name" when rawvalue.TryConvertLuaValue<string>(out var str) :
                 cmp.Name = str;
                 break;
-            case "style" when rawvalue.TryRead<LuaTable>(out var value):
+            case "style" when rawvalue.TryConvertLuaValue<LuaTable>(out var value):
                 cmp.Styles = AssignStylesProps(value);
                 if (cmp is Text text)
                 {
@@ -260,19 +259,19 @@ public static class LuaUiLibrary
                     textInput.TextInputStyles = AssignTextInputStylesProps(value);
                 }
                 break;
-            case "onanimationframebegan" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onanimationframebegan" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.AnimationFrameBegan = () =>
                 {
                     state.Call(func, []);
                 };
                 break;
-            case "active" when rawvalue.TryRead<bool>(out var b):
+            case "active" when rawvalue.TryConvertLuaValue<bool>(out var b):
                 cmp.IsActive = b;
                 break;
-            case "focused" when rawvalue.TryRead<bool>(out var b):
+            case "focused" when rawvalue.TryConvertLuaValue<bool>(out var b):
                 cmp.IsFocused = b;
                 break;
-            case "tabindex" when rawvalue.TryRead<int>(out var i):
+            case "tabindex" when rawvalue.TryConvertLuaValue<int>(out var i):
                 cmp.IsFocusable = true;
                 cmp.TabIndex = i;
                 break;
@@ -284,49 +283,49 @@ public static class LuaUiLibrary
             // multiple times, popping several menu pages at once). These event
             // props map one-to-one to a single host delegate, so clearing first
             // is correct.
-            case "onmousedown" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmousedown" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MousePressed = null;
                 cmp.MousePressed += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmouseup" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmouseup" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseReleased = null;
                 cmp.MouseReleased += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmousedrag" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmousedrag" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseDragged = null;
                 cmp.MouseDragged += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmousescroll" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmousescroll" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseScrolled = null;
                 cmp.MouseScrolled += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmousemove" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmousemove" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseMoved = null;
                 cmp.MouseMoved += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmouseenter" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmouseenter" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseEntered = null;
                 cmp.MouseEntered += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onmouseleave" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onmouseleave" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.MouseLeft = null;
                 cmp.MouseLeft += @event =>
                 {
@@ -335,61 +334,61 @@ public static class LuaUiLibrary
                     Logging.Debug("MouseLeave: " + stopwatch.Elapsed);
                 };
                 break;
-            case "onkeytype" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onkeytype" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.KeyTyped = null;
                 cmp.KeyTyped += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onkeydown" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onkeydown" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.KeyPressed = null;
                 cmp.KeyPressed += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onkeyup" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onkeyup" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.KeyReleased = null;
                 cmp.KeyReleased += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
-            case "onfocus" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onfocus" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.Focused = null;
                 cmp.Focused += () =>
                 {
                     state.Call(func, []);
                 };
                 break;
-            case "onblur" when rawvalue.TryRead<LuaFunction>(out var func):
+            case "onblur" when rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 cmp.Unfocused = null;
                 cmp.Unfocused += () =>
                 {
                     state.Call(func, []);
                 };
                 break;
-            case "src" when cmp is Image image && rawvalue.TryRead<string>(out var str):
+            case "src" when cmp is Image image && rawvalue.TryConvertLuaValue<string>(out var str):
                 image.ImageData = G.LoadImage(str);
                 break;
-            case "scale" when cmp is Image image && rawvalue.TryRead<float>(out var f):
+            case "scale" when cmp is Image image && rawvalue.TryConvertLuaValue<float>(out var f):
                 image.Scale = f;
                 break;
-            case "value" when cmp is TextInput textInput && rawvalue.TryRead<string>(out var str):
+            case "value" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<string>(out var str):
                 textInput.SetText(str);
                 break;
-            case "placeholder" when cmp is TextInput textInput && rawvalue.TryRead<string>(out var str):
+            case "placeholder" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<string>(out var str):
                 textInput.Placeholder = str;
                 break;
-            case "onsubmit" when cmp is TextInput textInput && rawvalue.TryRead<LuaFunction>(out var func):
+            case "onsubmit" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 textInput.Submitted = null;
                 textInput.Submitted += value =>
                 {
                     state.Call(func, [value]);
                 };
                 break;
-            case "onchange" when cmp is TextInput textInput && rawvalue.TryRead<LuaFunction>(out var func):
+            case "onchange" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<LuaFunction>(out var func):
                 textInput.TextChanged = null;
                 textInput.TextChanged += value =>
                 {
@@ -405,22 +404,22 @@ public static class LuaUiLibrary
 
         foreach (var (rawkey, rawvalue) in props)
         {
-            if (!rawkey.TryRead<string>(out var key))
+            if (!rawkey.TryConvertLuaValue<string>(out var key))
             {
                 continue;
             }
 
             styles = key switch
             {
-                "cursor-color" or "cursorColor" when rawvalue.TryRead<string>(out var v) => styles with
+                "cursor-color" or "cursorColor" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     CursorColor = ParseColor(v) ?? new Color()
                 },
-                "selection-color" or "selectionColor" when rawvalue.TryRead<string>(out var v) => styles with
+                "selection-color" or "selectionColor" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     SelectionColor = ParseColor(v) ?? new Color()
                 },
-                "placeholder-color" or "placeholderColor" when rawvalue.TryRead<string>(out var v) => styles with
+                "placeholder-color" or "placeholderColor" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     PlaceholderColor = ParseColor(v) ?? new Color()
                 },
@@ -437,22 +436,22 @@ public static class LuaUiLibrary
 
         foreach (var (rawkey, rawvalue) in props)
         {
-            if (!rawkey.TryRead<string>(out var key))
+            if (!rawkey.TryConvertLuaValue<string>(out var key))
             {
                 continue;
             }
 
             styles = key switch
             {
-                "color" when rawvalue.TryRead<string>(out var v) => styles with
+                "color" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     ForegroundColor = ParseColor(v) ?? new Color()
                 },
-                "stroke" or "strokeColor" or "stroke-color" when rawvalue.TryRead<string>(out var v) => styles with
+                "stroke" or "strokeColor" or "stroke-color" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     StrokeColor = ParseColor(v)
                 },
-                "font-family" or "fontFamily" when rawvalue.TryRead<string>(out var v) => styles with
+                "font-family" or "fontFamily" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     FontFamily = v switch
                     {
@@ -464,7 +463,7 @@ public static class LuaUiLibrary
                     }
                 },
                 "font-size" or "fontSize" => styles with { FontSize = ParseFontSize(rawvalue, styles.FontSize) },
-                "font-style" or "fontStyle" when rawvalue.TryRead<string>(out var v) => styles with
+                "font-style" or "fontStyle" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     FontStyle = v switch
                     {
@@ -475,7 +474,7 @@ public static class LuaUiLibrary
                         _ => styles.FontStyle
                     }
                 },
-                "word-break" or "wordBreak" when rawvalue.TryRead<string>(out var v) => styles with
+                "word-break" or "wordBreak" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     BreakType = v switch
                     {
@@ -485,7 +484,7 @@ public static class LuaUiLibrary
                         _ => styles.BreakType
                     },
                 },
-                "vertical-align" or "verticalAlign" when rawvalue.TryRead<string>(out var v) => styles with
+                "vertical-align" or "verticalAlign" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     VerticalAlignment = v switch
                     {
@@ -495,7 +494,7 @@ public static class LuaUiLibrary
                         _ => styles.VerticalAlignment
                     },
                 },
-                "text-align" or "textAlign" when rawvalue.TryRead<string>(out var v) => styles with
+                "text-align" or "textAlign" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with
                 {
                     HorizontalAlignment = v switch
                     {
@@ -519,7 +518,7 @@ public static class LuaUiLibrary
 
         foreach (var (rawkey, rawvalue) in props)
         {
-            if (!rawkey.TryRead<string>(out var key))
+            if (!rawkey.TryConvertLuaValue<string>(out var key))
             {
                 continue;
             }
@@ -527,18 +526,18 @@ public static class LuaUiLibrary
             styles = key switch
             {
                 // Layout / flex
-                "direction" when rawvalue.TryRead<string>(out var v) => styles with { Direction = ParseDirection(v, styles.Direction) },
-                "flex-direction" or "flexDirection" when rawvalue.TryRead<string>(out var v) => styles with { FlexDirection = ParseFlexDirection(v, styles.FlexDirection) },
-                "justify-content" or "justifyContent" when rawvalue.TryRead<string>(out var v) => styles with { JustifyContent = ParseJustify(v, styles.JustifyContent) },
-                "align-items" or "alignItems" when rawvalue.TryRead<string>(out var v) => styles with { AlignItems = ParseAlign(v, styles.AlignItems) },
-                "align-self" or "alignSelf" when rawvalue.TryRead<string>(out var v) => styles with { AlignSelf = ParseAlign(v, styles.AlignSelf) },
-                "align-content" or "alignContent" when rawvalue.TryRead<string>(out var v) => styles with { AlignContent = ParseAlign(v, styles.AlignContent) },
-                "position" when rawvalue.TryRead<string>(out var v) => styles with { Position = ParsePosition(v, styles.Position) },
-                "flex-wrap" or "flexWrap" when rawvalue.TryRead<string>(out var v) => styles with { FlexWrap = ParseWrap(v, styles.FlexWrap) },
-                "overflow" when rawvalue.TryRead<string>(out var v) => styles with { Overflow = ParseOverflow(v, styles.Overflow) },
-                "display" when rawvalue.TryRead<string>(out var v) => styles with { Display = ParseDisplay(v, styles.Display) },
-                "box-sizing" or "boxSizing" when rawvalue.TryRead<string>(out var v) => styles with { BoxSizing = ParseBoxSizing(v, styles.BoxSizing) },
-                "visibility" when rawvalue.TryRead<string>(out var v) => styles with { Visibility = ParseVisibility(v, styles.Visibility) },
+                "direction" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { Direction = ParseDirection(v, styles.Direction) },
+                "flex-direction" or "flexDirection" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { FlexDirection = ParseFlexDirection(v, styles.FlexDirection) },
+                "justify-content" or "justifyContent" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { JustifyContent = ParseJustify(v, styles.JustifyContent) },
+                "align-items" or "alignItems" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { AlignItems = ParseAlign(v, styles.AlignItems) },
+                "align-self" or "alignSelf" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { AlignSelf = ParseAlign(v, styles.AlignSelf) },
+                "align-content" or "alignContent" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { AlignContent = ParseAlign(v, styles.AlignContent) },
+                "position" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { Position = ParsePosition(v, styles.Position) },
+                "flex-wrap" or "flexWrap" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { FlexWrap = ParseWrap(v, styles.FlexWrap) },
+                "overflow" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { Overflow = ParseOverflow(v, styles.Overflow) },
+                "display" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { Display = ParseDisplay(v, styles.Display) },
+                "box-sizing" or "boxSizing" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { BoxSizing = ParseBoxSizing(v, styles.BoxSizing) },
+                "visibility" when rawvalue.TryConvertLuaValue<string>(out var v) => styles with { Visibility = ParseVisibility(v, styles.Visibility) },
 
                 // Flex sizing
                 "flex" => styles with { Flex = ParseNullableFloat(rawvalue, styles.Flex) },
@@ -727,12 +726,12 @@ public static class LuaUiLibrary
 
     private static float ParseFloat(LuaValue value, float current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             var span = s.AsSpan();
             if (span.EndsWith("px"))
@@ -749,12 +748,12 @@ public static class LuaUiLibrary
 
     private static float ParseFontSize(LuaValue value, float current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             var span = s.AsSpan();
             if (span.EndsWith("pt"))
@@ -776,12 +775,12 @@ public static class LuaUiLibrary
             return null;
         }
 
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             var span = s.AsSpan();
             if (span.EndsWith("px"))
@@ -798,12 +797,12 @@ public static class LuaUiLibrary
 
     private static MeasurementWidthHeight ParseWidthHeight(LuaValue value, MeasurementWidthHeight current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             try { return MeasurementWidthHeight.FromString(s); }
             catch (FormatException) { return current; }
@@ -814,12 +813,12 @@ public static class LuaUiLibrary
 
     private static MeasurementMarginPosition ParseMarginPosition(LuaValue value, MeasurementMarginPosition current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             try { return MeasurementMarginPosition.FromString(s); }
             catch (FormatException) { return current; }
@@ -830,12 +829,12 @@ public static class LuaUiLibrary
 
     private static MeasurementPadding ParsePadding(LuaValue value, MeasurementPadding current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             try { return MeasurementPadding.FromString(s); }
             catch (FormatException) { return current; }
@@ -846,12 +845,12 @@ public static class LuaUiLibrary
 
     private static MeasurementGap ParseGap(LuaValue value, MeasurementGap current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }
 
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
         {
             try { return MeasurementGap.FromString(s); }
             catch (FormatException) { return current; }
@@ -862,7 +861,7 @@ public static class LuaUiLibrary
 
     private static MeasurementFlexBasis ParseFlexBasis(LuaValue value, MeasurementFlexBasis current)
     {
-        if (value.TryRead<float>(out var f))
+        if (value.TryConvertLuaValue<float>(out var f))
         {
             return f;
         }

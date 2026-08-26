@@ -34,7 +34,7 @@ public class ReadOnlyLuaView<T, TView>(IReadOnlyList<T> innerList, Func<T, TView
     bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
-        if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
+        if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
             if ((uint)index < (uint)Value.Count)
             {

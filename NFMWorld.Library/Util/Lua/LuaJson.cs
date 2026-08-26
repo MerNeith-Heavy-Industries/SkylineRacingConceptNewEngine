@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Lua;
 using NuLua;
 using NuLua.Luau;
 
@@ -32,7 +31,7 @@ public static class LuaJson
         writer.WriteStartObject();
         foreach (var (key, value) in table)
         {
-            var name = key.TryRead<string>(out var s) ? s : key.ToString();
+            var name = key.TryConvertLuaValue<string>(out var s) ? s : key.ToString();
             WriteValue(writer, name, value);
         }
 
@@ -41,16 +40,16 @@ public static class LuaJson
 
     private static void WriteValue(Utf8JsonWriter writer, string name, LuaValue value)
     {
-        if (value.TryRead<string>(out var s))
+        if (value.TryConvertLuaValue<string>(out var s))
             writer.WriteString(name, s);
-        else if (value.TryRead<bool>(out var b))
+        else if (value.TryConvertLuaValue<bool>(out var b))
             writer.WriteBoolean(name, b);
-        else if (value.TryRead<LuaTable>(out var table))
+        else if (value.TryConvertLuaValue<LuaTable>(out var table))
         {
             writer.WritePropertyName(name);
             WriteTable(writer, table);
         }
-        else if (value.TryRead<double>(out var d))
+        else if (value.TryConvertLuaValue<double>(out var d))
             writer.WriteNumber(name, d);
         else if (value.Type == LuaValueType.Nil)
             writer.WriteNull(name);

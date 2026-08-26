@@ -40,7 +40,7 @@ public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<
     bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
-        if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
+        if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
             if ((uint)index < (uint)Value.Count)
             {
@@ -56,9 +56,9 @@ public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<
     bool ILuaUserData.TrySetIndex(LuauState state, LuaValue key, LuaValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
-        if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
+        if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
-            if (!value.TryRead<TView>(out var typedValue))
+            if (!value.TryConvertLuaValue<TView>(out var typedValue))
             {
                 // Fallback: try number → T conversion for common numeric types
                 typedValue = value.ConvertLuaValue<TView>();
