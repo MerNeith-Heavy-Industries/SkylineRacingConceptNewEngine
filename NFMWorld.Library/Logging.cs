@@ -31,14 +31,30 @@ public static class Logging
             .AddZLoggerRollingFile((dt, index) => $"{dt:yyyy-MM-dd}_{index}.log", 1024 * 1024)
             .AddProvider(new NfmwLoggerProvider())
             .AddProvider(new NfmwSentryBreadcrumbLogger())
-            .SetMinimumLevel(
-#if DEBUG
-                LogLevel.Trace
-#else
-                LogLevel.Debug
-#endif
-            )
+            .SetMinimumLevel(MinimumLevelFromEnvironment())
         );
+
+    /// <summary>
+    /// Minimum log level. Overridable at runtime via the NFMW_LOG_MIN_LEVEL environment
+    /// variable (a <see cref="LogLevel"/> name, e.g. "Warning") so hosts/tests/benchmarks can
+    /// silence debug spam (e.g. per-node UI setProperty logs) without a rebuild. Defaults to
+    /// the historical behaviour: Trace in DEBUG builds, Debug otherwise.
+    /// </summary>
+    static LogLevel MinimumLevelFromEnvironment()
+    {
+        if (Enum.TryParse<LogLevel>(
+                Environment.GetEnvironmentVariable("NFMW_LOG_MIN_LEVEL"),
+                ignoreCase: true,
+                out var level))
+        {
+            return level;
+        }
+#if DEBUG
+        return LogLevel.Trace;
+#else
+        return LogLevel.Debug;
+#endif
+    }
 
     private static readonly ILogger General = LoggerFactory.CreateLogger("general");
 
@@ -60,7 +76,7 @@ public static class Logging
         => Debug($"{message}", memberName: memberName, filePath: filePath, lineNumber: lineNumber);
 
     #region InterpolatedStringHandler
-    
+
     public static void Info([InterpolatedStringHandlerArgument] ref StructuredLoggingInformationInterpolatedStringHandler handler, object? context = null, [CallerMemberName] string? memberName = null, [CallerFilePath] string? filePath = null, [CallerLineNumber] int lineNumber = 0)
     {
         if (General.IsEnabled(LogLevel.Information))
@@ -371,7 +387,7 @@ public class NfmwSentryBreadcrumbLogger : ILoggerProvider
 public class NfmwLoggerProvider : ILoggerProvider
 {
     private static readonly ConcurrentQueue<(string message, string level)> OutputLog = new();
-    
+
     public static IEnumerable<(string message, string level)> GetLogs()
     {
         return OutputLog;
