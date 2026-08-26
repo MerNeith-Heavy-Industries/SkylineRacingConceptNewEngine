@@ -4,13 +4,14 @@ using System.Runtime.CompilerServices;
 using FixedMathSharp;
 using FixedMathSharp.Utility;
 using Lua;
-using Lua.Runtime;
 using Microsoft.Extensions.Logging;
 using nfm_world_library.Lua;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 
 /*************************************
  *
@@ -3153,70 +3154,52 @@ public readonly struct Array2D<T>(int rows, int columns) : IEnumerable<T>, ILuaU
     // ILuaUserData — table-like behaviour via metatable
     // ------------------------------------------------------------------
 
-    LuaTable? ILuaUserData.Metatable
+    LuaUserDataMetamethods ILuaUserData.SupportedMetamethods =>
+        LuaUserDataMetamethods.Index |
+        LuaUserDataMetamethods.NewIndex |
+        LuaUserDataMetamethods.Iter |
+        LuaUserDataMetamethods.Length;
+
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
-        get => SharedMetatable;
-        set => throw new InvalidOperationException("Cannot set this object's metatable");
-    }
-
-    /// <summary>Shared metatable for all <see cref="UnlimitedArray{T}"/> instances of the same T.</summary>
-    private static LuaTable SharedMetatable
-    {
-        get
-        {
-            if (field != null)
-                return field;
-
-            var mt = new LuaTable(0, 3);
-            mt[Metamethods.Index] = new LuaFunction("__index", IndexMetamethodImpl);
-            mt[Metamethods.NewIndex] = new LuaFunction("__newindex", NewIndexMetamethodImpl);
-            mt[Metamethods.Len] = new LuaFunction("__len", LenMetamethodImpl);
-
-            Interlocked.CompareExchange(ref field, mt, null);
-            return field!;
-        }
-    }
-
-    private static ValueTask<int> IndexMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
-    {
-        var arr = context.GetArgument<LuaArray<T>>(0);
-        var key = context.GetArgument(1);
-
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
-            if ((uint)index < (uint)arr.Value.Count)
+            if ((uint)index < (uint)_arr.Length)
             {
-                return new(context.Return(LuaHelpers.ToLuaValue(arr[index]!)));
+                value = LuaHelpers.ToLuaValue(state, _arr[index]);
+                return true;
             }
         }
 
-        return new(context.Return(LuaValue.Nil));
+        value = default;
+        return false;
     }
 
-    private static ValueTask<int> NewIndexMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaValue key, LuaValue value)
     {
-        var arr = context.GetArgument<LuaArray<T>>(0);
-        var key = context.GetArgument(1);
-        var value = context.GetArgument(2);
-
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
             if (!value.TryRead<T>(out var typedValue))
             {
                 // Fallback: try number → T conversion for common numeric types
-                typedValue = LuaHelpers.ConvertLuaValue<T>(value);
+                typedValue = value.ConvertLuaValue<T>();
             }
-            arr[index] = typedValue;
+            _arr[index] = typedValue;
+            return true;
         }
 
-        return new(context.Return());
+        return false;
     }
 
-    private static ValueTask<int> LenMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
+    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
     {
-        var arr = context.GetArgument<LuaArray<T>>(0);
-        return new(context.Return((double)arr.Value.Count));
+        for (var i = 0; i < _arr.Length; i++)
+        {
+            yield return new KeyValuePair<LuaValue, LuaValue>(i + 1, LuaHelpers.ToLuaValue(state, _arr[i]));
+        }
     }
+
+    long? ILuaUserData.Length => rows * columns;
 }

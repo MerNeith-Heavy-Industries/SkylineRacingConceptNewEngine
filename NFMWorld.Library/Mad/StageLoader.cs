@@ -116,14 +116,14 @@ public partial class StageLoader
     [MemoryPackOrder(26), LuaName] public int? MountainSeed;
     [MemoryPackOrder(27), LuaName] public float? MountainCoverage;
     [MemoryPackOrder(28), LuaName] public LuaVector3? LightDirection;
-    [MemoryPackOrder(29), LuaName] public LuaUnlimitedArray<PiecePlacement> pieces = new();
-    [MemoryPackOrder(30), LuaName] public LuaUnlimitedArray<Rad3dBoxDef> walls = new();
+    [MemoryPackOrder(29), LuaName] public UnlimitedArray<PiecePlacement> pieces = new();
+    [MemoryPackOrder(30), LuaName] public UnlimitedArray<Rad3dBoxDef> walls = new();
     [MemoryPackOrder(31), LuaName] public int maxr = 0;
     [MemoryPackOrder(32), LuaName] public int maxl = 100;
     [MemoryPackOrder(33), LuaName] public int maxt = 0;
     [MemoryPackOrder(34), LuaName] public int maxb = 100;
 
-    [MemoryPackOrder(35), LuaName] public LuaUnlimitedArray<EnvironmentInstruction> EnvironmentInstructions = new();
+    [MemoryPackOrder(35), LuaName] public UnlimitedArray<EnvironmentInstruction> EnvironmentInstructions = new();
     [MemoryPackOrder(36), LuaName] public bool DrawPolys = true;
     [MemoryPackOrder(37), LuaName] public bool DrawClouds = true;
 

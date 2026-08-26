@@ -6,79 +6,81 @@ using Microsoft.Extensions.Logging;
 using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.DriverInterface.UI;
 using NFMWorld.Reactor;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Util;
 
 public static class LuaUiLibrary
 {
-    public static void Register(LuaState state, Action<View> setActiveRoot, Action<string, LuaValue> call, Func<string, Action<LuaValue>, Action> onEvent)
+    public static void Register(LuauState state, Action<View> setActiveRoot, Action<string, LuaValue> call,
+        Func<string, Action<LuaValue>, Action> onEvent)
     {
-        var library = new LuaTable()
+        var library = state.CreateTable();
+        library["createRoot"] = state.CreateFunction(CreateRoot);
+        library["createInstance"] = state.CreateFunction(CreateInstance);
+        library["createTextInstance"] = state.CreateFunction(CreateTextInstance);
+        library["appendChild"] = state.CreateFunction(AppendChild);
+        library["insertBefore"] = state.CreateFunction(InsertBefore);
+        library["removeChild"] = state.CreateFunction(RemoveChild);
+        library["setProperty"] = state.CreateFunction(SetProperty);
+        library["commitTextUpdate"] = state.CreateFunction(CommitTextUpdate);
+        library["setActiveRoot"] = state.CreateFunction((_, args) =>
         {
-            ["createRoot"] = CreateRoot,
-            ["createInstance"] = CreateInstance,
-            ["createTextInstance"] = CreateTextInstance,
-            ["appendChild"] = AppendChild,
-            ["insertBefore"] = InsertBefore,
-            ["removeChild"] = RemoveChild,
-            ["setProperty"] = SetProperty,
-            ["commitTextUpdate"] = CommitTextUpdate,
-            ["setActiveRoot"] = new LuaFunction("setActiveRoot", (context, ct) =>
+            var view = args[0].ConvertLuaValue<View>();
+            setActiveRoot(view);
+
+            return state.Return();
+        });
+        library["call"] = state.CreateFunction((_, args) =>
+        {
+            var method = args[0].ConvertLuaValue<string>();
+            var payload = args[1];
+            call(method, payload);
+
+            return state.Return();
+        });
+        library["onEvent"] = state.CreateFunction((substate, args) =>
+        {
+            var @event = args[0].ConvertLuaValue<string>();
+            var callback = args[1].ConvertLuaValue<LuaFunction>();
+
+            var unregister = onEvent(@event, value =>
             {
-                var view = context.GetArgument<View>(0);
-                setActiveRoot(view);
-
-                return new ValueTask<int>(context.Return());
-            }),
-            ["call"] = new LuaFunction("call", (context, ct) =>
+                state.Call(callback, value);
+            });
+            
+            return state.Return(substate.CreateFunction((substate1, args1) =>
             {
-                var method = context.GetArgument<string>(0);
-                var payload = context.GetArgument(1);
-                call(method, payload);
-                return new ValueTask<int>(context.Return());
-            }),
-            ["onEvent"] = new LuaFunction("onEvent", (context, ct) =>
-            {
-                var @event = context.GetArgument<string>(0);
-                var callback = context.GetArgument<LuaFunction>(1);
+                unregister();
+                return state.Return();
+            }));
+        });
+        library["defer"] = state.CreateFunction((substate, args) =>
+        {
+            var callback = args[0].ConvertLuaValue<LuaFunction>();
 
-                var unregister = onEvent(@event, value =>
-                {
-                    state.Call(callback, [value]);
-                });
+            // Queue the callback on the game-thread SynchronizationContext;
+            // it runs in GameThreadContext.ExecutePendingTasks() at the end
+            // of the frame's Update, so every setState in a frame coalesces
+            // into a single deferred re-render (scheduler batching).
+            GameThreadContext.Current.Post(_ => { state.Call(callback); }, null);
 
-                return new ValueTask<int>(context.Return(new LuaFunction("unregister", (context, ct) =>
-                {
-                    unregister();
-                    return new ValueTask<int>(context.Return());
-                })));
-            }),
-            ["defer"] = new LuaFunction("defer", (context, ct) =>
-            {
-                var callback = context.GetArgument<LuaFunction>(0);
+            return state.Return();
+        });
 
-                // Queue the callback on the game-thread SynchronizationContext;
-                // it runs in GameThreadContext.ExecutePendingTasks() at the end
-                // of the frame's Update, so every setState in a frame coalesces
-                // into a single deferred re-render (scheduler batching).
-                GameThreadContext.Current.Post(_ => { state.Call(callback, []); }, null);
-
-                return new ValueTask<int>(context.Return());
-            })
-        };
-
-        state.Environment["UiLib"] = library;
+        state["UiLib"] = library;
     }
 
-    internal static readonly LuaFunction CreateRoot = new("createRoot", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> CreateRoot = (state, args) =>
     {
-        return new ValueTask<int>(context.Return(new View()));
-    });
+        return state.Return(LuaHelpers.ToLuaValue(state, new View()));
+    };
 
-    internal static readonly LuaFunction CreateInstance = new("createInstance", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> CreateInstance = (state, args) =>
     {
-        var vtype = context.GetArgument<string>(0);
-        var props = context.GetArgument<LuaTable>(1);
+        var vtype = args[0].ConvertLuaValue<string>();
+        var props = args[1].ConvertLuaValue<LuaTable>();
         
         Logging.Debug($"createInstance {vtype}");
 
@@ -94,10 +96,10 @@ public static class LuaUiLibrary
                         continue;
                     }
 
-                    AssignComponentProperty(key, rawvalue, view, context.State);
+                    AssignComponentProperty(key, rawvalue, view, state);
                 }
 
-                return new ValueTask<int>(context.Return(view));
+                return state.Return(LuaHelpers.ToLuaValue(state, view));
             case "image":
                 var image = new Image();
 
@@ -108,10 +110,10 @@ public static class LuaUiLibrary
                         continue;
                     }
 
-                    AssignComponentProperty(key, rawvalue, image, context.State);
+                    AssignComponentProperty(key, rawvalue, image, state);
                 }
 
-                return new ValueTask<int>(context.Return(image));
+                return state.Return(LuaHelpers.ToLuaValue(state, image));
             case "text":
                 var text = new Text();
 
@@ -122,10 +124,10 @@ public static class LuaUiLibrary
                         continue;
                     }
 
-                    AssignComponentProperty(key, rawvalue, text, context.State);
+                    AssignComponentProperty(key, rawvalue, text, state);
                 }
 
-                return new ValueTask<int>(context.Return(text));
+                return state.Return(LuaHelpers.ToLuaValue(state, text));
             case "textinput":
                 var textinput = new TextInput();
 
@@ -136,28 +138,28 @@ public static class LuaUiLibrary
                         continue;
                     }
 
-                    AssignComponentProperty(key, rawvalue, textinput, context.State);
+                    AssignComponentProperty(key, rawvalue, textinput, state);
                 }
 
-                return new ValueTask<int>(context.Return(textinput));
+                return state.Return(LuaHelpers.ToLuaValue(state, textinput));
         }
 
-        throw new LuaRuntimeException(context.State, new InvalidOperationException($"Unknown vnode type {vtype}"));
-    });
+        throw new InvalidOperationException($"Unknown vnode type {vtype}");
+    };
 
-    internal static readonly LuaFunction CreateTextInstance = new("createTextInstance", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> CreateTextInstance = (state, args) =>
     {
-        var text = context.GetArgument<string>(0);
+        var text = args[0].ConvertLuaValue<string>();
         
         Logging.Debug($"createTextInstance {text}");
 
-        return new ValueTask<int>(context.Return( new TextNode() { Text = text }));
-    });
+        return state.Return(LuaHelpers.ToLuaValue(state, new TextNode() { Text = text }));
+    };
 
-    internal static readonly LuaFunction AppendChild = new("appendChild", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> AppendChild = (state, args) =>
     {
-        var parent = context.GetArgument<Node>(0);
-        var child = context.GetArgument<Node>(1);
+        var parent = args[0].ConvertLuaValue<Node>();
+        var child = args[1].ConvertLuaValue<Node>();
 
         Logging.Debug($"appendChild {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")}");
 
@@ -172,14 +174,14 @@ public static class LuaUiLibrary
         // recomputes from scratch instead of diffing against stale nodes.
         FocusManager.ResetHover();
 
-        return new ValueTask<int>(context.Return());
-    });
+        return state.Return();
+    };
 
-    internal static readonly LuaFunction InsertBefore = new("insertBefore", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> InsertBefore = (state, args) =>
     {
-        var parent = context.GetArgument<Node>(0);
-        var child = context.GetArgument<Node>(1);
-        var before = context.GetArgument<Node>(2);
+        var parent = args[0].ConvertLuaValue<Node>();
+        var child = args[1].ConvertLuaValue<Node>();
+        var before = args[2].ConvertLuaValue<Node>();
 
         Logging.Debug($"insertBefore {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")} b4 {(before is Component { Name: {} name3 } ? name3 : "Node")}");
 
@@ -190,13 +192,13 @@ public static class LuaUiLibrary
 
         FocusManager.ResetHover();
 
-        return new ValueTask<int>(context.Return());
-    });
+        return state.Return();
+    };
 
-    internal static readonly LuaFunction RemoveChild = new("removeChild", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> RemoveChild = (state, args) =>
     {
-        var parent = context.GetArgument<Node>(0);
-        var child = context.GetArgument<Node>(1);
+        var parent = args[0].ConvertLuaValue<Node>();
+        var child = args[1].ConvertLuaValue<Node>();
 
         Logging.Debug($"removeChild {(parent is Component { Name: {} name } ? name : "Node")}->{(child is Component { Name: {} name2 } ? name2 : "Node")}");
 
@@ -207,39 +209,39 @@ public static class LuaUiLibrary
 
         FocusManager.ResetHover();
 
-        return new ValueTask<int>(context.Return());
-    });
+        return state.Return();
+    };
 
-    internal static readonly LuaFunction SetProperty = new("setProperty", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> SetProperty = (state, args) =>
     {
-        var instance = context.GetArgument<Node>(0);
-        var key = context.GetArgument<string>(1);
-        var value = context.GetArgument(2);
+        var instance = args[0].ConvertLuaValue<Node>();
+        var key = args[1].ConvertLuaValue<string>();
+        var value = args[2];
 
         Logging.Debug($"setProperty {(instance is Component { Name: {} name } ? name : "Node")} {key}={value}");
 
         if (instance is Component cmp)
         {
-            AssignComponentProperty(key, value, cmp, context.State);
+            AssignComponentProperty(key, value, cmp, state);
         }
 
-        return new ValueTask<int>(context.Return());
-    });
+        return state.Return();
+    };
 
-    internal static readonly LuaFunction CommitTextUpdate = new("commitTextUpdate", (context, ct) =>
+    internal static readonly LuaFunc<LuauState> CommitTextUpdate = (state, args) =>
     {
-        var textInstance = context.GetArgument<TextNode>(0);
-        var oldText = context.GetArgumentOrNullClass<string>(1);
-        var newText = context.GetArgumentOrNullClass<string>(2);
+        var textInstance = args[0].ConvertLuaValue<TextNode>();
+        var oldText = args[1].ConvertLuaValue<string>();
+        var newText = args[2].ConvertLuaValue<string>();
 
         Logging.Debug($"commitTextUpdate {oldText}->{newText}");
 
         textInstance.Text = newText;
 
-        return new ValueTask<int>(context.Return());
-    });
+        return state.Return();
+    };
 
-    private static void AssignComponentProperty(string key, LuaValue rawvalue, Component cmp, LuaState state)
+    private static void AssignComponentProperty(string key, LuaValue rawvalue, Component cmp, LuauState state)
     {
         switch (key)
         {
@@ -274,9 +276,6 @@ public static class LuaUiLibrary
                 cmp.IsFocusable = true;
                 cmp.TabIndex = i;
                 break;
-            case "ref" when rawvalue.TryRead<LuaTable>(out var tab):
-                tab["current"] = cmp;
-                break;
             // NOTE: These bindings must REPLACE the previous handler rather than
             // accumulate with +=. React re-creates Lua closures on every parent
             // render, and diffProps re-sets any prop whose value changed, so a
@@ -289,42 +288,42 @@ public static class LuaUiLibrary
                 cmp.MousePressed = null;
                 cmp.MousePressed += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmouseup" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.MouseReleased = null;
                 cmp.MouseReleased += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmousedrag" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.MouseDragged = null;
                 cmp.MouseDragged += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmousescroll" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.MouseScrolled = null;
                 cmp.MouseScrolled += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmousemove" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.MouseMoved = null;
                 cmp.MouseMoved += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmouseenter" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.MouseEntered = null;
                 cmp.MouseEntered += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onmouseleave" when rawvalue.TryRead<LuaFunction>(out var func):
@@ -332,7 +331,7 @@ public static class LuaUiLibrary
                 cmp.MouseLeft += @event =>
                 {
                     var stopwatch = Stopwatch.StartNew();
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                     Logging.Debug("MouseLeave: " + stopwatch.Elapsed);
                 };
                 break;
@@ -340,21 +339,21 @@ public static class LuaUiLibrary
                 cmp.KeyTyped = null;
                 cmp.KeyTyped += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onkeydown" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.KeyPressed = null;
                 cmp.KeyPressed += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onkeyup" when rawvalue.TryRead<LuaFunction>(out var func):
                 cmp.KeyReleased = null;
                 cmp.KeyReleased += @event =>
                 {
-                    state.Call(func, [@event]);
+                    state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
                 break;
             case "onfocus" when rawvalue.TryRead<LuaFunction>(out var func):

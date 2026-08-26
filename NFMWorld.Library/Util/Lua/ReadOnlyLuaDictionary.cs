@@ -1,8 +1,8 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using Lua;
-using Lua.Runtime;
 using nfm_world_library.Lua;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Util;
 
@@ -18,98 +18,33 @@ public class ReadOnlyLuaDictionary<TKey, TValue>(IReadOnlyDictionary<TKey, TValu
     // ILuaUserData — table-like behaviour via metatable
     // ------------------------------------------------------------------
 
-    LuaTable? ILuaUserData.Metatable
+    LuaUserDataMetamethods ILuaUserData.SupportedMetamethods =>
+        LuaUserDataMetamethods.Index |
+        LuaUserDataMetamethods.Iter |
+        LuaUserDataMetamethods.Length;
+
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
-        get => field ??= SharedMetatable;
-        set;
+        // Integer key → array index (Lua is 1-indexed)
+        if (LuaHelpers.TryConvertLuaValue<TKey>(key, out var typedKey))
+        {
+            value = LuaHelpers.ToLuaValue(state, this[typedKey]);
+            return true;
+        }
+
+        value = default;
+        return false;
     }
 
-    /// <summary>Shared metatable for all <see cref="UnlimitedArray{T}"/> instances of the same T.</summary>
-    private static LuaTable SharedMetatable
+    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
     {
-        get
+        foreach (var (key, value) in this)
         {
-            if (field != null)
-                return field;
-
-            var mt = new LuaTable(0, 3);
-            mt[Metamethods.Index] = new LuaFunction("__index", IndexMetamethodImpl);
-            mt[Metamethods.Len] = new LuaFunction("__len", LenMetamethodImpl);
-            mt[Metamethods.Pairs] = Pairs;
-            mt[Metamethods.IPairs] = Ipairs;
-
-            Interlocked.CompareExchange(ref field, mt, null);
-            return field!;
+            yield return new KeyValuePair<LuaValue, LuaValue>(LuaHelpers.ToLuaValue(state, key), LuaHelpers.ToLuaValue(state, value));
         }
     }
 
-    private static ValueTask<int> IndexMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
-    {
-        var arr = context.GetArgument<ReadOnlyLuaDictionary<TKey, TValue>>(0);
-        var key = context.GetArgument(1);
-
-        if (key.TryRead<TKey>(out var typedValue))
-        {
-            return new(context.Return(LuaHelpers.ToLuaValue(arr[typedValue]!)));
-        }
-
-        return new(context.Return(LuaValue.Nil));
-    }
-
-    private static ValueTask<int> LenMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
-    {
-        var arr = context.GetArgument<ReadOnlyLuaDictionary<TKey, TValue>>(0);
-        return new(context.Return((double)arr.Value.Count));
-    }
-
-    private static readonly Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> Inext = static (context, ct) =>
-    {
-        var instance = context.GetCsClosure()!.UpValues[0].Read<IEnumerator<KeyValuePair<TKey, TValue>>>();
-        var idx = context.GetCsClosure()!.UpValues[1].Read<int>();
-        context.GetCsClosure()!.UpValues[1] = idx + 1;
-        if (!instance.MoveNext())
-        {
-            return ValueTask.FromResult(context.Return());
-        }
-
-        var t = new LuaTable();
-        t[1] = LuaHelpers.ToLuaValue(instance.Current.Key);
-        t[2] = LuaHelpers.ToLuaValue(instance.Current.Value);
-        
-        return ValueTask.FromResult(context.Return(idx + 1, t));
-    };
-
-    private static readonly LuaFunction Ipairs = new(Metamethods.IPairs, (context, ct) =>
-    {
-        var instance = context.GetArgument<IEnumerable<KeyValuePair<TKey, TValue>>>(0);
-        
-        // upvalues: instance, idx
-        var closure = new CSharpClosure("inext", [LuaValue.FromLightUserData(instance), 0], Inext);
-        
-        return ValueTask.FromResult(context.Return(closure, LuaValue.Nil, LuaValue.Nil));
-    });
-        
-    // pairs
-    private static readonly Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> Next = static (context, ct) =>
-    {
-        var instance = context.GetCsClosure()!.UpValues[0].Read<IEnumerator<KeyValuePair<TKey, TValue>>>();
-        if (!instance.MoveNext())
-        {
-            return ValueTask.FromResult(context.Return());
-        }
-        
-        return ValueTask.FromResult(context.Return(LuaHelpers.ToLuaValue(instance.Current.Key), LuaHelpers.ToLuaValue(instance.Current.Value)));
-    };
-
-    private static readonly LuaFunction Pairs = new(Metamethods.Pairs, (context, ct) =>
-    {
-        var instance = context.GetArgument<IEnumerable<KeyValuePair<TKey, TValue>>>(0);
-        
-        // upvalues: instance, idx
-        var closure = new CSharpClosure("next", [LuaValue.FromLightUserData(instance)], Next);
-        
-        return ValueTask.FromResult(context.Return(closure, LuaValue.Nil, LuaValue.Nil));
-    });
+    long? ILuaUserData.Length => Count;
 
     public bool ContainsKey(TKey key)
     {

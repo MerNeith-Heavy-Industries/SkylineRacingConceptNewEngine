@@ -16,7 +16,7 @@ public readonly partial struct LuaEventEnvelope
     [MemoryPackOrder(0)]
     public required string Type { get; init; }
 
-    /// <summary>JSON-encoded event payload (UTF-8).</summary>
-    [MemoryPackOrder(1), LuaValueMemoryPackFormatter]
-    public required LuaValue Payload { get; init; }
+    /// <summary>MemoryPack-encoded event payload (UTF-8).</summary>
+    [MemoryPackOrder(1)]
+    public required byte[] Payload { get; init; }
 }

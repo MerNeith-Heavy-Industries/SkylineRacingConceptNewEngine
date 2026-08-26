@@ -1,63 +1,8 @@
-declare extern type CarStatsData with
-    fileName: string
-    name: string
-    collection: Collection
-    topSpeed: number
-    acceleration: number
-    handling: number
-    powerSave: number
-    strength: number
-    maxHealth: number
-    stunting: number
-    hypergliding: number
-    abing: number
+declare extern type CounterData with
+    value: integer
 end
 
-declare CarStatsData: {
-}
-
-declare extern type CarCollectionsData with
-    collections: { [integer|number]: CarCollectionData }
-end
-
-declare CarCollectionsData: {
-}
-
-declare extern type CarCollectionData with
-    id: Collection
-    name: string
-    cars: { [integer|number]: CarStatsData }
-end
-
-declare CarCollectionData: {
-}
-
-declare extern type CurrentCollectionData with
-    id: Collection
-end
-
-declare CurrentCollectionData: {
-}
-
-declare extern type PauseState with
-    lap: integer
-    totalLaps: integer
-    position: integer
-    totalRacers: integer
-    stageName: string
-end
-
-declare PauseState: {
-}
-
-declare extern type AccountData with
-    name: string
-    isLoggedIn: boolean
-    avatarUrl: string
-    __eq: ((left: AccountData|nil, right: AccountData|nil) -> boolean)
-end
-
-declare AccountData: {
+declare CounterData: {
 }
 
 declare extern type CapturedKey with
@@ -121,10 +66,65 @@ end
 declare AvailableOptions: {
 }
 
-declare extern type CounterData with
-    value: integer
+declare extern type CarStatsData with
+    fileName: string
+    name: string
+    collection: Collection
+    topSpeed: number
+    acceleration: number
+    handling: number
+    powerSave: number
+    strength: number
+    maxHealth: number
+    stunting: number
+    hypergliding: number
+    abing: number
 end
 
-declare CounterData: {
+declare CarStatsData: {
+}
+
+declare extern type CarCollectionsData with
+    collections: { [integer|number]: CarCollectionData }
+end
+
+declare CarCollectionsData: {
+}
+
+declare extern type CarCollectionData with
+    id: Collection
+    name: string
+    cars: { [integer|number]: CarStatsData }
+end
+
+declare CarCollectionData: {
+}
+
+declare extern type CurrentCollectionData with
+    id: Collection
+end
+
+declare CurrentCollectionData: {
+}
+
+declare extern type PauseState with
+    lap: integer
+    totalLaps: integer
+    position: integer
+    totalRacers: integer
+    stageName: string
+end
+
+declare PauseState: {
+}
+
+declare extern type AccountData with
+    name: string
+    isLoggedIn: boolean
+    avatarUrl: string
+    __eq: ((left: AccountData|nil, right: AccountData|nil) -> boolean)
+end
+
+declare AccountData: {
 }
 

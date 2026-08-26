@@ -1,17 +1,13 @@
-using Lua;
-using Lua.Loaders;
-using Lua.Standard;
 using MemoryPack;
 using nfm_world_library.Lua;
 using NFMWorld.DriverInterface;
-using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorldLibrary.Backend;
-using NFMWorldLibrary.Backend.AI;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Helpers;
 using NFMWorldLibrary.Util;
-using NFMWorld.LuaSourceGenerator.Generator;
 using NFMWorldLibrary.Radpack;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Gamemodes.Lua;
 
@@ -118,7 +114,7 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
         gamemode.SendServerEvent(MemoryPackSerializer.Serialize(new LuaEventEnvelope
         {
             Type = type,
-            Payload = payload
+            Payload = LuaValueMemoryPackFormatter.Serialize(payload)
         }));
     }
 
@@ -166,23 +162,23 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
 /// </summary>
 public sealed class LuaGamemode : BaseClientGamemode
 {
-    private readonly LuaState _state;
+    private readonly LuauState _state;
     private readonly LuaTable? _moduleTable;
 
     public LuaTable? Config { get; }
 
     public override string GamemodeId { get; }
 
-    public LuaGamemode(ClientGamemodeParameters clientGamemodeParameters, IGamemodeContext gamemodeContext, string gamemodeId, LuaTable? config = null)
+    public LuaGamemode(ClientGamemodeParameters clientGamemodeParameters, IGamemodeContext gamemodeContext, string gamemodeId, IReadOnlyDictionary<string, object>? config = null)
         : base(clientGamemodeParameters, gamemodeContext)
     {
         GamemodeId = gamemodeId;
 
-        Config = config;
-
         _state = LuaHelpers.OpenState();
 
-        _state.Environment["GM"] = new LuaGamemodeContext(this);
+        Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
+
+        _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/client.luau");
         if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
@@ -191,18 +187,17 @@ public sealed class LuaGamemode : BaseClientGamemode
         }
     }
 
-    public LuaGamemode(ClientGamemodeParameters clientGamemodeParameters, IGamemodeContext gamemodeContext, string gamemodeId, RadpackLua radpack, LuaTable? config = null)
+    public LuaGamemode(ClientGamemodeParameters clientGamemodeParameters, IGamemodeContext gamemodeContext, string gamemodeId, RadpackLua radpack, IReadOnlyDictionary<string, object>? config = null)
         : base(clientGamemodeParameters, gamemodeContext)
     {
         GamemodeId = gamemodeId;
 
-        Config = config;
-
         _state = LuaHelpers.OpenState();
 
-        _state.Environment["GM"] = new LuaGamemodeContext(this);
+        Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
 
-        _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
+        _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
+
         var results = _state.DoString(radpack.Files["client"]);
         if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
         {
@@ -240,13 +235,13 @@ public sealed class LuaGamemode : BaseClientGamemode
     public override void KeyPressed(Key key, in Keys keys)
     {
         base.KeyPressed(key, keys);
-        Call("OnKeyPressed", LuaVisibleHelper.Wrap(key));
+        Call("OnKeyPressed", _state.CreateEnumUserData(key));
     }
 
     public override void KeyReleased(Key key, in Keys keys)
     {
         base.KeyReleased(key, keys);
-        Call("OnKeyReleased", LuaVisibleHelper.Wrap(key));
+        Call("OnKeyReleased", _state.CreateEnumUserData(key));
     }
 
     public override void KeyTyped(char character)
@@ -258,44 +253,40 @@ public sealed class LuaGamemode : BaseClientGamemode
     public override void OnServerEvent(ReadOnlySpan<byte> payload)
     {
         var envelope = MemoryPackSerializer.Deserialize<LuaEventEnvelope>(payload);
-        Call("OnServerEvent", envelope.Type, envelope.Payload);
+        Call("OnServerEvent", envelope.Type, LuaValueMemoryPackFormatter.Deserialize(_state, envelope.Payload));
     }
 
     public override void OnServerRaceFinished(RaceResults results)
     {
-        Call("OnServerEvent", new LuaTable()
-        {
-            ["raceDuration"] = results.RaceDuration.TotalSeconds,
-            ["gamemodeId"] = results.GamemodeId,
-            ["standings"] = MarshalStandings(results.Standings)
-        });
+        var table = _state.CreateTable();
+        table["raceDuration"] = results.RaceDuration.TotalSeconds;
+        table["gamemodeId"] = results.GamemodeId;
+        table["standings"] = MarshalStandings(results.Standings);
+        
+        Call("OnServerEvent", table);
     }
     
     /// <summary>
     /// Marshals standings back into a <see cref="LuaTable"/>, mirroring the shape read by
     /// <c>LuaServerGamemode.ParseStandings</c>. Each entry is <c>{ playerId, position, finished }</c>.
     /// </summary>
-    private static LuaTable MarshalStandings(RaceStanding[] standings)
+    private LuaTable MarshalStandings(RaceStanding[] standings)
     {
-        var table = new LuaTable();
+        var table = _state.CreateTable();
         var index = 1;
         foreach (var standing in standings)
         {
-            table[index++] = new LuaTable
-            {
-                ["playerId"] = standing.PlayerId.ToString("D"),
-                ["position"] = (double)standing.FinishPosition,
-                ["finished"] = standing.FinishTime.HasValue
-            };
+            var subtable = _state.CreateTable();
+            subtable["playerId"] = standing.PlayerId.ToString("D");
+            subtable["position"] = (double)standing.FinishPosition;
+            subtable["finished"] = standing.FinishTime.HasValue;
+            table[index++] = subtable;
         }
 
         return table;
     }
     
     // ── Script invocation ──────────────────────────────────────────
-
-    private void RegisterFunction(string name, Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> fn)
-        => _state.Environment[name] = new LuaFunction(name, fn);
 
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
@@ -308,7 +299,14 @@ public sealed class LuaGamemode : BaseClientGamemode
 
         try
         {
-            return _state.Call(function, arguments);
+            var resultCount = _state.Call(function, arguments);
+            var values = new LuaValue[resultCount];
+            for (var i = 0; i < resultCount; i++)
+            {
+                values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
+            }
+            // TODO do we need to free anything?
+            return values;
         }
         catch (Exception ex)
         {

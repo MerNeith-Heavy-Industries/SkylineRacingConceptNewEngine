@@ -1,11 +1,9 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
-using Lua;
-using Lua.Runtime;
 using Maxine.Extensions.Collections;
-using MemoryPack;
 using nfm_world_library.Lua;
-using NFMWorld.Reactor;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Util;
 
@@ -74,52 +72,37 @@ public partial class ReadOnlyLuaArray<T> : ILuaUserData, IReadOnlyList<T>
     // ILuaUserData — table-like behaviour via metatable
     // ------------------------------------------------------------------
 
-    LuaTable? ILuaUserData.Metatable
+    LuaUserDataMetamethods ILuaUserData.SupportedMetamethods =>
+        LuaUserDataMetamethods.Index |
+        LuaUserDataMetamethods.Iter |
+        LuaUserDataMetamethods.Length;
+
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
-        get => field ??= SharedMetatable;
-        set;
-    }
-
-    /// <summary>Shared metatable for all <see cref="UnlimitedArray{T}"/> instances of the same T.</summary>
-    private static LuaTable SharedMetatable
-    {
-        get
-        {
-            if (field != null)
-                return field;
-
-            var mt = new LuaTable(0, 3);
-            mt[Metamethods.Index] = new LuaFunction("__index", IndexMetamethodImpl);
-            mt[Metamethods.Len] = new LuaFunction("__len", LenMetamethodImpl);
-
-            Interlocked.CompareExchange(ref field, mt, null);
-            return field!;
-        }
-    }
-
-    private static ValueTask<int> IndexMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
-    {
-        var arr = context.GetArgument<ReadOnlyLuaArray<T>>(0);
-        var key = context.GetArgument(1);
-
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryRead<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
         {
-            if ((uint)index < (uint)arr.Value.Count)
+            if ((uint)index < (uint)Value.Count)
             {
-                return new(context.Return(LuaHelpers.ToLuaValue(arr[index]!)));
+                value = LuaHelpers.ToLuaValue(state, Value[index]);
+                return true;
             }
         }
 
-        return new(context.Return(LuaValue.Nil));
+        value = default;
+        return false;
     }
 
-    private static ValueTask<int> LenMetamethodImpl(LuaFunctionExecutionContext context, CancellationToken ct)
+    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
     {
-        var arr = context.GetArgument<ReadOnlyLuaArray<T>>(0);
-        return new(context.Return((double)arr.Value.Count));
+        for (var i = 0; i < Value.Count; i++)
+        {
+            yield return new KeyValuePair<LuaValue, LuaValue>(i + 1, LuaHelpers.ToLuaValue(state, Value[i]));
+        }
     }
 
+    long? ILuaUserData.Length => Value.Count;
+    
     public int IndexOf(T item) => Value.IndexOf(item);
 
     public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();

@@ -1,9 +1,7 @@
-﻿using Lua;
-using Lua.Loaders;
-using Lua.Standard;
-using NFMWorld.LuaSourceGenerator.Generator;
-using NFMWorldLibrary.Radpack;
+﻿using NFMWorldLibrary.Radpack;
 using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Gamemodes.Lua;
 
@@ -18,13 +16,13 @@ public class LuaGamemodeConfig
         var state = LuaHelpers.OpenState();
 
         LuaGamemodeConfig? config = null;
-        RegisterFunction(state, "DefineGamemodeConfig", (context, ct) =>
+        state.RegisterFunction("DefineGamemodeConfig", (luauState, args) =>
         {
-            var table = context.GetArgument<LuaTable>(0);
-
+            var table = args[0].Read<LuaTable>();
+            
             config = MarshalConfig(table);
 
-            return ValueTask.FromResult(context.Return());
+            return 0;
         });
 
         state.DoFile($"data/gamemodes/{path}/config.luau");
@@ -41,16 +39,15 @@ public class LuaGamemodeConfig
         var state = LuaHelpers.OpenState();
 
         LuaGamemodeConfig? config = null;
-        RegisterFunction(state, "DefineGamemodeConfig", (context, ct) =>
+        state.RegisterFunction("DefineGamemodeConfig", (luauState, args) =>
         {
-            var table = context.GetArgument<LuaTable>(0);
-
+            var table = args[0].Read<LuaTable>();
+            
             config = MarshalConfig(table);
 
-            return ValueTask.FromResult(context.Return());
+            return 0;
         });
 
-        state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(lua.Files), state.ModuleLoader!);
         state.DoString(lua.Files["config"]);
 
         return config ?? new LuaGamemodeConfig()
@@ -59,9 +56,6 @@ public class LuaGamemodeConfig
             Description = "N/A"
         };
     }
-
-    private static void RegisterFunction(LuaState state, string name, Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> fn)
-        => state.Environment[name] = new LuaFunction(name, fn);
 
     private static LuaGamemodeConfig MarshalConfig(LuaTable table)
     {
@@ -106,7 +100,7 @@ public class LuaGamemodeConfig
                                 propValue.Options.Add(new LuaGamemodePropertyOption
                                 {
                                     Label = optionLabel.ToString(),
-                                    Value = optionValue.Read<object>()
+                                    Value = optionValue.ConvertLuaValue<object>()
                                 });
                             }
                         }
@@ -122,23 +116,19 @@ public class LuaGamemodeConfig
     /// Marshals this config back into a <see cref="LuaTable"/>, mirroring the shape
     /// expected by <see cref="MarshalConfig"/>.
     /// </summary>
-    public LuaTable ToLuaTable()
+    public LuaTable ToLuaTable(LuauState state)
     {
-        var table = new LuaTable
-        {
-            ["name"] = Name,
-            ["description"] = Description
-        };
+        var table = state.CreateTable();
+        table["name"] = Name;
+        table["description"] = Description;
 
-        var properties = new LuaTable();
+        var properties = state.CreateTable();
         var propertyIndex = 1;
         foreach (var property in Properties)
         {
-            var propertyTable = new LuaTable
-            {
-                ["name"] = property.Name,
-                ["type"] = property.Type.ToString()
-            };
+            var propertyTable = state.CreateTable();
+            propertyTable["name"] = property.Name;
+            propertyTable["type"] = property.Type.ToString();
 
             if (property.Label is not null)
             {
@@ -152,15 +142,14 @@ public class LuaGamemodeConfig
 
             if (property.Options.Count > 0)
             {
-                var options = new LuaTable();
+                var options = state.CreateTable();
                 var optionIndex = 1;
                 foreach (var option in property.Options)
                 {
-                    options[optionIndex++] = new LuaTable
-                    {
-                        ["label"] = option.Label,
-                        ["value"] = LuaValue.FromObject(option.Value)
-                    };
+                    var t = state.CreateTable();
+                    options[optionIndex++] = t;
+                    t["label"] = option.Label;
+                    t["value"] = LuaHelpers.ToLuaValue(state, option.Value);
                 }
 
                 propertyTable["options"] = options;
@@ -174,8 +163,10 @@ public class LuaGamemodeConfig
         return table;
     }
 
-    public bool IsCompatible(IReadOnlyDictionary<string, object> config)
+    public bool IsCompatible(IReadOnlyDictionary<string, object>? config)
     {
+        if (config == null) return Properties.Count == 0;
+        
         foreach (var property in Properties)
         {
             if (!config.TryGetValue(property.Name, out var value))

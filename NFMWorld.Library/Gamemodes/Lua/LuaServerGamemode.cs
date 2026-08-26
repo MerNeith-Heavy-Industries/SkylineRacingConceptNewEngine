@@ -1,15 +1,13 @@
-using Lua;
-using Lua.Loaders;
-using Lua.Standard;
 using MemoryPack;
 using nfm_world_library.Lua;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Util;
-using NFMWorld.LuaSourceGenerator.Generator;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Multiplayer;
 using NFMWorldLibrary.Multiplayer.Packets.C2S;
 using NFMWorldLibrary.Radpack;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Gamemodes.Lua;
 
@@ -45,7 +43,7 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
         data.BroadcastEvent(MemoryPackSerializer.Serialize(new LuaEventEnvelope
         {
             Type = type,
-            Payload = payload
+            Payload = LuaValueMemoryPackFormatter.Serialize(payload)
         }));
     }
 
@@ -108,7 +106,7 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
 /// </summary>
 public sealed class LuaServerGamemode : BaseServerGamemode
 {
-    private LuaState _state;
+    private LuauState _state;
     private IServerGamemodeData? _data;
     internal GameStateSnapshot? _snapshot;
     private readonly LuaTable? _moduleTable;
@@ -119,16 +117,17 @@ public sealed class LuaServerGamemode : BaseServerGamemode
     public IReadOnlyList<ServerSidePlayerInfo> Players { get; set; }
 
     public LuaServerGamemode(ServerGamemodeParameters parameters, IServerGamemodeData data, string gamemodeId,
-        LuaTable? config = null)
+        IReadOnlyDictionary<string, object>? config = null)
     {
         _data = data;
         GamemodeId = gamemodeId;
-        Config = config;
         Players = parameters.Players;
         
         _state = LuaHelpers.OpenState();
 
-        _state.Environment["SGM"] = new LuaServerGamemodeContext(this, data);
+        Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
+
+        _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/server.luau");
         if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
@@ -138,18 +137,18 @@ public sealed class LuaServerGamemode : BaseServerGamemode
     }
 
     public LuaServerGamemode(ServerGamemodeParameters parameters, IServerGamemodeData data, string gamemodeId,
-        RadpackLua radpack, LuaTable? config = null)
+        RadpackLua radpack, IReadOnlyDictionary<string, object>? config = null)
     {
         _data = data;
         GamemodeId = gamemodeId;
-        Config = config;
         Players = parameters.Players;
         
         _state = LuaHelpers.OpenState();
 
-        _state.Environment["SGM"] = new LuaServerGamemodeContext(this, data);
+        Config = config != null ? LuaHelpers.GamemodeConfigToLuaTable(_state, config) : null;
 
-        _state.ModuleLoader = CompositeModuleLoader.Create(new RadpackModuleLoader(radpack.Files), _state.ModuleLoader!);
+        _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
+
         var results = _state.DoString(radpack.Files["server"]);
         if (results is [var value] && value.TryRead<LuaTable>(out var resultTable))
         {
@@ -178,13 +177,10 @@ public sealed class LuaServerGamemode : BaseServerGamemode
     {
         var envelope = MemoryPackSerializer.Deserialize<LuaEventEnvelope>(payload);
 
-        Call("OnClientEvent", clientId.ToString(), envelope.Type, envelope.Payload);
+        Call("OnClientEvent", clientId.ToString(), envelope.Type, LuaValueMemoryPackFormatter.Deserialize(_state, envelope.Payload));
     }
 
     public override GameStateSnapshot? GetStateSnapshot() => _snapshot;
-
-    private void RegisterFunction(string name, Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> fn)
-        => _state!.Environment[name] = new LuaFunction(name, fn);
 
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
@@ -197,7 +193,14 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
         try
         {
-            return _state.Call(function, arguments);
+            var resultCount = _state.Call(function, arguments);
+            var values = new LuaValue[resultCount];
+            for (var i = 0; i < resultCount; i++)
+            {
+                values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
+            }
+            // TODO do we need to free anything?
+            return values;
         }
         catch (Exception ex)
         {

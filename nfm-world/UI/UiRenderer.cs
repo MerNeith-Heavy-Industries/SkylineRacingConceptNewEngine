@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Lua;
 using Microsoft.Xna.Framework;
 using NFMWorld;
 using NFMWorld.ClayDom.Events;
@@ -9,6 +8,8 @@ using NFMWorld.DriverInterface.DriverInterface;
 using NFMWorld.LuaSourceGenerator.Generator.NFMWorld;
 using NFMWorld.Reactor;
 using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 
 namespace WorldXaml.UI.Yoga;
 
@@ -18,7 +19,7 @@ public class UiRenderer : IDisposable
 
     private readonly Dictionary<string, MessageHandler> _toCsharpHandlers = new();
     private readonly ConcurrentDictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
-    private LuaState _state;
+    private LuauState _state;
     private string _currentPhaseId = "main-menu";
 
     public View? ActiveRoot { get; private set; }

@@ -13,10 +13,10 @@ namespace NFMWorldLibrary.Backend;
 [LuaVisible]
 public partial class BackendStage
 {
-    [LuaName] public LuaUnlimitedArray<BackendGameObject> Pieces { get; } = [];
-    [LuaName] public LuaUnlimitedArray<StageObject> Nodes { get; } = [];
-    [LuaName] public LuaUnlimitedArray<StageObject> Checkpoints { get; } = [];
-    [LuaName] public LuaUnlimitedArray<StageObject> FixHoops { get; } = [];
+    [LuaName] public UnlimitedArray<BackendGameObject> Pieces { get; } = [];
+    [LuaName] public UnlimitedArray<StageObject> Nodes { get; } = [];
+    [LuaName] public UnlimitedArray<StageObject> Checkpoints { get; } = [];
+    [LuaName] public UnlimitedArray<StageObject> FixHoops { get; } = [];
     [LuaName] public ushort Nlaps { get; set; }
 
     [LuaName] public string Name = "hogan rewish";

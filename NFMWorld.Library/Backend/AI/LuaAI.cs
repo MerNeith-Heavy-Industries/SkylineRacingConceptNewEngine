@@ -1,11 +1,9 @@
-﻿using Lua;
-using Lua.Standard;
-using nfm_world_library.Lua;
-using NFMWorld.LuaSourceGenerator.Generator;
+﻿using nfm_world_library.Lua;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Gamemodes;
-using NFMWorldLibrary.Gamemodes.Lua;
 using NFMWorldLibrary.Util;
+using NuLua;
+using NuLua.Luau;
 
 namespace NFMWorldLibrary.Backend.AI;
 
@@ -28,7 +26,7 @@ public partial class LuaAiContext(BaseClientGamemode gamemode, ClientSidePlayer 
 public class LuaAi : BaseAi
 {
     private readonly string _scriptPath;
-    private readonly LuaState _state;
+    private readonly LuauState _state;
     private readonly LuaTable? _moduleTable;
 
     public LuaTable? Config { get; set; }
@@ -39,7 +37,7 @@ public class LuaAi : BaseAi
 
         _state = LuaHelpers.OpenState();
 
-        _state.Environment["AI"] = new LuaAiContext(gamemode, aiPlayer, this);
+        _state["AI"] = LuaHelpers.ToLuaValue(_state, new LuaAiContext(gamemode, aiPlayer, this));
 
         Config = config;
 
@@ -57,9 +55,6 @@ public class LuaAi : BaseAi
 
     // ── Script invocation ──────────────────────────────────────────
 
-    private void RegisterFunction(string name, Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> fn)
-        => _state.Environment[name] = new LuaFunction(name, fn);
-
     private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
     {
         if (_moduleTable == null ||
@@ -71,11 +66,18 @@ public class LuaAi : BaseAi
 
         try
         {
-            return _state.Call(function, arguments);
+            var resultCount = _state.Call(function, arguments);
+            var values = new LuaValue[resultCount];
+            for (var i = 0; i < resultCount; i++)
+            {
+                values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
+            }
+            // TODO do we need to free anything?
+            return values;
         }
         catch (Exception ex)
         {
-            Logging.Error($"[LuaGamemode:{_scriptPath}] {name} failed: {ex.Message}", ex);
+            Logging.Error($"[LuaAi:{_scriptPath}] {name} failed: {ex.Message}", ex);
         }
         return [LuaValue.Nil];
     }

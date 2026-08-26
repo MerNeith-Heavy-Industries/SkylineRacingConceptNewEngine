@@ -49,8 +49,6 @@
         <ProjectReference Include="..\NFMWorld.PhysicsFS\NFMWorld.PhysicsFS.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
         <ProjectReference Include="..\NFMWorld.Sentry\NFMWorld.Sentry.csproj" />
-        <ProjectReference Include="..\Lua-CSharp\src\Lua.SourceGenerator\Lua.SourceGenerator.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
-        <ProjectReference Include="..\Lua-CSharp\src\Lua\Lua.csproj" />
     </ItemGroup>
 
     <ItemGroup>
