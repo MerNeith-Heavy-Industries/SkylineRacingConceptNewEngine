@@ -399,7 +399,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     private void EmitTypePartial(IndentedStringBuilder sb)
     {
         sb.Append($"partial {(type.IsRecord ? "record " : "")}{(type.IsValueType ? "struct " : type.IsInterface ? "interface " : "class ")}{type.TypeName}");
-        sb.Append($" : global::NuLua.ILuaUserData<{type.FullTypeName}>");
+        sb.Append($" : global::NuLua.ILuaUserData");
         sb.AppendLine();
         using (sb.Block())
         {
@@ -416,7 +416,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
 
     private void EmitSupportedMetamethods(IndentedStringBuilder sb)
     {
-        sb.AppendLine("public static global::NuLua.LuaUserDataMetamethods SupportedMetamethods =>");
+        sb.AppendLine("public global::NuLua.LuaUserDataMetamethods SupportedMetamethods =>");
         using (sb.Indent())
         {
             var flags = new List<string>();

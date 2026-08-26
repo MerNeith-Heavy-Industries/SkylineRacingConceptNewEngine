@@ -6,13 +6,13 @@ using NuLua.Luau;
 
 namespace NFMWorldLibrary.FixedMath;
 
-public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle roll) : IEquatable<f64Euler>, IPrimitiveUserData<f64Euler>
+public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle roll) : IEquatable<f64Euler>, IPrimitive<f64Euler>
 {
     #region ILuaUserData
-    
+
     public static int PrimitiveId => 3;
 
-    static LuaUserDataMetamethods ILuaUserData<f64Euler>.SupportedMetamethods =>
+    static LuaUserDataMetamethods IPrimitive<f64Euler>.SupportedMetamethods =>
         LuaUserDataMetamethods.Unm |
         LuaUserDataMetamethods.Add |
         LuaUserDataMetamethods.Sub |
@@ -20,23 +20,23 @@ public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle 
         LuaUserDataMetamethods.ToString |
         LuaUserDataMetamethods.Index;
 
-    bool ILuaUserData<f64Euler>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool IPrimitive<f64Euler>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
         if (key.TryRead<string>(out var strKey))
         {
-            if (strKey == "pitch") value = LuaValue.FromPrimitive(Pitch);
-            if (strKey == "yaw") value = LuaValue.FromPrimitive(Yaw);
-            if (strKey == "roll") value = LuaValue.FromPrimitive(Roll);
+            if (strKey == "pitch") { value = LuaValue.FromPrimitive(Pitch); return true; }
+            if (strKey == "yaw") { value = LuaValue.FromPrimitive(Yaw); return true; }
+            if (strKey == "roll") { value = LuaValue.FromPrimitive(Roll); return true; }
         }
 
         value = default;
         return false;
     }
 
-    string? ILuaUserData<f64Euler>.ToLuaString(LuauState state) => ToString();
-    
+    string? IPrimitive<f64Euler>.ToLuaString(LuauState state) => ToString();
+
     #endregion
-    
+
     public f64AngleSingle Yaw { get; set; } = yaw;
     public f64AngleSingle Pitch { get; set; } = pitch;
     public f64AngleSingle Roll { get; set; } = roll;
@@ -74,7 +74,7 @@ public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle 
     {
         return new f64Euler(WrapSinglePositive(Yaw), WrapSinglePositive(Pitch), WrapSinglePositive(Roll));
     }
-    
+
     /// <summary>
     /// Wraps this Stride.Core.Mathematics.AngleSingle to be in the range [0, 2π).
     /// </summary>
@@ -145,7 +145,7 @@ public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle 
     public bool Equals(f64Euler other) => Yaw.Equals(other.Yaw) && Pitch.Equals(other.Pitch) && Roll.Equals(other.Roll);
     public override bool Equals(object? obj) => obj is f64Euler other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(Yaw, Pitch, Roll);
-    
+
     public static explicit operator Euler(f64Euler euler)
         => new Euler(AngleSingle.FromRadians((float)euler.Yaw.Radians), AngleSingle.FromRadians((float)euler.Pitch.Radians), AngleSingle.FromRadians((float)euler.Roll.Radians));
 }

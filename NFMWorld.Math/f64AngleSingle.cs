@@ -6,13 +6,13 @@ using NuLua.Luau;
 
 namespace NFMWorldLibrary.FixedMath;
 
-public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquatable<f64AngleSingle>, ISpanFormattable, IPrimitiveUserData<f64AngleSingle>
+public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquatable<f64AngleSingle>, ISpanFormattable, IPrimitive<f64AngleSingle>
 {
     #region ILuaUserData
-    
+
     public static int PrimitiveId => 2;
 
-    static LuaUserDataMetamethods ILuaUserData<f64AngleSingle>.SupportedMetamethods =>
+    static LuaUserDataMetamethods IPrimitive<f64AngleSingle>.SupportedMetamethods =>
         LuaUserDataMetamethods.Unm |
         LuaUserDataMetamethods.Add |
         LuaUserDataMetamethods.Sub |
@@ -24,22 +24,22 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
         LuaUserDataMetamethods.ToString |
         LuaUserDataMetamethods.Index;
 
-    bool ILuaUserData<f64AngleSingle>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool IPrimitive<f64AngleSingle>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
     {
         if (key.TryRead<string>(out var strKey))
         {
-            if (strKey == "deg") value = LuaValue.FromPrimitive(Degrees);
-            if (strKey == "rad") value = LuaValue.FromPrimitive(Radians);
+            if (strKey == "deg") { value = LuaValue.FromPrimitive(Degrees); return true; }
+            if (strKey == "rad") { value = LuaValue.FromPrimitive(Radians); return true; }
         }
 
         value = default;
         return false;
     }
 
-    string ILuaUserData<f64AngleSingle>.ToLuaString(LuauState state) => ToString();
+    string IPrimitive<f64AngleSingle>.ToLuaString(LuauState state) => ToString();
 
     #endregion
-    
+
     /// <summary>
     /// A value that specifies the size of a single degree.
     /// </summary>
@@ -96,7 +96,7 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
     {
         return new f64AngleSingle(radians * fix64.RadToDeg);
     }
-    
+
     public static f64AngleSingle FromDegrees(fix64 degrees)
     {
         return new f64AngleSingle(degrees);
