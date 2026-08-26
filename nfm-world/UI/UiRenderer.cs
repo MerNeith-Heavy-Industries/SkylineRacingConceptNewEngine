@@ -65,11 +65,6 @@ public class UiRenderer : IDisposable
     {
         NodeDebugger.YogaRoot = ActiveRoot;
         ActiveRoot?.LayoutAndRender(G.Viewport);
-        
-        G.SetColor(Color.Black);
-        var renderStats = _state["renderStats"].ConvertLuaValue<LuaTable>();
-        
-        G.DrawString($"RenderStats:\nFlushes: {renderStats["flushes"].Read<double>()}\nRenders: {renderStats["renders"].Read<double>()}\nReentrantFlushes: {renderStats["reentrantFlushes"].Read<double>()}\nMaxPasses: {renderStats["maxPasses"].Read<double>()}\nAbortedLoops: {renderStats["abortedLoops"].Read<double>()}", 15, 150);
     }
 
     /// <summary>
