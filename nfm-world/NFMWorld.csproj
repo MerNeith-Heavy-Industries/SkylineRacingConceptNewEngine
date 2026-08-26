@@ -217,23 +217,6 @@
         <MemoryPackGenerator_TypeScriptEnableNullableTypes>true</MemoryPackGenerator_TypeScriptEnableNullableTypes>
     </PropertyGroup>
 
-    <Target Name="BuildWebUi" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
-        <Message Text="Building web UI (pnpm install + pnpm run build)..." Importance="High" />
-        <Exec Command="pnpm install --frozen-lockfile" WorkingDirectory="data\html" />
-        <Exec Command="pnpm run build" WorkingDirectory="data\html" />
-    </Target>
-
-    <Target Name="IncludeWebUi" BeforeTargets="AssignTargetPaths" DependsOnTargets="BuildWebUi" Condition="Exists('data\html\dist')">
-        <ItemGroup>
-            <WebUiFiles Include="data\html\dist\**\*" />
-            <Content Include="@(WebUiFiles)">
-                <Link>data\html\dist\%(RecursiveDir)%(FileName)%(Extension)</Link>
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            </Content>
-        </ItemGroup>
-    </Target>
-
-
     <ItemGroup>
         <Folder Include="data\html\src\shared\memorypack\" />
         <Folder Include="Mad\Renderer\Renderable\" />

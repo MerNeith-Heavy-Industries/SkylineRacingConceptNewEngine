@@ -41,19 +41,105 @@ local function formatTime(ms: number): string
 	return ("%s.%s"):format(secsFmt, msFmt)
 end
 
-local function RaceHud(): React.VNode
-    local speed, setSpeed = useState(0)
+local function PowerDamageBars(): React.VNode
 	local power, setPower = useState(1)
 	local damage, setDamage = useState(0)
-	local lap, setLap = useState(1)
-	local totalLaps, setTotalLaps = useState(3)
-	local position, setPosition = useState(1)
-	local totalRacers, setTotalRacers = useState(1)
-	local lapTime, setLapTime = useState(0)
-	local chkDiffMs, setChkDiffMs = useState<<number?>>(nil)
-	local lastChkDiffMs, setLastChkDiffMs = useState<<number?>>(nil)
+
+	useEffect(function()
+		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+			if data ~= nil then
+				setPower(data.power)
+				setDamage(data.damage)
+			end
+		end)
+	end, {})
+
+	return x(View) {
+		style = {
+			position = "absolute",
+			top = 16,
+			right = 16,
+			width = 200,
+			display = "flex",
+			flexDirection = "column",
+			gap = 8,
+		},
+		x(GlassCard) { color = "#ff5252",
+			x(CornerLabel) { "Power" },
+			x(StatBar) { label = "", value = power / 0.98, color = "#ff5252", height = 10 },
+		},
+		x(GlassCard) { color = "#4fc3f7",
+			x(CornerLabel) { "Damage" },
+			x(StatBar) { label = "", value = damage, color = "#4fc3f7", height = 10 },
+		},
+	}
+end
+
+local function Splits(): React.VNode
 	local lapDiffMs, setLapDiffMs = useState<<number?>>(nil)
 	local lastLapDiffMs, setLastLapDiffMs = useState<<number?>>(nil)
+
+	useEffect(function()
+		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+			if data ~= nil then
+				setLapDiffMs(data.lapDiffMs)
+				setLastLapDiffMs(data.lastLapDiffMs)
+			end
+		end)
+	end, {})
+
+	return x(View) {
+		style = {
+			position = "absolute",
+			bottom = 24,
+			left = 0,
+			right = 0,
+			display = "flex",
+			flexDirection = "column",
+			alignItems = "flex-end",
+		},
+		x(Text) {
+			style = { fontSize = 36, fontStyle = "bold" },
+			("Lap Diff: %d"):format(lapDiffMs),
+		},
+		x(Text) {
+			style = { fontSize = 14, color = "rgba(255,255,255,0.5)" },
+			("Last: %d"):format(lastLapDiffMs),
+		},
+	}
+end
+
+local function Speed(): React.VNode
+	local speed, setSpeed = useState(0)
+
+	useEffect(function()
+		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+			if data ~= nil then
+				setSpeed(data.speed)
+			end
+		end)
+	end, {})
+
+	local speedKmh = speed * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0
+
+	return x(View) {
+		style = {
+			position = "absolute",
+			bottom = 24,
+			left = 0,
+			right = 0,
+			display = "flex",
+			flexDirection = "column",
+			alignItems = "center",
+		},
+		x(Text) { style = { fontSize = 56, fontStyle = "bold" }, ("%d"):format(math.floor(speedKmh + 0.5)) },
+		x(Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
+	}
+end
+
+local function RaceHud(): React.VNode
+	local position, setPosition = useState(1)
+	local totalRacers, setTotalRacers = useState(1)
 	local countdownTimer, setCountdownTimer = useState(0)
 	local stateText, setStateText = useState('')
 	local stateTextEndsAt, setStateTextEndsAt = useState<<number?>>(nil)
@@ -63,18 +149,8 @@ local function RaceHud(): React.VNode
 	useEffect(function()
 		return UiLib.onEvent("race:hudState", function(data: HudStateData)
 			if data ~= nil then
-				setSpeed(data.speed)
-				setPower(data.power)
-				setDamage(data.damage)
-				setLap(data.lap)
-				setTotalLaps(data.totalLaps)
 				setPosition(data.position)
 				setTotalRacers(data.totalRacers)
-				setLapTime(data.lapTime)
-				setChkDiffMs(data.chkDiffMs)
-				setLastChkDiffMs(data.lastChkDiffMs)
-				setLapDiffMs(data.lapDiffMs)
-				setLastLapDiffMs(data.lastLapDiffMs)
 				setCountdownTimer(data.countdownTimer)
 				setStateText(data.stateText)
 				setStateTextEndsAt(data.stateTextEndsAt)
@@ -99,60 +175,14 @@ local function RaceHud(): React.VNode
 		actualStateText = stateText or ""
 	end
 
-	local speedKmh = speed * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0
-
 	return x(Root) {
 		actualStateText ~= "" and x(CenterText) { text = actualStateText, size = 24 },
 
-		x(View) {
-			style = {
-				position = "absolute",
-				top = 16,
-				right = 16,
-				width = 200,
-				display = "flex",
-				flexDirection = "column",
-				gap = 8,
-			},
-			x(GlassCard) { color = "#ff5252",
-				x(CornerLabel) { "Power" },
-				x(StatBar) { label = "", value = power / 0.98, color = "#ff5252", height = 10 },
-			},
-			x(GlassCard) { color = "#4fc3f7",
-				x(CornerLabel) { "Damage" },
-				x(StatBar) { label = "", value = damage, color = "#4fc3f7", height = 10 },
-			},
-		},
+		x(PowerDamageBars) {},
 
-		x(View) {
-			style = { position = "absolute", top = 16, left = 16, width = 180 },
-			x(GlassCard) { color = "#69f0ae",
-				x(CornerLabel) { ("Lap %d/%d"):format(lap, totalLaps) },
-				x(Text) { style = { fontSize = 28, fontStyle = "bold" }, formatTime(lapTime) },
-				chkDiffMs ~= nil and lastChkDiffMs ~= nil and x(Text) {
-					style = { fontSize = 11, color = "rgba(255,255,255,0.4)", marginTop = 4 },
-					("CHK Diff: %s (Last: %s)"):format(formatTime(chkDiffMs), formatTime(lastChkDiffMs)),
-				},
-				lapDiffMs ~= nil and lastLapDiffMs ~= nil and x(Text) {
-					style = { fontSize = 11, color = "rgba(255,255,255,0.4)", marginTop = 4 },
-					("Lap Diff: %s (Last: %s)"):format(formatTime(lapDiffMs), formatTime(lastLapDiffMs)),
-				},
-			},
-		},
+		x(Splits) {},
 
-		x(View) {
-			style = {
-				position = "absolute",
-				bottom = 24,
-				left = 0,
-				right = 0,
-				display = "flex",
-				flexDirection = "column",
-				alignItems = "center",
-			},
-			x(Text) { style = { fontSize = 56, fontStyle = "bold" }, ("%d"):format(math.floor(speedKmh + 0.5)) },
-			x(Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
-		},
+		x(Speed) {},
 
 		x(View) {
 			style = {

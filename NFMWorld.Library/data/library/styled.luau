@@ -9,6 +9,7 @@ local useCallback = React.useCallback
 local useMemo = React.useMemo
 local h = React.h
 local View = React.View
+local useRef = React.useRef
 
 local function merge<T>(a: T, b: T): T
     if a == nil then return b end
@@ -144,7 +145,7 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
             end
         end
 
-        return function(props: P): React.VNode
+        return React.memo(function(props: P): React.VNode
             local isHover, setIsHover = useState(false)
             local isFocus, setIsFocus = useState(false)
 
@@ -160,34 +161,32 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
             local onFocus = useCallback(function() setIsFocus(true) end, {})
             local onBlur = useCallback(function() setIsFocus(false) end, {})
 
-            local outprops: { [string]: any } = {}
+            -- Persistent scratch table, allocated once per component instance and
+            -- reused every render — safe against callers who memoize/reuse `props`,
+            -- since we never write onto their table.
+            local outpropsRef = useRef(nil)
+            if outpropsRef.current == nil then
+                outpropsRef.current = {}
+            end
+            local outprops = outpropsRef.current :: { [string]: any }
 
+            -- Direct assignment, not merge(nil, v) — merge() only earns its keep
+            -- when combining two non-nil tables (style/hover/focus below); here
+            -- outprops[k] is being freshly assigned so a plain copy is enough.
+            for k in pairs(outprops) do
+                outprops[k] = nil -- clear stale keys from a previous render's prop set
+            end
             for k, v in pairs((props :: any)) do
-                outprops[k] = merge(outprops[k], v)
+                outprops[k] = v
             end
 
-			-- Memoize the merged style so its table identity is stable across
-			-- renders. React's `diffProps` uses reference equality, so a fresh
-			-- table every render made EVERY styled component re-run
-			-- `host.setProperty(style)` on every render (a Lua→C# crossing per
-			-- node). Stable identity lets diffProps skip unchanged styles.
-			outprops.style = useMemo(function()
-				local s = merge(outprops.style, plain)
-				if isHover and hover ~= nil then
-					s = merge(s, hover)
-				end
-				if isFocus and focus ~= nil then
-					s = merge(s, focus)
-				end
-				return s
-			end, { outprops.style, isHover, isFocus })
-            -- frame rate the more the user hovers.
-            --
-            -- Capture the user's own handlers first so the wrappers chain to
-            -- the ORIGINAL function instead of recursively calling themselves
-            -- (the old code re-read `outprops.onmouseenter` after overwriting
-            -- it, which tail-call-looped when a styled component was also given
-            -- its own enter/leave/focus/blur handler).
+            outprops.style = useMemo(function()
+                local s = merge(outprops.style, plain)
+                if isHover and hover ~= nil then s = merge(s, hover) end
+                if isFocus and focus ~= nil then s = merge(s, focus) end
+                return s
+            end, { outprops.style, isHover, isFocus })
+
             local userEnter = outprops.onmouseenter
             local userLeave = outprops.onmouseleave
             local userFocus = outprops.onfocus
@@ -230,8 +229,9 @@ local function styled<P>(vtype: React.StatelessFunctionalComponent<P>): ((Styled
                 end
             end
 
+
             return h(vtype, (outprops :: any) :: P)
-        end
+        end)
     end
 end
 
