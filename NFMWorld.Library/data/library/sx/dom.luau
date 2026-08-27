@@ -565,6 +565,11 @@ local function render(rootNode)
     return rootView
 end
 
+-- Wire the end-of-frame scheduler: UiLib.defer (via Host.defer) coalesces all signal
+-- writes in a frame into ONE effect pass, exactly like the game's per-frame batching.
+-- Tests use a synchronous fake defer; a consumer can opt out with Sx.setScheduler(nil).
+Sx.setScheduler(Host.defer)
+
 Dom.render = render
 Dom.Show = Show
 Dom.Switch = Switch
