@@ -225,7 +225,11 @@ end
 
 -- ------------------------------------------------------------------ public API
 
-local function createSignal(value)
+export type Accessor<T> = () -> T
+
+export type Signal<T> = { get: Accessor<T>, set: (T) -> () }
+
+local function createSignal<T>(value: T?): (Accessor<T>, (T) -> ())
     local s = {
         kind = "signal",
         value = value,
@@ -273,7 +277,7 @@ local function createComputation(fn, isEffect)
     return node
 end
 
-local function createMemo(fn, value)
+local function createMemo<T>(fn: () -> T, value: T?): Accessor<T>
     local node = createComputation(fn, false)
     node.value = value
     local read = function()
@@ -286,7 +290,7 @@ local function createMemo(fn, value)
     return read
 end
 
-local function createEffect(fn)
+local function createEffect(fn: () -> ()): () -> ()
     local node = createComputation(fn, true)
     updateEffect(node)
     return function()
@@ -294,7 +298,7 @@ local function createEffect(fn)
     end
 end
 
-local function createRoot(fn)
+local function createRoot<T>(fn: ((() -> ())) -> T): T
     local prevOwner, prevListener = Owner, Listener
     local root = {
         fn = nil,
@@ -322,19 +326,20 @@ local function createRoot(fn)
     return result
 end
 
-local function batch(fn)
+local function batch<T>(fn: () -> T): T
     batching = batching + 1
-    local ok, err = pcall(fn)
+    local ok, result = pcall(fn)
     batching = batching - 1
     if not ok then
-        error(err)
+        error(result)
     end
     if batching == 0 then
         scheduleFlush()
     end
+    return result
 end
 
-local function untrack(fn)
+local function untrack<T>(fn: () -> T): T
     local prevListener = Listener
     Listener = nil
     local ok, result = pcall(fn)
@@ -345,7 +350,7 @@ local function untrack(fn)
     return result
 end
 
-local function onCleanup(fn)
+local function onCleanup(fn: () -> ()): ()
     if Owner then
         if Owner.cleanups == nil then
             Owner.cleanups = {}
@@ -354,17 +359,17 @@ local function onCleanup(fn)
     end
 end
 
-local function onMount(fn)
+local function onMount(fn: () -> ()): ()
     createEffect(function()
         untrack(fn)
     end)
 end
 
-local function getOwner()
+local function getOwner(): any?
     return Owner
 end
 
-local function runWithOwner(owner, fn)
+local function runWithOwner<T>(owner: any, fn: () -> T): T
     local prevOwner, prevListener = Owner, Listener
     Owner = owner
     Listener = nil
@@ -376,11 +381,11 @@ local function runWithOwner(owner, fn)
     return result
 end
 
-local function setScheduler(fn)
+local function setScheduler(fn: ((() -> ())) -> ()): ()
     Scheduler = fn
 end
 
-local function flushSync()
+local function flushSync(): ()
     flushEffects()
 end
 

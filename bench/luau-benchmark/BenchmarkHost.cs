@@ -156,7 +156,7 @@ public sealed class BenchmarkHost : IDisposable
     }
 
     /// <summary>
-    /// Load the Sx fine-grained reactive UI module (data/library/sx/init.luau). Its
+    /// Load the Sx fine-grained reactive UI module (data/library/sx/index.luau). Its
     /// `require('./signals'|'./h'|'./dom')` graph resolves through the LibraryFileSystem
     /// rooted at data/library; dom.luau captures `_G.UiLib` at load (registered above).
     /// </summary>
@@ -164,7 +164,7 @@ public sealed class BenchmarkHost : IDisposable
     {
         var sxPath = Path.Combine(_libraryRoot, "sx", "init.luau");
         var code = File.ReadAllText(sxPath);
-        var closure = _state.Load(code, "sx/init.luau");
+        var closure = _state.Load(code, "sx/index.luau");
         var results = _state.Call(closure, []);
         return results.Length > 0 ? results[0] : LuaValue.Nil;
     }

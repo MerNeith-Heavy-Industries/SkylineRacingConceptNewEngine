@@ -3,7 +3,7 @@
 -- signals; tab content and controls read them reactively through accessors, so editing a
 -- slider only re-sets that one control's props/text, never the whole tree.
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 

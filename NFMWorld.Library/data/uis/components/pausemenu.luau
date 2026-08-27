@@ -1,7 +1,7 @@
 -- Pause menu overlay (Sx port of preact pausemenu.luau).
 -- Controlled by a `visible` prop from RaceHud (driven by the "race:paused" event).
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 local Settings = require("./settings")

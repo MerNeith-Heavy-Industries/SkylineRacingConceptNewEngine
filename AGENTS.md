@@ -344,11 +344,11 @@ built to fix the per-frame re-render cost of preact-luau. It is a **sibling** to
 preact-luau — new UI work should target Sx; preact-luau stays for unmigrated routes.
 
 - **Where:** `NFMWorld.Library/data/library/sx/` (`signals.luau`, `host.luau`, `h.luau`,
-  `dom.luau`, `styled.luau`, `init.luau`, `declarations.d.luau`, `GUIDE.md`). Ships via the existing `data/**` copy rule.
+  `dom.luau`, `styled.luau`, `index.luau`, `declarations.d.luau`, `GUIDE.md`). Ships via the existing `data/**` copy rule.
 - **Beginner guide:** `NFMWorld.Library/data/library/sx/GUIDE.md` teaches the framework from
   zero (no web/signals/SolidJS assumed): mental model, `x`, `For`/`Show`/`Switch`, events,
   `styled`, the game bridge, and gotchas.
-- **Public module `Sx`** (`init.luau`): `createSignal/createMemo/createEffect/createRoot/
+- **Public module `Sx`** (`index.luau`): `createSignal/createMemo/createEffect/createRoot/
   batch/untrack/onCleanup/onMount/getOwner/runWithOwner/setScheduler/flushSync`, the
   hyperscript `x`, `render`, `Fragment`, and flow components `Show/Switch/Match/For/Index`.
 - **Core model** (port of Solid `reactive/signal.js`): signals are cells; memos are lazy

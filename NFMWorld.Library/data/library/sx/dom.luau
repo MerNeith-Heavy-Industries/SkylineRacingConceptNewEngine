@@ -15,6 +15,8 @@ local Host = require('./host')
 
 local Dom = {}
 
+local types = require('./types')
+
 -- ------------------------------------------------------------------ markers
 
 local FLOW = {} -- unique marker for flow descriptors
@@ -370,23 +372,23 @@ local FlowKind = {
     Index = "index",
 }
 
-local function Show(props)
+local function Show(props): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind.Show, props = props, children = props.children }
 end
 
-local function Switch(props)
+local function Switch(props): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind.Switch, props = props, children = props.children }
 end
 
-local function Match(props)
+local function Match(props): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind.Match, props = props, children = props.children }
 end
 
-local function For(props)
+local function For(props): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind.For, props = props, children = props.children }
 end
 
-local function Index(props)
+local function Index(props): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind.Index, props = props, children = props.children }
 end
 
@@ -584,7 +586,7 @@ end
 -- ------------------------------------------------------------------ public
 
 -- Install a descriptor tree into a fresh host root and activate it.
-local function render(rootNode)
+local function render(rootNode: types.NodeDescriptor): any
     local rootView = Host.createRoot()
     Sx.batch(function()
         mountNode(rootNode, rootView, nil)

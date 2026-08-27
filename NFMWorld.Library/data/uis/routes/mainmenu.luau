@@ -5,7 +5,7 @@
 -- NOTE: the Settings component is not ported to Sx yet — its embedded view is kept
 -- commented out below.
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 

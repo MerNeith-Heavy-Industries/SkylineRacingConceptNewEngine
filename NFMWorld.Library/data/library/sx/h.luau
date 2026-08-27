@@ -8,9 +8,11 @@
 -- where `children` holds the positional (numeric-key) entries — plain values (mounted
 -- statically), functions (mounted reactively as accessors), or nested descriptors.
 
+local types = require('./types')
+
 local h = {}
 
-local function x(vtype)
+local function x<P>(vtype: string | types.Component<P> | ((any) -> types.NodeDescriptor)): ((P) -> types.NodeDescriptor)
     return function(props)
         props = props or {}
         local named = {}
