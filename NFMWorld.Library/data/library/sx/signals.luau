@@ -78,7 +78,8 @@ local function untrackSource(n, comp)
     end
 end
 
--- Tear down a computation: run cleanups, dispose owned children, unsubscribe sources.
+-- Tear down a computation: run cleanups, dispose owned children (marking them disposed so
+-- the effect queue skips them even if they were already queued STALE), unsubscribe sources.
 local function cleanNode(node)
     if node.cleanups then
         local cleanups = node.cleanups
@@ -90,7 +91,9 @@ local function cleanNode(node)
     if node.owned then
         local owned = node.owned
         for i = 1, #owned do
-            cleanNode(owned[i])
+            local child = owned[i]
+            child.disposed = true
+            cleanNode(child)
         end
         node.owned = nil
     end
