@@ -53,8 +53,8 @@ local function run(frames)
         end
     end)
 
-    -- coalesce a frame's writes into one end-of-frame effect pass
-    Sx.setScheduler(UiLib.defer)
+    -- defer scheduling is auto-wired by the framework (Sx.setScheduler(UiLib.defer) via
+    -- Host.defer at dom.luau load) — no explicit call needed here.
 
     local speedKmh = function()
         return tostring(math.floor(speed() * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0 + 0.5))
