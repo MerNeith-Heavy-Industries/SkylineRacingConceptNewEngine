@@ -30,7 +30,21 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         }
 
         if (item is Component cmp)
-            parent.NodeInternal.InsertChild(cmp.Contents, index);
+        {
+            // YogaNode only holds Components; TextNodes interleaved in the Items list
+            // (e.g. an Sx dynamic-slot anchor or bare text in a view) must not shift the
+            // Yoga insert index. Count the Components strictly before `index` — otherwise
+            // List.Insert throws ArgumentOutOfRangeException (index > Yoga child count).
+            var yogaIndex = 0;
+            var limit = index < Items.Count ? index : Items.Count;
+            for (var i = 0; i < limit; i++)
+            {
+                if (Items[i] is Component) yogaIndex++;
+            }
+
+            parent.NodeInternal.InsertChild(cmp.Contents, yogaIndex);
+        }
+
         item.VisualParent = parent;
         base.InsertItem(index, item);
     }
