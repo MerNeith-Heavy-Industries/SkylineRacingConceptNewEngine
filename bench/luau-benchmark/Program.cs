@@ -67,6 +67,12 @@ void Run(string scenario, int runs, string[] args)
         case "preact-large":
             RunPreact(host, scripts, runs, name: "preact-large", size: 1024, fresh: false, iterations: 100);
             break;
+        case "hud":
+            RunHud(host, scripts, runs);
+            break;
+        case "vmcore":
+            RunVmcore(host, scripts, runs);
+            break;
         case "diag":
         {
             var path = Path.Combine(scripts, "diag_create_root.luau");
@@ -79,6 +85,8 @@ void Run(string scenario, int runs, string[] args)
             RunFixed64(host, scripts, runs);
             RunPreact(host, scripts, runs, "preact-small", 16, true, 10000);
             RunPreact(host, scripts, runs, "preact-large", 1024, false, 100);
+            RunHud(host, scripts, runs);
+            RunVmcore(host, scripts, runs);
             break;
     }
 }
@@ -117,6 +125,104 @@ static void RunPreact(BenchmarkHost host, string scripts, int runs, string name,
     }
     PrintResult(name, bestCpu, bestWall);
     Console.WriteLine();
+}
+
+static void RunVmcore(BenchmarkHost host, string scripts, int runs)
+{
+    var path = Path.Combine(scripts, "vmcore.luau");
+    const int iterations = 2000, depth = 8;
+    Console.WriteLine($"vmcore : {iterations} reconciler-core walks (depth {depth}, fresh props, no C# host)");
+    Console.WriteLine("  Compare: luau.exe scripts/vmcore_driver.luau");
+
+    double bestCpu = double.MaxValue, bestWall = double.MaxValue;
+    for (var r = 0; r < runs; r++)
+    {
+        var (cpu, wall, _) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)depth), LuaValue.FromBoolean(true));
+        if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
+    }
+    Console.WriteLine($"  Luau CPU {bestCpu * 1000,9:F3} ms | wall {bestWall * 1000,9:F3} ms");
+}
+
+static void RunHud(BenchmarkHost host, string scripts, int runs)
+{
+    var path = Path.Combine(scripts, "hud_render.luau");
+    const int frames = 300;
+    Console.WriteLine($"hud : {frames} per-frame timetrial-HUD flushes (17-node preact tree, 3 dirty components, real defer+ExecutePendingTasks path)");
+
+    // fresh props = current racehud.luau behaviour (inline style tables -> setProperty per node)
+    LuaUiHostStats.Enabled = true;
+    RunHudRegime(host, path, frames, runs, fresh: true, label: "fresh (inline styles)");
+
+    // stable props = hoist style tables to module constants (memoize the styles)
+    RunHudRegime(host, path, frames, runs, fresh: false, label: "stable (hoisted styles)");
+    LuaUiHostStats.Enabled = false;
+    Console.WriteLine();
+}
+
+static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, bool fresh, string label)
+{
+    double bestCpu = double.MaxValue, bestWall = double.MaxValue;
+    long setProps = 0, commits = 0, creates = 0, structures = 0;
+    long diffed = 0, rendered = 0, rrCount = 0, processCount = 0;
+    double hostUs = 0;
+    string names = "";
+    for (var r = 0; r < runs; r++)
+    {
+        LuaUiHostStats.Reset();
+        var (cpu, wall, rets) = host.RunScript(path, LuaValue.FromNumber((double)frames), LuaValue.FromBoolean(fresh));
+        if (cpu < bestCpu)
+        {
+            bestCpu = cpu;
+            bestWall = wall;
+            setProps = LuaUiHostStats.SetPropertyCount;
+            commits = LuaUiHostStats.CommitTextCount;
+            creates = LuaUiHostStats.CreateInstanceCount + LuaUiHostStats.CreateTextCount;
+            structures = LuaUiHostStats.StructureCount;
+            hostUs = LuaUiHostStats.Us(LuaUiHostStats.SetPropertyTicks + LuaUiHostStats.CommitTextTicks);
+            if (rets.Length >= 6)
+            {
+                if (rets[1].TryConvertLuaValue<double>(out var d)) diffed = (long)d;
+                if (rets[2].TryConvertLuaValue<double>(out var r2)) rendered = (long)r2;
+                if (rets[3].TryConvertLuaValue<double>(out var r3)) rrCount = (long)r3;
+                if (rets[4].TryConvertLuaValue<double>(out var r4)) processCount = (long)r4;
+                if (rets[5].TryConvertLuaValue<LuaTable>(out var nameTable))
+                {
+                    foreach (var (k, v) in nameTable)
+                    {
+                        if (k.TryConvertLuaValue<string>(out var key) && v.TryConvertLuaValue<double>(out var val))
+                        {
+                            names += $"{key}={val} ";
+                        }
+                    }
+                }
+                if (rets.Length >= 7 && rets[6].TryConvertLuaValue<LuaTable>(out var detailTable))
+                {
+                    foreach (var (k, v) in detailTable)
+                    {
+                        if (k.TryConvertLuaValue<string>(out var key) && v.TryConvertLuaValue<LuaTable>(out var det))
+                        {
+                            string depth = "", parent = "";
+                            foreach (var (dk, dv) in det)
+                            {
+                                if (dk.TryConvertLuaValue<string>(out var dk2))
+                                {
+                                    if (dk2 == "depth" && dv.TryConvertLuaValue<double>(out var dd)) depth = dd.ToString("F0");
+                                    if (dk2 == "parent" && dv.TryConvertLuaValue<string>(out var dp)) parent = dp;
+                                }
+                            }
+                            names += $" [{key}@d{depth} parent={parent}]";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    var usPerFrame = bestWall * 1_000_000.0 / frames;
+    var luaUsPerFrame = usPerFrame - hostUs / frames;
+    Console.WriteLine(
+        $"  {label,-22} {usPerFrame,8:F1} us/frame | diffed {diffed / (double)frames:F1}/f rendered {rendered / (double)frames:F1}/f renderComp {rrCount / (double)frames:F1}/f process {processCount / (double)frames:F1}/f | setProp {setProps / (double)frames:F1}/f create {creates} struct {structures} | C#-host {hostUs / frames,6:F1} us/f | Lua {luaUsPerFrame,6:F1} us/f");
+    Console.WriteLine($"      renderComponent by type: {names}");
 }
 
 static void PrintResult(string name, double cpuSec, double wallSec)

@@ -4,6 +4,7 @@ using NFMWorld.Reactor;
 using NFMWorldLibrary.Util;
 using NuLua;
 using NuLua.Luau;
+using System.Threading.Tasks;
 
 namespace LuauBenchmark;
 
@@ -30,7 +31,7 @@ public sealed class BenchmarkHost
 
     public View? ActiveRoot { get; private set; }
 
-    readonly Dictionary<int, Action<LuaValue>> _handlers = new();
+    readonly Dictionary<int, (string Event, Action<LuaValue> Callback)> _handlers = new();
     readonly object _gate = new();
     int _eventId;
 
@@ -55,6 +56,8 @@ public sealed class BenchmarkHost
 
         var react = LoadReact();
         _state["React"] = react;
+
+        RegisterBenchGlobals();
     }
 
     // ---- LuaUiLibrary stand-in delegates ------------------------------------
@@ -67,8 +70,58 @@ public sealed class BenchmarkHost
     {
         int id;
         lock (_gate) id = _eventId++;
-        _handlers[id] = callback;
+        _handlers[id] = (@event, callback);
         return () => { lock (_gate) _handlers.Remove(id); };
+    }
+
+    /// <summary>
+    /// Dispatch a C#→Lua event to every handler subscribed via UiLib.onEvent, matching
+    /// <see cref="UiRenderer.PushToLua"/> in the real game. Payload is a Lua value (the
+    /// repro passes a fresh Lua table, mirroring a freshly-built HudStateData each frame).
+    /// </summary>
+    public void PushEvent(string evt, LuaValue payload)
+    {
+        lock (_gate)
+        {
+            foreach (var (_, h) in _handlers)
+            {
+                if (h.Event == evt)
+                {
+                    h.Callback(payload);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Run the deferred UI flush, mirroring the end of WorldGame.Update(): every
+    /// setState a frame queued via UiLib.defer → GameThreadContext.Post is drained here
+    /// (one preact `process()` that re-renders the dirty components).
+    /// </summary>
+    public void FlushPendingTasks()
+    {
+        GameThreadContext.Current.ExecutePendingTasks();
+    }
+
+    void RegisterBenchGlobals()
+    {
+        _state["__bench_push"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        {
+            var evt = args[0].ConvertLuaValue<string>();
+            var payload = args[1];
+            PushEvent(evt, payload);
+            return state.Return();
+        }));
+        _state["__bench_flush"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        {
+            FlushPendingTasks();
+            return state.Return();
+        }));
+        _state["__bench_reset_stats"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        {
+            LuaUiHostStats.Reset();
+            return state.Return();
+        }));
     }
 
     // ---- Script loading ------------------------------------------------------
