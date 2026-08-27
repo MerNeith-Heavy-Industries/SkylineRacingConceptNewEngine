@@ -9,7 +9,7 @@ local Sx = require("../../library/sx/init")
 local styled = Sx.styled
 local x = Sx.x
 
--- local Settings = require("../components/settings") -- TODO: port to Sx
+local Settings = require("../components/settings")
 
 -- ── Types ────────────────────────────────────────────────────────
 
@@ -336,8 +336,9 @@ local MainMenu = function()
 			{
 				label = "SETTINGS",
 				description = "Adjust game settings.",
-				-- TODO: port Settings to Sx. Was: action = function() setCurrentView("settings") end
-				action = function() end,
+				action = function()
+					setCurrentView("settings")
+				end,
 			},
 			{
 				label = "CREDITS",
@@ -365,13 +366,13 @@ local MainMenu = function()
 		x(Root) {
 			-- Switch for conditional views
 			x(Sx.Switch) {
-				-- Settings view (Settings not ported to Sx yet — commented out)
-				-- x(Sx.Match) {
-				-- 	when = function() return currentView() == "settings" end,
-				-- 	x(Settings) {
-				-- 		onClose = function() setCurrentView("menu") end
-				-- 	},
-				-- },
+				-- Settings view
+				x(Sx.Match) {
+					when = function() return currentView() == "settings" end,
+					x(Settings) {
+						onClose = function() setCurrentView("menu") end,
+					},
+				},
 				-- Menu view (default)
 				x(Sx.Match) {
 					when = function() return currentView() == "menu" end,
