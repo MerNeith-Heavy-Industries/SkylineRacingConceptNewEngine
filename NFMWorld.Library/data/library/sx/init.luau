@@ -30,6 +30,7 @@ Sx.x = h.x
 
 -- renderer + flow components
 Sx.render = dom.render
+Sx.Fragment = dom.Fragment
 Sx.Show = dom.Show
 Sx.Switch = dom.Switch
 Sx.Match = dom.Match

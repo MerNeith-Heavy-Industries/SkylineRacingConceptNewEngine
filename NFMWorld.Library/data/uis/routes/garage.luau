@@ -1,31 +1,32 @@
---!strict
+-- Garage view (Sx port of preact garage.luau), ported from
+-- nfm-world/data/html/src/pages/Garage.tsx. Fine-grained: collections/currentCar/
+-- currentCollection/searchQuery are signals; the collection list is a keyed For; a car
+-- click updates only the cards whose selection actually changed (stable style tables +
+-- reference-compare in the renderer skip redundant setProperty).
 
--- Garage view ported from nfm-world/data/html/src/pages/Garage.tsx.
-
-local React = require("../../library/react")
-local styled = require("../../library/styled")
+local Sx = require("../../library/sx/init")
+local styled = Sx.styled
+local x = Sx.x
 local glasscard = require("../components/glasscard")
 local GlassCard = glasscard.GlassCard
 local StatBar = glasscard.StatBar
 
-local useState = React.useState
-local useEffect = React.useEffect
-local useRef = React.useRef
-local useMemo = React.useMemo
-local useCallback = React.useCallback
-local x = React.x
-local View = React.View
-local Text = React.Text
-local TextInput = React.TextInput
+-- value-or-accessor helper
+local function readProp(v)
+	if type(v) == "function" then
+		return v()
+	end
+	return v
+end
 
-local Root = styled(View) {
+local Root = styled("view") {
 	width = "100%",
 	height = "100%",
 	display = "flex",
 	flexDirection = "row",
 }
 
-local Sidebar = styled(View) {
+local Sidebar = styled("view") {
 	width = 340,
 	height = "100%",
 	paddingTop = 32,
@@ -40,12 +41,12 @@ local Sidebar = styled(View) {
 	borderColor = "rgba(255,255,255,0.06)",
 }
 
-local Header = styled(Text) {
+local Header = styled("text") {
 	fontSize = 28,
 	fontStyle = "bold",
 }
 
-local CollectionList = styled(View) {
+local CollectionList = styled("view") {
 	flex = 1,
 	display = "flex",
 	flexDirection = "column",
@@ -53,60 +54,50 @@ local CollectionList = styled(View) {
 	gap = 8,
 }
 
-local StatsPanel = styled(View) {
+local StatsPanel = styled("view") {
 	flexShrink = 0,
 	display = "flex",
 	alignItems = "center",
 	justifyContent = "center",
 }
 
-local StatsCard = styled(View) {
+local StatsCard = styled("view") {
 	width = 280,
 	padding = 24,
 	flexDirection = "column",
 }
 
-local CarName = styled(Text) {
+local CarName = styled("text") {
 	fontSize = 18,
 	fontStyle = "bold",
 	color = "#4fc3f7",
 	marginBottom = 16,
 }
 
-local Placeholder = styled(Text) {
+local Placeholder = styled("text") {
 	fontSize = 18,
 	color = "rgba(255,255,255,0.3)",
 }
 
-local CollectionHeader = styled(Text) {
-	fontSize = 12,
-	marginBottom = 6,
-	paddingTop = 4,
-	paddingBottom = 4,
-	paddingLeft = 8,
-	paddingRight = 8,
-	borderRadius = 4,
-}
-
-local CarCardName = styled(Text) {
+local CarCardName = styled("text") {
 	fontSize = 14,
 	fontStyle = "bold",
 	marginBottom = 4,
 }
 
-local CarCardCollection = styled(Text) {
+local CarCardCollection = styled("text") {
 	fontSize = 11,
 	color = "rgba(255,255,255,0.4)",
 }
 
-local NoResults = styled(Text) {
+local NoResults = styled("text") {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.3)",
 	textAlign = "center",
 	padding = 24,
 }
 
-local BackBtn = styled(View) {
+local BackBtn = styled("view") {
 	paddingTop = 10,
 	paddingBottom = 10,
 	paddingLeft = 24,
@@ -119,120 +110,106 @@ local BackBtn = styled(View) {
 	hover = { backgroundColor = "rgba(255,255,255,0.1)" },
 }
 
-local function map<T, V>(tbl: { T }, f: (T, number) -> V): { V }
-	local t = {}
-	for i = 1, #tbl do
-		t[i] = f(tbl[i], i)
-	end
-	return t
-end
-
--- Module-level constant so the collection wrapper View's style table has a
--- stable identity across renders (diffProps uses reference equality).
+-- Module-level constant style for the collection wrapper View (stable identity).
 local collectionViewStyle = { flexDirection = "column", flexShrink = 0 }
 
--- Card component. Wrapped in React.memo so that on a car click (which
--- rebuilds the list with fresh VNodes) only the cards whose `selected` prop
--- actually changed re-render — the other ~150 cards bail out at the memo
--- boundary. useCallback/useMemo keep the handler + style stable so diffProps
--- skips re-setting them too.
-local CarCard = React.memo(function(props: {
-	name: string,
-	collectionName: string,
-	fileName: string,
-	selected: boolean,
-	onSelect: ((string, string) -> ()),
-}): React.VNode
-	local style = useMemo<<React.Style>>(function()
-		return { marginBottom = 8, opacity = props.selected and 1 or 0.7 }
-	end, { props.selected })
-	local onMousedown = useCallback(function()
-		props.onSelect(props.collectionName, props.fileName)
-	end, { props.onSelect, props.collectionName, props.fileName })
+-- Stable card styles: selection change swaps the reference, so unchanged cards skip
+-- setProperty (the renderer's reactive-prop effect compares references).
+local cardStyleSelected = { marginBottom = 8, opacity = 1 }
+local cardStyleUnselected = { marginBottom = 8, opacity = 0.7 }
+
+-- Card component. `selected` is an accessor; only cards whose selection changes update.
+local function CarCard(props)
+	local style = Sx.createMemo(function()
+		if readProp(props.selected) then
+			return cardStyleSelected
+		end
+		return cardStyleUnselected
+	end)
+
 	return x(GlassCard) {
 		name = "glasscard " .. props.name,
-		color = props.selected and "#4fc3f7" or "rgba(255,255,255,0.15)",
+		color = function()
+			return readProp(props.selected) and "#4fc3f7" or "rgba(255,255,255,0.15)"
+		end,
 		style = style,
-		onmousedown = onMousedown,
+		onmousedown = function()
+			props.onSelect(props.collectionName, props.fileName)
+		end,
 		x(CarCardName) { name = "carcardname " .. props.name, props.name },
 		x(CarCardCollection) { name = "carcardcollection " .. props.collectionName, props.collectionName },
 	}
-end)
+end
 
-local CollectionSection = React.memo(function(props: {
-	name: string,
-	active: boolean,
-	onSelect: ((string) -> ()),
-}): React.VNode
-	local style = useMemo(function()
-		return {
-			marginBottom = 6,
-			paddingTop = 4,
-			paddingBottom = 4,
-			paddingLeft = 8,
-			paddingRight = 8,
-			borderRadius = 4,
-			borderLeftWidth = 2,
-			borderColor = props.active and "#4fc3f7" or "transparent",
-			backgroundColor = props.active and "rgba(79,195,247,0.08)" or "transparent",
-		}
-	end, { props.active })
-	local textStyle = useMemo(function()
-		return { fontSize = 12, color = props.active and "#4fc3f7" or "rgba(255,255,255,0.4)" }
-	end, { props.active })
-	local onMousedown = useCallback(function()
-		props.onSelect(props.name)
-	end, { props.onSelect, props.name })
-	return x(View) {
+local function CollectionSection(props)
+	return x("view") {
 		name = "inner view " .. props.name,
-		style = style,
-		onmousedown = onMousedown,
-		x(Text) {
-			style = textStyle,
+		style = Sx.createMemo(function()
+			local active = readProp(props.active)
+			return {
+				marginBottom = 6,
+				paddingTop = 4,
+				paddingBottom = 4,
+				paddingLeft = 8,
+				paddingRight = 8,
+				borderRadius = 4,
+				borderLeftWidth = 2,
+				borderColor = active and "#4fc3f7" or "transparent",
+				backgroundColor = active and "rgba(79,195,247,0.08)" or "transparent",
+			}
+		end),
+		onmousedown = function()
+			props.onSelect(props.name)
+		end,
+		x("text") {
+			style = Sx.createMemo(function()
+				local active = readProp(props.active)
+				return { fontSize = 12, color = active and "#4fc3f7" or "rgba(255,255,255,0.4)" }
+			end),
 			props.name,
 		},
 	}
-end)
+end
 
-local Garage = React.memo(function(): React.VNode
-	local currentCar, setCurrentCar = useState<<CarStatsData | nil>>(nil)
-	local collections, setCollections = useState<<CarCollectionsData | nil>>(nil)
-	local currentCollection, setCurrentCollection = useState<<CarCollectionData | nil>>(nil)
-	local searchQuery, setSearchQuery = useState<<string>>("")
-	local rootRef = useRef<<Component | nil>>(nil)
+local function Garage()
+	local currentCar, setCurrentCar = Sx.createSignal(nil)
+	local collections, setCollections = Sx.createSignal(nil)
+	local currentCollection, setCurrentCollection = Sx.createSignal(nil)
+	local searchQuery, setSearchQuery = Sx.createSignal("")
+	local rootRef = {}
 
-	useEffect(function()
-		local u1 = UiLib.onEvent("garage:currentCar", function(data: any)
+	Sx.createEffect(function()
+		local u1 = UiLib.onEvent("garage:currentCar", function(data)
 			setCurrentCar(data)
 		end)
-		local u2 = UiLib.onEvent("garage:collections", function(data: any)
+		local u2 = UiLib.onEvent("garage:collections", function(data)
 			setCollections(data)
 		end)
-		local u3 = UiLib.onEvent("garage:currentCollection", function(data: any)
+		local u3 = UiLib.onEvent("garage:currentCollection", function(data)
 			setCurrentCollection(data)
 		end)
-		return function()
+		Sx.onCleanup(function()
 			u1()
 			u2()
 			u3()
-		end
-	end, {})
+		end)
+	end)
 
-	useEffect(function()
+	Sx.createEffect(function()
 		if rootRef.current ~= nil then
 			rootRef.current:focus()
 		end
-	end, {})
+	end)
 
-	local handleSelectCar = useCallback(function(collection: string, fileName: string)
+	local function handleSelectCar(collection, fileName)
 		UiLib.call("selectCar", { collection = collection, fileName = fileName })
-	end, {})
+	end
 
-	local handleSelectCollection = useCallback(function(collection: string)
+	local function handleSelectCollection(collection)
 		UiLib.call("selectCollection", { collection = collection })
-	end, {})
+	end
 
-	local function handleGlobalKey(event: any)
+	local function handleGlobalKey(event)
 		if event.keyCode == Key.left then
 			UiLib.call("cycleCar", { direction = "left" })
 		elseif event.keyCode == Key.right then
@@ -245,22 +222,26 @@ local Garage = React.memo(function(): React.VNode
 	end
 
 	-- Client-side search filter
-	local query = searchQuery:lower():match("^%s*(.-)%s*$")
+	local query = Sx.createMemo(function()
+		return searchQuery():lower():match("^%s*(.-)%s*$") or ""
+	end)
 
-	local filteredCollections = useMemo(function()
-		local result: any = {}
-		if collections ~= nil then
-			if query == "" then
-				for i = 1, #collections.collections do
-					result[#result + 1] = collections.collections[i]
+	local filteredCollections = Sx.createMemo(function()
+		local result = {}
+		local cols = collections()
+		if cols ~= nil then
+			local q = query()
+			if q == "" then
+				for i = 1, #cols.collections do
+					result[#result + 1] = cols.collections[i]
 				end
 			else
-				for i = 1, #collections.collections do
-					local col = collections.collections[i]
+				for i = 1, #cols.collections do
+					local col = cols.collections[i]
 					local matchedCars = {}
 					for j = 1, #col.cars do
 						local car = col.cars[j]
-						if car.name:lower():find(query :: string, 1, true) ~= nil then
+						if car.name:lower():find(q, 1, true) ~= nil then
 							matchedCars[#matchedCars + 1] = car
 						end
 					end
@@ -275,50 +256,7 @@ local Garage = React.memo(function(): React.VNode
 			end
 		end
 		return result
-	end, { collections, searchQuery })
-
-	-- Memoize the collection-list subtree so unrelated re-renders (e.g.
-	-- hovering the back button) don't rebuild every car-card VNode.
-	local listChildren = useMemo(function()
-		return map(filteredCollections, function(col: any): React.VNode
-			local active = currentCollection ~= nil and currentCollection.id == col.id
-			return x(View) {
-				name = "view " .. col.name,
-				key = col.name,
-				style = collectionViewStyle,
-				x(CollectionSection) {
-					name = col.name,
-					active = active,
-					onSelect = handleSelectCollection,
-				},
-				map(col.cars, function(car: any): React.VNode
-					return x(CarCard) {
-						key = car.fileName,
-						name = car.name,
-						collectionName = col.name,
-						fileName = car.fileName,
-						selected = currentCar ~= nil and currentCar.fileName == car.fileName,
-						onSelect = handleSelectCar,
-					}
-				end),
-			}
-		end)
-	end, { filteredCollections, currentCar, currentCollection })
-
-	local statsNode = useMemo(function()
-		return currentCar ~= nil and x(StatsCard) {
-			x(CarName) { currentCar.name },
-			x(StatBar) { label = "Top Speed", value = currentCar.topSpeed, color = "#ff6e40" },
-			x(StatBar) { label = "Acceleration", value = currentCar.acceleration, color = "#ffd740" },
-			x(StatBar) { label = "Handling", value = currentCar.handling, color = "#69f0ae" },
-			x(StatBar) { label = "Power Save", value = currentCar.powerSave, color = "#40c4ff" },
-			x(StatBar) { label = "Strength", value = currentCar.strength, color = "#ff4081" },
-			x(StatBar) { label = "Max Health", value = currentCar.maxHealth, color = "#e040fb" },
-			x(StatBar) { label = "Stunting", value = currentCar.stunting, color = "#ff6e40" },
-			x(StatBar) { label = "Hypergliding", value = currentCar.hypergliding, color = "#7c4dff" },
-			x(StatBar) { label = "AB'ing", value = currentCar.abing, color = "#448aff" },
-		} or x(Placeholder) { "Select a car to view stats" }
-	end, { currentCar })
+	end)
 
 	return x(Root) {
 		ref = rootRef,
@@ -329,10 +267,25 @@ local Garage = React.memo(function(): React.VNode
 			x(Header) { "Garage" },
 
 			x(StatsPanel) {
-				statsNode,
+				x(Sx.Show) {
+					when = function() return currentCar() ~= nil end,
+					fallback = x(Placeholder) { "Select a car to view stats" },
+					x(StatsCard) {
+						x(CarName) { function() return currentCar().name end },
+						x(StatBar) { label = "Top Speed", value = function() return currentCar().topSpeed end, color = "#ff6e40" },
+						x(StatBar) { label = "Acceleration", value = function() return currentCar().acceleration end, color = "#ffd740" },
+						x(StatBar) { label = "Handling", value = function() return currentCar().handling end, color = "#69f0ae" },
+						x(StatBar) { label = "Power Save", value = function() return currentCar().powerSave end, color = "#40c4ff" },
+						x(StatBar) { label = "Strength", value = function() return currentCar().strength end, color = "#ff4081" },
+						x(StatBar) { label = "Max Health", value = function() return currentCar().maxHealth end, color = "#e040fb" },
+						x(StatBar) { label = "Stunting", value = function() return currentCar().stunting end, color = "#ff6e40" },
+						x(StatBar) { label = "Hypergliding", value = function() return currentCar().hypergliding end, color = "#7c4dff" },
+						x(StatBar) { label = "AB'ing", value = function() return currentCar().abing end, color = "#448aff" },
+					},
+				},
 			},
 
-			x(TextInput) {
+			x("textinput") {
 				style = {
 					width = "100%",
 					paddingTop = 10,
@@ -346,12 +299,13 @@ local Garage = React.memo(function(): React.VNode
 				},
 				placeholder = "Search cars...",
 				value = searchQuery,
-				onchange = function(value: string)
+				onchange = function(value)
 					setSearchQuery(value)
 				end,
-				onsubmit = function(value: string)
-					if #filteredCollections > 0 then
-						local firstCol = filteredCollections[1]
+				onsubmit = function(value)
+					local fc = filteredCollections()
+					if #fc > 0 then
+						local firstCol = fc[1]
 						if firstCol.cars ~= nil and #firstCol.cars > 0 then
 							handleSelectCar(firstCol.name, firstCol.cars[1].fileName)
 							setSearchQuery("")
@@ -361,7 +315,7 @@ local Garage = React.memo(function(): React.VNode
 						end
 					end
 				end,
-				onkeydown = function(event: any)
+				onkeydown = function(event)
 					if event.keyCode == Key.escape then
 						setSearchQuery("")
 						if rootRef.current ~= nil then
@@ -372,10 +326,50 @@ local Garage = React.memo(function(): React.VNode
 			},
 
 			x(CollectionList) {
-				listChildren,
+				x(Sx.For) {
+					each = filteredCollections,
+					function(item, index)
+						local col = item()
+						return x("view") {
+							name = "view " .. col.name,
+							style = collectionViewStyle,
+							x(CollectionSection) {
+								name = col.name,
+								active = function()
+									local cc = currentCollection()
+									return cc ~= nil and cc.id == col.id
+								end,
+								onSelect = handleSelectCollection,
+							},
+							x(Sx.For) {
+								each = function() return col.cars end,
+								function(item2, index2)
+									local car = item2()
+									return x(CarCard) {
+										name = car.name,
+										collectionName = col.name,
+										fileName = car.fileName,
+										selected = function()
+											local cc = currentCar()
+											return cc ~= nil and cc.fileName == car.fileName
+										end,
+										onSelect = handleSelectCar,
+									}
+								end,
+							},
+						}
+					end,
+				},
 
-				query ~= "" and #filteredCollections == 0 and x(NoResults) {
-					('No cars match "%s"'):format(searchQuery),
+				x(Sx.Show) {
+					when = function()
+						return query() ~= "" and #filteredCollections() == 0
+					end,
+					x(NoResults) {
+						function()
+							return ('No cars match "%s"'):format(searchQuery())
+						end,
+					},
 				},
 			},
 
@@ -383,13 +377,13 @@ local Garage = React.memo(function(): React.VNode
 				onmousedown = function()
 					UiLib.call("back", {})
 				end,
-				x(Text) {
+				x("text") {
 					style = { fontSize = 14, fontStyle = "bold", color = "rgba(255,255,255,0.6)" },
 					"← Back to Menu",
 				},
 			},
 		},
 	}
-end)
+end
 
 return Garage

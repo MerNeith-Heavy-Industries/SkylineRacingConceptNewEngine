@@ -1,38 +1,31 @@
---!strict
+-- Settings view (Sx port of preact settings.luau). Rendered by the main menu and the
+-- pause menu. Fine-grained: `config`/`options`/`tab`/`capturingAction`/modals are
+-- signals; tab content and controls read them reactively through accessors, so editing a
+-- slider only re-sets that one control's props/text, never the whole tree.
 
--- Settings view ported from nfm-world/data/html/src/pages/Settings.tsx.
--- Reusable component: rendered by the main menu and the pause menu.
-
-local React = require("../../library/react")
-local styled = require("../../library/styled")
-
-local useState = React.useState
-local useEffect = React.useEffect
-local useCallback = React.useCallback
-local useRef = React.useRef
-local x = React.x
-local View = React.View
-local Text = React.Text
+local Sx = require("../../library/sx/init")
+local styled = Sx.styled
+local x = Sx.x
 
 -- ── Helpers ──────────────────────────────────────────────────────
 
-local function clamp01(v: number): number
+local function clamp01(v)
 	if v < 0 then return 0 end
 	if v > 1 then return 1 end
 	return v
 end
 
-local function map<T, V>(tbl: { T }, f: (T, number) -> V): { V }
-	local t = {}
-	for i = 1, #tbl do
-		t[i] = f(tbl[i], i)
+-- value-or-accessor: returns the current value whether `v` is plain or a getter.
+local function readProp(v)
+	if type(v) == "function" then
+		return v()
 	end
-	return t
+	return v
 end
 
-local function keyCodeToName(code: number): string
+local function keyCodeToName(code)
 	if code == 0 then return "None" end
-	local names: { [number]: string } = {
+	local names = {
 		[8] = "Backspace", [9] = "Tab", [13] = "Enter",
 		[16] = "Shift", [17] = "Ctrl", [18] = "Alt",
 		[27] = "Escape", [32] = "Space",
@@ -74,7 +67,7 @@ local DISTANT_OUTLINE_BEHAVIORS = {
 
 -- ── Styled primitives ────────────────────────────────────────────
 
-local Root = styled(View) {
+local Root = styled("view") {
 	width = "100%",
 	height = "100%",
 	display = "flex",
@@ -82,14 +75,14 @@ local Root = styled(View) {
 	backgroundColor = "rgba(0,0,0,0.65)",
 }
 
-local Header = styled(Text) {
+local Header = styled("text") {
 	fontSize = 28,
 	fontStyle = "bold",
 	textAlign = "center",
 	marginTop = 20,
 }
 
-local TabBar = styled(View) {
+local TabBar = styled("view") {
 	display = "flex",
 	flexDirection = "row",
 	justifyContent = "center",
@@ -99,7 +92,7 @@ local TabBar = styled(View) {
 	paddingRight = 40,
 }
 
-local Content = styled(View) {
+local Content = styled("view") {
 	flex = 1,
 	overflow = "scroll",
 	paddingTop = 20,
@@ -108,7 +101,7 @@ local Content = styled(View) {
 	paddingBottom = 10,
 }
 
-local BottomBar = styled(View) {
+local BottomBar = styled("view") {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -122,14 +115,14 @@ local BottomBar = styled(View) {
 	borderColor = "rgba(255,255,255,0.08)",
 }
 
-local SectionLabel = styled(Text) {
+local SectionLabel = styled("text") {
 	fontSize = 11,
 	fontStyle = "bold",
 	color = "rgba(255,255,255,0.35)",
 	marginBottom = 10,
 }
 
-local Row = styled(View) {
+local Row = styled("view") {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -139,27 +132,27 @@ local Row = styled(View) {
 	paddingBottom = 6,
 }
 
-local Label = styled(Text) {
+local Label = styled("text") {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.8)",
 	minWidth = 140,
 }
 
-local SliderValue = styled(Text) {
+local SliderValue = styled("text") {
 	fontSize = 12,
 	color = "rgba(255,255,255,0.5)",
 	marginLeft = 8,
 	minWidth = 50,
 }
 
-local Divider = styled(View) {
+local Divider = styled("view") {
 	height = 1,
 	backgroundColor = "rgba(255,255,255,0.06)",
 	marginTop = 12,
 	marginBottom = 12,
 }
 
-local ResetLink = styled(Text) {
+local ResetLink = styled("text") {
 	color = "rgba(255,255,255,0.35)",
 	fontSize = 12,
 	paddingTop = 8,
@@ -167,7 +160,7 @@ local ResetLink = styled(Text) {
 	hover = { color = "rgba(255,152,0,0.7)" },
 }
 
-local KeyBindingRow = styled(View) {
+local KeyBindingRow = styled("view") {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -177,44 +170,50 @@ local KeyBindingRow = styled(View) {
 	paddingBottom = 4,
 }
 
-local KeyBindingLabel = styled(Text) {
+local KeyBindingLabel = styled("text") {
 	fontSize = 13,
 	color = "rgba(255,255,255,0.75)",
 	minWidth = 160,
 }
 
 -- ── Interactive controls (approximations of HTML controls) ───────
+-- Reactive props (`active`/`capturing`/`checked`/`value`) may be accessors.
 
-local function TabBtn(props: { active: boolean?, label: string, onPress: () -> () }): React.VNode
-	local active = props.active
-	return x(View) {
-		style = {
-			paddingTop = 8,
-			paddingBottom = 8,
-			paddingLeft = 20,
-			paddingRight = 20,
-			backgroundColor = active and "rgba(79,195,247,0.18)" or "transparent",
-			borderWidth = 1,
-			borderColor = active and "rgba(79,195,247,0.35)" or "transparent",
-			borderRadius = 6,
-		},
+local function TabBtn(props)
+	return x("view") {
+		style = Sx.createMemo(function()
+			local active = readProp(props.active)
+			return {
+				paddingTop = 8,
+				paddingBottom = 8,
+				paddingLeft = 20,
+				paddingRight = 20,
+				backgroundColor = active and "rgba(79,195,247,0.18)" or "transparent",
+				borderWidth = 1,
+				borderColor = active and "rgba(79,195,247,0.35)" or "transparent",
+				borderRadius = 6,
+			}
+		end),
 		onmousedown = function() props.onPress() end,
-		x(Text) {
-			style = {
-				fontSize = 13,
-				fontStyle = "bold",
-				color = active and "#fff" or "rgba(255,255,255,0.45)",
-			},
+		x("text") {
+			style = Sx.createMemo(function()
+				local active = readProp(props.active)
+				return {
+					fontSize = 13,
+					fontStyle = "bold",
+					color = active and "#fff" or "rgba(255,255,255,0.45)",
+				}
+			end),
 			props.label,
 		},
 	}
 end
 
-local function Btn(props: { variant: "primary" | nil, label: string, onPress: () -> () }): React.VNode
+local function Btn(props)
 	local primary = props.variant == "primary"
 	local bg = primary and "rgba(79,195,247,0.22)" or "rgba(255,255,255,0.06)"
 	local border = primary and "rgba(79,195,247,0.35)" or "rgba(255,255,255,0.12)"
-	return x(View) {
+	return x("view") {
 		style = {
 			paddingTop = 10,
 			paddingBottom = 10,
@@ -226,72 +225,103 @@ local function Btn(props: { variant: "primary" | nil, label: string, onPress: ()
 			borderRadius = 6,
 		},
 		onmousedown = function() props.onPress() end,
-		x(Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+		x("text") { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
 	}
 end
 
-local function KeyBindingBtn(props: { capturing: boolean?, label: string, onPress: () -> () }): React.VNode
-	local capturing = props.capturing
-	local bg = capturing and "rgba(255,152,0,0.25)" or "rgba(255,255,255,0.06)"
-	local border = capturing and "rgba(255,152,0,0.5)" or "rgba(255,255,255,0.12)"
-	return x(View) {
-		style = {
-			paddingTop = 5,
-			paddingBottom = 5,
-			paddingLeft = 18,
-			paddingRight = 18,
-			minWidth = 140,
-			alignItems = "center",
-			backgroundColor = bg,
-			borderWidth = 1,
-			borderColor = border,
-			borderRadius = 5,
-		},
+local function KeyBindingBtn(props)
+	return x("view") {
+		style = Sx.createMemo(function()
+			local capturing = readProp(props.capturing)
+			return {
+				paddingTop = 5,
+				paddingBottom = 5,
+				paddingLeft = 18,
+				paddingRight = 18,
+				minWidth = 140,
+				alignItems = "center",
+				backgroundColor = capturing and "rgba(255,152,0,0.25)" or "rgba(255,255,255,0.06)",
+				borderWidth = 1,
+				borderColor = capturing and "rgba(255,152,0,0.5)" or "rgba(255,255,255,0.12)",
+				borderRadius = 5,
+			}
+		end),
 		onmousedown = function() props.onPress() end,
-		x(Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+		x("text") {
+			style = Sx.createMemo(function()
+				local capturing = readProp(props.capturing)
+				return { fontSize = 13, fontStyle = "bold", color = capturing and "#ffb300" or "#fff" }
+			end),
+			function()
+				return readProp(props.label)
+			end,
+		},
 	}
 end
 
 -- Click-to-cycle select (approx of <select>): click advances to next option.
-local function Select(props: { options: { [number]: string }?, value: number?, onSelect: ((value: number) -> ()) }): React.VNode
-	local options = props.options or {}
-	local value = props.value or 0
-	local label = ""
-	if #options > 0 then
-		label = options[value + 1] or options[1] or ""
-	end
-	return x(View) {
-		style = {
-			paddingTop = 6,
-			paddingBottom = 6,
-			paddingLeft = 10,
-			paddingRight = 10,
-			minWidth = 160,
-			alignItems = "center",
-			backgroundColor = "rgba(255,255,255,0.06)",
-			borderWidth = 1,
-			borderColor = "rgba(255,255,255,0.15)",
-			borderRadius = 5,
-		},
+local function Select(props)
+	return x("view") {
+		style = Sx.createMemo(function()
+			local options = props.options or {}
+			local value = readProp(props.value) or 0
+			local label = ""
+			if #options > 0 then
+				label = options[value + 1] or options[1] or ""
+			end
+			return {
+				paddingTop = 6,
+				paddingBottom = 6,
+				paddingLeft = 10,
+				paddingRight = 10,
+				minWidth = 160,
+				alignItems = "center",
+				backgroundColor = "rgba(255,255,255,0.06)",
+				borderWidth = 1,
+				borderColor = "rgba(255,255,255,0.15)",
+				borderRadius = 5,
+			}
+		end),
 		onmousedown = function()
+			local options = props.options or {}
 			if #options == 0 then return end
-			props.onSelect((value + 1) % #options)
+			props.onSelect(((readProp(props.value) or 0) + 1) % #options)
 		end,
-		x(Text) { style = { fontSize = 13, color = "#fff" }, label },
+		x("text") {
+			style = Sx.createMemo(function()
+				local options = props.options or {}
+				local value = readProp(props.value) or 0
+				local label = ""
+				if #options > 0 then
+					label = options[value + 1] or options[1] or ""
+				end
+				return { fontSize = 13, color = "#fff" }
+			end),
+			function()
+				local options = props.options or {}
+				local value = readProp(props.value) or 0
+				if #options > 0 then
+					return options[value + 1] or options[1] or ""
+				end
+				return ""
+			end,
+		},
 	}
 end
 
-local function Checkbox(props: { checked: boolean?, onToggle: () -> () }): React.VNode
-	local checked = props.checked
-	return x(View) {
-		style = {
-			width = 16,
-			height = 16,
-			backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.08)",
-			borderWidth = 1,
-			borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.25)",
-			borderRadius = 3,
-		},
+local function Checkbox(props)
+	return x("view") {
+		style = Sx.createMemo(function()
+			local checked = readProp(props.checked)
+			return {
+				width = 16,
+				height = 16,
+				backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.08)",
+				borderWidth = 1,
+				borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.25)",
+				borderRadius = 3,
+			}
+		end),
 		onmousedown = function() props.onToggle() end,
 	}
 end
@@ -299,13 +329,12 @@ end
 local TRACK_W = 160
 
 -- Click/drag slider: maps pointer X on a 160px track to [min, max] at `step`.
-local function Slider(props: { min: number?, max: number?, step: number?, value: number?, onValue: ((value: number) -> ()) }): React.VNode
+local function Slider(props)
 	local min = props.min or 0
 	local max = props.max or 1
 	local step = props.step or 1
-	local value = props.value or 0
 
-	local function setFromX(px: number)
+	local function setFromX(px)
 		local frac = clamp01(px / TRACK_W)
 		local raw = min + frac * (max - min)
 		local stepped = raw
@@ -317,9 +346,7 @@ local function Slider(props: { min: number?, max: number?, step: number?, value:
 		props.onValue(stepped)
 	end
 
-	local frac = clamp01((value - min) / (max - min))
-
-	return x(View) {
+	return x("view") {
 		style = {
 			width = TRACK_W,
 			height = 20,
@@ -329,7 +356,7 @@ local function Slider(props: { min: number?, max: number?, step: number?, value:
 		},
 		onmousedown = function(event) setFromX(event.relativePosition.x) end,
 		onmousedrag = function(event) setFromX(event.relativePosition.x) end,
-		x(View) {
+		x("view") {
 			style = {
 				width = "100%",
 				height = 4,
@@ -337,61 +364,72 @@ local function Slider(props: { min: number?, max: number?, step: number?, value:
 				borderRadius = 2,
 				overflow = "hidden",
 			},
-			x(View) {
-				style = {
-					width = ("%d%%"):format(frac * 100),
-					height = "100%",
-					backgroundColor = "#4fc3f7",
-				},
+			x("view") {
+				style = Sx.createMemo(function()
+					local value = readProp(props.value) or 0
+					local frac = clamp01((value - min) / (max - min))
+					return {
+						width = ("%d%%"):format(frac * 100),
+						height = "100%",
+						backgroundColor = "#4fc3f7",
+					}
+				end),
 			},
 		},
 	}
 end
 
 -- ── Tabs ─────────────────────────────────────────────────────────
+-- Each tab receives the `config` GETTER (signal) so reads are reactive.
 
-local function VideoTab(props: { config: SettingsSnapshot, options: AvailableOptions, set: ((key: string, value: any) -> ()) }): React.VNode
+local function VideoTab(props)
 	local config = props.config
 	local options = props.options
 	local set = props.set
 
-	return x(React.Fragment) {
+	return x(Sx.Fragment) {
 		x(SectionLabel) { "Display" },
 		x(Row) {
 			x(Label) { "Renderer" },
 			x(Select) {
-				options = options.renderers or {},
-				value = config.selectedRenderer,
+				options = options().renderers or {},
+				value = function() return config().selectedRenderer end,
 				onSelect = function(v) set("selectedRenderer", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "Resolution" },
 			x(Select) {
-				options = options.resolutions or {},
-				value = config.selectedResolution,
+				options = options().resolutions or {},
+				value = function() return config().selectedResolution end,
 				onSelect = function(v) set("selectedResolution", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "Display Mode" },
 			x(Select) {
-				options = options.displayModes or {},
-				value = config.selectedDisplayMode,
+				options = options().displayModes or {},
+				value = function() return config().selectedDisplayMode end,
 				onSelect = function(v) set("selectedDisplayMode", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "VSync" },
-			x(Checkbox) { checked = config.vsync, onToggle = function() set("vsync", not config.vsync) end },
+			x(Checkbox) { checked = function() return config().vsync end, onToggle = function() set("vsync", not config().vsync) end },
 		},
 		x(Row) {
 			x(Label) { "FPS Limit" },
 			x(Slider) {
-				min = 0, max = 240, step = 1, value = config.fpsLimit,
+				min = 0, max = 240, step = 1,
+				value = function() return config().fpsLimit end,
 				onValue = function(v) set("fpsLimit", v) end,
 			},
-			x(SliderValue) { config.fpsLimit == 0 and "Unlimited" or ("%d FPS"):format(config.fpsLimit) },
+			x(SliderValue) {
+				function()
+					local v = config().fpsLimit
+					return v == 0 and "Unlimited" or ("%d FPS"):format(v)
+				end,
+			},
 		},
 
 		x(Divider) {},
@@ -399,32 +437,32 @@ local function VideoTab(props: { config: SettingsSnapshot, options: AvailableOpt
 		x(Row) {
 			x(Label) { "Antialiasing" },
 			x(Select) {
-				options = options.antialiasModes or {},
-				value = config.antialias,
+				options = options().antialiasModes or {},
+				value = function() return config().antialias end,
 				onSelect = function(v) set("antialias", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "Shadow Distance" },
 			x(Select) {
-				options = options.shadowCascadeLevels or {},
-				value = config.shadowCascadeLevel,
+				options = options().shadowCascadeLevels or {},
+				value = function() return config().shadowCascadeLevel end,
 				onSelect = function(v) set("shadowCascadeLevel", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "Shadow Resolution" },
 			x(Select) {
-				options = options.shadowResolutions or {},
-				value = config.shadowResolution,
+				options = options().shadowResolutions or {},
+				value = function() return config().shadowResolution end,
 				onSelect = function(v) set("shadowResolution", v) end,
 			},
 		},
 		x(Row) {
 			x(Label) { "Render Distance" },
 			x(Select) {
-				options = options.renderDistanceNames or {},
-				value = config.renderDistance,
+				options = options().renderDistanceNames or {},
+				value = function() return config().renderDistance end,
 				onSelect = function(v) set("renderDistance", v) end,
 			},
 		},
@@ -433,103 +471,110 @@ local function VideoTab(props: { config: SettingsSnapshot, options: AvailableOpt
 		x(SectionLabel) { "Advanced" },
 		x(Row) {
 			x(Label) { "Low Latency" },
-			x(Checkbox) { checked = config.lowLatency, onToggle = function() set("lowLatency", not config.lowLatency) end },
+			x(Checkbox) { checked = function() return config().lowLatency end, onToggle = function() set("lowLatency", not config().lowLatency) end },
 		},
 		x(Row) {
 			x(Label) { "Outline Width" },
 			x(Slider) {
-				min = 0.5, max = 4, step = 0.1, value = config.lineWidth,
+				min = 0.5, max = 4, step = 0.1,
+				value = function() return config().lineWidth end,
 				onValue = function(v) set("lineWidth", v) end,
 			},
-			x(SliderValue) { ("%.1f"):format(config.lineWidth) },
+			x(SliderValue) { function() return ("%.1f"):format(config().lineWidth) end },
 		},
 		x(Row) {
 			x(Label) { "Distant Outlines" },
 			x(Select) {
 				options = DISTANT_OUTLINE_BEHAVIORS,
-				value = config.distantOutlineBehavior,
+				value = function() return config().distantOutlineBehavior end,
 				onSelect = function(v) set("distantOutlineBehavior", v) end,
 			},
 		},
 	}
 end
 
-local function AudioTab(props: { config: SettingsSnapshot, set: ((key: string, value: any) -> ()) }): React.VNode
+local function AudioTab(props)
 	local config = props.config
 	local set = props.set
 
-	return x(React.Fragment) {
+	return x(Sx.Fragment) {
 		x(SectionLabel) { "Volume" },
 		x(Row) {
 			x(Label) { "Mute All" },
-			x(Checkbox) { checked = config.muteAll, onToggle = function() set("muteAll", not config.muteAll) end },
+			x(Checkbox) { checked = function() return config().muteAll end, onToggle = function() set("muteAll", not config().muteAll) end },
 		},
 		x(Row) {
 			x(Label) { "Master Volume" },
 			x(Slider) {
-				min = 0, max = 1, step = 0.01, value = config.masterVolume,
+				min = 0, max = 1, step = 0.01,
+				value = function() return config().masterVolume end,
 				onValue = function(v) set("masterVolume", v) end,
 			},
-			x(SliderValue) { ("%d%%"):format(math.floor(config.masterVolume * 100 + 0.5)) },
+			x(SliderValue) { function() return ("%d%%"):format(math.floor(config().masterVolume * 100 + 0.5)) end },
 		},
 		x(Row) {
 			x(Label) { "Music Volume" },
 			x(Slider) {
-				min = 0, max = 1, step = 0.01, value = config.musicVolume,
+				min = 0, max = 1, step = 0.01,
+				value = function() return config().musicVolume end,
 				onValue = function(v) set("musicVolume", v) end,
 			},
-			x(SliderValue) { ("%d%%"):format(math.floor(config.musicVolume * 100 + 0.5)) },
+			x(SliderValue) { function() return ("%d%%"):format(math.floor(config().musicVolume * 100 + 0.5)) end },
 		},
 		x(Row) {
 			x(Label) { "Effects Volume" },
 			x(Slider) {
-				min = 0, max = 1, step = 0.01, value = config.effectsVolume,
+				min = 0, max = 1, step = 0.01,
+				value = function() return config().effectsVolume end,
 				onValue = function(v) set("effectsVolume", v) end,
 			},
-			x(SliderValue) { ("%d%%"):format(math.floor(config.effectsVolume * 100 + 0.5)) },
+			x(SliderValue) { function() return ("%d%%"):format(math.floor(config().effectsVolume * 100 + 0.5)) end },
 		},
 
 		x(Divider) {},
 		x(Row) {
 			x(Label) { "Remastered Music" },
-			x(Checkbox) { checked = config.remasteredMusic, onToggle = function() set("remasteredMusic", not config.remasteredMusic) end },
+			x(Checkbox) { checked = function() return config().remasteredMusic end, onToggle = function() set("remasteredMusic", not config().remasteredMusic) end },
 		},
 	}
 end
 
-local function GameTab(props: { config: SettingsSnapshot, set: ((key: string, value: any) -> ()), onReset: () -> () }): React.VNode
+local function GameTab(props)
 	local config = props.config
 	local set = props.set
 
-	return x(React.Fragment) {
+	return x(Sx.Fragment) {
 		x(SectionLabel) { "Camera" },
 		x(Row) {
 			x(Label) { "Field of View" },
 			x(Slider) {
-				min = 58.7, max = 120, step = 0.5, value = config.fov,
+				min = 58.7, max = 120, step = 0.5,
+				value = function() return config().fov end,
 				onValue = function(v) set("fov", v) end,
 			},
-			x(SliderValue) { ("%.1f°"):format(config.fov) },
+			x(SliderValue) { function() return ("%.1f°"):format(config().fov) end },
 		},
 		x(Row) {
 			x(Label) { "Smooth FOV" },
-			x(Checkbox) { checked = config.smoothFov, onToggle = function() set("smoothFov", not config.smoothFov) end },
+			x(Checkbox) { checked = function() return config().smoothFov end, onToggle = function() set("smoothFov", not config().smoothFov) end },
 		},
 		x(Row) {
 			x(Label) { "Follow Y Offset" },
 			x(Slider) {
-				min = -160, max = 500, step = 1, value = config.followY,
+				min = -160, max = 500, step = 1,
+				value = function() return config().followY end,
 				onValue = function(v) set("followY", v) end,
 			},
-			x(SliderValue) { ("%d"):format(config.followY) },
+			x(SliderValue) { function() return ("%d"):format(config().followY) end },
 		},
 		x(Row) {
 			x(Label) { "Follow Z Offset" },
 			x(Slider) {
-				min = -500, max = 500, step = 1, value = config.followZ,
+				min = -500, max = 500, step = 1,
+				value = function() return config().followZ end,
 				onValue = function(v) set("followZ", v) end,
 			},
-			x(SliderValue) { ("%d"):format(config.followZ) },
+			x(SliderValue) { function() return ("%d"):format(config().followZ) end },
 		},
 
 		x(Divider) {},
@@ -540,11 +585,10 @@ local function GameTab(props: { config: SettingsSnapshot, set: ((key: string, va
 	}
 end
 
-local function KeyboardTab(props: { config: SettingsSnapshot, capturingAction: string?, startCapture: (action: string) -> (), onReset: () -> () }): React.VNode
+local function KeyboardTab(props)
 	local config = props.config
-	local capturingAction = props.capturingAction
 
-	return x(React.Fragment) {
+	return x(Sx.Fragment) {
 		x(SectionLabel) { "Key Bindings" },
 
 		x(ResetLink) {
@@ -554,47 +598,54 @@ local function KeyboardTab(props: { config: SettingsSnapshot, capturingAction: s
 
 		x(Divider) {},
 
-		map(config.keyBindings, function(b: KeyBindingData): React.VNode
-			local capturing = capturingAction == b.action
-			return x(KeyBindingRow) {
-				key = b.action,
-				x(KeyBindingLabel) { b.displayName ~= "" and b.displayName or b.action },
-				x(KeyBindingBtn) {
-					capturing = capturing,
-					label = capturing and "Press any key..." or keyCodeToName(b.keyCode),
-					onPress = function()
-						props.startCapture(b.action)
-					end,
-				},
-			}
-		end),
+		x(Sx.For) {
+			each = function()
+				local c = config()
+				return c ~= nil and c.keyBindings or {}
+			end,
+			function(item, index)
+				local b = item()
+				return x(KeyBindingRow) {
+					x(KeyBindingLabel) { b.displayName ~= "" and b.displayName or b.action },
+					x(KeyBindingBtn) {
+						capturing = function() return props.capturingAction() == b.action end,
+						label = function()
+							local cap = props.capturingAction() == b.action
+							return cap and "Press any key..." or keyCodeToName(b.keyCode)
+						end,
+						onPress = function()
+							props.startCapture(b.action)
+						end,
+					},
+				}
+			end,
+		},
 
-		capturingAction ~= nil and x(Text) {
-			style = { fontSize = 12, color = "rgba(255,152,0,0.6)", marginTop = 10, textAlign = "center" },
-			"Press any key to bind, or ESC to cancel...",
+		x(Sx.Show) {
+			when = function() return props.capturingAction() ~= nil end,
+			x("text") {
+				style = { fontSize = 12, color = "rgba(255,152,0,0.6)", marginTop = 10, textAlign = "center" },
+				"Press any key to bind, or ESC to cancel...",
+			},
 		},
 	}
 end
 
 -- ── Settings component ───────────────────────────────────────────
 
-local function Settings(props: { onClose: () -> () }): React.VNode
+local function Settings(props)
 	local onClose = props.onClose
 
-	local tab, setTab = useState<<string>>("video")
-	local config, setConfig = useState<<SettingsSnapshot | nil>>(nil)
-	local options, setOptions = useState<<AvailableOptions | nil>>(nil)
-	local capturingAction, setCapturingAction = useState<<string | nil>>(nil)
-	local confirmModal, setConfirmModal = useState<<{
-        title: string,
-        message: string,
-        onConfirm: () -> (),
-    } | nil>>(nil)
-	local restartModal, setRestartModal = useState<<boolean>>(false)
-	local pendingCloseRef = useRef(false)
-	local rootRef = useRef<<any>>(nil)
+	local tab, setTab = Sx.createSignal("video")
+	local config, setConfig = Sx.createSignal(nil)
+	local options, setOptions = Sx.createSignal(nil)
+	local capturingAction, setCapturingAction = Sx.createSignal(nil)
+	local confirmModal, setConfirmModal = Sx.createSignal(nil)
+	local restartModal, setRestartModal = Sx.createSignal(false)
+	local pendingClose = { current = false }
+	local rootRef = {}
 
-	local function copySnapshot(c: SettingsSnapshot): SettingsSnapshot
+	local function copySnapshot(c)
 		local t = SettingsSnapshot.new()
 		t.selectedRenderer = c.selectedRenderer
 		t.selectedResolution = c.selectedResolution
@@ -621,38 +672,37 @@ local function Settings(props: { onClose: () -> () }): React.VNode
 		if c.keyBindings ~= nil then
 			for i = 1, #c.keyBindings do
 				local b = c.keyBindings[i]
-                kb[i] = KeyBindingData.new()
-                kb[i].action = b.action
-                kb[i].displayName = b.displayName
-                kb[i].keyCode = b.keyCode
+				kb[i] = KeyBindingData.new()
+				kb[i].action = b.action
+				kb[i].displayName = b.displayName
+				kb[i].keyCode = b.keyCode
 			end
 		end
 		t.keyBindings = kb
 		return t
 	end
 
-	local updateConfig = useCallback(function(updater: (SettingsSnapshot) -> SettingsSnapshot)
-		setConfig(function(prev: SettingsSnapshot | nil)
-			if prev == nil then return prev end
-			return updater(prev)
-		end)
-	end, {})
+	local function updateConfig(updater)
+		local prev = config()
+		if prev == nil then return end
+		setConfig(updater(prev))
+	end
 
-	local applySetting = useCallback(function(key: string, value: any)
+	local function applySetting(key, value)
 		UiLib.call("applySetting", { key = key, value = value })
-	end, {})
+	end
 
-	local set = useCallback(function<T>(key: string, value: T)
-		updateConfig(function(c: SettingsSnapshot)
-			local next = copySnapshot(c)
-			;(next :: any)[key] = value
-			return next
+	local function set(key, value)
+		updateConfig(function(c)
+			local nextC = copySnapshot(c)
+			nextC[key] = value
+			return nextC
 		end)
 		applySetting(key, value)
-	end, { updateConfig, applySetting })
+	end
 
-	useEffect(function()
-		local u1 = UiLib.onEvent("settings:config", function(data: SettingsSnapshot)
+	Sx.createEffect(function()
+		local u1 = UiLib.onEvent("settings:config", function(data)
 			if data == nil then
 				setConfig(nil)
 			else
@@ -660,17 +710,15 @@ local function Settings(props: { onClose: () -> () }): React.VNode
 			end
 		end)
 
-		local u2 = UiLib.onEvent("settings:options", function(data: AvailableOptions)
+		local u2 = UiLib.onEvent("settings:options", function(data)
 			setOptions(data)
 		end)
 
-		local u3 = UiLib.onEvent("settings:keyCaptured", function(data: CapturedKey)
+		local u3 = UiLib.onEvent("settings:keyCaptured", function(data)
 			setCapturingAction(nil)
-
 			if not data.cancelled and data.action ~= nil then
-				setConfig(function(prev: SettingsSnapshot | nil)
-					if prev == nil then return prev end
-
+				local prev = config()
+				if prev ~= nil then
 					local kb = {}
 					for i = 1, #prev.keyBindings do
 						local b = prev.keyBindings[i]
@@ -680,16 +728,15 @@ local function Settings(props: { onClose: () -> () }): React.VNode
 						elseif b.action == data.action then
 							newKeyCode = data.keyCode
 						end
-                        kb[i] = KeyBindingData.new()
-                        kb[i].action = b.action
-                        kb[i].displayName = b.displayName
-                        kb[i].keyCode = newKeyCode
+						kb[i] = KeyBindingData.new()
+						kb[i].action = b.action
+						kb[i].displayName = b.displayName
+						kb[i].keyCode = newKeyCode
 					end
-
-					local next = copySnapshot(prev)
-					next.keyBindings = kb
-					return next
-				end)
+					local nextC = copySnapshot(prev)
+					nextC.keyBindings = kb
+					setConfig(nextC)
+				end
 			end
 		end)
 
@@ -698,48 +745,48 @@ local function Settings(props: { onClose: () -> () }): React.VNode
 		end)
 
 		local u5 = UiLib.onEvent("settings:saved", function()
-			if pendingCloseRef.current then
-				pendingCloseRef.current = false
+			if pendingClose.current then
+				pendingClose.current = false
 				if onClose ~= nil then onClose() end
 			end
 		end)
 
 		UiLib.call("getConfig", {})
 
-		return function()
+		Sx.onCleanup(function()
 			u1()
 			u2()
 			u3()
 			u4()
 			u5()
-		end
-	end, {})
+		end)
+	end)
 
-	useEffect(function()
+	Sx.createEffect(function()
 		if rootRef.current ~= nil then rootRef.current:focus() end
-	end, {})
+	end)
 
-	local function handleRootKey(event: KeyboardEvent)
+	local function handleRootKey(event)
 		if event.keyCode == Key.escape and onClose ~= nil then
 			onClose()
 		end
 	end
 
-	local handleSave = useCallback(function()
+	local function handleSave()
 		UiLib.call("saveConfig", {})
-	end, {})
+	end
 
-	local handleClose = useCallback(function()
+	local function handleClose()
 		UiLib.call("close", {})
 		if onClose ~= nil then onClose() end
-	end, { onClose })
+	end
 
-	local handleOk = useCallback(function()
+	local function handleOk()
 		UiLib.call("saveConfig", {})
-		pendingCloseRef.current = true
-	end, {})
+		pendingClose.current = true
+	end
 
-	local handleResetDefaults = useCallback(function(section: string, title: string, message: string)
+	local function handleResetDefaults(section, title, message)
 		setConfirmModal {
 			title = title,
 			message = message,
@@ -748,126 +795,142 @@ local function Settings(props: { onClose: () -> () }): React.VNode
 				setConfirmModal(nil)
 			end,
 		}
-	end, {})
+	end
 
-	local startCapture = useCallback(function(action: string)
+	local function startCapture(action)
 		setCapturingAction(action)
 		UiLib.call("startCapture", { action = action })
-	end, {})
-
-	if config == nil or options == nil then
-		return x(Root) {
-			ref = rootRef,
-			tabindex = 0,
-			onkeydown = handleRootKey,
-			x(Header) { "Settings" },
-			x(Content) {
-				x(Text) {
-					style = { textAlign = "center", color = "rgba(255,255,255,0.3)", marginTop = 80 },
-					"Loading settings...",
-				},
-			},
-		}
 	end
 
 	return x(Root) {
 		ref = rootRef,
 		tabindex = 0,
 		onkeydown = handleRootKey,
-		x(Header) { "Settings" },
 
-		x(TabBar) {
-			x(TabBtn) { label = "Keyboard", active = tab == "keyboard", onPress = function() setTab("keyboard") end },
-			x(TabBtn) { label = "Video", active = tab == "video", onPress = function() setTab("video") end },
-			x(TabBtn) { label = "Audio", active = tab == "audio", onPress = function() setTab("audio") end },
-			x(TabBtn) { label = "Game", active = tab == "game", onPress = function() setTab("game") end },
-		},
-
-		x(Content) {
-			tab == "video" and x(VideoTab) { config = config, options = options, set = set },
-			tab == "audio" and x(AudioTab) { config = config, set = set },
-			tab == "game" and x(GameTab) {
-				config = config,
-				set = set,
-				onReset = function()
-					handleResetDefaults("camera", "Reset Camera", "Are you sure you want to reset camera settings to default?")
-				end,
-			},
-			tab == "keyboard" and x(KeyboardTab) {
-				config = config,
-				capturingAction = capturingAction,
-				startCapture = startCapture,
-				onReset = function()
-					handleResetDefaults("keyboard", "Reset Key Binds", "Are you sure you want to reset key binds to default?")
-				end,
-			},
-		},
-
-		x(BottomBar) {
-			x(Btn) { variant = "primary", label = "OK", onPress = handleOk },
-			x(Btn) { label = "Cancel", onPress = handleClose },
-			x(Btn) { label = "Apply", onPress = handleSave },
-		},
-
-		confirmModal ~= nil and not restartModal and x(View) {
-			style = {
-				position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
-				display = "flex", alignItems = "center", justifyContent = "center",
-				backgroundColor = "rgba(0,0,0,0.5)",
-			},
-			onmousedown = function() setConfirmModal(nil) end,
-			x(View) {
-				style = {
-					backgroundColor = "#1a1a2e",
-					borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
-					borderRadius = 10,
-					paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
-					minWidth = 320,
-					alignItems = "center",
-				},
-				onmousedown = function() end,
-				x(Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, confirmModal.title },
-				x(Text) { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, confirmModal.message },
-				x(View) {
-					style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
-					x(Btn) { variant = "primary", label = "Yes", onPress = confirmModal.onConfirm },
-					x(Btn) { label = "No", onPress = function() setConfirmModal(nil) end },
+		x(Sx.Switch) {
+			x(Sx.Match) {
+				when = function() return config() == nil or options() == nil end,
+				x(Header) { "Settings" },
+				x(Content) {
+					x("text") {
+						style = { textAlign = "center", color = "rgba(255,255,255,0.3)", marginTop = 80 },
+						"Loading settings...",
+					},
 				},
 			},
-		},
+			x(Sx.Match) {
+				when = function() return true end,
+				x(Header) { "Settings" },
+				x(TabBar) {
+					x(TabBtn) { label = "Keyboard", active = function() return tab() == "keyboard" end, onPress = function() setTab("keyboard") end },
+					x(TabBtn) { label = "Video", active = function() return tab() == "video" end, onPress = function() setTab("video") end },
+					x(TabBtn) { label = "Audio", active = function() return tab() == "audio" end, onPress = function() setTab("audio") end },
+					x(TabBtn) { label = "Game", active = function() return tab() == "game" end, onPress = function() setTab("game") end },
+				},
+				x(Content) {
+					x(Sx.Show) {
+						when = function() return tab() == "video" end,
+						x(VideoTab) { config = config, options = options, set = set },
+					},
+					x(Sx.Show) {
+						when = function() return tab() == "audio" end,
+						x(AudioTab) { config = config, set = set },
+					},
+					x(Sx.Show) {
+						when = function() return tab() == "game" end,
+						x(GameTab) {
+							config = config,
+							set = set,
+							onReset = function()
+								handleResetDefaults("camera", "Reset Camera", "Are you sure you want to reset camera settings to default?")
+							end,
+						},
+					},
+					x(Sx.Show) {
+						when = function() return tab() == "keyboard" end,
+						x(KeyboardTab) {
+							config = config,
+							capturingAction = capturingAction,
+							startCapture = startCapture,
+							onReset = function()
+								handleResetDefaults("keyboard", "Reset Key Binds", "Are you sure you want to reset key binds to default?")
+							end,
+						},
+					},
+				},
+				x(BottomBar) {
+					x(Btn) { variant = "primary", label = "OK", onPress = handleOk },
+					x(Btn) { label = "Cancel", onPress = handleClose },
+					x(Btn) { label = "Apply", onPress = handleSave },
+				},
 
-		restartModal and x(View) {
-			style = {
-				position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
-				display = "flex", alignItems = "center", justifyContent = "center",
-				backgroundColor = "rgba(0,0,0,0.5)",
-			},
-			x(View) {
-				style = {
-					backgroundColor = "#1a1a2e",
-					borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
-					borderRadius = 10,
-					paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
-					minWidth = 320,
-					alignItems = "center",
+				x(Sx.Show) {
+					when = function() return confirmModal() ~= nil and not restartModal() end,
+					x("view") {
+						style = {
+							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
+							display = "flex", alignItems = "center", justifyContent = "center",
+							backgroundColor = "rgba(0,0,0,0.5)",
+						},
+						onmousedown = function() setConfirmModal(nil) end,
+						x("view") {
+							style = {
+								backgroundColor = "#1a1a2e",
+								borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
+								borderRadius = 10,
+								paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
+								minWidth = 320,
+								alignItems = "center",
+							},
+							onmousedown = function() end,
+							x("text") { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return confirmModal().title end },
+							x("text") { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, function() return confirmModal().message end },
+							x("view") {
+								style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
+								x(Btn) { variant = "primary", label = "Yes", onPress = function() return confirmModal().onConfirm() end },
+								x(Btn) { label = "No", onPress = function() setConfirmModal(nil) end },
+							},
+						},
+					},
 				},
-				x(Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, "Restart Required" },
-				x(Text) {
-					style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20, textAlign = "center" },
-					"The renderer has been changed. A restart is required for this change to take effect.",
-				},
-				x(View) {
-					style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
-					x(Btn) { variant = "primary", label = "Restart Now", onPress = function() UiLib.call("restartNow", {}) end },
-					x(Btn) {
-						label = "Later",
-						onPress = function()
-							setRestartModal(false)
-							if pendingCloseRef.current then
-								pendingCloseRef.current = false
-								if onClose ~= nil then onClose() end
-							end
-						end,
+
+				x(Sx.Show) {
+					when = function() return restartModal() end,
+					x("view") {
+						style = {
+							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
+							display = "flex", alignItems = "center", justifyContent = "center",
+							backgroundColor = "rgba(0,0,0,0.5)",
+						},
+						x("view") {
+							style = {
+								backgroundColor = "#1a1a2e",
+								borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
+								borderRadius = 10,
+								paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
+								minWidth = 320,
+								alignItems = "center",
+							},
+							x("text") { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, "Restart Required" },
+							x("text") {
+								style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20, textAlign = "center" },
+								"The renderer has been changed. A restart is required for this change to take effect.",
+							},
+							x("view") {
+								style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
+								x(Btn) { variant = "primary", label = "Restart Now", onPress = function() UiLib.call("restartNow", {}) end },
+								x(Btn) {
+									label = "Later",
+									onPress = function()
+										setRestartModal(false)
+										if pendingClose.current then
+											pendingClose.current = false
+											if onClose ~= nil then onClose() end
+										end
+									end,
+								},
+							},
+						},
 					},
 				},
 			},

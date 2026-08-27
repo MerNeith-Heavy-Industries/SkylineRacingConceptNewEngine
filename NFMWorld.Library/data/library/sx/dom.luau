@@ -18,6 +18,7 @@ local Dom = {}
 -- ------------------------------------------------------------------ markers
 
 local FLOW = {} -- unique marker for flow descriptors
+local Fragment = {} -- unique marker for fragment descriptors (mounts children inline)
 
 -- ------------------------------------------------------------------ small helpers
 
@@ -246,10 +247,17 @@ local function mountHostElement(descriptor, parent, marker)
     local el = Host.createInstance(descriptor.type, staticProps)
     insertInto(parent, el, marker)
 
-    -- reactive non-event props -> per-prop effect -> setProperty
+    -- reactive non-event props -> per-prop effect -> setProperty. The effect skips the
+    -- host call when the accessor returns the same reference as last time, so stable
+    -- (memoized/constant) props don't re-set on every recompute.
     for key, accessor in pairs(reactiveProps) do
+        local last = nil
         Sx.createEffect(function()
-            Host.setProperty(el, key, accessor())
+            local v = accessor()
+            if v ~= last then
+                Host.setProperty(el, key, v)
+                last = v
+            end
         end)
     end
 
@@ -319,13 +327,34 @@ local function mountComponent(descriptor, parent, marker)
     }
 end
 
--- Dispatch a descriptor to host element / flow / component.
+-- Dispatch a descriptor to host element / flow / fragment / component.
 mountNode = function(descriptor, parent, marker)
     local t = descriptor.type
     if type(t) == "string" then
         return mountHostElement(descriptor, parent, marker)
     elseif t == FLOW then
         return mountFlow(descriptor, parent, marker)
+    elseif t == Fragment then
+        -- mount each child inline into `parent` (no wrapper host node)
+        local nodes = {}
+        local disposes = {}
+        for i = 1, #descriptor.children do
+            local m = mountValueInto(parent, descriptor.children[i], marker)
+            if m then
+                for _, n in ipairs(m.nodes) do
+                    nodes[#nodes + 1] = n
+                end
+                disposes[#disposes + 1] = m.dispose
+            end
+        end
+        return {
+            nodes = nodes,
+            dispose = function()
+                for i = #disposes, 1, -1 do
+                    disposes[i]()
+                end
+            end,
+        }
     else
         return mountComponent(descriptor, parent, marker)
     end
@@ -571,6 +600,7 @@ end
 Sx.setScheduler(Host.defer)
 
 Dom.render = render
+Dom.Fragment = Fragment
 Dom.Show = Show
 Dom.Switch = Switch
 Dom.Match = Match

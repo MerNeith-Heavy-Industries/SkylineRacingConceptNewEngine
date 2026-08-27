@@ -1,106 +1,133 @@
---!strict
-
--- Shared glassmorphism primitives ported from
--- nfm-world/data/html/src/shared/components/GlassCard.tsx
+-- Shared glassmorphism primitives (Sx port of preact glasscard.luau).
 --
--- Note: the Lua `styled` engine does not support `backdrop-filter`,
--- `box-shadow`, `transition`, `transform`, or `animation`, so those
--- are dropped; only the supported style properties are used.
+-- GlassCard: card with a 3px colored top accent bar. `color` and `style` may be plain
+-- values or accessors (fine-grained); a reactive color/style is applied via a single
+-- setProperty when it changes. StatBar / CenterText are pure (static) components.
 
-local React = require("../../library/react")
+local Sx = require("../../library/sx/init")
+local x = Sx.x
 
-local x = React.x
-local View = React.View
-local Text = React.Text
-local useMemo = React.useMemo
-
-local function clamp01(v: number): number
+local function clamp01(v)
 	if v < 0 then return 0 end
 	if v > 1 then return 1 end
 	return v
 end
 
-local function map<T, V>(tbl: { T }, f: (T, number) -> V): { V }
-	local t = {}
-	for i = 1, #tbl do
-		t[i] = f(tbl[i], i)
+local function copyStyle(dst, src)
+	for k, v in pairs(src) do
+		dst[k] = v
 	end
-	return t
 end
 
 -- ── GlassCard ────────────────────────────────────────────────────
--- Card with a 3px colored top accent bar.
 
-local function GlassCard(props: { color: string?, style: React.Styles?, children: React.Children } & React.ViewProps): React.VNode
-	local color = props.color or "#4fc3f7"
+local function GlassCard(props)
+	props = props or {}
 
-	-- Memoize the merged style so its table identity is stable across renders
-	-- (React's diffProps uses reference equality). props.style is the card's
-	-- memoized style, so this is stable unless the card's selection changes.
-	local style = useMemo(function()
-		local s: React.Styles = {
-			backgroundColor = "rgba(255,255,255,0.05)",
-			borderRadius = 12,
-			borderWidth = 1,
-			borderColor = "rgba(255,255,255,0.1)",
-			paddingTop = 16,
-			paddingBottom = 16,
-			paddingLeft = 20,
-			paddingRight = 20,
-			position = "relative",
-			overflow = "hidden",
-		}
-		if props.style ~= nil then
-			for k, v in pairs((props.style :: any)) do
-				(s :: any)[k] = v
-			end
+	local baseStyle = {
+		backgroundColor = "rgba(255,255,255,0.05)",
+		borderRadius = 12,
+		borderWidth = 1,
+		borderColor = "rgba(255,255,255,0.1)",
+		paddingTop = 16,
+		paddingBottom = 16,
+		paddingLeft = 20,
+		paddingRight = 20,
+		position = "relative",
+		overflow = "hidden",
+	}
+
+	local color
+	if type(props.color) == "function" then
+		color = props.color
+	else
+		color = function()
+			return props.color or "#4fc3f7"
 		end
-		return s
-	end, { props.style })
+	end
 
-	local barStyle = useMemo(function(): React.Styles
+	-- Reference-stable merged style: rebuilds only when the resolved input style changes
+	-- reference, so a card whose selection didn't change reuses the same table and the
+	-- reactive style prop skips the setProperty (dom.luau compares references).
+	local lastInput = nil
+	local cachedStyle = nil
+	local style = Sx.createMemo(function()
+		local ps = props.style
+		local input = ps
+		if type(ps) == "function" then
+			input = ps()
+		end
+		if input ~= lastInput then
+			lastInput = input
+			local s = {}
+			for k, v in pairs(baseStyle) do
+				s[k] = v
+			end
+			if input ~= nil then
+				for k, v in pairs(input) do
+					s[k] = v
+				end
+			end
+			cachedStyle = s
+		end
+		return cachedStyle
+	end)
+
+	local barStyle = Sx.createMemo(function()
 		return {
 			position = "absolute",
 			top = 0,
 			left = 0,
 			right = 0,
 			height = 3,
-			backgroundColor = color,
+			backgroundColor = color(),
 			borderTopLeftRadius = 12,
 			borderTopRightRadius = 12,
 		}
-	end, { color })
+	end)
 
-	local bar = x(View) {
-		style = barStyle,
-	}
-
-	-- Forward remaining props (onmousedown, key, ...) to the wrapper View.
-	local wrapperProps: { [string]: any } = {}
-	for k, v in pairs(props :: any) do
+	local wrapperProps = {}
+	for k, v in pairs(props) do
 		if k ~= "color" and k ~= "style" and k ~= "children" and k ~= "key" then
 			wrapperProps[k] = v
 		end
 	end
 	wrapperProps.style = style
 
-	return React.createElement(View, wrapperProps, bar, props.children)
+	local children = { x("view") { style = barStyle } }
+	for _, c in ipairs(props.children or {}) do
+		children[#children + 1] = c
+	end
+
+	return {
+		type = "view",
+		props = wrapperProps,
+		children = children,
+	}
 end
 
 -- ── StatBar ──────────────────────────────────────────────────────
--- Labeled progress bar (value is 0..1).
+-- Labeled progress bar (value is 0..1). `value` may be a plain number or an accessor;
+-- a reactive value updates only this bar's width text + fill width.
 
-local StatBar = React.memo(function (props: { value: number?, color: string?, height: number?, label: string? }): React.VNode
-	local value = clamp01(props.value or 0)
+local function StatBar(props)
+	props = props or {}
 	local color = props.color or "#4fc3f7"
 	local height = props.height or 8
 	local label = props.label or ""
 
-	local pct = math.floor(value * 100 + 0.5)
+	local valueAccessor
+	if type(props.value) == "function" then
+		valueAccessor = props.value
+	else
+		valueAccessor = function()
+			return props.value or 0
+		end
+	end
 
-	return x(View) {
+	return x("view") {
 		style = { marginBottom = 8, flexDirection = "column", gap = 4 },
-		x(View) {
+		x("view") {
 			style = {
 				display = "flex",
 				flexDirection = "row",
@@ -108,16 +135,19 @@ local StatBar = React.memo(function (props: { value: number?, color: string?, he
 				alignItems = "center",
 				marginBottom = 4,
 			},
-			x(Text) {
+			x("text") {
 				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
 				label,
 			},
-			x(Text) {
+			x("text") {
 				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
-				("%d%%"):format(pct),
+				function()
+					local v = clamp01(valueAccessor())
+					return ("%d%%"):format(math.floor(v * 100 + 0.5))
+				end,
 			},
 		},
-		x(View) {
+		x("view") {
 			style = {
 				width = "100%",
 				height = height,
@@ -125,22 +155,26 @@ local StatBar = React.memo(function (props: { value: number?, color: string?, he
 				borderRadius = height / 2,
 				overflow = "hidden",
 			},
-			x(View) {
-				style = {
-					width = ("%d%%"):format(pct),
-					height = "100%",
-					backgroundColor = color,
-					borderRadius = height / 2,
-				},
+			x("view") {
+				style = Sx.createMemo(function()
+					local v = clamp01(valueAccessor())
+					return {
+						width = ("%d%%"):format(math.floor(v * 100 + 0.5)),
+						height = "100%",
+						backgroundColor = color,
+						borderRadius = height / 2,
+					}
+				end),
 			},
 		},
 	}
-end)
+end
 
 -- ── CenterText ───────────────────────────────────────────────────
--- Large center-screen text overlay. Splits on "\n".
+-- Large center-screen text overlay. Splits on "\n". `text` may be a plain string or an
+-- accessor; lines are rendered through a keyed For so a changing text updates in place.
 
-local function splitLines(s: string): { string }
+local function splitLines(s)
 	local t = {}
 	local start = 1
 	while true do
@@ -155,13 +189,21 @@ local function splitLines(s: string): { string }
 	return t
 end
 
-local function CenterText(props: { text: string?, size: number?, color: string? }): React.VNode
-	local text = props.text or ""
+local function CenterText(props)
+	props = props or {}
 	local size = props.size or 64
 	local color = props.color or "rgba(255,255,255,0.9)"
-	local lines = splitLines(text)
 
-	return x(View) {
+	local textAccessor
+	if type(props.text) == "function" then
+		textAccessor = props.text
+	else
+		textAccessor = function()
+			return props.text or ""
+		end
+	end
+
+	return x("view") {
 		style = {
 			position = "absolute",
 			top = 0,
@@ -173,12 +215,17 @@ local function CenterText(props: { text: string?, size: number?, color: string? 
 			alignItems = "center",
 			justifyContent = "center",
 		},
-		map(lines, function(line: string): React.VNode
-			return x(Text) {
-				style = { fontSize = size, color = color, fontStyle = "bold", textAlign = "center" },
-				line,
-			}
-		end),
+		x(Sx.For) {
+			each = function()
+				return splitLines(textAccessor() or "")
+			end,
+			function(item, index)
+				return x("text") {
+					style = { fontSize = size, color = color, fontStyle = "bold", textAlign = "center" },
+					item(),
+				}
+			end,
+		},
 	}
 end
 

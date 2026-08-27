@@ -1,60 +1,44 @@
---!strict
+-- In-race HUD overlay (Sx port of preact racehud.luau), ported from
+-- nfm-world/data/html/src/pages/RaceHud.tsx. Fine-grained: each telemetry value is a
+-- signal; a per-frame `race:hudState` push updates only the affected leaf text/bar via
+-- commitTextUpdate/setProperty.
 
--- In-race HUD overlay ported from nfm-world/data/html/src/pages/RaceHud.tsx.
-
-local React = require("../../library/react")
-local styled = require("../../library/styled")
+local Sx = require("../../library/sx/init")
+local styled = Sx.styled
+local x = Sx.x
 local glasscard = require("../components/glasscard")
 local GlassCard = glasscard.GlassCard
 local StatBar = glasscard.StatBar
 local CenterText = glasscard.CenterText
 local PauseMenu = require("../components/pausemenu")
 
-local useState = React.useState
-local useEffect = React.useEffect
-local x = React.x
-local View = React.View
-local Text = React.Text
-
-local Root = styled(View) {
+local Root = styled("view") {
 	width = "100%",
 	height = "100%",
 	position = "relative",
 }
 
-local CornerLabel = styled(Text) {
+local CornerLabel = styled("text") {
 	fontSize = 11,
 	color = "rgba(255,255,255,0.5)",
 	marginBottom = 4,
 }
 
-local function formatTime(ms: number): string
-	local mins = math.floor(ms / 60000)
-	local secs = math.floor(ms / 1000) % 60
-	local msecs = ms % 1000
-	local minsFmt = ("%02d"):format(mins)
-	local secsFmt = ("%02d"):format(secs)
-	local msFmt = ("%03d"):format(msecs)
-	if mins > 0 then
-		return ("%s:%s.%s"):format(minsFmt, secsFmt, msFmt)
-	end
-	return ("%s.%s"):format(secsFmt, msFmt)
-end
+local function PowerDamageBars()
+	local power, setPower = Sx.createSignal(1)
+	local damage, setDamage = Sx.createSignal(0)
 
-local PowerDamageBars = React.memo(function()
-	local power, setPower = useState(1)
-	local damage, setDamage = useState(0)
-
-	useEffect(function()
-		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("race:hudState", function(data)
 			if data ~= nil then
 				setPower(data.power)
 				setDamage(data.damage)
 			end
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	return x(View) {
+	return x("view") {
 		style = {
 			position = "absolute",
 			top = 16,
@@ -66,29 +50,30 @@ local PowerDamageBars = React.memo(function()
 		},
 		x(GlassCard) { color = "#ff5252",
 			x(CornerLabel) { "Power" },
-			x(StatBar) { label = "", value = power / 0.98, color = "#ff5252", height = 10 },
+			x(StatBar) { label = "", value = function() return power() / 0.98 end, color = "#ff5252", height = 10 },
 		},
 		x(GlassCard) { color = "#4fc3f7",
 			x(CornerLabel) { "Damage" },
-			x(StatBar) { label = "", value = damage, color = "#4fc3f7", height = 10 },
+			x(StatBar) { label = "", value = function() return damage() end, color = "#4fc3f7", height = 10 },
 		},
 	}
-end)
+end
 
-local Splits = React.memo(function()
-	local lapDiffMs, setLapDiffMs = useState<<number?>>(nil)
-	local lastLapDiffMs, setLastLapDiffMs = useState<<number?>>(nil)
+local function Splits()
+	local lapDiffMs, setLapDiffMs = Sx.createSignal(0)
+	local lastLapDiffMs, setLastLapDiffMs = Sx.createSignal(0)
 
-	useEffect(function()
-		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("race:hudState", function(data)
 			if data ~= nil then
-				setLapDiffMs(data.lapDiffMs)
-				setLastLapDiffMs(data.lastLapDiffMs)
+				setLapDiffMs(data.lapDiffMs or 0)
+				setLastLapDiffMs(data.lastLapDiffMs or 0)
 			end
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	return x(View) {
+	return x("view") {
 		style = {
 			position = "absolute",
 			bottom = 24,
@@ -98,31 +83,34 @@ local Splits = React.memo(function()
 			flexDirection = "column",
 			alignItems = "flex-end",
 		},
-		x(Text) {
+		x("text") {
 			style = { fontSize = 36, fontStyle = "bold" },
-			("Lap Diff: %d"):format(lapDiffMs),
+			function() return ("Lap Diff: %d"):format(lapDiffMs()) end,
 		},
-		x(Text) {
+		x("text") {
 			style = { fontSize = 14, color = "rgba(255,255,255,0.5)" },
-			("Last: %d"):format(lastLapDiffMs),
+			function() return ("Last: %d"):format(lastLapDiffMs()) end,
 		},
 	}
-end)
+end
 
-local Speed = React.memo(function()
-	local speed, setSpeed = useState(0)
+local function Speed()
+	local speed, setSpeed = Sx.createSignal(0)
 
-	useEffect(function()
-		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("race:hudState", function(data)
 			if data ~= nil then
 				setSpeed(data.speed)
 			end
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	local speedKmh = speed * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0
+	local speedKmh = Sx.createMemo(function()
+		return math.floor(speed() * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0 + 0.5)
+	end)
 
-	return x(View) {
+	return x("view") {
 		style = {
 			position = "absolute",
 			bottom = 24,
@@ -132,22 +120,21 @@ local Speed = React.memo(function()
 			flexDirection = "column",
 			alignItems = "center",
 		},
-		x(Text) { style = { fontSize = 56, fontStyle = "bold" }, ("%d"):format(math.floor(speedKmh + 0.5)) },
-		x(Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
+		x("text") { style = { fontSize = 56, fontStyle = "bold" }, function() return ("%d"):format(speedKmh()) end },
+		x("text") { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
 	}
-end)
+end
 
-local RaceHud = React.memo(function()
-	local position, setPosition = useState(1)
-	local totalRacers, setTotalRacers = useState(1)
-	local countdownTimer, setCountdownTimer = useState(0)
-	local stateText, setStateText = useState('')
-	local stateTextEndsAt, setStateTextEndsAt = useState<<number?>>(nil)
+local function RaceHud()
+	local position, setPosition = Sx.createSignal(1)
+	local totalRacers, setTotalRacers = Sx.createSignal(1)
+	local countdownTimer, setCountdownTimer = Sx.createSignal(0)
+	local stateText, setStateText = Sx.createSignal("")
+	local stateTextEndsAt, setStateTextEndsAt = Sx.createSignal(nil)
+	local isPaused, setIsPaused = Sx.createSignal(false)
 
-	local isPaused, setIsPaused = useState<<boolean>>(false)
-
-	useEffect(function()
-		return UiLib.onEvent("race:hudState", function(data: HudStateData)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("race:hudState", function(data)
 			if data ~= nil then
 				setPosition(data.position)
 				setTotalRacers(data.totalRacers)
@@ -156,27 +143,34 @@ local RaceHud = React.memo(function()
 				setStateTextEndsAt(data.stateTextEndsAt)
 			end
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	useEffect(function()
-		return UiLib.onEvent("race:paused", function(data: boolean)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("race:paused", function(data)
 			setIsPaused(data)
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	if stateTextEndsAt ~= nil and os.time() >= stateTextEndsAt then
-		stateText = nil
-	end
-
-	local actualStateText
-	if countdownTimer > 0 then
-		actualStateText = ("Starting in %d"):format(countdownTimer)
-	else
-		actualStateText = stateText or ""
-	end
+	local actualStateText = Sx.createMemo(function()
+		local stEndsAt = stateTextEndsAt()
+		local stText = stateText()
+		if stEndsAt ~= nil and os.time() >= stEndsAt then
+			stText = nil
+		end
+		local countdown = countdownTimer()
+		if countdown > 0 then
+			return ("Starting in %d"):format(countdown)
+		end
+		return stText or ""
+	end)
 
 	return x(Root) {
-		actualStateText ~= "" and x(CenterText) { text = actualStateText, size = 24 },
+		x(Sx.Show) {
+			when = function() return actualStateText() ~= "" end,
+			x(CenterText) { text = function() return actualStateText() end, size = 24 },
+		},
 
 		x(PowerDamageBars) {},
 
@@ -184,7 +178,7 @@ local RaceHud = React.memo(function()
 
 		x(Speed) {},
 
-		x(View) {
+		x("view") {
 			style = {
 				position = "absolute",
 				bottom = 24,
@@ -193,12 +187,15 @@ local RaceHud = React.memo(function()
 				flexDirection = "column",
 				alignItems = "flex-end",
 			},
-			x(Text) { style = { fontSize = 36, fontStyle = "bold" }, ("%d/%d"):format(position, totalRacers) },
-			x(Text) { style = { fontSize = 12, color = "rgba(255,255,255,0.5)" }, "POSITION" },
+			x("text") { style = { fontSize = 36, fontStyle = "bold" }, function() return ("%d/%d"):format(position(), totalRacers()) end },
+			x("text") { style = { fontSize = 12, color = "rgba(255,255,255,0.5)" }, "POSITION" },
 		},
 
-		isPaused and x(PauseMenu) {},
+		x(Sx.Show) {
+			when = isPaused,
+			x(PauseMenu) {},
+		},
 	}
-end)
+end
 
 return RaceHud

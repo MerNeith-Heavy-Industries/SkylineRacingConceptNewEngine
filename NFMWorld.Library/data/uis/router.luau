@@ -6,9 +6,9 @@ local Sx = require("../library/sx/init")
 local x = Sx.x
 
 local MainMenu = require("./routes/mainmenu")
--- local Garage = require("./routes/garage")  -- TODO: port to Sx
--- local RaceHud = require("./routes/racehud") -- TODO: port to Sx
--- local TestPage = require("./routes/test")   -- TODO: port to Sx
+local Garage = require("./routes/garage")
+local RaceHud = require("./routes/racehud")
+local TestPage = require("./routes/test")
 
 local defaultRoute = "main-menu"
 
@@ -28,9 +28,18 @@ local function Router()
 				when = function() return route() == "main-menu" end,
 				x(MainMenu) {},
 			},
-			-- x(Sx.Match) { when = function() return route() == "garage" end, x(Garage) {} },
-			-- x(Sx.Match) { when = function() return route() == "race" end, x(RaceHud) {} },
-			-- x(Sx.Match) { when = function() return route() == "test" end, x(TestPage) {} },
+			x(Sx.Match) {
+				when = function() return route() == "garage" end,
+				x(Garage) {},
+			},
+			x(Sx.Match) {
+				when = function() return route() == "race" end,
+				x(RaceHud) {},
+			},
+			x(Sx.Match) {
+				when = function() return route() == "test" end,
+				x(TestPage) {},
+			},
 			-- Fallback: any unhandled route shows the default page (main menu)
 			x(Sx.Match) {
 				when = function() return true end,
