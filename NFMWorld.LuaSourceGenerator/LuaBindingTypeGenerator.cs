@@ -617,7 +617,10 @@ internal abstract class BaseLuaTypeGenerator
 
         // Userdata: [LuaVisible] types + hand-written ILuaUserData<T>.
         if (variableType.IsILuaUserData || (variableType.HasLuaVisibleAttr && !variableType.IsOpenGeneric && !variableType.IsConstructedGeneric))
-            return $"global::NuLua.LuaValue.FromUserData({state}.CreateUserData({variable}))";
+            if (variableType.IsValueType)
+                return $"global::NuLua.LuaValue.FromUserData({state}.CreateUserData({variable}))";
+            else
+                return $"({variable} is not null ? global::NuLua.LuaValue.FromUserData({state}.CreateUserData({variable})) : global::NuLua.LuaValue.Nil)";
 
         // Lua-native pass-through values.
         if (variableType.IsLuaValue) return variable;
