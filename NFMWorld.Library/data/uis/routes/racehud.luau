@@ -3,7 +3,7 @@
 -- signal; a per-frame `race:hudState` push updates only the affected leaf text/bar via
 -- commitTextUpdate/setProperty.
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 local glasscard = require("../components/glasscard")

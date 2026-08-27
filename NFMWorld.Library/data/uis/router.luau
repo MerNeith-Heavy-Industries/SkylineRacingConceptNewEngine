@@ -2,7 +2,7 @@
 -- renders the matching page through Sx.Switch. Only the main-menu route is ported to Sx
 -- yet; the other routes are commented out.
 
-local Sx = require("../library/sx/init")
+local Sx = require("../library/sx/index")
 local x = Sx.x
 
 local MainMenu = require("./routes/mainmenu")

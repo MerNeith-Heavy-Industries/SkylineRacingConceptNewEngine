@@ -1,7 +1,7 @@
 -- Test page (Sx port of preact test.luau), ported from
 -- nfm-world/data/html/src/pages/Test.tsx.
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 

@@ -4,7 +4,7 @@
 -- click updates only the cards whose selection actually changed (stable style tables +
 -- reference-compare in the renderer skip redundant setProperty).
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 local glasscard = require("../components/glasscard")

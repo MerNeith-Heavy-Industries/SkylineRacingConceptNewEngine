@@ -4,7 +4,7 @@
 -- values or accessors (fine-grained); a reactive color/style is applied via a single
 -- setProperty when it changes. StatBar / CenterText are pure (static) components.
 
-local Sx = require("../../library/sx/init")
+local Sx = require("../../library/sx/index")
 local x = Sx.x
 
 local function clamp01(v)

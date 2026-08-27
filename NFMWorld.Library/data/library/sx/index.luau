@@ -8,6 +8,13 @@ local signals = require('./signals')
 local h = require('./h')
 local dom = require('./dom')
 local styled = require('./styled')
+local types = require('./types')
+
+export type NodeDescriptor = types.NodeDescriptor
+export type Component<P> = types.Component<P>
+
+export type Accessor<T> = signals.Accessor<T>
+export type Signal<T> = signals.Signal<T>
 
 local Sx = {}
 
