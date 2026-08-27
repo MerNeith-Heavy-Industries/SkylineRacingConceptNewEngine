@@ -337,6 +337,66 @@ pnpm dev          # Vite dev server on port 5173 (use with NFMW_VITE_DEV=1)
 
 ---
 
+## Fine-Grained Reactive UI (Sx)
+
+A SolidJS/dom-expressions-style fine-grained reactivity UI framework for the Lua `UiLib`,
+built to fix the per-frame re-render cost of preact-luau. It is a **sibling** to
+preact-luau — new UI work should target Sx; preact-luau stays for unmigrated routes.
+
+- **Where:** `NFMWorld.Library/data/library/sx/` (`signals.luau`, `host.luau`, `h.luau`,
+  `dom.luau`, `styled.luau`, `init.luau`, `declarations.d.luau`). Ships via the existing `data/**` copy rule.
+- **Public module `Sx`** (`init.luau`): `createSignal/createMemo/createEffect/createRoot/
+  batch/untrack/onCleanup/onMount/getOwner/runWithOwner/setScheduler/flushSync`, the
+  hyperscript `x`, `render`, and flow components `Show/Switch/Match/For/Index`.
+- **Core model** (port of Solid `reactive/signal.js`): signals are cells; memos are lazy
+  pull computations (recompute on read when stale); effects are eager push computations.
+  Reading a signal/memo during a computation subscribes it. Writing a signal marks
+  observers STALE and propagates through memos, queueing effects. Effects run once per
+  batched flush in dependency order; memos recompute lazily during effect execution.
+- **Renderer** (`dom.luau`): components run **ONCE** under their own owner (`createRoot`)
+  and return a descriptor built by `x`. Static children/props mount once; **function-valued
+  children are installed as per-slot effects** — a dynamic text child updates via a single
+  `commitTextUpdate` on its anchor node; a function-valued (non-`on`) prop updates via a
+  single `setProperty`. Flow components use a hidden empty `TextNode` anchor as the slot
+  terminator.
+- **Events:** props with an `on` prefix are event handlers, wired **once** at
+  `createInstance` (the host replaces, never `+=`) — they are static, not reactive
+  accessors. A non-`on` function prop is treated as a **reactive accessor** (Solid
+  gotcha) — name callbacks with an `on` prefix.
+- **`styled(tag)(baseStyle)`** (`styled.luau`): CSS-in-JS wrapper returning a component
+  that merges the base style + caller `style` override + a `hover` variant driven by a
+  hover signal. Wires `onmouseenter`/`onmouseleave` ONLY when a `hover` variant exists.
+- **Scheduler:** `Sx.setScheduler(UiLib.defer)` coalesces all signal writes in a frame
+  into ONE end-of-frame effect pass (same `GameThreadContext.Post` path preact uses).
+  No scheduler set → synchronous flush (used by unit tests).
+- **Ports:** `data/uis/router.luau` + `data/uis/routes/mainmenu.luau` are Sx ports (the
+  only active route; garage/race/test/settings stay commented out until migrated). The
+  router subscribes to `nfmw:navigate` via a signal and renders pages through `Sx.Switch`
+  with a default-route fallback Match.
+- **Benchmark:** `bench/luau-benchmark/scripts/hud_sx.luau` mirrors `hud_render.luau`
+  (17-node HUD, signals feed dynamic text + reactive bar widths). Scenario `hud_sx`.
+  Expected: ~2 setProp + ~2 commitText per frame, 0 structural ops (vs preact 13–39
+  setProps/f), and ~3–4x less wall time on the same machine.
+- **Tests:** `Lua-CSharp/tests/Lua.Tests/SxReactiveTests.cs` (NUnit, loads the real
+  `.luau` via memory FS + fake host) covers signal/memo/effect semantics, batch
+  coalescing, root disposal, Show/Switch, For keyed single-row update (1 commit), the
+  single-leaf HUD case (1 commit, 0 structural), and an end-to-end `Router_MainMenu`
+  test that loads the real `router.luau` + `mainmenu.luau`, drives account + navigation
+  events, and asserts rendering, the welcome subtitle, PLAY/BACK page pushes, and the
+  default-route fallback.
+
+### Sx gotchas
+
+| Gotcha | Rule |
+|---|---|
+| Reactive text children | Must be accessor functions: `x(Text){ () => item().label }`, not `x(Text){ item.label }` (plain reads don't update). |
+| `For`/`Index` | Solid semantics: `For` keys by value identity, `Index` by position. No per-element `key` prop. |
+| Non-`on` function props | Treated as reactive accessors (Solid gotcha). Use `on`-prefixed names for callbacks. |
+| `and/or` falsy trap | `(type(w)=="function") and w() or w` returns `w` when `w()` is `false`/`nil`. Use an explicit `if`. |
+| Memos must store values | `updateMemo` assigns `node.value = result`; a memo whose result is discarded returns `nil` forever. |
+
+---
+
 ## Shader Pipeline (HLSL / SPIR-V)
 
 Shaders live in `data/shaders/*.fx` and are compiled to `.fxb` by the `BuildShaders` MSBuild target via `fxc.exe`. The `ShaderSourceGen` Roslyn source generator additionally wraps compiled shaders and emits C# binding code.

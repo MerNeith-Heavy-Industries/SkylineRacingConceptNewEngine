@@ -37,7 +37,7 @@ public class WorldGame : Game
 
     internal static long LastFrameTime;
     internal static long LastTickTime;
-    internal static long LastAsyncTime;
+    internal static double LastAsyncTime;
     internal static int LastTickCount;
     private Keys _oldKeyState;
     private MouseButtons _oldMouseState;
@@ -140,7 +140,7 @@ public class WorldGame : Game
             var t = new MicroStopwatch();
             t.Start();
             if (GameThreadContext.Current.ExecutePendingTasks())
-                LastAsyncTime = t.ElapsedMicroseconds;
+                LastAsyncTime = t.ElapsedTicks * (1000000D / Stopwatch.Frequency);
             transaction.Finish();
         }
 

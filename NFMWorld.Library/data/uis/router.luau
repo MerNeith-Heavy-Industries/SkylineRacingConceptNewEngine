@@ -1,53 +1,43 @@
---!strict
-local styled = require("../library/styled")
-local React = require("../library/react")
-local dom = require("../library/uilib-dom")
-local useState = React.useState
-local useEffect = React.useEffect
-local useCallback = React.useCallback
-local useRef = React.useRef
-local useSyncExternalStore = React.useSyncExternalStore
-local useContext = React.useContext
-local x = React.x
-local View = React.View
-local Text = React.Text
-local Image = React.Image
-local TextInput = React.TextInput
+-- Sx hash-based router. Subscribes to C# navigation (nfmw:navigate) via a signal and
+-- renders the matching page through Sx.Switch. Only the main-menu route is ported to Sx
+-- yet; the other routes are commented out.
+
+local Sx = require("../library/sx/init")
+local x = Sx.x
 
 local MainMenu = require("./routes/mainmenu")
-local Garage = require("./routes/garage")
-local RaceHud = require("./routes/racehud")
-local TestPage = require("./routes/test")
-
--- ── Simple hash-based router ─────────────────────────────────────
--- Reads window.location.hash to determine which page component to
--- render. Hash changes (e.g. #/garage) are handled without page
--- reload, keeping the CEF render process alive.
-
-local routes: { [string]: React.StatelessFunctionalComponent<any> } = {
-	["main-menu"] = MainMenu,
-	["garage"] = Garage,
-	["race"] = RaceHud,
-	["test"] = TestPage,
-}
+-- local Garage = require("./routes/garage")  -- TODO: port to Sx
+-- local RaceHud = require("./routes/racehud") -- TODO: port to Sx
+-- local TestPage = require("./routes/test")   -- TODO: port to Sx
 
 local defaultRoute = "main-menu"
 
-function Router()
-	local hash, setHash = useState(defaultRoute)
+local function Router()
+	local route, setRoute = Sx.createSignal(defaultRoute)
 
-	useEffect(function()
-		return UiLib.onEvent("nfmw:navigate", function(hash: string)
-			setHash(hash)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("nfmw:navigate", function(hash)
+			setRoute(hash)
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	local Page = routes[hash] or routes[defaultRoute]
-	return x(Page) {}
+	return (
+		x(Sx.Switch) {
+			x(Sx.Match) {
+				when = function() return route() == "main-menu" end,
+				x(MainMenu) {},
+			},
+			-- x(Sx.Match) { when = function() return route() == "garage" end, x(Garage) {} },
+			-- x(Sx.Match) { when = function() return route() == "race" end, x(RaceHud) {} },
+			-- x(Sx.Match) { when = function() return route() == "test" end, x(TestPage) {} },
+			-- Fallback: any unhandled route shows the default page (main menu)
+			x(Sx.Match) {
+				when = function() return true end,
+				x(MainMenu) {},
+			},
+		}
+	)
 end
 
-function App()
-	return x(Router) {}
-end
-
-dom.render(x(App) {})
+Sx.render(x(Router) {})

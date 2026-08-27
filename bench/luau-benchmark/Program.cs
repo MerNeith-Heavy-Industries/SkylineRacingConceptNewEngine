@@ -11,7 +11,7 @@ if (Environment.GetEnvironmentVariable("NFMW_LOG_MIN_LEVEL") is null)
 }
 
 // CLI:  LuauBenchmark <scenario> [runs]
-//   scenario: fixed64 | preact-small | preact-large | all   (default: all)
+//   scenario: fixed64 | preact-small | preact-large | hud | hud_sx | vmcore | all   (default: all)
 //   runs    : best-of-N runs per scenario                    (default: 3)
 
 var scenario = args.Length > 0 ? args[0] : "all";
@@ -40,6 +40,9 @@ switch (scenario)
     case "hud":
         RunHud(host, scripts, runs);
         break;
+    case "hud_sx":
+        RunHudSx(host, scripts, runs);
+        break;
     case "vmcore":
         RunVmcore(host, scripts, runs);
         break;
@@ -48,6 +51,7 @@ switch (scenario)
         RunPreact(host, scripts, runs, "preact-small", 16, true, 10000);
         RunPreact(host, scripts, runs, "preact-large", 1024, false, 100);
         RunHud(host, scripts, runs);
+        RunHudSx(host, scripts, runs);
         RunVmcore(host, scripts, runs);
         break;
 }
@@ -184,6 +188,39 @@ static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, 
     Console.WriteLine(
         $"  {label,-22} {usPerFrame,8:F1} us/frame | diffed {diffed / (double)frames:F1}/f rendered {rendered / (double)frames:F1}/f renderComp {rrCount / (double)frames:F1}/f process {processCount / (double)frames:F1}/f | setProp {setProps / (double)frames:F1}/f create {creates} struct {structures} | C#-host {hostUs / frames,6:F1} us/f | Lua {luaUsPerFrame,6:F1} us/f");
     Console.WriteLine($"      renderComponent by type: {names}");
+}
+
+static void RunHudSx(BenchmarkHost host, string scripts, int runs)
+{
+    var path = Path.Combine(scripts, "hud_sx.luau");
+    const int frames = 300;
+    Console.WriteLine($"hud_sx : {frames} per-frame timetrial-HUD flushes (Sx fine-grained tree, leaf-only updates, real defer+ExecutePendingTasks path)");
+
+    LuaUiHostStats.Enabled = true;
+    double bestCpu = double.MaxValue, bestWall = double.MaxValue;
+    long setProps = 0, commits = 0, creates = 0, structures = 0;
+    double hostUs = 0;
+    for (var r = 0; r < runs; r++)
+    {
+        LuaUiHostStats.Reset();
+        var (cpu, wall, _) = host.RunScript(path, new LuaValue((double)frames));
+        if (cpu < bestCpu)
+        {
+            bestCpu = cpu;
+            bestWall = wall;
+            setProps = LuaUiHostStats.SetPropertyCount;
+            commits = LuaUiHostStats.CommitTextCount;
+            creates = LuaUiHostStats.CreateInstanceCount + LuaUiHostStats.CreateTextCount;
+            structures = LuaUiHostStats.StructureCount;
+            hostUs = LuaUiHostStats.Us(LuaUiHostStats.SetPropertyTicks + LuaUiHostStats.CommitTextTicks);
+        }
+    }
+    LuaUiHostStats.Enabled = false;
+
+    var usPerFrame = bestWall * 1_000_000.0 / frames;
+    Console.WriteLine(
+        $"  sx           {usPerFrame,8:F1} us/frame | setProp {setProps / (double)frames:F1}/f commitText {commits / (double)frames:F1}/f | create {creates} struct {structures} | C#-host {hostUs / frames,6:F1} us/f");
+    Console.WriteLine();
 }
 
 static void PrintResult(string name, double cpuSec, double wallSec)
