@@ -77,6 +77,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction CreateInstance = new("createInstance", (context, ct) =>
     {
+        if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateInstanceCount++;
         var vtype = context.GetArgument<string>(0);
         var props = context.GetArgument<LuaTable>(1);
         
@@ -147,6 +148,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction CreateTextInstance = new("createTextInstance", (context, ct) =>
     {
+        if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateTextCount++;
         var text = context.GetArgument<string>(0);
         
         Logging.Debug($"createTextInstance {text}");
@@ -156,6 +158,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction AppendChild = new("appendChild", (context, ct) =>
     {
+        if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
 
@@ -177,6 +180,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction InsertBefore = new("insertBefore", (context, ct) =>
     {
+        if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
         var before = context.GetArgumentOrNullClass<Node>(2);
@@ -202,6 +206,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction RemoveChild = new("removeChild", (context, ct) =>
     {
+        if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = context.GetArgument<Node>(0);
         var child = context.GetArgument<Node>(1);
 
@@ -219,6 +224,7 @@ public static class LuaUiLibrary
 
     internal static readonly LuaFunction SetProperty = new("setProperty", (context, ct) =>
     {
+        var t0 = LuaUiHostStats.Enabled ? Stopwatch.GetTimestamp() : 0;
         var instance = context.GetArgument<Node>(0);
         var key = context.GetArgument<string>(1);
         var value = context.GetArgument(2);
@@ -230,11 +236,18 @@ public static class LuaUiLibrary
             AssignComponentProperty(key, value, cmp, context.State);
         }
 
+        if (LuaUiHostStats.Enabled)
+        {
+            LuaUiHostStats.SetPropertyCount++;
+            LuaUiHostStats.SetPropertyTicks += Stopwatch.GetTimestamp() - t0;
+        }
+
         return new ValueTask<int>(context.Return());
     });
 
     internal static readonly LuaFunction CommitTextUpdate = new("commitTextUpdate", (context, ct) =>
     {
+        var t0 = LuaUiHostStats.Enabled ? Stopwatch.GetTimestamp() : 0;
         var textInstance = context.GetArgument<TextNode>(0);
         var oldText = context.GetArgumentOrNullClass<string>(1);
         var newText = context.GetArgumentOrNullClass<string>(2);
@@ -242,6 +255,12 @@ public static class LuaUiLibrary
         Logging.Debug($"commitTextUpdate {oldText}->{newText}");
 
         textInstance.Text = newText;
+
+        if (LuaUiHostStats.Enabled)
+        {
+            LuaUiHostStats.CommitTextCount++;
+            LuaUiHostStats.CommitTextTicks += Stopwatch.GetTimestamp() - t0;
+        }
 
         return new ValueTask<int>(context.Return());
     });
@@ -1109,4 +1128,39 @@ public static class LuaUiLibrary
 
         return -1;
     }
+}
+
+/// <summary>
+/// Lightweight counters for the Lua→C# host bridge (LuaUiLibrary), so the cost of a
+/// preact reconcile can be split into pure-Lua reconciler time vs C#-host time.
+/// Disabled by default (one branch per host call). Enable it in benchmarks or from a
+/// console command; call <see cref="Reset"/> before a measured run and read the totals
+/// afterwards. Ticks are <see cref="Stopwatch.GetTimestamp"/> units (divide by
+/// <see cref="Stopwatch.Frequency"/> for seconds).
+/// </summary>
+public static class LuaUiHostStats
+{
+    public static bool Enabled;
+
+    public static long SetPropertyCount;
+    public static long CommitTextCount;
+    public static long CreateInstanceCount;
+    public static long CreateTextCount;
+    public static long StructureCount; // appendChild / insertBefore / removeChild
+
+    public static long SetPropertyTicks;
+    public static long CommitTextTicks;
+
+    public static void Reset()
+    {
+        SetPropertyCount = 0;
+        CommitTextCount = 0;
+        CreateInstanceCount = 0;
+        CreateTextCount = 0;
+        StructureCount = 0;
+        SetPropertyTicks = 0;
+        CommitTextTicks = 0;
+    }
+
+    public static double Us(long ticks) => ticks * 1_000_000.0 / Stopwatch.Frequency;
 }
