@@ -1,20 +1,15 @@
---!strict
-local styled = require("../../library/styled")
-local React = require("../../library/react")
-local dom = require("../../library/uilib-dom")
-local useState = React.useState
-local useEffect = React.useEffect
-local useCallback = React.useCallback
-local useRef = React.useRef
-local useSyncExternalStore = React.useSyncExternalStore
-local useContext = React.useContext
-local x = React.x
-local View = React.View
-local Text = React.Text
-local Image = React.Image
-local TextInput = React.TextInput
+-- Sx port of the main menu. Fine-grained: components run once; the page stack and
+-- account are signals; the item list is a keyed For; reactive text children update via
+-- single commitTextUpdate calls. No vdom diffing, no per-frame re-render.
+--
+-- NOTE: the Settings component is not ported to Sx yet — its embedded view is kept
+-- commented out below.
 
-local Settings = require("../components/settings")
+local Sx = require("../../library/sx/init")
+local styled = Sx.styled
+local x = Sx.x
+
+-- local Settings = require("../components/settings") -- TODO: port to Sx
 
 -- ── Types ────────────────────────────────────────────────────────
 
@@ -31,7 +26,7 @@ type MenuPage = {
 
 -- ── Styled components ────────────────────────────────────────────
 
-local Root = styled(View) {
+local Root = styled("view") {
 	width = "100%",
 	height = "100%",
 	display = "flex",
@@ -40,23 +35,20 @@ local Root = styled(View) {
 	justifyContent = "center",
 }
 
-local PageTitle = styled(Text) {
+local PageTitle = styled("text") {
 	fontSize = 48,
 	fontStyle = "bold",
 	fontFamily = "Adventure",
-	-- letterSpacing = 4,
-	-- textTransform = "uppercase",
 	marginBottom = 8,
 }
 
-local Subtitle = styled(Text) {
+local Subtitle = styled("text") {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.5)",
 	marginBottom = 40,
-	-- letterSpacing = 2,
 }
 
-local Items = styled(View) {
+local Items = styled("view") {
 	display = "flex",
 	flexDirection = "column",
 	gap = 6,
@@ -64,7 +56,7 @@ local Items = styled(View) {
 	alignItems = "stretch",
 }
 
-local ItemBtn = styled(View) {
+local ItemBtn = styled("view") {
 	display = "flex",
 	flexDirection = "column",
 	alignItems = "flex-start",
@@ -73,33 +65,26 @@ local ItemBtn = styled(View) {
 	borderWidth = "1px",
 	borderColor = "rgba(255,255,255,0.1)",
 	borderRadius = 8,
-	-- cursor = 'pointer',
-	-- transition = 'all 0.15s ease',
-	-- width = "100%",
 	hover = {
 		backgroundColor = "rgba(79,195,247,0.24)",
 		borderColor = "rgba(79,195,247,0.25)",
-		-- transform = 'translateY(-1px)',
 	},
-	-- active = { transform = 'translateY(0)' },
 }
 
-local ItemLabel = styled(Text) {
+local ItemLabel = styled("text") {
 	color = "#fff",
 	textAlign = "left",
 	fontSize = 16,
 	fontStyle = "bold",
-	-- letterSpacing = 1,
 }
 
-local ItemDesc = styled(Text) {
+local ItemDesc = styled("text") {
 	fontSize = 12,
 	color = "rgba(255,255,255,0.4)",
 	marginTop = 2,
-	-- letterSpacing = 0.5,
 }
 
-local BackBtn = styled(Text) {
+local BackBtn = styled("text") {
 	marginTop = 12,
 	padding = 10,
 	fontSize = 14,
@@ -109,72 +94,51 @@ local BackBtn = styled(Text) {
 	borderWidth = "1px",
 	borderColor = "rgba(255,255,255,0.08)",
 	borderRadius = 6,
-	-- cursor = 'pointer',
-	-- transition = 'all 0.15s ease',
 	hover = { color = "#fff", backgroundColor = "rgba(255,255,255,0.08)" },
 }
 
-local Footer = styled(Text) {
+local Footer = styled("text") {
 	position = "absolute",
 	bottom = 20,
 	fontSize = 11,
 	color = "rgba(255,255,255,0.3)",
-	-- letterSpacing = 1,
 }
 
 -- ── Component ────────────────────────────────────────────────────
 
-local function slice<T>(tbl: { T }, first: number?, last: number?, step: number?): { T }
-	local sliced = {}
+local MainMenu = function()
+	local account, setAccount = Sx.createSignal(nil)
+	local pageStack, setPageStack = Sx.createSignal({})
+	local currentView, setCurrentView = Sx.createSignal("menu")
 
-	for i = first or 1, last or #tbl, step or 1 do
-		sliced[#sliced + 1] = tbl[i]
-	end
-
-	return sliced
-end
-
-local function map<T, V>(tbl: { T }, f: (T) -> V): { V }
-	local t = {}
-	for k, v in pairs(tbl) do
-		t[k] = f(v)
-	end
-	return t
-end
-
-local function append<T>(a: { T }, b: T): { T }
-	local result = {}
-	for i = 1, #a do
-		result[i] = a[i]
-	end
-	result[#result + 1] = b
-	return result
-end
-
-local MainMenu = React.memo(function(): React.VNode
-	local account, setAccount = useState<<AccountData | nil>>(nil)
-	local pageStack, setPageStack = useState<<{ MenuPage }>> {}
-	local currentView, setCurrentView = useState<<"menu" | "settings">>("menu")
-
-	useEffect(function()
-		return UiLib.onEvent<<AccountData | nil>>("main-menu:account", setAccount)
-	end, {})
-
-	local goBack = useCallback(function()
-		setPageStack(function(s)
-			return slice(s, 1, #s - 1)
+	Sx.createEffect(function()
+		local unsub = UiLib.onEvent("main-menu:account", function(value)
+			setAccount(value)
 		end)
-	end, {})
+		Sx.onCleanup(unsub)
+	end)
 
-	local pushPage = useCallback(function(page: MenuPage)
-		setPageStack(function(s)
-			-- table.unpack returns nil on an empty table, so use append
-			return append(s, page)
-		end)
-	end, {})
+	local goBack = function()
+		local s = pageStack()
+		local newS = {}
+		for i = 1, #s - 1 do
+			newS[i] = s[i]
+		end
+		setPageStack(newS)
+	end
+
+	local pushPage = function(page: MenuPage)
+		local s = pageStack()
+		local newS = {}
+		for i = 1, #s do
+			newS[i] = s[i]
+		end
+		newS[#newS + 1] = page
+		setPageStack(newS)
+	end
 
 	-- Build page factories
-	local buildSpMenu = useCallback(function(): MenuPage
+	local buildSpMenu = function(): MenuPage
 		return {
 			title = "SINGLEPLAYER",
 			items = {
@@ -213,9 +177,9 @@ local MainMenu = React.memo(function(): React.VNode
 				},
 			},
 		}
-	end, { goBack })
+	end
 
-	local buildMpMenu = useCallback(function(): MenuPage
+	local buildMpMenu = function(): MenuPage
 		return {
 			title = "MULTIPLAYER",
 			items = {
@@ -240,9 +204,9 @@ local MainMenu = React.memo(function(): React.VNode
 				},
 			},
 		}
-	end, { goBack })
+	end
 
-	local buildWorkshopMenu = useCallback(function(): MenuPage
+	local buildWorkshopMenu = function(): MenuPage
 		return {
 			title = "WORKSHOP",
 			items = {
@@ -274,9 +238,9 @@ local MainMenu = React.memo(function(): React.VNode
 				},
 			},
 		}
-	end, { goBack })
+	end
 
-	local buildTrainingMenu = useCallback(function(): MenuPage
+	local buildTrainingMenu = function(): MenuPage
 		return {
 			title = "TRAINING",
 			items = {
@@ -308,9 +272,9 @@ local MainMenu = React.memo(function(): React.VNode
 				},
 			},
 		}
-	end, { goBack })
+	end
 
-	local buildPlayMenu = useCallback(function(): MenuPage
+	local buildPlayMenu = function(): MenuPage
 		return {
 			title = "PLAY",
 			items = {
@@ -342,7 +306,7 @@ local MainMenu = React.memo(function(): React.VNode
 				},
 			},
 		}
-	end, { goBack, buildSpMenu, buildMpMenu, buildTrainingMenu, pushPage })
+	end
 
 	-- Main menu page
 	local mainPage: MenuPage = {
@@ -372,9 +336,8 @@ local MainMenu = React.memo(function(): React.VNode
 			{
 				label = "SETTINGS",
 				description = "Adjust game settings.",
-				action = function()
-					setCurrentView("settings")
-				end,
+				-- TODO: port Settings to Sx. Was: action = function() setCurrentView("settings") end
+				action = function() end,
 			},
 			{
 				label = "CREDITS",
@@ -393,38 +356,87 @@ local MainMenu = React.memo(function(): React.VNode
 		},
 	}
 
-	local currentPage = #pageStack > 0 and pageStack[#pageStack] or mainPage
-
-	-- ── Embedded Settings view ────────────────────────────────────
-	if currentView == "settings" then
-		return x(Settings) { onClose = function() setCurrentView("menu") end }
-	end
+	local currentPage = Sx.createMemo(function()
+		local stack = pageStack()
+		return #stack > 0 and stack[#stack] or mainPage
+	end)
 
 	return (
 		x(Root) {
-			x(PageTitle) { name = "PageTitle", currentPage.title },
-			x(Subtitle) {
-				name = "Subtitle",
-				#pageStack == 0 and (account and account.isLoggedIn and ("Welcome, %s"):format(account.name) or "")
-					or "",
-			},
-			x(Items) {
-				name = "Items",
-				map(currentPage.items, function(item)
-					return x(ItemBtn) {
-						name = "ItemBtn",
-						key = item.label,
-						onmousedown = function(event)
-							item.action()
+			-- Switch for conditional views
+			x(Sx.Switch) {
+				-- Settings view (Settings not ported to Sx yet — commented out)
+				-- x(Sx.Match) {
+				-- 	when = function() return currentView() == "settings" end,
+				-- 	x(Settings) {
+				-- 		onClose = function() setCurrentView("menu") end
+				-- 	},
+				-- },
+				-- Menu view (default)
+				x(Sx.Match) {
+					when = function() return currentView() == "menu" end,
+
+					x(PageTitle) {
+						name = "PageTitle",
+						function()
+							return currentPage().title
 						end,
-						x(ItemLabel) { name = "ItemLabel", item.label },
-						x(ItemDesc) { name = "ItemDesc", item.description },
-					}
-				end),
+					},
+
+					-- Welcome subtitle, shown only on the root page when logged in
+					x(Sx.Show) {
+						when = function()
+							local stack = pageStack()
+							local acc = account()
+							return #stack == 0 and acc ~= nil and acc.isLoggedIn
+						end,
+						x(Subtitle) {
+							name = "Subtitle",
+							function()
+								return ("Welcome, %s"):format(account().name)
+							end,
+						},
+					},
+
+					-- Menu items (keyed For)
+					x(Items) {
+						name = "Items",
+						x(Sx.For) {
+							each = function()
+								return currentPage().items
+							end,
+							function(item, index)
+								return x(ItemBtn) {
+									name = "ItemBtn",
+									onmousedown = function(event)
+										item().action()
+									end,
+									x(ItemLabel) {
+										name = "ItemLabel",
+										function()
+											return item().label
+										end,
+									},
+									x(ItemDesc) {
+										name = "ItemDesc",
+										function()
+											return item().description
+										end,
+									},
+								}
+							end,
+						},
+					},
+
+					-- Footer on the root page only
+					x(Sx.Show) {
+						when = function() return #pageStack() == 0 end,
+						x(Footer) { name = "Footer", "NFM World — Lua + React UI" },
+					},
+				},
 			},
-			#pageStack == 0 and x(Footer) { name = "Footer", "NFM World — Lua + React UI" },
 		}
 	)
-end)
+end
 
 return MainMenu

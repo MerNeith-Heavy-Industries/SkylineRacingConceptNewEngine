@@ -1,0 +1,397 @@
+-- Sx reactive core — a Lua port of SolidJS's fine-grained reactivity primitives.
+--
+-- Provides: createSignal / createMemo / createEffect / createRoot / batch / untrack /
+-- onCleanup / onMount / getOwner / runWithOwner / setScheduler / flushSync.
+--
+-- Model (push-pull graph, ported from Solid's reactive/signal.js):
+--   * A SIGNAL is a mutable cell { value, observers }.
+--   * A COMPUTATION (memo or effect) is a node { fn, value, state, sources, observers,
+--     owned, cleanups, owner, disposed, isEffect }.
+--   * Reading a signal/memo while a computation is running registers that computation as
+--     an observer (dependency tracking).
+--   * Writing a signal marks its observers STALE and propagates staleness transitively
+--     through memos, queueing effects. Effects run on a batched, dependency-ordered
+--     scheduler; memos recompute lazily on read (pull).
+--
+-- The scheduler is injectable (default: synchronous flush, used by tests). The game /
+-- benchmark injects UiLib.defer so a frame's worth of signal writes coalesce into ONE
+-- end-of-frame effect pass.
+
+local Sx = {}
+
+-- ------------------------------------------------------------------ state
+local STALE = 0
+local PENDING = 1
+local CLEAN = 2
+
+local Owner = nil      -- currently executing owner (root or computation)
+local Listener = nil   -- currently executing computation (memo/effect)
+local batching = 0
+local Flushing = false
+local Scheduled = false
+local Scheduler = nil
+local PendingEffects = {}
+local effectQueueLen = 0
+
+-- ------------------------------------------------------------------ forward decls
+local updateEffect
+local updateMemo
+local disposeComputation
+
+-- ------------------------------------------------------------------ graph helpers
+
+-- Register `comp` (the current Listener) as an observer of node `n`, and `n` as a
+-- source of `comp`. No-op if `n` is already a source of `comp`.
+local function trackRead(n)
+    local comp = Listener
+    if comp == nil then
+        return
+    end
+    local sources = comp.sources
+    if sources then
+        for i = 1, #sources do
+            if sources[i] == n then
+                return
+            end
+        end
+    end
+    if comp.sources == nil then
+        comp.sources = {}
+    end
+    table.insert(comp.sources, n)
+    if n.observers == nil then
+        n.observers = {}
+    end
+    table.insert(n.observers, comp)
+end
+
+-- Remove `comp` from `n.observers`.
+local function untrackSource(n, comp)
+    if n.observers then
+        local obs = n.observers
+        for i = #obs, 1, -1 do
+            if obs[i] == comp then
+                table.remove(obs, i)
+                break
+            end
+        end
+    end
+end
+
+-- Tear down a computation: run cleanups, dispose owned children, unsubscribe sources.
+local function cleanNode(node)
+    if node.cleanups then
+        local cleanups = node.cleanups
+        for i = #cleanups, 1, -1 do
+            cleanups[i]()
+        end
+        node.cleanups = nil
+    end
+    if node.owned then
+        local owned = node.owned
+        for i = 1, #owned do
+            cleanNode(owned[i])
+        end
+        node.owned = nil
+    end
+    if node.sources then
+        local sources = node.sources
+        for _, n in ipairs(sources) do
+            untrackSource(n, node)
+        end
+        node.sources = nil
+    end
+end
+
+disposeComputation = function(node)
+    if node.disposed then
+        return
+    end
+    node.disposed = true
+    cleanNode(node)
+    if node.owner and node.owner.owned then
+        local owned = node.owner.owned
+        for i = 1, #owned do
+            if owned[i] == node then
+                table.remove(owned, i)
+                break
+            end
+        end
+    end
+end
+
+-- ------------------------------------------------------------------ scheduling
+
+local function queueEffect(node)
+    effectQueueLen = effectQueueLen + 1
+    PendingEffects[effectQueueLen] = node
+end
+
+-- Mark a computation STALE and propagate upward to its observers. Effects get queued;
+-- memos are lazy (recomputed on read) but their staleness still reaches downstream effects.
+local function markStale(comp)
+    if comp.disposed or comp.state == STALE then
+        return
+    end
+    comp.state = STALE
+    if comp.isEffect then
+        queueEffect(comp)
+    end
+    if comp.observers then
+        local observers = comp.observers
+        for i = 1, #observers do
+            markStale(observers[i])
+        end
+    end
+end
+
+-- Recompute a memo (pull). Only runs when STALE. Stores the result into node.value.
+updateMemo = function(node)
+    if node.state ~= STALE then
+        return
+    end
+    cleanNode(node)
+    local prevOwner, prevListener = Owner, Listener
+    Owner = node
+    Listener = node
+    local ok, result = pcall(node.fn, node.value)
+    Owner, Listener = prevOwner, prevListener
+    if not ok then
+        error(result)
+    end
+    node.value = result
+    node.state = CLEAN
+end
+
+-- Run an effect's fn, resubscribing dependencies.
+updateEffect = function(node)
+    cleanNode(node)
+    local prevOwner, prevListener = Owner, Listener
+    Owner = node
+    Listener = node
+    local ok, result = pcall(node.fn, node.value)
+    Owner, Listener = prevOwner, prevListener
+    node.state = CLEAN
+    if not ok then
+        error(result)
+    end
+end
+
+-- Drain the effect queue. Re-entrant writes (effects writing signals) push onto the
+-- same queue and are processed in the same flush (dependency order, FIFO).
+local function flushEffects()
+    local guard = 0
+    while effectQueueLen > 0 do
+        guard = guard + 1
+        if guard > 10000 then
+            error("Sx: effect cycle detected (too many update passes)")
+        end
+        local q = PendingEffects
+        local qlen = effectQueueLen
+        PendingEffects = {}
+        effectQueueLen = 0
+        for i = 1, qlen do
+            local node = q[i]
+            q[i] = nil
+            if node.state == STALE and not node.disposed then
+                updateEffect(node)
+            end
+        end
+    end
+end
+
+local function scheduleFlush()
+    if batching > 0 then
+        return
+    end
+    if Flushing then
+        return
+    end
+    if Scheduler ~= nil then
+        if not Scheduled then
+            Scheduled = true
+            Scheduler(function()
+                Scheduled = false
+                flushEffects()
+            end)
+        end
+    else
+        flushEffects()
+    end
+end
+
+-- ------------------------------------------------------------------ public API
+
+local function createSignal(value)
+    local s = {
+        kind = "signal",
+        value = value,
+        observers = nil,
+    }
+    local read = function()
+        trackRead(s)
+        return s.value
+    end
+    local write = function(newValue)
+        if newValue == s.value then
+            return
+        end
+        s.value = newValue
+        if s.observers then
+            local observers = s.observers
+            for i = 1, #observers do
+                markStale(observers[i])
+            end
+        end
+        scheduleFlush()
+    end
+    return read, write
+end
+
+local function createComputation(fn, isEffect)
+    local node = {
+        fn = fn,
+        value = nil,
+        state = STALE,
+        sources = nil,
+        observers = nil,
+        owned = nil,
+        cleanups = nil,
+        owner = Owner,
+        disposed = false,
+        isEffect = isEffect,
+    }
+    if Owner then
+        if Owner.owned == nil then
+            Owner.owned = {}
+        end
+        table.insert(Owner.owned, node)
+    end
+    return node
+end
+
+local function createMemo(fn, value)
+    local node = createComputation(fn, false)
+    node.value = value
+    local read = function()
+        if node.state ~= CLEAN then
+            updateMemo(node)
+        end
+        trackRead(node)
+        return node.value
+    end
+    return read
+end
+
+local function createEffect(fn)
+    local node = createComputation(fn, true)
+    updateEffect(node)
+    return function()
+        disposeComputation(node)
+    end
+end
+
+local function createRoot(fn)
+    local prevOwner, prevListener = Owner, Listener
+    local root = {
+        fn = nil,
+        value = nil,
+        state = CLEAN,
+        sources = nil,
+        observers = nil,
+        owned = nil,
+        cleanups = nil,
+        owner = nil,
+        disposed = false,
+        isEffect = false,
+    }
+    Owner = root
+    Listener = nil
+    local ok, result = pcall(function()
+        return fn(function()
+            disposeComputation(root)
+        end)
+    end)
+    Owner, Listener = prevOwner, prevListener
+    if not ok then
+        error(result)
+    end
+    return result
+end
+
+local function batch(fn)
+    batching = batching + 1
+    local ok, err = pcall(fn)
+    batching = batching - 1
+    if not ok then
+        error(err)
+    end
+    if batching == 0 then
+        scheduleFlush()
+    end
+end
+
+local function untrack(fn)
+    local prevListener = Listener
+    Listener = nil
+    local ok, result = pcall(fn)
+    Listener = prevListener
+    if not ok then
+        error(result)
+    end
+    return result
+end
+
+local function onCleanup(fn)
+    if Owner then
+        if Owner.cleanups == nil then
+            Owner.cleanups = {}
+        end
+        table.insert(Owner.cleanups, fn)
+    end
+end
+
+local function onMount(fn)
+    createEffect(function()
+        untrack(fn)
+    end)
+end
+
+local function getOwner()
+    return Owner
+end
+
+local function runWithOwner(owner, fn)
+    local prevOwner, prevListener = Owner, Listener
+    Owner = owner
+    Listener = nil
+    local ok, result = pcall(fn)
+    Owner, Listener = prevOwner, prevListener
+    if not ok then
+        error(result)
+    end
+    return result
+end
+
+local function setScheduler(fn)
+    Scheduler = fn
+end
+
+local function flushSync()
+    flushEffects()
+end
+
+Sx.createSignal = createSignal
+Sx.createMemo = createMemo
+Sx.createEffect = createEffect
+Sx.createRoot = createRoot
+Sx.batch = batch
+Sx.untrack = untrack
+Sx.onCleanup = onCleanup
+Sx.onMount = onMount
+Sx.getOwner = getOwner
+Sx.runWithOwner = runWithOwner
+Sx.setScheduler = setScheduler
+Sx.flushSync = flushSync
+
+return Sx

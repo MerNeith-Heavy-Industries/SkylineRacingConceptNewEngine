@@ -54,6 +54,9 @@ public sealed class BenchmarkHost : IDisposable
         var react = LoadReact();
         _state.Environment["React"] = react;
 
+        var sx = LoadSx();
+        _state.Environment["Sx"] = sx;
+
         RegisterBenchGlobals();
     }
 
@@ -148,6 +151,20 @@ public sealed class BenchmarkHost : IDisposable
         var reactPath = Path.Combine(_libraryRoot, "react.luau");
         var code = File.ReadAllText(reactPath);
         var closure = _state.Load(code, "react.luau");
+        var results = _state.Call(closure, []);
+        return results.Length > 0 ? results[0] : LuaValue.Nil;
+    }
+
+    /// <summary>
+    /// Load the Sx fine-grained reactive UI module (data/library/sx/init.luau). Its
+    /// `require('./signals'|'./h'|'./dom')` graph resolves through the LibraryFileSystem
+    /// rooted at data/library; dom.luau captures `_G.UiLib` at load (registered above).
+    /// </summary>
+    LuaValue LoadSx()
+    {
+        var sxPath = Path.Combine(_libraryRoot, "sx", "init.luau");
+        var code = File.ReadAllText(sxPath);
+        var closure = _state.Load(code, "sx/init.luau");
         var results = _state.Call(closure, []);
         return results.Length > 0 ? results[0] : LuaValue.Nil;
     }

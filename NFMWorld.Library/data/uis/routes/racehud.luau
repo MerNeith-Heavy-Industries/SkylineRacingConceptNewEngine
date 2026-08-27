@@ -41,7 +41,7 @@ local function formatTime(ms: number): string
 	return ("%s.%s"):format(secsFmt, msFmt)
 end
 
-local function PowerDamageBars(): React.VNode
+local PowerDamageBars = React.memo(function()
 	local power, setPower = useState(1)
 	local damage, setDamage = useState(0)
 
@@ -73,9 +73,9 @@ local function PowerDamageBars(): React.VNode
 			x(StatBar) { label = "", value = damage, color = "#4fc3f7", height = 10 },
 		},
 	}
-end
+end)
 
-local function Splits(): React.VNode
+local Splits = React.memo(function()
 	local lapDiffMs, setLapDiffMs = useState<<number?>>(nil)
 	local lastLapDiffMs, setLastLapDiffMs = useState<<number?>>(nil)
 
@@ -107,9 +107,9 @@ local function Splits(): React.VNode
 			("Last: %d"):format(lastLapDiffMs),
 		},
 	}
-end
+end)
 
-local function Speed(): React.VNode
+local Speed = React.memo(function()
 	local speed, setSpeed = useState(0)
 
 	useEffect(function()
@@ -135,9 +135,9 @@ local function Speed(): React.VNode
 		x(Text) { style = { fontSize = 56, fontStyle = "bold" }, ("%d"):format(math.floor(speedKmh + 0.5)) },
 		x(Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
 	}
-end
+end)
 
-local function RaceHud(): React.VNode
+local RaceHud = React.memo(function()
 	local position, setPosition = useState(1)
 	local totalRacers, setTotalRacers = useState(1)
 	local countdownTimer, setCountdownTimer = useState(0)
@@ -199,6 +199,6 @@ local function RaceHud(): React.VNode
 
 		isPaused and x(PauseMenu) {},
 	}
-end
+end)
 
 return RaceHud

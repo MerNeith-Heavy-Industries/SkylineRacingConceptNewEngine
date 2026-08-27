@@ -90,7 +90,7 @@ end
 -- ── StatBar ──────────────────────────────────────────────────────
 -- Labeled progress bar (value is 0..1).
 
-local function StatBar(props: { value: number?, color: string?, height: number?, label: string? }): React.VNode
+local StatBar = React.memo(function (props: { value: number?, color: string?, height: number?, label: string? }): React.VNode
 	local value = clamp01(props.value or 0)
 	local color = props.color or "#4fc3f7"
 	local height = props.height or 8
@@ -135,7 +135,7 @@ local function StatBar(props: { value: number?, color: string?, height: number?,
 			},
 		},
 	}
-end
+end)
 
 -- ── CenterText ───────────────────────────────────────────────────
 -- Large center-screen text overlay. Splits on "\n".

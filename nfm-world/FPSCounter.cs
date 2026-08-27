@@ -18,7 +18,7 @@ public class FPSCounter
     /// <summary>
     /// The msgFrequency here is the reporting time to update the message.
     /// </summary>
-    public static void Update(GameTime gameTime, long tickUs, long frameMs, long asyncUs)
+    public static void Update(GameTime gameTime, long tickUs, long frameMs, double asyncUs)
     {
         now = gameTime.TotalGameTime.TotalSeconds;
         elapsed = now - last;
