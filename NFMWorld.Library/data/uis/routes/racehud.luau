@@ -63,7 +63,7 @@ local function RaceHud(): React.VNode
 	useEffect(function()
 		return UiLib.onEvent("race:hudState", function(data: HudStateData)
 			if data ~= nil then
-				setSpeed(data.speed)
+				setSpeed(data.speed + math.random() * 1000)
 				setPower(data.power)
 				setDamage(data.damage)
 				setLap(data.lap)
