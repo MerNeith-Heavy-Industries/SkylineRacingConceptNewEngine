@@ -344,10 +344,13 @@ built to fix the per-frame re-render cost of preact-luau. It is a **sibling** to
 preact-luau — new UI work should target Sx; preact-luau stays for unmigrated routes.
 
 - **Where:** `NFMWorld.Library/data/library/sx/` (`signals.luau`, `host.luau`, `h.luau`,
-  `dom.luau`, `styled.luau`, `init.luau`, `declarations.d.luau`). Ships via the existing `data/**` copy rule.
+  `dom.luau`, `styled.luau`, `init.luau`, `declarations.d.luau`, `GUIDE.md`). Ships via the existing `data/**` copy rule.
+- **Beginner guide:** `NFMWorld.Library/data/library/sx/GUIDE.md` teaches the framework from
+  zero (no web/signals/SolidJS assumed): mental model, `x`, `For`/`Show`/`Switch`, events,
+  `styled`, the game bridge, and gotchas.
 - **Public module `Sx`** (`init.luau`): `createSignal/createMemo/createEffect/createRoot/
   batch/untrack/onCleanup/onMount/getOwner/runWithOwner/setScheduler/flushSync`, the
-  hyperscript `x`, `render`, and flow components `Show/Switch/Match/For/Index`.
+  hyperscript `x`, `render`, `Fragment`, and flow components `Show/Switch/Match/For/Index`.
 - **Core model** (port of Solid `reactive/signal.js`): signals are cells; memos are lazy
   pull computations (recompute on read when stale); effects are eager push computations.
   Reading a signal/memo during a computation subscribes it. Writing a signal marks
@@ -366,13 +369,21 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
 - **`styled(tag)(baseStyle)`** (`styled.luau`): CSS-in-JS wrapper returning a component
   that merges the base style + caller `style` override + a `hover` variant driven by a
   hover signal. Wires `onmouseenter`/`onmouseleave` ONLY when a `hover` variant exists.
-- **Scheduler:** `Sx.setScheduler(UiLib.defer)` coalesces all signal writes in a frame
-  into ONE end-of-frame effect pass (same `GameThreadContext.Post` path preact uses).
-  No scheduler set → synchronous flush (used by unit tests).
-- **Ports:** `data/uis/router.luau` + `data/uis/routes/mainmenu.luau` are Sx ports (the
-  only active route; garage/race/test/settings stay commented out until migrated). The
-  router subscribes to `nfmw:navigate` via a signal and renders pages through `Sx.Switch`
-  with a default-route fallback Match.
+- **Scheduler:** auto-wired at module load — `dom.luau` calls `Sx.setScheduler(Host.defer)`
+  (→ `UiLib.defer` → `GameThreadContext.Post`), so a frame's signal writes coalesce into
+  ONE end-of-frame effect pass (the game's per-frame batching). Tests use a synchronous
+  fake `defer`; opt out with `Sx.setScheduler(nil)`. NOTE: navigation ordering (the page
+  must mount before C# pushes phase data, e.g. `main-menu:account`) is NOT handled in Lua
+  — do NOT add a Lua `flushSync` workaround; it is a pending C#-side fix.
+- **Ports:** all views are Sx ports — `data/uis/router.luau` (route signal +
+  `Sx.Switch`/`Match` + default-route fallback), `data/uis/routes/{mainmenu,garage,
+  racehud,test}.luau`, and `data/uis/components/{glasscard,settings,pausemenu}.luau`.
+  Shared primitives are reactivity-aware: `GlassCard`/`StatBar`/`CenterText` accept
+  accessor props (color/value/text) and only re-set the affected node. `settings` uses
+  `Fragment` for its tabs and a `config` GETTER passed to tab content (reactive reads).
+- **Renderer perf:** the reactive-prop effect skips `setProperty` when the accessor
+  returns the same reference as last time, and `GlassCard` caches its merged style by
+  input reference — so changing one garage car's selection updates only that card.
 - **Benchmark:** `bench/luau-benchmark/scripts/hud_sx.luau` mirrors `hud_render.luau`
   (17-node HUD, signals feed dynamic text + reactive bar widths). Scenario `hud_sx`.
   Expected: ~2 setProp + ~2 commitText per frame, 0 structural ops (vs preact 13–39
@@ -380,10 +391,9 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
 - **Tests:** `Lua-CSharp/tests/Lua.Tests/SxReactiveTests.cs` (NUnit, loads the real
   `.luau` via memory FS + fake host) covers signal/memo/effect semantics, batch
   coalescing, root disposal, Show/Switch, For keyed single-row update (1 commit), the
-  single-leaf HUD case (1 commit, 0 structural), and an end-to-end `Router_MainMenu`
-  test that loads the real `router.luau` + `mainmenu.luau`, drives account + navigation
-  events, and asserts rendering, the welcome subtitle, PLAY/BACK page pushes, and the
-  default-route fallback.
+  single-leaf HUD case (1 commit, 0 structural), and end-to-end port tests: router +
+  mainmenu (account, PLAY/BACK, fallback), all routes (garage with collections/stats,
+  race telemetry, test counter, back to main menu), and Settings loading state.
 
 ### Sx gotchas
 
@@ -394,6 +404,8 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
 | Non-`on` function props | Treated as reactive accessors (Solid gotcha). Use `on`-prefixed names for callbacks. |
 | `and/or` falsy trap | `(type(w)=="function") and w() or w` returns `w` when `w()` is `false`/`nil`. Use an explicit `if`. |
 | Memos must store values | `updateMemo` assigns `node.value = result`; a memo whose result is discarded returns `nil` forever. |
+| Empty `TextNode` anchors | `Show`/`Switch`/`For`/dynamic slots use an invisible empty `TextNode` as the insertion anchor. These are direct children of Views, interleaved with Components. The host's `insertBefore` must map the all-children index to the Component-only Yoga index (`ComponentChildCollection.InsertItem`) or `YogaNode.InsertChild` throws `ArgumentOutOfRangeException`. |
+| Lua 5.3 `%d` | `("%d%%"):format(v * 100)` errors ("number has no integer representation") for non-exact floats like `0.8*100`. Always `math.floor(v * 100 + 0.5)` first. |
 
 ---
 
