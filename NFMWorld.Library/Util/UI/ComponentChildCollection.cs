@@ -4,6 +4,18 @@ namespace NFMWorld.Reactor;
 
 public class ComponentChildCollection(Component parent) : NonSynchronizedObservableCollection<Node>
 {
+    /// <summary>
+    /// Recursively mark a node (and its descendants) as disposed/attached. Removal marks
+    /// the subtree disposed so hover tracking can drop the now-stale references; re-insert
+    /// clears it because the node is live again.
+    /// </summary>
+    private static void SetDisposed(Node node, bool disposed)
+    {
+        node.IsDisposed = disposed;
+        foreach (var child in node.VisualChildren)
+            SetDisposed(child, disposed);
+    }
+
     protected override void InsertItem(int index, Node item)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
@@ -46,6 +58,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         }
 
         item.VisualParent = parent;
+        SetDisposed(item, false);
         base.InsertItem(index, item);
     }
 
@@ -54,11 +67,13 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
         var oldItem = Items[index];
         oldItem.VisualParent = null;
+        SetDisposed(oldItem, true);
         if (item is Component cmp)
             parent.NodeInternal.ReplaceChild(cmp.Contents, index);
         else if (oldItem is Component cmp1)
             parent.NodeInternal.RemoveChild(cmp1.Contents);
         item.VisualParent = parent;
+        SetDisposed(item, false);
         base.SetItem(index, item);
     }
 
@@ -67,6 +82,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
         foreach (var item in Items)
         {
             item.VisualParent = null;
+            SetDisposed(item, true);
         }
         parent.NodeInternal.ClearChildren();
         base.ClearItems();
@@ -76,6 +92,7 @@ public class ComponentChildCollection(Component parent) : NonSynchronizedObserva
     {
         var item = Items[index];
         item.VisualParent = null;
+        SetDisposed(item, true);
         if (item is Component cmp)
             parent.NodeInternal.RemoveChild(cmp.Contents);
         base.RemoveItem(index);
