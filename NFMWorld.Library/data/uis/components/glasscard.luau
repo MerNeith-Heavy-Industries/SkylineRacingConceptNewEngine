@@ -42,20 +42,20 @@ local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signal
 	-- setProperty (dom compares references). No manual cache needed — and a nil caller
 	-- style still produces the base style.
 	local style = Sx.createMemo(function(): Sx.Styles
-		local s: Sx.Styles = {}
+		local s: Sx.Styles | {[string]: string} = {}
 		for k, v in pairs(baseStyle) do
 			s[k] = v
 		end
 		local override = props.style
 		if override ~= nil then
-			local input = Sx.read(override)
+			local input = Sx.read(override) :: Sx.Styles
 			if input ~= nil then
-				for k, v in pairs(input) do
+				for k, v in pairs(input :: any) do
 					s[k] = v
 				end
 			end
 		end
-		return s
+		return s :: Sx.Styles
 	end)
 
 	local barStyle = Sx.createMemo(function(): Sx.Styles

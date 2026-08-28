@@ -626,6 +626,12 @@ end
 
 -- ── Settings component ───────────────────────────────────────────
 
+type ConfirmModal = {
+	title: string,
+	message: string,
+	onConfirm: () -> (),
+}
+
 local function Settings(props)
 	local onClose = props.onClose
 
@@ -633,16 +639,12 @@ local function Settings(props)
 	local config, setConfig = Sx.createSignal<<SettingsSnapshot | nil>>(nil)
 	local options, setOptions = Sx.createSignal<<AvailableOptions | nil>>(nil)
 	local capturingAction, setCapturingAction = Sx.createSignal<<string | nil>>(nil)
-	local confirmModal, setConfirmModal = Sx.createSignal<<{
-        title: string,
-        message: string,
-        onConfirm: () -> (),
-    } | nil>>(nil)
+	local confirmModal, setConfirmModal = Sx.createSignal<<ConfirmModal | nil>>(nil)
 	local restartModal, setRestartModal = Sx.createSignal<<boolean>>(false)
 	local pendingClose = { current = false }
 	local rootRef: { current: Component? } = {}
 
-	local function copySnapshot(c)
+	local function copySnapshot(c: SettingsSnapshot): SettingsSnapshot
 		local t = SettingsSnapshot.new()
 		t.selectedRenderer = c.selectedRenderer
 		t.selectedResolution = c.selectedResolution
@@ -827,16 +829,16 @@ local function Settings(props)
 				x(Content) {
 					x(Sx.Show) {
 						when = function() return tab() == "video" end,
-						x(VideoTab) { config = config, options = options, set = set },
+						x(VideoTab) { config = config :: Sx.Accessor<SettingsSnapshot>, options = options :: Sx.Accessor<AvailableOptions>, set = set },
 					},
 					x(Sx.Show) {
 						when = function() return tab() == "audio" end,
-						x(AudioTab) { config = config, set = set },
+						x(AudioTab) { config = config :: Sx.Accessor<SettingsSnapshot>, set = set },
 					},
 					x(Sx.Show) {
 						when = function() return tab() == "game" end,
 						x(GameTab) {
-							config = config,
+							config = config :: Sx.Accessor<SettingsSnapshot>,
 							set = set,
 							onReset = function()
 								handleResetDefaults("camera", "Reset Camera", "Are you sure you want to reset camera settings to default?")
@@ -846,7 +848,7 @@ local function Settings(props)
 					x(Sx.Show) {
 						when = function() return tab() == "keyboard" end,
 						x(KeyboardTab) {
-							config = config,
+							config = config :: Sx.Accessor<SettingsSnapshot>,
 							capturingAction = capturingAction,
 							startCapture = startCapture,
 							onReset = function()
@@ -880,11 +882,11 @@ local function Settings(props)
 								alignItems = "center",
 							},
 							onmousedown = function() end,
-							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return confirmModal().title end },
-							x(Sx.Text) { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, function() return confirmModal().message end },
+							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return (confirmModal() :: ConfirmModal).title end },
+							x(Sx.Text) { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, function() return (confirmModal() :: ConfirmModal).message end },
 							x(Sx.View) {
 								style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
-								x(Btn) { variant = "primary", label = "Yes", onPress = function() return confirmModal().onConfirm() end },
+								x(Btn) { variant = "primary", label = "Yes", onPress = function() return (confirmModal() :: ConfirmModal).onConfirm() end },
 								x(Btn) { label = "No", onPress = function() setConfirmModal(nil) end },
 							},
 						},
