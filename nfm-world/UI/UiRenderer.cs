@@ -115,6 +115,14 @@ public class UiRenderer : IDisposable
     [MemberNotNull(nameof(_state))]
     public void Reload()
     {
+        // Drop all hooks registered by the previous Lua state (via UiLib.onEvent) and
+        // any per-phase C# message handlers. Otherwise stale hooks from the discarded
+        // state remain in _toLuaHandlers and get dispatched by PushToLua, invoking
+        // Lua callbacks against an abandoned LuaState.
+        _toLuaHandlers.Clear();
+        _toCsharpHandlers.Clear();
+        _maxEvent = 0;
+
         _state = LuaHelpers.OpenState();
         LuaVisibleTypeRegistry.RegisterAll(_state);
         LuaUiLibrary.Register(_state, SetActiveRoot, Call, OnEvent);
