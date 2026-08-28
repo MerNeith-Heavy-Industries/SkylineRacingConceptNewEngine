@@ -21,7 +21,7 @@ public struct Styles() : IEquatable<Styles>
     /// <summary>
     /// CSS: flex-direction - Establishes the main-axis (row/column/row-reverse/column-reverse)
     /// </summary>
-    public FlexDirection FlexDirection = FlexDirection.Column;
+    public FlexDirection FlexDirection = FlexDirection.Row;
 
     /// <summary>
     /// CSS: justify-content - Defines alignment along the main axis
@@ -41,7 +41,7 @@ public struct Styles() : IEquatable<Styles>
     /// <summary>
     /// CSS: align-content - Aligns flex container's lines when there is extra space in the cross-axis
     /// </summary>
-    public Align AlignContent = Align.FlexStart;
+    public Align AlignContent = Align.Stretch;
 
     /// <summary>
     /// CSS: position - Sets how an element is positioned (static/relative/absolute/fixed)
