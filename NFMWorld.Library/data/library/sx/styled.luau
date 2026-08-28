@@ -12,8 +12,6 @@
 
 local Sx = require('./signals')
 local types = require('./types')
-local h = require('./h')
-local x = h.x
 
 local function copyStyle(dst: { [string]: any }, src: { [string]: any }): ()
     for k, v in pairs(src) do
@@ -39,7 +37,7 @@ local function styled<P>(tag: (P) -> types.NodeDescriptor): (baseStyle: any?) ->
 
             local named: { [string]: any } = {}
             for k, v in pairs(props) do
-                if k ~= "style" then
+                if k ~= "style" and k ~= "children" and k ~= "key" then
                     named[k] = v
                 end
             end
@@ -92,7 +90,11 @@ local function styled<P>(tag: (P) -> types.NodeDescriptor): (baseStyle: any?) ->
                 named.style = s
             end
 
-            return x(tag)(named)
+            return {
+                type = tag,
+                props = named,
+                children = props.children or {},
+            } :: types.NodeDescriptor
         end
     end
 end
