@@ -210,6 +210,24 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
   single-leaf HUD case (1 commit, 0 structural), and end-to-end port tests: router +
   mainmenu (account, PLAY/BACK, fallback), all routes (garage with collections/stats,
   race telemetry, test counter, back to main menu), and Settings loading state.
+- **DevTools:** an in-game inspector overlay (`data/uis/components/devtools.luau`, mounted
+  in `router.luau` behind the route Switch) shows a component/flow/host **tree** and a live
+  **signals/memos/effects** list. It's backed by optional introspection in the sx core,
+  all inert unless enabled:
+  - `sx/signals.luau` keeps a `LiveNodes` registry of every signal + computation
+    (`Sx.debug.list()`) and an injectable `Sx.debug.setOnChange(fn)` hook fired after any
+    signal write that marks observers stale (used by auto-refresh).
+  - `sx/dom.luau` builds a component tree during mount via `Dom.devtools` (`enable` /
+    `snapshot`); each component/host/flow node records a name + children. Component names
+    come from `debug.info(fn, "n")`. Lua-CSharp tracks declaration names on
+    `Prototype.Name` (parser records them for `local function X()`, `function X()`, and
+    `local X = function()`) and exposes them via the Luau-style `debug.info(fn, "n")`
+    (added to `DebugLibrary`; `debug.getinfo` stays conformant). `devName` falls back to
+    `debug.getinfo(fn)` → `short_src:linedefined` for unnamed functions.
+  - `Sx.devtools` / `Sx.debug` are exported from `sx/index.luau`.
+  - The pane re-snapshots only when the tree's structural signature changes (preserves
+    expand/collapse across value-only updates); auto-refresh is opt-in and guarded against
+    feedback loops (a `refreshing` flag suppresses the hook for its own writes).
 
 ### Sx gotchas
 
