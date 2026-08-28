@@ -36,28 +36,26 @@ local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signal
 		overflow = "hidden",
 	}
 
-	-- Reference-stable merged style: rebuilds only when the resolved input style changes
-	-- reference, so a card whose selection didn't change reuses the same table and the
-	-- reactive style prop skips the setProperty (dom.luau compares references).
-	local lastInput: Sx.Styles | nil = nil
-	local cachedStyle: Sx.Styles | nil = nil
-	local style = Sx.createMemo(function()
-		local ps = props.style
-		local input = Sx.read(ps)
-		if input ~= lastInput then
-			lastInput = input
-			local s: Sx.Styles = {}
-			for k, v in pairs(baseStyle) do
-				s[k] = v
-			end
+	-- Reactive merged style. createMemo is reference-stable: it caches the computed value
+	-- and only recomputes when a signal it reads changes, so a card whose input style
+	-- didn't change keeps returning the same table and dom's reactive style prop skips its
+	-- setProperty (dom compares references). No manual cache needed — and a nil caller
+	-- style still produces the base style.
+	local style = Sx.createMemo(function(): Sx.Styles
+		local s: Sx.Styles = {}
+		for k, v in pairs(baseStyle) do
+			s[k] = v
+		end
+		local override = props.style
+		if override ~= nil then
+			local input = Sx.read(override)
 			if input ~= nil then
 				for k, v in pairs(input) do
 					s[k] = v
 				end
 			end
-			cachedStyle = s
 		end
-		return cachedStyle
+		return s
 	end)
 
 	local barStyle = Sx.createMemo(function(): Sx.Styles
@@ -73,24 +71,22 @@ local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signal
 		}
 	end)
 
-	local wrapperProps = {}
-	for k, v in pairs(props) do
+	-- Assemble the wrapper descriptor with x(): pass through every prop except the ones
+	-- GlassCard consumes, then add the accent bar as the first child, then the caller's
+	-- children. A wrapper that splices in children has to build its own arg table — the
+	-- same pattern styled.luau uses internally.
+	local args: any = { style = style }
+	for k, v in pairs(props :: { [string]: any }) do
 		if k ~= "color" and k ~= "style" and k ~= "children" and k ~= "key" then
-			wrapperProps[k] = v
+			args[k] = v
 		end
 	end
-	wrapperProps.style = style
-
-	local children = { x(Sx.View) { style = barStyle } }
+	args[1] = x(Sx.View) { style = barStyle }
 	for _, c in ipairs(props.children or {}) do
-		children[#children + 1] = c
+		args[#args + 1] = c
 	end
 
-	return {
-		type = 'view',
-		props = wrapperProps,
-		children = children,
-	} :: Sx.NodeDescriptor
+	return x(Sx.View)(args)
 end
 
 -- ── StatBar ──────────────────────────────────────────────────────
