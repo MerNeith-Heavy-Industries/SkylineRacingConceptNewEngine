@@ -340,6 +340,11 @@ local function mountHostElement(descriptor: types.NodeDescriptor, parent: any, m
 
     local el = createInstance(descriptor.type, staticProps)
     insertInto(parent, el, marker)
+    if devNode ~= nil then
+        -- devtools: keep a live ref to the host node so the devtools can
+        -- draw a highlight border over it when hovering its tree node.
+        devNode.__host = el
+    end
 
     -- reactive non-event props -> per-prop effect -> setProperty. The effect skips the
     -- host call when the accessor returns the same reference as last time, so stable
@@ -738,6 +743,9 @@ Dom.devtools = {
         end
         local function walk(node: any): any
             local out: any = { name = node.name, kind = node.kind, children = {} }
+            if node.__host ~= nil then
+                out.host = node.__host
+            end
             local kids = node.children
             for i = 1, #kids do
                 out.children[i] = walk(kids[i])
