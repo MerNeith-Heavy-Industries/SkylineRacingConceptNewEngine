@@ -21,6 +21,11 @@ public enum FlexDirection
 
 public enum Justify
 {
+    // NOTE: must stay value-identical to Microsoft.UI.Reactor.Layout.FlexJustify
+    // (which has Auto=0, FlexStart=1, Center=2, ...) because ToYogaJustify() is a
+    // raw cast. Missing `Auto` here shifted every member by one, so
+    // Justify.Center cast to FlexJustify.FlexStart and vertical centering broke.
+    Auto,
     FlexStart,
     Center,
     FlexEnd,
@@ -31,6 +36,7 @@ public enum Justify
 
 public enum Align
 {
+    // value-identical to Microsoft.UI.Reactor.Layout.FlexAlign (raw cast in ToYogaAlign)
     Auto,
     FlexStart,
     Center,
@@ -40,6 +46,8 @@ public enum Align
     SpaceBetween,
     SpaceAround,
     SpaceEvenly,
+    Start,
+    End,
 }
 
 public enum Position
@@ -65,9 +73,11 @@ public enum Overflow
 
 public enum Display
 {
+    // value-identical to Microsoft.UI.Reactor.Layout.YogaDisplay (raw cast in ToYogaDisplay)
     Flex,
     None,
     Contents,
+    Grid,
 }
 
 public enum BoxSizing
