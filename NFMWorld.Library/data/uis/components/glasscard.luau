@@ -22,8 +22,8 @@ end
 
 -- ── GlassCard ────────────────────────────────────────────────────
 
-local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signalish<Sx.Styles>?, children: { any }? } & Sx.ViewProps)
-	local baseStyle = {
+local function GlassCard(props: { color: Sx.Signalish<string>?, children: { any }? } & Sx.ViewProps)
+	local wrapperStyle: Sx.Styles = {
 		backgroundColor = "rgba(255,255,255,0.05)",
 		borderRadius = 12,
 		borderWidth = 1,
@@ -36,52 +36,37 @@ local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signal
 		overflow = "hidden",
 	}
 
+	local barStyle: Sx.Styles = {
+		position = "absolute",
+		top = 0,
+		left = 0,
+		width = "100%",
+		height = 3,
+		borderTopLeftRadius = 12,
+		borderTopRightRadius = 12,
+	}
+
 	-- Reactive merged style. createMemo is reference-stable: it caches the computed value
 	-- and only recomputes when a signal it reads changes, so a card whose input style
 	-- didn't change keeps returning the same table and dom's reactive style prop skips its
 	-- setProperty (dom compares references). No manual cache needed — and a nil caller
 	-- style still produces the base style.
-	local style = Sx.createMemo(function(): Sx.Styles
+	local barStyle2 = Sx.createMemo(function(): Sx.Styles
 		local s: Sx.Styles | {[string]: string} = {}
-		for k, v in pairs(baseStyle) do
+		for k, v in pairs(barStyle :: any) do
 			s[k] = v
 		end
-		local override = props.style
-		if override ~= nil then
-			local input = Sx.read(override) :: Sx.Styles
-			if input ~= nil then
-				for k, v in pairs(input :: any) do
-					s[k] = v
-				end
-			end
-		end
+		local c = Sx.read(props.color) or "#4fc3f7"
+		s.backgroundColor = c
 		return s :: Sx.Styles
 	end)
 
-	local barStyle = Sx.createMemo(function(): Sx.Styles
-		return {
-			position = "absolute",
-			top = 0,
-			left = 0,
-			right = 0,
-			height = 3,
-			backgroundColor = Sx.read(props.color) or "#4fc3f7",
-			borderTopLeftRadius = 12,
-			borderTopRightRadius = 12,
-		}
-	end)
+	local args: any = { style = wrapperStyle }
 
-	-- Assemble the wrapper descriptor with x(): pass through every prop except the ones
-	-- GlassCard consumes, then add the accent bar as the first child, then the caller's
-	-- children. A wrapper that splices in children has to build its own arg table — the
-	-- same pattern styled.luau uses internally.
-	local args: any = { style = style }
-	for k, v in pairs(props :: { [string]: any }) do
-		if k ~= "color" and k ~= "style" and k ~= "children" and k ~= "key" then
-			args[k] = v
-		end
-	end
-	args[1] = x(Sx.View) { style = barStyle }
+	args[1] = x(Sx.View) {
+		style = barStyle2,
+	}
+
 	for _, c in ipairs(props.children or {}) do
 		args[#args + 1] = c
 	end
@@ -99,21 +84,19 @@ local function StatBar(props: { label: string, value: Sx.Signalish<number>?, col
 	local label = props.label or ""
 
 	return x(Sx.View) {
-		style = { marginBottom = 8, flexDirection = "column", gap = 4 },
+		style = { marginBottom = 8 },
 		x(Sx.View) {
 			style = {
 				display = "flex",
-				flexDirection = "row",
 				justifyContent = "space-between",
-				alignItems = "center",
 				marginBottom = 4,
 			},
 			x(Sx.Text) {
-				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
+				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", strokeColor = "rgba(100,100,100,0.4)", flexShrink = 0 },
 				label,
 			},
 			x(Sx.Text) {
-				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
+				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", strokeColor = "rgba(100,100,100,0.4)", flexShrink = 0 },
 				function()
 					local v = clamp01(Sx.read(props.value) or 0)
 					return ("%d%%"):format(math.floor(v * 100 + 0.5))

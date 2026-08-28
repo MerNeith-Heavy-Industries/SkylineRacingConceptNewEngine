@@ -1,6 +1,6 @@
 -- Sx hyperscript builder. Curried like the existing preact `x`:
 --
---     x("view"){ style = s, x("text"){ "hi" } }
+--     x(Sx.View){ style = s, x(Sx.Text){ "hi" } }
 --     x(MyComponent){ name = "x", someSignalFn }
 --
 -- A call returns a plain descriptor table:
@@ -12,7 +12,7 @@ local t = require('./types')
 
 local h = {}
 
-local function x<P>(vtype: string | t.Component<P> | ((any) -> t.NodeDescriptor)): ((P) -> t.NodeDescriptor)
+local function x<P>(vtype: t.Component<P>): ((Propify<P, any>) -> t.NodeDescriptor)
     return function(props: P?)
         props = props or {}
         local named: { [string]: any } = {}
@@ -135,10 +135,10 @@ export type Styles = {
 
 export type TextStyles = Styles & {
 	color: string?,
-	stroke: string?,
+	strokeColor: string?,
 	fontFamily: string?,
 	fontSize: string | number | nil,
-	fontStyle: string?,
+	fontStyle: 'bold' | 'italic' | 'plain' | 'bold italic' | nil,
 	verticalAlign: "top" | "bottom" | "middle" | nil,
 	textAlign: "left" | "right" | "center" | nil,
 }
@@ -191,7 +191,7 @@ export type TextInputProps = ViewProps & {
 
 -- Converts p to
 -- P & { [number]: R.Child }
--- and makes all properties in P accept () -> T
+-- and removes children from P
 type function Propify(tbl: typeof(types.newtable()), childType)
     local props = {}
 
@@ -255,7 +255,7 @@ local function TextInput(props: TextInputProps): t.NodeDescriptor
     }
 end
 
-h.x = x :: <P>(vtype: t.Component<P>) -> ((Propify<P, any>) -> t.NodeDescriptor)
+h.x = x
 h.View = View
 h.Text = Text
 h.Image = Image
