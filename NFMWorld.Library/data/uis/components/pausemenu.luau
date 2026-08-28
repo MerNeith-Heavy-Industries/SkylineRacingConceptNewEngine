@@ -1,3 +1,5 @@
+--!strict
+
 -- Pause menu overlay (Sx port of preact pausemenu.luau).
 -- Controlled by a `visible` prop from RaceHud (driven by the "race:paused" event).
 
@@ -8,7 +10,7 @@ local Settings = require("./settings")
 
 -- ── Styled components ────────────────────────────────────────────
 
-local Overlay = styled("view") {
+local Overlay = styled(Sx.View) {
 	position = "absolute",
 	top = 0,
 	left = 0,
@@ -20,7 +22,7 @@ local Overlay = styled("view") {
 	backgroundColor = "rgba(0,0,0,0.65)",
 }
 
-local MenuCard = styled("view") {
+local MenuCard = styled(Sx.View) {
 	width = 380,
 	paddingTop = 36,
 	paddingBottom = 36,
@@ -36,19 +38,19 @@ local MenuCard = styled("view") {
 	gap = 6,
 }
 
-local Title = styled("text") {
+local Title = styled(Sx.Text) {
 	fontSize = 22,
 	fontStyle = "bold",
 	marginBottom = 4,
 }
 
-local Subtitle = styled("text") {
+local Subtitle = styled(Sx.Text) {
 	fontSize = 12,
 	color = "rgba(255,255,255,0.35)",
 	marginBottom = 20,
 }
 
-local RaceInfo = styled("view") {
+local RaceInfo = styled(Sx.View) {
 	width = "100%",
 	display = "flex",
 	flexDirection = "row",
@@ -62,24 +64,24 @@ local RaceInfo = styled("view") {
 	borderColor = "rgba(255,255,255,0.06)",
 }
 
-local InfoItem = styled("view") {
+local InfoItem = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "column",
 	alignItems = "center",
 	gap = 2,
 }
 
-local InfoLabel = styled("text") {
+local InfoLabel = styled(Sx.Text) {
 	fontSize = 10,
 	color = "rgba(255,255,255,0.35)",
 }
 
-local InfoValue = styled("text") {
+local InfoValue = styled(Sx.Text) {
 	fontSize = 18,
 	fontStyle = "bold",
 }
 
-local ConfirmBox = styled("view") {
+local ConfirmBox = styled(Sx.View) {
 	backgroundColor = "#1a1a2e",
 	borderWidth = 1,
 	borderColor = "rgba(255,255,255,0.12)",
@@ -92,20 +94,20 @@ local ConfirmBox = styled("view") {
 	alignItems = "center",
 }
 
-local ConfirmTitle = styled("text") {
+local ConfirmTitle = styled(Sx.Text) {
 	fontSize = 16,
 	fontStyle = "bold",
 	marginBottom = 8,
 }
 
-local ConfirmMsg = styled("text") {
+local ConfirmMsg = styled(Sx.Text) {
 	fontSize = 13,
 	color = "rgba(255,255,255,0.45)",
 	marginBottom = 20,
 	textAlign = "center",
 }
 
-local ConfirmBtns = styled("view") {
+local ConfirmBtns = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "row",
 	justifyContent = "center",
@@ -114,7 +116,7 @@ local ConfirmBtns = styled("view") {
 
 -- ── Button helpers ───────────────────────────────────────────────
 
-local function menuBtnStyle(variant)
+local function menuBtnStyle(variant: 'primary' | 'danger' | nil): Sx.TextStyles
 	local primary = variant == "primary"
 	local danger = variant == "danger"
 	if danger then
@@ -146,17 +148,17 @@ local function menuBtnStyle(variant)
 	}
 end
 
-local function MenuBtn(props)
-	return x("view") {
+local function MenuBtn(props: { variant: 'primary' | 'danger' | nil, label: Sx.Signalish<string>, onPress: () -> () })
+	return x(Sx.View) {
 		style = menuBtnStyle(props.variant),
 		onmousedown = function() props.onPress() end,
-		x("text") { style = { fontSize = 15, fontStyle = "bold", color = "#fff" }, props.label },
+		x(Sx.Text) { style = { fontSize = 15, fontStyle = "bold", color = "#fff" }, props.label },
 	}
 end
 
-local function ConfirmBtn(props)
+local function ConfirmBtn(props: { variant: 'primary' | 'danger' | nil, label: Sx.Signalish<string>, onPress: () -> () })
 	local danger = props.variant == "danger"
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			paddingTop = 10, paddingBottom = 10, paddingLeft = 28, paddingRight = 28,
 			backgroundColor = danger and "rgba(255,82,82,0.18)" or "rgba(255,255,255,0.06)",
@@ -164,15 +166,15 @@ local function ConfirmBtn(props)
 			borderRadius = 6,
 		},
 		onmousedown = function() props.onPress() end,
-		x("text") { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+		x(Sx.Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
 	}
 end
 
 -- ── Component ────────────────────────────────────────────────────
 
 local function PauseMenu()
-	local view, setView = Sx.createSignal("menu")
-	local pauseState, setPauseState = Sx.createSignal(nil)
+	local view, setView = Sx.createSignal<<string>>("menu")
+	local pauseState, setPauseState = Sx.createSignal<<PauseState | nil>>(nil)
 
 	Sx.createEffect(function()
 		local unsub = UiLib.onEvent("race:pauseState", function(data)
@@ -194,7 +196,7 @@ local function PauseMenu()
 			-- Settings
 			x(Sx.Match) {
 				when = function() return view() == "settings" end,
-				x("view") {
+				x(Sx.View) {
 					style = { position = "absolute", top = 0, left = 0, right = 0, bottom = 0 },
 					x(Settings) { onClose = function() setView("menu") end },
 				},
@@ -203,7 +205,7 @@ local function PauseMenu()
 			x(Sx.Match) {
 				when = function() return view() == "confirmQuit" end,
 				x(Overlay) {
-					x("view") {
+					x(Sx.View) {
 						style = {
 							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
 							display = "flex", alignItems = "center", justifyContent = "center",
@@ -226,7 +228,7 @@ local function PauseMenu()
 			x(Sx.Match) {
 				when = function() return view() == "confirmRestart" end,
 				x(Overlay) {
-					x("view") {
+					x(Sx.View) {
 						style = {
 							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
 							display = "flex", alignItems = "center", justifyContent = "center",

@@ -558,3 +558,6 @@ UiLib.call("method", { ... })
 -- entry point
 Sx.render(x(Router) {})
 ```
+
+
+TODO: document Sx.read, Sx.Accessor, and Sx.Signalish, update 'view' -> Sx.View

@@ -12,6 +12,15 @@
 
 local Sx = require('./signals')
 local Host = require('./host')
+local createRoot = Host.createRoot
+local createInstance = Host.createInstance
+local createTextInstance = Host.createTextInstance
+local appendChild = Host.appendChild
+local insertBefore = Host.insertBefore
+local removeChild = Host.removeChild
+local setProperty = Host.setProperty
+local commitTextUpdate = Host.commitTextUpdate
+local setActiveRoot = Host.setActiveRoot
 
 local Dom = {}
 
@@ -22,17 +31,26 @@ local types = require('./types')
 local FLOW = {} -- unique marker for flow descriptors
 local Fragment = {} -- unique marker for fragment descriptors (mounts children inline)
 
+-- ------------------------------------------------------------------ types
+
+-- A mount result: the host nodes inserted for a mounted subtree plus a dispose function
+-- that tears them down (including any reactive effects).
+export type MountResult = {
+    nodes: { any },
+    dispose: () -> (),
+}
+
 -- ------------------------------------------------------------------ small helpers
 
-local function isNode(v)
+local function isNode<T>(v: T): boolean
     return type(v) == "table" and v.type ~= nil
 end
 
-local function isEventKey(key)
+local function isEventKey(key: string): boolean
     return string.sub(key, 1, 2) == "on"
 end
 
-local function toAccessor(v)
+local function toAccessor<T>(v: T | (() -> T)): (() -> T)
     if type(v) == "function" then
         return v
     end
@@ -41,28 +59,28 @@ local function toAccessor(v)
     end
 end
 
-local function toValueOrCall(v)
+local function toValueOrCall<T>(v: T | (() -> T)): T
     if type(v) == "function" then
         return v()
     end
     return v
 end
 
-local function insertInto(parent, node, marker)
+local function insertInto(parent: any, node: any, marker: any?): ()
     if marker ~= nil then
-        Host.insertBefore(parent, node, marker)
+        insertBefore(parent, node, marker)
     else
-        Host.appendChild(parent, node)
+        appendChild(parent, node)
     end
 end
 
-local function removeNode(parent, node)
-    Host.removeChild(parent, node)
+local function removeNode(parent: any, node: any): ()
+    removeChild(parent, node)
 end
 
-local function createAnchor(parent)
-    local anchor = Host.createTextInstance("")
-    Host.appendChild(parent, anchor)
+local function createAnchor(parent: any): any
+    local anchor = createTextInstance("")
+    appendChild(parent, anchor)
     return anchor
 end
 
@@ -70,26 +88,26 @@ end
 
 -- A mount result is { nodes = {hostNode,...}, dispose = fn }.
 
-local function emptyMount()
+local function emptyMount(): MountResult
     return { nodes = {}, dispose = function() end }
 end
 
 -- ------------------------------------------------------------------ mountValue / mountNode (mutually recursive)
 
-local mountNode
-local mountValueInto
-local insertDynamic
-local mountFlow
+local mountNode: (descriptor: types.NodeDescriptor, parent: any, marker: any?) -> MountResult
+local mountValueInto: (parent: any, value: any, marker: any?) -> MountResult?
+local insertDynamic: (parent: any, accessor: (() -> any), marker: any?) -> MountResult
+local mountFlow: (descriptor: types.NodeDescriptor, parent: any, marker: any?) -> MountResult
 
 -- Mount a static value (text / descriptor / array) into `parent` before `marker`.
 -- A function value is mounted reactively (dynamic accessor).
-mountValueInto = function(parent, value, marker)
+mountValueInto = function(parent: any, value: any, marker: any?): MountResult?
     if value == nil then
         return nil
     end
     local t = type(value)
     if t == "string" or t == "number" then
-        local node = Host.createTextInstance(tostring(value))
+        local node = createTextInstance(tostring(value))
         insertInto(parent, node, marker)
         return {
             nodes = { node },
@@ -130,14 +148,14 @@ end
 -- Dynamic child slot: an accessor is installed inside an effect. Fast path keeps a
 -- single text node (the anchor) updated via commitTextUpdate; structural values are
 -- mounted before the anchor and swapped atomically.
-insertDynamic = function(parent, accessor, marker)
+insertDynamic = function(parent: any, accessor: (() -> any), marker: any?): MountResult
     local anchor
     local ownsAnchor = false
     if marker ~= nil then
         anchor = marker
     else
-        anchor = Host.createTextInstance("")
-        Host.appendChild(parent, anchor)
+        anchor = createTextInstance("")
+        appendChild(parent, anchor)
         ownsAnchor = true
     end
     local currentText = ""
@@ -151,7 +169,7 @@ insertDynamic = function(parent, accessor, marker)
             local str = tostring(value)
             if currentNodes == nil then
                 if str ~= currentText then
-                    Host.commitTextUpdate(anchor, currentText, str)
+                    commitTextUpdate(anchor, currentText, str)
                     currentText = str
                 end
             else
@@ -164,7 +182,7 @@ insertDynamic = function(parent, accessor, marker)
                 end
                 currentNodes = nil
                 currentDispose = nil
-                Host.commitTextUpdate(anchor, currentText, str)
+                commitTextUpdate(anchor, currentText, str)
                 currentText = str
             end
         elseif value ~= nil and t == "table" then
@@ -179,7 +197,7 @@ insertDynamic = function(parent, accessor, marker)
                 end
             end
             if currentText ~= "" then
-                Host.commitTextUpdate(anchor, currentText, "")
+                commitTextUpdate(anchor, currentText, "")
                 currentText = ""
             end
             currentNodes = m and m.nodes or nil
@@ -198,7 +216,7 @@ insertDynamic = function(parent, accessor, marker)
                 currentDispose = nil
             end
             if currentText ~= "" then
-                Host.commitTextUpdate(anchor, currentText, "")
+                commitTextUpdate(anchor, currentText, "")
                 currentText = ""
             end
         end
@@ -229,9 +247,9 @@ end
 
 -- Mount a host element: createInstance with static/event props, wire reactive
 -- (function-valued, non-`on`) props through effects, mount children.
-local function mountHostElement(descriptor, parent, marker)
-    local staticProps = {}
-    local reactiveProps = {}
+local function mountHostElement(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
+    local staticProps: { [string]: any } = {}
+    local reactiveProps: { [string]: any } = {}
     for key, val in pairs(descriptor.props) do
         if type(val) == "function" then
             if isEventKey(key) then
@@ -246,7 +264,7 @@ local function mountHostElement(descriptor, parent, marker)
         end
     end
 
-    local el = Host.createInstance(descriptor.type, staticProps)
+    local el = createInstance(descriptor.type, staticProps)
     insertInto(parent, el, marker)
 
     -- reactive non-event props -> per-prop effect -> setProperty. The effect skips the
@@ -257,7 +275,7 @@ local function mountHostElement(descriptor, parent, marker)
         Sx.createEffect(function()
             local v = accessor()
             if v ~= last then
-                Host.setProperty(el, key, v)
+                setProperty(el, key, v)
                 last = v
             end
         end)
@@ -293,7 +311,7 @@ end
 
 -- Mount a component: run it once under its own owner (createRoot); its returned
 -- descriptor is mounted; disposal tears down the owner (all its effects/cleanups).
-local function mountComponent(descriptor, parent, marker)
+local function mountComponent(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
     local fn = descriptor.type
     local compProps = {}
     for k, v in pairs(descriptor.props) do
@@ -330,7 +348,7 @@ local function mountComponent(descriptor, parent, marker)
 end
 
 -- Dispatch a descriptor to host element / flow / fragment / component.
-mountNode = function(descriptor, parent, marker)
+mountNode = function(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
     local t = descriptor.type
     if type(t) == "string" then
         return mountHostElement(descriptor, parent, marker)
@@ -364,35 +382,33 @@ end
 
 -- ------------------------------------------------------------------ flow components
 
-local FlowKind = {
-    Show = "show",
-    Switch = "switch",
-    Match = "match",
-    For = "for",
-    Index = "index",
-}
+local FlowKind_Show = "show"
+local FlowKind_Switch = "switch"
+local FlowKind_Match = "match"
+local FlowKind_For = "for"
+local FlowKind_Index = "index"
 
-local function Show(props): types.NodeDescriptor
-    return { type = FLOW, kind = FlowKind.Show, props = props, children = props.children }
+local function Show(props: { when: boolean | (() -> boolean), fallback: types.NodeDescriptor?, children: {types.NodeDescriptor} }): types.NodeDescriptor
+    return { type = FLOW, kind = FlowKind_Show, props = props, children = props.children }
 end
 
-local function Switch(props): types.NodeDescriptor
-    return { type = FLOW, kind = FlowKind.Switch, props = props, children = props.children }
+local function Switch(props: { children: {types.NodeDescriptor}? }): types.NodeDescriptor
+    return { type = FLOW, kind = FlowKind_Switch, props = props, children = props.children }
 end
 
-local function Match(props): types.NodeDescriptor
-    return { type = FLOW, kind = FlowKind.Match, props = props, children = props.children }
+local function Match(props: { when: boolean | (() -> boolean), children: {types.NodeDescriptor} }): types.NodeDescriptor
+    return { type = FLOW, kind = FlowKind_Match, props = props, children = props.children }
 end
 
-local function For(props): types.NodeDescriptor
-    return { type = FLOW, kind = FlowKind.For, props = props, children = props.children }
+local function For<T>(props: { each: {T} | (() -> {T}), children: (item: () -> T, index: number) -> types.NodeDescriptor }): types.NodeDescriptor
+    return { type = FLOW, kind = FlowKind_For, props = props, children = props.children }
 end
 
-local function Index(props): types.NodeDescriptor
-    return { type = FLOW, kind = FlowKind.Index, props = props, children = props.children }
+local function Index<T>(props: { of: {T} | (() -> {T}), children: (item: () -> T, index: number) -> types.NodeDescriptor }): types.NodeDescriptor
+    return { type = FLOW, kind = FlowKind_Index, props = props, children = props.children }
 end
 
-local function disposeMount(m)
+local function disposeMount(m: MountResult?): ()
     if m then
         if m.dispose then
             m.dispose()
@@ -403,11 +419,11 @@ local function disposeMount(m)
 end
 
 -- Show: mounts `children` when `when` is truthy, else `fallback`.
-local function mountShow(props, children, parent, marker)
+local function mountShow(props: any, children: { any }, parent: any, marker: any?): MountResult
     local when = toAccessor(props.when)
     local fallback = props.fallback
     local anchor = marker or createAnchor(parent)
-    local current = nil
+    local current: MountResult? = nil
 
     local eff = Sx.createEffect(function()
         local w = when()
@@ -433,16 +449,16 @@ local function mountShow(props, children, parent, marker)
 end
 
 -- Switch: mounts the children of the FIRST Match whose `when` is truthy.
-local function mountSwitch(props, children, parent, marker)
+local function mountSwitch(props: any, children: { any }, parent: any, marker: any?): MountResult
     local anchor = marker or createAnchor(parent)
-    local current = nil
+    local current: MountResult? = nil
 
     local eff = Sx.createEffect(function()
         local chosen = nil
         for i = 1, #children do
             local matchDesc = children[i]
             local isMatch = (matchDesc.type == Match) or
-                (matchDesc.type == FLOW and matchDesc.kind == FlowKind.Match)
+                (matchDesc.type == FLOW and matchDesc.kind == FlowKind_Match)
             if isMatch then
                 local w = matchDesc.props.when
                 local wv
@@ -476,7 +492,7 @@ local function mountSwitch(props, children, parent, marker)
     return { nodes = { anchor }, dispose = dispose }
 end
 
-local function rowKey(item, index, keyed)
+local function rowKey(item: any, index: number, keyed: boolean): any
     if keyed then
         return item
     end
@@ -485,14 +501,14 @@ end
 
 -- For (keyed) / Index (positional): mounts rows from `each`; rows are rebuilt only when
 -- the list's keys change, so per-row updates flow through signals read inside row content.
-local function mountList(props, children, parent, marker, keyed)
+local function mountList(props: any, children: { any }, parent: any, marker: any?, keyed: boolean): MountResult
     local each = toAccessor(props.each)
     local fallback = props.fallback
     local rowFn = children[1]
     local anchor = marker or createAnchor(parent)
 
-    local rows = {}
-    local currentFallback = nil
+    local rows: { { key: any, dispose: () -> () } } = {}
+    local currentFallback: MountResult? = nil
 
     local eff = Sx.createEffect(function()
         local list = each() or {}
@@ -569,15 +585,15 @@ local function mountList(props, children, parent, marker, keyed)
     return { nodes = { anchor }, dispose = dispose }
 end
 
-mountFlow = function(descriptor, parent, marker)
+mountFlow = function(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
     local kind = descriptor.kind
-    if kind == FlowKind.Show or kind == FlowKind.Match then
+    if kind == FlowKind_Show or kind == FlowKind_Match then
         return mountShow(descriptor.props, descriptor.children, parent, marker)
-    elseif kind == FlowKind.Switch then
+    elseif kind == FlowKind_Switch then
         return mountSwitch(descriptor.props, descriptor.children, parent, marker)
-    elseif kind == FlowKind.For then
+    elseif kind == FlowKind_For then
         return mountList(descriptor.props, descriptor.children, parent, marker, true)
-    elseif kind == FlowKind.Index then
+    elseif kind == FlowKind_Index then
         return mountList(descriptor.props, descriptor.children, parent, marker, false)
     end
     error("Sx: unknown flow kind " .. tostring(kind))
@@ -587,12 +603,12 @@ end
 
 -- Install a descriptor tree into a fresh host root and activate it.
 local function render(rootNode: types.NodeDescriptor): any
-    local rootView = Host.createRoot()
+    local rootView = createRoot()
     Sx.batch(function()
         mountNode(rootNode, rootView, nil)
     end)
     Sx.flushSync()
-    Host.setActiveRoot(rootView)
+    setActiveRoot(rootView)
     return rootView
 end
 

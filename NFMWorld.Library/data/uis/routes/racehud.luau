@@ -1,3 +1,4 @@
+--!strict
 -- In-race HUD overlay (Sx port of preact racehud.luau), ported from
 -- nfm-world/data/html/src/pages/RaceHud.tsx. Fine-grained: each telemetry value is a
 -- signal; a per-frame `race:hudState` push updates only the affected leaf text/bar via
@@ -12,13 +13,13 @@ local StatBar = glasscard.StatBar
 local CenterText = glasscard.CenterText
 local PauseMenu = require("../components/pausemenu")
 
-local Root = styled("view") {
+local Root = styled(Sx.View) {
 	width = "100%",
 	height = "100%",
 	position = "relative",
 }
 
-local CornerLabel = styled("text") {
+local CornerLabel = styled(Sx.Text) {
 	fontSize = 11,
 	color = "rgba(255,255,255,0.5)",
 	marginBottom = 4,
@@ -38,7 +39,7 @@ local function PowerDamageBars()
 		Sx.onCleanup(unsub)
 	end)
 
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			position = "absolute",
 			top = 16,
@@ -73,7 +74,7 @@ local function Splits()
 		Sx.onCleanup(unsub)
 	end)
 
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			position = "absolute",
 			bottom = 24,
@@ -83,11 +84,11 @@ local function Splits()
 			flexDirection = "column",
 			alignItems = "flex-end",
 		},
-		x("text") {
+		x(Sx.Text) {
 			style = { fontSize = 36, fontStyle = "bold" },
 			function() return ("Lap Diff: %d"):format(lapDiffMs()) end,
 		},
-		x("text") {
+		x(Sx.Text) {
 			style = { fontSize = 14, color = "rgba(255,255,255,0.5)" },
 			function() return ("Last: %d"):format(lastLapDiffMs()) end,
 		},
@@ -110,7 +111,7 @@ local function Speed()
 		return math.floor(speed() * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0 + 0.5)
 	end)
 
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			position = "absolute",
 			bottom = 24,
@@ -120,8 +121,8 @@ local function Speed()
 			flexDirection = "column",
 			alignItems = "center",
 		},
-		x("text") { style = { fontSize = 56, fontStyle = "bold" }, function() return ("%d"):format(speedKmh()) end },
-		x("text") { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
+		x(Sx.Text) { style = { fontSize = 56, fontStyle = "bold" }, function() return ("%d"):format(speedKmh()) end },
+		x(Sx.Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)" }, "KM/H" },
 	}
 end
 
@@ -178,7 +179,7 @@ local function RaceHud()
 
 		x(Speed) {},
 
-		x("view") {
+		x(Sx.View) {
 			style = {
 				position = "absolute",
 				bottom = 24,
@@ -187,8 +188,8 @@ local function RaceHud()
 				flexDirection = "column",
 				alignItems = "flex-end",
 			},
-			x("text") { style = { fontSize = 36, fontStyle = "bold" }, function() return ("%d/%d"):format(position(), totalRacers()) end },
-			x("text") { style = { fontSize = 12, color = "rgba(255,255,255,0.5)" }, "POSITION" },
+			x(Sx.Text) { style = { fontSize = 36, fontStyle = "bold" }, function() return ("%d/%d"):format(position(), totalRacers()) end },
+			x(Sx.Text) { style = { fontSize = 12, color = "rgba(255,255,255,0.5)" }, "POSITION" },
 		},
 
 		x(Sx.Show) {

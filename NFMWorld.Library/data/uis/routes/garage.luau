@@ -1,3 +1,4 @@
+--!strict
 -- Garage view (Sx port of preact garage.luau), ported from
 -- nfm-world/data/html/src/pages/Garage.tsx. Fine-grained: collections/currentCar/
 -- currentCollection/searchQuery are signals; the collection list is a keyed For; a car
@@ -11,22 +12,14 @@ local glasscard = require("../components/glasscard")
 local GlassCard = glasscard.GlassCard
 local StatBar = glasscard.StatBar
 
--- value-or-accessor helper
-local function readProp(v)
-	if type(v) == "function" then
-		return v()
-	end
-	return v
-end
-
-local Root = styled("view") {
+local Root = styled(Sx.View) {
 	width = "100%",
 	height = "100%",
 	display = "flex",
 	flexDirection = "row",
 }
 
-local Sidebar = styled("view") {
+local Sidebar = styled(Sx.View) {
 	width = 340,
 	height = "100%",
 	paddingTop = 32,
@@ -41,12 +34,12 @@ local Sidebar = styled("view") {
 	borderColor = "rgba(255,255,255,0.06)",
 }
 
-local Header = styled("text") {
+local Header = styled(Sx.Text) {
 	fontSize = 28,
 	fontStyle = "bold",
 }
 
-local CollectionList = styled("view") {
+local CollectionList = styled(Sx.View) {
 	flex = 1,
 	display = "flex",
 	flexDirection = "column",
@@ -54,50 +47,50 @@ local CollectionList = styled("view") {
 	gap = 8,
 }
 
-local StatsPanel = styled("view") {
+local StatsPanel = styled(Sx.View) {
 	flexShrink = 0,
 	display = "flex",
 	alignItems = "center",
 	justifyContent = "center",
 }
 
-local StatsCard = styled("view") {
+local StatsCard = styled(Sx.View) {
 	width = 280,
 	padding = 24,
 	flexDirection = "column",
 }
 
-local CarName = styled("text") {
+local CarName = styled(Sx.Text) {
 	fontSize = 18,
 	fontStyle = "bold",
 	color = "#4fc3f7",
 	marginBottom = 16,
 }
 
-local Placeholder = styled("text") {
+local Placeholder = styled(Sx.Text) {
 	fontSize = 18,
 	color = "rgba(255,255,255,0.3)",
 }
 
-local CarCardName = styled("text") {
+local CarCardName = styled(Sx.Text) {
 	fontSize = 14,
 	fontStyle = "bold",
 	marginBottom = 4,
 }
 
-local CarCardCollection = styled("text") {
+local CarCardCollection = styled(Sx.Text) {
 	fontSize = 11,
 	color = "rgba(255,255,255,0.4)",
 }
 
-local NoResults = styled("text") {
+local NoResults = styled(Sx.Text) {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.3)",
 	textAlign = "center",
 	padding = 24,
 }
 
-local BackBtn = styled("view") {
+local BackBtn = styled(Sx.View) {
 	paddingTop = 10,
 	paddingBottom = 10,
 	paddingLeft = 24,
@@ -111,17 +104,17 @@ local BackBtn = styled("view") {
 }
 
 -- Module-level constant style for the collection wrapper View (stable identity).
-local collectionViewStyle = { flexDirection = "column", flexShrink = 0 }
+local collectionViewStyle: Sx.Styles = { flexDirection = "column", flexShrink = 0 }
 
 -- Stable card styles: selection change swaps the reference, so unchanged cards skip
 -- setProperty (the renderer's reactive-prop effect compares references).
-local cardStyleSelected = { marginBottom = 8, opacity = 1 }
-local cardStyleUnselected = { marginBottom = 8, opacity = 0.7 }
+local cardStyleSelected: Sx.Styles = { marginBottom = 8, opacity = 1 }
+local cardStyleUnselected: Sx.Styles = { marginBottom = 8, opacity = 0.7 }
 
 -- Card component. `selected` is an accessor; only cards whose selection changes update.
-local function CarCard(props)
-	local style = Sx.createMemo(function()
-		if readProp(props.selected) then
+local function CarCard(props: { name: string, collectionName: string, fileName: string, selected: Sx.Signalish<boolean>, onSelect: (string, string) -> () })
+	local style = Sx.createMemo(function(): Sx.Styles
+		if Sx.read(props.selected) then
 			return cardStyleSelected
 		end
 		return cardStyleUnselected
@@ -130,7 +123,7 @@ local function CarCard(props)
 	return x(GlassCard) {
 		name = "glasscard " .. props.name,
 		color = function()
-			return readProp(props.selected) and "#4fc3f7" or "rgba(255,255,255,0.15)"
+			return Sx.read(props.selected) and "#4fc3f7" or "rgba(255,255,255,0.15)"
 		end,
 		style = style,
 		onmousedown = function()
@@ -141,11 +134,11 @@ local function CarCard(props)
 	}
 end
 
-local function CollectionSection(props)
-	return x("view") {
+local function CollectionSection(props: { name: string, active: Sx.Signalish<boolean>, onSelect: (string) -> () })
+	return x(Sx.View) {
 		name = "inner view " .. props.name,
-		style = Sx.createMemo(function()
-			local active = readProp(props.active)
+		style = Sx.createMemo(function(): Sx.Styles
+			local active = Sx.read(props.active)
 			return {
 				marginBottom = 6,
 				paddingTop = 4,
@@ -161,9 +154,9 @@ local function CollectionSection(props)
 		onmousedown = function()
 			props.onSelect(props.name)
 		end,
-		x("text") {
-			style = Sx.createMemo(function()
-				local active = readProp(props.active)
+		x(Sx.Text) {
+			style = Sx.createMemo(function(): Sx.TextStyles
+				local active = Sx.read(props.active)
 				return { fontSize = 12, color = active and "#4fc3f7" or "rgba(255,255,255,0.4)" }
 			end),
 			props.name,
@@ -172,11 +165,11 @@ local function CollectionSection(props)
 end
 
 local function Garage()
-	local currentCar, setCurrentCar = Sx.createSignal(nil)
-	local collections, setCollections = Sx.createSignal(nil)
-	local currentCollection, setCurrentCollection = Sx.createSignal(nil)
-	local searchQuery, setSearchQuery = Sx.createSignal("")
-	local rootRef = {}
+	local currentCar, setCurrentCar = Sx.createSignal<<CarStatsData | nil>>(nil)
+	local collections, setCollections = Sx.createSignal<<CarCollectionsData | nil>>(nil)
+	local currentCollection, setCurrentCollection = Sx.createSignal<<CarCollectionData | nil>>(nil)
+	local searchQuery, setSearchQuery = Sx.createSignal<<string>>("")
+	local rootRef: { current: Component? } = {}
 
 	Sx.createEffect(function()
 		local u1 = UiLib.onEvent("garage:currentCar", function(data)
@@ -285,7 +278,7 @@ local function Garage()
 				},
 			},
 
-			x("textinput") {
+			x(Sx.TextInput) {
 				style = {
 					width = "100%",
 					paddingTop = 10,
@@ -326,11 +319,11 @@ local function Garage()
 			},
 
 			x(CollectionList) {
-				x(Sx.For) {
+				x(Sx.For<<CarCollectionData>>) {
 					each = filteredCollections,
-					function(item, index)
+					function(item: () -> CarCollectionData, index: number)
 						local col = item()
-						return x("view") {
+						return x(Sx.View) {
 							name = "view " .. col.name,
 							style = collectionViewStyle,
 							x(CollectionSection) {
@@ -341,9 +334,9 @@ local function Garage()
 								end,
 								onSelect = handleSelectCollection,
 							},
-							x(Sx.For) {
+							x(Sx.For<<CarStatsData>>) {
 								each = function() return col.cars end,
-								function(item2, index2)
+								function(item2: () -> CarStatsData, index2: number)
 									local car = item2()
 									return x(CarCard) {
 										name = car.name,
@@ -377,7 +370,7 @@ local function Garage()
 				onmousedown = function()
 					UiLib.call("back", {})
 				end,
-				x("text") {
+				x(Sx.Text) {
 					style = { fontSize = 14, fontStyle = "bold", color = "rgba(255,255,255,0.6)" },
 					"← Back to Menu",
 				},

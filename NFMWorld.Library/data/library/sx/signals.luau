@@ -24,25 +24,49 @@ local STALE = 0
 local PENDING = 1
 local CLEAN = 2
 
-local Owner = nil      -- currently executing owner (root or computation)
-local Listener = nil   -- currently executing computation (memo/effect)
+-- A computation is a memo or effect node in the reactive graph.
+export type Computation = {
+    fn: (any) -> any,
+    value: any,
+    state: number,
+    sources: { SignalNode<any> | Computation }?,
+    observers: { Computation }?,
+    owned: { Computation }?,
+    cleanups: { (() -> ()) }?,
+    owner: Computation?,
+    disposed: boolean,
+    isEffect: boolean,
+}
+
+-- A signal cell: { value, observers }.
+export type SignalNode<T> = {
+    kind: "signal",
+    value: T?,
+    observers: { Computation }?,
+}
+
+-- Any node that can be read (and thus observed): a signal or a computation.
+export type ReactiveNode<T> = SignalNode<T> | Computation
+
+local Owner: Computation? = nil    -- currently executing owner (root or computation)
+local Listener: Computation? = nil -- currently executing computation (memo/effect)
 local batching = 0
-local Flushing = false
-local Scheduled = false
-local Scheduler = nil
-local PendingEffects = {}
+local Flushing: boolean = false
+local Scheduled: boolean = false
+local Scheduler: (((() -> ())) -> ())? = nil
+local PendingEffects: { Computation } = {}
 local effectQueueLen = 0
 
 -- ------------------------------------------------------------------ forward decls
-local updateEffect
-local updateMemo
-local disposeComputation
+local updateEffect: (node: Computation) -> ()
+local updateMemo: (node: Computation) -> ()
+local disposeComputation: (node: Computation) -> ()
 
 -- ------------------------------------------------------------------ graph helpers
 
 -- Register `comp` (the current Listener) as an observer of node `n`, and `n` as a
 -- source of `comp`. No-op if `n` is already a source of `comp`.
-local function trackRead(n)
+local function trackRead(n: ReactiveNode<any>)
     local comp = Listener
     if comp == nil then
         return
@@ -66,7 +90,7 @@ local function trackRead(n)
 end
 
 -- Remove `comp` from `n.observers`.
-local function untrackSource(n, comp)
+local function untrackSource(n: SignalNode<any> | Computation, comp: Computation)
     if n.observers then
         local obs = n.observers
         for i = #obs, 1, -1 do
@@ -80,7 +104,7 @@ end
 
 -- Tear down a computation: run cleanups, dispose owned children (marking them disposed so
 -- the effect queue skips them even if they were already queued STALE), unsubscribe sources.
-local function cleanNode(node)
+local function cleanNode(node: Computation)
     if node.cleanups then
         local cleanups = node.cleanups
         for i = #cleanups, 1, -1 do
@@ -106,7 +130,7 @@ local function cleanNode(node)
     end
 end
 
-disposeComputation = function(node)
+disposeComputation = function(node: Computation)
     if node.disposed then
         return
     end
@@ -125,14 +149,14 @@ end
 
 -- ------------------------------------------------------------------ scheduling
 
-local function queueEffect(node)
+local function queueEffect(node: Computation)
     effectQueueLen = effectQueueLen + 1
     PendingEffects[effectQueueLen] = node
 end
 
 -- Mark a computation STALE and propagate upward to its observers. Effects get queued;
 -- memos are lazy (recomputed on read) but their staleness still reaches downstream effects.
-local function markStale(comp)
+local function markStale(comp: Computation)
     if comp.disposed or comp.state == STALE then
         return
     end
@@ -149,7 +173,7 @@ local function markStale(comp)
 end
 
 -- Recompute a memo (pull). Only runs when STALE. Stores the result into node.value.
-updateMemo = function(node)
+updateMemo = function(node: Computation)
     if node.state ~= STALE then
         return
     end
@@ -167,7 +191,7 @@ updateMemo = function(node)
 end
 
 -- Run an effect's fn, resubscribing dependencies.
-updateEffect = function(node)
+updateEffect = function(node: Computation)
     cleanNode(node)
     local prevOwner, prevListener = Owner, Listener
     Owner = node
@@ -182,7 +206,7 @@ end
 
 -- Drain the effect queue. Re-entrant writes (effects writing signals) push onto the
 -- same queue and are processed in the same flush (dependency order, FIFO).
-local function flushEffects()
+local function flushEffects(): ()
     local guard = 0
     while effectQueueLen > 0 do
         guard = guard + 1
@@ -203,7 +227,7 @@ local function flushEffects()
     end
 end
 
-local function scheduleFlush()
+local function scheduleFlush(): ()
     if batching > 0 then
         return
     end
@@ -229,17 +253,17 @@ export type Accessor<T> = () -> T
 
 export type Signal<T> = { get: Accessor<T>, set: (T) -> () }
 
-local function createSignal<T>(value: T?): (Accessor<T>, (T) -> ())
-    local s = {
+local function createSignal<T>(value: T): (Accessor<T>, (T) -> ())
+    local s: SignalNode<T> = {
         kind = "signal",
         value = value,
         observers = nil,
     }
-    local read = function()
+    local read: Accessor<T> = function()
         trackRead(s)
         return s.value
     end
-    local write = function(newValue)
+    local write: (T) -> () = function(newValue)
         if newValue == s.value then
             return
         end
@@ -255,8 +279,8 @@ local function createSignal<T>(value: T?): (Accessor<T>, (T) -> ())
     return read, write
 end
 
-local function createComputation(fn, isEffect)
-    local node = {
+local function createComputation(fn: (any) -> any, isEffect: boolean): Computation
+    local node: Computation = {
         fn = fn,
         value = nil,
         state = STALE,
@@ -280,7 +304,7 @@ end
 local function createMemo<T>(fn: () -> T, value: T?): Accessor<T>
     local node = createComputation(fn, false)
     node.value = value
-    local read = function()
+    local read: Accessor<T> = function()
         if node.state ~= CLEAN then
             updateMemo(node)
         end
@@ -300,7 +324,7 @@ end
 
 local function createRoot<T>(fn: ((() -> ())) -> T): T
     local prevOwner, prevListener = Owner, Listener
-    local root = {
+    local root: Computation = {
         fn = nil,
         value = nil,
         state = CLEAN,

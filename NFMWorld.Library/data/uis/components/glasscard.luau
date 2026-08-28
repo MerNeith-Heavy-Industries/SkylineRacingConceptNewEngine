@@ -1,3 +1,4 @@
+--!strict
 -- Shared glassmorphism primitives (Sx port of preact glasscard.luau).
 --
 -- GlassCard: card with a 3px colored top accent bar. `color` and `style` may be plain
@@ -21,9 +22,7 @@ end
 
 -- ── GlassCard ────────────────────────────────────────────────────
 
-local function GlassCard(props)
-	props = props or {}
-
+local function GlassCard(props: { color: Sx.Signalish<string>?, style: Sx.Signalish<Sx.Styles>?, children: { any }? } & Sx.ViewProps)
 	local baseStyle = {
 		backgroundColor = "rgba(255,255,255,0.05)",
 		borderRadius = 12,
@@ -37,29 +36,17 @@ local function GlassCard(props)
 		overflow = "hidden",
 	}
 
-	local color
-	if type(props.color) == "function" then
-		color = props.color
-	else
-		color = function()
-			return props.color or "#4fc3f7"
-		end
-	end
-
 	-- Reference-stable merged style: rebuilds only when the resolved input style changes
 	-- reference, so a card whose selection didn't change reuses the same table and the
 	-- reactive style prop skips the setProperty (dom.luau compares references).
-	local lastInput = nil
-	local cachedStyle = nil
+	local lastInput: Sx.Styles | nil = nil
+	local cachedStyle: Sx.Styles | nil = nil
 	local style = Sx.createMemo(function()
 		local ps = props.style
-		local input = ps
-		if type(ps) == "function" then
-			input = ps()
-		end
+		local input = Sx.read(ps)
 		if input ~= lastInput then
 			lastInput = input
-			local s = {}
+			local s: Sx.Styles = {}
 			for k, v in pairs(baseStyle) do
 				s[k] = v
 			end
@@ -73,14 +60,14 @@ local function GlassCard(props)
 		return cachedStyle
 	end)
 
-	local barStyle = Sx.createMemo(function()
+	local barStyle = Sx.createMemo(function(): Sx.Styles
 		return {
 			position = "absolute",
 			top = 0,
 			left = 0,
 			right = 0,
 			height = 3,
-			backgroundColor = color(),
+			backgroundColor = Sx.read(props.color) or "#4fc3f7",
 			borderTopLeftRadius = 12,
 			borderTopRightRadius = 12,
 		}
@@ -94,40 +81,30 @@ local function GlassCard(props)
 	end
 	wrapperProps.style = style
 
-	local children = { x("view") { style = barStyle } }
+	local children = { x(Sx.View) { style = barStyle } }
 	for _, c in ipairs(props.children or {}) do
 		children[#children + 1] = c
 	end
 
 	return {
-		type = "view",
+		type = 'view',
 		props = wrapperProps,
 		children = children,
-	}
+	} :: Sx.NodeDescriptor
 end
 
 -- ── StatBar ──────────────────────────────────────────────────────
 -- Labeled progress bar (value is 0..1). `value` may be a plain number or an accessor;
 -- a reactive value updates only this bar's width text + fill width.
 
-local function StatBar(props)
-	props = props or {}
+local function StatBar(props: { label: string, value: Sx.Signalish<number>?, color: string?, height: number? })
 	local color = props.color or "#4fc3f7"
 	local height = props.height or 8
 	local label = props.label or ""
 
-	local valueAccessor
-	if type(props.value) == "function" then
-		valueAccessor = props.value
-	else
-		valueAccessor = function()
-			return props.value or 0
-		end
-	end
-
-	return x("view") {
+	return x(Sx.View) {
 		style = { marginBottom = 8, flexDirection = "column", gap = 4 },
-		x("view") {
+		x(Sx.View) {
 			style = {
 				display = "flex",
 				flexDirection = "row",
@@ -135,19 +112,19 @@ local function StatBar(props)
 				alignItems = "center",
 				marginBottom = 4,
 			},
-			x("text") {
+			x(Sx.Text) {
 				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
 				label,
 			},
-			x("text") {
+			x(Sx.Text) {
 				style = { fontSize = 12, color = "rgba(255,255,255,0.7)", flexShrink = 0 },
 				function()
-					local v = clamp01(valueAccessor())
+					local v = clamp01(Sx.read(props.value) or 0)
 					return ("%d%%"):format(math.floor(v * 100 + 0.5))
 				end,
 			},
 		},
-		x("view") {
+		x(Sx.View) {
 			style = {
 				width = "100%",
 				height = height,
@@ -155,9 +132,9 @@ local function StatBar(props)
 				borderRadius = height / 2,
 				overflow = "hidden",
 			},
-			x("view") {
-				style = Sx.createMemo(function()
-					local v = clamp01(valueAccessor())
+			x(Sx.View) {
+				style = Sx.createMemo(function(): Sx.Styles
+					local v = clamp01(Sx.read(props.value) or 0)
 					return {
 						width = ("%d%%"):format(math.floor(v * 100 + 0.5)),
 						height = "100%",
@@ -174,7 +151,7 @@ end
 -- Large center-screen text overlay. Splits on "\n". `text` may be a plain string or an
 -- accessor; lines are rendered through a keyed For so a changing text updates in place.
 
-local function splitLines(s)
+local function splitLines(s: string): { string }
 	local t = {}
 	local start = 1
 	while true do
@@ -189,21 +166,11 @@ local function splitLines(s)
 	return t
 end
 
-local function CenterText(props)
-	props = props or {}
+local function CenterText(props: { text: Sx.Signalish<string>?, size: number?, color: string? })
 	local size = props.size or 64
 	local color = props.color or "rgba(255,255,255,0.9)"
 
-	local textAccessor
-	if type(props.text) == "function" then
-		textAccessor = props.text
-	else
-		textAccessor = function()
-			return props.text or ""
-		end
-	end
-
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			position = "absolute",
 			top = 0,
@@ -215,12 +182,12 @@ local function CenterText(props)
 			alignItems = "center",
 			justifyContent = "center",
 		},
-		x(Sx.For) {
+		x(Sx.For<<string>>) {
 			each = function()
-				return splitLines(textAccessor() or "")
+				return splitLines(Sx.read(props.text) or "")
 			end,
 			function(item, index)
-				return x("text") {
+				return x(Sx.Text) {
 					style = { fontSize = size, color = color, fontStyle = "bold", textAlign = "center" },
 					item(),
 				}

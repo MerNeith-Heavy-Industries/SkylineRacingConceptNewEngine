@@ -3,46 +3,59 @@
 -- preact-luau/src/ui.luau. Kept as the single choke point so the renderer (dom.luau)
 -- never touches the global directly.
 
-local UiLib = _G.UiLib
+local UiLib = UiLib
 
 local Host = {}
 
+-- Host node / root handle: opaque host objects owned by UiLib/Yoga.
+export type HostNode = any
+
 Host.defer = UiLib.defer
 
-function Host.createRoot()
-    return UiLib.createRoot()
+local createRoot = UiLib.createRoot
+local createInstance = UiLib.createInstance
+local createTextInstance = UiLib.createTextInstance
+local appendChild = UiLib.appendChild
+local insertBefore = UiLib.insertBefore
+local removeChild = UiLib.removeChild
+local setProperty = UiLib.setProperty
+local commitTextUpdate = UiLib.commitTextUpdate
+local setActiveRoot = UiLib.setActiveRoot
+
+function Host.createRoot(): any
+    return createRoot()
 end
 
-function Host.createInstance(vtype, props)
-    return UiLib.createInstance(vtype, props)
+function Host.createInstance(vtype: string, props: { [string]: any }): any
+    return createInstance(vtype, props)
 end
 
-function Host.createTextInstance(text)
-    return UiLib.createTextInstance(text)
+function Host.createTextInstance(text: string): any
+    return createTextInstance(text)
 end
 
-function Host.appendChild(parent, child)
-    UiLib.appendChild(parent, child)
+function Host.appendChild(parent: any, child: any): ()
+    appendChild(parent, child)
 end
 
-function Host.insertBefore(parent, child, before)
-    UiLib.insertBefore(parent, child, before)
+function Host.insertBefore(parent: any, child: any, before: any): ()
+    insertBefore(parent, child, before)
 end
 
-function Host.removeChild(parent, child)
-    UiLib.removeChild(parent, child)
+function Host.removeChild(parent: any, child: any): ()
+    removeChild(parent, child)
 end
 
-function Host.setProperty(instance, key, value)
-    UiLib.setProperty(instance, key, value)
+function Host.setProperty(instance: any, key: string, value: any): ()
+    setProperty(instance, key, value)
 end
 
-function Host.commitTextUpdate(textInstance, oldText, newText)
-    UiLib.commitTextUpdate(textInstance, oldText, newText)
+function Host.commitTextUpdate(textInstance: any, oldText: string, newText: string): ()
+    commitTextUpdate(textInstance, oldText, newText)
 end
 
-function Host.setActiveRoot(root)
-    UiLib.setActiveRoot(root)
+function Host.setActiveRoot(root: any): ()
+    setActiveRoot(root)
 end
 
 return Host
