@@ -194,6 +194,8 @@ local function styled<P>(tag: (P) -> t.NodeDescriptor, name: string?): (StyledIn
         if tagName and #tagName > 0 then
             tagName = tagName:sub(1, 1):upper() .. tagName:sub(2)
             Sx.debug.setStyledName(component, tagName)
+        else
+            Sx.debug.setStyledName(component, 'StyledComponent')
         end
 
         Sx.debug.setCallSite(component, debug.getinfo(2))
