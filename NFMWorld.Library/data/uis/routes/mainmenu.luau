@@ -1,9 +1,7 @@
+--!strict
 -- Sx port of the main menu. Fine-grained: components run once; the page stack and
 -- account are signals; the item list is a keyed For; reactive text children update via
 -- single commitTextUpdate calls. No vdom diffing, no per-frame re-render.
---
--- NOTE: the Settings component is not ported to Sx yet — its embedded view is kept
--- commented out below.
 
 local Sx = require("../../library/sx/index")
 local styled = Sx.styled
@@ -26,7 +24,7 @@ type MenuPage = {
 
 -- ── Styled components ────────────────────────────────────────────
 
-local Root = styled("view") {
+local Root = styled(Sx.View) {
 	width = "100%",
 	height = "100%",
 	display = "flex",
@@ -35,20 +33,20 @@ local Root = styled("view") {
 	justifyContent = "center",
 }
 
-local PageTitle = styled("text") {
+local PageTitle = styled(Sx.Text) {
 	fontSize = 48,
 	fontStyle = "bold",
 	fontFamily = "Adventure",
 	marginBottom = 8,
 }
 
-local Subtitle = styled("text") {
+local Subtitle = styled(Sx.Text) {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.5)",
 	marginBottom = 40,
 }
 
-local Items = styled("view") {
+local Items = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "column",
 	gap = 6,
@@ -56,7 +54,7 @@ local Items = styled("view") {
 	alignItems = "stretch",
 }
 
-local ItemBtn = styled("view") {
+local ItemBtn = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "column",
 	alignItems = "flex-start",
@@ -71,20 +69,20 @@ local ItemBtn = styled("view") {
 	},
 }
 
-local ItemLabel = styled("text") {
+local ItemLabel = styled(Sx.Text) {
 	color = "#fff",
 	textAlign = "left",
 	fontSize = 16,
 	fontStyle = "bold",
 }
 
-local ItemDesc = styled("text") {
+local ItemDesc = styled(Sx.Text) {
 	fontSize = 12,
 	color = "rgba(255,255,255,0.4)",
 	marginTop = 2,
 }
 
-local BackBtn = styled("text") {
+local BackBtn = styled(Sx.Text) {
 	marginTop = 12,
 	padding = 10,
 	fontSize = 14,
@@ -97,7 +95,7 @@ local BackBtn = styled("text") {
 	hover = { color = "#fff", backgroundColor = "rgba(255,255,255,0.08)" },
 }
 
-local Footer = styled("text") {
+local Footer = styled(Sx.Text) {
 	position = "absolute",
 	bottom = 20,
 	fontSize = 11,
@@ -107,9 +105,9 @@ local Footer = styled("text") {
 -- ── Component ────────────────────────────────────────────────────
 
 local MainMenu = function()
-	local account, setAccount = Sx.createSignal(nil)
-	local pageStack, setPageStack = Sx.createSignal({})
-	local currentView, setCurrentView = Sx.createSignal("menu")
+	local account, setAccount = Sx.createSignal<<AccountData | nil>>(nil)
+	local pageStack, setPageStack = Sx.createSignal<<{ MenuPage }>>({})
+	local currentView, setCurrentView = Sx.createSignal<<"menu" | "settings">>("menu")
 
 	Sx.createEffect(function()
 		local unsub = UiLib.onEvent("main-menu:account", function(value)
@@ -402,11 +400,11 @@ local MainMenu = function()
 					-- Menu items (keyed For)
 					x(Items) {
 						name = "Items",
-						x(Sx.For) {
+						x(Sx.For<<MenuItem>>) {
 							each = function()
 								return currentPage().items
 							end,
-							function(item, index)
+							function(item: () -> MenuItem, index: number)
 								return x(ItemBtn) {
 									name = "ItemBtn",
 									onmousedown = function(event)

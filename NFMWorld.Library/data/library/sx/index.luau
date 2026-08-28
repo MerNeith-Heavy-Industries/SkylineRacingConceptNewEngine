@@ -8,10 +8,10 @@ local signals = require('./signals')
 local h = require('./h')
 local dom = require('./dom')
 local styled = require('./styled')
-local types = require('./types')
+local t = require('./types')
 
-export type NodeDescriptor = types.NodeDescriptor
-export type Component<P> = types.Component<P>
+export type NodeDescriptor = t.NodeDescriptor
+export type Component<P> = t.Component<P>
 
 export type Accessor<T> = signals.Accessor<T>
 export type Signal<T> = signals.Signal<T>
@@ -34,10 +34,57 @@ Sx.flushSync = signals.flushSync
 
 -- hyperscript
 Sx.x = h.x
+Sx.View = h.View
+Sx.Text = h.Text
+Sx.Image = h.Image
+Sx.TextInput = h.TextInput
+export type ViewProps = h.ViewProps
+export type TextProps = h.TextProps
+export type ImageProps = h.ImageProps
+export type TextInputProps = h.TextInputProps
+export type Styles = h.Styles
+export type TextStyles = h.TextStyles
+export type TextInputStyles = h.TextInputStyles
+export type Signalish<T> = h.Signalish<T>
+
+type function Unwrap(t)
+    local function unwrapOne(ty)
+        if ty:is("function") then
+            local params = ty:parameters()
+            local rets = ty:returns()
+
+            -- treat nil as "zero-length pack"
+            local pcount = params and #params or (params and params.head and #params.head) or 0
+            local rhead = rets and (rets.head or rets) or nil
+
+            if pcount == 0 and rhead and #rhead == 1 then
+                return rhead[1]
+            end
+        end
+        return ty
+    end
+
+    if t:is("union") then
+        local results = {}
+        for _, part in t:components() do
+            table.insert(results, unwrapOne(part))
+        end
+        return types.unionof(table.unpack(results))
+    else
+        return unwrapOne(t)
+    end
+end
+
+function Sx.read<T>(v: Signalish<T>): Unwrap<T>
+    if type(v) == "function" then
+        return v()
+    end
+    return v
+end
 
 -- renderer + flow components
 Sx.render = dom.render
-Sx.Fragment = dom.Fragment
+Sx.Fragment = dom.Fragment :: ({}) -> t.NodeDescriptor
 Sx.Show = dom.Show
 Sx.Switch = dom.Switch
 Sx.Match = dom.Match

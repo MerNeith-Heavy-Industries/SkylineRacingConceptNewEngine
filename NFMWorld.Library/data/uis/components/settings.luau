@@ -1,3 +1,4 @@
+--!strict
 -- Settings view (Sx port of preact settings.luau). Rendered by the main menu and the
 -- pause menu. Fine-grained: `config`/`options`/`tab`/`capturingAction`/modals are
 -- signals; tab content and controls read them reactively through accessors, so editing a
@@ -12,14 +13,6 @@ local x = Sx.x
 local function clamp01(v)
 	if v < 0 then return 0 end
 	if v > 1 then return 1 end
-	return v
-end
-
--- value-or-accessor: returns the current value whether `v` is plain or a getter.
-local function readProp(v)
-	if type(v) == "function" then
-		return v()
-	end
 	return v
 end
 
@@ -67,7 +60,7 @@ local DISTANT_OUTLINE_BEHAVIORS = {
 
 -- ── Styled primitives ────────────────────────────────────────────
 
-local Root = styled("view") {
+local Root = styled(Sx.View) {
 	width = "100%",
 	height = "100%",
 	display = "flex",
@@ -75,14 +68,14 @@ local Root = styled("view") {
 	backgroundColor = "rgba(0,0,0,0.65)",
 }
 
-local Header = styled("text") {
+local Header = styled(Sx.Text) {
 	fontSize = 28,
 	fontStyle = "bold",
 	textAlign = "center",
 	marginTop = 20,
 }
 
-local TabBar = styled("view") {
+local TabBar = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "row",
 	justifyContent = "center",
@@ -92,7 +85,7 @@ local TabBar = styled("view") {
 	paddingRight = 40,
 }
 
-local Content = styled("view") {
+local Content = styled(Sx.View) {
 	flex = 1,
 	overflow = "scroll",
 	paddingTop = 20,
@@ -101,7 +94,7 @@ local Content = styled("view") {
 	paddingBottom = 10,
 }
 
-local BottomBar = styled("view") {
+local BottomBar = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -115,14 +108,14 @@ local BottomBar = styled("view") {
 	borderColor = "rgba(255,255,255,0.08)",
 }
 
-local SectionLabel = styled("text") {
+local SectionLabel = styled(Sx.Text) {
 	fontSize = 11,
 	fontStyle = "bold",
 	color = "rgba(255,255,255,0.35)",
 	marginBottom = 10,
 }
 
-local Row = styled("view") {
+local Row = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -132,27 +125,27 @@ local Row = styled("view") {
 	paddingBottom = 6,
 }
 
-local Label = styled("text") {
+local Label = styled(Sx.Text) {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.8)",
 	minWidth = 140,
 }
 
-local SliderValue = styled("text") {
+local SliderValue = styled(Sx.Text) {
 	fontSize = 12,
 	color = "rgba(255,255,255,0.5)",
 	marginLeft = 8,
 	minWidth = 50,
 }
 
-local Divider = styled("view") {
+local Divider = styled(Sx.View) {
 	height = 1,
 	backgroundColor = "rgba(255,255,255,0.06)",
 	marginTop = 12,
 	marginBottom = 12,
 }
 
-local ResetLink = styled("text") {
+local ResetLink = styled(Sx.Text) {
 	color = "rgba(255,255,255,0.35)",
 	fontSize = 12,
 	paddingTop = 8,
@@ -160,7 +153,7 @@ local ResetLink = styled("text") {
 	hover = { color = "rgba(255,152,0,0.7)" },
 }
 
-local KeyBindingRow = styled("view") {
+local KeyBindingRow = styled(Sx.View) {
 	display = "flex",
 	flexDirection = "row",
 	alignItems = "center",
@@ -170,7 +163,7 @@ local KeyBindingRow = styled("view") {
 	paddingBottom = 4,
 }
 
-local KeyBindingLabel = styled("text") {
+local KeyBindingLabel = styled(Sx.Text) {
 	fontSize = 13,
 	color = "rgba(255,255,255,0.75)",
 	minWidth = 160,
@@ -179,10 +172,10 @@ local KeyBindingLabel = styled("text") {
 -- ── Interactive controls (approximations of HTML controls) ───────
 -- Reactive props (`active`/`capturing`/`checked`/`value`) may be accessors.
 
-local function TabBtn(props)
-	return x("view") {
-		style = Sx.createMemo(function()
-			local active = readProp(props.active)
+local function TabBtn(props: { active: Sx.Signalish<boolean?>, label: Sx.Signalish<string>, onPress: () -> () })
+	return x(Sx.View) {
+		style = Sx.createMemo(function(): Sx.Styles
+			local active = Sx.read(props.active)
 			return {
 				paddingTop = 8,
 				paddingBottom = 8,
@@ -195,9 +188,9 @@ local function TabBtn(props)
 			}
 		end),
 		onmousedown = function() props.onPress() end,
-		x("text") {
-			style = Sx.createMemo(function()
-				local active = readProp(props.active)
+		x(Sx.Text) {
+			style = Sx.createMemo(function(): Sx.TextStyles
+				local active = Sx.read(props.active)
 				return {
 					fontSize = 13,
 					fontStyle = "bold",
@@ -209,11 +202,11 @@ local function TabBtn(props)
 	}
 end
 
-local function Btn(props)
+local function Btn(props: { variant: "primary" | nil, label: Sx.Signalish<string>, onPress: () -> () })
 	local primary = props.variant == "primary"
 	local bg = primary and "rgba(79,195,247,0.22)" or "rgba(255,255,255,0.06)"
 	local border = primary and "rgba(79,195,247,0.35)" or "rgba(255,255,255,0.12)"
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			paddingTop = 10,
 			paddingBottom = 10,
@@ -225,14 +218,14 @@ local function Btn(props)
 			borderRadius = 6,
 		},
 		onmousedown = function() props.onPress() end,
-		x("text") { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+		x(Sx.Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
 	}
 end
 
-local function KeyBindingBtn(props)
-	return x("view") {
-		style = Sx.createMemo(function()
-			local capturing = readProp(props.capturing)
+local function KeyBindingBtn(props: { capturing: Sx.Signalish<boolean?>, label: Sx.Signalish<string>, onPress: () -> () })
+	return x(Sx.View) {
+		style = Sx.createMemo(function(): Sx.Styles
+			local capturing = Sx.read(props.capturing)
 			return {
 				paddingTop = 5,
 				paddingBottom = 5,
@@ -247,24 +240,24 @@ local function KeyBindingBtn(props)
 			}
 		end),
 		onmousedown = function() props.onPress() end,
-		x("text") {
-			style = Sx.createMemo(function()
-				local capturing = readProp(props.capturing)
+		x(Sx.Text) {
+			style = Sx.createMemo(function(): Sx.TextStyles
+				local capturing = Sx.read(props.capturing)
 				return { fontSize = 13, fontStyle = "bold", color = capturing and "#ffb300" or "#fff" }
 			end),
 			function()
-				return readProp(props.label)
+				return Sx.read(props.label)
 			end,
 		},
 	}
 end
 
 -- Click-to-cycle select (approx of <select>): click advances to next option.
-local function Select(props)
-	return x("view") {
-		style = Sx.createMemo(function()
+local function Select(props: { options: {string}, value: Sx.Signalish<number?>, onSelect: ((number) -> ()) })
+	return x(Sx.View) {
+		style = Sx.createMemo(function(): Sx.Styles
 			local options = props.options or {}
-			local value = readProp(props.value) or 0
+			local value = Sx.read(props.value) or 0
 			local label = ""
 			if #options > 0 then
 				label = options[value + 1] or options[1] or ""
@@ -285,12 +278,12 @@ local function Select(props)
 		onmousedown = function()
 			local options = props.options or {}
 			if #options == 0 then return end
-			props.onSelect(((readProp(props.value) or 0) + 1) % #options)
+			props.onSelect(((Sx.read(props.value) or 0) + 1) % #options)
 		end,
-		x("text") {
-			style = Sx.createMemo(function()
+		x(Sx.Text) {
+			style = Sx.createMemo(function(): Sx.TextStyles
 				local options = props.options or {}
-				local value = readProp(props.value) or 0
+				local value = Sx.read(props.value) or 0
 				local label = ""
 				if #options > 0 then
 					label = options[value + 1] or options[1] or ""
@@ -299,7 +292,7 @@ local function Select(props)
 			end),
 			function()
 				local options = props.options or {}
-				local value = readProp(props.value) or 0
+				local value = Sx.read(props.value) or 0
 				if #options > 0 then
 					return options[value + 1] or options[1] or ""
 				end
@@ -309,10 +302,10 @@ local function Select(props)
 	}
 end
 
-local function Checkbox(props)
-	return x("view") {
-		style = Sx.createMemo(function()
-			local checked = readProp(props.checked)
+local function Checkbox(props: { checked: Sx.Signalish<boolean>, onToggle: () -> () })
+	return x(Sx.View) {
+		style = Sx.createMemo(function(): Sx.Styles
+			local checked = Sx.read(props.checked)
 			return {
 				width = 16,
 				height = 16,
@@ -329,12 +322,12 @@ end
 local TRACK_W = 160
 
 -- Click/drag slider: maps pointer X on a 160px track to [min, max] at `step`.
-local function Slider(props)
+local function Slider(props: { min: number, max: number, step: number, value: Sx.Signalish<number>, onValue: ((number) -> ()) })
 	local min = props.min or 0
 	local max = props.max or 1
 	local step = props.step or 1
 
-	local function setFromX(px)
+	local function setFromX(px: number)
 		local frac = clamp01(px / TRACK_W)
 		local raw = min + frac * (max - min)
 		local stepped = raw
@@ -346,7 +339,7 @@ local function Slider(props)
 		props.onValue(stepped)
 	end
 
-	return x("view") {
+	return x(Sx.View) {
 		style = {
 			width = TRACK_W,
 			height = 20,
@@ -356,7 +349,7 @@ local function Slider(props)
 		},
 		onmousedown = function(event) setFromX(event.relativePosition.x) end,
 		onmousedrag = function(event) setFromX(event.relativePosition.x) end,
-		x("view") {
+			x(Sx.View) {
 			style = {
 				width = "100%",
 				height = 4,
@@ -364,9 +357,9 @@ local function Slider(props)
 				borderRadius = 2,
 				overflow = "hidden",
 			},
-			x("view") {
-				style = Sx.createMemo(function()
-					local value = readProp(props.value) or 0
+			x(Sx.View) {
+				style = Sx.createMemo(function(): Sx.Styles
+					local value = Sx.read(props.value) or 0
 					local frac = clamp01((value - min) / (max - min))
 					return {
 						width = ("%d%%"):format(frac * 100),
@@ -382,7 +375,7 @@ end
 -- ── Tabs ─────────────────────────────────────────────────────────
 -- Each tab receives the `config` GETTER (signal) so reads are reactive.
 
-local function VideoTab(props)
+local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options: Sx.Accessor<AvailableOptions>, set: ((key: string, value: any) -> ()) })
 	local config = props.config
 	local options = props.options
 	local set = props.set
@@ -493,7 +486,7 @@ local function VideoTab(props)
 	}
 end
 
-local function AudioTab(props)
+local function AudioTab(props: { config: Sx.Accessor<SettingsSnapshot>, set: ((key: string, value: any) -> ()) })
 	local config = props.config
 	local set = props.set
 
@@ -539,7 +532,7 @@ local function AudioTab(props)
 	}
 end
 
-local function GameTab(props)
+local function GameTab(props: { config: Sx.Accessor<SettingsSnapshot>, set: ((key: string, value: any) -> ()), onReset: () -> () })
 	local config = props.config
 	local set = props.set
 
@@ -585,7 +578,7 @@ local function GameTab(props)
 	}
 end
 
-local function KeyboardTab(props)
+local function KeyboardTab(props: { config: Sx.Accessor<SettingsSnapshot>, onReset: () -> (), capturingAction: Sx.Accessor<string?>, startCapture: ((action: string) -> ()) })
 	local config = props.config
 
 	return x(Sx.Fragment) {
@@ -598,12 +591,12 @@ local function KeyboardTab(props)
 
 		x(Divider) {},
 
-		x(Sx.For) {
-			each = function()
+		x(Sx.For<<KeyBindingData>>) {
+			each = function(): {KeyBindingData}
 				local c = config()
 				return c ~= nil and c.keyBindings or {}
 			end,
-			function(item, index)
+			function(item: () -> KeyBindingData, index: number)
 				local b = item()
 				return x(KeyBindingRow) {
 					x(KeyBindingLabel) { b.displayName ~= "" and b.displayName or b.action },
@@ -623,7 +616,7 @@ local function KeyboardTab(props)
 
 		x(Sx.Show) {
 			when = function() return props.capturingAction() ~= nil end,
-			x("text") {
+			x(Sx.Text) {
 				style = { fontSize = 12, color = "rgba(255,152,0,0.6)", marginTop = 10, textAlign = "center" },
 				"Press any key to bind, or ESC to cancel...",
 			},
@@ -637,13 +630,17 @@ local function Settings(props)
 	local onClose = props.onClose
 
 	local tab, setTab = Sx.createSignal("video")
-	local config, setConfig = Sx.createSignal(nil)
-	local options, setOptions = Sx.createSignal(nil)
-	local capturingAction, setCapturingAction = Sx.createSignal(nil)
-	local confirmModal, setConfirmModal = Sx.createSignal(nil)
-	local restartModal, setRestartModal = Sx.createSignal(false)
+	local config, setConfig = Sx.createSignal<<SettingsSnapshot | nil>>(nil)
+	local options, setOptions = Sx.createSignal<<AvailableOptions | nil>>(nil)
+	local capturingAction, setCapturingAction = Sx.createSignal<<string | nil>>(nil)
+	local confirmModal, setConfirmModal = Sx.createSignal<<{
+        title: string,
+        message: string,
+        onConfirm: () -> (),
+    } | nil>>(nil)
+	local restartModal, setRestartModal = Sx.createSignal<<boolean>>(false)
 	local pendingClose = { current = false }
-	local rootRef = {}
+	local rootRef: { current: Component? } = {}
 
 	local function copySnapshot(c)
 		local t = SettingsSnapshot.new()
@@ -812,7 +809,7 @@ local function Settings(props)
 				when = function() return config() == nil or options() == nil end,
 				x(Header) { "Settings" },
 				x(Content) {
-					x("text") {
+					x(Sx.Text) {
 						style = { textAlign = "center", color = "rgba(255,255,255,0.3)", marginTop = 80 },
 						"Loading settings...",
 					},
@@ -866,14 +863,14 @@ local function Settings(props)
 
 				x(Sx.Show) {
 					when = function() return confirmModal() ~= nil and not restartModal() end,
-					x("view") {
+					x(Sx.View) {
 						style = {
 							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
 							display = "flex", alignItems = "center", justifyContent = "center",
 							backgroundColor = "rgba(0,0,0,0.5)",
 						},
 						onmousedown = function() setConfirmModal(nil) end,
-						x("view") {
+						x(Sx.View) {
 							style = {
 								backgroundColor = "#1a1a2e",
 								borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
@@ -883,9 +880,9 @@ local function Settings(props)
 								alignItems = "center",
 							},
 							onmousedown = function() end,
-							x("text") { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return confirmModal().title end },
-							x("text") { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, function() return confirmModal().message end },
-							x("view") {
+							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return confirmModal().title end },
+							x(Sx.Text) { style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20 }, function() return confirmModal().message end },
+							x(Sx.View) {
 								style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
 								x(Btn) { variant = "primary", label = "Yes", onPress = function() return confirmModal().onConfirm() end },
 								x(Btn) { label = "No", onPress = function() setConfirmModal(nil) end },
@@ -896,13 +893,13 @@ local function Settings(props)
 
 				x(Sx.Show) {
 					when = function() return restartModal() end,
-					x("view") {
+					x(Sx.View) {
 						style = {
 							position = "absolute", top = 0, left = 0, right = 0, bottom = 0,
 							display = "flex", alignItems = "center", justifyContent = "center",
 							backgroundColor = "rgba(0,0,0,0.5)",
 						},
-						x("view") {
+						x(Sx.View) {
 							style = {
 								backgroundColor = "#1a1a2e",
 								borderWidth = 1, borderColor = "rgba(255,255,255,0.12)",
@@ -911,12 +908,12 @@ local function Settings(props)
 								minWidth = 320,
 								alignItems = "center",
 							},
-							x("text") { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, "Restart Required" },
-							x("text") {
+							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, "Restart Required" },
+							x(Sx.Text) {
 								style = { fontSize = 13, color = "rgba(255,255,255,0.5)", marginBottom = 20, textAlign = "center" },
 								"The renderer has been changed. A restart is required for this change to take effect.",
 							},
-							x("view") {
+							x(Sx.View) {
 								style = { display = "flex", flexDirection = "row", justifyContent = "center", gap = 10 },
 								x(Btn) { variant = "primary", label = "Restart Now", onPress = function() UiLib.call("restartNow", {}) end },
 								x(Btn) {

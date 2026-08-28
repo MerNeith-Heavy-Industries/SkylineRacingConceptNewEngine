@@ -1,3 +1,4 @@
+--!strict
 -- Test page (Sx port of preact test.luau), ported from
 -- nfm-world/data/html/src/pages/Test.tsx.
 
@@ -5,7 +6,7 @@ local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 
-local Root = styled("view") {
+local Root = styled(Sx.View) {
 	width = "100%",
 	height = "100%",
 	display = "flex",
@@ -15,12 +16,12 @@ local Root = styled("view") {
 	gap = 16,
 }
 
-local Label = styled("text") {
+local Label = styled(Sx.Text) {
 	fontSize = 14,
 	color = "rgba(255,255,255,0.5)",
 }
 
-local Counter = styled("text") {
+local Counter = styled(Sx.Text) {
 	fontSize = 64,
 	fontStyle = "bold",
 	color = "#4fc3f7",
@@ -43,7 +44,7 @@ local function TestPage()
 	return x(Root) {
 		x(Label) { "CEF + Preact Test" },
 		x(Counter) { function() return ("%d"):format(counter()) end },
-		x("view") {
+		x(Sx.View) {
 			style = {
 				paddingTop = 10,
 				paddingBottom = 10,
@@ -55,9 +56,9 @@ local function TestPage()
 				borderRadius = 6,
 			},
 			onmousedown = function() UiLib.call("increment", {}) end,
-			x("text") { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "Increment (JS → C#)" },
+			x(Sx.Text) { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "Increment (JS → C#)" },
 		},
-		x("view") {
+		x(Sx.View) {
 			style = {
 				paddingTop = 10,
 				paddingBottom = 10,
@@ -69,7 +70,7 @@ local function TestPage()
 				borderRadius = 6,
 			},
 			onmousedown = function() UiLib.call("back", {}) end,
-			x("text") { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "← Back to Menu" },
+			x(Sx.Text) { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "← Back to Menu" },
 		},
 	}
 end

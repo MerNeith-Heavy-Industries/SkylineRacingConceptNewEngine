@@ -1,3 +1,4 @@
+--!strict
 -- Sx styled — CSS-in-JS component wrapper (Sx port of library/styled.luau).
 --
 -- styled(tag)(baseStyle) -> component(props). The component renders a host element of
@@ -10,15 +11,16 @@
 -- dropped (Sx For/Index handle keying).
 
 local Sx = require('./signals')
+local types = require('./types')
 
-local function copyStyle(dst, src)
+local function copyStyle(dst: { [string]: any }, src: { [string]: any }): ()
     for k, v in pairs(src) do
         dst[k] = v
     end
 end
 
-local function styled(tag)
-    return function(baseStyle)
+local function styled<P>(tag: (P) -> types.NodeDescriptor): (baseStyle: any?) -> ((P) -> types.NodeDescriptor)
+    return function(baseStyle: any?)
         baseStyle = baseStyle or {}
         local hasHover = baseStyle.hover ~= nil
 
@@ -30,12 +32,12 @@ local function styled(tag)
             end
         end
 
-        return function(props)
+        return function(props: P?)
             props = props or {}
 
-            local named = {}
+            local named: { [string]: any } = {}
             for k, v in pairs(props) do
-                if k ~= "style" and k ~= "children" and k ~= "key" then
+                if k ~= "style" then
                     named[k] = v
                 end
             end
@@ -88,11 +90,7 @@ local function styled(tag)
                 named.style = s
             end
 
-            return {
-                type = tag,
-                props = named,
-                children = props.children or {},
-            }
+            return Sx.x(tag, named)
         end
     end
 end
