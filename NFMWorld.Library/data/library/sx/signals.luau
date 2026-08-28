@@ -57,6 +57,29 @@ local Scheduler: (((() -> ())) -> ())? = nil
 local PendingEffects: { Computation } = {}
 local effectQueueLen = 0
 
+-- ------------------------------------------------------------------ devtools hooks
+-- Optional introspection used by the Sx devtools. Everything here defaults to inert so
+-- the hot path is untouched unless devtools installs a hook / reads the registry.
+local DebugHooks = {
+    onChange = nil, -- (node) -> () called after a signal write that marks observers stale
+}
+local LiveNodes: { { node: any, kind: string }? } = {} -- registry of live signal/computation nodes
+
+local function registerLive(node: any, kind: string)
+    LiveNodes[#LiveNodes + 1] = { node = node, kind = kind }
+end
+
+local function unregisterLive(node: any)
+    for i = 1, #LiveNodes do
+        if LiveNodes[i] and LiveNodes[i].node == node then
+            local last = LiveNodes[#LiveNodes]
+            LiveNodes[i] = last
+            LiveNodes[#LiveNodes] = nil
+            break
+        end
+    end
+end
+
 -- ------------------------------------------------------------------ forward decls
 local updateEffect: (node: Computation) -> ()
 local updateMemo: (node: Computation) -> ()
@@ -135,6 +158,7 @@ disposeComputation = function(node: Computation)
         return
     end
     node.disposed = true
+    unregisterLive(node)
     cleanNode(node)
     if node.owner and node.owner.owned then
         local owned = node.owner.owned
@@ -259,6 +283,7 @@ local function createSignal<T>(value: T): (Accessor<T>, (T) -> ())
         value = value,
         observers = nil,
     }
+    registerLive(s, "signal")
     local read: Accessor<T> = function()
         trackRead(s)
         return s.value
@@ -275,6 +300,9 @@ local function createSignal<T>(value: T): (Accessor<T>, (T) -> ())
             end
         end
         scheduleFlush()
+        if DebugHooks.onChange and s.observers and #s.observers > 0 then
+            DebugHooks.onChange(s)
+        end
     end
     return read, write
 end
@@ -298,6 +326,7 @@ local function createComputation(fn: (any) -> any, isEffect: boolean): Computati
         end
         table.insert(Owner.owned, node)
     end
+    registerLive(node, "computation")
     return node
 end
 
@@ -412,6 +441,21 @@ end
 local function flushSync(): ()
     flushEffects()
 end
+
+Sx.debug = {
+    setOnChange = function(fn: ((any) -> ())?)
+        DebugHooks.onChange = fn
+    end,
+    list = function(): { { kind: string, node: any } }
+        local out: { { kind: string, node: any } } = {}
+        for _, entry in ipairs(LiveNodes) do
+            if entry and (entry.node.disposed == nil or not entry.node.disposed) then
+                out[#out + 1] = { kind = entry.kind, node = entry.node }
+            end
+        end
+        return out
+    end,
+}
 
 Sx.createSignal = createSignal
 Sx.createMemo = createMemo

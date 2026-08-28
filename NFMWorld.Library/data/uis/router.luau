@@ -1,3 +1,4 @@
+--!strict
 -- Sx hash-based router. Subscribes to C# navigation (nfmw:navigate) via a signal and
 -- renders the matching page through Sx.Switch. Only the main-menu route is ported to Sx
 -- yet; the other routes are commented out.
@@ -9,6 +10,7 @@ local MainMenu = require("./routes/mainmenu")
 local Garage = require("./routes/garage")
 local RaceHud = require("./routes/racehud")
 local TestPage = require("./routes/test")
+local DevTools = require("./components/devtools")
 
 local defaultRoute = "main-menu"
 
@@ -23,28 +25,39 @@ local function Router()
 	end)
 
 	return (
-		x(Sx.Switch) {
-			x(Sx.Match) {
-				when = function() return route() == "main-menu" end,
-				x(MainMenu) {},
+		x(Sx.View) {
+			style = {
+				width = "100%",
+				height = "100%",
+				position = "relative",
+				display = "flex",
+				flexDirection = "column",
 			},
-			x(Sx.Match) {
-				when = function() return route() == "garage" end,
-				x(Garage) {},
+			x(Sx.Switch) {
+				x(Sx.Match) {
+					when = function() return route() == "main-menu" end,
+					x(MainMenu) {},
+				},
+				x(Sx.Match) {
+					when = function() return route() == "garage" end,
+					x(Garage) {},
+				},
+				x(Sx.Match) {
+					when = function() return route() == "race" end,
+					x(RaceHud) {},
+				},
+				x(Sx.Match) {
+					when = function() return route() == "test" end,
+					x(TestPage) {},
+				},
+				-- Fallback: any unhandled route shows the default page (main menu)
+				x(Sx.Match) {
+					when = function() return true end,
+					x(MainMenu) {},
+				},
 			},
-			x(Sx.Match) {
-				when = function() return route() == "race" end,
-				x(RaceHud) {},
-			},
-			x(Sx.Match) {
-				when = function() return route() == "test" end,
-				x(TestPage) {},
-			},
-			-- Fallback: any unhandled route shows the default page (main menu)
-			x(Sx.Match) {
-				when = function() return true end,
-				x(MainMenu) {},
-			},
+			-- DevTools overlay (top-right inspector for the Sx renderer).
+			x(DevTools) {},
 		}
 	)
 end

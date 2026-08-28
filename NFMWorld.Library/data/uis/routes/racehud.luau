@@ -55,26 +55,32 @@ local function PowerDamageBars()
 		},
 		x(GlassCard) {
 			color = "#ff5252",
-			x(CornerLabel) { x(CornerLabelText) { "Power" } },
-			x(StatBar) {
-				label = "",
-				value = function()
-					return power() / 0.98
-				end,
-				color = "#ff5252",
-				height = 10,
+			x(Sx.View) {
+				style = { flexDirection = "column" },
+				x(CornerLabel) { x(CornerLabelText) { "Power" } },
+				x(StatBar) {
+					label = "",
+					value = function()
+						return power() / 0.98
+					end,
+					color = "#ff5252",
+					height = 10,
+				},
 			},
 		},
 		x(GlassCard) {
 			color = "#4fc3f7",
-			x(CornerLabel) { x(CornerLabelText) { "Damage" } },
-			x(StatBar) {
-				label = "",
-				value = function()
-					return damage()
-				end,
-				color = "#4fc3f7",
-				height = 10,
+			x(Sx.View) {
+				style = { flexDirection = "column" },
+				x(CornerLabel) { x(CornerLabelText) { "Damage" } },
+				x(StatBar) {
+					label = "",
+					value = function()
+						return damage()
+					end,
+					color = "#4fc3f7",
+					height = 10,
+				},
 			},
 		},
 	}
@@ -126,67 +132,71 @@ local function Splits()
 		x(GlassCard) {
 			color = "#69f0ae",
 			x(Sx.View) {
-				style = {
-					marginBottom = 4,
-					letterSpacing = 1,
-				},
-				x(Sx.Text) {
-					style = { fontSize = 11, color = "rgba(255,255,255,0.5)" },
-					function()
-						return "Lap " .. lap() .. "/" .. totalLaps()
-					end,
-				},
-			},
-			x(Sx.View) {
-				x(Sx.Text) {
+				style = { flexDirection = "column" },
+
+				x(Sx.View) {
 					style = {
-						fontSize = 28,
-						fontStyle = "bold",
-						strokeColor = "black"
+						marginBottom = 4,
+						letterSpacing = 1,
 					},
-					function()
-						return formatTime(lapTime())
-					end,
+					x(Sx.Text) {
+						style = { fontSize = 11, color = "rgba(255,255,255,0.5)" },
+						function()
+							return "Lap " .. lap() .. "/" .. totalLaps()
+						end,
+					},
 				},
-			},
-			x(Sx.Show) {
-				when = function()
-					return chkDiffMs() and lastChkDiffMs()
-				end,
-				x(Sx.Text) {
-					style = {
-						fontSize = 11,
-						color = "rgba(255,255,255,0.4)",
-						marginTop = 4,
-						strokeColor = "rgba(100,100,100,0.4)",
+				x(Sx.View) {
+					x(Sx.Text) {
+						style = {
+							fontSize = 28,
+							fontStyle = "bold",
+							strokeColor = "black",
+						},
+						function()
+							return formatTime(lapTime())
+						end,
 					},
-					function()
-						return "CHK Diff: "
-							.. formatTime(chkDiffMs())
-							.. " (Last: "
-							.. formatTime(lastChkDiffMs())
-							.. ")"
-					end,
 				},
-			},
-			x(Sx.Show) {
-				when = function()
-					return lapDiffMs() and lastLapDiffMs()
-				end,
-				x(Sx.Text) {
-					style = {
-						fontSize = 11,
-						color = "rgba(255,255,255,0.4)",
-						marginTop = 4,
-						strokeColor = "rgba(100,100,100,0.4)",
-					},
-					function()
-						return "Lap Diff: "
-							.. formatTime(lapDiffMs())
-							.. " (Last: "
-							.. formatTime(lastLapDiffMs())
-							.. ")"
+				x(Sx.Show) {
+					when = function()
+						return chkDiffMs() and lastChkDiffMs()
 					end,
+					x(Sx.Text) {
+						style = {
+							fontSize = 11,
+							color = "rgba(255,255,255,0.4)",
+							marginTop = 4,
+							strokeColor = "rgba(100,100,100,0.4)",
+						},
+						function()
+							return "CHK Diff: "
+								.. formatTime(chkDiffMs())
+								.. " (Last: "
+								.. formatTime(lastChkDiffMs())
+								.. ")"
+						end,
+					},
+				},
+				x(Sx.Show) {
+					when = function()
+						return lapDiffMs() and lastLapDiffMs()
+					end,
+					x(Sx.Text) {
+						style = {
+							fontSize = 11,
+							color = "rgba(255,255,255,0.4)",
+							marginTop = 4,
+							strokeColor = "rgba(100,100,100,0.4)",
+						},
+						function()
+							return "Lap Diff: "
+								.. formatTime(lapDiffMs())
+								.. " (Last: "
+								.. formatTime(lastLapDiffMs())
+								.. ")"
+						end,
+					},
 				},
 			},
 		},
@@ -221,13 +231,21 @@ local function Speed()
 		},
 		x(GlassCard) {
 			color = "#c3f74f",
-			x(Sx.Text) {
-				style = { fontSize = 56, fontStyle = "bold", strokeColor = "black" },
-				function()
-					return ("%d"):format(speedKmh())
-				end,
+			x(Sx.View) {
+				style = {
+					flexDirection = "column",
+				},
+				x(Sx.Text) {
+					style = { fontSize = 56, fontStyle = "bold", strokeColor = "black" },
+					function()
+						return ("%d"):format(speedKmh())
+					end,
+				},
+				x(Sx.Text) {
+					style = { fontSize = 14, color = "rgba(255,255,255,0.5)", strokeColor = "rgba(100,100,100,0.4)" },
+					"KM/H",
+				},
 			},
-			x(Sx.Text) { style = { fontSize = 14, color = "rgba(255,255,255,0.5)", strokeColor = "rgba(100,100,100,0.4)" }, "KM/H" },
 		},
 	}
 end
@@ -309,8 +327,11 @@ local function RaceHud()
 						return ("%d/%d"):format(position(), totalRacers())
 					end,
 				},
-				x(Sx.Text) { style = { fontSize = 12, color = "rgba(255,255,255,0.5)", strokeColor = "rgba(100,100,100,0.4)" }, "POSITION" },
-			}
+				x(Sx.Text) {
+					style = { fontSize = 12, color = "rgba(255,255,255,0.5)", strokeColor = "rgba(100,100,100,0.4)" },
+					"POSITION",
+				},
+			},
 		},
 
 		x(Sx.Show) {
