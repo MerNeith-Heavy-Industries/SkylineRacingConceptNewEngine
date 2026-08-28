@@ -35,12 +35,27 @@ local DevTools = { enabled = false, root = nil }
 local DevStack = {}
 
 local function devName(fn: any): string
+    -- Cheap guard: when devtools is off we never use the name, so don't spend a pcall.
+    if not DevTools.enabled then
+        return ""
+    end
     if type(fn) == "string" then
         return fn
     end
+    -- Lua-CSharp's debug.info(fn, "n") returns the function's stored declaration name
+    -- (recorded on the prototype at parse time). Fall back to the definition site
+    -- (source + line) via debug.getinfo if the function is unnamed.
     local ok, name = pcall(debug.info, fn, "n")
     if ok and type(name) == "string" and name ~= "" and name ~= "?" then
         return name
+    end
+    local ok2, info = pcall(debug.getinfo, fn)
+    if ok2 and type(info) == "table" then
+        local src = info.short_src
+        local line = info.linedefined
+        if type(src) == "string" and src ~= "" and type(line) == "number" and line > 0 then
+            return src .. ":" .. line
+        end
     end
     return "anonymous"
 end
@@ -380,7 +395,13 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
     end
     compProps.children = descriptor.children
 
-    local devNode = devPush("component", devName(fn))
+    local name = devName(fn)
+    local devNode = devPush("component", name)
+    if DevTools.enabled then
+        -- Tag the component's root computation so signals/memos created inside it can be
+        -- attributed to this component in the devtools signals tab.
+        Sx.debug.setPendingRootName(name)
+    end
 
     local rootDispose = nil
     local mounted = nil

@@ -43,6 +43,7 @@ export type SignalNode<T> = {
     kind: "signal",
     value: T?,
     observers: { Computation }?,
+    owner: Computation?,
 }
 
 -- Any node that can be read (and thus observed): a signal or a computation.
@@ -56,6 +57,7 @@ local Scheduled: boolean = false
 local Scheduler: (((() -> ())) -> ())? = nil
 local PendingEffects: { Computation } = {}
 local effectQueueLen = 0
+local PendingRootName: string? = nil -- devtools: name to tag the next createRoot's root computation
 
 -- ------------------------------------------------------------------ devtools hooks
 -- Optional introspection used by the Sx devtools. Everything here defaults to inert so
@@ -282,6 +284,7 @@ local function createSignal<T>(value: T): (Accessor<T>, (T) -> ())
         kind = "signal",
         value = value,
         observers = nil,
+        owner = Owner,
     }
     registerLive(s, "signal")
     local read: Accessor<T> = function()
@@ -365,6 +368,12 @@ local function createRoot<T>(fn: ((() -> ())) -> T): T
         disposed = false,
         isEffect = false,
     }
+    if PendingRootName ~= nil then
+        -- devtools: tag this root so signals/memos created under it can be attributed to
+        -- the owning component via Sx.debug.ownerName().
+        root.__devName = PendingRootName
+        PendingRootName = nil
+    end
     Owner = root
     Listener = nil
     local ok, result = pcall(function()
@@ -454,6 +463,22 @@ Sx.debug = {
             end
         end
         return out
+    end,
+    -- devtools: name to tag the next component root (set by the renderer before a mount).
+    setPendingRootName = function(name: string?)
+        PendingRootName = name
+    end,
+    -- devtools: walk the reactive owner chain up to the nearest component root and return
+    -- the component that owns this signal/memo (or nil for module-level / unnamed scopes).
+    ownerName = function(node: any): string?
+        local cur = node
+        while cur do
+            if cur.__devName ~= nil then
+                return cur.__devName
+            end
+            cur = cur.owner
+        end
+        return nil
     end,
 }
 
