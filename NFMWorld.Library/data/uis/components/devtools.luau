@@ -1,0 +1,457 @@
+--!strict
+-- Sx devtools: an in-game inspector overlay for the Sx fine-grained renderer, inspired
+-- by solid-devtools and the ClaySharp debugger.
+--
+-- Shows two views backed by the core introspection added to sx/signals.luau and
+-- sx/dom.luau:
+--   * "Tree"  — the mounted component / flow / host-element tree (Sx.devtools.snapshot()).
+--   * "Signals" — live signal / memo / effect nodes with their current value
+--     (Sx.debug.list()). Effects and memos are registered as computations; only
+--     signals / memos are really interesting, effects are shown for completeness.
+--
+-- Enable tree capture at module load (before Sx.render), then refresh manually or turn
+-- on auto-refresh (which re-snapshots once per frame when any signal with observers is
+-- written). This is debug tooling: it intentionally runs on the same reactive host it
+-- inspects, so treat its own signals as noise.
+
+local Sx = require("../../library/sx/index")
+local styled = Sx.styled
+local x = Sx.x
+
+-- Enable component-tree capture before the app renders.
+Sx.devtools.enable()
+
+-- ── Styled primitives ────────────────────────────────────────────
+
+local Panel = styled(Sx.View) {
+	position = "absolute",
+	top = 12,
+	right = 12,
+	width = 400,
+	height = "60%",
+	maxHeight = "70%",
+	backgroundColor = "rgba(10,12,20,0.94)",
+	borderWidth = 1,
+	borderColor = "rgba(79,195,247,0.4)",
+	borderRadius = 10,
+	display = "flex",
+	flexDirection = "column",
+	paddingTop = 8,
+	paddingBottom = 8,
+	paddingLeft = 10,
+	paddingRight = 10,
+	gap = 6,
+	overflow = "hidden",
+}
+
+local Header = styled(Sx.View) {
+	display = "flex",
+	flexDirection = "row",
+	alignItems = "center",
+	justifyContent = "space-between",
+	flexShrink = 0,
+	paddingBottom = 6,
+	borderBottomWidth = 1,
+	borderColor = "rgba(255,255,255,0.08)",
+}
+
+local Title = styled(Sx.Text) {
+	fontSize = 12,
+	fontStyle = "bold",
+	color = "#4fc3f7",
+}
+
+local CloseBtn = styled(Sx.Text) {
+	fontSize = 13,
+	color = "rgba(255,255,255,0.5)",
+	paddingLeft = 8,
+	paddingRight = 8,
+	hover = { color = "#fff" },
+}
+
+local Tabs = styled(Sx.View) {
+	display = "flex",
+	flexDirection = "row",
+	flexShrink = 0,
+	gap = 6,
+}
+
+local TabLabel = styled(Sx.Text) {
+	fontSize = 11,
+}
+
+local Toolbar = styled(Sx.View) {
+	display = "flex",
+	flexDirection = "row",
+	flexShrink = 0,
+	gap = 6,
+	alignItems = "center",
+}
+
+local ToolBtn = styled(Sx.View) {
+	paddingTop = 2,
+	paddingBottom = 2,
+	paddingLeft = 8,
+	paddingRight = 8,
+	borderRadius = 4,
+	backgroundColor = "rgba(255,255,255,0.06)",
+	hover = { backgroundColor = "rgba(79,195,247,0.3)" },
+}
+
+local Body = styled(Sx.View) {
+	display = "flex",
+	flexDirection = "column",
+	alignItems = "stretch",
+	flexGrow = 1,
+	flexShrink = 1,
+	minHeight = 0,
+	gap = 2,
+	overflow = "scroll",
+}
+
+local Launcher = styled(Sx.View) {
+	position = "absolute",
+	top = 12,
+	right = 12,
+	paddingTop = 6,
+	paddingBottom = 6,
+	paddingLeft = 10,
+	paddingRight = 10,
+	backgroundColor = "rgba(10,12,20,0.85)",
+	borderWidth = 1,
+	borderColor = "rgba(79,195,247,0.5)",
+	borderRadius = 6,
+	hover = { backgroundColor = "rgba(79,195,247,0.25)" },
+}
+
+-- ── Formatting helpers ───────────────────────────────────────────
+
+local function nodeLabel(node: any): string
+	if node.kind == "component" then
+		return node.name
+	elseif node.kind == "host" then
+		return "<" .. node.name .. ">"
+	end
+	return "[" .. node.name .. "]"
+end
+
+local function colorFor(node: any): string
+	if node.kind == "component" then
+		return "#7ee787" -- green
+	elseif node.kind == "host" then
+		return "rgba(255,255,255,0.55)"
+	end
+	return "#d2a8ff" -- purple (flow)
+end
+
+local function fmtValue(v: any): string
+	local t = type(v)
+	if v == nil then
+		return "nil"
+	end
+	if t == "string" then
+		return '"' .. v .. '"'
+	end
+	if t == "number" or t == "boolean" then
+		return tostring(v)
+	end
+	if t == "function" then
+		return "fn"
+	end
+	if t == "table" then
+		local n = #v
+		if n > 0 then
+			return "array[" .. n .. "]"
+		end
+		return "table"
+	end
+	return tostring(v)
+end
+
+-- ── Tree view ────────────────────────────────────────────────────
+
+local function TreeNode(props: { node: any, depth: number })
+	local expanded, setExpanded = Sx.createSignal<<boolean>>(props.depth < 2)
+	local hasChildren = #props.node.children > 0
+
+	return x(Sx.View) {
+		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%" },
+		x(Sx.View) {
+			style = {
+				display = "flex",
+				flexDirection = "row",
+				alignItems = "center",
+				alignSelf = "stretch",
+				width = "100%",
+				flexShrink = 0,
+				paddingLeft = props.depth * 10,
+				paddingTop = 1,
+				paddingBottom = 1,
+			},
+			onmousedown = function()
+				if hasChildren then
+					setExpanded(not expanded())
+				end
+			end,
+			x(Sx.Text) {
+				style = { fontSize = 11, fontStyle = "bold", color = colorFor(props.node) },
+				function()
+					local marker = "  "
+					if hasChildren then
+						marker = expanded() and "▾ " or "▸ "
+					end
+					return marker .. nodeLabel(props.node)
+				end,
+			},
+		},
+		x(Sx.Show) {
+			when = function() return expanded() and hasChildren end,
+			x(Sx.For) {
+				each = function() return props.node.children end,
+				function(item, index)
+					return x(TreeNode) { node = item(), depth = props.depth + 1 }
+				end,
+			},
+		},
+	}
+end
+
+local function TreeView(props: { snapshot: () -> any })
+	return x(Sx.View) {
+		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%", gap = 2 },
+		x(Sx.For<<any>>) {
+			each = function(): {any}
+				local root = props.snapshot()
+				if root == nil then
+					return {}
+				end
+				return { root }
+			end,
+			function(item, index)
+				return x(TreeNode) { node = item(), depth = 0 }
+			end,
+		},
+	}
+end
+
+-- ── Signals view ─────────────────────────────────────────────────
+
+local function SignalsView(props: { items: () -> { any } })
+	return x(Sx.View) {
+		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%", gap = 1 },
+		x(Sx.For) {
+			each = function() return props.items() end,
+			function(item, index)
+				local s = item()
+				local tag = s.kind == "signal" and "sig" or (s.isEffect and "eff" or "mem")
+				local tagColor = s.kind == "signal" and "#79b8ff" or (s.isEffect and "#ffab70" or "#f97583")
+				return x(Sx.View) {
+					style = { display = "flex", flexDirection = "row", alignItems = "center", width = "100%", flexShrink = 0, gap = 6 },
+					x(Sx.Text) {
+						style = { fontSize = 10, color = tagColor, fontStyle = "bold", width = 28 },
+						tag,
+					},
+					x(Sx.Text) {
+						style = { fontSize = 10, color = "rgba(126,231,135,0.8)", fontStyle = "bold", flexGrow = 1 },
+						s.owner and s.owner or "-",
+					},
+					x(Sx.Text) {
+						style = { fontSize = 11, color = "rgba(255,255,255,0.85)", width = 80 },
+						fmtValue(s.value),
+					},
+				}
+			end,
+		},
+	}
+end
+
+-- ── DevTools ─────────────────────────────────────────────────────
+
+local function DevTools()
+	local open, setOpen = Sx.createSignal<<boolean>>(true)
+	local tab, setTab = Sx.createSignal<<"tree" | "signals">>("tree")
+	local snapshot, setSnapshot = Sx.createSignal<<any | nil>>(nil)
+	local sigList, setSigList = Sx.createSignal<<{ any }>>({})
+	local auto, setAuto = Sx.createSignal<<boolean>>(false)
+
+	-- Snapshot data is written into signals read by the tree / signals For components. The
+	-- `refreshing` guard stops refresh()'s own writes from re-triggering the onChange
+	-- auto-refresh hook (which would otherwise loop forever, since snapshot/sigList are
+	-- observed by the renderer). The tree only re-snapshots when its structural signature
+	-- changes, so expansion state survives value-only updates.
+	local refreshing = false
+	local dirty = false
+	local autoTick = 0
+	local lastTreeSig = ""
+
+	-- Auto-refresh is throttled: a full refresh (tree walk + signals list rebuild) is
+	-- expensive, so even though signal writes happen every frame it only runs every N
+	-- frames. Effects are also filtered out of the signals list (they are the bulk of
+	-- live nodes and aren't useful to inspect), which keeps each rebuild small.
+	local AUTOREFRESH_EVERY_N = 10
+
+	local function treeSig(node: any): string
+		if node == nil then
+			return ""
+		end
+		local s = node.kind .. ":" .. node.name .. "("
+		for _, c in ipairs(node.children) do
+			s = s .. treeSig(c) .. ","
+		end
+		return s .. ")"
+	end
+
+	local function refresh()
+		refreshing = true
+		-- The full-tree snapshot is the most expensive part; only pay for it when the
+		-- tree tab is actually visible.
+		if tab() == "tree" then
+			local tree = Sx.devtools.snapshot()
+			local sig = treeSig(tree)
+			if sig ~= lastTreeSig then
+				lastTreeSig = sig
+				setSnapshot(tree)
+			end
+		end
+		local entries = Sx.debug.list()
+		local arr: { any } = {}
+		for _, e in ipairs(entries) do
+			-- Drop effects (isEffect computations): they dominate the live-node count and
+			-- aren't useful to inspect here. Only signals + memos are shown.
+			if e.kind == "signal" or (e.kind == "computation" and e.node.isEffect ~= true) then
+				arr[#arr + 1] = {
+					kind = e.kind,
+					isEffect = false,
+					value = e.node.value,
+					owner = Sx.debug.ownerName(e.node),
+				}
+			end
+		end
+		setSigList(arr)
+		refreshing = false
+	end
+
+	local function scheduleAutoRefresh()
+		if refreshing then
+			return
+		end
+		if not dirty then
+			dirty = true
+			UiLib.defer(function()
+				dirty = false
+				autoTick = autoTick + 1
+				if autoTick % AUTOREFRESH_EVERY_N == 0 then
+					refresh()
+				end
+			end)
+		end
+	end
+
+	-- First snapshot after the whole tree has mounted this frame.
+	Sx.onMount(function()
+		UiLib.defer(function()
+			refresh()
+		end)
+	end)
+
+	-- Auto-refresh: when enabled, any signal write that marks observers stale schedules ONE
+	-- refresh per frame (coalesced by the frame scheduler). refresh()'s own writes are
+	-- ignored via the `refreshing` guard, so there is no feedback loop.
+	Sx.createEffect(function()
+		if auto() then
+			Sx.debug.setOnChange(scheduleAutoRefresh)
+		else
+			Sx.debug.setOnChange(nil)
+		end
+	end)
+
+	-- Clean up the global hook when this component unmounts.
+	Sx.onCleanup(function()
+		Sx.debug.setOnChange(nil)
+	end)
+
+	return x(Sx.Fragment) {
+		x(Sx.Show) {
+			when = function() return not open() end,
+			x(Launcher) {
+				onmousedown = function() setOpen(true) end,
+				x(Sx.Text) { style = { fontSize = 12, fontStyle = "bold", color = "#4fc3f7" }, "Sx" },
+			},
+		},
+		x(Sx.Show) {
+			when = open,
+			x(Panel) {
+			x(Header) {
+				x(Title) { "Sx DevTools" },
+				x(CloseBtn) {
+					onmousedown = function() setOpen(false) end,
+					"✕",
+				},
+			},
+			x(Tabs) {
+				x(Sx.View) {
+					style = function(): Sx.Styles
+						return {
+							paddingTop = 3, paddingBottom = 3, paddingLeft = 8, paddingRight = 8,
+							borderRadius = 5,
+							backgroundColor = tab() == "tree" and "rgba(79,195,247,0.35)" or "rgba(255,255,255,0.05)",
+						}
+					end,
+					onmousedown = function() setTab("tree") end,
+					x(TabLabel) {
+						style = function(): Sx.TextStyles
+							return { color = tab() == "tree" and "#fff" or "rgba(255,255,255,0.6)" }
+						end,
+						"Tree",
+					},
+				},
+				x(Sx.View) {
+					style = function(): Sx.Styles
+						return {
+							paddingTop = 3, paddingBottom = 3, paddingLeft = 8, paddingRight = 8,
+							borderRadius = 5,
+							backgroundColor = tab() == "signals" and "rgba(79,195,247,0.35)" or "rgba(255,255,255,0.05)",
+						}
+					end,
+					onmousedown = function() setTab("signals") end,
+					x(TabLabel) {
+						style = function(): Sx.TextStyles
+							return { color = tab() == "signals" and "#fff" or "rgba(255,255,255,0.6)" }
+						end,
+						"Signals",
+					},
+				},
+			},
+			x(Toolbar) {
+				x(ToolBtn) {
+					onmousedown = refresh,
+					x(Sx.Text) { style = { fontSize = 10, color = "rgba(255,255,255,0.7)" }, "Refresh" },
+				},
+				x(ToolBtn) {
+					onmousedown = function() setAuto(not auto()) end,
+					x(Sx.Text) {
+						style = function(): Sx.TextStyles
+							return { fontSize = 10, color = auto() and "#4fc3f7" or "rgba(255,255,255,0.5)" }
+						end,
+						function()
+							return auto() and "Auto: on" or "Auto: off"
+						end,
+					},
+				},
+			},
+			x(Body) {
+				x(Sx.Show) {
+					when = function() return tab() == "tree" end,
+					x(TreeView) { snapshot = snapshot },
+				},
+				x(Sx.Show) {
+					when = function() return tab() == "signals" end,
+					x(SignalsView) { items = sigList },
+				},
+			},
+		},
+		},
+	}
+end
+
+return DevTools
