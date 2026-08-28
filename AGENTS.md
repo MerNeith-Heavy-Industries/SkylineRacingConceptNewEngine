@@ -13,7 +13,7 @@ NFM World is a custom game engine and game written primarily in **C#**, targetin
 - **Big picture:** The playable app lives in `nfm-world/` (`NFMWorld.csproj`) and depends on many sibling projects (notably `NFMWorld.Library`, `NvgSharp.FNA.Core`, `NvgSharp.Text.FNA.Core`, `MonoGame.ImGuiNet`). Treat `nfm-world` as the app entry; engine/framework code is in `FNA/` and rendering/GUI glue under `NvgSharp/`, `FontStashSharp/`, and `MonoGame.ImGuiNet/`.
 
 Key characteristics:
-- **CEF-based UI** — the UI is a Preact + TypeScript SPA rendered by CEF (Chromium Embedded Framework) as a transparent overlay. Replaces both the legacy XAML and Reactor VDOM systems.
+- **Luau/Yoga-based UI** — the UI is written in Luau (`data/uis/` + `NFMWorld.Library/data/library/`) and rendered by a Yoga layout host (`nfm-world/UI/UiRenderer.cs` / `NFMWorld.Library/Util/Lua/LuaUiLibrary.cs`). Replaces the legacy XAML, Reactor VDOM, and CEF systems. New UI work targets **Sx**; preact-luau remains for unmigrated routes.
 - A custom **shader pipeline**: shaders in `data/shaders/*.fx` are compiled to `.fxb` via `fxc.exe` during build.
 - **Fixed-point math** (`FixedMathSharp`) for deterministic physics and gameplay logic.
 - A **virtual file system** (`Maxine.VFS`) with path abstraction over real and in-memory backends.
@@ -32,8 +32,7 @@ Key characteristics:
 
 - **Project patterns / conventions:**
   - Most subprojects are referenced with `ProjectReference` from `NFMWorld.csproj`; prefer keeping cross-project ref changes small and use `dotnet sln` only when adding/removing whole projects.
-  - Game logic vs UI: `NFMWorld.Library` contains backend/game systems; UI, rendering and native interops live in `nfm-world/`, `NvgSharp/`, and `FNA/`. The CEF-based UI lives in `nfm-world/UI/Cef/` (C# integration) and `data/html/` (Preact SPA frontend).
-  - **CefGlue.BrowserProcess** and **NFMWorld.BrowserProcess** are the CEF subprocess hosts. `NFMWorld.BrowserProcess` extends the generic `CefGlue.BrowserProcess` with NFM-specific render process handling and V8 JS interop.
+  - Game logic vs UI: `NFMWorld.Library` contains backend/game systems; UI, rendering and native interops live in `nfm-world/`, `NvgSharp/`, and `FNA/`. The Luau/Yoga UI lives in `data/uis/` (routes/components) and `NFMWorld.Library/data/library/` (reactlib + Sx), hosted by `nfm-world/UI/UiRenderer.cs` and `NFMWorld.Library/Util/Lua/LuaUiLibrary.cs`.
   - Data and assets: NFMWorld and NFMWorld.Library include `None Include="data\**\*" CopyToOutputDirectory=...` — follow existing CopyToOutputDirectory semantics rather than inventing new asset pipelines.
 
 - **Dependencies & runtime notes:**
@@ -48,9 +47,9 @@ Key characteristics:
 
 - **Where to look for behavior:**
   - Initialization / main loop: `nfm-world/NFMWorld.csproj` → `WorldGame.cs`, `NFMWorld.csproj` references `WorldGame.cs` as a logical entry point.
-  - CEF UI integration: `nfm-world/UI/Cef/CefRenderer.cs` (central orchestrator), `nfm-world/UI/Cef/GameBridge.cs` (JS↔C# messaging), `nfm-world/UI/Cef/Bridges/` (per-phase bridges).
-  - CEF subprocess: `NFMWorld.BrowserProcess/` and `CefGlue.BrowserProcess/` (renderer process host, V8 interop).
-  - Frontend SPA: `data/html/src/` (Preact + TypeScript + Vite).
+  - Luau/Yoga UI host: `nfm-world/UI/UiRenderer.cs`, `NFMWorld.Library/Util/Lua/LuaUiLibrary.cs` (Yoga layout, events, `defer` batching).
+  - Luau UI views: `data/uis/` (`router.luau`, `routes/{mainmenu,garage,racehud,test}.luau`, `components/`).
+  - Reactive UI framework: `NFMWorld.Library/data/library/sx/` (Sx)
   - Game backend: [NFMWorld.Library](../NFMWorld.Library/NFMWorld.Library.csproj)
   - Rendering and fonts: `NvgSharp/`, `FontStashSharp/` and `FNA/`.
 
@@ -94,17 +93,9 @@ Shaders in `data/shaders/*.fx` are compiled to `.fxb` by the `BuildShaders` MSBu
 
 To add a new shader, add the `.fx` source to the `<CompileShader>` ItemGroup in `NFMWorld.csproj`. Do not manually copy `.fxb` files.
 
-### Frontend (CEF UI) build
+### UI (Luau/Yoga)
 
-```bash
-# Build the Preact SPA frontend
-cd nfm-world/data/html
-pnpm install
-pnpm build        # → outputs to data/html/dist/
-pnpm dev          # Vite dev server on port 5173 (use with NFMW_VITE_DEV=1)
-```
-
-The built output in `data/html/dist/` is served by `NfmwSchemeHandlerFactory` via the `nfmw://` custom scheme. In dev mode (`NFMW_VITE_DEV=1` env var or `.vite-dev` marker file), the game loads from `http://localhost:5173/` instead.
+The UI is written in Luau and rendered by a Yoga layout host — there is **no separate frontend build step**. Views live in `data/uis/` and ship via the existing `data/**` copy rule. See the [Fine-Grained Reactive UI (Sx)](#fine-grained-reactive-ui-sx) section and `NFMWorld.Library/data/library/sx/GUIDE.md` for the framework and gotchas.
 
 ### Source generator output (Reactor, legacy)
 
@@ -116,7 +107,7 @@ dotnet build nfm-world/NFMWorld.csproj
 
 Generated files appear in `nfm-world/Generated/NFMWorld.Reactor.Generator/.../*.g.cs`. The csproj must have `<Compile Remove="Generated/**" />` to prevent double-compilation.
 
-**Note:** The Reactor VDOM framework is being phased out in favor of the CEF-based UI. New UI work should use the CEF/Preact frontend.
+**Note:** The Reactor VDOM framework has been replaced by the Luau/Yoga UI. New UI work should target **Sx**.
 
 ---
 
@@ -159,185 +150,6 @@ Gamemodes are written in **Lua** and share one code path for singleplayer and mu
 | `HudStateData` (DriverInterface) | never mark `[LuaVisible]` — use `LuaHudState` |
 | Race finish broadcasts | guard with `_finished` / `ResultsBroadcasted` (done in both hosts) |
 | TT preview/simulation | still C# (`TimeTrialPreviewGamemode`/`TimeTrialSimulationGamemode` derive from C# `TimeTrialGamemode`) |
-
----
-
-## CEF-Based UI System
-
-The UI is a **Preact + TypeScript SPA** rendered by CEF (Chromium Embedded Framework) as a transparent overlay on the FNA/MonoGame 3D scene. Replaces both the legacy XAML and Reactor VDOM systems.
-
-### Key projects
-
-| Project | Role |
-|---|---|
-| `CefGlue.BrowserProcess` | **Generic** CEF subprocess host — `RenderProcessHandler`, V8 JS execution, native object binding. Not NFM-specific. |
-| `NFMWorld.BrowserProcess` | **NFM-specific** CEF subprocess host — extends `CefGlue.BrowserProcess` with `NfmwRenderProcessHandler` (injects `__nfmwCall` V8 global) and `nfmwPush` message handling. |
-| `nfm-world/UI/Cef/` | Main game CEF integration — `CefRenderer`, `GameBridge`, `NfmwCefClient`, `NfmwCefRenderHandler`, per-phase bridges. |
-| `data/html/` | Frontend SPA — Preact + TypeScript + Vite + Goober CSS-in-JS. |
-| `data/html/dist/` | Built frontend output (not in repo). Served by `NfmwSchemeHandlerFactory` via `nfmw://` scheme. |
-
-### Architecture overview
-
-```mermaid
-graph TB
-    subgraph "Game Process (nfm-world)"
-        WG[WorldGame] --> CR[CefRenderer]
-        CR --> GB[GameBridge]
-        GB --> PB1[MainMenuBridge]
-        GB --> PB2[HudBridge]
-        GB --> PB_N[...]
-    end
-
-    subgraph "Browser Subprocess (NFMWorld.BrowserProcess.exe)"
-        NRPH[NfmwRenderProcessHandler] --> V8[V8 JS Context]
-    end
-
-    subgraph "HTML/JS Frontend (data/html/)"
-        APP[app.tsx - Preact SPA]
-    end
-
-    CR <-->|CefProcessMessage| NRPH
-    NRPH --> V8
-    V8 --> APP
-    APP -->|__nfmwCall| V8
-```
-
-### Initialization flow
-
-1. `CefRenderer` is constructed with `ResolveBasePageUrl()`:
-   - Dev mode (`NFMW_VITE_DEV=1` or `.vite-dev`): `http://localhost:5173/`
-   - Production: `nfmw://app/index.html`
-2. `CefRuntime.Load()` → creates windowless, transparent CEF browser.
-3. `BrowserSubprocessPath` set to `NFMWorld.BrowserProcess.exe`.
-4. Registers the `nfmw://` custom scheme handler (serves `data/html/dist/` with SPA fallback).
-5. Per-frame: `CefRenderer.Update(gameTime)` pumps CEF messages + forwards input; `CefRenderer.Render()` draws browser `Texture2D` as full-screen overlay.
-
-### C# ↔ JavaScript communication
-
-**JS → C#** (`__nfmwCall` → `CefProcessMessage` → `GameBridge`):
-```
-JS: __nfmwCall("methodName", jsonPayload)
-  → CefProcessMessage "nfmwCall" (renderer → browser)
-  → GameBridge.HandleNfmwCall()
-  → dispatches to registered PhaseBridge.OnMessage(type, JsonElement?)
-```
-Wrap with `callNfmw(method, payload)` from `bridge.ts`.
-
-**C# → JS** (`nfmwPush` → `CefProcessMessage` → `__nfmwDispatch`):
-```
-C#: PhaseBridge.Push("eventType", data) or PushMemoryPack("eventType", data)
-  → GameBridge.PushToJs(browser, phaseId, eventType, data)
-  → CefProcessMessage "nfmwPush" (browser → renderer)
-  → V8: __nfmwDispatch("{phaseId}:{eventType}", data)
-  → bridge.ts: nfmwEvents.emit(event, JSON.parse(data))
-```
-Supports JSON, binary (byte[] → ArrayBuffer), and MemoryPack payloads.
-
-**C# → JS (evaluation):** `CefRenderer.ExecuteJavaScript(code)` sends arbitrary JS for execution in the V8 context.
-
-### Per-phase bridge pattern
-
-Each game phase has a `PhaseBridge` subclass:
-
-| Bridge | Phase ID | Role |
-|---|---|---|
-| `DummyBridge` | `"empty"` | Default no-op |
-| `MainMenuBridge` | `"main-menu"` | Navigation + account state |
-| `HudBridge` | `"race"` | Race telemetry (speed, lap, damage, position) |
-| `GarageBridge` | `"garage"` | Car selection/upgrades |
-| `SettingsBridge` | `"settings"` | Game settings |
-
-**Bridge lifecycle (from `BasePhase`):**
-1. Phase.Enter → `CefBridge?.Register(CefRenderer)` → registers message handler + navigates to hash URL
-2. Each frame EndGameTick → `CefBridge?.PushCefState()` pushes state to JS
-3. Phase.Exit → `CefBridge?.Unregister()` → unregisters handler
-
-Hash-based navigation across a single browser instance: `ExecuteJavaScript("window.location.href = '#/race';")`.
-
-### Frontend (Preact SPA)
-
-**Tech stack:** Preact (~3KB) + Vite + Goober (CSS-in-JS, ~1KB) + TypeScript strict.
-
-**File structure:**
-```
-data/html/src/
-├── app.tsx              # SPA root: hash router + Preact render
-├── pages/
-│   ├── MainMenu.tsx     # Main menu with sub-menus
-│   ├── RaceHud.tsx      # In-race HUD (speed, power/damage, lap, position)
-│   ├── Garage.tsx       # Car garage
-│   ├── Settings.tsx     # Game settings
-│   └── Test.tsx         # Test page
-└── shared/
-    ├── bridge.ts        # onNfmwEvent / callNfmw wrappers
-    ├── style.css        # Global styles (transparent bg, animations)
-    ├── components/
-    │   └── GlassCard.tsx
-    └── memorypack/      # MemoryPack binary deserializers for TS
-        ├── MemoryPackReader.ts
-        ├── MemoryPackWriter.ts
-        └── *Data.ts     # Typed data models (AccountData, HudStateData, etc.)
-```
-
-**Hash router** maps to pages: `#/main-menu`, `#/race`, `#/garage`, `#/settings`, `#/test`, `#/empty`.
-
-### Key types (game-side)
-
-| Type | File | Role |
-|---|---|---|
-| `CefRenderer` | `nfm-world/UI/Cef/CefRenderer.cs` | **Central orchestrator** — owns CEF browser, render handler, client, game bridge. Public API for game code. |
-| `GameBridge` | `nfm-world/UI/Cef/GameBridge.cs` | JS↔C# message routing. Dispatches `nfmwCall` to registered `PhaseBridge`. `PushToJs()` for C#→JS. |
-| `NfmwCefClient` | `nfm-world/UI/Cef/NfmwCefClient.cs` | `CefClient` subclass — render handler + load handler + process message routing. |
-| `NfmwCefRenderHandler` | `nfm-world/UI/Cef/NfmwCefRenderHandler.cs` | Off-screen render — creates/updates `Texture2D` from CEF `OnPaint` with dirty-rect + popup support. |
-| `NfmwSchemeHandlerFactory` | `nfm-world/UI/Cef/NfmwSchemeHandlerFactory.cs` | Serves `data/html/dist/` via `nfmw://` scheme with SPA fallback + CORS headers. |
-| `NfmwLoadHandler` | `nfm-world/UI/Cef/NfmwCefClient.cs` | Injects `nfmwEvents.emit('ready')` on page load. |
-| `PhaseBridge` | `nfm-world/UI/Cef/Bridges/PhaseBridge.cs` | Abstract base — register/unregister, `Push()`, `PushMemoryPack()`, `EnableInput`. |
-| `NfmwRenderProcessHandler` | `NFMWorld.BrowserProcess/Handlers/` | Injects `__nfmwCall` V8 function + handles `nfmwPush` messages with binary support. |
-| `NfmwV8Handler` | `NFMWorld.BrowserProcess/Handlers/` | V8 handler for `__nfmwCall` — serializes JS args into `CefProcessMessage`. |
-
-### Key patterns
-
-1. **Single browser, hash routing** — one `CefBrowser` instance shared across all phases. Phase navigation via `ExecuteJavaScript("window.location.href = '#/phase';")`. No browser create/destroy overhead.
-2. **Phase bridges manage their namespace** — each bridge registers with unique `phaseId`. Events prefixed `"{phaseId}:{eventType}"`.
-3. **Input forwarding toggleable per phase** — `PhaseBridge.EnableInput` controls keyboard/mouse forwarding.
-4. **MemoryPack for high-frequency data** — `HudBridge` uses MemoryPack binary serialization for per-frame telemetry (more efficient than JSON at 60fps).
-5. **Transparent rendering** — browser renders with transparent background. 3D game scene shows through unpainted areas.
-6. **Dirty-rect optimizations** — partial texture uploads from CEF dirty rects, reducing GPU bandwidth.
-7. **Keyboard state consumption** — `CefRenderer.ConsumeKeyboardState()` prevents key bleeding on phase transitions.
-8. **DevTools** — accessible via `F12`, `cef_devtools` console command, or `ShowDevTools()` programmatically.
-
-### Frontend build
-
-```bash
-cd nfm-world/data/html
-pnpm install
-pnpm build        # → outputs to data/html/dist/
-pnpm dev          # Vite dev server on port 5173 (use with NFMW_VITE_DEV=1)
-```
-
-### CEF configuration notes
-
-- `WindowlessRenderingEnabled = true`, `MultiThreadedMessageLoop = false`, `NoSandbox = true`
-- Background color: transparent — `CefColor(0,0,0,0)`
-- CEF flags: `disable-gpu`, `disable-gpu-compositing`, `enable-begin-frame-scheduling`
-- On Linux: `no-zygote` flag. All platforms: `disable-features=FirstPartySets`
-- NuGet: `CefGlue.Common` v120.6099.211
-
-### Lessons learned
-
-**L1 — Single browser, single SPA model.** Do not create new `CefBrowser` instances per phase. Use hash-routing within one SPA. Creating/destroying browsers is expensive and breaks CEF's render process pooling.
-
-**L2 — Phase bridges must clean up on Unregister.** Always call `Unregister()` in `Phase.Exit` to remove the message handler. Leaving stale handlers registered causes duplicate message dispatch and hard-to-debug UI glitches.
-
-**L3 — Binary payloads need `nfmwPush` message type awareness.** The `NfmwRenderProcessHandler` checks `PushMessageType` (JSON=0, Binary=1, MemoryPack=2) to decide whether to `JSON.parse` the payload or pass as `ArrayBuffer`/`Uint8Array`.
-
-**L4 — Vite dev server needs CORS headers for cross-origin access.** The `NfmwSchemeHandlerFactory` adds CORS headers for production. In dev mode, Vite handles its own CORS — no extra config needed.
-
-**L5 — Windowless CEF needs manual message loop pumping.** `MultiThreadedMessageLoop = false` means you must call `CefRuntime.DoMessageLoopWork()` each frame. Missing this call freezes the UI.
-
-**L6 — Transparent background requires both CEF config AND CSS.** Set `CefColor(0,0,0,0)` in settings AND `background: transparent` in the HTML body. Missing either gives a white/gray background.
-
-**L7 — Subprocess auto-exit on parent death.** The browser subprocess monitors the game PID and exits if the parent dies. This prevents orphaned `NFMWorld.BrowserProcess.exe` instances.
 
 ---
 
@@ -605,7 +417,6 @@ Two test cases exist in `Program.Main()`: (1) a windshield-shaped polygon with 1
 - Remove or flatten the MSBuild platform conditionals without testing on all OSes.
 - Change shader/tool expectations without keeping a non-Windows fallback (`tools/fxc.exe` or documented wine steps).
 - Use NUnit APIs — the project uses MSTest.
-- Create new `CefBrowser` instances per phase — use hash-routing within the single SPA.
 - Rely on OS-native path separators anywhere in game or test code — use VFS normalization.
 
 ### Common gotchas at a glance
@@ -613,11 +424,7 @@ Two test cases exist in `Program.Main()`: (1) a windshield-shaped polygon with 1
 | Gotcha | Rule |
 |---|---|
 | Test framework | MSTest only — no `Assert.That`, `[Test]`, `[TestFixture]` |
-| CEF browser lifecycle | Single browser, hash routing — do NOT create/destroy browsers per phase |
-| CEF message pumping | Must call `CefRuntime.DoMessageLoopWork()` each frame (windowless mode) |
-| Transparent CEF | Set BOTH `CefColor(0,0,0,0)` AND `background: transparent` in HTML body |
 | Phase bridge cleanup | Always call `Unregister()` in `Phase.Exit` |
 | Source gen output | Check `nfm-world/Generated/` — do not trust a clean build alone |
-| Frontend build | Run `pnpm build` in `data/html/` after frontend changes |
 
 ---
