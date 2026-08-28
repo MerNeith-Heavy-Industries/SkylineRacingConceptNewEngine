@@ -108,7 +108,7 @@ end
 
 type StyledInput<P> = WithVariants<Style<P>>
 
-local function styled<P>(tag: (P) -> t.NodeDescriptor): (StyledInput<P>) -> ((P) -> t.NodeDescriptor)
+local function styled<P>(tag: (P) -> t.NodeDescriptor, name: string?): (StyledInput<P>) -> ((P) -> t.NodeDescriptor)
     return function(baseStyle: any?)
         baseStyle = baseStyle or {}
         local hasHover = baseStyle.hover ~= nil
@@ -121,7 +121,7 @@ local function styled<P>(tag: (P) -> t.NodeDescriptor): (StyledInput<P>) -> ((P)
             end
         end
 
-        return function(props: P?)
+        local component = function(props: P?)
             props = props or {}
 
             local named: { [string]: any } = {}
@@ -183,8 +183,22 @@ local function styled<P>(tag: (P) -> t.NodeDescriptor): (StyledInput<P>) -> ((P)
                 type = tag,
                 props = named,
                 children = props.children or {},
-            } :: types.NodeDescriptor
+            } :: t.NodeDescriptor
         end
+
+        -- Tag the component with a readable name so it shows up in the devtools tree.
+        -- Styled closures are anonymous to debug.info (they'd otherwise all collapse to the
+        -- styled.luau source line); prefix with the capitalized base tag for readability
+        -- (e.g. styled('view') -> "StyledView").
+        local tagName = name
+        if tagName and #tagName > 0 then
+            tagName = tagName:sub(1, 1):upper() .. tagName:sub(2)
+            Sx.debug.setStyledName(component, tagName)
+        end
+
+        Sx.debug.setCallSite(component, debug.getinfo(2))
+
+        return component
     end
 end
 
