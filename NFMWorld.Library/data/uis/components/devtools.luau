@@ -170,7 +170,26 @@ end
 
 -- ── Tree view ────────────────────────────────────────────────────
 
-local function TreeNode(props: { node: any, depth: number })
+-- The tree snapshot carries a live `host` ref on host nodes; a component node resolves to
+-- its first host descendant. Hovering a tree node highlights that element by positioning
+-- an overlay at the host's layout rect (no style mutation, so no relayout).
+local function findHost(node: any): any?
+	if node == nil then
+		return nil
+	end
+	if node.host ~= nil then
+		return node.host
+	end
+	for _, c in ipairs(node.children or {}) do
+		local h = findHost(c)
+		if h ~= nil then
+			return h
+		end
+	end
+	return nil
+end
+
+local function TreeNode(props: { node: any, depth: number, onHover: ((any?) -> ())? })
 	local expanded, setExpanded = Sx.createSignal<<boolean>>(props.depth < 2)
 	local hasChildren = #props.node.children > 0
 
@@ -193,6 +212,16 @@ local function TreeNode(props: { node: any, depth: number })
 					setExpanded(not expanded())
 				end
 			end,
+			onmouseenter = function()
+				if props.onHover then
+					props.onHover(props.node)
+				end
+			end,
+			onmouseleave = function()
+				if props.onHover then
+					props.onHover(nil)
+				end
+			end,
 			x(Sx.Text) {
 				style = { fontSize = 11, fontStyle = "bold", color = colorFor(props.node) },
 				function()
@@ -209,14 +238,14 @@ local function TreeNode(props: { node: any, depth: number })
 			x(Sx.For) {
 				each = function() return props.node.children end,
 				function(item, index)
-					return x(TreeNode) { node = item(), depth = props.depth + 1 }
+					return x(TreeNode) { node = item(), depth = props.depth + 1, onHover = props.onHover }
 				end,
 			},
 		},
 	}
 end
 
-local function TreeView(props: { snapshot: () -> any })
+local function TreeView(props: { snapshot: () -> any, onHover: ((any?) -> ())? })
 	return x(Sx.View) {
 		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%", gap = 2 },
 		x(Sx.For<<any>>) {
@@ -228,7 +257,7 @@ local function TreeView(props: { snapshot: () -> any })
 				return { root }
 			end,
 			function(item, index)
-				return x(TreeNode) { node = item(), depth = 0 }
+				return x(TreeNode) { node = item(), depth = 0, onHover = props.onHover }
 			end,
 		},
 	}
@@ -273,6 +302,7 @@ local function DevTools()
 	local snapshot, setSnapshot = Sx.createSignal<<any | nil>>(nil)
 	local sigList, setSigList = Sx.createSignal<<{ any }>>({})
 	local auto, setAuto = Sx.createSignal<<boolean>>(false)
+	local hoverRect, setHoverRect = Sx.createSignal<<{ x: number, y: number, w: number, h: number } | nil>>(nil)
 
 	-- Snapshot data is written into signals read by the tree / signals For components. The
 	-- `refreshing` guard stops refresh()'s own writes from re-triggering the onChange
@@ -303,6 +333,7 @@ local function DevTools()
 
 	local function refresh()
 		refreshing = true
+		setHoverRect(nil)
 		-- The full-tree snapshot is the most expensive part; only pay for it when the
 		-- tree tab is actually visible.
 		if tab() == "tree" then
@@ -329,6 +360,26 @@ local function DevTools()
 		end
 		setSigList(arr)
 		refreshing = false
+	end
+
+	local function handleHover(node: any?)
+		if node == nil then
+			setHoverRect(nil)
+			return
+		end
+		local host = findHost(node)
+		if host == nil then
+			setHoverRect(nil)
+			return
+		end
+		local ok, pos, size = pcall(function()
+			return host.layoutBorderPosition, host.layoutBorderSize
+		end)
+		if not ok or pos == nil or size == nil then
+			setHoverRect(nil)
+			return
+		end
+		setHoverRect({ x = pos.x, y = pos.y, w = size.x, h = size.y })
 	end
 
 	local function scheduleAutoRefresh()
@@ -362,6 +413,13 @@ local function DevTools()
 			Sx.debug.setOnChange(scheduleAutoRefresh)
 		else
 			Sx.debug.setOnChange(nil)
+		end
+	end)
+
+	-- Clear the hover overlay whenever the panel closes.
+	Sx.createEffect(function()
+		if not open() then
+			setHoverRect(nil)
 		end
 	end)
 
@@ -442,7 +500,7 @@ local function DevTools()
 			x(Body) {
 				x(Sx.Show) {
 					when = function() return tab() == "tree" end,
-					x(TreeView) { snapshot = snapshot },
+					x(TreeView) { snapshot = snapshot, onHover = handleHover },
 				},
 				x(Sx.Show) {
 					when = function() return tab() == "signals" end,
@@ -450,6 +508,26 @@ local function DevTools()
 				},
 			},
 		},
+		},
+		x(Sx.View) {
+			style = function(): Sx.Styles
+				local r = hoverRect()
+				if r == nil then
+					return { position = "absolute", display = "none", pointerEvents = "none" }
+				end
+				return {
+					position = "absolute",
+					display = "flex",
+					left = r.x,
+					top = r.y,
+					width = r.w,
+					height = r.h,
+					backgroundColor = "rgba(79,195,247,0.35)",
+					borderWidth = 1,
+					borderColor = "rgba(79,195,247,1)",
+					pointerEvents = "none",
+				}
+			end,
 		},
 	}
 end
