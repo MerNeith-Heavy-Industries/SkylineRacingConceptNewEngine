@@ -167,14 +167,17 @@ local function fmtValue(v: any): string
 	return tostring(v)
 end
 
--- Richer value formatter for the props pane: renders small tables (e.g. style dicts)
--- inline as `{k=v ...}` instead of collapsing them to "table". Depth-limited so a
--- recursive/self-referencing prop can't blow the stack.
-local function fmtPropValue(v: any, depth: number?): string
+-- Formats a value into a multi-line string for the props pane. Record tables (e.g. a
+-- `style` dict) are broken out one key per line with indentation; arrays/scalars/functions
+-- use a compact inline form. Rendered in a SINGLE text node so hovering a different node
+-- only updates one commitTextUpdate (no host structural changes -> no FocusManager
+-- .ResetHover feedback loop). Depth-limited to avoid runaway nesting on recursive props.
+local function formatPropsTree(v: any, depth: number?): string
 	depth = depth or 0
-	if depth > 3 then
+	if depth > 5 then
 		return "…"
 	end
+	local indent = string.rep("  ", depth)
 	local t = type(v)
 	if v == nil then
 		return "nil"
@@ -189,18 +192,30 @@ local function fmtPropValue(v: any, depth: number?): string
 		return "fn"
 	end
 	if t == "table" then
-		local parts: { string } = {}
-		local count = 0
-		for k, val in pairs(v) do
-			count = count + 1
-			if count <= 6 then
-				parts[#parts + 1] = tostring(k) .. "=" .. fmtPropValue(val, depth + 1)
+		local n = #v
+		if n > 0 and next(v, n) == nil then
+			return "array[" .. n .. "]"
+		end
+		local keys: { string } = {}
+		for k in pairs(v) do
+			if type(k) == "string" then
+				keys[#keys + 1] = k
 			end
 		end
-		if #parts > 0 then
-			return "{" .. table.concat(parts, " ") .. (count > 6 and " …" or "") .. "}"
+		table.sort(keys)
+		if #keys == 0 then
+			return "{}"
 		end
-		return "{}"
+		local lines: { string } = {}
+		for _, k in ipairs(keys) do
+			local valStr = formatPropsTree(v[k], depth + 1)
+			if string.find(valStr, "\n", 1, true) ~= nil then
+				lines[#lines + 1] = indent .. k .. "\n" .. valStr
+			else
+				lines[#lines + 1] = indent .. k .. " = " .. valStr
+			end
+		end
+		return table.concat(lines, "\n")
 	end
 	return tostring(v)
 end
@@ -226,9 +241,17 @@ local function findHost(node: any): any?
 	return nil
 end
 
-local function TreeNode(props: { node: any, depth: number, onHover: ((any?) -> ())? })
+local function TreeNode(props: { node: any, depth: number, onHover: ((any?) -> ())?, expandAll: () -> boolean, expandVersion: () -> number })
 	local expanded, setExpanded = Sx.createSignal<<boolean>>(props.depth < 2)
 	local hasChildren = #props.node.children > 0
+
+	-- React to the "Expand all" / "Collapse all" toolbar buttons. The version counter
+	-- makes a repeated click (e.g. after a manual toggle) re-apply the forced state.
+	Sx.createEffect(function()
+		if props.expandVersion() > 0 then
+			setExpanded(props.expandAll())
+		end
+	end)
 
 	return x(Sx.View) {
 		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%" },
@@ -270,19 +293,20 @@ local function TreeNode(props: { node: any, depth: number, onHover: ((any?) -> (
 				end,
 			},
 		},
-		x(Sx.Show) {
-			when = function() return expanded() and hasChildren end,
-			x(Sx.For) {
-				each = function() return props.node.children end,
-				function(item, index)
-					return x(TreeNode) { node = item(), depth = props.depth + 1, onHover = props.onHover }
-				end,
+			x(Sx.Show) {
+				when = function() return expanded() and hasChildren end,
+				x(Sx.For) {
+					each = function() return props.node.children end,
+					function(item, index)
+						return x(TreeNode) { node = item(), depth = props.depth + 1, onHover = props.onHover, expandAll = props.expandAll, expandVersion = props.expandVersion }
+					end,
+				},
 			},
 		},
 	}
 end
 
-local function TreeView(props: { snapshot: () -> any, onHover: ((any?) -> ())? })
+local function TreeView(props: { snapshot: () -> any, onHover: ((any?) -> ())?, expandAll: () -> boolean, expandVersion: () -> number })
 	return x(Sx.View) {
 		style = { display = "flex", flexDirection = "column", alignItems = "stretch", flexShrink = 0, width = "100%", gap = 2 },
 		x(Sx.For<<any>>) {
@@ -294,7 +318,7 @@ local function TreeView(props: { snapshot: () -> any, onHover: ((any?) -> ())? }
 				return { root }
 			end,
 			function(item, index)
-				return x(TreeNode) { node = item(), depth = 0, onHover = props.onHover }
+				return x(TreeNode) { node = item(), depth = 0, onHover = props.onHover, expandAll = props.expandAll, expandVersion = props.expandVersion }
 			end,
 		},
 	}
@@ -302,43 +326,19 @@ end
 
 -- ── Props pane ───────────────────────────────────────────────────
 
--- Lists the props of the hovered tree node as key → value rows. Reads props from the
--- live devtools node (captured at mount in dom.luau), formatted by fmtPropValue.
+-- Renders the hovered node's props as a single multi-line text node (one
+-- commitTextUpdate per hover change), so showing different nodes never appends/removes
+-- host nodes — which would otherwise trigger FocusManager.ResetHover and fight the hover
+-- highlight. Nested record tables are broken out onto their own indented lines.
 local function PropsList(props: { node: () -> any? })
-	return x(Sx.For<<string>>) {
-		each = function(): { string }
+	return x(Sx.Text) {
+		style = { fontSize = 10, color = "rgba(255,255,255,0.85)", width = "100%" },
+		function()
 			local node = props.node()
 			if node == nil or node.props == nil then
-				return {}
+				return "(no props)"
 			end
-			local keys: { string } = {}
-			for k in pairs(node.props) do
-				if type(k) == "string" then
-					keys[#keys + 1] = k
-				end
-			end
-			table.sort(keys)
-			return keys
-		end,
-		function(key, index)
-			local k = key()
-			return x(Sx.View) {
-				style = { display = "flex", flexDirection = "row", alignItems = "flex-start", gap = 6, flexShrink = 0, width = "100%" },
-				x(Sx.Text) {
-					style = { fontSize = 10, color = "rgba(255,255,255,0.4)", width = 80, flexShrink = 0, fontStyle = "bold" },
-					k,
-				},
-				x(Sx.Text) {
-					style = { fontSize = 10, color = "rgba(255,255,255,0.85)", flexGrow = 1 },
-					function()
-						local node = props.node()
-						if node == nil then
-							return ""
-						end
-						return fmtPropValue(node.props[k])
-					end,
-				},
-			}
+			return formatPropsTree(node.props)
 		end,
 	}
 end
@@ -427,6 +427,8 @@ local function DevTools()
 	local auto, setAuto = Sx.createSignal<<boolean>>(false)
 	local hoverRect, setHoverRect = Sx.createSignal<<{ x: number, y: number, w: number, h: number } | nil>>(nil)
 	local hoverNode, setHoverNode = Sx.createSignal<<any | nil>>(nil)
+	local expandAll, setExpandAll = Sx.createSignal<<boolean>>(false)
+	local expandVersion, setExpandVersion = Sx.createSignal<<number>>(0)
 
 	-- Snapshot data is written into signals read by the tree / signals For components. The
 	-- `refreshing` guard stops refresh()'s own writes from re-triggering the onChange
@@ -512,10 +514,21 @@ local function DevTools()
 				return host.layoutBorderPosition, host.layoutBorderSize
 			end)
 			if ok and pos ~= nil and size ~= nil then
-				rect = { x = pos.x, y = pos.y, w = size.x, h = size.y }
+				rect = { x = pos.x, y = pos.y, w = size.x, h = size.h }
 			end
 		end
 		applyHover(node, rect)
+	end
+
+	-- Force every tree node to expand / collapse. The version counter makes repeated
+	-- clicks re-apply the forced state even after a manual per-node toggle.
+	local function expandAllNodes()
+		setExpandAll(true)
+		setExpandVersion(expandVersion() + 1)
+	end
+	local function collapseAllNodes()
+		setExpandAll(false)
+		setExpandVersion(expandVersion() + 1)
 	end
 
 	local function scheduleAutoRefresh()
@@ -632,11 +645,22 @@ local function DevTools()
 						end,
 					},
 				},
+				x(Sx.Show) {
+					when = function() return tab() == "tree" end,
+					x(ToolBtn) {
+						onmousedown = expandAllNodes,
+						x(Sx.Text) { style = { fontSize = 10, color = "rgba(255,255,255,0.7)" }, "Expand" },
+					},
+					x(ToolBtn) {
+						onmousedown = collapseAllNodes,
+						x(Sx.Text) { style = { fontSize = 10, color = "rgba(255,255,255,0.7)" }, "Collapse" },
+					},
+				},
 			},
 			x(Body) {
 				x(Sx.Show) {
 					when = function() return tab() == "tree" end,
-					x(TreeView) { snapshot = snapshot, onHover = handleHover },
+					x(TreeView) { snapshot = snapshot, onHover = handleHover, expandAll = expandAll, expandVersion = expandVersion },
 				},
 				x(Sx.Show) {
 					when = function() return tab() == "signals" end,
