@@ -26,6 +26,64 @@ local Dom = {}
 
 local types = require('./types')
 
+-- ------------------------------------------------------------------ devtools (component tree)
+-- Optional component-tree capture for the Sx devtools. Inert (nil-checks only) unless
+-- `Dom.devtools.enable()` is called. `DevStack` tracks the current mount path so each
+-- component / host element / flow registers itself as a child of its parent.
+
+local DevTools = { enabled = false, root = nil }
+local DevStack = {}
+
+local function devName(fn: any): string
+    if type(fn) == "string" then
+        return fn
+    end
+    local ok, name = pcall(debug.info, fn, "n")
+    if ok and type(name) == "string" and name ~= "" and name ~= "?" then
+        return name
+    end
+    return "anonymous"
+end
+
+local function devPush(kind: string, name: string): any
+    if not DevTools.enabled then
+        return nil
+    end
+    local parent = DevStack[#DevStack]
+    local node = { name = name, kind = kind, children = {}, parent = parent }
+    if parent then
+        parent.children[#parent.children + 1] = node
+    elseif DevTools.root == nil then
+        DevTools.root = node
+    end
+    DevStack[#DevStack + 1] = node
+    return node
+end
+
+local function devPop()
+    DevStack[#DevStack] = nil
+end
+
+local function devRemove(node: any)
+    if node == nil then
+        return
+    end
+    node.children = {}
+    if node.parent then
+        local pc = node.parent.children
+        for i = 1, #pc do
+            if pc[i] == node then
+                table.remove(pc, i)
+                break
+            end
+        end
+        node.parent = nil
+    end
+    if DevTools.root == node then
+        DevTools.root = nil
+    end
+end
+
 -- ------------------------------------------------------------------ markers
 
 local FLOW = {} -- unique marker for flow descriptors
@@ -248,6 +306,7 @@ end
 -- Mount a host element: createInstance with static/event props, wire reactive
 -- (function-valued, non-`on`) props through effects, mount children.
 local function mountHostElement(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
+    local devNode = devPush("host", tostring(descriptor.type))
     local staticProps: { [string]: any } = {}
     local reactiveProps: { [string]: any } = {}
     for key, val in pairs(descriptor.props) do
@@ -301,8 +360,10 @@ local function mountHostElement(descriptor: types.NodeDescriptor, parent: any, m
             childDisposes[i]()
         end
         removeNode(parent, el)
+        devRemove(devNode)
     end
 
+    devPop()
     return {
         nodes = { el },
         dispose = dispose,
@@ -319,6 +380,8 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
     end
     compProps.children = descriptor.children
 
+    local devNode = devPush("component", devName(fn))
+
     local rootDispose = nil
     local mounted = nil
     Sx.createRoot(function(dispose)
@@ -330,6 +393,8 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
         return node
     end)
 
+    devPop()
+
     local dispose = function()
         if mounted then
             mounted.dispose()
@@ -339,6 +404,7 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
             rootDispose()
             rootDispose = nil
         end
+        devRemove(devNode)
     end
 
     return {
@@ -587,16 +653,27 @@ end
 
 mountFlow = function(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
     local kind = descriptor.kind
+    local devNode = devPush("flow", kind or "flow")
+    local result
     if kind == FlowKind_Show or kind == FlowKind_Match then
-        return mountShow(descriptor.props, descriptor.children, parent, marker)
+        result = mountShow(descriptor.props, descriptor.children, parent, marker)
     elseif kind == FlowKind_Switch then
-        return mountSwitch(descriptor.props, descriptor.children, parent, marker)
+        result = mountSwitch(descriptor.props, descriptor.children, parent, marker)
     elseif kind == FlowKind_For then
-        return mountList(descriptor.props, descriptor.children, parent, marker, true)
+        result = mountList(descriptor.props, descriptor.children, parent, marker, true)
     elseif kind == FlowKind_Index then
-        return mountList(descriptor.props, descriptor.children, parent, marker, false)
+        result = mountList(descriptor.props, descriptor.children, parent, marker, false)
+    else
+        devPop()
+        error("Sx: unknown flow kind " .. tostring(kind))
     end
-    error("Sx: unknown flow kind " .. tostring(kind))
+    devPop()
+    local origDispose = result.dispose
+    result.dispose = function()
+        origDispose()
+        devRemove(devNode)
+    end
+    return result
 end
 
 -- ------------------------------------------------------------------ public
@@ -626,5 +703,28 @@ Dom.For = For
 Dom.Index = Index
 Dom.mountNode = mountNode
 Dom.mountValueInto = mountValueInto
+
+Dom.devtools = {
+    enable = function()
+        DevTools.enabled = true
+    end,
+    disable = function()
+        DevTools.enabled = false
+    end,
+    snapshot = function(): any?
+        if DevTools.root == nil then
+            return nil
+        end
+        local function walk(node: any): any
+            local out: any = { name = node.name, kind = node.kind, children = {} }
+            local kids = node.children
+            for i = 1, #kids do
+                out.children[i] = walk(kids[i])
+            end
+            return out
+        end
+        return walk(DevTools.root)
+    end,
+}
 
 return Dom

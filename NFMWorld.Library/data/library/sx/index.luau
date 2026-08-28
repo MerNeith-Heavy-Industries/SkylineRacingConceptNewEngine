@@ -106,6 +106,10 @@ Sx.Match = dom.Match
 Sx.For = dom.For
 Sx.Index = dom.Index
 
+-- devtools introspection (component tree + live signal/memo registry)
+Sx.devtools = dom.devtools
+Sx.debug = signals.debug
+
 -- styling
 Sx.styled = styled
 
