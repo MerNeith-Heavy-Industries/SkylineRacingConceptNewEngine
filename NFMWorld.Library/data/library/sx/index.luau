@@ -49,7 +49,30 @@ export type Signalish<T> = h.Signalish<T>
 
 type function Unwrap(t)
     local function unwrapOne(ty)
-        if ty:is("function") then
+        if ty:is("union") or ty:is("intersection") then
+            local isUnion = ty:is("union")
+            local seen = {}
+            local results = {}
+
+            for _, part in ty:components() do
+                local unwrapped = unwrapOne(part)
+                local key = tostring(unwrapped)
+                if not seen[key] then
+                    seen[key] = true
+                    table.insert(results, unwrapped)
+                end
+            end
+
+            if #results == 1 then
+                return results[1]
+            end
+
+            if isUnion then
+                return types.unionof(table.unpack(results))
+            else
+                return types.intersectionof(table.unpack(results))
+            end
+        elseif ty:is("function") then
             local params = ty:parameters()
             local rets = ty:returns()
 
@@ -64,15 +87,7 @@ type function Unwrap(t)
         return ty
     end
 
-    if t:is("union") then
-        local results = {}
-        for _, part in t:components() do
-            table.insert(results, unwrapOne(part))
-        end
-        return types.unionof(table.unpack(results))
-    else
-        return unwrapOne(t)
-    end
+    return unwrapOne(t)
 end
 
 function Sx.read<T>(v: Signalish<T>): Unwrap<T>

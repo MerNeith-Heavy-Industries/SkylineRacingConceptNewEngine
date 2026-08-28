@@ -264,14 +264,14 @@ local function PauseMenu()
 								x(InfoItem) {
 									x(InfoLabel) { "Lap" },
 									x(InfoValue) { function()
-										local ps = pauseState()
+										local ps = pauseState() :: PauseState
 										return ("%d/%d"):format(ps.lap, ps.totalLaps)
 									end },
 								},
 								x(InfoItem) {
 									x(InfoLabel) { "Position" },
 									x(InfoValue) { function()
-										local ps = pauseState()
+										local ps = pauseState() :: PauseState
 										return ("%d/%d"):format(ps.position, ps.totalRacers)
 									end },
 								},

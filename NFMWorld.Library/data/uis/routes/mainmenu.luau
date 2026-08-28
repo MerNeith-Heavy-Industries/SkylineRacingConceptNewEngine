@@ -392,7 +392,7 @@ local MainMenu = function()
 						x(Subtitle) {
 							name = "Subtitle",
 							function()
-								return ("Welcome, %s"):format(account().name)
+								return ("Welcome, %s"):format((account() :: AccountData).name)
 							end,
 						},
 					},
