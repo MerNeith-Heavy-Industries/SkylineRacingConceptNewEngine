@@ -11,7 +11,7 @@
 -- dropped (Sx For/Index handle keying).
 
 local Sx = require('./signals')
-local types = require('./types')
+local t = require('./types')
 
 local function copyStyle(dst: { [string]: any }, src: { [string]: any }): ()
     for k, v in pairs(src) do
@@ -19,7 +19,96 @@ local function copyStyle(dst: { [string]: any }, src: { [string]: any }): ()
     end
 end
 
-local function styled<P>(tag: (P) -> types.NodeDescriptor): (baseStyle: any?) -> ((P) -> types.NodeDescriptor)
+type function rawget(tbl, key)
+    local function find(t): type?
+        if t:is("table") then
+            for k, v in t:properties() do
+                if k == key then
+                    if v.read ~= v.write then
+                        error("mismatched read/write types found for the property")
+                    end
+                    return v.read
+                end
+            end
+            return nil
+        elseif t:is("intersection") then
+            local results = {}
+            for _, part in t:components() do
+                local result = find(part)
+                if result ~= nil then
+                    table.insert(results, result)
+                end
+            end
+            if #results == 0 then
+                return nil
+            elseif #results == 1 then
+                return results[1]
+            else
+                return types.intersectionof(table.unpack(results))
+            end
+        elseif t:is("union") then
+            local results = {}
+            for _, part in t:components() do
+                local result = find(part)
+                if result == nil then
+                    return nil
+                end
+                table.insert(results, result)
+            end
+            if #results == 0 then
+                return nil
+            elseif #results == 1 then
+                return results[1]
+            else
+                return types.unionof(table.unpack(results))
+            end
+        end
+        return nil
+    end
+
+    local result = find(tbl)
+    if result == nil then
+        error("key not found!")
+    end
+    return result
+end
+
+type Style<T> = rawget<T, 'style'>
+
+type function WithVariants(styleT)
+    local result = types.newtable()
+
+    local function collect(t)
+        if t:is("table") then
+            for k, v in t:properties() do
+                result:setproperty(k, v.read)
+            end
+        elseif t:is("union") then
+            for _, part in t:components() do
+                collect(part)
+            end
+        elseif t:is("intersection") then
+            for _, part in t:components() do
+                collect(part)
+            end
+        end
+        -- silently ignore nil / other branches (e.g. from an optional union)
+    end
+
+    collect(styleT)
+
+    local optionalStyles = types.optional(result) -- based on the flat table, not raw styleT
+    result:setproperty(types.singleton("hover"), optionalStyles)
+    result:setproperty(types.singleton("focus"), optionalStyles)
+
+    result:setindexer(types.string, types.never) -- reject unlisted string keys
+
+    return result
+end
+
+type StyledInput<P> = WithVariants<Style<P>>
+
+local function styled<P>(tag: (P) -> t.NodeDescriptor): (StyledInput<P>) -> ((P) -> t.NodeDescriptor)
     return function(baseStyle: any?)
         baseStyle = baseStyle or {}
         local hasHover = baseStyle.hover ~= nil

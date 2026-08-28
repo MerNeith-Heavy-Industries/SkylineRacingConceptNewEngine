@@ -52,6 +52,7 @@ local Items = styled(Sx.View) {
 	gap = 6,
 	minWidth = 320,
 	alignItems = "stretch",
+	alignContent = "stretch",
 }
 
 local ItemBtn = styled(Sx.View) {

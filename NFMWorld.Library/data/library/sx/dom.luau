@@ -388,7 +388,7 @@ local FlowKind_Match = "match"
 local FlowKind_For = "for"
 local FlowKind_Index = "index"
 
-local function Show(props: { when: boolean | (() -> boolean), fallback: types.NodeDescriptor?, children: {types.NodeDescriptor} }): types.NodeDescriptor
+local function Show(props: { when: any | (() -> any), fallback: types.NodeDescriptor?, children: {types.NodeDescriptor} }): types.NodeDescriptor
     return { type = FLOW, kind = FlowKind_Show, props = props, children = props.children }
 end
 
