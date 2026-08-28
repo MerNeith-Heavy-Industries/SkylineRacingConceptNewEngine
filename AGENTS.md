@@ -4,6 +4,10 @@ Keep guidance short and actionable. Reference files and patterns below when maki
 
 DO NOT write PowerShell or shell scripts for code-editing tasks. ALWAYS use the code-editing tools available to you.
 
+When writing Luau, ALWAYS write type-safe code with type annotations (like if you were writing TypeScript!). Don't just stuff `any` everywhere. Check your Luau code with `luau-analyze` in strict mode and fix any errors unless fixing them is impossible within the type system or would strongly reduce readability.
+
+For writing code with Sx cross-reference the [sx guide](NFMWorld.Library\data\library\sx\GUIDE.md).
+
 NFM World is a custom game engine and game written primarily in **C#**, targeting `net10.0`. The playable app lives in `nfm-world/` (`NFMWorld.csproj`) and depends on many sibling projects — notably `NFMWorld.Library`, `FNA.Core` (via NvgSharp), and `MonoGame.ImGuiNet`. Treat `nfm-world/` as the app entry point; engine/framework code is in `FNA/`; rendering and GUI glue is under `NvgSharp/`, `FontStashSharp/`, and `MonoGame.ImGuiNet/` (FontStashSharp is in the solution but not a direct ProjectReference of the app).
 
 - **Big picture:** The playable app lives in `nfm-world/` (`NFMWorld.csproj`) and depends on many sibling projects (notably `NFMWorld.Library`, `NvgSharp.FNA.Core`, `NvgSharp.Text.FNA.Core`, `MonoGame.ImGuiNet`). Treat `nfm-world` as the app entry; engine/framework code is in `FNA/` and rendering/GUI glue under `NvgSharp/`, `FontStashSharp/`, and `MonoGame.ImGuiNet/`.
