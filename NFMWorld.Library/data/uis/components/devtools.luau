@@ -28,8 +28,7 @@ local Panel = styled(Sx.View) {
 	top = 12,
 	right = 12,
 	width = 400,
-	height = "60%",
-	maxHeight = "70%",
+	height = "90%",
 	backgroundColor = "rgba(10,12,20,0.94)",
 	borderWidth = 1,
 	borderColor = "rgba(79,195,247,0.4)",
@@ -168,6 +167,44 @@ local function fmtValue(v: any): string
 	return tostring(v)
 end
 
+-- Richer value formatter for the props pane: renders small tables (e.g. style dicts)
+-- inline as `{k=v ...}` instead of collapsing them to "table". Depth-limited so a
+-- recursive/self-referencing prop can't blow the stack.
+local function fmtPropValue(v: any, depth: number?): string
+	depth = depth or 0
+	if depth > 3 then
+		return "…"
+	end
+	local t = type(v)
+	if v == nil then
+		return "nil"
+	end
+	if t == "string" then
+		return '"' .. v .. '"'
+	end
+	if t == "number" or t == "boolean" then
+		return tostring(v)
+	end
+	if t == "function" then
+		return "fn"
+	end
+	if t == "table" then
+		local parts: { string } = {}
+		local count = 0
+		for k, val in pairs(v) do
+			count = count + 1
+			if count <= 6 then
+				parts[#parts + 1] = tostring(k) .. "=" .. fmtPropValue(val, depth + 1)
+			end
+		end
+		if #parts > 0 then
+			return "{" .. table.concat(parts, " ") .. (count > 6 and " …" or "") .. "}"
+		end
+		return "{}"
+	end
+	return tostring(v)
+end
+
 -- ── Tree view ────────────────────────────────────────────────────
 
 -- The tree snapshot carries a live `host` ref on host nodes; a component node resolves to
@@ -263,6 +300,92 @@ local function TreeView(props: { snapshot: () -> any, onHover: ((any?) -> ())? }
 	}
 end
 
+-- ── Props pane ───────────────────────────────────────────────────
+
+-- Lists the props of the hovered tree node as key → value rows. Reads props from the
+-- live devtools node (captured at mount in dom.luau), formatted by fmtPropValue.
+local function PropsList(props: { node: () -> any? })
+	return x(Sx.For<<string>>) {
+		each = function(): { string }
+			local node = props.node()
+			if node == nil or node.props == nil then
+				return {}
+			end
+			local keys: { string } = {}
+			for k in pairs(node.props) do
+				if type(k) == "string" then
+					keys[#keys + 1] = k
+				end
+			end
+			table.sort(keys)
+			return keys
+		end,
+		function(key, index)
+			local k = key()
+			return x(Sx.View) {
+				style = { display = "flex", flexDirection = "row", alignItems = "flex-start", gap = 6, flexShrink = 0, width = "100%" },
+				x(Sx.Text) {
+					style = { fontSize = 10, color = "rgba(255,255,255,0.4)", width = 80, flexShrink = 0, fontStyle = "bold" },
+					k,
+				},
+				x(Sx.Text) {
+					style = { fontSize = 10, color = "rgba(255,255,255,0.85)", flexGrow = 1 },
+					function()
+						local node = props.node()
+						if node == nil then
+							return ""
+						end
+						return fmtPropValue(node.props[k])
+					end,
+				},
+			}
+		end,
+	}
+end
+
+local function PropsPane(props: { node: () -> any?, visible: () -> boolean })
+	-- Permanently mounted child of the panel; visibility is toggled purely via the
+	-- `display` style so showing/hiding it never appends/removes a host node (which would
+	-- trigger FocusManager.ResetHover and fight the hover highlight).
+	return x(Sx.View) {
+		style = function(): Sx.Styles
+			local show = props.visible()
+			return {
+				display = show and "flex" or "none",
+				flexDirection = "column",
+				alignItems = "stretch",
+				flexShrink = 0,
+                minHeight = '20%',
+				maxHeight = 150,
+				borderTopWidth = 1,
+				borderColor = "rgba(255,255,255,0.08)",
+				paddingTop = 4,
+				paddingBottom = 4,
+				gap = 1,
+				overflow = "scroll",
+			}
+		end,
+		x(Sx.View) {
+			style = { display = "flex", flexDirection = "row", alignItems = "center", gap = 6, flexShrink = 0 },
+			x(Sx.Text) {
+				style = { fontSize = 10, color = "#d2a8ff", fontStyle = "bold", flexShrink = 0 },
+				"Props",
+			},
+			x(Sx.Text) {
+				style = { fontSize = 10, color = "rgba(255,255,255,0.5)", flexShrink = 0 },
+				function()
+					local node = props.node()
+					if node == nil then
+						return ""
+					end
+					return nodeLabel(node)
+				end,
+			},
+		},
+		x(PropsList) { node = props.node },
+	}
+end
+
 -- ── Signals view ─────────────────────────────────────────────────
 
 local function SignalsView(props: { items: () -> { any } })
@@ -303,6 +426,7 @@ local function DevTools()
 	local sigList, setSigList = Sx.createSignal<<{ any }>>({})
 	local auto, setAuto = Sx.createSignal<<boolean>>(false)
 	local hoverRect, setHoverRect = Sx.createSignal<<{ x: number, y: number, w: number, h: number } | nil>>(nil)
+	local hoverNode, setHoverNode = Sx.createSignal<<any | nil>>(nil)
 
 	-- Snapshot data is written into signals read by the tree / signals For components. The
 	-- `refreshing` guard stops refresh()'s own writes from re-triggering the onChange
@@ -333,14 +457,17 @@ local function DevTools()
 
 	local function refresh()
 		refreshing = true
-		setHoverRect(nil)
 		-- The full-tree snapshot is the most expensive part; only pay for it when the
-		-- tree tab is actually visible.
+		-- tree tab is actually visible. Hover is cleared only when the tree STRUCTURALLY
+		-- re-snapshots (the hovered node ref is stale): value-only updates (auto-refresh
+		-- picking up signal changes) keep the current hover so it doesn't flicker.
 		if tab() == "tree" then
 			local tree = Sx.devtools.snapshot()
 			local sig = treeSig(tree)
 			if sig ~= lastTreeSig then
 				lastTreeSig = sig
+				setHoverRect(nil)
+				setHoverNode(nil)
 				setSnapshot(tree)
 			end
 		end
@@ -362,24 +489,33 @@ local function DevTools()
 		refreshing = false
 	end
 
+	-- Set the hovered node + overlay rect together, suppressing the auto-refresh
+	-- onChange hook for these internal writes: hoverNode/hoverRect are observed signals,
+	-- so without this guard, merely hovering would schedule a refresh (which then clears
+	-- the hover every N frames).
+	local function applyHover(node: any?, rect: { x: number, y: number, w: number, h: number }?)
+		refreshing = true
+		setHoverNode(node)
+		setHoverRect(rect)
+		refreshing = false
+	end
+
 	local function handleHover(node: any?)
 		if node == nil then
-			setHoverRect(nil)
+			applyHover(nil, nil)
 			return
 		end
 		local host = findHost(node)
-		if host == nil then
-			setHoverRect(nil)
-			return
+		local rect: { x: number, y: number, w: number, h: number }? = nil
+		if host ~= nil then
+			local ok, pos, size = pcall(function()
+				return host.layoutBorderPosition, host.layoutBorderSize
+			end)
+			if ok and pos ~= nil and size ~= nil then
+				rect = { x = pos.x, y = pos.y, w = size.x, h = size.y }
+			end
 		end
-		local ok, pos, size = pcall(function()
-			return host.layoutBorderPosition, host.layoutBorderSize
-		end)
-		if not ok or pos == nil or size == nil then
-			setHoverRect(nil)
-			return
-		end
-		setHoverRect({ x = pos.x, y = pos.y, w = size.x, h = size.y })
+		applyHover(node, rect)
 	end
 
 	local function scheduleAutoRefresh()
@@ -506,6 +642,10 @@ local function DevTools()
 					when = function() return tab() == "signals" end,
 					x(SignalsView) { items = sigList },
 				},
+			},
+			x(PropsPane) {
+				node = hoverNode,
+				visible = function() return tab() == "tree" end,
 			},
 		},
 		},

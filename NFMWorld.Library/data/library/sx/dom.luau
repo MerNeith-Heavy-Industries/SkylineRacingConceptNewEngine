@@ -88,12 +88,17 @@ local function devName(fn: any): string
     return "anonymous"
 end
 
-local function devPush(kind: string, name: string): any
+local function devPush(kind: string, name: string, props: any?): any
     if not DevTools.enabled then
         return nil
     end
     local parent = DevStack[#DevStack]
     local node = { name = name, kind = kind, children = {}, parent = parent }
+    if props ~= nil then
+        -- devtools: keep a live ref to the element/component props so the devtools can
+        -- render a props pane for the hovered tree node.
+        node.props = props
+    end
     if parent then
         parent.children[#parent.children + 1] = node
     elseif DevTools.root == nil then
@@ -349,7 +354,7 @@ end
 -- Mount a host element: createInstance with static/event props, wire reactive
 -- (function-valued, non-`on`) props through effects, mount children.
 local function mountHostElement(descriptor: types.NodeDescriptor, parent: any, marker: any?): MountResult
-    local devNode = devPush("host", tostring(descriptor.type))
+    local devNode = devPush("host", tostring(descriptor.type), descriptor.props)
     local staticProps: { [string]: any } = {}
     local reactiveProps: { [string]: any } = {}
     for key, val in pairs(descriptor.props) do
@@ -429,7 +434,7 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
     compProps.children = descriptor.children
 
     local name = devName(fn)
-    local devNode = devPush("component", name)
+    local devNode = devPush("component", name, compProps)
     if DevTools.enabled then
         -- Tag the component's root computation so signals/memos created inside it can be
         -- attributed to this component in the devtools signals tab.
@@ -773,6 +778,9 @@ Dom.devtools = {
             local out: any = { name = node.name, kind = node.kind, children = {} }
             if node.__host ~= nil then
                 out.host = node.__host
+            end
+            if node.props ~= nil then
+                out.props = node.props
             end
             local kids = node.children
             for i = 1, #kids do
