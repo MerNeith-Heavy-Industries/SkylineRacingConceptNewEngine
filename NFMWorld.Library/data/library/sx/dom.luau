@@ -34,6 +34,23 @@ local types = require('./types')
 local DevTools = { enabled = false, root = nil }
 local DevStack = {}
 
+-- Format "source:line" for a devtools call site. A call site captured at the top of a
+-- module (e.g. a `styled(...)` definition) resolves to the module's MAIN chunk frame,
+-- which has `linedefined == 0` — fall back to `currentline` (the active line) so styled
+-- definitions still show their source line. `src` alone is the last resort.
+local function formatCallSite(src: any, linedefined: any, currentline: any): string
+	if type(src) ~= "string" or src == "" then
+		return ""
+	end
+	if type(linedefined) == "number" and linedefined > 0 then
+		return src .. ":" .. linedefined
+	end
+	if type(currentline) == "number" and currentline > 0 then
+		return src .. ":" .. currentline
+	end
+	return src
+end
+
 local function devName(fn: any): string
     -- Cheap guard: when devtools is off we never use the name, so don't spend a pcall.
     if not DevTools.enabled then
@@ -42,20 +59,31 @@ local function devName(fn: any): string
     if type(fn) == "string" then
         return fn
     end
+
+    local lineNumber = ''
+    if Sx.debug.getCallSite(fn) then
+        local info = Sx.debug.getCallSite(fn)
+        lineNumber = formatCallSite(info.short_src, info.linedefined, info.currentline)
+    else
+        local ok2, info = pcall(debug.getinfo, fn)
+        if ok2 and type(info) == "table" then
+            lineNumber = formatCallSite(info.short_src, info.linedefined, info.currentline)
+        end
+    end
+
+    -- Styled components register a readable name (they are anonymous closures, so
+    -- debug.info can't name them). Looked up via a weak-keyed registry because
+    -- Lua-CSharp functions can't hold properties.
+    local sxName = Sx.debug.styledName(fn)
+    if type(sxName) == "string" and sxName ~= "" then
+        return sxName .. ' (' .. lineNumber .. ')'
+    end
     -- Lua-CSharp's debug.info(fn, "n") returns the function's stored declaration name
     -- (recorded on the prototype at parse time). Fall back to the definition site
     -- (source + line) via debug.getinfo if the function is unnamed.
     local ok, name = pcall(debug.info, fn, "n")
     if ok and type(name) == "string" and name ~= "" and name ~= "?" then
-        return name
-    end
-    local ok2, info = pcall(debug.getinfo, fn)
-    if ok2 and type(info) == "table" then
-        local src = info.short_src
-        local line = info.linedefined
-        if type(src) == "string" and src ~= "" and type(line) == "number" and line > 0 then
-            return src .. ":" .. line
-        end
+        return name .. ' (' .. lineNumber .. ')'
     end
     return "anonymous"
 end
