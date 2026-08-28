@@ -80,12 +80,12 @@ Compare:
 -- ❌ Old mindset: the function re-runs when the value changes.
 local function Speed()
     local s = speed()          -- read once, baked in forever
-    return x("text") { ("%d"):format(s) }
+    return x(Sx.Text) { ("%d"):format(s) }
 end
 
 -- ✅ Sx mindset: the function runs once; the changing part is a function.
 local function Speed()
-    return x("text") { function()
+    return x(Sx.Text) { function()
         return ("%d"):format(speed())
     end }
 end
@@ -105,11 +105,11 @@ There's no HTML. You build the UI with a function called `x` (short for "element
 a tag name, then a table with the element's properties and children:
 
 ```lua
-x("view") {                         -- a container
+x(Sx.View) {                         -- a container
     style = { flexDirection = "column", gap = 8 },
-    x("text") { "Hello" },          -- a text element
-    x("view") {                     -- nested container
-        x("text") { "World" },
+    x(Sx.Text) { "Hello" },          -- a text element
+    x(Sx.View) {                     -- nested container
+        x(Sx.Text) { "World" },
     },
 }
 ```
@@ -118,10 +118,10 @@ Available host elements:
 
 | Tag | What it is |
 |---|---|
-| `"view"` | A box/container. Use it for layout (flex, spacing, backgrounds). |
-| `"text"` | A piece of text. Its children are the text content. |
-| `"image"` | An image (`src`, `scale`). |
-| `"textinput"` | A text entry box (`value`, `placeholder`, `onchange`, `onsubmit`). |
+| `Sx.View` | A box/container. Use it for layout (flex, spacing, backgrounds). |
+| `Sx.Text` | A piece of text. Its children are the text content. |
+| `Sx.Image` | An image (`src`, `scale`). |
+| `Sx.TextInput` | A text entry box (`value`, `placeholder`, `onchange`, `onsubmit`). |
 
 **How the table is read:**
 
@@ -129,10 +129,10 @@ Available host elements:
 - **Positional entries** (just values in order) are *children*.
 
 ```lua
-x("view") {
+x(Sx.View) {
     style = { padding = 8 },        -- a property (named)
-    x("text") { "child one" },      -- a child (positional)
-    x("text") { "child two" },      -- another child
+    x(Sx.Text) { "child one" },      -- a child (positional)
+    x(Sx.Text) { "child two" },      -- another child
 }
 ```
 
@@ -141,14 +141,14 @@ tree:
 
 ```lua
 local function SpeedReadout()
-    return x("view") {
-        x("text") { function() return ("%d"):format(speed()) end },
-        x("text") { "KM/H" },
+    return x(Sx.View) {
+        x(Sx.Text) { function() return ("%d"):format(speed()) end },
+        x(Sx.Text) { "KM/H" },
     }
 end
 
 -- use it:
-x("view") { x(SpeedReadout) {} }
+x(Sx.View) { x(SpeedReadout) {} }
 ```
 
 ---
@@ -158,7 +158,7 @@ x("view") { x(SpeedReadout) {} }
 To make text react to a signal, pass a **function** as the text child:
 
 ```lua
-x("text") { function()
+x(Sx.Text) { function()
     return ("%d"):format(speed())
 end }
 ```
@@ -178,12 +178,12 @@ is a function that gets each item:
 ```lua
 local items = { { name = "Skyline" }, { name = "Silvia" } }
 
-x("view") {
+x(Sx.View) {
     x(Sx.For) {
         each = function() return items end,
         function(item, index)
             local it = item()
-            return x("text") { it.name }
+            return x(Sx.Text) { it.name }
         end,
     },
 }
@@ -203,7 +203,7 @@ your rows have stable identities (e.g. car objects); use `Index` when you only c
 position.
 
 > If a row's content needs to react to a signal, use the accessor pattern inside the row,
-> just like with text: `x("text") { function() return item().name end }`.
+> just like with text: `x(Sx.Text) { function() return item().name end }`.
 
 ---
 
@@ -214,8 +214,8 @@ position.
 ```lua
 x(Sx.Show) {
     when = function() return isLoggedIn() end,
-    fallback = x("text") { "Sign in" },
-    x("text") { "Welcome back" },
+    fallback = x(Sx.Text) { "Sign in" },
+    x(Sx.Text) { "Welcome back" },
 }
 ```
 
@@ -243,8 +243,8 @@ If a component needs to return *several* top-level children with no wrapping box
 
 ```lua
 return x(Sx.Fragment) {
-    x("text") { "first" },
-    x("text") { "second" },
+    x(Sx.Text) { "first" },
+    x(Sx.Text) { "second" },
 }
 ```
 
@@ -256,11 +256,11 @@ Anything that starts with `on` is an **event handler** (a function called when s
 happens). They're wired up once and stay put:
 
 ```lua
-x("view") {
+x(Sx.View) {
     onmousedown = function(evt)
         UiLib.call("navigate", { page = "garage" })
     end,
-    x("text") { "Garage" },
+    x(Sx.Text) { "Garage" },
 }
 ```
 
@@ -279,13 +279,13 @@ Available events: `onmousedown`, `onmouseup`, `onmousedrag`, `onmousescroll`, `o
 Inline styles are just tables:
 
 ```lua
-x("view") { style = { width = "100%", height = "100%", flexDirection = "column" } }
+x(Sx.View) { style = { width = "100%", height = "100%", flexDirection = "column" } }
 ```
 
 For reusable styled components, use `styled`:
 
 ```lua
-local MenuItem = styled("view") {
+local MenuItem = styled(Sx.View) {
     padding = 14,
     backgroundColor = "rgba(60,60,60,0.12)",
     borderRadius = 8,
@@ -297,7 +297,7 @@ local MenuItem = styled("view") {
 -- use it:
 x(MenuItem) {
     onmousedown = function() print("clicked") end,
-    x("text") { "Label" },
+    x(Sx.Text) { "Label" },
 }
 ```
 
@@ -317,7 +317,7 @@ local speedKmh = Sx.createMemo(function()
     return math.floor(speed() * 1.4 * 21.0 * 60.0 * 60.0 / 100000.0 + 0.5)
 end)
 
-x("text") { function() return ("%d"):format(speedKmh()) end }
+x(Sx.Text) { function() return ("%d"):format(speedKmh()) end }
 ```
 
 - Like a signal, you read it with `speedKmh()`.
@@ -328,7 +328,115 @@ x("text") { function() return ("%d"):format(speedKmh()) end }
 
 ---
 
-## 12. Lifecycle: `onMount`, `onCleanup`, `createRoot`
+## 12. Typing reactive values: `Signalish`, `Accessor`, and `Sx.read`
+
+Sx ships three type helpers for describing values that may or may not be reactive. They
+show up in `--!strict` Lua whenever you write a reusable component that accepts either a
+plain value or a reactive getter.
+
+### `Sx.Signalish<T>`
+
+`Signalish<T>` is `T | (() -> T)` — "a `T`, or a function that returns a `T`." Use it for a
+prop that callers may pass either as a static value **or** as a reactive accessor:
+
+```lua
+local function SpeedBadge(props: { value: Sx.Signalish<number> })
+    return x(Sx.Text) { function() return ("%d"):format(props.value()) end }
+end
+```
+
+Because the prop is a union, Sx can't know whether `props.value` is a function or a plain
+number — that's exactly what `Sx.read` is for (below). A `Signalish` prop is also how the
+built-in host props work (`style`, `value`, `src`, ... are all `Signalish`), which is why
+you can pass either a table or a function to `style = ...`.
+
+### `Sx.Accessor<T>`
+
+`Accessor<T>` is just `() -> T` — the read handle of a signal. Use it (instead of
+`Signalish`) when you want to **require** callers to hand you a reactive getter, so you
+never have to unwrap a union:
+
+```lua
+local function SettingsPage(props: { config: Sx.Accessor<SettingsSnapshot> })
+    -- props.config is *always* a function; no union to unwrap.
+    return x(Sx.Text) { function() return props.config().name end }
+end
+```
+
+A signal's read handle *is* an `Accessor`: `local v, setV = Sx.createSignal(0)` gives you
+`v: Sx.Accessor<number>`.
+
+### `Sx.read(v)`
+
+`Sx.read(v)` takes a `Signalish<T>` and returns the plain `T` — if `v` is a function it
+calls it, otherwise it returns `v` as-is. It's the safe way to unwrap a `Signalish` prop
+*inside a reactive scope* so the scope subscribes to the underlying signal:
+
+```lua
+local function StatBar(props: { value: Sx.Signalish<number>? })
+    return x(Sx.View) {
+        x(Sx.Text) { function()
+            local v = Sx.read(props.value) or 0   -- subscribes if value is a getter
+            return ("%.0f"):format(clamp01(v) * 100)
+        end },
+    }
+end
+```
+
+Read it inside an effect, memo, or function-child — **never** at the top of a component,
+which would read it once and bake it in (the "component runs once" trap from section 4).
+`Sx.read` also sidesteps the `and/or` falsy trap from the gotchas: it only special-cases
+function-ness, not the value, so a getter that returns `false`/`nil` still resolves
+correctly.
+
+**Cache the resolved reference when it's expensive.** `GlassCard` shows the pattern: it
+resolves its `Signalish` style inside a memo and keeps the *last* resolved table, rebuilding
+only when the resolved reference actually changes — so a card whose style didn't change
+reuses the same table and the reactive style prop skips its `setProperty`.
+
+---
+
+## 13. Typing lists: `For<<T>>` and `Index<<T>>`
+
+`For` and `Index` are *generic* components — you tell Luau what the row type is by writing
+`x(Sx.For<<T>>)`. This types both the `each`/`of` list and the `item` getter your row
+function receives:
+
+```lua
+type CarStatsData = { name: string, topSpeed: number }
+
+x(Sx.For<<CarStatsData>>) {
+    each = function() return collections[0].cars end,  -- {CarStatsData}
+    function(item: () -> CarStatsData, index: number)
+        local car = item()                              -- item() is CarStatsData
+        return x(CarCard) { name = car.name, topSpeed = car.topSpeed }
+    end,
+}
+```
+
+- The type argument `<<T>>` is the **row** type. `each` must then be `{T}` (or a
+  `() -> {T}`), and your row function's first parameter is `item: () -> T` — a getter you
+  call with `item()` to get the row, never the row itself.
+- `Index<<T>>` is identical but uses `of` instead of `each`, and keys rows by position
+  instead of identity:
+
+  ```lua
+  x(Sx.Index<<string>>) {
+      of = function() return splitLines(text) end,
+      function(line: () -> string, i: number)
+          return x(Sx.Text) { line() }
+      end,
+  }
+  ```
+
+- If you leave the type argument off, Luau falls back to `T = any` and you lose
+  autocomplete and type-checking on `item()` — always write the `<<T>>`.
+- Annotate the row callback parameters (`item: () -> T, index: number`) explicitly. It
+  makes intent clear and lets Luau catch you if you treat `item` as a plain value.
+
+---
+
+## 14. Lifecycle: `onMount`, `onCleanup`, `createRoot`
 
 These are for when a component or effect starts and stops.
 
@@ -354,7 +462,7 @@ end
 
 ---
 
-## 13. Grouping writes: `batch`
+## 15. Grouping writes: `batch`
 
 If you write several signals at once, wrap them in `batch` so Sx only does **one** update
 pass instead of one per write:
@@ -372,13 +480,13 @@ that belong together.
 
 ---
 
-## 14. Talking to the game: `UiLib.onEvent` and `UiLib.call`
+## 16. Talking to the game: `UiLib.onEvent` and `UiLib.call`
 
 The Lua UI talks to the C# game through two functions:
 
 - **C# → Lua (incoming data):** `UiLib.onEvent(eventName, handler)` — register a handler
   that's called when the game pushes data. It returns an unregister function (call it on
-  cleanup, see section 12).
+  cleanup, see section 14).
 
   ```lua
   UiLib.onEvent("race:hudState", function(data)
@@ -401,7 +509,7 @@ carry.
 
 ---
 
-## 15. Putting it together: a router and a page
+## 17. Putting it together: a router and a page
 
 The app is entered through `data/uis/router.luau`, which subscribes to navigation and renders
 the current page:
@@ -446,9 +554,9 @@ local function MainMenu()
         Sx.onCleanup(unsub)
     end)
 
-    return x("view") {
+    return x(Sx.View) {
         style = { flexDirection = "column", alignItems = "center", justifyContent = "center" },
-        x("text") {
+        x(Sx.Text) {
             style = { fontSize = 48, fontStyle = "bold" },
             "NFM WORLD",
         },
@@ -457,7 +565,7 @@ local function MainMenu()
                 local a = account()
                 return a ~= nil and a.isLoggedIn
             end,
-            x("text") { function()
+            x(Sx.Text) { function()
                 return ("Welcome, %s"):format(account().name)
             end },
         },
@@ -473,10 +581,10 @@ builds its tree once, with reactive bits inside functions.
 
 ---
 
-## 16. Gotchas (worth reading twice)
+## 18. Gotchas (worth reading twice)
 
-1. **Reactive text must be a function.** `x("text") { value }` sets it once; to react, use
-   `x("text") { function() return value() end }`.
+1. **Reactive text must be a function.** `x(Sx.Text) { value }` sets it once; to react, use
+   `x(Sx.Text) { function() return value() end }`.
 
 2. **Non-`on` function props are reactive.** `onmousedown = fn` is a handler; `color = fn`
    would be treated as a reactive value. Name plain callbacks with `on`.
@@ -499,9 +607,14 @@ builds its tree once, with reactive bits inside functions.
 8. **Unsubscribe on unmount.** If you `UiLib.onEvent(...)` inside an effect, pass the returned
    unregister to `Sx.onCleanup` so a navigated-away page doesn't keep receiving events.
 
+9. **Always write `<<T>>` on `For`/`Index`.** Without it Luau infers `T = any`, so you lose
+   checking on `item()`. Write `x(Sx.For<<Car>>)` and annotate the callback as
+   `function(item: () -> Car, index)`. Type signal-able props with `Sx.Signalish<T>` and
+   read them with `Sx.read` inside a reactive scope — never at the top of a component.
+
 ---
 
-## 17. Glossary (web terms → plain words)
+## 19. Glossary (web terms → plain words)
 
 | Term | Plain meaning |
 |---|---|
@@ -517,6 +630,9 @@ builds its tree once, with reactive bits inside functions.
 | Batch | Grouping several writes so Sx does one update pass. |
 | HUD | Head-Up Display — the in-race overlay (speed, laps, position). |
 | Phase / bridge | A game screen (main menu, garage, race) and the C# code that feeds it data. |
+| Signalish | A type `T | (() -> T)` for a prop that may be a plain value or a getter. |
+| Accessor | The read handle of a signal (`() -> T`). |
+| `Sx.read` | Unwraps a `Signalish` to its plain value (calls it if it's a function). |
 
 ---
 
@@ -538,14 +654,20 @@ Sx.onMount(fn)                              -- run once on mount
 Sx.batch(function() ... end)                -- group writes
 
 -- tree
-x("view")  { style = {...}, x("text") { "hi" } }
-x(MyComponent) { someProp = 1, x("text") { "child" } }
+x(Sx.View)  { style = {...}, x(Sx.Text) { "hi" } }
+x(MyComponent) { someProp = 1, x(Sx.Text) { "child" } }
+
+-- types (--!strict)
+Sx.Signalish<T>   -- T | (() -> T): a prop that's a value OR a getter
+Sx.Accessor<T>    -- () -> T: the read handle of a signal (requires a getter)
+Sx.read(v)        -- unwrap a Signalish<T> to T inside a reactive scope
 
 -- flow
-x(Sx.Show)    { when = fn, fallback = ..., children }
-x(Sx.Switch)  { x(Sx.Match) { when = fn, children }, ... }
-x(Sx.For)     { each = fn, function(item, index) return ... end }
-x(Sx.Fragment){ child1, child2 }
+x(Sx.Show)         { when = fn, fallback = ..., children }
+x(Sx.Switch)       { x(Sx.Match) { when = fn, children }, ... }
+x(Sx.For<<T>>)     { each = fn, function(item: () -> T, index) return ... end }
+x(Sx.Index<<T>>)   { of = fn, function(item: () -> T, index) return ... end }
+x(Sx.Fragment)     { child1, child2 }
 
 -- events (once) vs reactive props (functions)
 onmousedown = function(evt) ... end
@@ -558,6 +680,3 @@ UiLib.call("method", { ... })
 -- entry point
 Sx.render(x(Router) {})
 ```
-
-
-TODO: document Sx.read, Sx.Accessor, and Sx.Signalish, update 'view' -> Sx.View
