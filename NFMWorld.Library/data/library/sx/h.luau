@@ -131,6 +131,7 @@ export type Styles = {
 	borderBottomRightRadius: string | number | nil,
 	--- accepts px
 	borderRadius: string | number | nil,
+	pointerEvents: 'auto' | 'none' | nil,
 }
 
 export type TextStyles = Styles & {

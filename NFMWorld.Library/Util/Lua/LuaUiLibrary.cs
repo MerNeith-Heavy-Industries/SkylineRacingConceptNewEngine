@@ -656,6 +656,12 @@ public static class LuaUiLibrary
                 // Opacity
                 "opacity" => styles with { Opacity = ParseFloat(rawvalue, styles.Opacity) },
 
+                // Pointer
+                "pointer-events" or "pointerEvents" when rawvalue.TryRead<string>(out var v) => styles with
+                {
+                    PointerEvents = v is not "none"
+                },
+                
                 _ => styles
             };
         }

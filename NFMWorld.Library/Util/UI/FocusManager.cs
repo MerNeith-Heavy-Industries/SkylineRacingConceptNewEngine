@@ -79,6 +79,9 @@ public static class FocusManager
 
     private static Component? HitTestRecursive(Component node, Vector2 pos)
     {
+        if (!node.Styles.PointerEvents)
+            return null;
+
         // Skip nodes (and their descendants) clipped out by an overflow ancestor.
         if (node.ClipRect is { } clip && !clip.Contains(pos.X, pos.Y))
             return null;
@@ -134,6 +137,9 @@ public static class FocusManager
 
     private static bool HitTestChainRecursive(Component node, LuaVector2 pos, List<Component> chain)
     {
+        if (!node.Styles.PointerEvents)
+            return false;
+
         // Skip nodes (and their descendants) clipped out by an overflow ancestor.
         if (node.ClipRect is { } clip && !clip.Contains(pos.X, pos.Y))
             return false;
@@ -223,24 +229,12 @@ public static class FocusManager
     }
 
     /// <summary>
-    /// Clear the hover chain, resetting <see cref="Component.IsHovered"/> on
-    /// all currently-hovered elements. Does not fire MouseLeft events — host
-    /// side state (e.g. React styled components) is reset by React's own
-    /// unmount effect when the tree is torn down. Use when deactivating the
-    /// UI (phase change) or when the tree is structurally mutated.
+    /// Clear the hover chain, resetting <see cref="Component.IsHovered"/> on all currently
+    /// hovered elements WITHOUT firing MouseLeft events. Use when deactivating the UI
+    /// (phase change) or tearing down the whole tree, where firing leave callbacks against
+    /// state that is going away is undesirable.
     /// </summary>
     public static void ClearHover()
-    {
-        ResetHover();
-    }
-
-    /// <summary>
-    /// Silently drop the hover chain without firing events. Use during
-    /// structural DOM mutations (React unmount/remount) where hovered nodes
-    /// are being torn down and the chain would otherwise hold stale
-    /// references to disposed components.
-    /// </summary>
-    public static void ResetHover()
     {
         if (_hoveredChain.Count == 0) return;
 
@@ -249,4 +243,36 @@ public static class FocusManager
 
         _hoveredChain.Clear();
     }
+
+    /// <summary>
+    /// Drop the hover chain, firing MouseLeft for components that still exist and silently
+    /// discarding stale (disposed) references. Structural mutations can tear down hovered
+    /// subtrees; firing on a disposed node would invoke callbacks against removed state, so
+    /// those are dropped without an event while surviving components get a proper leave.
+    /// </summary>
+    public static void ResetHover()
+    {
+        if (_hoveredChain.Count == 0) return;
+
+        // Clear first and iterate a stable snapshot so a MouseLeft callback that triggers a
+        // nested structural mutation (re-entrant ResetHover) sees an empty chain.
+        var chain = new List<Component>(_hoveredChain);
+        _hoveredChain.Clear();
+
+        for (int i = chain.Count - 1; i >= 0; i--)
+        {
+            var node = chain[i];
+            if (node.IsDisposed)
+                continue; // stray reference — drop silently
+            node.DispatchMouseLeft(s_leaveEvent);
+        }
+    }
+
+    private static readonly BaseMouseMoveEvent s_leaveEvent = new(
+        new LuaVector2(0, 0),
+        default,
+        CtrlKey: false,
+        AltKey: false,
+        ShiftKey: false
+    );
 }
