@@ -245,34 +245,28 @@ public static class FocusManager
     }
 
     /// <summary>
-    /// Drop the hover chain, firing MouseLeft for components that still exist and silently
-    /// discarding stale (disposed) references. Structural mutations can tear down hovered
-    /// subtrees; firing on a disposed node would invoke callbacks against removed state, so
-    /// those are dropped without an event while surviving components get a proper leave.
+    /// Reconcile the hover chain after a structural change, mirroring how a browser
+    /// re-hit-tests the pointer against the new DOM. Browsers only fire mouseleave on
+    /// elements whose hover state actually changed — inserting/removing an unrelated
+    /// subtree does NOT fire mouseleave on a sibling still under the cursor. So instead of
+    /// wiping the whole chain (which spuriously fired MouseLeft on still-hovered nodes,
+    /// e.g. whenever a devtools pane or a Show toggled), we drop stale (disposed)
+    /// references and keep the surviving hovered nodes; the next
+    /// <see cref="DispatchMouseMove"/> re-diffs against the new tree and fires
+    /// leave/enter only for nodes that actually changed. Full teardown / phase changes
+    /// should use <see cref="ClearHover"/>.
     /// </summary>
     public static void ResetHover()
     {
         if (_hoveredChain.Count == 0) return;
 
-        // Clear first and iterate a stable snapshot so a MouseLeft callback that triggers a
-        // nested structural mutation (re-entrant ResetHover) sees an empty chain.
-        var chain = new List<Component>(_hoveredChain);
-        _hoveredChain.Clear();
-
-        for (int i = chain.Count - 1; i >= 0; i--)
+        // Drop stale (disposed) references silently; keep surviving hovered nodes so the
+        // next DispatchMouseMove diffs against them instead of re-firing MouseEntered on
+        // everything under the cursor.
+        for (int i = _hoveredChain.Count - 1; i >= 0; i--)
         {
-            var node = chain[i];
-            if (node.IsDisposed)
-                continue; // stray reference — drop silently
-            node.DispatchMouseLeft(s_leaveEvent);
+            if (_hoveredChain[i].IsDisposed)
+                _hoveredChain.RemoveAt(i);
         }
     }
-
-    private static readonly BaseMouseMoveEvent s_leaveEvent = new(
-        new LuaVector2(0, 0),
-        default,
-        CtrlKey: false,
-        AltKey: false,
-        ShiftKey: false
-    );
 }
