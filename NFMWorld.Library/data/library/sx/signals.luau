@@ -67,7 +67,6 @@ local DebugHooks = {
 }
 local LiveNodes: { { node: any, kind: string }? } = {} -- registry of live signal/computation nodes
 local StyledNames = setmetatable({}, { __mode = "k" }) -- devtools: styled component fn -> name (weak keys; Lua-CSharp fns can't hold props)
-local CallSites = setmetatable({}, { __mode = "k" }) -- devtools: styled component fn -> debug.getinfo (weak keys; Lua-CSharp fns can't hold props)
 
 local function registerLive(node: any, kind: string)
     LiveNodes[#LiveNodes + 1] = { node = node, kind = kind }
@@ -475,14 +474,8 @@ Sx.debug = {
     setStyledName = function(fn: any, name: string)
         StyledNames[fn] = name
     end,
-    setCallSite = function(fn: any, info: any)
-        CallSites[fn] = info
-    end,
     styledName = function(fn: any): string?
         return StyledNames[fn]
-    end,
-    getCallSite = function(fn: any): any
-        return CallSites[fn]
     end,
     -- devtools: walk the reactive owner chain up to the nearest component root and return
     -- the component that owns this signal/memo (or nil for module-level / unnamed scopes).
