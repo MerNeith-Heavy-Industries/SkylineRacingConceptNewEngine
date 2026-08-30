@@ -293,14 +293,13 @@ local function TreeNode(props: { node: any, depth: number, onHover: ((any?) -> (
 				end,
 			},
 		},
-			x(Sx.Show) {
-				when = function() return expanded() and hasChildren end,
-				x(Sx.For) {
-					each = function() return props.node.children end,
-					function(item, index)
-						return x(TreeNode) { node = item(), depth = props.depth + 1, onHover = props.onHover, expandAll = props.expandAll, expandVersion = props.expandVersion }
-					end,
-				},
+		x(Sx.Show) {
+			when = function() return expanded() and hasChildren end,
+			x(Sx.For) {
+				each = function() return props.node.children end,
+				function(item, index)
+					return x(TreeNode) { node = item(), depth = props.depth + 1, onHover = props.onHover, expandAll = props.expandAll, expandVersion = props.expandVersion }
+				end,
 			},
 		},
 	}
@@ -514,7 +513,7 @@ local function DevTools()
 				return host.layoutBorderPosition, host.layoutBorderSize
 			end)
 			if ok and pos ~= nil and size ~= nil then
-				rect = { x = pos.x, y = pos.y, w = size.x, h = size.h }
+				rect = { x = pos.x, y = pos.y, w = size.x, h = size.y }
 			end
 		end
 		applyHover(node, rect)

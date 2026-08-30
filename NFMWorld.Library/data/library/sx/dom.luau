@@ -12,6 +12,7 @@
 
 local Sx = require('./signals')
 local Host = require('./host')
+local h = require('./h')
 local createRoot = Host.createRoot
 local createInstance = Host.createInstance
 local createTextInstance = Host.createTextInstance
@@ -51,7 +52,7 @@ local function formatCallSite(src: any, linedefined: any, currentline: any): str
 	return src
 end
 
-local function devName(fn: any): string
+local function devName(fn: any, callSite: string?): string
     -- Cheap guard: when devtools is off we never use the name, so don't spend a pcall.
     if not DevTools.enabled then
         return ""
@@ -60,10 +61,12 @@ local function devName(fn: any): string
         return fn
     end
 
+    -- Prefer the creation call site (recorded on the descriptor at `x(...){...}` time)
+    -- over the component's declaration site, so each tree node shows where its instance
+    -- was created in the source.
     local lineNumber = ''
-    if Sx.debug.getCallSite(fn) then
-        local info = Sx.debug.getCallSite(fn)
-        lineNumber = formatCallSite(info.short_src, info.linedefined, info.currentline)
+    if callSite ~= nil and callSite ~= "" then
+        lineNumber = callSite
     else
         local ok2, info = pcall(debug.getinfo, fn)
         if ok2 and type(info) == "table" then
@@ -188,14 +191,6 @@ local function createAnchor(parent: any): any
     local anchor = createTextInstance("")
     appendChild(parent, anchor)
     return anchor
-end
-
--- ------------------------------------------------------------------ mount result
-
--- A mount result is { nodes = {hostNode,...}, dispose = fn }.
-
-local function emptyMount(): MountResult
-    return { nodes = {}, dispose = function() end }
 end
 
 -- ------------------------------------------------------------------ mountValue / mountNode (mutually recursive)
@@ -433,7 +428,7 @@ local function mountComponent(descriptor: types.NodeDescriptor, parent: any, mar
     end
     compProps.children = descriptor.children
 
-    local name = devName(fn)
+    local name = devName(fn, descriptor.callSite)
     local devNode = devPush("component", name, compProps)
     if DevTools.enabled then
         -- Tag the component's root computation so signals/memos created inside it can be
@@ -766,9 +761,11 @@ Dom.mountValueInto = mountValueInto
 Dom.devtools = {
     enable = function()
         DevTools.enabled = true
+        h.setCaptureCallSites(true)
     end,
     disable = function()
         DevTools.enabled = false
+        h.setCaptureCallSites(false)
     end,
     snapshot = function(): any?
         if DevTools.root == nil then

@@ -12,7 +12,45 @@ local t = require('./types')
 
 local h = {}
 
+-- devtools: when enabled, `x` records the "short_src:line" of the `x(...){...}` call site
+-- onto each descriptor so the devtools tree can show where an element/component was
+-- created in the code (instead of the component's declaration site). Off by default —
+-- mounting builds descriptors once, but we still avoid the debug.getinfo cost when the
+-- devtools are not in use.
+local captureCallSites = false
+
+-- Capture the "short_src:line" of the caller of the returned builder — i.e. the
+-- `x(...){...}` creation site. Uses debug.traceback because debug.getinfo's currentline
+-- is 0 for the DoFile'd entry chunk in this VM, while traceback reports "file:line"
+-- reliably for every frame. We walk up the traceback and return the FIRST frame that is
+-- NOT inside the Sx library. That is the user's creation site even when flow/effect
+-- machinery (For/Show/Switch, signals, styled) sits between the render function and the
+-- `x` call — e.g. a `<For>` row function lives in the user's module, not in dom.luau.
+local function captureCallSite(): string
+    local ok, tb = pcall(debug.traceback, "", 2)
+    if not ok or type(tb) ~= "string" then
+        return ""
+    end
+    for line in tb:gmatch("[^\n]+") do
+        local path, ln = line:match("^%s*([^:]+):(%d+):")
+        if path and ln and not path:find("sx/", 1, true) then
+            return path .. ":" .. ln
+        end
+    end
+    return ""
+end
+
 local function x<P>(vtype: t.Component<P>): ((Propify<P, any>) -> t.NodeDescriptor)
+    -- Capture the creation site in the OUTER builder, not the returned function:
+    -- `x(ItemBtn){...}` is `x(ItemBtn)({...})`, so the `x(ItemBtn)` call is never in a
+    -- tail position and its caller (the component's render fn) is still on the stack.
+    -- Capturing inside the returned builder would lose that frame for a `<For>` row's
+    -- `return x(ItemBtn){...}` (tail call elimination), resolving the site to the mount
+    -- line instead of the user's row fn.
+    local callSite = ""
+    if captureCallSites then
+        callSite = captureCallSite()
+    end
     return function(props: P?)
         props = props or {}
         local named: { [string]: any } = {}
@@ -24,11 +62,13 @@ local function x<P>(vtype: t.Component<P>): ((Propify<P, any>) -> t.NodeDescript
                 named[k] = v
             end
         end
-        return {
+        local desc = {
             type = vtype,
             props = named,
             children = children,
         }
+        desc.callSite = callSite
+        return desc
     end
 end
 
@@ -254,6 +294,10 @@ local function TextInput(props: TextInputProps): t.NodeDescriptor
         props = props,
         children = props.children or {},
     }
+end
+
+h.setCaptureCallSites = function(v: boolean)
+    captureCallSites = v
 end
 
 h.x = x

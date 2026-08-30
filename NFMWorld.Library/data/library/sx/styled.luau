@@ -198,8 +198,6 @@ local function styled<P>(tag: (P) -> t.NodeDescriptor, name: string?): (StyledIn
             Sx.debug.setStyledName(component, 'StyledComponent')
         end
 
-        Sx.debug.setCallSite(component, debug.getinfo(2))
-
         return component
     end
 end
