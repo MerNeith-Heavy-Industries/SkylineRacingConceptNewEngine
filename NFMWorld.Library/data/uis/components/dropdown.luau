@@ -6,12 +6,13 @@
 -- { label, value }. Opens a popup below the trigger; closes on outside click (blur),
 -- on selecting an option, or on re-clicking the trigger.
 --
--- Note: Sx styles have no zIndex, so the popup relies on absolute positioning relative
--- to this container (`position = "relative"`); inside `overflow: hidden/scroll` parents
--- it may be clipped. A real dropdown (not the click-to-cycle Select in settings.luau).
+-- A real dropdown (not the click-to-cycle Select in settings.luau). The popup is
+-- absolutely positioned below the trigger with zIndex = 1000, so it is painted and
+-- hit-tested above later tree siblings (z-index aware render order + FocusManager
+-- hit test). Inside `overflow: hidden/scroll` parents it may still be clipped.
 -- Open/close is driven purely by the trigger toggle + selecting an option (no
 -- focus/blur), so it re-opens reliably after a selection. There is no click-outside
--- close (Sx has no zIndex/full-screen layer for a scoped backdrop).
+-- close (no full-screen scoped backdrop).
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
@@ -49,6 +50,7 @@ local function Dropdown(props: DropdownProps)
 	local placeholder = props.placeholder or "Select..."
 
 	local open, setOpen = Sx.createSignal(false)
+	local hovered, setHovered = Sx.createSignal(false)
 
 	local function selectedLabel()
 		local v = Sx.read(props.value)
@@ -59,11 +61,53 @@ local function Dropdown(props: DropdownProps)
 		return placeholder
 	end
 
+	-- Per-option row: its own hover signal so only the hovered option re-renders.
+	local function DropdownOptionRow(props: { opt: DropdownOption, value: Sx.Signalish<number?>, onSelect: (number) -> () })
+		local hovered, setHovered = Sx.createSignal(false)
+		return x(Sx.View) {
+			style = Sx.createMemo(function(): Sx.Styles
+				local v = Sx.read(props.value)
+				local selected = v ~= nil and v == props.opt.value
+				return {
+					paddingTop = 7,
+					paddingBottom = 7,
+					paddingLeft = 12,
+					paddingRight = 12,
+					backgroundColor = selected and "rgba(79,195,247,0.18)"
+						or (hovered() and "rgba(255,255,255,0.08)" or "transparent"),
+				}
+			end),
+			onmousedown = function()
+				if disabled then return end
+				props.onSelect(props.opt.value)
+				setOpen(false)
+			end,
+			onmouseenter = function()
+				setHovered(true)
+			end,
+			onmouseleave = function()
+				setHovered(false)
+			end,
+			x(Sx.Text) {
+				style = Sx.createMemo(function(): Sx.TextStyles
+					local v = Sx.read(props.value)
+					local selected = v ~= nil and v == props.opt.value
+					return {
+						fontSize = 13,
+						color = selected and "#4fc3f7" or (hovered() and "#fff" or "rgba(255,255,255,0.8)"),
+					}
+				end),
+				props.opt.label,
+			},
+		}
+	end
+
 	return x(Sx.View) {
 		style = { position = "relative", width = width },
 		x(Sx.View) {
 			style = Sx.createMemo(function(): Sx.Styles
 				local isOpen = open()
+				local hov = hovered() and not disabled
 				return {
 					display = "flex",
 					flexDirection = "row",
@@ -76,13 +120,19 @@ local function Dropdown(props: DropdownProps)
 					paddingRight = 12,
 					backgroundColor = "rgba(255,255,255,0.06)",
 					borderWidth = 1,
-					borderColor = isOpen and "rgba(79,195,247,0.6)" or "rgba(255,255,255,0.15)",
+					borderColor = isOpen and "rgba(79,195,247,0.6)" or (hov and "rgba(255,255,255,0.4)" or "rgba(255,255,255,0.15)"),
 					borderRadius = 6,
 				}
 			end),
 			onmousedown = function()
 				if disabled then return end
 				setOpen(not open())
+			end,
+			onmouseenter = function()
+				setHovered(true)
+			end,
+			onmouseleave = function()
+				setHovered(false)
 			end,
 			x(Sx.Text) {
 				style = Sx.createMemo(function(): Sx.TextStyles
@@ -104,44 +154,20 @@ local function Dropdown(props: DropdownProps)
 					marginTop = 4,
 					display = "flex",
 					flexDirection = "column",
+					zIndex = 1000,
 					backgroundColor = "rgba(20,24,32,0.98)",
 					borderWidth = 1,
 					borderColor = "rgba(255,255,255,0.15)",
 					borderRadius = 6,
-					overflow = "hidden",
+					overflow = "scroll",
 				},
 				x(Sx.For<<DropdownOption>>) {
 					each = function() return rows end,
 					function(item: () -> DropdownOption, _index: number)
-						local opt = item()
-						return x(Sx.View) {
-							style = Sx.createMemo(function(): Sx.Styles
-								local v = Sx.read(props.value)
-								local selected = v ~= nil and v == opt.value
-								return {
-									paddingTop = 7,
-									paddingBottom = 7,
-									paddingLeft = 12,
-									paddingRight = 12,
-									backgroundColor = selected and "rgba(79,195,247,0.18)" or "transparent",
-								}
-							end),
-							onmousedown = function()
-								if disabled then return end
-								props.onSelect(opt.value)
-								setOpen(false)
-							end,
-							x(Sx.Text) {
-								style = Sx.createMemo(function(): Sx.TextStyles
-									local v = Sx.read(props.value)
-									local selected = v ~= nil and v == opt.value
-									return {
-										fontSize = 13,
-										color = selected and "#4fc3f7" or "rgba(255,255,255,0.8)",
-									}
-								end),
-								opt.label,
-							},
+						return x(DropdownOptionRow) {
+							opt = item(),
+							value = props.value,
+							onSelect = props.onSelect,
 						}
 					end,
 				},

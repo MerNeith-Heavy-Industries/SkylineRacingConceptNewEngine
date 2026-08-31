@@ -19,6 +19,7 @@ export type CheckboxProps = {
 local function Checkbox(props: CheckboxProps)
 	local size = props.size or 16
 	local disabled = props.disabled == true
+	local hovered, setHovered = Sx.createSignal(false)
 
 	return x(Sx.View) {
 		style = {
@@ -31,16 +32,23 @@ local function Checkbox(props: CheckboxProps)
 			if disabled then return end
 			props.onToggle()
 		end,
+		onmouseenter = function()
+			setHovered(true)
+		end,
+		onmouseleave = function()
+			setHovered(false)
+		end,
 		x(Sx.View) {
 			style = Sx.createMemo(function(): Sx.Styles
 				local checked = Sx.read(props.checked)
+				local hov = hovered() and not disabled
 				return {
 					width = size,
 					height = size,
 					flexShrink = 0,
-					backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.08)",
+					backgroundColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.16)" or "rgba(255,255,255,0.08)"),
 					borderWidth = 1,
-					borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.25)",
+					borderColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.5)" or "rgba(255,255,255,0.25)"),
 					borderRadius = 3,
 				}
 			end),

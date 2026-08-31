@@ -70,14 +70,16 @@ public static class FocusManager
 
     /// <summary>
     /// Hit-test: find the topmost focusable Node at a screen position.
-    /// Walks children in reverse (topmost rendered last).
+    /// Walks children topmost-first — higher subtree z-index wins over lower, and among
+    /// equal z-index the later sibling (rendered last) is on top.
     /// </summary>
     public static Node? HitTest(Component root, Vector2 screenPos)
     {
-        return HitTestRecursive(root, screenPos);
+        var zCache = new Dictionary<Component, int>();
+        return HitTestRecursive(root, screenPos, zCache);
     }
 
-    private static Component? HitTestRecursive(Component node, Vector2 pos)
+    private static Component? HitTestRecursive(Component node, Vector2 pos, Dictionary<Component, int> zCache)
     {
         if (!node.Styles.PointerEvents)
             return null;
@@ -86,13 +88,15 @@ public static class FocusManager
         if (node.ClipRect is { } clip && !clip.Contains(pos.X, pos.Y))
             return null;
 
-        // Walk children back-to-front for correct z-order
-        foreach (var visual in GetTopmostFirst(node))
+        // Walk children topmost-first for z-index aware occlusion: a high-z subtree
+        // (e.g. a dropdown popup) is hit-tested before lower-z siblings of an ancestor,
+        // even if it appears earlier in the tree.
+        foreach (var visual in GetTopmostFirst(node, zCache))
         {
             if (!visual.IsDisplayed)
                 continue;
 
-            var result = HitTestRecursive(visual, pos);
+            var result = HitTestRecursive(visual, pos, zCache);
             if (result is not null) return result;
         }
 
@@ -109,33 +113,62 @@ public static class FocusManager
 
     /// <summary>
     /// Hit-tests and returns the full ancestor chain (root→leaf) of nodes at
-    /// <paramref name="screenPos"/>. Empty when nothing hit.
+    /// <paramref name="screenPos"/>. Empty when nothing hit. Uses the same z-index
+    /// aware ordering as <see cref="HitTest"/> so hover matches the mousedown hit.
     /// </summary>
     public static List<Component> HitTestChain(Component root, LuaVector2 screenPos)
     {
         var chain = new List<Component>();
-        HitTestChainRecursive(root, screenPos, chain);
+        var zCache = new Dictionary<Component, int>();
+        HitTestChainRecursive(root, screenPos, chain, zCache);
         return chain;
     }
 
     /// <summary>
-    /// Enumerates a node's visual children back-to-front (topmost rendered
-    /// last), which is the standard z-order. Equivalent to the previous
-    /// <c>OrderBy(TabOrder).Reverse()</c> when TabOrder is uniform (the common
-    /// case for the Lua UI, which never sets it), but without per-node LINQ
-    /// allocation on every mouse move.
+    /// Enumerates a node's visual children topmost-first for hit-testing:
+    /// higher subtree z-index first, then later (rendered-last) siblings first.
+    /// A node's effective z for ordering is the max z-index of itself and its subtree,
+    /// so a high-z descendant (e.g. a dropdown popup) is hit-tested before lower-z
+    /// siblings of an ancestor. Falls back to plain reverse (later-first) when the
+    /// whole subtree has no positive z-index, preserving the old zero-allocation path.
     /// </summary>
-    private static IEnumerable<Component> GetTopmostFirst(Component node)
+    private static IEnumerable<Component> GetTopmostFirst(Component node, Dictionary<Component, int> zCache)
     {
-        var children = node.VisualChildren;
-        for (int i = children.Count - 1; i >= 0; i--)
+        // Fast path: no positive z-index under this node → plain reverse (later-first),
+        // no per-node list allocation (common case — the Lua UI mostly uses z=0).
+        if (Component.SubtreeMaxZ(node, zCache) <= 0)
         {
-            if (children[i] is Component c)
-                yield return c;
+            var children = node.VisualChildren;
+            for (int i = children.Count - 1; i >= 0; i--)
+                if (children[i] is Component c)
+                    yield return c;
+            yield break;
         }
+
+        var list = new List<(int idx, Component c)>();
+        int n = 0;
+        foreach (var visual in node.VisualChildren)
+        {
+            if (visual is Component c)
+            {
+                list.Add((n, c));
+                n++;
+            }
+        }
+
+        list.Sort((x, y) =>
+        {
+            int zx = Component.SubtreeMaxZ(x.c, zCache);
+            int zy = Component.SubtreeMaxZ(y.c, zCache);
+            if (zx != zy) return zy.CompareTo(zx);   // higher z first
+            return y.idx.CompareTo(x.idx);           // later sibling first on tie
+        });
+
+        foreach (var (_, c) in list)
+            yield return c;
     }
 
-    private static bool HitTestChainRecursive(Component node, LuaVector2 pos, List<Component> chain)
+    private static bool HitTestChainRecursive(Component node, LuaVector2 pos, List<Component> chain, Dictionary<Component, int> zCache)
     {
         if (!node.Styles.PointerEvents)
             return false;
@@ -161,12 +194,12 @@ public static class FocusManager
         if (!selfHit && node.IsFocusable)
             return false;
 
-        foreach (var visual in GetTopmostFirst(node))
+        foreach (var visual in GetTopmostFirst(node, zCache))
         {
             if (!visual.IsDisplayed)
                 continue;
 
-            if (HitTestChainRecursive(visual, pos, chain))
+            if (HitTestChainRecursive(visual, pos, chain, zCache))
                 return true;           // deepest child hit — stop
         }
 

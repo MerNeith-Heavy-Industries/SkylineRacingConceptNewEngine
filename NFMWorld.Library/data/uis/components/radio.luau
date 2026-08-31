@@ -20,6 +20,7 @@ local function Radio(props: RadioProps)
 	local size = props.size or 16
 	local disabled = props.disabled == true
 	local dot = math.max(4, math.floor(size * 0.5 + 0.5))
+	local hovered, setHovered = Sx.createSignal(false)
 
 	return x(Sx.View) {
 		style = {
@@ -32,9 +33,16 @@ local function Radio(props: RadioProps)
 			if disabled then return end
 			props.onSelect()
 		end,
+		onmouseenter = function()
+			setHovered(true)
+		end,
+		onmouseleave = function()
+			setHovered(false)
+		end,
 		x(Sx.View) {
 			style = Sx.createMemo(function(): Sx.Styles
 				local checked = Sx.read(props.checked)
+				local hov = hovered() and not disabled
 				return {
 					width = size,
 					height = size,
@@ -45,7 +53,7 @@ local function Radio(props: RadioProps)
 					justifyContent = "center",
 					backgroundColor = "transparent",
 					borderWidth = 2,
-					borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.3)",
+					borderColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.55)" or "rgba(255,255,255,0.3)"),
 					borderRadius = size / 2,
 				}
 			end),

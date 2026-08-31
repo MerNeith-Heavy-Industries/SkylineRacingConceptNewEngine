@@ -11,7 +11,7 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: opacity - Sets the transparency level (0.0 = fully transparent, 1.0 = fully opaque)
     /// </summary>
     public float Opacity = 1.0f;
-    
+
     // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
     /// <summary>
     /// CSS: direction - Establishes the main-axis (ltr/rtl/inherit)
@@ -72,12 +72,12 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: flex - Shorthand for flex-grow, flex-shrink, and flex-basis combined
     /// </summary>
     public float? Flex;
-    
+
     /// <summary>
     /// CSS: flex-grow - Defines the ability for a flex item to grow if necessary
     /// </summary>
     public float? FlexGrow;
-    
+
     /// <summary>
     /// CSS: flex-shrink - Defines the ability for a flex item to shrink if necessary
     /// </summary>
@@ -87,7 +87,7 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: flex-basis - Defines the default size of an element before remaining space is distributed
     /// </summary>
     public MeasurementFlexBasis FlexBasis = MeasurementFlexBasis.Undefined;
-    
+
     /// <summary>
     /// CSS: left - Specifies the left position of a positioned element
     /// </summary>
@@ -167,7 +167,7 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: border-right-width - Sets the width of the right border
     /// </summary>
     public Pixels? BorderRight;
-    
+
     /// <summary>
     /// CSS: column-gap - Sets the gap between columns in a flex container
     /// </summary>
@@ -177,7 +177,7 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: row-gap - Sets the gap between rows in a flex container
     /// </summary>
     public MeasurementGap GapRow = MeasurementGap.Undefined;
-    
+
     /// <summary>
     /// CSS: width - Sets the width of the element
     /// </summary>
@@ -212,7 +212,7 @@ public struct Styles() : IEquatable<Styles>
     /// CSS: aspect-ratio - Sets the preferred aspect ratio for the element (width / height)
     /// </summary>
     public Pixels? AspectRatio;
-    
+
     public Color? BorderColor = null;
     public Color? BackgroundColor = null;
     public float BorderTopLeftRadius = 0f;
@@ -222,9 +222,18 @@ public struct Styles() : IEquatable<Styles>
 
     public bool PointerEvents = true;
 
+    /// <summary>
+    /// CSS: z-index - Controls the paint / hit-test stacking order of the element.
+    /// Higher values are hit-tested (and rendered) above lower values, regardless of
+    /// tree order. A node's effective z for ordering is the max z-index in its subtree
+    /// (so a high-z descendant like a dropdown popup wins over lower-z siblings of an
+    /// ancestor). Default 0.
+    /// </summary>
+    public int ZIndex = 0;
+
     public bool Equals(Styles other)
     {
-        return Visibility == other.Visibility && Opacity.Equals(other.Opacity) && Direction == other.Direction && FlexDirection == other.FlexDirection && JustifyContent == other.JustifyContent && AlignItems == other.AlignItems && AlignSelf == other.AlignSelf && AlignContent == other.AlignContent && Position == other.Position && FlexWrap == other.FlexWrap && Overflow == other.Overflow && Display == other.Display && BoxSizing == other.BoxSizing && Nullable.Equals(Flex, other.Flex) && Nullable.Equals(FlexGrow, other.FlexGrow) && Nullable.Equals(FlexShrink, other.FlexShrink) && FlexBasis.Equals(other.FlexBasis) && Left.Equals(other.Left) && Top.Equals(other.Top) && Right.Equals(other.Right) && Bottom.Equals(other.Bottom) && MarginTop.Equals(other.MarginTop) && MarginBottom.Equals(other.MarginBottom) && MarginLeft.Equals(other.MarginLeft) && MarginRight.Equals(other.MarginRight) && PaddingTop.Equals(other.PaddingTop) && PaddingBottom.Equals(other.PaddingBottom) && PaddingLeft.Equals(other.PaddingLeft) && PaddingRight.Equals(other.PaddingRight) && Nullable.Equals(BorderTop, other.BorderTop) && Nullable.Equals(BorderBottom, other.BorderBottom) && Nullable.Equals(BorderLeft, other.BorderLeft) && Nullable.Equals(BorderRight, other.BorderRight) && GapColumn.Equals(other.GapColumn) && GapRow.Equals(other.GapRow) && Width.Equals(other.Width) && Height.Equals(other.Height) && MinWidth.Equals(other.MinWidth) && MinHeight.Equals(other.MinHeight) && MaxWidth.Equals(other.MaxWidth) && MaxHeight.Equals(other.MaxHeight) && Nullable.Equals(AspectRatio, other.AspectRatio) && Nullable.Equals(BorderColor, other.BorderColor) && Nullable.Equals(BackgroundColor, other.BackgroundColor) && BorderTopLeftRadius.Equals(other.BorderTopLeftRadius) && BorderTopRightRadius.Equals(other.BorderTopRightRadius) && BorderBottomLeftRadius.Equals(other.BorderBottomLeftRadius) && BorderBottomRightRadius.Equals(other.BorderBottomRightRadius) && PointerEvents == other.PointerEvents;
+        return Visibility == other.Visibility && Opacity.Equals(other.Opacity) && Direction == other.Direction && FlexDirection == other.FlexDirection && JustifyContent == other.JustifyContent && AlignItems == other.AlignItems && AlignSelf == other.AlignSelf && AlignContent == other.AlignContent && Position == other.Position && FlexWrap == other.FlexWrap && Overflow == other.Overflow && Display == other.Display && BoxSizing == other.BoxSizing && Nullable.Equals(Flex, other.Flex) && Nullable.Equals(FlexGrow, other.FlexGrow) && Nullable.Equals(FlexShrink, other.FlexShrink) && FlexBasis.Equals(other.FlexBasis) && Left.Equals(other.Left) && Top.Equals(other.Top) && Right.Equals(other.Right) && Bottom.Equals(other.Bottom) && MarginTop.Equals(other.MarginTop) && MarginBottom.Equals(other.MarginBottom) && MarginLeft.Equals(other.MarginLeft) && MarginRight.Equals(other.MarginRight) && PaddingTop.Equals(other.PaddingTop) && PaddingBottom.Equals(other.PaddingBottom) && PaddingLeft.Equals(other.PaddingLeft) && PaddingRight.Equals(other.PaddingRight) && Nullable.Equals(BorderTop, other.BorderTop) && Nullable.Equals(BorderBottom, other.BorderBottom) && Nullable.Equals(BorderLeft, other.BorderLeft) && Nullable.Equals(BorderRight, other.BorderRight) && GapColumn.Equals(other.GapColumn) && GapRow.Equals(other.GapRow) && Width.Equals(other.Width) && Height.Equals(other.Height) && MinWidth.Equals(other.MinWidth) && MinHeight.Equals(other.MinHeight) && MaxWidth.Equals(other.MaxWidth) && MaxHeight.Equals(other.MaxHeight) && Nullable.Equals(AspectRatio, other.AspectRatio) && Nullable.Equals(BorderColor, other.BorderColor) && Nullable.Equals(BackgroundColor, other.BackgroundColor) && BorderTopLeftRadius.Equals(other.BorderTopLeftRadius) && BorderTopRightRadius.Equals(other.BorderTopRightRadius) && BorderBottomLeftRadius.Equals(other.BorderBottomLeftRadius) && BorderBottomRightRadius.Equals(other.BorderBottomRightRadius) && PointerEvents == other.PointerEvents && ZIndex == other.ZIndex;
     }
 
     public override bool Equals(object? obj)
@@ -284,6 +293,7 @@ public struct Styles() : IEquatable<Styles>
         hashCode.Add(BorderBottomLeftRadius);
         hashCode.Add(BorderBottomRightRadius);
         hashCode.Add(PointerEvents);
+        hashCode.Add(ZIndex);
         return hashCode.ToHashCode();
     }
 

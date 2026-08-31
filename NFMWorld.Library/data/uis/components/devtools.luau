@@ -27,6 +27,7 @@ local Panel = styled(Sx.View) {
 	position = "absolute",
 	top = 12,
 	right = 12,
+	zIndex = 1000000,
 	width = 400,
 	height = "90%",
 	backgroundColor = "rgba(10,12,20,0.94)",
