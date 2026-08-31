@@ -151,7 +151,6 @@ public partial class SampleClass
     }
 
     // Hidden method (should not be exposed)
-    [LuaHidden]
     public void HiddenMethod()
     {
         _privateField = 42;
