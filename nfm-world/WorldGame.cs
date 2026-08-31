@@ -43,6 +43,11 @@ public class WorldGame : Game
     private MouseButtons _oldMouseState;
     private Int2 _oldMousePosition;
     private int _oldScrollValue;
+    // UI drag state: the renderer only receives pressed/moved/released today, so
+    // mouse-drag events (needed by the Sx Slider) are synthesized here from a held
+    // primary button + pointer movement since the press.
+    private bool _mouseDragging;
+    private Int2 _mouseDragStart;
     private NanoVGRenderer _nvg;
     private TimeStep _tickTimeStep = new((1000f / Physics.TargetTps) / 1000f);
     public static bool LowLatency = false;
@@ -51,7 +56,7 @@ public class WorldGame : Game
 
     private static bool _loaded;
     private const int FrameDelay = (int) (1000 / 21.3f);
-    
+
     private int _yogaDebugPage = -1;
 
     private static readonly Microsoft.Xna.Framework.Input.Keys[] XnaKeys = Enum.GetValues<Microsoft.Xna.Framework.Input.Keys>();
@@ -417,12 +422,17 @@ public class WorldGame : Game
                 MouseButtons.XButton2 => MouseButton.XButton2,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            
+
             if (buttons.HasFlag(button) && !_oldMouseState.HasFlag(button))
             {
                 if (!wantCaptureMouse)
                 {
                     GameSparker.UiRenderer?.HandleMousePressed(newState.X, newState.Y, nfmButton, buttons, ctrlKey, shiftKey, altKey);
+                    if (nfmButton == MouseButton.Primary)
+                    {
+                        _mouseDragging = true;
+                        _mouseDragStart = mousePosition;
+                    }
                 }
 
                 GameSparker.CurrentPhase.MousePressed(newState.X, newState.Y, wantCaptureMouse, nfmButton, buttons, ctrlKey, shiftKey, altKey);
@@ -434,6 +444,11 @@ public class WorldGame : Game
                     GameSparker.UiRenderer?.HandleMouseReleased(newState.X, newState.Y, nfmButton, buttons, ctrlKey, shiftKey, altKey);
                 }
 
+                if (nfmButton == MouseButton.Primary)
+                {
+                    _mouseDragging = false;
+                }
+
                 GameSparker.CurrentPhase.MouseReleased(newState.X, newState.Y, wantCaptureMouse, nfmButton, buttons, ctrlKey, shiftKey, altKey);
             }
         }
@@ -443,6 +458,10 @@ public class WorldGame : Game
             if (!wantCaptureMouse)
             {
                 GameSparker.UiRenderer?.HandleMouseMoved(newState.X, newState.Y, buttons, ctrlKey, shiftKey, altKey);
+                if (_mouseDragging)
+                {
+                    GameSparker.UiRenderer?.HandleMouseDragged(newState.X, newState.Y, _mouseDragStart.X, _mouseDragStart.Y, MouseButton.Primary, buttons, ctrlKey, shiftKey, altKey);
+                }
             }
 
             GameSparker.CurrentPhase.MouseMoved(mousePosition.X, mousePosition.Y, wantCaptureMouse, buttons, ctrlKey, shiftKey, altKey);
@@ -452,7 +471,7 @@ public class WorldGame : Game
         if (scrollValue != _oldScrollValue)
         {
             var delta = scrollValue - _oldScrollValue;
-            
+
             if (!wantCaptureMouse)
             {
                 GameSparker.UiRenderer?.HandleMouseScrolled(newState.X, newState.Y, delta, buttons, ctrlKey, shiftKey, altKey);
@@ -663,7 +682,7 @@ public class WorldGame : Game
             },
             _ => throw new PlatformNotSupportedException($"Unsupported platform: {os}, please update {nameof(ImportResolver)}")
         };
-        
+
         // Anchor to the app base directory rather than the process working directory:
         // dlopen treats a slash-containing name as a path relative to the CWD (ignoring
         // LD_LIBRARY_PATH), so a relative "libs/..." only resolves when launched from the
