@@ -1,6 +1,5 @@
 using Lua;
 using Lua.Runtime;
-using nfm_world_library.Lua;
 
 namespace NFMWorld.LuaSourceGenerator.Test;
 

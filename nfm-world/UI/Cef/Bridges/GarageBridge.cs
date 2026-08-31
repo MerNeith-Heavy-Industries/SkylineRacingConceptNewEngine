@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lua;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary;
 using NFMWorldLibrary.Util;
 

@@ -2,7 +2,7 @@ using Lua;
 using Lua.Loaders;
 using Lua.Standard;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Util;
 using NFMWorld.LuaSourceGenerator.Generator;

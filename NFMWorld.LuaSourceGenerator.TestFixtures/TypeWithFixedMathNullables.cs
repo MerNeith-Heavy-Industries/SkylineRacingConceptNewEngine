@@ -1,5 +1,5 @@
 using FixedMathSharp;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorld.LuaSourceGenerator.TestFixtures;
 

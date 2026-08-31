@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Lua;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Rad;

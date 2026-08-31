@@ -1,6 +1,6 @@
 using Lua;
 using Maxine.Extensions;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorldLibrary;
 

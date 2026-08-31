@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using Lua;
 using Lua.Runtime;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorldLibrary.Util;
 

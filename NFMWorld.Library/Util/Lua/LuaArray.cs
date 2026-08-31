@@ -5,8 +5,8 @@ using Lua;
 using Lua.Runtime;
 using Maxine.Extensions.Collections;
 using MemoryPack;
+using NFMWorld.Lua;
 using NFMWorld.LuaSourceGenerator.Generator;
-using nfm_world_library.Lua;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Util;

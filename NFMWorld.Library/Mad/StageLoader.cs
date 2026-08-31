@@ -1,5 +1,5 @@
 ﻿using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;
 using NFMWorldLibrary.Util;

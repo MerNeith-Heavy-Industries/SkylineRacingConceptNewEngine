@@ -1,5 +1,5 @@
 using Microsoft.UI.Reactor.Layout;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorld.Reactor;
 

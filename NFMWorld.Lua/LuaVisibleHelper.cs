@@ -2,7 +2,7 @@
 using Lua;
 using NFMWorldLibrary.FixedMath;
 
-namespace NFMWorld.LuaSourceGenerator.Generator;
+namespace NFMWorld.Lua;
 
 /// <summary>
 /// Thread-safe registry mapping each <typeparamref name="T"/> to its code-generated metatable.

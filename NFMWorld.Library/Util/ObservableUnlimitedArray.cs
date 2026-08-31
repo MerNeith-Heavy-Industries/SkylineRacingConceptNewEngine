@@ -1,7 +1,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorldLibrary.Util;
 

@@ -9,10 +9,10 @@ namespace NFMWorld.LuaSourceGenerator;
 [Generator(LanguageNames.CSharp)]
 public partial class LuaVisibleGenerator : IIncrementalGenerator
 {
-    public const string LuaVisibleAttrName = "nfm_world_library.Lua.LuaVisibleAttribute";
-    public const string LuaNameAttrName = "nfm_world_library.Lua.LuaNameAttribute";
-    public const string LuaHiddenAttrName = "nfm_world_library.Lua.LuaHiddenAttribute";
-    public const string MemberLuaVisibleAttrName = "nfm_world_library.Lua.MemberLuaVisibleAttribute";
+    public const string LuaVisibleAttrName = "NFMWorld.Lua.LuaVisibleAttribute";
+    public const string LuaNameAttrName = "NFMWorld.Lua.LuaNameAttribute";
+    public const string LuaHiddenAttrName = "NFMWorld.Lua.LuaHiddenAttribute";
+    public const string MemberLuaVisibleAttrName = "NFMWorld.Lua.MemberLuaVisibleAttribute";
     public const string InlineArrayAttrName = "System.Runtime.CompilerServices.InlineArrayAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -180,12 +180,12 @@ internal sealed class SymbolReferences
 
     private SymbolReferences(Compilation compilation)
     {
-        LuaVisibleAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.LuaVisibleAttribute");
-        LuaNameAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.LuaNameAttribute");
-        LuaHiddenAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.LuaHiddenAttribute");
-        MemberLuaVisibleAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.MemberLuaVisibleAttribute");
-        LuaShimTypeAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.LuaShimTypeAttribute");
-        LuaOverloadPriorityAttribute = compilation.GetTypeByMetadataName("nfm_world_library.Lua.LuaOverloadPriorityAttribute");
+        LuaVisibleAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.LuaVisibleAttribute");
+        LuaNameAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.LuaNameAttribute");
+        LuaHiddenAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.LuaHiddenAttribute");
+        MemberLuaVisibleAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.MemberLuaVisibleAttribute");
+        LuaShimTypeAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.LuaShimTypeAttribute");
+        LuaOverloadPriorityAttribute = compilation.GetTypeByMetadataName("NFMWorld.Lua.LuaOverloadPriorityAttribute");
         InlineArrayAttribute = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.InlineArrayAttribute");
         ILuaUserData = compilation.GetTypeByMetadataName("Lua.ILuaUserData");
         LuaTable = compilation.GetTypeByMetadataName("Lua.LuaTable");

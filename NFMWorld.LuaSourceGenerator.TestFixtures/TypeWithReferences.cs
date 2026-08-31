@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorld.LuaSourceGenerator.Test.SampleTypes;
 

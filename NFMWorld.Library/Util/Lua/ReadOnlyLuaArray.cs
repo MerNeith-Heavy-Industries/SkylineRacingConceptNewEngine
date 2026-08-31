@@ -4,7 +4,7 @@ using Lua;
 using Lua.Runtime;
 using Maxine.Extensions.Collections;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorld.Reactor;
 
 namespace NFMWorldLibrary.Util;
