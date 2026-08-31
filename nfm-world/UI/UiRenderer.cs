@@ -152,6 +152,19 @@ public class UiRenderer : IDisposable
             new BaseMouseMoveEvent(new Vector2(x, y), buttons, ctrlKey, altKey, shiftKey));
     }
 
+    public void HandleMouseDragged(int x, int y, int dragStartX, int dragStartY, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
+    {
+        if (ActiveRoot == null) return;
+        ActiveRoot.DispatchMouseDragged(new BaseMouseDragEvent(
+            new Vector2(dragStartX, dragStartY),
+            new Vector2(x, y),
+            (byte)button,
+            buttons,
+            ctrlKey,
+            altKey,
+            shiftKey));
+    }
+
     public void HandleMousePressed(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         if (ActiveRoot == null) return;
