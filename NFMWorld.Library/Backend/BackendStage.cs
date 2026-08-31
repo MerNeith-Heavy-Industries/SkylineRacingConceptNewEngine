@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 using System.Runtime.InteropServices;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;
 using NFMWorldLibrary.Rad;

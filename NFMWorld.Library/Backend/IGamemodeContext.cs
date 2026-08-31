@@ -1,4 +1,4 @@
-﻿using nfm_world_library.Lua;
+﻿using NFMWorld.Lua;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Gamemodes;
 using NFMWorldLibrary.Util;

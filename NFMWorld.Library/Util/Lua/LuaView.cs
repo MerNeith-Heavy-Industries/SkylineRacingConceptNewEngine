@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Lua;
 using Lua.Runtime;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.FixedMath;
 
 namespace NFMWorldLibrary.Util;

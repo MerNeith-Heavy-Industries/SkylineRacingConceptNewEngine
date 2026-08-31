@@ -1,6 +1,6 @@
 ﻿using Lua;
 using Lua.Standard;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorld.LuaSourceGenerator.Generator;
 using NFMWorldLibrary.Backend.Gamemodes;
 using NFMWorldLibrary.Gamemodes;

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorldLibrary.Rad;
 

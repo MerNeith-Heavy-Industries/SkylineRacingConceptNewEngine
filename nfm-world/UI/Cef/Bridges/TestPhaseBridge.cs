@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Lua;
 using MemoryPack;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorld.UI.Cef;
 

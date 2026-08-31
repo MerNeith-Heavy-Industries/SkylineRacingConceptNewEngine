@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 
 namespace NFMWorldLibrary;
 

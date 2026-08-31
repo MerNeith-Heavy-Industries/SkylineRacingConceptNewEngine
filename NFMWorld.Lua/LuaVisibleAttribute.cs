@@ -1,4 +1,4 @@
-namespace nfm_world_library.Lua;
+namespace NFMWorld.Lua;
 
 /// <summary>
 /// Marks a type to be exposed to Lua via the source generator.

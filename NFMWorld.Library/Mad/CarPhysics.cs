@@ -6,7 +6,7 @@ using FixedMathSharp.Utility;
 using Lua;
 using Lua.Runtime;
 using Microsoft.Extensions.Logging;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.Backend;
 using NFMWorldLibrary.Collision;
 using NFMWorldLibrary.FixedMath;

@@ -1,5 +1,5 @@
 ﻿using Lua;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.Gamemodes;
 
 namespace NFMWorldLibrary.Backend.Gamemodes;

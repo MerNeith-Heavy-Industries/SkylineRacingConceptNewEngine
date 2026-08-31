@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
-using nfm_world_library.Lua;
+using NFMWorld.Lua;
 using NFMWorldLibrary.Util;
 
 namespace NFMWorld.Reactor;
