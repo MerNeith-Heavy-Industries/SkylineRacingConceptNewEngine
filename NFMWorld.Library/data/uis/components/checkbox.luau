@@ -1,0 +1,67 @@
+--!strict
+-- Checkbox — reusable fine-grained reactive checkbox for Sx.
+--
+-- Controlled component: `checked` may be a plain boolean or an accessor (signal);
+-- `onToggle` is called when the box is pressed. Optional reactive `label`.
+-- Reactive styles go through `createMemo` so a change only re-sets this control.
+
+local Sx = require("../../library/sx/index")
+local x = Sx.x
+
+export type CheckboxProps = {
+	checked: Sx.Signalish<boolean>,
+	onToggle: () -> (),
+	label: Sx.Signalish<string>?,
+	disabled: boolean?,
+	size: number?,
+}
+
+local function Checkbox(props: CheckboxProps)
+	local size = props.size or 16
+	local disabled = props.disabled == true
+
+	return x(Sx.View) {
+		style = {
+			display = "flex",
+			flexDirection = "row",
+			alignItems = "center",
+			gap = 8,
+		},
+		onmousedown = function()
+			if disabled then return end
+			props.onToggle()
+		end,
+		x(Sx.View) {
+			style = Sx.createMemo(function(): Sx.Styles
+				local checked = Sx.read(props.checked)
+				return {
+					width = size,
+					height = size,
+					flexShrink = 0,
+					backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.08)",
+					borderWidth = 1,
+					borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.25)",
+					borderRadius = 3,
+				}
+			end),
+		},
+		x(Sx.Text) {
+			style = Sx.createMemo(function(): Sx.TextStyles
+				local checked = Sx.read(props.checked)
+				return {
+					fontSize = 13,
+					color = disabled
+						and "rgba(255,255,255,0.3)"
+						or (checked and "#fff" or "rgba(255,255,255,0.7)"),
+				}
+			end),
+			function()
+				local label = props.label
+				if label == nil then return "" end
+				return Sx.read(label)
+			end,
+		},
+	}
+end
+
+return Checkbox
