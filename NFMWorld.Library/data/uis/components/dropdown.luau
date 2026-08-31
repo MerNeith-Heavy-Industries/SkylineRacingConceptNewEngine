@@ -1,0 +1,153 @@
+--!strict
+-- Dropdown — reusable fine-grained reactive popup dropdown for Sx.
+--
+-- Controlled component: `value` (the selected option's numeric value, signal/accessor)
+-- + `onSelect`. `options` may be a list of strings (values 0..n-1) or a list of
+-- { label, value }. Opens a popup below the trigger; closes on outside click (blur),
+-- on selecting an option, or on re-clicking the trigger.
+--
+-- Note: Sx styles have no zIndex, so the popup relies on absolute positioning relative
+-- to this container (`position = "relative"`); inside `overflow: hidden/scroll` parents
+-- it may be clipped. A real dropdown (not the click-to-cycle Select in settings.luau).
+-- Open/close is driven purely by the trigger toggle + selecting an option (no
+-- focus/blur), so it re-opens reliably after a selection. There is no click-outside
+-- close (Sx has no zIndex/full-screen layer for a scoped backdrop).
+
+local Sx = require("../../library/sx/index")
+local x = Sx.x
+
+export type DropdownOption = { label: string, value: number }
+export type DropdownProps = {
+	options: { string } | { DropdownOption },
+	value: Sx.Signalish<number?>,
+	onSelect: (number) -> (),
+	placeholder: string?,
+	width: number?,
+	disabled: boolean?,
+}
+
+-- Normalize string lists (index-based values) or { label, value } lists to rows.
+local function toRows(options: { string } | { DropdownOption }): { DropdownOption }
+	local rows: { DropdownOption } = {}
+	if #options == 0 then return rows end
+	if type(options[1]) == "string" then
+		for i = 1, #options do
+			rows[i] = { label = options[i] :: string, value = i - 1 }
+		end
+	else
+		for i = 1, #options do
+			rows[i] = options[i] :: DropdownOption
+		end
+	end
+	return rows
+end
+
+local function Dropdown(props: DropdownProps)
+	local rows = toRows(props.options)
+	local width = props.width or 160
+	local disabled = props.disabled == true
+	local placeholder = props.placeholder or "Select..."
+
+	local open, setOpen = Sx.createSignal(false)
+
+	local function selectedLabel()
+		local v = Sx.read(props.value)
+		if v == nil then return placeholder end
+		for _, row in ipairs(rows) do
+			if row.value == v then return row.label end
+		end
+		return placeholder
+	end
+
+	return x(Sx.View) {
+		style = { position = "relative", width = width },
+		x(Sx.View) {
+			style = Sx.createMemo(function(): Sx.Styles
+				local isOpen = open()
+				return {
+					display = "flex",
+					flexDirection = "row",
+					alignItems = "center",
+					justifyContent = "space-between",
+					gap = 8,
+					paddingTop = 8,
+					paddingBottom = 8,
+					paddingLeft = 12,
+					paddingRight = 12,
+					backgroundColor = "rgba(255,255,255,0.06)",
+					borderWidth = 1,
+					borderColor = isOpen and "rgba(79,195,247,0.6)" or "rgba(255,255,255,0.15)",
+					borderRadius = 6,
+				}
+			end),
+			onmousedown = function()
+				if disabled then return end
+				setOpen(not open())
+			end,
+			x(Sx.Text) {
+				style = Sx.createMemo(function(): Sx.TextStyles
+					local isOpen = open()
+					return { fontSize = 13, color = isOpen and "#fff" or "rgba(255,255,255,0.8)" }
+				end),
+				function() return selectedLabel() end,
+			},
+			x(Sx.Text) { style = { fontSize = 12, color = "rgba(255,255,255,0.5)", flexShrink = 0 }, "▾" },
+		},
+		x(Sx.Show) {
+			when = function() return open() end,
+			x(Sx.View) {
+				style = {
+					position = "absolute",
+					top = "100%",
+					left = 0,
+					width = "100%",
+					marginTop = 4,
+					display = "flex",
+					flexDirection = "column",
+					backgroundColor = "rgba(20,24,32,0.98)",
+					borderWidth = 1,
+					borderColor = "rgba(255,255,255,0.15)",
+					borderRadius = 6,
+					overflow = "hidden",
+				},
+				x(Sx.For<<DropdownOption>>) {
+					each = function() return rows end,
+					function(item: () -> DropdownOption, _index: number)
+						local opt = item()
+						return x(Sx.View) {
+							style = Sx.createMemo(function(): Sx.Styles
+								local v = Sx.read(props.value)
+								local selected = v ~= nil and v == opt.value
+								return {
+									paddingTop = 7,
+									paddingBottom = 7,
+									paddingLeft = 12,
+									paddingRight = 12,
+									backgroundColor = selected and "rgba(79,195,247,0.18)" or "transparent",
+								}
+							end),
+							onmousedown = function()
+								if disabled then return end
+								props.onSelect(opt.value)
+								setOpen(false)
+							end,
+							x(Sx.Text) {
+								style = Sx.createMemo(function(): Sx.TextStyles
+									local v = Sx.read(props.value)
+									local selected = v ~= nil and v == opt.value
+									return {
+										fontSize = 13,
+										color = selected and "#4fc3f7" or "rgba(255,255,255,0.8)",
+									}
+								end),
+								opt.label,
+							},
+						}
+					end,
+				},
+			},
+		},
+	}
+end
+
+return Dropdown
