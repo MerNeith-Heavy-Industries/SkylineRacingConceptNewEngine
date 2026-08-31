@@ -850,6 +850,66 @@ public abstract partial class Component : Node, IAnimationCallback
         }
     }
 
+    /// <summary>Max z-index in a node's subtree (own z + descendants).</summary>
+    internal static int SubtreeMaxZ(Component node, Dictionary<Component, int>? cache)
+    {
+        if (cache is not null && cache.TryGetValue(node, out var cached))
+            return cached;
+
+        int max = node.Styles.ZIndex;
+        foreach (var visual in node.VisualChildren)
+        {
+            if (visual is Component c)
+            {
+                int cz = SubtreeMaxZ(c, cache);
+                if (cz > max) max = cz;
+            }
+        }
+
+        if (cache is not null)
+            cache[node] = max;
+        return max;
+    }
+
+    /// <summary>
+    /// Visual children ordered for painting (z-aware). Lower subtree z-index paints
+    /// first (behind), higher paints last (on top); ties keep original order so a later
+    /// sibling paints over an earlier one. Fast path: when nothing in the subtree has a
+    /// positive z-index, this is exactly plain tree order with no list allocation.
+    /// </summary>
+    private IEnumerable<Component> GetChildrenInPaintOrder()
+    {
+        if (SubtreeMaxZ(this, null) <= 0)
+        {
+            foreach (var child in GetChildSnapshot())
+                if (child is Component c)
+                    yield return c;
+            yield break;
+        }
+
+        var list = new List<(int idx, Component c)>();
+        int i = 0;
+        foreach (var visual in VisualChildren)
+        {
+            if (visual is Component c)
+            {
+                list.Add((i, c));
+                i++;
+            }
+        }
+
+        list.Sort((x, y) =>
+        {
+            int zx = SubtreeMaxZ(x.c, null);
+            int zy = SubtreeMaxZ(y.c, null);
+            if (zx != zy) return zx.CompareTo(zy);  // lower z first (behind)
+            return x.idx.CompareTo(y.idx);          // earlier first; later paints on top
+        });
+
+        foreach (var (_, c) in list)
+            yield return c;
+    }
+
     public void Render(RenderContext context)
     {
         OnAnimationFrameBegan();
@@ -892,11 +952,8 @@ public abstract partial class Component : Node, IAnimationCallback
             }
 
             var childOrigin = LayoutBorderPosition - new LuaVector2(ScrollLeft, ScrollTop);
-            foreach (var child in GetChildSnapshot())
-            {
-                if (child is Component cmp)
-                    cmp.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
-            }
+            foreach (var cmp in GetChildrenInPaintOrder())
+                cmp.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
 
             if (IsClipping)
             {
@@ -1058,6 +1115,7 @@ public abstract partial class Component : Node, IAnimationCallback
             if (IsFocusable)
             {
                 IsActive = true;
+                IsFocused = true;
             }
 
             MousePressed?.Invoke(relativeEvent);

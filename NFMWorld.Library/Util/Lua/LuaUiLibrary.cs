@@ -80,7 +80,7 @@ public static class LuaUiLibrary
         if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateInstanceCount++;
         var vtype = context.GetArgument<string>(0);
         var props = context.GetArgument<LuaTable>(1);
-        
+
         Logging.Debug($"createInstance {vtype}");
 
         switch (vtype)
@@ -150,7 +150,7 @@ public static class LuaUiLibrary
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateTextCount++;
         var text = context.GetArgument<string>(0);
-        
+
         Logging.Debug($"createTextInstance {text}");
 
         return new ValueTask<int>(context.Return( new TextNode() { Text = text }));
@@ -566,6 +566,7 @@ public static class LuaUiLibrary
                 "display" when rawvalue.TryRead<string>(out var v) => styles with { Display = ParseDisplay(v, styles.Display) },
                 "box-sizing" or "boxSizing" when rawvalue.TryRead<string>(out var v) => styles with { BoxSizing = ParseBoxSizing(v, styles.BoxSizing) },
                 "visibility" when rawvalue.TryRead<string>(out var v) => styles with { Visibility = ParseVisibility(v, styles.Visibility) },
+                "z-index" or "zIndex" => styles with { ZIndex = ParseInt(rawvalue, styles.ZIndex) },
 
                 // Flex sizing
                 "flex" => styles with { Flex = ParseNullableFloat(rawvalue, styles.Flex) },
@@ -661,7 +662,7 @@ public static class LuaUiLibrary
                 {
                     PointerEvents = v is not "none"
                 },
-                
+
                 _ => styles
             };
         }
@@ -775,6 +776,30 @@ public static class LuaUiLibrary
             {
                 return f;
             }
+        }
+
+        return current;
+    }
+
+    private static int ParseInt(LuaValue value, int current)
+    {
+        if (value.TryRead<int>(out var i))
+            return i;
+
+        if (value.TryRead<float>(out var f))
+            return (int)f;
+
+        if (value.TryRead<string>(out var s))
+        {
+            var span = s.AsSpan();
+            if (span.EndsWith("px"))
+                span = span[..^2];
+
+            if (int.TryParse(span, NumberStyles.Integer, CultureInfo.InvariantCulture, out i))
+                return i;
+
+            if (float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out f))
+                return (int)f;
         }
 
         return current;
@@ -1136,7 +1161,7 @@ public static class LuaUiLibrary
         {
             return null;
         }
-        
+
         if (_colors.TryGetValue(str, out var color))
         {
             return color;

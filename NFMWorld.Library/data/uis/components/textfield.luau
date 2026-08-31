@@ -21,6 +21,7 @@ export type TextFieldProps = {
 
 local function TextField(props: TextFieldProps)
 	local focus, setFocus = Sx.createSignal(false)
+	local hovered, setHovered = Sx.createSignal(false)
 	local disabled = props.disabled == true
 
 	return x(Sx.View) {
@@ -52,7 +53,7 @@ local function TextField(props: TextFieldProps)
 					paddingRight = 14,
 					backgroundColor = "rgba(255,255,255,0.08)",
 					borderWidth = 1,
-					borderColor = isFocused and "rgba(79,195,247,0.7)" or "rgba(255,255,255,0.12)",
+					borderColor = isFocused and "rgba(79,195,247,0.7)" or (hovered() and "rgba(255,255,255,0.4)" or "rgba(255,255,255,0.12)"),
 					borderRadius = 8,
 					placeholderColor = "rgba(255,255,255,0.35)",
 					cursorColor = "#4fc3f7",
@@ -67,6 +68,12 @@ local function TextField(props: TextFieldProps)
 			end,
 			onblur = function()
 				setFocus(false)
+			end,
+			onmouseenter = function()
+				setHovered(true)
+			end,
+			onmouseleave = function()
+				setHovered(false)
 			end,
 		},
 	}

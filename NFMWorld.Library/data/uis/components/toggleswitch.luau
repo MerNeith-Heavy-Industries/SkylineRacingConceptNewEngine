@@ -21,6 +21,7 @@ local function ToggleSwitch(props: ToggleSwitchProps)
 	local knob = math.max(4, size - 4)
 	local pad = 2
 	local disabled = props.disabled == true
+	local hovered, setHovered = Sx.createSignal(false)
 
 	return x(Sx.View) {
 		style = {
@@ -33,14 +34,21 @@ local function ToggleSwitch(props: ToggleSwitchProps)
 			if disabled then return end
 			props.onToggle()
 		end,
+		onmouseenter = function()
+			setHovered(true)
+		end,
+		onmouseleave = function()
+			setHovered(false)
+		end,
 		x(Sx.View) {
 			style = Sx.createMemo(function(): Sx.Styles
 				local checked = Sx.read(props.checked)
+				local hov = hovered() and not disabled
 				return {
 					width = width,
 					height = size,
 					position = "relative",
-					backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.2)",
+					backgroundColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.28)" or "rgba(255,255,255,0.2)"),
 					borderRadius = size / 2,
 				}
 			end),

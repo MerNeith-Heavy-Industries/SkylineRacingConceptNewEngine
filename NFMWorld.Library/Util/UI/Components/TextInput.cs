@@ -36,10 +36,24 @@ public partial class TextInput : Component
     /// <summary>Whether a mouse drag-selection is in progress.</summary>
     private bool _isDragging;
 
+    // ── Double/triple click ───────────────────────────────────────
+
+    /// <summary>Number of consecutive clicks within <see cref="ClickIntervalMs"/>.</summary>
+    private int _clickCount;
+
+    /// <summary>Ticks (ms) of the most recent primary click.</summary>
+    private long _lastClickTimeMs;
+
+    /// <summary>Character index of the most recent primary click (position proximity).</summary>
+    private int _lastClickCharIndex;
+
     // ── Cursor blink ──────────────────────────────────────────────
 
     /// <summary>Blink period for the cursor in milliseconds.</summary>
     private const float CursorBlinkPeriodMs = 530f;
+
+    /// <summary>Max gap (ms) between consecutive clicks to count as a double/triple click.</summary>
+    private const long ClickIntervalMs = 500;
 
     private float _cursorBlinkTimer;
     private bool _cursorVisible;
@@ -144,6 +158,14 @@ public partial class TextInput : Component
             BorderColor = new Color(255, 255, 255, 255),
             BackgroundColor = new Color(20, 20, 30, 255),
         };
+
+        // Make this node the containing block for its absolutely-positioned
+        // CursorOverlay child. This flag lives on the Yoga node (NOT in Styles), so it
+        // survives the fresh Styles assignment Lua applies when setting props (which
+        // resets Position to Static). Without a containing block, the overlay's inset-0
+        // box resolves against a higher ancestor and the cursor/selection are drawn at
+        // screen-global coordinates instead of inside the input.
+        AlwaysFormsContainingBlock = true;
 
         TextInputStyles = TextInputStyles with
         {
@@ -482,6 +504,32 @@ public partial class TextInput : Component
         _cursorVisible = true;
     }
 
+    /// <summary>Selects the word containing (or adjacent to) the given character index.</summary>
+    private void SelectWord(int charIndex)
+    {
+        var t = CurrentText;
+        var idx = Math.Clamp(charIndex, 0, t.Length);
+        int start = idx, end = idx;
+        while (start > 0 && !char.IsWhiteSpace(t[start - 1]))
+            start--;
+        while (end < t.Length && !char.IsWhiteSpace(t[end]))
+            end++;
+
+        _selectionAnchor = start;
+        _cursorIndex = end;
+        _cursorBlinkTimer = 0;
+        _cursorVisible = true;
+    }
+
+    /// <summary>Selects all text (triple-click).</summary>
+    private void SelectAll()
+    {
+        _selectionAnchor = 0;
+        _cursorIndex = CurrentText.Length;
+        _cursorBlinkTimer = 0;
+        _cursorVisible = true;
+    }
+
     // ── Mouse input ────────────────────────────────────────────────
 
     [ClientOnly]
@@ -493,7 +541,28 @@ public partial class TextInput : Component
         var shift = @event.ShiftKey;
         // RelativePosition is padding-box-relative; convert to content-box-relative X
         var charIdx = GetCharIndexForCursorX(@event.RelativePosition.X - LayoutPaddingLeft);
-        MoveCursorTo(charIdx, shift);
+
+        // Count consecutive clicks (same spot, within the interval) for double/triple click.
+        var now = Environment.TickCount64;
+        var withinTime = now - _lastClickTimeMs <= ClickIntervalMs;
+        var sameSpot = Math.Abs(charIdx - _lastClickCharIndex) <= 1;
+        _clickCount = withinTime && sameSpot ? _clickCount + 1 : 1;
+        _lastClickTimeMs = now;
+        _lastClickCharIndex = charIdx;
+
+        if (_clickCount >= 3)
+        {
+            SelectAll();
+        }
+        else if (_clickCount == 2)
+        {
+            SelectWord(charIdx);
+        }
+        else
+        {
+            MoveCursorTo(charIdx, shift);
+        }
+
         _isDragging = true;
     }
 
@@ -507,6 +576,8 @@ public partial class TextInput : Component
     {
         if (!_isDragging)
             return;
+
+        _clickCount = 1; // a drag is not part of a multi-click sequence
 
         // RelativePosition is padding-box-relative; convert to content-box-relative X
         var charIdx = GetCharIndexForCursorX(@event.RelativePosition.X - LayoutPaddingLeft);
@@ -531,7 +602,7 @@ public partial class TextInput : Component
 
     // ── Rendering (background + border) ────────────────────────────
 
-    protected virtual void RenderBackground(LuaVector2 position, LuaVector2 size)
+    protected override void RenderBackground(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
         {
@@ -546,7 +617,7 @@ public partial class TextInput : Component
 
     }
 
-    protected virtual void RenderBorder(LuaVector2 position, LuaVector2 size)
+    protected override void RenderBorder(LuaVector2 position, LuaVector2 size)
     {
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
@@ -682,8 +753,8 @@ public partial class TextInput : Component
                 var cursorX = _owner.GetCursorXForCharIndex(_owner._cursorIndex);
 
                 G.SetColor(_owner.TextInputStyles.CursorColor);
-                var cursorTop = contentTop + 2;
-                var cursorBottom = contentBottom - 4;
+                var cursorTop = contentTop;
+                var cursorBottom = contentBottom;
                 G.DrawLine(
                     (int)(baseX + cursorX), (int)cursorTop,
                     (int)(baseX + cursorX), (int)cursorBottom);
@@ -692,11 +763,11 @@ public partial class TextInput : Component
     }
 }
 
-public struct TextInputStyles : IEquatable<TextInputStyles>
+public struct TextInputStyles() : IEquatable<TextInputStyles>
 {
-    public Color CursorColor;
-    public Color SelectionColor;
-    public Color PlaceholderColor;
+    public Color CursorColor = new Color(255, 255, 255, 255);
+    public Color SelectionColor = new Color(100, 180, 255, 128);
+    public Color PlaceholderColor = new Color(128, 128, 128, 255);
 
     public bool Equals(TextInputStyles other)
     {
