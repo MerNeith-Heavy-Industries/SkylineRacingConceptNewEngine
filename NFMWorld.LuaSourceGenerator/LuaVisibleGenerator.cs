@@ -53,66 +53,13 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
             })
             .WithTrackingName("StubsOutputDir");
 
-        var typeProvider2 = context.SyntaxProvider.ForAttributeWithMetadataName(
-            MemberLuaVisibleAttrName,
-            static (node, _) => node is PropertyDeclarationSyntax or FieldDeclarationSyntax or MethodDeclarationSyntax or ConstructorDeclarationSyntax,
-            static (ctx, ct) => ctx.TargetSymbol.ContainingType)
-            .WithTrackingName("MemberLuaVisibleTypes");
-
-        var luaTypeMetadatas2 = typeProvider2.Combine(symbolReferences)
-            .Select((pair, ct) =>
-            {
-                var (symbol, references) = pair;
-                if (references == null) return null;
-                return new LuaTypeMetadata(symbol, references);
-            })
-            .Where(tm => tm?.IsCandidate == true)
-            .WithTrackingName("MemberLuaVisibleTypeMetadatas");
-
-        var assemblyLuaVisibleTypes = context.CompilationProvider
-            .SelectMany((compilation, ct) => compilation.Assembly.GetAttributes())
-            .Select((attr, ct) =>
-            {
-                if (attr.AttributeClass == null) return null;
-                var attrName = attr.AttributeClass.ToDisplayString();
-                // Match AssemblyLuaVisibleAttribute<T> (generic) or AssemblyLuaVisibleAttribute (non-generic)
-                if (!attrName.StartsWith("nfm_world_library.Lua.AssemblyLuaVisibleAttribute")) return null;
-
-                ITypeSymbol? typeSymbol = null;
-
-                // Generic version: AssemblyLuaVisibleAttribute<T> — type is in TypeArguments
-                if (attr.AttributeClass.TypeArguments.Length == 1)
-                {
-                    typeSymbol = attr.AttributeClass.TypeArguments[0];
-                }
-                // Non-generic version: AssemblyLuaVisibleAttribute(Type) — type is in constructor args
-                else if (attr.ConstructorArguments.Length == 1)
-                {
-                    typeSymbol = attr.ConstructorArguments[0].Value as ITypeSymbol;
-                }
-
-                return typeSymbol as INamedTypeSymbol;
-            })
-            .Where(ts => ts != null)
-            .WithTrackingName("AssemblyLuaVisibleTypes");
-
-        var assemblyLuaTypeMetadatas = assemblyLuaVisibleTypes.Combine(symbolReferences)
-            .Select((pair, ct) =>
-            {
-                var (symbol, references) = pair;
-                if (references == null) return null;
-                return new LuaTypeMetadata(symbol!, references);
-            })
-            .Where(tm => tm?.IsCandidate == true)
-            .WithTrackingName("AssemblyLuaTypeMetadatas");
-
-        var combined = luaTypeMetadatas.Collect().Combine(luaTypeMetadatas2.Collect()).Combine(assemblyLuaTypeMetadatas.Collect()).Combine(stubsOutputDir).Combine(asmName);
+        var combined = luaTypeMetadatas.Collect().Combine(stubsOutputDir).Combine(asmName);
 
         context.RegisterSourceOutput(
             combined,
             (spc, pairs) =>
             {
-                var ((((visible, memberVisible), assemblyVisible), stubsOutputDir), asmName) = pairs;
+                var ((visible, stubsOutputDir), asmName) = pairs;
 
                 var list = new Dictionary<string, LuaTypeMetadata>();
                 foreach (var meta in visible)
@@ -120,20 +67,14 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
                     if (!list.ContainsKey(meta!.FullTypeName))
                         list[meta.FullTypeName] = meta;
                 }
-                foreach (var meta in assemblyVisible)
-                {
-                    if (!list.ContainsKey(meta!.FullTypeName))
-                        list[meta.FullTypeName] = meta;
-                }
-                foreach (var meta in memberVisible)
-                {
-                    if (!list.ContainsKey(meta!.FullTypeName))
-                        list[meta.FullTypeName] = meta;
-                }
 
                 var ns = $"NFMWorld.LuaSourceGenerator.Generator.{asmName}";
 
-                foreach (var type in list.Values)
+                var orderedList = list.Values
+                    .OrderBy(t => t.FullTypeName)
+                    .ToArray();
+
+                foreach (var type in orderedList)
                 {
                     if (type.IsEnum)
                     {
@@ -149,7 +90,7 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
                     }
                 }
                 {
-                    var initGenerator = new LuaBindingInitGenerator(list.Values.ToArray(), ns);
+                    var initGenerator = new LuaBindingInitGenerator(orderedList, ns);
                     var code = initGenerator.GenerateCode();
                     spc.AddSource("_init.cs", code);
                 }
@@ -157,7 +98,7 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
                 if (stubsOutputDir != null)
                 {
                     var codes = new StringBuilder();
-                    foreach (var type in list.Values)
+                    foreach (var type in orderedList)
                     {
                         var initGenerator = new LuaStubsGenerator(type);
                         var code = initGenerator.GenerateCode();

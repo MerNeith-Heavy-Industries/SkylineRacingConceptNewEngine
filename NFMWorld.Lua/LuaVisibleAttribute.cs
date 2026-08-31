@@ -14,20 +14,6 @@ public sealed class LuaVisibleAttribute : Attribute
 }
 
 /// <summary>
-/// Marks a property, field, method, or method return type to expose its type to Lua
-/// via StructUserData wrapping. The type itself does not need [LuaVisible] — only
-/// the member-level attribute is required for StructUserData metatable generation.
-/// </summary>
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method | AttributeTargets.ReturnValue, AllowMultiple = false)]
-public sealed class MemberLuaVisibleAttribute : Attribute;
-
-/// <summary>
-/// Marks a method, property, or field to be hidden from Lua even if the containing type is [LuaVisible].
-/// </summary>
-[AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Constructor | AttributeTargets.Event)]
-public sealed class LuaHiddenAttribute : Attribute;
-
-/// <summary>
 /// Marks a method or property with a custom Lua name.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Constructor)]
@@ -59,25 +45,4 @@ public sealed class LuaShimTypeAttribute(string shimType) : Attribute
 public sealed class LuaOverloadPriorityAttribute(long priority) : Attribute
 {
     public long OverloadPriority { get; } = priority;
-}
-
-/// <summary>
-/// Marks an assembly to indicate that type T should be considered Lua visible.
-/// </summary>
-/// <typeparam name="T">The type.</typeparam>
-[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-public sealed class AssemblyLuaVisibleAttribute<T>() : AssemblyLuaVisibleAttribute(typeof(T));
-
-/// <summary>
-/// Marks an assembly to indicate that the specified type should be considered Lua visible.
-/// </summary>
-/// <param name="type"></param>
-[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-public class AssemblyLuaVisibleAttribute(Type type) : Attribute
-{
-    public Type Type { get; } = type;
-    
-    public AssemblyLuaVisibleAttribute(string typeName) : this(Type.GetType(typeName) ?? throw new ArgumentException($"Type '{typeName}' not found."))
-    { 
-    }
 }
