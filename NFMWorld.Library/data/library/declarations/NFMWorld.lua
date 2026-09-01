@@ -7,13 +7,13 @@ AccountData = {}
 
 
 ---@class AvailableOptions
----@field renderers { [integer|number]: string }
----@field resolutions { [integer|number]: string }
----@field displayModes { [integer|number]: string }
----@field antialiasModes { [integer|number]: string }
----@field shadowCascadeLevels { [integer|number]: string }
----@field shadowResolutions { [integer|number]: string }
----@field renderDistanceNames { [integer|number]: string }
+---@field renderers { string }
+---@field resolutions { string }
+---@field displayModes { string }
+---@field antialiasModes { string }
+---@field shadowCascadeLevels { string }
+---@field shadowResolutions { string }
+---@field renderDistanceNames { string }
 
 AvailableOptions = {}
 
@@ -29,13 +29,13 @@ CapturedKey = {}
 ---@class CarCollectionData
 ---@field id Collection
 ---@field name string
----@field cars { [integer|number]: CarStatsData }
+---@field cars { CarStatsData }
 
 CarCollectionData = {}
 
 
 ---@class CarCollectionsData
----@field collections { [integer|number]: CarCollectionData }
+---@field collections { CarCollectionData }
 
 CarCollectionsData = {}
 
@@ -69,18 +69,6 @@ CounterData = {}
 CurrentCollectionData = {}
 
 
----@class KeyBindingData
----@field action string
----@field displayName string
----@field keyCode integer
-
-KeyBindingData = {}
-
-
----Creates a new KeyBindingData
----@return KeyBindingData
-function KeyBindingData.new() end
-
 ---@class PauseState
 ---@field lap integer
 ---@field totalLaps integer
@@ -90,35 +78,4 @@ function KeyBindingData.new() end
 
 PauseState = {}
 
-
----@class SettingsSnapshot
----@field selectedRenderer integer
----@field selectedResolution integer
----@field selectedDisplayMode integer
----@field vsync boolean
----@field fpsLimit integer
----@field antialias integer
----@field shadowCascadeLevel integer
----@field shadowResolution integer
----@field renderDistance integer
----@field lowLatency boolean
----@field lineWidth number
----@field masterVolume number
----@field musicVolume number
----@field effectsVolume number
----@field muteAll boolean
----@field remasteredMusic boolean
----@field fov number
----@field followY integer
----@field followZ integer
----@field smoothFov boolean
----@field keyBindings { [integer|number]: KeyBindingData }
----@field distantOutlineBehavior integer
-
-SettingsSnapshot = {}
-
-
----Creates a new SettingsSnapshot
----@return SettingsSnapshot
-function SettingsSnapshot.new() end
 
