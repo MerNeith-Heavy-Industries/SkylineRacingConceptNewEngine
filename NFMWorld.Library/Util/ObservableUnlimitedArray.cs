@@ -30,7 +30,7 @@ namespace NFMWorldLibrary.Util;
 /// appropriate events.
 /// </para>
 /// </remarks>
-[LuaShimType("{ [integer|number]: T }")]
+[LuaShimType("{ T }")]
 public class ObservableUnlimitedArray<T> : UnlimitedArray<T>,
     INotifyPropertyChanged,
     INotifyPropertyChanging,

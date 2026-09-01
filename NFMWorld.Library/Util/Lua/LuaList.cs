@@ -3,7 +3,7 @@ using NFMWorld.Lua;
 
 namespace NFMWorldLibrary.Util;
 
-[LuaShimType("{ [integer|number]: T }")]
+[LuaShimType("{ T }")]
 [MemoryPackable(GenerateType.Collection)]
 public partial class LuaList<T> : LuaArray<T>
 {

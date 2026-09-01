@@ -9,7 +9,7 @@ using NFMWorld.Reactor;
 
 namespace NFMWorldLibrary.Util;
 
-[LuaShimType("{ [integer|number]: T }")]
+[LuaShimType("{ T }")]
 public partial class ReadOnlyLuaArray<T> : ILuaUserData, IReadOnlyList<T>
 {
     public readonly IReadOnlyList<T> Value;
