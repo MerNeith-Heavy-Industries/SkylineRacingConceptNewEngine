@@ -10,6 +10,7 @@ namespace NFMWorld.LuaSourceGenerator;
 public partial class LuaVisibleGenerator : IIncrementalGenerator
 {
     public const string LuaVisibleAttrName = "NFMWorld.Lua.LuaVisibleAttribute";
+    public const string LuaTableConvertibleAttrName = "NFMWorld.Lua.LuaTableConvertibleAttribute";
     public const string LuaNameAttrName = "NFMWorld.Lua.LuaNameAttribute";
     public const string LuaHiddenAttrName = "NFMWorld.Lua.LuaHiddenAttribute";
     public const string MemberLuaVisibleAttrName = "NFMWorld.Lua.MemberLuaVisibleAttribute";
@@ -26,10 +27,16 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
             .WithTrackingName("AsmName");
 
         var typeProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            LuaVisibleAttrName,
-            static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax or InterfaceDeclarationSyntax or EnumDeclarationSyntax,
-            static (ctx, ct) => (INamedTypeSymbol)ctx.TargetSymbol)
+                LuaVisibleAttrName,
+                static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax or InterfaceDeclarationSyntax or EnumDeclarationSyntax,
+                static (ctx, ct) => (INamedTypeSymbol)ctx.TargetSymbol)
             .WithTrackingName("LuaVisibleTypes");
+
+        var typeProvider2 = context.SyntaxProvider.ForAttributeWithMetadataName(
+                LuaTableConvertibleAttrName,
+                static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax or InterfaceDeclarationSyntax or EnumDeclarationSyntax,
+                static (ctx, ct) => (INamedTypeSymbol)ctx.TargetSymbol)
+            .WithTrackingName("LuaTableConvertibleTypes");
 
         var luaTypeMetadatas = typeProvider.Combine(symbolReferences)
             .Select((pair, ct) =>
@@ -40,6 +47,16 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
             })
             .Where(tm => tm?.IsCandidate == true)
             .WithTrackingName("LuaTypeMetadatas");
+
+        var luaTypeMetadatas2 = typeProvider2.Combine(symbolReferences)
+            .Select((pair, ct) =>
+            {
+                var (symbol, references) = pair;
+                if (references == null) return null;
+                return new LuaTypeMetadata(symbol, references);
+            })
+            .Where(tm => tm?.IsCandidate == true)
+            .WithTrackingName("LuaTableConvertibleTypeMetadatas");
 
         // Read optional stubs output directory from MSBuild property
         var stubsOutputDir = context.AnalyzerConfigOptionsProvider
@@ -53,13 +70,13 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
             })
             .WithTrackingName("StubsOutputDir");
 
-        var combined = luaTypeMetadatas.Collect().Combine(stubsOutputDir).Combine(asmName);
+        var combined = luaTypeMetadatas.Collect().Combine(luaTypeMetadatas2.Collect()).Combine(stubsOutputDir).Combine(asmName);
 
         context.RegisterSourceOutput(
             combined,
             (spc, pairs) =>
             {
-                var ((visible, stubsOutputDir), asmName) = pairs;
+                var (((visible, tableConvertible), stubsOutputDir), asmName) = pairs;
 
                 var list = new Dictionary<string, LuaTypeMetadata>();
                 foreach (var meta in visible)
@@ -94,6 +111,13 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
                     var code = initGenerator.GenerateCode();
                     spc.AddSource("_init.cs", code);
                 }
+                
+                foreach (var type in tableConvertible)
+                {
+                    var generator = new LuaTableConverterGenerator(type!, ns);
+                    var code = generator.GenerateCode();
+                    spc.AddSource($"{type!.SanitizedTypeName}.cs", code);
+                }
 
                 if (stubsOutputDir != null)
                 {
@@ -112,6 +136,13 @@ public partial class LuaVisibleGenerator : IIncrementalGenerator
                     foreach (var type in OrderLuauTypes(list))
                     {
                         var initGenerator = new LuauStubsGenerator(type);
+                        var code = initGenerator.GenerateCode();
+                        codes.AppendLine(code);
+                    }
+                    
+                    foreach (var type in tableConvertible)
+                    {
+                        var initGenerator = new LuauTableStubsGenerator(type!);
                         var code = initGenerator.GenerateCode();
                         codes.AppendLine(code);
                     }
@@ -177,6 +208,8 @@ internal sealed class SymbolReferences
     public INamedTypeSymbol? Fixed64Euler { get; }
     public INamedTypeSymbol IEnumerableT { get; }
     public INamedTypeSymbol? KeyValuePair { get; }
+    public INamedTypeSymbol? IList { get; }
+    public INamedTypeSymbol? IListNonGeneric { get; }
 
     private SymbolReferences(Compilation compilation)
     {
@@ -199,6 +232,9 @@ internal sealed class SymbolReferences
 
         IEnumerableT = compilation.GetSpecialType(SpecialType.System_Collections_Generic_IEnumerable_T);
         KeyValuePair = compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2");
+
+        IList = compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1");
+        IListNonGeneric = compilation.GetTypeByMetadataName("System.Collections.IList");
     }
 
     public static SymbolReferences? Create(Compilation compilation)

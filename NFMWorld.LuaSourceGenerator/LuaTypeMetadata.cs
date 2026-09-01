@@ -116,6 +116,26 @@ internal class BaseLuaTypeMetadata
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             miscellaneousOptions:
             SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+    
+    public bool IsIList { get; }
+
+    private bool ImplementsIList(ITypeSymbol type, SymbolReferences references)
+    {
+        var ilistT = references.IList;
+        if (ilistT is null) return false;
+
+        return type.AllInterfaces.Any(i => 
+            SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, ilistT));
+    }
+    
+    private bool ImplementsNonGenericIList(ITypeSymbol type, SymbolReferences references)
+    {
+        var ilist = references.IListNonGeneric;
+        if (ilist is null) return false;
+
+        return type.AllInterfaces.Any(i => 
+            SymbolEqualityComparer.Default.Equals(i, ilist));
+    }
 
     public BaseLuaTypeMetadata(ITypeSymbol symbol, SymbolReferences references)
     {
@@ -191,6 +211,8 @@ internal class BaseLuaTypeMetadata
         }
 
         ApplyShimTypeOverride(symbol, references, GetAttr(symbol, references.LuaShimTypeAttribute));
+        
+        IsIList = ImplementsIList(symbol, references) || ImplementsNonGenericIList(symbol, references);
     }
 
     /// <summary>
