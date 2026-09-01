@@ -720,14 +720,21 @@ public abstract partial class Component : Node, IAnimationCallback
         if (Styles.BackgroundColor is {} backgroundColor && backgroundColor != Color.Transparent)
         {
             G.SetColor(backgroundColor);
-            G.BeginPath();
-            G.RoundedRectVarying(
-                (int)position.X, (int)position.Y, (int)size.X, (int)size.Y,
-                Styles.BorderTopLeftRadius, Styles.BorderTopRightRadius,
-                Styles.BorderBottomRightRadius, Styles.BorderBottomLeftRadius);
-            G.Fill();
+            G.FillVariableBorderRect(
+                position.X - LayoutBorderLeft, // FillVariableBorderRect expects the whole size not the inner size
+                position.Y - LayoutBorderTop,
+                size.X + LayoutBorderLeft + LayoutBorderRight,
+                size.Y + LayoutBorderTop + LayoutBorderBottom,
+                Styles.BorderTop?.Value ?? 0,
+                Styles.BorderRight?.Value ?? 0,
+                Styles.BorderBottom?.Value ?? 0,
+                Styles.BorderLeft?.Value ?? 0,
+                Styles.BorderTopLeftRadius,
+                Styles.BorderTopRightRadius,
+                Styles.BorderBottomRightRadius,
+                Styles.BorderBottomLeftRadius
+            );
         }
-
     }
 
     protected virtual void RenderBorder(LuaVector2 position, LuaVector2 size)
@@ -735,77 +742,20 @@ public abstract partial class Component : Node, IAnimationCallback
         if (Styles.BorderColor is { } borderColor && borderColor != Color.Transparent)
         {
             G.SetColor(borderColor);
-
-            float minRadius = Math.Min(size.X, size.Y) / 2f;
-            int tl = (int)Math.Min(Styles.BorderTopLeftRadius, minRadius);
-            int tr = (int)Math.Min(Styles.BorderTopRightRadius, minRadius);
-            int bl = (int)Math.Min(Styles.BorderBottomLeftRadius, minRadius);
-            int br = (int)Math.Min(Styles.BorderBottomRightRadius, minRadius);
-
-            int x0 = (int)position.X, y0 = (int)position.Y, x1 = (int)position.X + (int)size.X, y1 = (int)position.Y + (int)size.Y;
-
-            // Edges (filled rects), inset by the clamped corner radii.
-            if (Styles.BorderLeft > 0)
-            {
-                G.BeginPath();
-                G.Rect(x0, y0 + tl, (int)Styles.BorderLeft!.Value, (int)(size.Y - tl - bl));
-                G.Fill();
-            }
-
-            if (Styles.BorderRight > 0)
-            {
-                G.BeginPath();
-                G.Rect(x1 - (int)Styles.BorderRight!.Value, y0 + tr, (int)Styles.BorderRight!.Value, (int)(size.Y - tr - br));
-                G.Fill();
-            }
-
-            if (Styles.BorderTop > 0)
-            {
-                G.BeginPath();
-                G.Rect(x0 + tl, y0, (int)(size.X - tl - tr), (int)Styles.BorderTop!.Value);
-                G.Fill();
-            }
-
-            if (Styles.BorderBottom > 0)
-            {
-                G.BeginPath();
-                G.Rect(x0 + bl, y1 - (int)Styles.BorderBottom!.Value, (int)(size.X - bl - br), (int)Styles.BorderBottom!.Value);
-                G.Fill();
-            }
-
-            // Corners (quarter-ring arcs).
-            if (Styles.BorderTopLeftRadius > 0)
-            {
-                RenderArc(x0 + tl, y0 + tl, tl, 180f, 270f, (int)(Styles.BorderTop?.Value ?? 0), borderColor);
-            }
-
-            if (Styles.BorderTopRightRadius > 0)
-            {
-                RenderArc(x1 - tr, y0 + tr, tr, 270f, 360f, (int)(Styles.BorderTop?.Value ?? 0), borderColor);
-            }
-
-            if (Styles.BorderBottomLeftRadius > 0)
-            {
-                RenderArc(x0 + bl, y1 - bl, bl, 90f, 180f, (int)(Styles.BorderBottom?.Value ?? 0), borderColor);
-            }
-
-            if (Styles.BorderBottomRightRadius > 0)
-            {
-                RenderArc(x1 - br, y1 - br, br, 0f, 90f, (int)(Styles.BorderBottom?.Value ?? 0), borderColor);
-            }
-            static void RenderArc(float cx, float cy, float radius, float startAngleDeg, float endAngleDeg, float thickness, Color color)
-            {
-                const float DegToRad = MathF.PI / 180f;
-
-                float arcRadius = Math.Max(radius - thickness * 0.5f, 0.5f);
-                G.BeginPath();
-                G.Arc(cx, cy, arcRadius, startAngleDeg * DegToRad, endAngleDeg * DegToRad, true);
-                G.SetColor(color);
-                G.SetStrokeWidth(thickness);
-                G.LineCapButt();
-                G.Stroke();
-            }
-
+            G.DrawVariableBorderRect(
+                position.X,
+                position.Y,
+                size.X,
+                size.Y,
+                Styles.BorderTop?.Value ?? 0,
+                Styles.BorderRight?.Value ?? 0,
+                Styles.BorderBottom?.Value ?? 0,
+                Styles.BorderLeft?.Value ?? 0,
+                Styles.BorderTopLeftRadius,
+                Styles.BorderTopRightRadius,
+                Styles.BorderBottomRightRadius,
+                Styles.BorderBottomLeftRadius
+            );
         }
     }
 
