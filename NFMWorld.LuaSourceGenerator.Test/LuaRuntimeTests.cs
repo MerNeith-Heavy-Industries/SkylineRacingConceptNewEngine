@@ -1,5 +1,6 @@
 using Lua;
 using Lua.Runtime;
+using Lua.Standard;
 
 namespace NFMWorld.LuaSourceGenerator.Test;
 
@@ -18,7 +19,7 @@ public class LuaRuntimeTests
     public async Task Fixed64_BasicCreation()
     {
         using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
+        var lib = FixedMathLibrary.Instance;
         state.Environment["fixed64"] = new LuaValue(new LuaFunction("fixed64", lib.Fixed64Constructor));
 
         var results = await state.DoStringAsync("return fixed64(3.5)");
@@ -29,7 +30,7 @@ public class LuaRuntimeTests
     public async Task Fixed64Vector3_BasicCreation()
     {
         using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
+        var lib = FixedMathLibrary.Instance;
         state.Environment["fixed64vector3"] = new LuaValue(new LuaFunction("fixed64vector3", lib.Fixed64Vector3Constructor));
         foreach (var fn in lib.VectorFunctions)
             state.Environment[fn.Name] = new LuaValue(fn.Func);
@@ -42,7 +43,7 @@ public class LuaRuntimeTests
     public async Task Fixed64Vector3_Magnitude()
     {
         using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
+        var lib = FixedMathLibrary.Instance;
         state.Environment["fixed64vector3"] = new LuaValue(new LuaFunction("fixed64vector3", lib.Fixed64Vector3Constructor));
 
         // Register vector functions under fixed64vec3 table
@@ -62,7 +63,7 @@ public class LuaRuntimeTests
     public async Task Fixed64Angle_BasicCreation()
     {
         using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
+        var lib = FixedMathLibrary.Instance;
 
         // Register angle functions under f64anglelib table
         var angleTable = new LuaTable(0, lib.AngleFunctions.Length);
@@ -78,7 +79,7 @@ public class LuaRuntimeTests
     public async Task Fixed64Euler_BasicCreation()
     {
         using var state = LuaState.Create();
-        var lib = Lua.Standard.FixedMathLibrary.Instance;
+        var lib = FixedMathLibrary.Instance;
 
         // Register angle + euler tables and constructors
         var angleTable = new LuaTable(0, lib.AngleFunctions.Length);
