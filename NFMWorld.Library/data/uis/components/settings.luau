@@ -8,6 +8,11 @@ local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 
+local Checkbox = require("./checkbox")
+local Dropdown = require("./dropdown")
+local Slider = require("./slider")
+local ToggleSwitch = require("./toggleswitch")
+
 -- ── Helpers ──────────────────────────────────────────────────────
 
 local function clamp01(v)
@@ -73,6 +78,8 @@ local Header = styled(Sx.Text) {
 	fontStyle = "bold",
 	textAlign = "center",
 	marginTop = 20,
+	marginBottom = 20,
+	flexShrink = 0,
 }
 
 local TabBar = styled(Sx.View) {
@@ -83,10 +90,15 @@ local TabBar = styled(Sx.View) {
 	paddingTop = 16,
 	paddingLeft = 40,
 	paddingRight = 40,
+	flexShrink = 0,
 }
 
 local Content = styled(Sx.View) {
-	flex = 1,
+	display = "flex",
+	flexDirection = "column",
+	flexGrow = 1,
+	flexShrink = 1,
+	minHeight = 0,
 	overflow = "scroll",
 	paddingTop = 20,
 	paddingLeft = 40,
@@ -106,6 +118,7 @@ local BottomBar = styled(Sx.View) {
 	paddingRight = 40,
 	borderTopWidth = 1,
 	borderColor = "rgba(255,255,255,0.08)",
+	flexShrink = 0,
 }
 
 local SectionLabel = styled(Sx.Text) {
@@ -113,6 +126,7 @@ local SectionLabel = styled(Sx.Text) {
 	fontStyle = "bold",
 	color = "rgba(255,255,255,0.35)",
 	marginBottom = 10,
+	flexShrink = 0,
 }
 
 local Row = styled(Sx.View) {
@@ -123,6 +137,7 @@ local Row = styled(Sx.View) {
 	gap = 16,
 	paddingTop = 6,
 	paddingBottom = 6,
+	flexShrink = 0,
 }
 
 local Label = styled(Sx.Text) {
@@ -143,6 +158,7 @@ local Divider = styled(Sx.View) {
 	backgroundColor = "rgba(255,255,255,0.06)",
 	marginTop = 12,
 	marginBottom = 12,
+	flexShrink = 0,
 }
 
 local ResetLink = styled(Sx.Text) {
@@ -150,6 +166,7 @@ local ResetLink = styled(Sx.Text) {
 	fontSize = 12,
 	paddingTop = 8,
 	paddingBottom = 8,
+	flexShrink = 0,
 	hover = { color = "rgba(255,152,0,0.7)" },
 }
 
@@ -161,6 +178,7 @@ local KeyBindingRow = styled(Sx.View) {
 	gap = 12,
 	paddingTop = 4,
 	paddingBottom = 4,
+	flexShrink = 0,
 }
 
 local KeyBindingLabel = styled(Sx.Text) {
@@ -252,125 +270,7 @@ local function KeyBindingBtn(props: { capturing: Sx.Signalish<boolean?>, label: 
 	}
 end
 
--- Click-to-cycle select (approx of <select>): click advances to next option.
-local function Select(props: { options: {string}, value: Sx.Signalish<number?>, onSelect: ((number) -> ()) })
-	return x(Sx.View) {
-		style = Sx.createMemo(function(): Sx.Styles
-			local options = props.options or {}
-			local value = Sx.read(props.value) or 0
-			local label = ""
-			if #options > 0 then
-				label = options[value + 1] or options[1] or ""
-			end
-			return {
-				paddingTop = 6,
-				paddingBottom = 6,
-				paddingLeft = 10,
-				paddingRight = 10,
-				minWidth = 160,
-				alignItems = "center",
-				backgroundColor = "rgba(255,255,255,0.06)",
-				borderWidth = 1,
-				borderColor = "rgba(255,255,255,0.15)",
-				borderRadius = 5,
-			}
-		end),
-		onmousedown = function()
-			local options = props.options or {}
-			if #options == 0 then return end
-			props.onSelect(((Sx.read(props.value) or 0) + 1) % #options)
-		end,
-		x(Sx.Text) {
-			style = Sx.createMemo(function(): Sx.TextStyles
-				local options = props.options or {}
-				local value = Sx.read(props.value) or 0
-				local label = ""
-				if #options > 0 then
-					label = options[value + 1] or options[1] or ""
-				end
-				return { fontSize = 13, color = "#fff" }
-			end),
-			function()
-				local options = props.options or {}
-				local value = Sx.read(props.value) or 0
-				if #options > 0 then
-					return options[value + 1] or options[1] or ""
-				end
-				return ""
-			end,
-		},
-	}
-end
-
-local function Checkbox(props: { checked: Sx.Signalish<boolean>, onToggle: () -> () })
-	return x(Sx.View) {
-		style = Sx.createMemo(function(): Sx.Styles
-			local checked = Sx.read(props.checked)
-			return {
-				width = 16,
-				height = 16,
-				backgroundColor = checked and "#4fc3f7" or "rgba(255,255,255,0.08)",
-				borderWidth = 1,
-				borderColor = checked and "#4fc3f7" or "rgba(255,255,255,0.25)",
-				borderRadius = 3,
-			}
-		end),
-		onmousedown = function() props.onToggle() end,
-	}
-end
-
 local TRACK_W = 160
-
--- Click/drag slider: maps pointer X on a 160px track to [min, max] at `step`.
-local function Slider(props: { min: number, max: number, step: number, value: Sx.Signalish<number>, onValue: ((number) -> ()) })
-	local min = props.min or 0
-	local max = props.max or 1
-	local step = props.step or 1
-
-	local function setFromX(px: number)
-		local frac = clamp01(px / TRACK_W)
-		local raw = min + frac * (max - min)
-		local stepped = raw
-		if step > 0 then
-			stepped = math.floor((raw - min) / step + 0.5) * step + min
-		end
-		if stepped < min then stepped = min end
-		if stepped > max then stepped = max end
-		props.onValue(stepped)
-	end
-
-	return x(Sx.View) {
-		style = {
-			width = TRACK_W,
-			height = 20,
-			display = "flex",
-			flexDirection = "row",
-			alignItems = "center",
-		},
-		onmousedown = function(event) setFromX(event.relativePosition.x) end,
-		onmousedrag = function(event) setFromX(event.relativePosition.x) end,
-			x(Sx.View) {
-			style = {
-				width = "100%",
-				height = 4,
-				backgroundColor = "rgba(255,255,255,0.15)",
-				borderRadius = 2,
-				overflow = "hidden",
-			},
-			x(Sx.View) {
-				style = Sx.createMemo(function(): Sx.Styles
-					local value = Sx.read(props.value) or 0
-					local frac = clamp01((value - min) / (max - min))
-					return {
-						width = ("%d%%"):format(frac * 100),
-						height = "100%",
-						backgroundColor = "#4fc3f7",
-					}
-				end),
-			},
-		},
-	}
-end
 
 -- ── Tabs ─────────────────────────────────────────────────────────
 -- Each tab receives the `config` GETTER (signal) so reads are reactive.
@@ -384,7 +284,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		x(SectionLabel) { "Display" },
 		x(Row) {
 			x(Label) { "Renderer" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().renderers or {},
 				value = function() return config().selectedRenderer end,
 				onSelect = function(v) set("selectedRenderer", v) end,
@@ -392,7 +292,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Resolution" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().resolutions or {},
 				value = function() return config().selectedResolution end,
 				onSelect = function(v) set("selectedResolution", v) end,
@@ -400,7 +300,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Display Mode" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().displayModes or {},
 				value = function() return config().selectedDisplayMode end,
 				onSelect = function(v) set("selectedDisplayMode", v) end,
@@ -429,7 +329,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		x(SectionLabel) { "Quality" },
 		x(Row) {
 			x(Label) { "Antialiasing" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().antialiasModes or {},
 				value = function() return config().antialias end,
 				onSelect = function(v) set("antialias", v) end,
@@ -437,7 +337,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Shadow Distance" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().shadowCascadeLevels or {},
 				value = function() return config().shadowCascadeLevel end,
 				onSelect = function(v) set("shadowCascadeLevel", v) end,
@@ -445,7 +345,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Shadow Resolution" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().shadowResolutions or {},
 				value = function() return config().shadowResolution end,
 				onSelect = function(v) set("shadowResolution", v) end,
@@ -453,7 +353,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Render Distance" },
-			x(Select) {
+			x(Dropdown) {
 				options = options().renderDistanceNames or {},
 				value = function() return config().renderDistance end,
 				onSelect = function(v) set("renderDistance", v) end,
@@ -477,7 +377,7 @@ local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options:
 		},
 		x(Row) {
 			x(Label) { "Distant Outlines" },
-			x(Select) {
+			x(Dropdown) {
 				options = DISTANT_OUTLINE_BEHAVIORS,
 				value = function() return config().distantOutlineBehavior end,
 				onSelect = function(v) set("distantOutlineBehavior", v) end,
@@ -645,39 +545,40 @@ local function Settings(props)
 	local rootRef: { current: Component? } = {}
 
 	local function copySnapshot(c: SettingsSnapshot): SettingsSnapshot
-		local t = SettingsSnapshot.new()
-		t.selectedRenderer = c.selectedRenderer
-		t.selectedResolution = c.selectedResolution
-		t.selectedDisplayMode = c.selectedDisplayMode
-		t.vsync = c.vsync
-		t.fpsLimit = c.fpsLimit
-		t.antialias = c.antialias
-		t.shadowCascadeLevel = c.shadowCascadeLevel
-		t.shadowResolution = c.shadowResolution
-		t.renderDistance = c.renderDistance
-		t.lowLatency = c.lowLatency
-		t.lineWidth = c.lineWidth
-		t.masterVolume = c.masterVolume
-		t.musicVolume = c.musicVolume
-		t.effectsVolume = c.effectsVolume
-		t.muteAll = c.muteAll
-		t.remasteredMusic = c.remasteredMusic
-		t.fov = c.fov
-		t.followY = c.followY
-		t.followZ = c.followZ
-		t.smoothFov = c.smoothFov
-		t.distantOutlineBehavior = c.distantOutlineBehavior
-		local kb = {}
+		local t: SettingsSnapshot = {
+			selectedRenderer = c.selectedRenderer,
+			selectedResolution = c.selectedResolution,
+			selectedDisplayMode = c.selectedDisplayMode,
+			vsync = c.vsync,
+			fpsLimit = c.fpsLimit,
+			antialias = c.antialias,
+			shadowCascadeLevel = c.shadowCascadeLevel,
+			shadowResolution = c.shadowResolution,
+			renderDistance = c.renderDistance,
+			lowLatency = c.lowLatency,
+			lineWidth = c.lineWidth,
+			masterVolume = c.masterVolume,
+			musicVolume = c.musicVolume,
+			effectsVolume = c.effectsVolume,
+			muteAll = c.muteAll,
+			remasteredMusic = c.remasteredMusic,
+			fov = c.fov,
+			followY = c.followY,
+			followZ = c.followZ,
+			smoothFov = c.smoothFov,
+			distantOutlineBehavior = c.distantOutlineBehavior,
+			keyBindings = {}
+		}
 		if c.keyBindings ~= nil then
 			for i = 1, #c.keyBindings do
 				local b = c.keyBindings[i]
-				kb[i] = KeyBindingData.new()
-				kb[i].action = b.action
-				kb[i].displayName = b.displayName
-				kb[i].keyCode = b.keyCode
+				t.keyBindings[i] = {
+					action = b.action,
+					displayName = b.displayName,
+					keyCode = b.keyCode
+				}
 			end
 		end
-		t.keyBindings = kb
 		return t
 	end
 
@@ -694,7 +595,7 @@ local function Settings(props)
 	local function set(key, value)
 		updateConfig(function(c)
 			local nextC = copySnapshot(c)
-			nextC[key] = value
+			;(nextC::any)[key] = value
 			return nextC
 		end)
 		applySetting(key, value)
@@ -718,7 +619,7 @@ local function Settings(props)
 			if not data.cancelled and data.action ~= nil then
 				local prev = config()
 				if prev ~= nil then
-					local kb = {}
+					local kb: {KeyBindingData} = {}
 					for i = 1, #prev.keyBindings do
 						local b = prev.keyBindings[i]
 						local newKeyCode = b.keyCode
@@ -727,10 +628,11 @@ local function Settings(props)
 						elseif b.action == data.action then
 							newKeyCode = data.keyCode
 						end
-						kb[i] = KeyBindingData.new()
-						kb[i].action = b.action
-						kb[i].displayName = b.displayName
-						kb[i].keyCode = newKeyCode
+						kb[i] = {
+							action = b.action,
+							displayName = b.displayName,
+							keyCode = newKeyCode
+						}
 					end
 					local nextC = copySnapshot(prev)
 					nextC.keyBindings = kb
