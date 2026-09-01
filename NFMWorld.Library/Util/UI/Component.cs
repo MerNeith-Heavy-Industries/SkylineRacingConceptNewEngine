@@ -800,67 +800,84 @@ public abstract partial class Component : Node, IAnimationCallback
         }
     }
 
-    /// <summary>Max z-index in a node's subtree (own z + descendants).</summary>
-    internal static int SubtreeMaxZ(Component node, Dictionary<Component, int>? cache)
+    /// <summary>
+    /// Max z-index that escapes a node's subtree to its parent for sibling ordering.
+    /// A stacking context (z != 0) presents its OWN z — its descendants are contained
+    /// within it and do not bubble further. A non-SC node presents the max escaping z of
+    /// its descendants. This is the CSS-like "nearest stacking context" rule; it avoids
+    /// hoisting an entire ancestor subtree just because it contains one high-z descendant
+    /// (e.g. a dropdown popup), which is what the old subtree-max approach did.
+    /// </summary>
+    internal static int EscapeZ(Component node, Dictionary<Component, int>? cache)
     {
         if (cache is not null && cache.TryGetValue(node, out var cached))
             return cached;
 
-        int max = node.Styles.ZIndex;
-        foreach (var visual in node.VisualChildren)
+        int result;
+        if (node.Styles.ZIndex != 0)
         {
-            if (visual is Component c)
+            result = node.Styles.ZIndex;
+        }
+        else
+        {
+            result = 0;
+            foreach (var visual in node.VisualChildren)
             {
-                int cz = SubtreeMaxZ(c, cache);
-                if (cz > max) max = cz;
+                if (visual is Component c)
+                {
+                    int cz = EscapeZ(c, cache);
+                    if (cz > result) result = cz;
+                }
             }
         }
 
         if (cache is not null)
-            cache[node] = max;
-        return max;
+            cache[node] = result;
+        return result;
     }
+
+    private readonly record struct PaintState(
+        bool Visible,
+        bool Clipping,
+        float OwnOpacity,
+        LuaVector2 PaddingPos,
+        LuaVector2 PaddingSize,
+        LuaVector2 ChildOrigin,
+        RectangleF? Clip);
+
+    private readonly record struct StackEntry(Component Node, LuaVector2 Origin, RectangleF? Clip, int Z);
 
     /// <summary>
-    /// Visual children ordered for painting (z-aware). Lower subtree z-index paints
-    /// first (behind), higher paints last (on top); ties keep original order so a later
-    /// sibling paints over an earlier one. Fast path: when nothing in the subtree has a
-    /// positive z-index, this is exactly plain tree order with no list allocation.
+    /// Paints this node as a stacking context. Non-stacking children (and their escaped
+    /// SC descendants) paint inline in tree order; then escaped stacking-context
+    /// descendants paint last, in ascending z order. With no z-index anywhere this is
+    /// exactly plain tree order, matching the previous behavior.
     /// </summary>
-    private IEnumerable<Component> GetChildrenInPaintOrder()
+    public void Render(RenderContext context) => PaintStacking(context);
+
+    private void PaintStacking(RenderContext context)
     {
-        if (SubtreeMaxZ(this, null) <= 0)
+        var s = BeginPaint(context);
+        if (!s.Visible) return;
+
+        var scs = new List<StackEntry>();
+        PaintChildren(s, scs);
+        scs.Sort((a, b) => a.Z.CompareTo(b.Z));
+
+        foreach (var e in scs)
         {
-            foreach (var child in GetChildSnapshot())
-                if (child is Component c)
-                    yield return c;
-            yield break;
+            // Preserve the accumulated ancestor clip for the escaped stacking context.
+            G.SaveState();
+            if (e.Clip is { } c)
+                G.IntersectScissor(c.X, c.Y, c.Width, c.Height);
+            e.Node.PaintStacking(new RenderContext(e.Origin, s.OwnOpacity, e.Clip));
+            G.RestoreState();
         }
 
-        var list = new List<(int idx, Component c)>();
-        int i = 0;
-        foreach (var visual in VisualChildren)
-        {
-            if (visual is Component c)
-            {
-                list.Add((i, c));
-                i++;
-            }
-        }
-
-        list.Sort((x, y) =>
-        {
-            int zx = SubtreeMaxZ(x.c, null);
-            int zy = SubtreeMaxZ(y.c, null);
-            if (zx != zy) return zx.CompareTo(zy);  // lower z first (behind)
-            return x.idx.CompareTo(y.idx);          // earlier first; later paints on top
-        });
-
-        foreach (var (_, c) in list)
-            yield return c;
+        EndPaint(s);
     }
 
-    public void Render(RenderContext context)
+    private PaintState BeginPaint(RenderContext context)
     {
         OnAnimationFrameBegan();
         Root = context.TopLeft;
@@ -871,49 +888,70 @@ public abstract partial class Component : Node, IAnimationCallback
             Logging.Info($"[Render] TextRun reached. Display={Styles.Display} Vis={Styles.Visibility} Opacity={Styles.Opacity}");
         }
 
-        if (Styles.Display != Display.None && Styles.Visibility == Visibility.Visible && Styles.Opacity > 0f)
+        if (Styles.Display == Display.None || Styles.Visibility != Visibility.Visible || Styles.Opacity <= 0f)
+            return default;
+
+        var ownOpacity = context.InheritedOpacity * Styles.Opacity;
+
+        // Recompute scroll extent from freshly laid-out children.
+        UpdateScrollExtent();
+
+        // Compute this node's effective clip (padding box when clipping),
+        // intersected with any clip inherited from clipping ancestors.
+        var paddingPos = LayoutPaddingPosition;
+        var paddingSize = LayoutPaddingSize;
+        RectangleF? effectiveClip = context.Clip;
+        var clipping = IsClipping;
+        if (clipping)
         {
-            var ownOpacity = context.InheritedOpacity * Styles.Opacity;
-
-            // Recompute scroll extent from freshly laid-out children.
-            UpdateScrollExtent();
-
-            // Compute this node's effective clip (padding box when clipping),
-            // intersected with any clip inherited from clipping ancestors.
-            var paddingPos = LayoutPaddingPosition;
-            var paddingSize = LayoutPaddingSize;
-            RectangleF? effectiveClip = context.Clip;
-            if (IsClipping)
-            {
-                var ownClip = new RectangleF(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
-                effectiveClip = effectiveClip is { } inherited ? RectangleF.Intersect(inherited, ownClip) : ownClip;
-            }
-            ClipRect = effectiveClip;
-
-            G.Alpha = ownOpacity;
-            RenderBackground(paddingPos, paddingSize);
-            RenderBorder(LayoutBorderPosition, LayoutBorderSize);
-            RenderContent(LayoutContentPosition, LayoutContentSize);
-
-            if (IsClipping)
-            {
-                G.SaveState();
-                G.IntersectScissor(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
-            }
-
-            var childOrigin = LayoutBorderPosition - new LuaVector2(ScrollLeft, ScrollTop);
-            foreach (var cmp in GetChildrenInPaintOrder())
-                cmp.Render(new RenderContext(childOrigin, ownOpacity, effectiveClip));
-
-            if (IsClipping)
-            {
-                G.RestoreState();
-            }
-
-            G.Alpha = ownOpacity;
-            RenderScrollbars(paddingPos, paddingSize);
-            G.Alpha = 1f;
+            var ownClip = new RectangleF(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
+            effectiveClip = effectiveClip is { } inherited ? RectangleF.Intersect(inherited, ownClip) : ownClip;
         }
+        ClipRect = effectiveClip;
+
+        G.Alpha = ownOpacity;
+        RenderBackground(paddingPos, paddingSize);
+        RenderBorder(LayoutBorderPosition, LayoutBorderSize);
+        RenderContent(LayoutContentPosition, LayoutContentSize);
+
+        if (clipping)
+        {
+            G.SaveState();
+            G.IntersectScissor(paddingPos.X, paddingPos.Y, paddingSize.X, paddingSize.Y);
+        }
+
+        var childOrigin = LayoutBorderPosition - new LuaVector2(ScrollLeft, ScrollTop);
+        return new PaintState(true, clipping, ownOpacity, paddingPos, paddingSize, childOrigin, effectiveClip);
+    }
+
+    private void EndPaint(PaintState s)
+    {
+        if (s.Clipping)
+            G.RestoreState();
+
+        G.Alpha = s.OwnOpacity;
+        RenderScrollbars(s.PaddingPos, s.PaddingSize);
+        G.Alpha = 1f;
+    }
+
+    private void PaintChildren(PaintState s, List<StackEntry> scs)
+    {
+        foreach (var visual in VisualChildren)
+        {
+            if (visual is not Component c || !c.IsDisplayed) continue;
+            if (c.Styles.ZIndex != 0)
+                scs.Add(new StackEntry(c, s.ChildOrigin, s.Clip, c.Styles.ZIndex));
+            else
+                PaintNonStacking(c, s.ChildOrigin, s.OwnOpacity, s.Clip, scs);
+        }
+    }
+
+    private static void PaintNonStacking(Component node, LuaVector2 origin, float opacity, RectangleF? clip, List<StackEntry> scs)
+    {
+        var s = node.BeginPaint(new RenderContext(origin, opacity, clip));
+        if (!s.Visible) return;
+        node.PaintChildren(s, scs);
+        node.EndPaint(s);
     }
 
     private protected void OnAnimationFrameBegan()

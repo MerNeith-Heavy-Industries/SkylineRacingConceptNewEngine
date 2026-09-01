@@ -136,7 +136,7 @@ public static class FocusManager
     {
         // Fast path: no positive z-index under this node → plain reverse (later-first),
         // no per-node list allocation (common case — the Lua UI mostly uses z=0).
-        if (Component.SubtreeMaxZ(node, zCache) <= 0)
+        if (Component.EscapeZ(node, zCache) <= 0)
         {
             var children = node.VisualChildren;
             for (int i = children.Count - 1; i >= 0; i--)
@@ -158,8 +158,8 @@ public static class FocusManager
 
         list.Sort((x, y) =>
         {
-            int zx = Component.SubtreeMaxZ(x.c, zCache);
-            int zy = Component.SubtreeMaxZ(y.c, zCache);
+            int zx = Component.EscapeZ(x.c, zCache);
+            int zy = Component.EscapeZ(y.c, zCache);
             if (zx != zy) return zy.CompareTo(zx);   // higher z first
             return y.idx.CompareTo(x.idx);           // later sibling first on tie
         });
