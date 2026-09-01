@@ -262,6 +262,41 @@ public static class FocusManager
     }
 
     /// <summary>
+    /// Handles a mouse press for focus purposes. Hit-tests the chain under the
+    /// cursor and focuses the topmost (deepest) focusable element in it; if the
+    /// clicked tree contains no focusable element, clears focus entirely
+    /// (unfocuses whatever was focused). Call once per mouse press, before
+    /// dispatching the press event into the tree.
+    /// </summary>
+    public static void HandleMousePressed(Component root, BaseMouseEvent @event)
+    {
+        var chain = HitTestChain(root, @event.Position);
+
+        // Chain is root→leaf; the deepest focusable element under the cursor wins.
+        for (int i = chain.Count - 1; i >= 0; i--)
+        {
+            if (chain[i].IsFocusable)
+            {
+                ActiveNode = chain[i];
+                FocusedNode = chain[i];
+                return;
+            }
+        }
+
+        // Clicked a tree with no focusable element → drop focus entirely.
+        ClearFocus();
+    }
+
+    /// <summary>
+    /// Handles a mouse release: clears the pressed/active state. Call once per
+    /// mouse release, before dispatching the release event into the tree.
+    /// </summary>
+    public static void HandleMouseReleased()
+    {
+        ActiveNode = null;
+    }
+
+    /// <summary>
     /// Clear the hover chain, resetting <see cref="Component.IsHovered"/> on all currently
     /// hovered elements WITHOUT firing MouseLeft events. Use when deactivating the UI
     /// (phase change) or tearing down the whole tree, where firing leave callbacks against

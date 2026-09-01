@@ -1062,12 +1062,6 @@ public abstract partial class Component : Node, IAnimationCallback
                 ShiftKey: @event.ShiftKey,
                 RelativePosition: @event.Position - LayoutPaddingPosition
             );
-            if (IsFocusable)
-            {
-                IsActive = true;
-                IsFocused = true;
-            }
-
             MousePressed?.Invoke(relativeEvent);
             OnMousePressed(relativeEvent);
         }
@@ -1094,11 +1088,6 @@ public abstract partial class Component : Node, IAnimationCallback
                 ShiftKey: @event.ShiftKey,
                 RelativePosition: @event.Position - LayoutPaddingPosition
             );
-            if (IsFocusable)
-            {
-                IsActive = false;
-            }
-
             MouseReleased?.Invoke(relativeEvent);
             OnMouseReleased(relativeEvent);
         }
