@@ -17,7 +17,7 @@ declare CarStatsData: {
 }
 
 declare extern type CarCollectionsData with
-    collections: { [integer|number]: CarCollectionData }
+    collections: { CarCollectionData }
 end
 
 declare CarCollectionsData: {
@@ -26,7 +26,7 @@ declare CarCollectionsData: {
 declare extern type CarCollectionData with
     id: Collection
     name: string
-    cars: { [integer|number]: CarStatsData }
+    cars: { CarStatsData }
 end
 
 declare CarCollectionData: {
@@ -69,53 +69,14 @@ end
 declare CapturedKey: {
 }
 
-declare extern type SettingsSnapshot with
-    selectedRenderer: integer
-    selectedResolution: integer
-    selectedDisplayMode: integer
-    vsync: boolean
-    fpsLimit: integer
-    antialias: integer
-    shadowCascadeLevel: integer
-    shadowResolution: integer
-    renderDistance: integer
-    lowLatency: boolean
-    lineWidth: number
-    masterVolume: number
-    musicVolume: number
-    effectsVolume: number
-    muteAll: boolean
-    remasteredMusic: boolean
-    fov: number
-    followY: integer
-    followZ: integer
-    smoothFov: boolean
-    keyBindings: { [integer|number]: KeyBindingData }
-    distantOutlineBehavior: integer
-end
-
-declare SettingsSnapshot: {
-    new: (() -> SettingsSnapshot),
-}
-
-declare extern type KeyBindingData with
-    action: string
-    displayName: string
-    keyCode: integer
-end
-
-declare KeyBindingData: {
-    new: (() -> KeyBindingData),
-}
-
 declare extern type AvailableOptions with
-    renderers: { [integer|number]: string }
-    resolutions: { [integer|number]: string }
-    displayModes: { [integer|number]: string }
-    antialiasModes: { [integer|number]: string }
-    shadowCascadeLevels: { [integer|number]: string }
-    shadowResolutions: { [integer|number]: string }
-    renderDistanceNames: { [integer|number]: string }
+    renderers: { string }
+    resolutions: { string }
+    displayModes: { string }
+    antialiasModes: { string }
+    shadowCascadeLevels: { string }
+    shadowResolutions: { string }
+    renderDistanceNames: { string }
 end
 
 declare AvailableOptions: {
@@ -127,4 +88,37 @@ end
 
 declare CounterData: {
 }
+
+export type SettingsSnapshot = {
+    selectedRenderer: integer,
+    selectedResolution: integer,
+    selectedDisplayMode: integer,
+    vsync: boolean,
+    fpsLimit: integer,
+    antialias: integer,
+    shadowCascadeLevel: integer,
+    shadowResolution: integer,
+    renderDistance: integer,
+    lowLatency: boolean,
+    lineWidth: number,
+    masterVolume: number,
+    musicVolume: number,
+    effectsVolume: number,
+    muteAll: boolean,
+    remasteredMusic: boolean,
+    fov: number,
+    followY: integer,
+    followZ: integer,
+    smoothFov: boolean,
+    keyBindings: {KeyBindingData},
+    distantOutlineBehavior: integer,
+}
+
+
+export type KeyBindingData = {
+    action: string,
+    displayName: string,
+    keyCode: integer,
+}
+
 

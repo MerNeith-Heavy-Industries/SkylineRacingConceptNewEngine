@@ -339,7 +339,7 @@ MouseButtons = {}
 
 
 ---@class Component : Node, NFMWorld.Reactor.IAnimationCallback
----@field visualChildren { [integer|number]: Node }
+---@field visualChildren { Node }
 ---@field canHaveChildren boolean
 ---@field name string
 ---@field isFocusable boolean
@@ -399,7 +399,7 @@ Direction = {}
 
 ---@class Node
 ---@field visualParent Node|nil
----@field visualChildren { [integer|number]: Node }
+---@field visualChildren { Node }
 
 Node = {}
 
@@ -407,7 +407,7 @@ Node = {}
 ---@class TextInput : Component, NFMWorld.Reactor.IAnimationCallback
 ---@field placeholder string
 ---@field text string
----@field visualChildren { [integer|number]: Node }
+---@field visualChildren { Node }
 ---@field canHaveChildren boolean
 ---@field name string
 ---@field isFocusable boolean
@@ -461,7 +461,7 @@ TextInput = {}
 
 
 ---@class TextNode : Node, NFMWorld.Reactor.IReceivesTextInvalidation, NFMWorld.Reactor.IRichTextLeaf, NFMWorld.Reactor.IRichTextElement
----@field visualChildren { [integer|number]: Node }
+---@field visualChildren { Node }
 ---@field text string
 ---@field visualParent Node|nil
 
@@ -469,7 +469,7 @@ TextNode = {}
 
 
 ---@class View : Component, NFMWorld.Reactor.IAnimationCallback
----@field visualChildren { [integer|number]: Node }
+---@field visualChildren { Node }
 ---@field canHaveChildren boolean
 ---@field name string
 ---@field isFocusable boolean
@@ -534,7 +534,7 @@ BaseAi = {}
 
 
 ---@class AiContext
----@field players { [integer|number]: ClientSidePlayer }
+---@field players { ClientSidePlayer }
 ---@field player ClientSidePlayer
 ---@field stage BackendStage
 ---@field config table|nil
@@ -547,7 +547,7 @@ AiContext = {}
 ---@field maxRadius integer
 ---@field wheelAngle f64euler
 ---@field turningWheelAngle f64euler
----@field wheels { [integer|number]: Rad3dWheelDef }
+---@field wheels { Rad3dWheelDef }
 ---@field carPhysics CarPhysics
 ---@field control Control
 ---@field currentCheckpoint integer
@@ -559,7 +559,7 @@ AiContext = {}
 ---@field stats CarStats
 ---@field wasted boolean
 ---@field player ClientSidePlayerInfo
----@field children { [integer|number]: BackendGameObject }
+---@field children { BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -569,7 +569,7 @@ BackendCar = {}
 
 
 ---@class BackendGameObject : NFMWorldLibrary.ITransform
----@field children { [integer|number]: BackendGameObject }
+---@field children { BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -578,10 +578,10 @@ BackendGameObject = {}
 
 
 ---@class BackendStage
----@field pieces { [integer|number]: BackendGameObject }
----@field nodes { [integer|number]: StageObject }
----@field checkpoints { [integer|number]: StageObject }
----@field fixHoops { [integer|number]: StageObject }
+---@field pieces { BackendGameObject }
+---@field nodes { StageObject }
+---@field checkpoints { StageObject }
+---@field fixHoops { StageObject }
 ---@field nlaps integer
 ---@field name string
 ---@field path string
@@ -606,10 +606,10 @@ IGamemodeContext = {}
 ---@field rad Rad3d
 ---@field nodeKind AiNodeKind
 ---@field isSpecial boolean
----@field boxes { [integer|number]: Rad3dBoxDef }
+---@field boxes { Rad3dBoxDef }
 ---@field maxRadius integer
 ---@field fileName string
----@field children { [integer|number]: BackendGameObject }
+---@field children { BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -618,9 +618,9 @@ StageObject = {}
 
 
 ---@class WallCollision : BackendGameObject, NFMWorldLibrary.ICollidable, NFMWorldLibrary.ITransform
----@field boxes { [integer|number]: Rad3dBoxDef }
+---@field boxes { Rad3dBoxDef }
 ---@field maxRadius integer
----@field children { [integer|number]: BackendGameObject }
+---@field children { BackendGameObject }
 ---@field parent BackendGameObject|nil
 ---@field position fixed64vector3
 ---@field rotation f64euler
@@ -633,21 +633,21 @@ WallCollision = {}
 ---@field btab boolean
 ---@field capcnt integer
 ---@field capsized boolean
----@field caught { [integer|number]: boolean }
+---@field caught { boolean }
 ---@field stat CarStats
 ---@field cn integer
 ---@field cntdest integer
 ---@field cntouch integer
 ---@field collidingWithClientPlayer boolean
----@field crank { [integer|number]: integer }
----@field lcrank { [integer|number]: integer }
+---@field crank { integer }
+---@field lcrank { integer }
 ---@field cxz fixed64
 ---@field staticCameraXz fixed64
 ---@field dcnt integer
 ---@field dcomp fixed64
 ---@field lcomp fixed64
 ---@field wasted boolean
----@field dominate { [integer|number]: boolean }
+---@field dominate { boolean }
 ---@field drag fixed64
 ---@field fixes integer
 ---@field forca fixed64
@@ -680,9 +680,9 @@ WallCollision = {}
 ---@field pzy fixed64
 ---@field rcomp fixed64
 ---@field rtab boolean
----@field scx { [integer|number]: fixed64 }
----@field scy { [integer|number]: fixed64 }
----@field scz { [integer|number]: fixed64 }
+---@field scx { fixed64 }
+---@field scy { fixed64 }
+---@field scz { fixed64 }
 ---@field shakedam integer
 ---@field skid integer
 ---@field speed fixed64
@@ -737,7 +737,7 @@ CarStats = {}
 
 
 ---@class CloudsInstruction : EnvironmentInstruction, System.IEquatable_EnvironmentInstruction, System.IEquatable_CloudsInstruction
----@field clouds { [integer|number]: integer }
+---@field clouds { integer }
 
 CloudsInstruction = {}
 
@@ -827,7 +827,7 @@ LuaClientContext = {}
 
 ---@class GamemodeContext
 ---@field stage BackendStage
----@field players { [integer|number]: ClientSidePlayer }
+---@field players { ClientSidePlayer }
 ---@field clientPlayer ClientSidePlayer
 ---@field hudState HudStateData
 ---@field physics PhysicsController
@@ -849,7 +849,7 @@ GamemodeContext = {}
 
 ---@class ServerGamemodeContext
 ---@field currentStage BackendStage
----@field players { [integer|number]: ServerSidePlayerInfo }
+---@field players { ServerSidePlayerInfo }
 ---@field config table|nil
 ---@field countdownInterval integer
 ---@field getPlayerPosition fun(self: ServerGamemodeContext, playerId: string): fixed64vector3|nil
@@ -889,8 +889,8 @@ GroundInstruction = {}
 
 ---@class HierarchyGroup : System.IEquatable_HierarchyGroup
 ---@field name string
----@field pieces { [integer|number]: PiecePlacement }
----@field coordinateKeys { [integer|number]: string }
+---@field pieces { PiecePlacement }
+---@field coordinateKeys { string }
 
 HierarchyGroup = {}
 
@@ -952,16 +952,16 @@ PolyType = {}
 
 ---@class Rad3d
 ---@field maxRadius integer
----@field colors { [integer|number]: Color3 }
+---@field colors { Color3 }
 ---@field stats CarStats
----@field wheels { [integer|number]: Rad3dWheelDef }
+---@field wheels { Rad3dWheelDef }
 ---@field rims Rad3dRimsDef|nil
----@field boxes { [integer|number]: Rad3dBoxDef }
----@field polys { [integer|number]: Rad3dPoly }
+---@field boxes { Rad3dBoxDef }
+---@field polys { Rad3dPoly }
 ---@field castsShadow boolean
----@field atp { [integer|number]: LuaVector2 }
+---@field atp { LuaVector2 }
 ---@field fileName string
----@field atLines { [integer|number]: Rad3dAttachmentLine }|nil
+---@field atLines { Rad3dAttachmentLine }|nil
 
 Rad3d = {}
 
@@ -1046,13 +1046,13 @@ SnapInstruction = {}
 ---@field mountainSeed integer|nil
 ---@field mountainCoverage number|nil
 ---@field lightDirection LuaVector3|nil
----@field pieces { [integer|number]: PiecePlacement }
----@field walls { [integer|number]: Rad3dBoxDef }
+---@field pieces { PiecePlacement }
+---@field walls { Rad3dBoxDef }
 ---@field maxr integer
 ---@field maxl integer
 ---@field maxt integer
 ---@field maxb integer
----@field environmentInstructions { [integer|number]: EnvironmentInstruction }
+---@field environmentInstructions { EnvironmentInstruction }
 ---@field drawPolys boolean
 ---@field drawClouds boolean
 
@@ -1074,7 +1074,7 @@ SurfaceType = {}
 
 
 ---@class TextureInstruction : EnvironmentInstruction, System.IEquatable_EnvironmentInstruction, System.IEquatable_TextureInstruction
----@field texture { [integer|number]: integer }
+---@field texture { integer }
 
 TextureInstruction = {}
 
