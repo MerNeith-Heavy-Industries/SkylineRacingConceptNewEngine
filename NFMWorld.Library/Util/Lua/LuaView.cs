@@ -18,7 +18,7 @@ namespace NFMWorldLibrary.Util;
 /// </typeparam>
 /// <param name="factory">Converts from T to TView</param>
 /// <param name="reverseFactory">Converts from TView back to T for writebacks</param>
-[LuaShimType("{ [integer|number]: TView }")]
+[LuaShimType("{ TView }")]
 public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<TView, T> reverseFactory) : ILuaUserData
 {
     public readonly IList<T> Value = innerList;

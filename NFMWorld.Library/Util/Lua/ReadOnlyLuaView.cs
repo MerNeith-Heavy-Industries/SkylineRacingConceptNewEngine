@@ -19,7 +19,7 @@ namespace NFMWorldLibrary.Util;
 /// type for correct functionality.
 /// </typeparam>
 /// <param name="factory">Converts from T to TView</param>
-[LuaShimType("{ [integer|number]: TView }")]
+[LuaShimType("{ TView }")]
 public class ReadOnlyLuaView<T, TView>(IReadOnlyList<T> innerList, Func<T, TView> factory) : ILuaUserData
 {
     public readonly IReadOnlyList<T> Value = innerList;

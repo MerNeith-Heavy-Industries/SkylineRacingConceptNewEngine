@@ -18,7 +18,7 @@ namespace NFMWorldLibrary.Util;
 /// The type of the array's elements. Must implement <see cref="ILuaUserData"/> or be a primitive
 /// type for correct functionality.
 /// </typeparam>
-[LuaShimType("{ [integer|number]: T }")]
+[LuaShimType("{ T }")]
 [MemoryPackable(GenerateType.Collection)]
 public partial class LuaArray<T> : ILuaUserData, IList<T>, IReadOnlyList<T>
 {

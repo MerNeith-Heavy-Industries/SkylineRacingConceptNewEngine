@@ -3049,7 +3049,7 @@ public partial class CarPhysics
     }
 }
 
-[LuaShimType("{ [integer|number]: T }")]
+[LuaShimType("{ T }")]
 public readonly struct Array2D<T>(int rows, int columns) : IEnumerable<T>, ILuaUserData
 {
     private struct ArrayEnumerator : IEnumerator<T>, ICloneable
