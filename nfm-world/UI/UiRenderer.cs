@@ -168,20 +168,19 @@ public class UiRenderer : IDisposable
     public void HandleMousePressed(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
         if (ActiveRoot == null) return;
-        // Only focusable nodes should take keyboard focus on click. Non-focusable
-        // controls (buttons, containers) must not steal focus from a focused root
-        // that is handling global key input (e.g. arrow keys, Escape).
-        if (FocusManager.HitTest(ActiveRoot, new Vector2(x, y)) is Component { IsFocusable: true } visual)
-        {
-            FocusManager.FocusedNode = visual;
-        }
-
-        ActiveRoot.DispatchMousePressed(new BaseMouseEvent(new Vector2(x, y), button, buttons, ctrlKey, altKey, shiftKey));
+        var @event = new BaseMouseEvent(new Vector2(x, y), button, buttons, ctrlKey, altKey, shiftKey);
+        // Focus handling lives in FocusManager: it focuses the focusable element
+        // under the cursor, or clears focus when the clicked tree has none.
+        FocusManager.HandleMousePressed(ActiveRoot, @event);
+        ActiveRoot.DispatchMousePressed(@event);
     }
 
     public void HandleMouseReleased(int x, int y, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
     {
-        ActiveRoot?.DispatchMouseReleased(new BaseMouseEvent(new Vector2(x, y), button, buttons, ctrlKey, altKey, shiftKey));
+        if (ActiveRoot == null) return;
+        var @event = new BaseMouseEvent(new Vector2(x, y), button, buttons, ctrlKey, altKey, shiftKey);
+        FocusManager.HandleMouseReleased();
+        ActiveRoot.DispatchMouseReleased(@event);
     }
 
     public void HandleMouseScrolled(int x, int y, int delta, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
