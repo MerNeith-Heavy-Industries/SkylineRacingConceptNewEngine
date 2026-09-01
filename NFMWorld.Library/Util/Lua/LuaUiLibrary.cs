@@ -642,16 +642,16 @@ public static class LuaUiLibrary
                 "background-color" or "backgroundColor" => styles with { BackgroundColor = ParseColor(rawvalue) ?? styles.BackgroundColor },
 
                 // Border radius
-                "border-top-left-radius" or "borderTopLeftRadius" => styles with { BorderTopLeftRadius = ParseFloat(rawvalue, styles.BorderTopLeftRadius) },
-                "border-top-right-radius" or "borderTopRightRadius" => styles with { BorderTopRightRadius = ParseFloat(rawvalue, styles.BorderTopRightRadius) },
-                "border-bottom-left-radius" or "borderBottomLeftRadius" => styles with { BorderBottomLeftRadius = ParseFloat(rawvalue, styles.BorderBottomLeftRadius) },
-                "border-bottom-right-radius" or "borderBottomRightRadius" => styles with { BorderBottomRightRadius = ParseFloat(rawvalue, styles.BorderBottomRightRadius) },
+                "border-top-left-radius" or "borderTopLeftRadius" => styles with { BorderTopLeftRadius = ParseCornerRadius(rawvalue, styles.BorderTopLeftRadius) },
+                "border-top-right-radius" or "borderTopRightRadius" => styles with { BorderTopRightRadius = ParseCornerRadius(rawvalue, styles.BorderTopRightRadius) },
+                "border-bottom-left-radius" or "borderBottomLeftRadius" => styles with { BorderBottomLeftRadius = ParseCornerRadius(rawvalue, styles.BorderBottomLeftRadius) },
+                "border-bottom-right-radius" or "borderBottomRightRadius" => styles with { BorderBottomRightRadius = ParseCornerRadius(rawvalue, styles.BorderBottomRightRadius) },
                 "border-radius" or "borderRadius" => styles with
                 {
-                    BorderTopLeftRadius = ParseFloat(rawvalue, styles.BorderTopLeftRadius),
-                    BorderTopRightRadius = ParseFloat(rawvalue, styles.BorderTopRightRadius),
-                    BorderBottomLeftRadius = ParseFloat(rawvalue, styles.BorderBottomLeftRadius),
-                    BorderBottomRightRadius = ParseFloat(rawvalue, styles.BorderBottomRightRadius),
+                    BorderTopLeftRadius = ParseCornerRadius(rawvalue, styles.BorderTopLeftRadius),
+                    BorderTopRightRadius = ParseCornerRadius(rawvalue, styles.BorderTopRightRadius),
+                    BorderBottomLeftRadius = ParseCornerRadius(rawvalue, styles.BorderBottomLeftRadius),
+                    BorderBottomRightRadius = ParseCornerRadius(rawvalue, styles.BorderBottomRightRadius),
                 },
 
                 // Opacity
@@ -758,6 +758,28 @@ public static class LuaUiLibrary
         "collapse" => Visibility.Hidden,
         _ => current
     };
+
+    private static CornerRadius ParseCornerRadius(LuaValue value, CornerRadius current)
+    {
+        if (value.TryRead<float>(out var f))
+        {
+            return f;
+        }
+
+        if (value.TryRead<string>(out var s))
+        {
+            var span = s.AsSpan();
+            if (span.EndsWith("px"))
+                span = span[..^2];
+
+            if (float.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out f))
+            {
+                return f;
+            }
+        }
+
+        return current;
+    }
 
     private static float ParseFloat(LuaValue value, float current)
     {

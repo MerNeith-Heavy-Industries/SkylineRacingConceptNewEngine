@@ -1,4 +1,6 @@
-﻿namespace NFMWorld.Reactor;
+﻿using NFMWorld.DriverInterface.DriverInterface;
+
+namespace NFMWorld.Reactor;
 
 public struct Styles() : IEquatable<Styles>
 {
@@ -215,10 +217,10 @@ public struct Styles() : IEquatable<Styles>
 
     public Color? BorderColor = null;
     public Color? BackgroundColor = null;
-    public float BorderTopLeftRadius = 0f;
-    public float BorderTopRightRadius = 0f;
-    public float BorderBottomLeftRadius = 0f;
-    public float BorderBottomRightRadius = 0f;
+    public CornerRadius BorderTopLeftRadius = 0f;
+    public CornerRadius BorderTopRightRadius = 0f;
+    public CornerRadius BorderBottomLeftRadius = 0f;
+    public CornerRadius BorderBottomRightRadius = 0f;
 
     public bool PointerEvents = true;
 
