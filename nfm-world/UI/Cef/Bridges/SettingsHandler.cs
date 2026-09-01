@@ -98,7 +98,7 @@ public sealed class SettingsHandler : ISubHandler
         _originalConfig ??= SettingsMenu.SaveConfigToString();
 
         var snapshot = SettingsMenu.GetCurrentSnapshot();
-        Push("config", snapshot);
+        Push("config", snapshot.ToLuaValue());
 
         var options = SettingsMenu.GetAvailableOptions();
         Push("options", options);
@@ -175,7 +175,7 @@ public sealed class SettingsHandler : ISubHandler
         var options = SettingsMenu.GetAvailableOptions();
         Push("options", options);
         var snapshot = SettingsMenu.GetCurrentSnapshot();
-        Push("config", snapshot);
+        Push("config", snapshot.ToLuaValue());
     }
 
     // ── Push helpers (hardcoded "settings" prefix) ────────────────
@@ -207,7 +207,7 @@ public sealed partial class CapturedKey
 /// <summary>
 /// Complete snapshot of all current settings, sent from C# to JS.
 /// </summary>
-[LuaVisible]
+[LuaTableConvertible]
 public sealed partial class SettingsSnapshot
 {
     // Video
@@ -237,20 +237,15 @@ public sealed partial class SettingsSnapshot
     [LuaName] public bool SmoothFov { get; set; }
 
     // Key bindings
-    [LuaName] public LuaArray<KeyBindingData> KeyBindings { get; set; } = [];
+    [LuaName] public KeyBindingData[] KeyBindings { get; set; } = [];
 
     [LuaName] public int DistantOutlineBehavior { get; set; }
-
-    [LuaName]
-    public SettingsSnapshot()
-    {
-    }
 }
 
 /// <summary>
 /// Single key binding sent to JS.
 /// </summary>
-[LuaVisible]
+[LuaTableConvertible]
 public sealed partial class KeyBindingData
 {
     /// <summary>Property name on KeyBindings (e.g., "Accelerate").</summary>
@@ -261,11 +256,6 @@ public sealed partial class KeyBindingData
 
     /// <summary>SDL Key enum integer value.</summary>
     [LuaName] public int KeyCode { get; set; }
-    
-    [LuaName]
-    public KeyBindingData()
-    {
-    }
 }
 
 /// <summary>

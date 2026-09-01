@@ -14,6 +14,12 @@ public sealed class LuaVisibleAttribute : Attribute
 }
 
 /// <summary>
+/// Marks a type as convertible to a <c>LuaTable</c>.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Enum, Inherited = false)]
+public sealed class LuaTableConvertibleAttribute : Attribute;
+
+/// <summary>
 /// Marks a method or property with a custom Lua name.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Constructor)]
