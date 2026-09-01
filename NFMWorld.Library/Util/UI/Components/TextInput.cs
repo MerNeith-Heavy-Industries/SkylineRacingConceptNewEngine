@@ -218,7 +218,7 @@ public partial class TextInput : Component
             TextChanged?.Invoke(Text ?? "");
 
         // Draw placeholder when empty and not focused
-        if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder) && !IsFocused)
+        if (string.IsNullOrEmpty(Text) && !string.IsNullOrEmpty(Placeholder))
         {
             _text.TextStyles = _text.TextStyles with { ForegroundColor = TextInputStyles.PlaceholderColor };
             _text.TextContent = Placeholder;
