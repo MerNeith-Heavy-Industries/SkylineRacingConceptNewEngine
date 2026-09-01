@@ -56,7 +56,9 @@ public sealed class YogaTestPhase : BasePhase
         _dragButton = button;
 
         var pos = new LuaVector2(x, y);
-        _root.DispatchMousePressed(new BaseMouseEvent(pos, button, buttons, ctrlKey, altKey, shiftKey));
+        var @event = new BaseMouseEvent(pos, button, buttons, ctrlKey, altKey, shiftKey);
+        FocusManager.HandleMousePressed(_root, @event);
+        _root.DispatchMousePressed(@event);
     }
 
     public override void MouseReleased(int x, int y, bool imguiWantsMouse, MouseButton button, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
@@ -67,7 +69,9 @@ public sealed class YogaTestPhase : BasePhase
         _dragButton = null;
 
         var pos = new LuaVector2(x, y);
-        _root.DispatchMouseReleased(new BaseMouseEvent(pos, button, buttons, ctrlKey, altKey, shiftKey));
+        var @event = new BaseMouseEvent(pos, button, buttons, ctrlKey, altKey, shiftKey);
+        FocusManager.HandleMouseReleased();
+        _root.DispatchMouseReleased(@event);
     }
 
     public override void MouseScrolled(int x, int y, int delta, bool imguiWantsMouse, MouseButtons buttons, bool ctrlKey, bool shiftKey, bool altKey)
