@@ -33,7 +33,7 @@ internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata>
                         if (!type.IsStatic)
                         {
                             sb.AppendLine($"init_{GetMetatableName(type)}();");
-                            sb.AppendLine($"global::NFMWorld.LuaSourceGenerator.Generator.LuaVisibleTypeMetatableRegistry<{type.FullTypeName}>.Register({GetMetatableName(type)});");
+                            sb.AppendLine($"global::NFMWorld.Lua.LuaVisibleTypeMetatableRegistry<{type.FullTypeName}>.Register({GetMetatableName(type)});");
                         }
 
                         sb.AppendLine($"init_{GetTypeTableName(type)}();");
