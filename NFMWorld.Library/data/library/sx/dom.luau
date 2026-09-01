@@ -569,9 +569,15 @@ local function mountShow(props: any, children: { any }, parent: any, marker: any
 end
 
 -- Switch: mounts the children of the FIRST Match whose `when` is truthy.
+-- Fast path: if the chosen Match descriptor is the same object as the one currently
+-- mounted, do NOT remount. This keeps `when` signals cheap to read even when they change
+-- (e.g. a loading-state `when` that reads a config signal) without rebuilding the whole
+-- chosen subtree — mirroring the `For`/`Index` fast path. Only a change of WHICH match is
+-- selected causes a structural remount.
 local function mountSwitch(props: any, children: { any }, parent: any, marker: any?): MountResult
     local anchor = marker or createAnchor(parent)
     local current: MountResult? = nil
+    local currentChosen = nil
 
     local eff = Sx.createEffect(function()
         local chosen = nil
@@ -593,6 +599,10 @@ local function mountSwitch(props: any, children: { any }, parent: any, marker: a
                 end
             end
         end
+        if chosen == currentChosen then
+            return
+        end
+        currentChosen = chosen
         local newMount
         if chosen then
             newMount = mountValueInto(parent, chosen.children, anchor)
