@@ -75,6 +75,7 @@ local function Dropdown(props: DropdownProps)
 					paddingRight = 12,
 					backgroundColor = selected and "rgba(79,195,247,0.18)"
 						or (hovered() and "rgba(255,255,255,0.08)" or "transparent"),
+					flexShrink = 0,
 				}
 			end),
 			onmousedown = function()
@@ -151,7 +152,6 @@ local function Dropdown(props: DropdownProps)
 					top = "100%",
 					left = 0,
 					width = "100%",
-					marginTop = 4,
 					display = "flex",
 					flexDirection = "column",
 					zIndex = 1000,
@@ -160,6 +160,7 @@ local function Dropdown(props: DropdownProps)
 					borderColor = "rgba(255,255,255,0.15)",
 					borderRadius = 6,
 					overflow = "scroll",
+					maxHeight = 200,
 				},
 				x(Sx.For<<DropdownOption>>) {
 					each = function() return rows end,
