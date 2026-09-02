@@ -17,6 +17,7 @@
 local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 -- Enable component-tree capture before the app renders.
 Sx.devtools.enable()
@@ -58,15 +59,15 @@ local Header = styled(Sx.View) {
 local Title = styled(Sx.Text) {
 	fontSize = 12,
 	fontStyle = "bold",
-	color = "#4fc3f7",
+	color = theme.accent,
 }
 
 local CloseBtn = styled(Sx.Text) {
 	fontSize = 13,
-	color = "rgba(255,255,255,0.5)",
+	color = theme.textMuted,
 	paddingLeft = 8,
 	paddingRight = 8,
-	hover = { color = "#fff" },
+	hover = { color = theme.textPrimary },
 }
 
 local Tabs = styled(Sx.View) {
@@ -94,8 +95,8 @@ local ToolBtn = styled(Sx.View) {
 	paddingLeft = 8,
 	paddingRight = 8,
 	borderRadius = 4,
-	backgroundColor = "rgba(255,255,255,0.06)",
-	hover = { backgroundColor = "rgba(79,195,247,0.3)" },
+	backgroundColor = theme.surface,
+	hover = { backgroundColor = theme.accentSoftStrong },
 }
 
 local Body = styled(Sx.View) {

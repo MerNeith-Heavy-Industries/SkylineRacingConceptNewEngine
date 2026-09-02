@@ -6,6 +6,7 @@
 local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 local Settings = require("../components/settings")
 
@@ -65,8 +66,8 @@ local ItemBtn = styled(Sx.View) {
 	borderColor = "rgba(255,255,255,0.1)",
 	borderRadius = 8,
 	hover = {
-		backgroundColor = "rgba(79,195,247,0.24)",
-		borderColor = "rgba(79,195,247,0.25)",
+		backgroundColor = theme.accentSoftStrong,
+		borderColor = theme.accentBorder,
 	},
 }
 

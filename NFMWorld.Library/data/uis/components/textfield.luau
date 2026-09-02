@@ -8,6 +8,7 @@
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 export type TextFieldProps = {
 	value: Sx.Signalish<string?>,
@@ -56,7 +57,7 @@ local function TextField(props: TextFieldProps)
 					borderColor = isFocused and "rgba(79,195,247,0.7)" or (hovered() and "rgba(255,255,255,0.4)" or "rgba(255,255,255,0.12)"),
 					borderRadius = 8,
 					placeholderColor = "rgba(255,255,255,0.35)",
-					cursorColor = "#4fc3f7",
+					cursorColor = theme.accent,
 				}
 			end),
 			value = props.value,

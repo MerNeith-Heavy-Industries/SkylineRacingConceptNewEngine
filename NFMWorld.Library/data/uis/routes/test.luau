@@ -6,6 +6,8 @@ local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 
+local Button = require("../../library/ui/button")
+
 local Checkbox = require("../components/checkbox")
 local Radio = require("../components/radio")
 local Slider = require("../components/slider")
@@ -88,33 +90,14 @@ local function TestPage()
 	return x(Root) {
 		x(Label) { "CEF + Preact Test" },
 		x(Counter) { function() return ("%d"):format(counter()) end },
-		x(Sx.View) {
-			style = {
-				paddingTop = 10,
-				paddingBottom = 10,
-				paddingLeft = 24,
-				paddingRight = 24,
-				backgroundColor = "rgba(79,195,247,0.15)",
-				borderWidth = 1,
-				borderColor = "rgba(79,195,247,0.3)",
-				borderRadius = 6,
-			},
-			onmousedown = function() UiLib.call("increment", {}) end,
-			x(Sx.Text) { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "Increment (JS → C#)" },
+		x(Button) {
+			variant = "primary",
+			label = "Increment (JS → C#)",
+			onPress = function() UiLib.call("increment", {}) end,
 		},
-		x(Sx.View) {
-			style = {
-				paddingTop = 10,
-				paddingBottom = 10,
-				paddingLeft = 24,
-				paddingRight = 24,
-				backgroundColor = "rgba(255,255,255,0.08)",
-				borderWidth = 1,
-				borderColor = "rgba(255,255,255,0.12)",
-				borderRadius = 6,
-			},
-			onmousedown = function() UiLib.call("back", {}) end,
-			x(Sx.Text) { style = { fontSize = 14, fontStyle = "bold", color = "#fff" }, "← Back to Menu" },
+		x(Button) {
+			label = "← Back to Menu",
+			onPress = function() UiLib.call("back", {}) end,
 		},
 		x(Sx.View) {
 			style = {

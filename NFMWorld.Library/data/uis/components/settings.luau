@@ -8,18 +8,14 @@ local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
 
+local Button = require("../../library/ui/button")
+local theme = require("../../library/ui/theme")
+
 local Checkbox = require("./checkbox")
 local Dropdown = require("./dropdown")
 local Slider = require("./slider")
-local ToggleSwitch = require("./toggleswitch")
 
 -- ── Helpers ──────────────────────────────────────────────────────
-
-local function clamp01(v)
-	if v < 0 then return 0 end
-	if v > 1 then return 1 end
-	return v
-end
 
 local function keyCodeToName(code)
 	if code == 0 then return "None" end
@@ -189,61 +185,32 @@ local KeyBindingLabel = styled(Sx.Text) {
 
 -- ── Interactive controls (approximations of HTML controls) ───────
 -- Reactive props (`active`/`capturing`/`checked`/`value`) may be accessors.
+-- Buttons share the unified `Button` (hover FX + palette). TabBtn/Btn are thin API
+-- adapters; KeyBindingBtn is a specialized capture button using the same palette.
 
 local function TabBtn(props: { active: Sx.Signalish<boolean?>, label: Sx.Signalish<string>, onPress: () -> () })
-	return x(Sx.View) {
-		style = Sx.createMemo(function(): Sx.Styles
-			local active = Sx.read(props.active)
-			return {
-				paddingTop = 8,
-				paddingBottom = 8,
-				paddingLeft = 20,
-				paddingRight = 20,
-				backgroundColor = active and "rgba(79,195,247,0.18)" or "transparent",
-				borderWidth = 1,
-				borderColor = active and "rgba(79,195,247,0.35)" or "transparent",
-				borderRadius = 6,
-			}
-		end),
-		onmousedown = function() props.onPress() end,
-		x(Sx.Text) {
-			style = Sx.createMemo(function(): Sx.TextStyles
-				local active = Sx.read(props.active)
-				return {
-					fontSize = 13,
-					fontStyle = "bold",
-					color = active and "#fff" or "rgba(255,255,255,0.45)",
-				}
-			end),
-			props.label,
-		},
+	return x(Button) {
+		variant = "ghost",
+		active = props.active,
+		label = props.label,
+		onPress = props.onPress,
 	}
 end
 
 local function Btn(props: { variant: "primary" | nil, label: Sx.Signalish<string>, onPress: () -> () })
-	local primary = props.variant == "primary"
-	local bg = primary and "rgba(79,195,247,0.22)" or "rgba(255,255,255,0.06)"
-	local border = primary and "rgba(79,195,247,0.35)" or "rgba(255,255,255,0.12)"
-	return x(Sx.View) {
-		style = {
-			paddingTop = 10,
-			paddingBottom = 10,
-			paddingLeft = 28,
-			paddingRight = 28,
-			backgroundColor = bg,
-			borderWidth = 1,
-			borderColor = border,
-			borderRadius = 6,
-		},
-		onmousedown = function() props.onPress() end,
-		x(Sx.Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+	return x(Button) {
+		variant = props.variant,
+		label = props.label,
+		onPress = props.onPress,
 	}
 end
 
 local function KeyBindingBtn(props: { capturing: Sx.Signalish<boolean?>, label: Sx.Signalish<string>, onPress: () -> () })
+	local hovered, setHovered = Sx.createSignal(false)
 	return x(Sx.View) {
 		style = Sx.createMemo(function(): Sx.Styles
 			local capturing = Sx.read(props.capturing)
+			local hov = hovered()
 			return {
 				paddingTop = 5,
 				paddingBottom = 5,
@@ -251,29 +218,26 @@ local function KeyBindingBtn(props: { capturing: Sx.Signalish<boolean?>, label: 
 				paddingRight = 18,
 				minWidth = 140,
 				alignItems = "center",
-				backgroundColor = capturing and "rgba(255,152,0,0.25)" or "rgba(255,255,255,0.06)",
+				backgroundColor = capturing and theme.warningSoft or (hov and theme.surfaceHover or theme.surface),
 				borderWidth = 1,
-				borderColor = capturing and "rgba(255,152,0,0.5)" or "rgba(255,255,255,0.12)",
+				borderColor = capturing and theme.warningBorder or theme.surfaceBorder,
 				borderRadius = 5,
 			}
 		end),
 		onmousedown = function() props.onPress() end,
+		onmouseenter = function() setHovered(true) end,
+		onmouseleave = function() setHovered(false) end,
 		x(Sx.Text) {
 			style = Sx.createMemo(function(): Sx.TextStyles
 				local capturing = Sx.read(props.capturing)
-				return { fontSize = 13, fontStyle = "bold", color = capturing and "#ffb300" or "#fff" }
+				return { fontSize = 13, fontStyle = "bold", color = capturing and theme.warning or theme.textPrimary }
 			end),
-			function()
-				return Sx.read(props.label)
-			end,
+			function() return Sx.read(props.label) end,
 		},
 	}
 end
 
-local TRACK_W = 160
-
 -- ── Tabs ─────────────────────────────────────────────────────────
--- Each tab receives the `config` GETTER (signal) so reads are reactive.
 
 local function VideoTab(props: { config: Sx.Accessor<SettingsSnapshot>, options: Sx.Accessor<AvailableOptions>, set: ((key: string, value: any) -> ()) })
 	local config = props.config

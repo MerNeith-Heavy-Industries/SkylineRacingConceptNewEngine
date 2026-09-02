@@ -16,6 +16,7 @@
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 export type DropdownOption = { label: string, value: number }
 export type DropdownProps = {
@@ -95,7 +96,7 @@ local function Dropdown(props: DropdownProps)
 					local selected = v ~= nil and v == props.opt.value
 					return {
 						fontSize = 13,
-						color = selected and "#4fc3f7" or (hovered() and "#fff" or "rgba(255,255,255,0.8)"),
+						color = selected and theme.accent or (hovered() and "#fff" or "rgba(255,255,255,0.8)"),
 					}
 				end),
 				props.opt.label,

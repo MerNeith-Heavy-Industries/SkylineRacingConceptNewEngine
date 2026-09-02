@@ -7,6 +7,7 @@
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 export type RadioProps = {
 	checked: Sx.Signalish<boolean>,
@@ -53,7 +54,7 @@ local function Radio(props: RadioProps)
 					justifyContent = "center",
 					backgroundColor = "transparent",
 					borderWidth = 2,
-					borderColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.55)" or "rgba(255,255,255,0.3)"),
+					borderColor = checked and theme.accent or (hov and "rgba(255,255,255,0.55)" or "rgba(255,255,255,0.3)"),
 					borderRadius = size / 2,
 				}
 			end),
@@ -63,7 +64,7 @@ local function Radio(props: RadioProps)
 					return {
 						width = dot,
 						height = dot,
-						backgroundColor = checked and "#4fc3f7" or "transparent",
+						backgroundColor = checked and theme.accent or "transparent",
 						borderRadius = dot / 2,
 					}
 				end),
