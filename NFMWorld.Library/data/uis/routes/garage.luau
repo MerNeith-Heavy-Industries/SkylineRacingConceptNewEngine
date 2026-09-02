@@ -8,6 +8,7 @@
 local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
+local Button = require("../../library/ui/button")
 local glasscard = require("../components/glasscard")
 local GlassCard = glasscard.GlassCard
 local StatBar = glasscard.StatBar
@@ -88,19 +89,6 @@ local NoResults = styled(Sx.Text) {
 	color = "rgba(255,255,255,0.3)",
 	textAlign = "center",
 	padding = 24,
-}
-
-local BackBtn = styled(Sx.View) {
-	paddingTop = 10,
-	paddingBottom = 10,
-	paddingLeft = 24,
-	paddingRight = 24,
-	alignItems = "center",
-	backgroundColor = "rgba(255,255,255,0.06)",
-	borderWidth = 1,
-	borderColor = "rgba(255,255,255,0.1)",
-	borderRadius = 6,
-	hover = { backgroundColor = "rgba(255,255,255,0.1)" },
 }
 
 -- Module-level constant style for the collection wrapper View (stable identity).
@@ -366,14 +354,11 @@ local function Garage()
 				},
 			},
 
-			x(BackBtn) {
-				onmousedown = function()
+			x(Button) {
+				label = "← Back to Menu",
+				onPress = function()
 					UiLib.call("back", {})
 				end,
-				x(Sx.Text) {
-					style = { fontSize = 14, fontStyle = "bold", color = "rgba(255,255,255,0.6)" },
-					"← Back to Menu",
-				},
 			},
 		},
 	}

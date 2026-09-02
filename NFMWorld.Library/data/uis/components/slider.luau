@@ -7,6 +7,7 @@
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 export type SliderProps = {
 	min: number?,
@@ -88,7 +89,7 @@ local function Slider(props: SliderProps)
 					return {
 						width = ("%d%%"):format(math.floor(frac * 100 + 0.5)),
 						height = "100%",
-						backgroundColor = disabled and "rgba(79,195,247,0.4)" or (hovered() and "#7dd8f9" or "#4fc3f7"),
+						backgroundColor = disabled and "rgba(79,195,247,0.4)" or (hovered() and theme.accentHover or theme.accent),
 					}
 				end),
 			},

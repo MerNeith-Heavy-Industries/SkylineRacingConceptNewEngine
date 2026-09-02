@@ -7,6 +7,7 @@
 
 local Sx = require("../../library/sx/index")
 local x = Sx.x
+local theme = require("../../library/ui/theme")
 
 export type CheckboxProps = {
 	checked: Sx.Signalish<boolean>,
@@ -46,9 +47,9 @@ local function Checkbox(props: CheckboxProps)
 					width = size,
 					height = size,
 					flexShrink = 0,
-					backgroundColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.16)" or "rgba(255,255,255,0.08)"),
+					backgroundColor = checked and theme.accent or (hov and "rgba(255,255,255,0.16)" or "rgba(255,255,255,0.08)"),
 					borderWidth = 1,
-					borderColor = checked and "#4fc3f7" or (hov and "rgba(255,255,255,0.5)" or "rgba(255,255,255,0.25)"),
+					borderColor = checked and theme.accent or (hov and "rgba(255,255,255,0.5)" or "rgba(255,255,255,0.25)"),
 					borderRadius = 3,
 				}
 			end),

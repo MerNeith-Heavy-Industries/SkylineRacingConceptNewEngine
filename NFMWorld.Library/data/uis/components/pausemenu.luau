@@ -6,6 +6,7 @@
 local Sx = require("../../library/sx/index")
 local styled = Sx.styled
 local x = Sx.x
+local Button = require("../../library/ui/button")
 local Settings = require("./settings")
 
 -- ── Styled components ────────────────────────────────────────────
@@ -115,58 +116,26 @@ local ConfirmBtns = styled(Sx.View) {
 }
 
 -- ── Button helpers ───────────────────────────────────────────────
-
-local function menuBtnStyle(variant: 'primary' | 'danger' | nil): Sx.TextStyles
-	local primary = variant == "primary"
-	local danger = variant == "danger"
-	if danger then
-		return {
-			width = "100%",
-			paddingTop = 14, paddingBottom = 14, paddingLeft = 24, paddingRight = 24,
-			backgroundColor = "rgba(255,82,82,0.12)",
-			borderWidth = 1, borderColor = "rgba(255,82,82,0.25)",
-			borderRadius = 8,
-			alignItems = "center",
-		}
-	elseif primary then
-		return {
-			width = "100%",
-			paddingTop = 14, paddingBottom = 14, paddingLeft = 24, paddingRight = 24,
-			backgroundColor = "rgba(79,195,247,0.15)",
-			borderWidth = 1, borderColor = "rgba(255,255,255,0.1)",
-			borderRadius = 8,
-			alignItems = "center",
-		}
-	end
-	return {
-		width = "100%",
-		paddingTop = 14, paddingBottom = 14, paddingLeft = 24, paddingRight = 24,
-		backgroundColor = "rgba(255,255,255,0.05)",
-		borderWidth = 1, borderColor = "rgba(255,255,255,0.1)",
-		borderRadius = 8,
-		alignItems = "center",
-	}
-end
+-- MenuBtn / ConfirmBtn are thin adapters over the shared `Button` (hover FX + palette).
 
 local function MenuBtn(props: { variant: 'primary' | 'danger' | nil, label: Sx.Signalish<string>, onPress: () -> () })
-	return x(Sx.View) {
-		style = menuBtnStyle(props.variant),
-		onmousedown = function() props.onPress() end,
-		x(Sx.Text) { style = { fontSize = 15, fontStyle = "bold", color = "#fff" }, props.label },
+	return x(Button) {
+		variant = props.variant,
+		label = props.label,
+		onPress = props.onPress,
+		size = "lg",
+		fullWidth = true,
+		style = { borderRadius = 8 },
+		textStyle = { fontSize = 15 },
 	}
 end
 
 local function ConfirmBtn(props: { variant: 'primary' | 'danger' | nil, label: Sx.Signalish<string>, onPress: () -> () })
-	local danger = props.variant == "danger"
-	return x(Sx.View) {
-		style = {
-			paddingTop = 10, paddingBottom = 10, paddingLeft = 28, paddingRight = 28,
-			backgroundColor = danger and "rgba(255,82,82,0.18)" or "rgba(255,255,255,0.06)",
-			borderWidth = 1, borderColor = danger and "rgba(255,82,82,0.3)" or "rgba(255,255,255,0.12)",
-			borderRadius = 6,
-		},
-		onmousedown = function() props.onPress() end,
-		x(Sx.Text) { style = { fontSize = 13, fontStyle = "bold", color = "#fff" }, props.label },
+	return x(Button) {
+		variant = props.variant,
+		label = props.label,
+		onPress = props.onPress,
+		style = { paddingTop = 10, paddingBottom = 10, paddingLeft = 28, paddingRight = 28 },
 	}
 end
 
