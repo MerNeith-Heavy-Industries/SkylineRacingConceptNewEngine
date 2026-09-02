@@ -1,80 +1,7 @@
----@class ICalculator
+---@class AnotherCalculator2 : NFMWorld.LuaSourceGenerator.Test.SampleTypes.ICalculator
 
-ICalculator = {}
+AnotherCalculator2 = {}
 
-
----@class CalculatorBase : ICalculator
-
-CalculatorBase = {}
-
-
----@class DerivedCalculator : CalculatorBase, ICalculator
-
-DerivedCalculator = {}
-
-
----@class AnotherCalculator : ICalculator
-
-AnotherCalculator = {}
-
-
----@class GenericMethods
-
-GenericMethods = {}
-
-
----@class ExternalTypeUser
-
-ExternalTypeUser = {}
-
-
----@class IDog : NFMWorld.LuaSourceGenerator.TestFixtures.IBaseAnimal
----@field breed string
----@field name string
----@field age integer
-
-IDog = {}
-
-
----@class IFixtureCar : NFMWorld.LuaSourceGenerator.TestFixtures.IFixtureVehicle, NFMWorld.LuaSourceGenerator.TestFixtures.IFixtureTransform
----@field model string
----@field isElectric boolean
----@field speed integer
----@field driverName string
----@field x number
----@field y number
----@field z number
-
-IFixtureCar = {}
-
-
----@class IPerson : NFMWorld.LuaSourceGenerator.TestFixtures.IHasName, NFMWorld.LuaSourceGenerator.TestFixtures.IHasAge
----@field email string
----@field getName fun(self: IPerson): string
----@field setName fun(self: IPerson, name: string)
----@field getAge fun(self: IPerson): integer
----@field setAge fun(self: IPerson, age: integer)
-
-IPerson = {}
-
-
----@class RecordStructType : System.IEquatable_RecordStructType
----@field x integer
----@field y integer
----@field sum fun(self: RecordStructType): integer
-
-RecordStructType = {}
-
-
----Creates a new RecordStructType
----@return RecordStructType
-function RecordStructType.new() end
-
----Creates a new RecordStructType
----@param x integer
----@param y integer
----@return RecordStructType
-function RecordStructType.new(x, y) end
 
 ---@class SampleClass
 ---@field id integer
@@ -158,109 +85,9 @@ function SampleClass.getNullableValue(hasValue, value) end
 Vec2 = {}
 
 
----@class StaticClass
-
-StaticClass = {}
-
----@type string
-StaticClass.staticProperty = nil
----@type number
-StaticClass.readOnlyProperty = nil
----@type integer
-StaticClass.staticField = nil
-
----@return integer
-function StaticClass.getMagicNumber() end
-
----@param a integer
----@param b integer
----@return integer
-function StaticClass.add(a, b) end
-
----@param name string
----@return string
-function StaticClass.greet(name) end
-
----@param x number
----@param y number
----@param operation string
----@return number
-function StaticClass.calculate(x, y, operation) end
-
----@param message string
-function StaticClass.raiseMessage(message) end
-
----@class TypeInLuaNamespace
----@field name string
----@field value integer
----@field getDescription fun(self: TypeInLuaNamespace): string
-
-TypeInLuaNamespace = {}
-
-
----Creates a new TypeInLuaNamespace
----@return TypeInLuaNamespace
-function TypeInLuaNamespace.new() end
-
----Creates a new TypeInLuaNamespace
----@param name string
----@param value integer
----@return TypeInLuaNamespace
-function TypeInLuaNamespace.new(name, value) end
-
----@class TypeWithArrays
-
-TypeWithArrays = {}
-
-
 ---@class TypeWithByRefParameters
 
 TypeWithByRefParameters = {}
-
-
----@class TypeWithConstants
-
-TypeWithConstants = {}
-
----@type integer
-TypeWithConstants.factor = nil
----@type string
-TypeWithConstants.defaultName = nil
----@type number
-TypeWithConstants.pi = nil
----@type integer
-TypeWithConstants.multiplier = nil
-
----@param value integer
----@return integer
-function TypeWithConstants.applyFactor(value) end
-
----@class TestColor : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
-
-TestColor = {}
-
-
----@class TypeWithEnum
----@field color TestColor
----@field readOnlyColor TestColor
----@field nullableColor TestColor|nil
----@field defaultColor TestColor
----@field getColor fun(self: TypeWithEnum): TestColor
----@field setColor fun(self: TypeWithEnum, color: TestColor)
----@field isPrimary fun(self: TypeWithEnum, color: TestColor): boolean
----@field getNullableColor fun(self: TypeWithEnum, returnValue: boolean): TestColor|nil
-
-TypeWithEnum = {}
-
-
----@class TypeWithEvents
-
-TypeWithEvents = {}
-
-
----@class CustomEventArgs : System.EventArgs
-
-CustomEventArgs = {}
 
 
 ---@class TypeWithExceptions
@@ -268,77 +95,19 @@ CustomEventArgs = {}
 TypeWithExceptions = {}
 
 
----@class TypeWithExtensionMembers
-
-TypeWithExtensionMembers = {}
-
-
----@class TypeWithFixedMathNullables
----@field nullableFixed fixed64|nil
----@field nullableVec3 fixed64vector3|nil
----@field normalFixed fixed64
----@field normalVec3 fixed64vector3
----@field getOptionalValue fun(self: TypeWithFixedMathNullables, returnValue: boolean): fixed64|nil
-
-TypeWithFixedMathNullables = {}
-
-
----Creates a new TypeWithFixedMathNullables
----@return TypeWithFixedMathNullables
-function TypeWithFixedMathNullables.new() end
-
----@class InlineBuffer
-
-InlineBuffer = {}
-
-
----@class TypeWithInlineArray
-
-TypeWithInlineArray = {}
-
-
----@class TypeWithIntIndexer
-
-TypeWithIntIndexer = {}
-
-
----@class TypeWithMemberShimOverrides
----@field myProperty CustomProperty
----@field myField CustomField
----@field methodWithParamShim fun(self: TypeWithMemberShimOverrides, value: CustomParam): integer
----@field methodWithReturnShim fun(self: TypeWithMemberShimOverrides): CustomReturn
-
-TypeWithMemberShimOverrides = {}
-
-
 ---@class TypeWithMethodDeduplication : NFMWorld.LuaSourceGenerator.Test.SampleTypes.CalculatorBase, NFMWorld.LuaSourceGenerator.Test.SampleTypes.ICalculator
 
 TypeWithMethodDeduplication = {}
 
 
----@class AnotherCalculator2 : NFMWorld.LuaSourceGenerator.Test.SampleTypes.ICalculator
+---@class TypeWithNestedGeneric
 
-AnotherCalculator2 = {}
+TypeWithNestedGeneric = {}
 
 
 ---@class TypeWithNewMember : NFMWorld.LuaSourceGenerator.Test.SampleTypes.CalculatorBase
 
 TypeWithNewMember = {}
-
-
----@class TypeWithMultiDimArray
-
-TypeWithMultiDimArray = {}
-
-
----@class TypeWithMultiParamIndexer
-
-TypeWithMultiParamIndexer = {}
-
-
----@class TypeWithNestedGeneric
-
-TypeWithNestedGeneric = {}
 
 
 ---@class TypeWithOverloads
@@ -393,6 +162,247 @@ function TypeWithOverloads.staticProcess(s) end
 TypeWithReferences = {}
 
 
+---@class Vec3
+
+Vec3 = {}
+
+
+---@class TypeWithArrays
+
+TypeWithArrays = {}
+
+
+---@class TypeWithIntIndexer
+
+TypeWithIntIndexer = {}
+
+
+---@class TypeWithMultiDimArray
+
+TypeWithMultiDimArray = {}
+
+
+---@class TypeWithMultiParamIndexer
+
+TypeWithMultiParamIndexer = {}
+
+
+---@class TypeWithStringIndexer
+
+TypeWithStringIndexer = {}
+
+
+---@class AnotherCalculator : ICalculator
+
+AnotherCalculator = {}
+
+
+---@class CalculatorBase : ICalculator
+
+CalculatorBase = {}
+
+
+---@class CustomEventArgs : System.EventArgs
+
+CustomEventArgs = {}
+
+
+---@class DerivedCalculator : CalculatorBase, ICalculator
+
+DerivedCalculator = {}
+
+
+---@class ExternalTypeUser
+
+ExternalTypeUser = {}
+
+
+---@class GenericMethods
+
+GenericMethods = {}
+
+
+---@class ICalculator
+
+ICalculator = {}
+
+
+---@class IDog : NFMWorld.LuaSourceGenerator.TestFixtures.IBaseAnimal
+---@field breed string
+---@field name string
+---@field age integer
+
+IDog = {}
+
+
+---@class IFixtureCar : NFMWorld.LuaSourceGenerator.TestFixtures.IFixtureVehicle, NFMWorld.LuaSourceGenerator.TestFixtures.IFixtureTransform
+---@field model string
+---@field isElectric boolean
+---@field speed integer
+---@field driverName string
+---@field x number
+---@field y number
+---@field z number
+
+IFixtureCar = {}
+
+
+---@class InlineBuffer
+
+InlineBuffer = {}
+
+
+---@class IPerson : NFMWorld.LuaSourceGenerator.TestFixtures.IHasName, NFMWorld.LuaSourceGenerator.TestFixtures.IHasAge
+---@field email string
+---@field getName fun(self: IPerson): string
+---@field setName fun(self: IPerson, name: string)
+---@field getAge fun(self: IPerson): integer
+---@field setAge fun(self: IPerson, age: integer)
+
+IPerson = {}
+
+
+---@class TypeInLuaNamespace
+---@field name string
+---@field value integer
+---@field getDescription fun(self: TypeInLuaNamespace): string
+
+TypeInLuaNamespace = {}
+
+
+---Creates a new TypeInLuaNamespace
+---@return TypeInLuaNamespace
+function TypeInLuaNamespace.new() end
+
+---Creates a new TypeInLuaNamespace
+---@param name string
+---@param value integer
+---@return TypeInLuaNamespace
+function TypeInLuaNamespace.new(name, value) end
+
+---@class RecordStructType : System.IEquatable_RecordStructType
+---@field x integer
+---@field y integer
+---@field sum fun(self: RecordStructType): integer
+
+RecordStructType = {}
+
+
+---Creates a new RecordStructType
+---@return RecordStructType
+function RecordStructType.new() end
+
+---Creates a new RecordStructType
+---@param x integer
+---@param y integer
+---@return RecordStructType
+function RecordStructType.new(x, y) end
+
+---@class StaticClass
+
+StaticClass = {}
+
+---@type string
+StaticClass.staticProperty = nil
+---@type number
+StaticClass.readOnlyProperty = nil
+---@type integer
+StaticClass.staticField = nil
+
+---@return integer
+function StaticClass.getMagicNumber() end
+
+---@param a integer
+---@param b integer
+---@return integer
+function StaticClass.add(a, b) end
+
+---@param name string
+---@return string
+function StaticClass.greet(name) end
+
+---@param x number
+---@param y number
+---@param operation string
+---@return number
+function StaticClass.calculate(x, y, operation) end
+
+---@param message string
+function StaticClass.raiseMessage(message) end
+
+---@class TestColor : System.Enum, System.IComparable, System.IConvertible, System.ISpanFormattable, System.IFormattable
+
+TestColor = {}
+
+
+---@class TypeWithConstants
+
+TypeWithConstants = {}
+
+---@type integer
+TypeWithConstants.factor = nil
+---@type string
+TypeWithConstants.defaultName = nil
+---@type number
+TypeWithConstants.pi = nil
+---@type integer
+TypeWithConstants.multiplier = nil
+
+---@param value integer
+---@return integer
+function TypeWithConstants.applyFactor(value) end
+
+---@class TypeWithEnum
+---@field color TestColor
+---@field readOnlyColor TestColor
+---@field nullableColor TestColor|nil
+---@field defaultColor TestColor
+---@field getColor fun(self: TypeWithEnum): TestColor
+---@field setColor fun(self: TypeWithEnum, color: TestColor)
+---@field isPrimary fun(self: TypeWithEnum, color: TestColor): boolean
+---@field getNullableColor fun(self: TypeWithEnum, returnValue: boolean): TestColor|nil
+
+TypeWithEnum = {}
+
+
+---@class TypeWithEvents
+
+TypeWithEvents = {}
+
+
+---@class TypeWithExtensionMembers
+
+TypeWithExtensionMembers = {}
+
+
+---@class TypeWithFixedMathNullables
+---@field nullableFixed fixed64|nil
+---@field nullableVec3 fixed64vector3|nil
+---@field normalFixed fixed64
+---@field normalVec3 fixed64vector3
+---@field getOptionalValue fun(self: TypeWithFixedMathNullables, returnValue: boolean): fixed64|nil
+
+TypeWithFixedMathNullables = {}
+
+
+---Creates a new TypeWithFixedMathNullables
+---@return TypeWithFixedMathNullables
+function TypeWithFixedMathNullables.new() end
+
+---@class TypeWithInlineArray
+
+TypeWithInlineArray = {}
+
+
+---@class TypeWithMemberShimOverrides
+---@field myProperty CustomProperty
+---@field myField CustomField
+---@field methodWithParamShim fun(self: TypeWithMemberShimOverrides, value: CustomParam): integer
+---@field methodWithReturnShim fun(self: TypeWithMemberShimOverrides): CustomReturn
+
+TypeWithMemberShimOverrides = {}
+
+
 ---@class TypeWithSpanParameters
 ---@field name string
 ---@field getName fun(self: TypeWithSpanParameters): string
@@ -409,11 +419,6 @@ function TypeWithSpanParameters.new() end
 TypeWithStaticAbstractInterface = {}
 
 
----@class TypeWithStringIndexer
-
-TypeWithStringIndexer = {}
-
-
 ---@class TypeWithTupleOverloads
 ---@field processTuple fun(self: TypeWithTupleOverloads, coords: System.ValueTuple_int_int): string
 ---@field processTuple fun(self: TypeWithTupleOverloads, point: System.ValueTuple_int_int_int): string
@@ -428,19 +433,4 @@ TypeWithTupleOverloads = {}
 ---Creates a new TypeWithTupleOverloads
 ---@return TypeWithTupleOverloads
 function TypeWithTupleOverloads.new() end
-
----@class Vec3
-
-Vec3 = {}
-
-
----@class System.Collections.Generic.List_int_Enumerator : System.Collections.Generic.IEnumerator_int, System.Collections.IEnumerator, System.IDisposable
-
-System.Collections.Generic.List_int_Enumerator = {}
-
-
----@class System.Collections.Generic.List_string_Enumerator : System.Collections.Generic.IEnumerator_string, System.Collections.IEnumerator, System.IDisposable
-
-System.Collections.Generic.List_string_Enumerator = {}
-
 
