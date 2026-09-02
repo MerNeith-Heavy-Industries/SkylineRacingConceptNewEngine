@@ -257,6 +257,37 @@ public abstract partial class Component : Node, IAnimationCallback
     [LuaName] public LuaVector2 LayoutBorder => new(LayoutBorderLeft + LayoutBorderRight, LayoutBorderTop + LayoutBorderBottom);
 
     /// <summary>
+    /// The effective visible region (current scissor rect) this node is constrained to,
+    /// in screen space. This is the intersection of every clipping ancestor's padding box
+    /// (set during <see cref="Render"/> as <see cref="ClipRect"/>), or the full root/viewport
+    /// rect when nothing clips. Exposed to Lua so popups (e.g. a dropdown) can decide which
+    /// direction to open based on how much space remains inside the visible region.
+    /// </summary>
+    [LuaName]
+    public LuaRect ScissorRect
+    {
+        get
+        {
+            if (ClipRect is { } clip)
+                return new LuaRect(clip.X, clip.Y, clip.Width, clip.Height);
+
+            var root = RootComponent();
+            var pos = root.LayoutMarginPosition;
+            var size = root.LayoutMarginSize;
+            return new LuaRect(pos.X, pos.Y, size.X, size.Y);
+        }
+    }
+
+    /// <summary>Walks up the visual-parent chain to the root component (fills the viewport).</summary>
+    private Component RootComponent()
+    {
+        var current = this;
+        while (current.VisualParent is Component parent)
+            current = parent;
+        return current;
+    }
+
+    /// <summary>
     /// Gets the width of the node's layout as determined by the Yoga layout engine after a layout pass.
     /// This Value is in points and does not include margins, borders, or padding.
     /// </summary>
