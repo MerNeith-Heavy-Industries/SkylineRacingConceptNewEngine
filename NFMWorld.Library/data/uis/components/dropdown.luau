@@ -52,6 +52,31 @@ local function Dropdown(props: DropdownProps)
 
 	local open, setOpen = Sx.createSignal(false)
 	local hovered, setHovered = Sx.createSignal(false)
+	local openUp, setOpenUp = Sx.createSignal(false)
+
+	-- ref to the trigger host component, so we can read its screen position + the
+	-- current scissor rect (visible region) to decide which way to open the popup.
+	local triggerRef: { current: any? } = { current = nil }
+
+	-- Row height estimate for the popup (padding 7+7 + ~18px line) and its max height.
+	local ROW_H = 32
+	local MAX_H = 200
+
+	-- Open upward when the popup (estimated height) would overflow the bottom of the
+	-- trigger's visible region (scissor rect). Falls back to downward when we can't
+	-- read layout metrics (e.g. the fake test host, or pre-first-render).
+	local function computeOpenUp(): boolean
+		local el = triggerRef.current
+		if el == nil then return false end
+		local pos = el.layoutMarginPosition
+		local size = el.layoutMarginSize
+		local scissor = el.scissorRect
+		if pos == nil or size == nil or scissor == nil then return false end
+		local triggerBottom = pos.y + size.y
+		local popupHeight = math.min(#rows * ROW_H, MAX_H)
+		local spaceBelow = (scissor.y + scissor.height) - triggerBottom
+		return popupHeight > spaceBelow
+	end
 
 	local function selectedLabel()
 		local v = Sx.read(props.value)
@@ -107,6 +132,8 @@ local function Dropdown(props: DropdownProps)
 	return x(Sx.View) {
 		style = { position = "relative", width = width },
 		x(Sx.View) {
+			ref = triggerRef,
+			tabindex = 0,
 			style = Sx.createMemo(function(): Sx.Styles
 				local isOpen = open()
 				local hov = hovered() and not disabled
@@ -128,7 +155,12 @@ local function Dropdown(props: DropdownProps)
 			end),
 			onmousedown = function()
 				if disabled then return end
+				setOpenUp(computeOpenUp())
 				setOpen(not open())
+			end,
+			onblur = function()
+				if disabled then return end
+				setOpen(false)
 			end,
 			onmouseenter = function()
 				setHovered(true)
@@ -148,21 +180,29 @@ local function Dropdown(props: DropdownProps)
 		x(Sx.Show) {
 			when = function() return open() end,
 			x(Sx.View) {
-				style = {
-					position = "absolute",
-					top = "100%",
-					left = 0,
-					width = "100%",
-					display = "flex",
-					flexDirection = "column",
-					zIndex = 1000,
-					backgroundColor = "rgba(20,24,32,0.98)",
-					borderWidth = 1,
-					borderColor = "rgba(255,255,255,0.15)",
-					borderRadius = 6,
-					overflow = "scroll",
-					maxHeight = 200,
-				},
+				style = Sx.createMemo(function(): Sx.Styles
+					local up = openUp()
+					local popupStyle: Sx.Styles = {
+						position = "absolute",
+						left = 0,
+						width = "100%",
+						display = "flex",
+						flexDirection = "column",
+						zIndex = 1000,
+						backgroundColor = "rgba(20,24,32,0.98)",
+						borderWidth = 1,
+						borderColor = "rgba(255,255,255,0.15)",
+						borderRadius = 6,
+						overflow = "scroll",
+						maxHeight = 200,
+					}
+					if up then
+						popupStyle.bottom = "100%"
+					else
+						popupStyle.top = "100%"
+					end
+					return popupStyle
+				end),
 				x(Sx.For<<DropdownOption>>) {
 					each = function() return rows end,
 					function(item: () -> DropdownOption, _index: number)
