@@ -10,6 +10,12 @@ public static class FocusManager
         get;
         set
         {
+            // Browser-like: only fire Unfocused/Focused when the focused node actually
+            // changes. Without this guard, clicking an already-focused element would
+            // re-fire Unfocused→Focused, which e.g. made a dropdown that closes on blur
+            // also close on a re-click of its own (still-focused) trigger.
+            if (ReferenceEquals(field, value))
+                return;
             if (field is Component cmp)
                 cmp.Unfocused?.Invoke();
             field = value;
