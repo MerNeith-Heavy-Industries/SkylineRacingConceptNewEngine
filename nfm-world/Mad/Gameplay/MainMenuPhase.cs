@@ -83,9 +83,8 @@ public class MainMenuPhase : BaseStageRenderingPhase
 
     private void OnFreePlayClicked()
     {
-        var factory = new LuaGamemodeFactory("nfmm/pvp", new Dictionary<string, object>()
+        var factory = new LuaGamemodeFactory("nfmm/timetrial", new Dictionary<string, object>()
         {
-            ["constraint"] = "both"
         });
         ClientSidePlayerInfo[] players = [
             new()
