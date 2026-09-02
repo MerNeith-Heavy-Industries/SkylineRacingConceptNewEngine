@@ -569,11 +569,18 @@ local function mountShow(props: any, children: { any }, parent: any, marker: any
 end
 
 -- Switch: mounts the children of the FIRST Match whose `when` is truthy.
+--
+-- The selected Match's children are mounted under a FRESH root (createRoot), NOT owned
+-- by this effect. That isolation matters: this effect re-runs whenever ANY `when` signal
+-- changes (e.g. a loading-state `when` that reads a config signal). Without the isolated
+-- root, the re-run's cleanNode would dispose the mounted subtree's reactive effects, so
+-- its dynamic children would stop updating. Under their own root, the subtree survives
+-- the re-run and keeps its fine-grained reactivity.
+--
 -- Fast path: if the chosen Match descriptor is the same object as the one currently
--- mounted, do NOT remount. This keeps `when` signals cheap to read even when they change
--- (e.g. a loading-state `when` that reads a config signal) without rebuilding the whole
--- chosen subtree — mirroring the `For`/`Index` fast path. Only a change of WHICH match is
--- selected causes a structural remount.
+-- mounted, do NOT remount — the subtree is already live and self-updating. Only a change
+-- of WHICH match is selected causes structural work (tear down the old root, mount a new
+-- one), mirroring the `For`/`Index` fast path.
 local function mountSwitch(props: any, children: { any }, parent: any, marker: any?): MountResult
     local anchor = marker or createAnchor(parent)
     local current: MountResult? = nil
@@ -603,12 +610,28 @@ local function mountSwitch(props: any, children: { any }, parent: any, marker: a
             return
         end
         currentChosen = chosen
-        local newMount
-        if chosen then
-            newMount = mountValueInto(parent, chosen.children, anchor)
-        end
+
+        -- Tear down the previously selected match (removes its nodes + disposes its root).
         disposeMount(current)
-        current = newMount
+        current = nil
+
+        if chosen then
+            -- Mount under a fresh root so the subtree's effects are owned by that root,
+            -- surviving this effect's re-runs (see header comment).
+            local rootDispose = nil
+            Sx.createRoot(function(dispose)
+                rootDispose = dispose
+                local m = mountValueInto(parent, chosen.children, anchor)
+                if m then
+                    local innerDispose = m.dispose
+                    m.dispose = function()
+                        if rootDispose then rootDispose() end
+                        innerDispose()
+                    end
+                    current = m
+                end
+            end)
+        end
     end)
 
     local dispose = function()
