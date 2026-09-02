@@ -6,6 +6,8 @@ DO NOT write PowerShell or shell scripts for code-editing tasks. ALWAYS use the 
 
 When writing Luau, ALWAYS write type-safe code with type annotations (like if you were writing TypeScript!). Don't just stuff `any` everywhere. Check your Luau code with `luau-analyze` in strict mode and fix any errors unless fixing them is impossible within the type system or would strongly reduce readability.
 
+Don't run all Lua-CSharp tests unless you've touched Lua-CSharp code, as they have a bunch of regression tests that take minutes to execute.
+
 For writing code with Sx cross-reference the [sx guide](NFMWorld.Library\data\library\sx\GUIDE.md).
 
 NFM World is a custom game engine and game written primarily in **C#**, targeting `net10.0`. The playable app lives in `nfm-world/` (`NFMWorld.csproj`) and depends on many sibling projects — notably `NFMWorld.Library`, `FNA.Core` (via NvgSharp), and `MonoGame.ImGuiNet`. Treat `nfm-world/` as the app entry point; engine/framework code is in `FNA/`; rendering and GUI glue is under `NvgSharp/`, `FontStashSharp/`, and `MonoGame.ImGuiNet/` (FontStashSharp is in the solution but not a direct ProjectReference of the app).
@@ -97,6 +99,15 @@ To add a new shader, add the `.fx` source to the `<CompileShader>` ItemGroup in 
 
 The UI is written in Luau and rendered by a Yoga layout host — there is **no separate frontend build step**. Views live in `data/uis/` and ship via the existing `data/**` copy rule. See the [Fine-Grained Reactive UI (Sx)](#fine-grained-reactive-ui-sx) section and `NFMWorld.Library/data/library/sx/GUIDE.md` for the framework and gotchas.
 
+Yoga is configured with web defaults, so:
+- flexDirection defaults to row
+- alignContent defaults to stretch
+- flexShrink defaults to 1
+- position defaults to static
+
+But:
+- boxSizing defaults to border-box
+
 ### Source generator output (Reactor, legacy)
 
 ```bash
@@ -113,7 +124,7 @@ Generated files appear in `nfm-world/Generated/NFMWorld.Reactor.Generator/.../*.
 
 ## Gamemodes (Lua-driven)
 
-Gamemodes are written in **Lua** and share one code path for singleplayer and multiplayer.
+Gamemodes are written in **Luau** and share one code path for singleplayer and multiplayer.
 
 ### Architecture
 
@@ -125,7 +136,7 @@ Gamemodes are written in **Lua** and share one code path for singleplayer and mu
 
 ### Lua framework (`NFMWorld.Library/Gamemodes/Lua/`)
 
-- Scripts live at `data/gamemodes/{id}/client.lua` and `server.lua` (shipped via the existing `data/**` copy rule). `LuaGamemodeFactory` / `GamemodeRegistry.RegisterLua(id, path)` wire them up; `nfmm/racing|wasting|both` → `pvp/`, `nfmm/timetrial` → `timetrial/`.
+- Scripts live at `data/gamemodes/{id}/client.luau` and `server.luau` (shipped via the existing `data/**` copy rule). `LuaGamemodeFactory` / `GamemodeRegistry.RegisterLua(id, path)` wire them up; `nfmm/racing|wasting|both` → `pvp/`, `nfmm/timetrial` → `timetrial/`.
 - Globals injected into scripts: `stage` (`LuaStage`), `players` (`LuaPlayers` — generic `UnlimitedArray<T>` constructed types only get opaque Lua stubs, so use this wrapper), `hud` (`LuaHudState`, writes through to `HudStateData`), `physics` (`PhysicsController`), `time_trial` (`LuaTimeTrial` ghost/recording helper), `config` (JSON table from the factory), plus functions `create_car`, `drive`, `physics_tick`, `calculate_positions`, `handle_checkpoint`, `handle_fix_hoops`, `send_event`, `countdown_interval`, `client_index`, `attach_bot` (C# `ElStupido` for now), `reset_client_state`, `update_hud`, `add_ghost_player`, `remove_fake_players`. Server scripts get `server` (`LuaServerData`), `broadcast_event`, `finish_race`.
 - Callback contract (invoked synchronously each tick): `on_begin`, `on_end`, `on_reset`, `on_game_tick`, `on_render`, `on_key_pressed(key)` / `on_key_released(key)` / `on_key_typed(char)` (keys passed as ints), `on_server_event(type, table)` / `on_client_event(playerId, type, table)` (server), `on_ai_tick(car, index)` (bots via `LuaBot`).
 - Events between client and server are `LuaEventEnvelope { Type, JsonPayload }` (MemoryPack + JSON Lua table) — not MemoryPack unions. `LuaJson` handles Lua table ↔ JSON.
@@ -178,6 +189,15 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
   `commitTextUpdate` on its anchor node; a function-valued (non-`on`) prop updates via a
   single `setProperty`. Flow components use a hidden empty `TextNode` anchor as the slot
   terminator.
+  **`Switch` mounts the selected `Match`'s children under a fresh isolated root** (not owned
+  by the switch effect) and fast-paths out when the chosen Match descriptor is unchanged.
+  This is required so a `Match.when` that reads a frequently-changing signal (e.g. a
+  settings loading-state `when` reading `config()`) does NOT cause the whole subtree to
+  remount on every write: without the isolated root, the switch effect's re-run would
+  `cleanNode` (dispose) the mounted subtree's owned reactive effects and leave them dead,
+  and without the fast path it would rebuild the entire chosen branch. Only a change of
+  WHICH match is selected does structural work. (Same latent pattern applies to `Show` and
+  `For`/`Index` — keep their `when`/`each` reads to rarely-changing signals.)
 - **Events:** props with an `on` prefix are event handlers, wired **once** at
   `createInstance` (the host replaces, never `+=`) — they are static, not reactive
   accessors. A non-`on` function prop is treated as a **reactive accessor** (Solid
@@ -223,7 +243,26 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
     `Prototype.Name` (parser records them for `local function X()`, `function X()`, and
     `local X = function()`) and exposes them via the Luau-style `debug.info(fn, "n")`
     (added to `DebugLibrary`; `debug.getinfo` stays conformant). `devName` falls back to
-    `debug.getinfo(fn)` → `short_src:linedefined` for unnamed functions.
+    `debug.getinfo(fn)` → `short_src:linedefined` for unnamed functions. Styled components
+    are anonymous closures, so `styled.luau` registers a readable `Styled<tag>` name (e.g.
+    `StyledView`) via `Sx.debug.setStyledName`; `devName` checks `Sx.debug.styledName(fn)`
+    first (weak-keyed registry — Lua-CSharp functions can't hold properties).
+  - `devName` prefers the **creation call site** over the declaration site: `x` (in
+    `h.luau`) records the `short_src:line` of each `x(...){...}` call onto the descriptor
+    (`desc.callSite`) when capture is on, and `Dom.devtools` toggles it through
+    `h.setCaptureCallSites` (wired in `enable`/`disable`). `captureCallSite()` (h.luau)
+    walks `debug.traceback("", 2)` and returns the FIRST frame not inside the Sx library
+    (path contains `sx/`) — so it resolves to the user's source even when flow/effect
+    machinery (`For`/`Show`/`Switch`, signals, `styled`) sits between the render function
+    and the `x` call (a `<For>` row fn lives in the user's module, not dom.luau).
+    `captureCallSite` is called in the **outer** `x(vtype)` builder, NOT the returned
+    function: `x(ItemBtn){...}` is `x(ItemBtn)({...})`, so `x(ItemBtn)` is never in a tail
+    position and its caller frame survives — whereas capturing in the returned builder
+    would lose a `<For>` row's frame to tail-call elimination (a row's `return
+    x(ItemBtn){...}` resolved to the mount line instead of the user's row fn).
+    `mountComponent` passes `descriptor.callSite` to `devName`, so each tree node shows
+    where its instance was created in the source, falling back to the declaration site (or
+    `"anonymous"`) when there is no captured call site (e.g. the root mounted via `render`).
   - `Sx.devtools` / `Sx.debug` are exported from `sx/index.luau`.
   - The pane re-snapshots only when the tree's structural signature changes (preserves
     expand/collapse across value-only updates); auto-refresh is opt-in and guarded against
@@ -238,6 +277,7 @@ preact-luau — new UI work should target Sx; preact-luau stays for unmigrated r
 | Non-`on` function props | Treated as reactive accessors (Solid gotcha). Use `on`-prefixed names for callbacks. |
 | `and/or` falsy trap | `(type(w)=="function") and w() or w` returns `w` when `w()` is `false`/`nil`. Use an explicit `if`. |
 | Memos must store values | `updateMemo` assigns `node.value = result`; a memo whose result is discarded returns `nil` forever. |
+| Flow `when`/`each` reading hot signals | `Switch` mounts its chosen `Match` under an isolated root and fast-paths when the chosen descriptor is unchanged, so a `Match.when` reading a frequently-changing signal (e.g. settings `config()`) won't remount the subtree. Keep `Show`/`For`/`Index` `when`/`each` reads to rarely-changing signals — they lack the isolated-root fast path. |
 | Empty `TextNode` anchors | `Show`/`Switch`/`For`/dynamic slots use an invisible empty `TextNode` as the insertion anchor. These are direct children of Views, interleaved with Components. The host's `insertBefore` must map the all-children index to the Component-only Yoga index (`ComponentChildCollection.InsertItem`) or `YogaNode.InsertChild` throws `ArgumentOutOfRangeException`. |
 | Lua 5.3 `%d` | `("%d%%"):format(v * 100)` errors ("number has no integer representation") for non-exact floats like `0.8*100`. Always `math.floor(v * 100 + 0.5)` first. |
 
