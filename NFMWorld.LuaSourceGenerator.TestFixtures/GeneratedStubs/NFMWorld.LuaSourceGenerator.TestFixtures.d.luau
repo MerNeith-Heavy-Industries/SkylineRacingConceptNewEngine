@@ -299,7 +299,7 @@ declare extern type TypeWithOverloads with
     value: integer
     text: string
     processNumber: ((self: TypeWithOverloads, x: integer) -> string) & ((self: TypeWithOverloads, x: number) -> string) & ((self: TypeWithOverloads, x: integer) -> string) & ((self: TypeWithOverloads, x: number) -> string)
-    processData: ((self: TypeWithOverloads, s: string) -> string) & ((self: TypeWithOverloads, arr: { [integer|number]: integer}) -> string) & ((self: TypeWithOverloads, arr: { [integer|number]: number}) -> string) & ((self: TypeWithOverloads, flag: boolean) -> string)
+    processData: ((self: TypeWithOverloads, s: string) -> string) & ((self: TypeWithOverloads, arr: {integer}) -> string) & ((self: TypeWithOverloads, arr: {number}) -> string) & ((self: TypeWithOverloads, flag: boolean) -> string)
     combine: ((self: TypeWithOverloads, a: integer, b: integer) -> string) & ((self: TypeWithOverloads, a: number, b: number) -> string) & ((self: TypeWithOverloads, a: string, b: string) -> string) & ((self: TypeWithOverloads, a: integer, b: string) -> string) & ((self: TypeWithOverloads, a: string, b: integer) -> string)
     __unm: ((a: TypeWithOverloads) -> TypeWithOverloads)
     __add: ((a: TypeWithOverloads, b: TypeWithOverloads) -> TypeWithOverloads) & ((a: TypeWithOverloads, b: integer) -> TypeWithOverloads) & ((a: integer, b: TypeWithOverloads) -> TypeWithOverloads)
@@ -309,12 +309,6 @@ end
 declare TypeWithOverloads: {
     new: ((value: integer) -> TypeWithOverloads) & ((value: number) -> TypeWithOverloads) & ((text: string) -> TypeWithOverloads),
     staticProcess: ((x: integer) -> string) & ((x: number) -> string) & ((s: string) -> string),
-}
-
-declare extern type TypeWithReferences with
-end
-
-declare TypeWithReferences: {
 }
 
 declare extern type TypeWithSpanParameters with
@@ -357,15 +351,9 @@ end
 declare Vec3: {
 }
 
-declare extern type System.Collections.Generic.List_int_Enumerator with
+declare extern type TypeWithReferences with
 end
 
-declare System.Collections.Generic.List_int_Enumerator: {
-}
-
-declare extern type System.Collections.Generic.List_string_Enumerator with
-end
-
-declare System.Collections.Generic.List_string_Enumerator: {
+declare TypeWithReferences: {
 }
 

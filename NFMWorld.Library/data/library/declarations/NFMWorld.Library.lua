@@ -354,6 +354,7 @@ MouseButtons = {}
 ---@field layoutMargin LuaVector2
 ---@field layoutPadding LuaVector2
 ---@field layoutBorder LuaVector2
+---@field scissorRect LuaRect
 ---@field layoutWidth number
 ---@field layoutHeight number
 ---@field layoutX number
@@ -422,6 +423,7 @@ Node = {}
 ---@field layoutMargin LuaVector2
 ---@field layoutPadding LuaVector2
 ---@field layoutBorder LuaVector2
+---@field scissorRect LuaRect
 ---@field layoutWidth number
 ---@field layoutHeight number
 ---@field layoutX number
@@ -484,6 +486,7 @@ TextNode = {}
 ---@field layoutMargin LuaVector2
 ---@field layoutPadding LuaVector2
 ---@field layoutBorder LuaVector2
+---@field scissorRect LuaRect
 ---@field layoutWidth number
 ---@field layoutHeight number
 ---@field layoutX number
@@ -1099,6 +1102,15 @@ DeterministicRandom = {}
 ---@param value fixed64
 ---@return DeterministicRandom
 function DeterministicRandom.new(value) end
+
+---@class LuaRect : System.IEquatable_LuaRect
+---@field x number
+---@field y number
+---@field width number
+---@field height number
+
+LuaRect = {}
+
 
 ---@class Stopwatch
 ---@field isRunning boolean
