@@ -1117,11 +1117,18 @@ public abstract partial class Component : Node, IAnimationCallback
 
     public void DispatchMousePressed(BaseMouseEvent @event)
     {
-        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
-            return;
-
-        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        // Occlusion-aware: only the topmost hit-test chain under the cursor (the deepest
+        // element + its ancestors) receives the press. The previous implementation walked
+        // the whole tree and fired EVERY element whose bounds contained the point, so
+        // clicking a z-indexed popup (e.g. a dropdown option) ALSO triggered an occluded
+        // element drawn beneath it (e.g. a dropdown whose trigger sat under the popup).
+        // Browsers only target the topmost element — matching focus/hover, which already
+        // dispatch through FocusManager.HitTestChain.
+        var chain = FocusManager.HitTestChain(this, @event.Position);
+        foreach (var node in chain)
         {
+            if (!IsPointWithinPadding(node, @event.Position))
+                continue;
             var relativeEvent = new MouseEvent(
                 Position: @event.Position,
                 Button: @event.Button,
@@ -1129,25 +1136,22 @@ public abstract partial class Component : Node, IAnimationCallback
                 CtrlKey: @event.CtrlKey,
                 MetaKey: @event.AltKey,
                 ShiftKey: @event.ShiftKey,
-                RelativePosition: @event.Position - LayoutPaddingPosition
+                RelativePosition: @event.Position - node.LayoutPaddingPosition
             );
-            MousePressed?.Invoke(relativeEvent);
-            OnMousePressed(relativeEvent);
-        }
-        foreach (var child in GetChildSnapshot())
-        {
-            if (child is Component cmp)
-                cmp.DispatchMousePressed(@event);
+            node.MousePressed?.Invoke(relativeEvent);
+            node.OnMousePressed(relativeEvent);
         }
     }
 
     public void DispatchMouseReleased(BaseMouseEvent @event)
     {
-        if (ClipRect is { } clip && !clip.Contains(@event.Position.X, @event.Position.Y))
-            return;
-
-        if (@event.Position.X > LayoutPaddingPosition.X && @event.Position.Y > LayoutPaddingPosition.Y && @event.Position.X < LayoutPaddingPosition.X + LayoutPaddingSize.X && @event.Position.Y < LayoutPaddingPosition.Y + LayoutPaddingSize.Y)
+        // Occlusion-aware, like DispatchMousePressed (see above): only the topmost
+        // hit-test chain under the cursor receives the release.
+        var chain = FocusManager.HitTestChain(this, @event.Position);
+        foreach (var node in chain)
         {
+            if (!IsPointWithinPadding(node, @event.Position))
+                continue;
             var relativeEvent = new MouseEvent(
                 Position: @event.Position,
                 Button: @event.Button,
@@ -1155,16 +1159,18 @@ public abstract partial class Component : Node, IAnimationCallback
                 CtrlKey: @event.CtrlKey,
                 MetaKey: @event.AltKey,
                 ShiftKey: @event.ShiftKey,
-                RelativePosition: @event.Position - LayoutPaddingPosition
+                RelativePosition: @event.Position - node.LayoutPaddingPosition
             );
-            MouseReleased?.Invoke(relativeEvent);
-            OnMouseReleased(relativeEvent);
+            node.MouseReleased?.Invoke(relativeEvent);
+            node.OnMouseReleased(relativeEvent);
         }
-        foreach (var child in GetChildSnapshot())
-        {
-            if (child is Component cmp)
-                cmp.DispatchMouseReleased(@event);
-        }
+    }
+
+    private static bool IsPointWithinPadding(Component node, LuaVector2 pos)
+    {
+        var p = node.LayoutPaddingPosition;
+        var s = node.LayoutPaddingSize;
+        return pos.X > p.X && pos.Y > p.Y && pos.X < p.X + s.X && pos.Y < p.Y + s.Y;
     }
 
     public void DispatchMouseDragged(BaseMouseDragEvent @event)
