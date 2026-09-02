@@ -25,7 +25,7 @@ public static class LuaTableHelper
         var table = new LuaTable(value.Length, 0);
         for (var i = 0; i < value.Length; i++)
         {
-            table[i] = value[i].ToLuaValue();
+            table[i + 1] = value[i].ToLuaValue();
         }
         return table;
     }
@@ -45,7 +45,7 @@ public static class LuaTableHelper
         var table = new LuaTable(value.Count, 0);
         for (var i = 0; i < value.Count; i++)
         {
-            table[i] = value[i].ToLuaValue();
+            table[i + 1] = value[i].ToLuaValue();
         }
         return table;
     }
