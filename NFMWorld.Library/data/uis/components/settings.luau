@@ -647,8 +647,8 @@ local function Settings(props)
 	end
 
 	local function handleOk()
-		UiLib.call("saveConfig", {})
 		pendingClose.current = true
+		UiLib.call("saveConfig", {})
 	end
 
 	local function handleResetDefaults(section, title, message)
@@ -746,6 +746,7 @@ local function Settings(props)
 								paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
 								minWidth = 320,
 								alignItems = "center",
+								flexDirection = "column",
 							},
 							onmousedown = function() end,
 							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, function() return (confirmModal() :: ConfirmModal).title end },
@@ -775,6 +776,7 @@ local function Settings(props)
 								paddingTop = 24, paddingBottom = 24, paddingLeft = 28, paddingRight = 28,
 								minWidth = 320,
 								alignItems = "center",
+								flexDirection = "column",
 							},
 							x(Sx.Text) { style = { fontSize = 16, fontStyle = "bold", marginBottom = 8 }, "Restart Required" },
 							x(Sx.Text) {
