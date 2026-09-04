@@ -19,6 +19,7 @@ public class LuaValueMemoryPackFormatterAttribute : MemoryPackCustomFormatterAtt
         private const ushort TagFix64V = 7;
         private const ushort TagFix64A = 8;
         private const ushort TagFix64E = 9;
+        private const ushort TagInt = 10;
         
         public void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref LuaValue value) where TBufferWriter : IBufferWriter<byte>
         {
@@ -51,6 +52,11 @@ public class LuaValueMemoryPackFormatterAttribute : MemoryPackCustomFormatterAtt
                     var num = value.Read<double>();
                     writer.WriteUnionHeader(TagNum);
                     writer.WriteUnmanaged(num);
+                    break;
+                case LuaValueType.Integer:
+                    var num1 = value.Read<long>();
+                    writer.WriteUnionHeader(TagInt);
+                    writer.WriteUnmanaged(num1);
                     break;
                 case LuaValueType.Function:
                     throw new InvalidOperationException("Type function not serializable!");
@@ -94,7 +100,7 @@ public class LuaValueMemoryPackFormatterAttribute : MemoryPackCustomFormatterAtt
                 case LuaValueType.UserData2:
                     throw new InvalidOperationException("Type userdata not serializable!");
                 default:
-                    throw new InvalidOperationException("Type not serializable!");
+                    throw new InvalidOperationException($"Type {value.Type} not serializable!");
             }
         }
 
@@ -124,6 +130,9 @@ public class LuaValueMemoryPackFormatterAttribute : MemoryPackCustomFormatterAtt
                     break;
                 case TagNum:
                     value = reader.ReadUnmanaged<double>();
+                    break;
+                case TagInt:
+                    value = reader.ReadUnmanaged<long>();
                     break;
                 case TagTab:
                     if (!reader.TryReadCollectionHeader(out var len))
