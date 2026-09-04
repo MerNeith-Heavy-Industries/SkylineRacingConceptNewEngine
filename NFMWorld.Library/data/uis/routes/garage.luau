@@ -215,7 +215,7 @@ local function Garage()
 	end)
 
 	local filteredCollections = Sx.createMemo(function()
-		local result = {}
+		local result: {(CarCollectionData | { id: string, cars: {CarStatsData} })} = {}
 		local cols = collections()
 		if cols ~= nil then
 			local q = query()
@@ -314,9 +314,9 @@ local function Garage()
 			},
 
 			x(CollectionList) {
-				x(Sx.For<<CarCollectionData>>) {
+				x(Sx.For<<CarCollectionData | { id: string, cars: {CarStatsData} }>>) {
 					each = filteredCollections,
-					function(item: () -> CarCollectionData, index: number)
+					function(item: () -> (CarCollectionData | { id: string, cars: {CarStatsData} }), index: number)
 						return x(Sx.View) {
 							name = function() return "view " .. item().id end,
 							style = collectionViewStyle,

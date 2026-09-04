@@ -49,6 +49,9 @@ public sealed class GarageBridge() : PhaseBridge("garage")
             case "back":
                 BackRequested?.Invoke();
                 break;
+            case "requestGarageData":
+                GarageDataRequested?.Invoke();
+                break;
         }
     }
 
@@ -73,7 +76,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     /// </summary>
     public void PushCurrentCollection(Collection collection)
     {
-        Push("currentCollection", new CurrentCollectionData { Id = collection });
+        Push("currentCollection", new CurrentCollectionData { Id = collection.ToString() });
     }
 
     public event Action<string, string>? CarSelected;
@@ -82,6 +85,7 @@ public sealed class GarageBridge() : PhaseBridge("garage")
     public event Action? ConfirmSelection;
     public event Action? CancelSelection;
     public event Action? BackRequested;
+    public event Action? GarageDataRequested;
 }
 
 /// <summary>
@@ -92,7 +96,7 @@ public sealed partial class CarStatsData
 {
     [LuaName] public string FileName { get; set; } = "";
     [LuaName] public string Name { get; set; } = "";
-    [LuaName] public Collection Collection { get; set; } = Collection.User;
+    [LuaName] public string Collection { get; set; } = nameof(NFMWorldLibrary.Collection.User);
     [LuaName] public double TopSpeed { get; set; }
     [LuaName] public double Acceleration { get; set; }
     [LuaName] public double Handling { get; set; }
@@ -119,13 +123,12 @@ public sealed partial class CarCollectionsData
 [LuaVisible]
 public sealed partial class CarCollectionData
 {
-    [LuaName] public Collection Id { get; set; } = Collection.User;
-    [LuaName] public string Name { get; set; } = "";
+    [LuaName] public string Id { get; set; } = nameof(Collection.User);
     [LuaName] public LuaArray<CarStatsData> Cars { get; set; } = [];
 }
 
 [LuaVisible]
 public sealed partial class CurrentCollectionData
 {
-    [LuaName] public required Collection Id { get; set; }
+    [LuaName] public required string Id { get; set; }
 }

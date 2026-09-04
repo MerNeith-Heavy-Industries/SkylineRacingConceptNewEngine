@@ -1,7 +1,7 @@
 declare extern type CarStatsData with
     fileName: string
     name: string
-    collection: Collection
+    collection: string
     topSpeed: number
     acceleration: number
     handling: number
@@ -24,8 +24,7 @@ declare CarCollectionsData: {
 }
 
 declare extern type CarCollectionData with
-    id: Collection
-    name: string
+    id: string
     cars: { CarStatsData }
 end
 
@@ -33,7 +32,7 @@ declare CarCollectionData: {
 }
 
 declare extern type CurrentCollectionData with
-    id: Collection
+    id: string
 end
 
 declare CurrentCollectionData: {

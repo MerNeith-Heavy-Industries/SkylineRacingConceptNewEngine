@@ -27,8 +27,7 @@ CapturedKey = {}
 
 
 ---@class CarCollectionData
----@field id Collection
----@field name string
+---@field id string
 ---@field cars { CarStatsData }
 
 CarCollectionData = {}
@@ -43,7 +42,7 @@ CarCollectionsData = {}
 ---@class CarStatsData
 ---@field fileName string
 ---@field name string
----@field collection Collection
+---@field collection string
 ---@field topSpeed number
 ---@field acceleration number
 ---@field handling number
@@ -64,7 +63,7 @@ CounterData = {}
 
 
 ---@class CurrentCollectionData
----@field id Collection
+---@field id string
 
 CurrentCollectionData = {}
 
