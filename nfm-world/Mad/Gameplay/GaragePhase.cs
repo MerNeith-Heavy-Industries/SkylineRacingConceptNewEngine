@@ -32,8 +32,6 @@ public class GaragePhase : BaseStageRenderingPhase
 
     private readonly GarageBridge _bridge = new();
 
-    private bool _pushedCollections = false;
-
     public GaragePhase(GraphicsDevice graphicsDevice, string? stageName = null) : base(graphicsDevice, stageName ?? GameSparker.GetAvailableStages().Shuffle().First())
     {
         InitBridge();
@@ -107,6 +105,31 @@ public class GaragePhase : BaseStageRenderingPhase
         _bridge.CancelSelection += SelectionCancelled;
 
         _bridge.BackRequested += SelectionCancelled;
+        
+        _bridge.GarageDataRequested += GarageDataRequested;
+    }
+
+    private void GarageDataRequested()
+    {
+        var data = BackendGameSparker.cars
+            .Where(kv => kv.Value.Count > 0)
+            .Select(kv => new CarCollectionData
+            {
+                Id = kv.Key.ToString(),
+                Cars = kv.Value
+                    .Select(c => new CarStatsData
+                    {
+                        FileName = c.FileName,
+                        Name = c.Stats.Name,
+                        Collection = kv.Key.ToString(),
+                    })
+                    .ToArray(),
+            })
+            .ToArray();
+
+        _bridge.PushCollections(data);
+        
+        PushCurrentCar();
     }
 
     private void SetupCurrentCar()
@@ -118,6 +141,11 @@ public class GaragePhase : BaseStageRenderingPhase
         Camera.Position = new Vector3(-750, 50, 750);
         FovOverride = 53;
 
+        PushCurrentCar();
+    }
+
+    private void PushCurrentCar()
+    {
         // create and position stat bars
         float switsLevel = (_backendCar.Stats.Swits[2] - 220) / 90f;
         switsLevel = Math.Max(0.05f, switsLevel);
@@ -136,12 +164,12 @@ public class GaragePhase : BaseStageRenderingPhase
 
         float ab = _backendCar.Stats.Airc / 75f;
 
-        // Push car stats to the CEF garage page
+        // Push car stats to the Yoga garage page
         _bridge.PushCurrentCar(new CarStatsData
         {
             FileName = _cars[_selectedCarIdx].FileName,
             Name = _cars[_selectedCarIdx].Stats.Name,
-            Collection = _currentCollection,
+            Collection = _currentCollection.ToString(),
             TopSpeed = switsLevel,
             Acceleration = accel,
             Handling = (float)_backendCar.Stats.Dishandle,
@@ -153,47 +181,14 @@ public class GaragePhase : BaseStageRenderingPhase
             Abing = ab,
         });
 
-        // Push current collection so JS can highlight the active one.
+        // Push current collection so Lua can highlight the active one.
         _bridge.PushCurrentCollection(_currentCollection);
-    }
-
-    /// <summary>
-    /// Push all available car collections (lightweight — only Name/Collection populated)
-    /// to the CEF garage page. Called once on Enter.
-    /// </summary>
-    private void PushAllCollections()
-    {
-        var data = BackendGameSparker.cars
-            .Where(kv => kv.Value.Count > 0)
-            .Select(kv => new CarCollectionData
-            {
-                Id = kv.Key,
-                Name = kv.Key.ToString(),
-                Cars = kv.Value
-                    .Select(c => new CarStatsData
-                    {
-                        FileName = c.FileName,
-                        Name = c.Stats.Name,
-                        Collection = kv.Key,
-                    })
-                    .ToArray(),
-            })
-            .ToArray();
-
-        _bridge.PushCollections(data);
-        _pushedCollections = true;
     }
 
     public override void Enter()
     {
         base.Enter();
         SetupCurrentCar();
-
-        // Push all car collections to CEF on first enter.
-        if (!_pushedCollections)
-        {
-            PushAllCollections();
-        }
     }
 
     private void SelectedCar()
