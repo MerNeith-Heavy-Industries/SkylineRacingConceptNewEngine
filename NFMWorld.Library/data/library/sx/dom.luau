@@ -539,22 +539,46 @@ local function disposeMount(m: MountResult?): ()
 end
 
 -- Show: mounts `children` when `when` is truthy, else `fallback`.
+--
+-- Fast path: the effect re-runs whenever any signal read by `when()` changes, but a Show
+-- only needs structural work when the MOUNTED BRANCH changes (children vs fallback vs
+-- nothing). If the branch is unchanged (e.g. `when` reads a frequently-changing signal
+-- like a selected car and stays truthy), return early and DON'T remount the children —
+-- their dynamic parts self-update via fine-grained accessors. Without this fast path,
+-- a Show whose `when` reads a hot signal (e.g. `currentCar() ~= nil`) would dispose and
+-- remount its whole subtree on every change (garage stats panel remounting per car).
 local function mountShow(props: any, children: { any }, parent: any, marker: any?): MountResult
     local when = toAccessor(props.when)
     local fallback = props.fallback
     local anchor = marker or createAnchor(parent)
     local current: MountResult? = nil
 
+    -- Which branch is mounted: 1 = children, 0 = fallback, nil = nothing.
+    local currentBranch: number? = nil
+
     local eff = Sx.createEffect(function()
         local w = when()
-        local newMount
+        local wantBranch
         if w then
-            newMount = mountValueInto(parent, children, anchor)
+            wantBranch = 1
         elseif fallback ~= nil then
-            newMount = mountValueInto(parent, toValueOrCall(fallback), anchor)
+            wantBranch = 0
+        else
+            wantBranch = nil
         end
+
+        if wantBranch == currentBranch then
+            return -- branch unchanged: leave the already-mounted subtree to self-update
+        end
+        currentBranch = wantBranch
+
         disposeMount(current)
-        current = newMount
+        current = nil
+        if wantBranch == 1 then
+            current = mountValueInto(parent, children, anchor)
+        elseif wantBranch == 0 then
+            current = mountValueInto(parent, toValueOrCall(fallback), anchor)
+        end
     end)
 
     local dispose = function()
