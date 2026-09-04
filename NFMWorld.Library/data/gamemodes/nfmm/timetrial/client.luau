@@ -9,7 +9,7 @@ local simulation = config ~= nil and config.simulation
 
 local state = "notStarted"
 local countdown = 3
-local inner = 0
+local inner = GM.countdownInterval
 local tick = 0
 local written = false
 local timer = Stopwatch.new()
@@ -146,7 +146,7 @@ local function OnReset()
     else
         state = "countdown"
         countdown = 3
-        inner = 0
+        inner = GM.countdownInterval
     end
 
     lastCheckpoint = 0
@@ -173,10 +173,11 @@ local function OnGameTick()
 
     if state == "countdown" then
         inner = inner - 1
+        GM.hudState.countdownTimer = countdown
+
         if inner <= 0 then
             inner = GM.countdownInterval
             countdown = countdown - 1
-            GM.hudState.countdownTimer = countdown
             if countdown <= 0 then
                 state = "inProgress"
                 timer:start()

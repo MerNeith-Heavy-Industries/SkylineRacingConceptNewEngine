@@ -3,7 +3,7 @@
 
 local state: "countdown" | "inProgress" | "finished" = "countdown"
 local countdown = 3
-local inner = 0
+local inner = GM.countdownInterval
 local clientTick = 0
 local lastCheckpoint = -1
 local lastLap = 0
@@ -25,11 +25,10 @@ local function setupCars()
 end
 
 local function OnBegin()
-    GM:clientReset()
     setupCars()
     state = "countdown"
     countdown = 3
-    inner = 0
+    inner = SGM.countdownInterval
     clientTick = 0
     lastCheckpoint = -1
     lastLap = 0
@@ -42,10 +41,11 @@ end
 local function OnGameTick()
     if state == "countdown" then
         inner = inner - 1
+        GM.hudState.countdownTimer = countdown
+
         if inner <= 0 then
             inner = GM.countdownInterval
             countdown = countdown - 1
-            GM.hudState.countdownTimer = countdown
             if countdown <= 0 then
                 state = "inProgress"
             end
@@ -108,6 +108,7 @@ local function OnServerEvent(type: string, payload: { [string] : any })
     end
 
     if type == "countdown_go" then
+        GM.hudState.countdownTimer = 0
         state = "inProgress"
     end
 end

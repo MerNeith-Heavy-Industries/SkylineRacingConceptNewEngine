@@ -3,7 +3,7 @@
 
 local state = "waitingToStart" -- waitingToStart, countdown, inProgress, finished
 local countdown = 3
-local inner = 0
+local inner = SGM.countdownInterval
 local perPlayer = {}          -- playerId -> { lap, checkpoint, finished, position }
 local finishCounter = 0
 local done = false
@@ -23,12 +23,13 @@ end
 local function OnStartRace()
     state = "countdown"
     countdown = 3
-    inner = 0
+    inner = SGM.countdownInterval
 end
 
 local function OnGameTick()
     if state == "countdown" then
         inner = inner - 1
+        print(tostring(inner))
         if inner <= 0 then
             inner = SGM.countdownInterval
             countdown = countdown - 1
