@@ -120,7 +120,6 @@ public class UiRenderer : IDisposable
         // state remain in _toLuaHandlers and get dispatched by PushToLua, invoking
         // Lua callbacks against an abandoned LuaState.
         _toLuaHandlers.Clear();
-        _toCsharpHandlers.Clear();
         _maxEvent = 0;
 
         _state = LuaHelpers.OpenState();
