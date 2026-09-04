@@ -330,7 +330,12 @@ public class ImGuiRenderer : IDisposable
         _graphicsDevice.BlendFactor = Color.White;
         _graphicsDevice.BlendState = BlendState.NonPremultiplied;
         _graphicsDevice.RasterizerState = _rasterizerState;
-        _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+        // Depth test must be DISABLED so ImGui always paints on top of the game/Yoga UI.
+        // The previous DepthStencilState.DepthRead depth-tested ImGui (fragment depth 0.5
+        // via the ortho projection) against the 3D depth buffer (never cleared per-frame),
+        // so wherever 3D geometry wrote depth < 0.5 the ImGui pixels were rejected and the
+        // Yoga UI drawn underneath showed through "over" ImGui.
+        _graphicsDevice.DepthStencilState = DepthStencilState.None;
 
         drawData->ScaleClipRects(ImGui.GetIO().DisplayFramebufferScale);
 
