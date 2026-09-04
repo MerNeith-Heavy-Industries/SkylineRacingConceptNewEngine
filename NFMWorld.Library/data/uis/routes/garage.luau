@@ -100,7 +100,7 @@ local cardStyleSelected: Sx.Styles = { marginBottom = 8, opacity = 1 }
 local cardStyleUnselected: Sx.Styles = { marginBottom = 8, opacity = 0.7 }
 
 -- Card component. `selected` is an accessor; only cards whose selection changes update.
-local function CarCard(props: { name: string, collectionName: string, fileName: string, selected: Sx.Signalish<boolean>, onSelect: (string, string) -> () })
+local function CarCard(props: { name: Sx.Signalish<string>, collectionName: Sx.Signalish<string>, fileName: Sx.Signalish<string>, selected: Sx.Signalish<boolean>, onSelect: (string, string) -> () })
 	local style = Sx.createMemo(function(): Sx.Styles
 		if Sx.read(props.selected) then
 			return cardStyleSelected
@@ -109,22 +109,22 @@ local function CarCard(props: { name: string, collectionName: string, fileName: 
 	end)
 
 	return x(GlassCard) {
-		name = "glasscard " .. props.name,
+		name = function() return "glasscard " .. Sx.read(props.name) end,
 		color = function()
 			return Sx.read(props.selected) and "#4fc3f7" or "rgba(255,255,255,0.15)"
 		end,
 		style = style,
 		onmousedown = function()
-			props.onSelect(props.collectionName, props.fileName)
+			props.onSelect(Sx.read(props.collectionName), Sx.read(props.fileName))
 		end,
-		x(CarCardName) { name = "carcardname " .. props.name, props.name },
-		x(CarCardCollection) { name = "carcardcollection " .. props.collectionName, props.collectionName },
+		x(CarCardName) { name = function() return "carcardname " .. Sx.read(props.name) end, props.name },
+		x(CarCardCollection) { name = function() return "carcardcollection " .. Sx.read(props.collectionName) end, props.collectionName },
 	}
 end
 
-local function CollectionSection(props: { name: string, active: Sx.Signalish<boolean>, onSelect: (string) -> () })
+local function CollectionSection(props: { name: Sx.Signalish<string>, active: Sx.Signalish<boolean>, onSelect: (string) -> () })
 	return x(Sx.View) {
-		name = "inner view " .. props.name,
+		name = function() return "inner view " .. Sx.read(props.name) end,
 		style = Sx.createMemo(function(): Sx.Styles
 			local active = Sx.read(props.active)
 			return {
@@ -137,10 +137,12 @@ local function CollectionSection(props: { name: string, active: Sx.Signalish<boo
 				borderLeftWidth = 2,
 				borderColor = active and "#4fc3f7" or "transparent",
 				backgroundColor = active and "rgba(79,195,247,0.08)" or "transparent",
+				flexGrow = 1,
+				flexShrink = 0,
 			}
 		end),
 		onmousedown = function()
-			props.onSelect(props.name)
+			props.onSelect(Sx.read(props.name))
 		end,
 		x(Sx.Text) {
 			style = Sx.createMemo(function(): Sx.TextStyles
@@ -169,6 +171,11 @@ local function Garage()
 		local u3 = UiLib.onEvent("garage:currentCollection", function(data)
 			setCurrentCollection(data)
 		end)
+
+		UiLib.defer(function()
+			UiLib.call("requestGarageData", {})
+		end)
+
 		Sx.onCleanup(function()
 			u1()
 			u2()
@@ -229,7 +236,6 @@ local function Garage()
 					if #matchedCars > 0 then
 						result[#result + 1] = {
 							id = col.id,
-							name = col.name,
 							cars = matchedCars,
 						}
 					end
@@ -277,6 +283,7 @@ local function Garage()
 					borderWidth = 1,
 					borderColor = "rgba(255,255,255,0.12)",
 					borderRadius = 8,
+					flexShrink = 0,
 				},
 				placeholder = "Search cars...",
 				value = searchQuery,
@@ -288,7 +295,7 @@ local function Garage()
 					if #fc > 0 then
 						local firstCol = fc[1]
 						if firstCol.cars ~= nil and #firstCol.cars > 0 then
-							handleSelectCar(firstCol.name, firstCol.cars[1].fileName)
+							handleSelectCar(firstCol.id, firstCol.cars[1].fileName)
 							setSearchQuery("")
 							if rootRef.current ~= nil then
 								rootRef.current:focus()
@@ -310,29 +317,27 @@ local function Garage()
 				x(Sx.For<<CarCollectionData>>) {
 					each = filteredCollections,
 					function(item: () -> CarCollectionData, index: number)
-						local col = item()
 						return x(Sx.View) {
-							name = "view " .. col.name,
+							name = function() return "view " .. item().id end,
 							style = collectionViewStyle,
 							x(CollectionSection) {
-								name = col.name,
+								name = function() return item().id end,
 								active = function()
 									local cc = currentCollection()
-									return cc ~= nil and cc.id == col.id
+									return cc ~= nil and cc.id == item().id
 								end,
 								onSelect = handleSelectCollection,
 							},
 							x(Sx.For<<CarStatsData>>) {
-								each = function() return col.cars end,
-								function(item2: () -> CarStatsData, index2: number)
-									local car = item2()
+								each = function() return item().cars end,
+								function(car: () -> CarStatsData, index2: number)
 									return x(CarCard) {
-										name = car.name,
-										collectionName = col.name,
-										fileName = car.fileName,
+										name = function() return car().name end,
+										collectionName = item().id,
+										fileName = function() return car().fileName end,
 										selected = function()
 											local cc = currentCar()
-											return cc ~= nil and cc.fileName == car.fileName
+											return cc ~= nil and cc.fileName == car().fileName
 										end,
 										onSelect = handleSelectCar,
 									}
