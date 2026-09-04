@@ -65,7 +65,7 @@ local function Button(props: ButtonProps)
 				border = theme.surfaceBorder
 			end
 
-			local style: { [string]: any } = {
+			local style: Sx.Styles = {
 				display = "flex",
 				flexDirection = "row",
 				alignItems = "center",
@@ -84,7 +84,7 @@ local function Button(props: ButtonProps)
 
 			if props.style ~= nil then
 				for k, v in pairs(props.style :: any) do
-					style[k] = v
+					(style :: any)[k] = v
 				end
 			end
 
