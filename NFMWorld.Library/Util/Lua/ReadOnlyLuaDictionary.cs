@@ -23,7 +23,7 @@ public class ReadOnlyLuaDictionary<TKey, TValue>(IReadOnlyDictionary<TKey, TValu
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (LuaHelpers.TryConvertLuaValue<TKey>(key, out var typedKey))
@@ -36,11 +36,11 @@ public class ReadOnlyLuaDictionary<TKey, TValue>(IReadOnlyDictionary<TKey, TValu
         return false;
     }
 
-    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
+    IEnumerator<KeyValuePair<LuaRefValue, LuaRefValue>>? ILuaUserData.GetIterator(LuauState state)
     {
         foreach (var (key, value) in this)
         {
-            yield return new KeyValuePair<LuaValue, LuaValue>(LuaHelpers.ToLuaValue(state, key), LuaHelpers.ToLuaValue(state, value));
+            yield return new KeyValuePair<LuaRefValue, LuaRefValue>(LuaHelpers.ToLuaValue(state, key), LuaHelpers.ToLuaValue(state, value));
         }
     }
 

@@ -20,18 +20,18 @@ public partial class LuaAiContext(BaseClientGamemode gamemode, ClientSidePlayer 
     public BackendStage CurrentStage => gamemode.CurrentStage;
     
     [LuaName]
-    public LuaTable? Config { get; } = ai.Config;
+    public LuaTableRef? Config { get; } = ai.Config;
 }
 
 public class LuaAi : BaseAi
 {
     private readonly string _scriptPath;
     private readonly LuauState _state;
-    private readonly LuaTable? _moduleTable;
+    private readonly LuaTableRef? _moduleTable;
 
-    public LuaTable? Config { get; set; }
+    public LuaTableRef? Config { get; set; }
 
-    public LuaAi(BaseClientGamemode gamemode, ClientSidePlayer aiPlayer, string scriptPath, LuaTable? config = null)
+    public LuaAi(BaseClientGamemode gamemode, ClientSidePlayer aiPlayer, string scriptPath, LuaTableRef? config = null)
     {
         _scriptPath = scriptPath;
 
@@ -42,7 +42,7 @@ public class LuaAi : BaseAi
         Config = config;
 
         var results = _state.DoFile($"data/ais/{_scriptPath}.luau");
-        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTableRef>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -55,19 +55,19 @@ public class LuaAi : BaseAi
 
     // ── Script invocation ──────────────────────────────────────────
 
-    private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
+    private LuaRefValue[] Call(string name, params ReadOnlySpan<LuaRefValue> arguments)
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryConvertLuaValue<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunctionRef>(out var function))
         {
-            return [LuaValue.Nil];
+            return [LuaRefValue.Nil];
         }
 
         try
         {
             var resultCount = _state.Call(function, arguments);
-            var values = new LuaValue[resultCount];
+            var values = new LuaRefValue[resultCount];
             for (var i = 0; i < resultCount; i++)
             {
                 values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
@@ -79,6 +79,6 @@ public class LuaAi : BaseAi
         {
             Logging.Error($"[LuaAi:{_scriptPath}] {name} failed: {ex.Message}", ex);
         }
-        return [LuaValue.Nil];
+        return [LuaRefValue.Nil];
     }
 }

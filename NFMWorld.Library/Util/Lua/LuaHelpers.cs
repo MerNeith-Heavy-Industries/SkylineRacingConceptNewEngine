@@ -28,54 +28,54 @@ public static class LuaHelpers
         return state;
     }
 
-    public static LuaValue ToLuaValue<T>(LuauState state, T value)
+    public static LuaRefValue ToLuaValue<T>(LuauState state, T value)
     {
-        if (value is null) return LuaValue.Nil;
+        if (value is null) return LuaRefValue.Nil;
         
         if (value is bool @bool)
-            return LuaValue.FromBoolean(@bool);
+            return LuaRefValue.FromBoolean(@bool);
         if (value is float @float)
-            return LuaValue.FromNumber(@float);
+            return LuaRefValue.FromNumber(@float);
         if (value is int @int)
-            return LuaValue.FromNumber(@int);
+            return LuaRefValue.FromNumber(@int);
         if (value is long @long)
-            return LuaValue.FromNumber(@long);
+            return LuaRefValue.FromNumber(@long);
         if (value is uint @uint)
-            return LuaValue.FromNumber(@uint);
+            return LuaRefValue.FromNumber(@uint);
         if (value is ulong @ulong)
-            return LuaValue.FromNumber(@ulong);
+            return LuaRefValue.FromNumber(@ulong);
         if (value is short @short)
-            return LuaValue.FromNumber(@short);
+            return LuaRefValue.FromNumber(@short);
         if (value is ushort @ushort)
-            return LuaValue.FromNumber(@ushort);
+            return LuaRefValue.FromNumber(@ushort);
         if (value is byte @byte)
-            return LuaValue.FromNumber(@byte);
+            return LuaRefValue.FromNumber(@byte);
         if (value is sbyte @sbyte)
-            return LuaValue.FromNumber(@sbyte);
+            return LuaRefValue.FromNumber(@sbyte);
         if (value is double @double)
-            return LuaValue.FromNumber(@double);
+            return LuaRefValue.FromNumber(@double);
 
         if (value is string @string)
-            return LuaValue.FromString(@string);
+            return LuaRefValue.FromString(@string);
 
-        if (value is LuaFunction func)
-            return LuaValue.FromFunction(func);
-        if (value is LuaTable table)
-            return LuaValue.FromTable(table);
+        if (value is LuaFunctionRef func)
+            return LuaRefValue.FromFunction(func);
+        if (value is LuaTableRef table)
+            return LuaRefValue.FromTable(table);
         if (value is ILuaState thread)
-            return LuaValue.FromThread(thread);
+            return LuaRefValue.FromThread(thread);
         
         if (value is fix64 fixed64)
-            return LuaValue.FromPrimitive(fixed64);
+            return LuaRefValue.FromPrimitive(fixed64);
         if (value is f64Vector3 f64Vector3)
-            return LuaValue.FromPrimitive(f64Vector3);
+            return LuaRefValue.FromPrimitive(f64Vector3);
         if (value is f64AngleSingle f64AngleSingle)
-            return LuaValue.FromPrimitive(f64AngleSingle);
+            return LuaRefValue.FromPrimitive(f64AngleSingle);
         if (value is f64Euler f64Euler)
-            return LuaValue.FromPrimitive(f64Euler);
+            return LuaRefValue.FromPrimitive(f64Euler);
         
-        if (value is LuaUserData userData)
-            return LuaValue.FromUserData(userData);
+        if (value is LuaUserDataRef userData)
+            return LuaRefValue.FromUserData(userData);
 
         if (value is ILuaUserData userData1)
             return state.CreateUserData(userData1);
@@ -111,8 +111,8 @@ public static class LuaHelpers
         return false;
     }
 
-    /// <summary>Converts a <see cref="LuaValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
-    public static T ConvertLuaValue<T>(this LuaValue value)
+    /// <summary>Converts a <see cref="LuaRefValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
+    public static T ConvertLuaValue<T>(this LuaRefValue value)
     {
         if (typeof(T) == typeof(object))
         {
@@ -159,7 +159,7 @@ public static class LuaHelpers
         }
     }
 
-    public static bool TryConvertLuaValue<T>(this LuaValue value, [NotNullWhen(true)] out T? outValue)
+    public static bool TryConvertLuaValue<T>(this LuaRefValue value, [NotNullWhen(true)] out T? outValue)
     {
         if (typeof(T) == typeof(fix64))
         {
@@ -210,12 +210,12 @@ public static class LuaHelpers
         return value.TryRead(out outValue);
     }
     
-    public static LuaTable GamemodeConfigToLuaTable(LuauState state, IReadOnlyDictionary<string, object> dict)
+    public static LuaTableRef GamemodeConfigToLuaTable(LuauState state, IReadOnlyDictionary<string, object> dict)
     {
         var table = state.CreateTable();
         foreach (var (k, obj) in dict)
         {
-            if (obj is LuaValue val) table[k] = val;
+            if (obj is LuaRefValue val) table[k] = val;
             else if (obj is string str) table[k] = str;
             else if (obj is bool b) table[k] = b;
             else if (obj is byte by) table[k] = by;
@@ -228,7 +228,7 @@ public static class LuaHelpers
             else if (obj is ulong ul) table[k] = ul;
             else if (obj is float f) table[k] = f;
             else if (obj is double d) table[k] = d;
-            else if (obj is fix64 f64) table[k] = LuaValue.FromPrimitive(f64);
+            else if (obj is fix64 f64) table[k] = LuaRefValue.FromPrimitive(f64);
         }
         return table;
     }

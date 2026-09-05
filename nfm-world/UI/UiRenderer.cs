@@ -18,7 +18,7 @@ public class UiRenderer : IDisposable
     private uint _maxEvent = 0;
 
     private readonly Dictionary<string, MessageHandler> _toCsharpHandlers = new();
-    private readonly ConcurrentDictionary<uint, (string Event, Action<LuaValue> Handler)> _toLuaHandlers = new();
+    private readonly ConcurrentDictionary<uint, (string Event, Action<LuaRefValue> Handler)> _toLuaHandlers = new();
     private LuauState _state;
     private string _currentPhaseId = "main-menu";
 
@@ -31,14 +31,14 @@ public class UiRenderer : IDisposable
         Reload();
     }
 
-    private Action OnEvent(string @event, Action<LuaValue> callback)
+    private Action OnEvent(string @event, Action<LuaRefValue> callback)
     {
         var key = _maxEvent++;
         _toLuaHandlers[key] = (@event, callback);
         return () => _toLuaHandlers.TryRemove(KeyValuePair.Create(key, (@event, callback)));
     }
 
-    private void Call(string method, LuaValue payload)
+    private void Call(string method, LuaRefValue payload)
     {
         // Dispatch to the first registered handler.
         // Only one phase is active at a time, so we dispatch to whichever handler is registered.
@@ -70,7 +70,7 @@ public class UiRenderer : IDisposable
     /// <summary>
     /// Delegate for handling Lua → C# messages.
     /// </summary>
-    public delegate void MessageHandler(string method, LuaValue payload);
+    public delegate void MessageHandler(string method, LuaRefValue payload);
 
     /// <summary>
     /// Register a per-phase message handler. Only one handler per phase ID is allowed.
@@ -99,7 +99,7 @@ public class UiRenderer : IDisposable
     /// <summary>
     /// Push an event from C# to Lua for a specific phase.
     /// </summary>
-    public void PushToLua(string phaseId, string eventType, LuaValue payload)
+    public void PushToLua(string phaseId, string eventType, LuaRefValue payload)
     {
         var fullEventId = $"{phaseId}:{eventType}";
 

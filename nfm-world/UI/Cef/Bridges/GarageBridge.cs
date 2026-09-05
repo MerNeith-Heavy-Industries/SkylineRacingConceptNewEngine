@@ -12,12 +12,12 @@ public sealed class GarageBridge() : PhaseBridge("garage")
 {
     public override bool EnableInput => true;
 
-    protected override void OnMessage(string type, LuaValue args)
+    protected override void OnMessage(string type, LuaRefValue args)
     {
         switch (type)
         {
             case "selectCar":
-                if (args.TryConvertLuaValue<LuaTable>(out var a)
+                if (args.TryConvertLuaValue<LuaTableRef>(out var a)
                     && a.TryGetValue("collection", out var col)
                     && a.TryGetValue("fileName", out var car))
                 {
@@ -25,13 +25,13 @@ public sealed class GarageBridge() : PhaseBridge("garage")
                 }
                 break;
             case "selectCollection":
-                if (args.TryConvertLuaValue<LuaTable>(out var b) && b.TryGetValue("collection", out var selCol))
+                if (args.TryConvertLuaValue<LuaTableRef>(out var b) && b.TryGetValue("collection", out var selCol))
                 {
                     CollectionSelected?.Invoke(selCol.ReadOrDefault<string>() ?? "");
                 }
                 break;
             case "cycleCar":
-                if (args.TryConvertLuaValue<LuaTable>(out var c) && c.TryGetValue("direction", out var dir))
+                if (args.TryConvertLuaValue<LuaTableRef>(out var c) && c.TryGetValue("direction", out var dir))
                 {
                     var direction = dir.ReadOrDefault<string>() ?? "";
                     CycleCarRequested?.Invoke(direction == "right" ? 1 : -1);

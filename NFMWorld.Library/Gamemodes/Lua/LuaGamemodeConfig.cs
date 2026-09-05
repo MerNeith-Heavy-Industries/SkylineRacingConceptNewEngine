@@ -18,7 +18,7 @@ public class LuaGamemodeConfig
         LuaGamemodeConfig? config = null;
         state.RegisterFunction("DefineGamemodeConfig", (luauState, args) =>
         {
-            var table = args[0].Read<LuaTable>();
+            var table = args[0].Read<LuaTableRef>();
             
             config = MarshalConfig(table);
 
@@ -41,7 +41,7 @@ public class LuaGamemodeConfig
         LuaGamemodeConfig? config = null;
         state.RegisterFunction("DefineGamemodeConfig", (luauState, args) =>
         {
-            var table = args[0].Read<LuaTable>();
+            var table = args[0].Read<LuaTableRef>();
             
             config = MarshalConfig(table);
 
@@ -59,7 +59,7 @@ public class LuaGamemodeConfig
         };
     }
 
-    private static LuaGamemodeConfig MarshalConfig(LuaTable table)
+    private static LuaGamemodeConfig MarshalConfig(LuaTableRef table)
     {
         table.TryGetValue("name", out var name);
         table.TryGetValue("description", out var description);
@@ -70,11 +70,11 @@ public class LuaGamemodeConfig
             Description = description.ToString()
         };
 
-        if (table.TryGetValue("properties", out var properties) && properties.TryConvertLuaValue<LuaTable>(out var propertiesTable))
+        if (table.TryGetValue("properties", out var properties) && properties.TryConvertLuaValue<LuaTableRef>(out var propertiesTable))
         {
             foreach (var (i, prop) in propertiesTable)
             {
-                if (prop.TryConvertLuaValue<LuaTable>(out var propTable))
+                if (prop.TryConvertLuaValue<LuaTableRef>(out var propTable))
                 {
                     propTable.TryGetValue("name", out var propName);
                     propTable.TryGetValue("type", out var propType);
@@ -91,11 +91,11 @@ public class LuaGamemodeConfig
                     config.Properties.Add(propValue);
 
                     if (propTable.TryGetValue("options", out var options) &&
-                        options.TryConvertLuaValue<LuaTable>(out var optionsTable))
+                        options.TryConvertLuaValue<LuaTableRef>(out var optionsTable))
                     {
                         foreach (var (j, option) in optionsTable)
                         {
-                            if (option.TryConvertLuaValue<LuaTable>(out var optionTable))
+                            if (option.TryConvertLuaValue<LuaTableRef>(out var optionTable))
                             {
                                 optionTable.TryGetValue("label", out var optionLabel);
                                 optionTable.TryGetValue("value", out var optionValue);
@@ -115,10 +115,10 @@ public class LuaGamemodeConfig
     }
 
     /// <summary>
-    /// Marshals this config back into a <see cref="LuaTable"/>, mirroring the shape
+    /// Marshals this config back into a <see cref="LuaTableRef"/>, mirroring the shape
     /// expected by <see cref="MarshalConfig"/>.
     /// </summary>
-    public LuaTable ToLuaTable(LuauState state)
+    public LuaTableRef ToLuaTable(LuauState state)
     {
         var table = state.CreateTable();
         table["name"] = Name;

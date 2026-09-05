@@ -31,7 +31,7 @@ public sealed class BenchmarkHost
 
     public View? ActiveRoot { get; private set; }
 
-    readonly Dictionary<int, (string Event, Action<LuaValue> Callback)> _handlers = new();
+    readonly Dictionary<int, (string Event, Action<LuaRefValue> Callback)> _handlers = new();
     readonly object _gate = new();
     int _eventId;
 
@@ -64,9 +64,9 @@ public sealed class BenchmarkHost
 
     void SetActiveRoot(View view) => ActiveRoot = view;
 
-    void Call(string method, LuaValue payload) { }
+    void Call(string method, LuaRefValue payload) { }
 
-    Action OnEvent(string @event, Action<LuaValue> callback)
+    Action OnEvent(string @event, Action<LuaRefValue> callback)
     {
         int id;
         lock (_gate) id = _eventId++;
@@ -79,7 +79,7 @@ public sealed class BenchmarkHost
     /// <see cref="UiRenderer.PushToLua"/> in the real game. Payload is a Lua value (the
     /// repro passes a fresh Lua table, mirroring a freshly-built HudStateData each frame).
     /// </summary>
-    public void PushEvent(string evt, LuaValue payload)
+    public void PushEvent(string evt, LuaRefValue payload)
     {
         lock (_gate)
         {
@@ -105,19 +105,19 @@ public sealed class BenchmarkHost
 
     void RegisterBenchGlobals()
     {
-        _state["__bench_push"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        _state["__bench_push"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
         {
             var evt = args[0].ConvertLuaValue<string>();
             var payload = args[1];
             PushEvent(evt, payload);
             return state.Return();
         }));
-        _state["__bench_flush"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        _state["__bench_flush"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
         {
             FlushPendingTasks();
             return state.Return();
         }));
-        _state["__bench_reset_stats"] = LuaValue.FromFunction(_state.CreateFunction((state, args) =>
+        _state["__bench_reset_stats"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
         {
             LuaUiHostStats.Reset();
             return state.Return();
@@ -126,13 +126,13 @@ public sealed class BenchmarkHost
 
     // ---- Script loading ------------------------------------------------------
 
-    LuaValue LoadReact()
+    LuaRefValue LoadReact()
     {
         var reactPath = Path.Combine(_libraryRoot, "data", "library", "react.luau");
         var source = File.ReadAllText(reactPath);
         // Chunk name "data/library/react.luau" so relative requires resolve to data/library/...
         var results = _state.DoString(source, "data/library/react.luau");
-        return results.Length > 0 ? results[0] : LuaValue.Nil;
+        return results.Length > 0 ? results[0] : LuaRefValue.Nil;
     }
 
     /// <summary>
@@ -140,14 +140,14 @@ public sealed class BenchmarkHost
     /// The script chunk must return a single `run` function.
     /// Returns (cpuSeconds from os.clock, wallSeconds from a C# Stopwatch, all returns).
     /// </summary>
-    public (double CpuSeconds, double WallSeconds, LuaValue[] Returns) RunScript(
+    public (double CpuSeconds, double WallSeconds, LuaRefValue[] Returns) RunScript(
         string scriptPath,
-        params LuaValue[] args)
+        params LuaRefValue[] args)
     {
         var source = File.ReadAllText(scriptPath);
         var module = _state.DoString(source, "bench_" + Path.GetFileName(scriptPath));
-        var runFn = module.Length > 0 ? module[0] : LuaValue.Nil;
-        var runFunction = runFn.ConvertLuaValue<LuaFunction>();
+        var runFn = module.Length > 0 ? module[0] : LuaRefValue.Nil;
+        var runFunction = runFn.ConvertLuaValue<LuaFunctionRef>();
 
         var sw = Stopwatch.StartNew();
         var results = CallFunction(_state, runFunction, args);
@@ -162,11 +162,11 @@ public sealed class BenchmarkHost
     }
 
     /// <summary>Calls a Lua function, reads all its returns, and restores the stack.</summary>
-    static LuaValue[] CallFunction(LuauState state, LuaFunction function, params LuaValue[] args)
+    static LuaRefValue[] CallFunction(LuauState state, LuaFunctionRef function, params LuaRefValue[] args)
     {
         var baseTop = state.GetTop();
         var count = state.Call(function, args);
-        var results = new LuaValue[count];
+        var results = new LuaRefValue[count];
         for (var i = 0; i < count; i++)
         {
             results[i] = state.ToLuaValue(baseTop + 1 + i);

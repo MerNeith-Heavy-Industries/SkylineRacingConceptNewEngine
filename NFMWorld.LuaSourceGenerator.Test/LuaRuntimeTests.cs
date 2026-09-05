@@ -7,7 +7,7 @@ namespace NFMWorld.LuaSourceGenerator.Test;
 
 /// <summary>
 /// FixedMath primitive tests. fixed64 / f64angle / f64euler / fixed64vector3 marshal to Lua via
-/// <see cref="LuaValue.FromPrimitive"/> (ids 0..3); their per-state metatables and read-back
+/// <see cref="LuaRefValue.FromPrimitive"/> (ids 0..3); their per-state metatables and read-back
 /// (<c>TryRead&lt;Fixed64&gt;</c> etc.) are not wired up yet — round-trips are a later pass.
 /// </summary>
 [TestClass]

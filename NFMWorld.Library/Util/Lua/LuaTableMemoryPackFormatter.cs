@@ -20,14 +20,14 @@ public class LuaValueMemoryPackFormatter
     private const ushort TagFix64A = 8;
     private const ushort TagFix64E = 9;
     
-    public static LuaValue Deserialize(LuauState luauState, Span<byte> data)
+    public static LuaRefValue Deserialize(LuauState luauState, Span<byte> data)
     {
         using var state = MemoryPackReaderOptionalStatePool.Rent(null);
 
         var reader = new MemoryPackReader(data, state);
         try
         {
-            LuaValue value = default;
+            LuaRefValue value = default;
             Deserialize(luauState, ref reader, ref value);
             return value;
         }
@@ -38,7 +38,7 @@ public class LuaValueMemoryPackFormatter
         }
     }
 
-    public static byte[] Serialize(LuaValue value)
+    public static byte[] Serialize(LuaRefValue value)
     {
         using var state = MemoryPackWriterOptionalStatePool.Rent(null);
         
@@ -57,12 +57,12 @@ public class LuaValueMemoryPackFormatter
         }
     }
 
-    private static void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref LuaValue value) where TBufferWriter : IBufferWriter<byte>
+    private static void Serialize<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref LuaRefValue value) where TBufferWriter : IBufferWriter<byte>
     {
         WriteLuaValue(ref writer, ref value);
     }
 
-    private static void WriteLuaValue<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref readonly LuaValue value) where TBufferWriter : IBufferWriter<byte>
+    private static void WriteLuaValue<TBufferWriter>(ref MemoryPackWriter<TBufferWriter> writer, scoped ref readonly LuaRefValue value) where TBufferWriter : IBufferWriter<byte>
     {
         switch (value.Type)
         {
@@ -98,7 +98,7 @@ public class LuaValueMemoryPackFormatter
             case LuaValueType.UserData:
                 throw new InvalidOperationException("Type userdata not serializable!");
             case LuaValueType.Table:
-                var t = value.Read<LuaTable>();
+                var t = value.Read<LuaTableRef>();
                 var len = t.Length;
                 writer.WriteUnionHeader(TagTab);
                 writer.WriteCollectionHeader(len);
@@ -150,12 +150,12 @@ public class LuaValueMemoryPackFormatter
         }
     }
 
-    public static void Deserialize(LuauState state, ref MemoryPackReader reader, scoped ref LuaValue value)
+    public static void Deserialize(LuauState state, ref MemoryPackReader reader, scoped ref LuaRefValue value)
     {
         ReadLuaValue(state, ref reader, ref value);
     }
 
-    private static void ReadLuaValue(LuauState state, ref MemoryPackReader reader, scoped ref LuaValue value)
+    private static void ReadLuaValue(LuauState state, ref MemoryPackReader reader, scoped ref LuaRefValue value)
     {
         if (!reader.TryReadUnionHeader(out var tag))
             throw new InvalidOperationException("Type not deserializable!");
@@ -163,13 +163,13 @@ public class LuaValueMemoryPackFormatter
         switch (tag)
         {
             case TagNil:
-                value = LuaValue.Nil;
+                value = LuaRefValue.Nil;
                 break;
             case TagFalse:
-                value = LuaValue.FromBoolean(false);
+                value = LuaRefValue.FromBoolean(false);
                 break;
             case TagTrue:
-                value = LuaValue.FromBoolean(true);
+                value = LuaRefValue.FromBoolean(true);
                 break;
             case TagStr:
                 value = reader.ReadString()!;
@@ -187,8 +187,8 @@ public class LuaValueMemoryPackFormatter
 
                 for (var i = 0; i < len; i++)
                 {
-                    LuaValue k = default;
-                    LuaValue v = default;
+                    LuaRefValue k = default;
+                    LuaRefValue v = default;
                     ReadLuaValue(state, ref reader, ref k);
                     ReadLuaValue(state, ref reader, ref v);
 
@@ -198,16 +198,16 @@ public class LuaValueMemoryPackFormatter
                 value = t;
                 break;
             case TagFix64:
-                value = LuaValue.FromPrimitive(reader.ReadUnmanaged<fix64>());
+                value = LuaRefValue.FromPrimitive(reader.ReadUnmanaged<fix64>());
                 break;
             case TagFix64V:
-                value = LuaValue.FromPrimitive(reader.ReadUnmanaged<f64Vector3>());
+                value = LuaRefValue.FromPrimitive(reader.ReadUnmanaged<f64Vector3>());
                 break;
             case TagFix64A:
-                value = LuaValue.FromPrimitive(reader.ReadUnmanaged<f64AngleSingle>());
+                value = LuaRefValue.FromPrimitive(reader.ReadUnmanaged<f64AngleSingle>());
                 break;
             case TagFix64E:
-                value = LuaValue.FromPrimitive(reader.ReadUnmanaged<f64Euler>());
+                value = LuaRefValue.FromPrimitive(reader.ReadUnmanaged<f64Euler>());
                 break;
             default:
                 throw new InvalidOperationException("Type not deserializable!");

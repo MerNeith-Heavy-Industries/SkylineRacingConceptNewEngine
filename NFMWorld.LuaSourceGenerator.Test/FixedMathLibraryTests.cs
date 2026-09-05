@@ -31,25 +31,25 @@ public class FixedMathLibraryTests
         return state;
     }
 
-    private static Fixed64 ReadFixed64(LuaValue v)
+    private static Fixed64 ReadFixed64(LuaRefValue v)
     {
         Assert.IsTrue(v.TryReadPrimitive<Fixed64>(out var r), "expected Fixed64 primitive");
         return r;
     }
 
-    private static Vector3d ReadVec3(LuaValue v)
+    private static Vector3d ReadVec3(LuaRefValue v)
     {
         Assert.IsTrue(v.TryReadPrimitive<Vector3d>(out var r), "expected Vector3d primitive");
         return r;
     }
 
-    private static f64AngleSingle ReadAngle(LuaValue v)
+    private static f64AngleSingle ReadAngle(LuaRefValue v)
     {
         Assert.IsTrue(v.TryReadPrimitive<f64AngleSingle>(out var r), "expected f64AngleSingle primitive");
         return r;
     }
 
-    private static f64Euler ReadEuler(LuaValue v)
+    private static f64Euler ReadEuler(LuaRefValue v)
     {
         Assert.IsTrue(v.TryReadPrimitive<f64Euler>(out var r), "expected f64Euler primitive");
         return r;

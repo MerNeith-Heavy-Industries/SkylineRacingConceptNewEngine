@@ -276,7 +276,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Int_ReadNull()
     {
         var obj = new SampleClass();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
         var results = _state.DoString("return obj.nullableInt");
         Assert.AreEqual(LuaValueType.Nil, results[0].Type);
     }
@@ -285,7 +285,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Int_SetAndRead()
     {
         var obj = new SampleClass();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
         _state.DoString("obj.nullableInt = 42");
         Assert.AreEqual(42, obj.NullableInt);
     }
@@ -294,7 +294,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Int_SetToNil()
     {
         var obj = new SampleClass { NullableInt = 42 };
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
         _state.DoString("obj.nullableInt = nil");
         Assert.IsNull(obj.NullableInt);
     }
@@ -303,7 +303,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Bool_ThreeState()
     {
         var obj = new SampleClass();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         var r1 = _state.DoString("return obj.nullableBool");
         Assert.AreEqual(LuaValueType.Nil, r1[0].Type);
@@ -322,7 +322,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Float_RoundTrip()
     {
         var obj = new SampleClass();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
         _state.DoString("obj.nullableFloat = 3.14");
         Assert.AreEqual(3.14f, obj.NullableFloat!.Value, 0.01f);
     }
@@ -331,7 +331,7 @@ public class LuaRuntimePortedTests
     public void Nullable_Long_Field()
     {
         var obj = new SampleClass { NullableLongField = 1234567890123L };
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
         var results = _state.DoString("return obj.nullableLongField");
         Assert.AreEqual(1234567890123.0, results[0].Read<double>(), 1.0);
     }
@@ -453,14 +453,14 @@ public class LuaRuntimePortedTests
 
     private void SetEnum(string name, TestColor value)
     {
-        _state[name] = LuaValue.FromUserData(_state.CreateEnumUserData(value));
+        _state[name] = LuaRefValue.FromUserData(_state.CreateEnumUserData(value));
     }
 
     [TestMethod]
     public void Enum_Property_Read()
     {
         var obj = new TypeWithEnum { Color = TestColor.Green };
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         var results = _state.DoString(@"
             local c = obj.color
@@ -473,7 +473,7 @@ public class LuaRuntimePortedTests
     public void Enum_Property_Set()
     {
         var obj = new TypeWithEnum();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         SetEnum("blueColor", TestColor.Blue);
         _state.DoString("obj.color = blueColor");
@@ -484,7 +484,7 @@ public class LuaRuntimePortedTests
     public void Enum_Method_Return()
     {
         var obj = new TypeWithEnum { Color = TestColor.Blue };
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         var results = _state.DoString(@"
             local c = obj:getColor()
@@ -497,7 +497,7 @@ public class LuaRuntimePortedTests
     public void Enum_Method_Parameter()
     {
         var obj = new TypeWithEnum();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         SetEnum("greenColor", TestColor.Green);
         _state.DoString("obj:setColor(greenColor)");
@@ -508,7 +508,7 @@ public class LuaRuntimePortedTests
     public void Enum_Method_BoolReturn()
     {
         var obj = new TypeWithEnum();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         SetEnum("redColor", TestColor.Red);
         SetEnum("yellowColor", TestColor.Yellow);
@@ -526,7 +526,7 @@ public class LuaRuntimePortedTests
     public void Enum_Nullable_ReadNull()
     {
         var obj = new TypeWithEnum();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         var results = _state.DoString("return obj.nullableColor");
         Assert.AreEqual(LuaValueType.Nil, results[0].Type);
@@ -536,7 +536,7 @@ public class LuaRuntimePortedTests
     public void Enum_Nullable_SetAndRead()
     {
         var obj = new TypeWithEnum();
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         SetEnum("greenColor", TestColor.Green);
         _state.DoString("obj.nullableColor = greenColor");
@@ -550,7 +550,7 @@ public class LuaRuntimePortedTests
     public void Enum_Nullable_SetToNil()
     {
         var obj = new TypeWithEnum { NullableColor = TestColor.Red };
-        _state["obj"] = LuaValue.FromUserData(_state.CreateUserData(obj));
+        _state["obj"] = LuaRefValue.FromUserData(_state.CreateUserData(obj));
 
         _state.DoString("obj.nullableColor = nil");
         Assert.IsNull(obj.NullableColor);
@@ -664,8 +664,8 @@ public class LuaRuntimePortedTests
     [TestMethod]
     public void Operators_Vec3_AddSubNegate()
     {
-        _state["v1"] = LuaValue.FromUserData(_state.CreateUserData(new Vector3Struct(1, 2, 3)));
-        _state["v2"] = LuaValue.FromUserData(_state.CreateUserData(new Vector3Struct(10, 20, 30)));
+        _state["v1"] = LuaRefValue.FromUserData(_state.CreateUserData(new Vector3Struct(1, 2, 3)));
+        _state["v2"] = LuaRefValue.FromUserData(_state.CreateUserData(new Vector3Struct(10, 20, 30)));
 
         var results = _state.DoString(@"
             local s = v1 + v2

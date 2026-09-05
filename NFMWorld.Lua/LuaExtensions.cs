@@ -8,12 +8,12 @@ namespace nfm_world_library.Lua;
 
 public static class LuaExtensions
 {
-    extension(LuaValue)
+    extension(LuaRefValue)
     {
-        public static LuaValue FromFixed64(Fixed64 value) => LuaValue.FromPrimitive(value);
-        public static LuaValue FromFixed64Vector3(Vector3d value) => LuaValue.FromPrimitive(value);
-        public static LuaValue FromFixed64Angle(f64AngleSingle value) => LuaValue.FromPrimitive(value);
-        public static LuaValue FromFixed64Euler(f64Euler value) => LuaValue.FromPrimitive(value);
+        public static LuaRefValue FromFixed64(Fixed64 value) => LuaRefValue.FromPrimitive(value);
+        public static LuaRefValue FromFixed64Vector3(Vector3d value) => LuaRefValue.FromPrimitive(value);
+        public static LuaRefValue FromFixed64Angle(f64AngleSingle value) => LuaRefValue.FromPrimitive(value);
+        public static LuaRefValue FromFixed64Euler(f64Euler value) => LuaRefValue.FromPrimitive(value);
     }
 
     public static void OpenFixedMathLibrary(this LuauState state)
@@ -102,13 +102,13 @@ public static class LuaExtensions
             return 1;
         });
 
-        state["fixed64vec3"] = LuaValue.FromTable(BuildFixed64Vec3Library(state));
-        state["f64anglelib"] = LuaValue.FromTable(BuildAngleLibrary(state));
-        state["f64eulerlib"] = LuaValue.FromTable(BuildEulerLibrary(state));
-        state["f64math"] = LuaValue.FromTable(BuildFixedMathLibrary(state));
+        state["fixed64vec3"] = LuaRefValue.FromTable(BuildFixed64Vec3Library(state));
+        state["f64anglelib"] = LuaRefValue.FromTable(BuildAngleLibrary(state));
+        state["f64eulerlib"] = LuaRefValue.FromTable(BuildEulerLibrary(state));
+        state["f64math"] = LuaRefValue.FromTable(BuildFixedMathLibrary(state));
     }
 
-    private static Fixed64 ReadFixed64Arg(LuaValue value)
+    private static Fixed64 ReadFixed64Arg(LuaRefValue value)
     {
         if (value.TryReadPrimitive<Fixed64>(out var f64))
             return f64;
@@ -117,7 +117,7 @@ public static class LuaExtensions
         throw new InvalidOperationException($"Cannot convert {value.Type} to Fixed64");
     }
 
-    private static f64AngleSingle ReadAngleArg(LuaValue value)
+    private static f64AngleSingle ReadAngleArg(LuaRefValue value)
     {
         if (value.TryReadPrimitive<f64AngleSingle>(out var angle))
             return angle;
@@ -128,18 +128,18 @@ public static class LuaExtensions
         throw new InvalidOperationException($"Cannot parse argument {value.Type} as f64angle or number");
     }
 
-    private static LuaTable BuildFixed64Vec3Library(LuauState state)
+    private static LuaTableRef BuildFixed64Vec3Library(LuauState state)
     {
         var table = state.CreateTable(0, 12);
 
-        table["normalized"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["normalized"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = args[0].ReadPrimitive<Vector3d>();
             state.PushPrimitive(Vector3d.GetNormalized(v));
             return 1;
         }));
 
-        table["cross"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["cross"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -147,7 +147,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["dot"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["dot"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -155,7 +155,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["distance"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["distance"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -163,7 +163,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["sqrdistance"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sqrdistance"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -171,21 +171,21 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["magnitude"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["magnitude"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = args[0].ReadPrimitive<Vector3d>();
             state.PushPrimitive(Vector3d.GetMagnitude(v));
             return 1;
         }));
 
-        table["sqrmagnitude"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sqrmagnitude"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = args[0].ReadPrimitive<Vector3d>();
             state.PushPrimitive(Vector3d.Dot(v, v));
             return 1;
         }));
 
-        table["max"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["max"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -193,7 +193,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["min"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["min"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -201,7 +201,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["lerp"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["lerp"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<Vector3d>();
             var b = args[1].ReadPrimitive<Vector3d>();
@@ -210,14 +210,14 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["abs"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["abs"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = args[0].ReadPrimitive<Vector3d>();
             state.PushPrimitive(Vector3d.Abs(v));
             return 1;
         }));
 
-        table["sign"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sign"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = args[0].ReadPrimitive<Vector3d>();
             state.PushPrimitive(Vector3d.Sign(v));
@@ -227,39 +227,39 @@ public static class LuaExtensions
         return table;
     }
 
-    private static LuaTable BuildAngleLibrary(LuauState state)
+    private static LuaTableRef BuildAngleLibrary(LuauState state)
     {
         var table = state.CreateTable(0, 8);
 
-        table["from_radians"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["from_radians"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var r = args[0].ReadPrimitive<Fixed64>();
             state.PushPrimitive(f64AngleSingle.FromRadians(r));
             return 1;
         }));
 
-        table["from_degrees"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["from_degrees"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var d = args[0].ReadPrimitive<Fixed64>();
             state.PushPrimitive(f64AngleSingle.FromDegrees(d));
             return 1;
         }));
 
-        table["wrap"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["wrap"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             state.PushPrimitive(f64AngleSingle.Wrap(a));
             return 1;
         }));
 
-        table["wrap_positive"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["wrap_positive"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             state.PushPrimitive(f64AngleSingle.WrapPositive(a));
             return 1;
         }));
 
-        table["min"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["min"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             var b = args[1].ReadPrimitive<f64AngleSingle>();
@@ -267,7 +267,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["max"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["max"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             var b = args[1].ReadPrimitive<f64AngleSingle>();
@@ -275,14 +275,14 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["degrees"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["degrees"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             state.PushPrimitive(a.Degrees);
             return 1;
         }));
 
-        table["radians"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["radians"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = args[0].ReadPrimitive<f64AngleSingle>();
             state.PushPrimitive(a.Radians);
@@ -292,18 +292,18 @@ public static class LuaExtensions
         return table;
     }
 
-    private static LuaTable BuildEulerLibrary(LuauState state)
+    private static LuaTableRef BuildEulerLibrary(LuauState state)
     {
         var table = state.CreateTable(0, 2);
 
-        table["wrap"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["wrap"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var e = args[0].ReadPrimitive<f64Euler>();
             state.PushPrimitive(e.Wrap());
             return 1;
         }));
 
-        table["wrap_positive"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["wrap_positive"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var e = args[0].ReadPrimitive<f64Euler>();
             state.PushPrimitive(e.WrapPositive());
@@ -313,53 +313,53 @@ public static class LuaExtensions
         return table;
     }
 
-    private static LuaTable BuildFixedMathLibrary(LuauState state)
+    private static LuaTableRef BuildFixedMathLibrary(LuauState state)
     {
         var table = state.CreateTable(0, 25);
 
-        table["sin"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sin"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Sin(x));
             return 1;
         }));
 
-        table["cos"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["cos"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Cos(x));
             return 1;
         }));
 
-        table["tan"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["tan"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Tan(x));
             return 1;
         }));
 
-        table["asin"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["asin"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Asin(x));
             return 1;
         }));
 
-        table["acos"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["acos"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Acos(x));
             return 1;
         }));
 
-        table["atan"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["atan"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Atan(x));
             return 1;
         }));
 
-        table["atan2"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["atan2"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var y = ReadFixed64Arg(args[0]);
             var x = ReadFixed64Arg(args[1]);
@@ -367,14 +367,14 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["sqrt"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sqrt"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Sqrt(x));
             return 1;
         }));
 
-        table["pow"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["pow"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var b = ReadFixed64Arg(args[0]);
             var e = ReadFixed64Arg(args[1]);
@@ -382,49 +382,49 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["ln"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["ln"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Ln(x));
             return 1;
         }));
 
-        table["log2"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["log2"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Log2(x));
             return 1;
         }));
 
-        table["abs"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["abs"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Abs(x));
             return 1;
         }));
 
-        table["floor"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["floor"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Floor(x));
             return 1;
         }));
 
-        table["ceil"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["ceil"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Ceiling(x));
             return 1;
         }));
 
-        table["round"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["round"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Round(x));
             return 1;
         }));
 
-        table["min"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["min"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = ReadFixed64Arg(args[0]);
             var b = ReadFixed64Arg(args[1]);
@@ -432,7 +432,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["max"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["max"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = ReadFixed64Arg(args[0]);
             var b = ReadFixed64Arg(args[1]);
@@ -440,7 +440,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["clamp"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["clamp"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = ReadFixed64Arg(args[0]);
             var min = ReadFixed64Arg(args[1]);
@@ -449,21 +449,21 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["clamp01"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["clamp01"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var v = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.Clamp01(v));
             return 1;
         }));
 
-        table["sign"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["sign"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive((Fixed64)Fixed64.Sign(x));
             return 1;
         }));
 
-        table["lerp"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["lerp"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = ReadFixed64Arg(args[0]);
             var b = ReadFixed64Arg(args[1]);
@@ -472,7 +472,7 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["hypot"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["hypot"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var a = ReadFixed64Arg(args[0]);
             var b = ReadFixed64Arg(args[1]);
@@ -480,25 +480,25 @@ public static class LuaExtensions
             return 1;
         }));
 
-        table["deg2rad"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["deg2rad"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.DegToRad(x));
             return 1;
         }));
 
-        table["rad2deg"] = LuaValue.FromFunction(state.CreateFunction(static (state, args) =>
+        table["rad2deg"] = LuaRefValue.FromFunction(state.CreateFunction(static (state, args) =>
         {
             var x = ReadFixed64Arg(args[0]);
             state.PushPrimitive(FixedMath.RadToDeg(x));
             return 1;
         }));
 
-        table["minValue"] = LuaValue.FromPrimitive(Fixed64.MinValue);
-        table["maxValue"] = LuaValue.FromPrimitive(Fixed64.MaxValue);
-        table["pi"] = LuaValue.FromPrimitive(FixedMath.PI);
-        table["halfpi"] = LuaValue.FromPrimitive(FixedMath.PiOver2);
-        table["twopi"] = LuaValue.FromPrimitive(FixedMath.TwoPI);
+        table["minValue"] = LuaRefValue.FromPrimitive(Fixed64.MinValue);
+        table["maxValue"] = LuaRefValue.FromPrimitive(Fixed64.MaxValue);
+        table["pi"] = LuaRefValue.FromPrimitive(FixedMath.PI);
+        table["halfpi"] = LuaRefValue.FromPrimitive(FixedMath.PiOver2);
+        table["twopi"] = LuaRefValue.FromPrimitive(FixedMath.TwoPI);
 
         return table;
     }

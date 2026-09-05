@@ -27,12 +27,12 @@ public sealed class MainMenuBridge : PhaseBridge
     /// </summary>
     public SettingsHandler Settings => _settings;
 
-    protected override void OnMessage(string type, LuaValue args)
+    protected override void OnMessage(string type, LuaRefValue args)
     {
         switch (type)
         {
             case "navigate":
-                if (args.TryConvertLuaValue<LuaTable>(out var a) && a.TryGetValue("page", out var page))
+                if (args.TryConvertLuaValue<LuaTableRef>(out var a) && a.TryGetValue("page", out var page))
                 {
                     NavigateRequested?.Invoke(page.ReadOrDefault<string>() ?? "");
                 }

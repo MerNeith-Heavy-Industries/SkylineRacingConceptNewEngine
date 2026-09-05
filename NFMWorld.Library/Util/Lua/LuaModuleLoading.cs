@@ -33,7 +33,7 @@ public static class LuaModuleLoading
         ArgumentNullException.ThrowIfNull(state);
         defaultSource ??= new VfsModuleSource(TheVFS.VFS, "vfs");
         RequireContext.Get(state).Reset(defaultSource);
-        state["require"] = LuaValue.FromFunction(state.CreateFunction(RequireFunc, 0));
+        state["require"] = LuaRefValue.FromFunction(state.CreateFunction(RequireFunc, 0));
     }
 
     /// <summary>Registers a gamemode radpack so <c>require</c> calls from its scripts resolve within it.</summary>
@@ -47,7 +47,7 @@ public static class LuaModuleLoading
     /// Loads and runs a script from the virtual file system, using <paramref name="path"/> as the
     /// chunk name so relative <c>require</c> calls resolve against its directory.
     /// </summary>
-    public static LuaValue[] DoFile(this LuauState state, string path)
+    public static LuaRefValue[] DoFile(this LuauState state, string path)
     {
         ArgumentNullException.ThrowIfNull(state);
         var bytes = TheVFS.VFS.ReadAllBytes(path);
@@ -58,20 +58,20 @@ public static class LuaModuleLoading
     /// Loads and runs <paramref name="source"/> with an explicit <paramref name="chunkName"/>
     /// (the module's identity for relative <c>require</c> resolution).
     /// </summary>
-    public static LuaValue[] DoString(this LuauState state, string source, string chunkName)
+    public static LuaRefValue[] DoString(this LuauState state, string source, string chunkName)
     {
         ArgumentNullException.ThrowIfNull(state);
         return ExecuteChunk(state, Encoding.UTF8.GetBytes(source), chunkName);
     }
 
-    static LuaValue[] ExecuteChunk(LuauState state, byte[] bytes, string chunkName)
+    static LuaRefValue[] ExecuteChunk(LuauState state, byte[] bytes, string chunkName)
     {
         var baseTop = state.GetTop();
         state.LoadString(bytes, Encoding.UTF8.GetBytes(chunkName));
         state.Call(0, -1);
 
         var count = state.GetTop() - baseTop;
-        var results = new LuaValue[count];
+        var results = new LuaRefValue[count];
         for (var i = 0; i < count; i++)
         {
             results[i] = state.ToLuaValue(baseTop + 1 + i);
@@ -126,7 +126,7 @@ public static class LuaModuleLoading
         var cacheKey = source.SourceId + ":" + key;
 
         var cacheValue = state[RequireContext.CacheGlobal];
-        LuaTable cacheTable;
+        LuaTableRef cacheTable;
         if (cacheValue.IsNil)
         {
             cacheTable = state.CreateTable();
@@ -134,7 +134,7 @@ public static class LuaModuleLoading
         }
         else
         {
-            cacheTable = cacheValue.Read<LuaTable>();
+            cacheTable = cacheValue.Read<LuaTableRef>();
         }
 
         try

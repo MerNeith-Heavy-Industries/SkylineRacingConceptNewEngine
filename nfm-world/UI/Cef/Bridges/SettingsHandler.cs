@@ -26,7 +26,7 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── ISubHandler ──────────────────────────────────────────────
 
-    public bool TryHandleMessage(string type, LuaValue args)
+    public bool TryHandleMessage(string type, LuaRefValue args)
     {
         switch (type)
         {
@@ -53,7 +53,7 @@ public sealed class SettingsHandler : ISubHandler
                 RestartConfirmed?.Invoke();
                 return true;
             case "startCapture":
-                if (args.TryConvertLuaValue<LuaTable>(out var a) && a.TryGetValue("action", out var action))
+                if (args.TryConvertLuaValue<LuaTableRef>(out var a) && a.TryGetValue("action", out var action))
                     _capturingAction = action.ReadOrDefault<string>();
                 return true;
             case "stopCapture":
@@ -142,18 +142,18 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── Private helpers ───────────────────────────────────────────
 
-    private void ApplySettingFromJs(LuaValue args)
+    private void ApplySettingFromJs(LuaRefValue args)
     {
-        if (!args.TryConvertLuaValue<LuaTable>(out var a) || !a.TryGetValue("key", out var keyProp))
+        if (!args.TryConvertLuaValue<LuaTableRef>(out var a) || !a.TryGetValue("key", out var keyProp))
             return;
 
         var key = keyProp.ReadOrDefault<string>() ?? "";
         SettingsMenu.ApplySetting(key, a);
     }
 
-    private void HandleResetDefaults(LuaValue args)
+    private void HandleResetDefaults(LuaRefValue args)
     {
-        if (!args.TryConvertLuaValue<LuaTable>(out var a) || !a.TryGetValue("section", out var sectionProp))
+        if (!args.TryConvertLuaValue<LuaTableRef>(out var a) || !a.TryGetValue("section", out var sectionProp))
             return;
 
         var section = sectionProp.ReadOrDefault<string>() ?? "";
@@ -179,7 +179,7 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── Push helpers (hardcoded "settings" prefix) ────────────────
 
-    private void Push(string eventType, LuaValue data)
+    private void Push(string eventType, LuaRefValue data)
     {
         _renderer?.PushToLua("settings", eventType, data);
     }

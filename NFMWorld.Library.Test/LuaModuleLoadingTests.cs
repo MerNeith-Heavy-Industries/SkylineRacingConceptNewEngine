@@ -348,7 +348,7 @@ public class LuaModuleLoadingTests
     {
         // Exercises the real game path: game state creation + global writes + require install.
         using var state = LuaHelpers.OpenState();
-        state["test"] = LuaValue.FromNumber(1);
+        state["test"] = LuaRefValue.FromNumber(1);
         var results = state.DoString("return test", "chunk");
         Assert.AreEqual(1, results[0].Read<double>());
     }

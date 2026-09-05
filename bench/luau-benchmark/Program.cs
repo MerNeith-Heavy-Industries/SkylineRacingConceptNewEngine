@@ -77,7 +77,7 @@ void Run(string scenario, int runs, string[] args)
         {
             var path = Path.Combine(scripts, "diag_create_root.luau");
             var n = ParseInt(args, 2, 1000);
-            var (dcpu, dwall, _) = host.RunScript(path, LuaValue.FromNumber((double)n));
+            var (dcpu, dwall, _) = host.RunScript(path, LuaRefValue.FromNumber((double)n));
             PrintResult("diag-top-level", dcpu, dwall);
             break;
         }
@@ -103,7 +103,7 @@ static void RunFixed64(BenchmarkHost host, string scripts, int runs)
     string? checksum = null;
     for (var r = 0; r < runs; r++)
     {
-        var (cpu, wall, rets) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)nodes));
+        var (cpu, wall, rets) = host.RunScript(path, LuaRefValue.FromNumber((double)iterations), LuaRefValue.FromNumber((double)nodes));
         if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
         if (rets.Length > 1 && rets[1].TryConvertLuaValue<string>(out var checksumStr)) checksum = checksumStr;
     }
@@ -120,7 +120,7 @@ static void RunPreact(BenchmarkHost host, string scripts, int runs, string name,
     double bestCpu = double.MaxValue, bestWall = double.MaxValue;
     for (var r = 0; r < runs; r++)
     {
-        var (cpu, wall, _) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)size), LuaValue.FromBoolean(fresh));
+        var (cpu, wall, _) = host.RunScript(path, LuaRefValue.FromNumber((double)iterations), LuaRefValue.FromNumber((double)size), LuaRefValue.FromBoolean(fresh));
         if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
     }
     PrintResult(name, bestCpu, bestWall);
@@ -137,7 +137,7 @@ static void RunVmcore(BenchmarkHost host, string scripts, int runs)
     double bestCpu = double.MaxValue, bestWall = double.MaxValue;
     for (var r = 0; r < runs; r++)
     {
-        var (cpu, wall, _) = host.RunScript(path, LuaValue.FromNumber((double)iterations), LuaValue.FromNumber((double)depth), LuaValue.FromBoolean(true));
+        var (cpu, wall, _) = host.RunScript(path, LuaRefValue.FromNumber((double)iterations), LuaRefValue.FromNumber((double)depth), LuaRefValue.FromBoolean(true));
         if (cpu < bestCpu) { bestCpu = cpu; bestWall = wall; }
     }
     Console.WriteLine($"  Luau CPU {bestCpu * 1000,9:F3} ms | wall {bestWall * 1000,9:F3} ms");
@@ -169,7 +169,7 @@ static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, 
     for (var r = 0; r < runs; r++)
     {
         LuaUiHostStats.Reset();
-        var (cpu, wall, rets) = host.RunScript(path, LuaValue.FromNumber((double)frames), LuaValue.FromBoolean(fresh));
+        var (cpu, wall, rets) = host.RunScript(path, LuaRefValue.FromNumber((double)frames), LuaRefValue.FromBoolean(fresh));
         if (cpu < bestCpu)
         {
             bestCpu = cpu;
@@ -185,7 +185,7 @@ static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, 
                 if (rets[2].TryConvertLuaValue<double>(out var r2)) rendered = (long)r2;
                 if (rets[3].TryConvertLuaValue<double>(out var r3)) rrCount = (long)r3;
                 if (rets[4].TryConvertLuaValue<double>(out var r4)) processCount = (long)r4;
-                if (rets[5].TryConvertLuaValue<LuaTable>(out var nameTable))
+                if (rets[5].TryConvertLuaValue<LuaTableRef>(out var nameTable))
                 {
                     foreach (var (k, v) in nameTable)
                     {
@@ -195,11 +195,11 @@ static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, 
                         }
                     }
                 }
-                if (rets.Length >= 7 && rets[6].TryConvertLuaValue<LuaTable>(out var detailTable))
+                if (rets.Length >= 7 && rets[6].TryConvertLuaValue<LuaTableRef>(out var detailTable))
                 {
                     foreach (var (k, v) in detailTable)
                     {
-                        if (k.TryConvertLuaValue<string>(out var key) && v.TryConvertLuaValue<LuaTable>(out var det))
+                        if (k.TryConvertLuaValue<string>(out var key) && v.TryConvertLuaValue<LuaTableRef>(out var det))
                         {
                             string depth = "", parent = "";
                             foreach (var (dk, dv) in det)

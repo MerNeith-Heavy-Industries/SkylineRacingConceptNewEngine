@@ -20,7 +20,7 @@ public interface ISubHandler
     /// message was consumed; otherwise the parent bridge's OnMessage will
     /// receive it.
     /// </summary>
-    bool TryHandleMessage(string type, LuaValue args);
+    bool TryHandleMessage(string type, LuaRefValue args);
 
     /// <summary>
     /// Called when the parent <see cref="PhaseBridge"/> is registered with a

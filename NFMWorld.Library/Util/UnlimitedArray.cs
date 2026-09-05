@@ -341,7 +341,7 @@ public partial class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, ILuaUserDat
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
@@ -357,7 +357,7 @@ public partial class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, ILuaUserDat
         return false;
     }
 
-    bool ILuaUserData.TrySetIndex(LuauState state, LuaValue key, LuaValue value)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaRefValue key, LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
@@ -374,11 +374,11 @@ public partial class UnlimitedArray<T> : IList<T>, IReadOnlyList<T>, ILuaUserDat
         return false;
     }
 
-    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
+    IEnumerator<KeyValuePair<LuaRefValue, LuaRefValue>>? ILuaUserData.GetIterator(LuauState state)
     {
         for (var i = 0; i < _size; i++)
         {
-            yield return new KeyValuePair<LuaValue, LuaValue>(i + 1, LuaHelpers.ToLuaValue(state, _items[i]));
+            yield return new KeyValuePair<LuaRefValue, LuaRefValue>(i + 1, LuaHelpers.ToLuaValue(state, _items[i]));
         }
     }
 

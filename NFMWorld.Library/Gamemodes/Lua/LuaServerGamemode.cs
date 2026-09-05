@@ -25,7 +25,7 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
     public ReadOnlyLuaArray<ServerSidePlayerInfo> Players { get; } = new(gamemode.Players);
 
     [LuaName]
-    public LuaTable? Config { get; } = gamemode.Config;
+    public LuaTableRef? Config { get; } = gamemode.Config;
 
     /// <summary>
     /// Gets the latest relayed position for a player, or null if not yet received.
@@ -38,7 +38,7 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
     }
 
     [LuaName]
-    public void BroadcastEvent(string type, LuaTable payload)
+    public void BroadcastEvent(string type, LuaTableRef payload)
     {
         data.BroadcastEvent(MemoryPackSerializer.Serialize(new LuaEventEnvelope
         {
@@ -48,7 +48,7 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
     }
 
     [LuaName]
-    public void FinishRace([LuaShimType("RaceStandings")] LuaTable standings)
+    public void FinishRace([LuaShimType("RaceStandings")] LuaTableRef standings)
     {
         gamemode._snapshot = new GameStateSnapshot
         {
@@ -62,12 +62,12 @@ public partial class LuaServerGamemodeContext(LuaServerGamemode gamemode, IServe
         };
     }
     
-    private static RaceStanding[] ParseStandings(LuaTable table)
+    private static RaceStanding[] ParseStandings(LuaTableRef table)
     {
         var standings = new List<RaceStanding>();
         foreach (var (_, value) in table)
         {
-            if (!value.TryConvertLuaValue<LuaTable>(out var entry))
+            if (!value.TryConvertLuaValue<LuaTableRef>(out var entry))
                 continue;
 
             var playerId = entry.TryGetValue("playerId", out var id) && id.TryConvertLuaValue<string>(out var s) && Guid.TryParse(s, out var guid)
@@ -109,8 +109,8 @@ public sealed class LuaServerGamemode : BaseServerGamemode
     private LuauState _state;
     private IServerGamemodeData? _data;
     internal GameStateSnapshot? _snapshot;
-    private readonly LuaTable? _moduleTable;
-    public LuaTable? Config { get; }
+    private readonly LuaTableRef? _moduleTable;
+    public LuaTableRef? Config { get; }
 
     public override string GamemodeId { get; }
 
@@ -130,7 +130,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/server.luau");
-        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTableRef>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -151,7 +151,7 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         _state["SGM"] = LuaHelpers.ToLuaValue(_state, new LuaServerGamemodeContext(this, data));
 
         var results = _state.DoString(radpack.Files["server"], $"@radpack/{gamemodeId}/server");
-        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTableRef>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -183,19 +183,19 @@ public sealed class LuaServerGamemode : BaseServerGamemode
 
     public override GameStateSnapshot? GetStateSnapshot() => _snapshot;
 
-    private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
+    private LuaRefValue[] Call(string name, params ReadOnlySpan<LuaRefValue> arguments)
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryConvertLuaValue<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunctionRef>(out var function))
         {
-            return [LuaValue.Nil];
+            return [LuaRefValue.Nil];
         }
 
         try
         {
             var resultCount = _state.Call(function, arguments);
-            var values = new LuaValue[resultCount];
+            var values = new LuaRefValue[resultCount];
             for (var i = 0; i < resultCount; i++)
             {
                 values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
@@ -207,6 +207,6 @@ public sealed class LuaServerGamemode : BaseServerGamemode
         {
             Logging.Error($"[LuaServerGamemode:{GamemodeId}] {name} failed: {ex.Message}", ex);
         }
-        return [LuaValue.Nil];
+        return [LuaRefValue.Nil];
     }
 }

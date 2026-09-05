@@ -66,7 +66,7 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
     public PhysicsController Physics { get; } = new(gamemode.Players, gamemode.CurrentStage);
 
     [LuaName]
-    public LuaTable? Config { get; } = gamemode.Config;
+    public LuaTableRef? Config { get; } = gamemode.Config;
 
     [LuaName]
     public LuaClientContext Client { get; } = new(gamemode.GamemodeContext.ClientCallbacks);
@@ -109,7 +109,7 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
     public int CountdownInterval => (int)(10 * (1 / NFMWorldLibrary.Physics.PHYSICS_MULTIPLIER));
 
     [LuaName]
-    public void SendEvent(string type, LuaTable payload)
+    public void SendEvent(string type, LuaTableRef payload)
     {
         gamemode.SendServerEvent(MemoryPackSerializer.Serialize(new LuaEventEnvelope
         {
@@ -163,9 +163,9 @@ public partial class LuaGamemodeContext(LuaGamemode gamemode)
 public sealed class LuaGamemode : BaseClientGamemode
 {
     private readonly LuauState _state;
-    private readonly LuaTable? _moduleTable;
+    private readonly LuaTableRef? _moduleTable;
 
-    public LuaTable? Config { get; }
+    public LuaTableRef? Config { get; }
 
     public override string GamemodeId { get; }
 
@@ -181,7 +181,7 @@ public sealed class LuaGamemode : BaseClientGamemode
         _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
 
         var results = _state.DoFile($"data/gamemodes/{gamemodeId}/client.luau");
-        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTableRef>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -200,7 +200,7 @@ public sealed class LuaGamemode : BaseClientGamemode
         _state["GM"] = LuaHelpers.ToLuaValue(_state, new LuaGamemodeContext(this));
 
         var results = _state.DoString(radpack.Files["client"], $"@radpack/{gamemodeId}/client");
-        if (results is [var value] && value.TryConvertLuaValue<LuaTable>(out var resultTable))
+        if (results is [var value] && value.TryConvertLuaValue<LuaTableRef>(out var resultTable))
         {
             _moduleTable = resultTable;
         }
@@ -268,10 +268,10 @@ public sealed class LuaGamemode : BaseClientGamemode
     }
     
     /// <summary>
-    /// Marshals standings back into a <see cref="LuaTable"/>, mirroring the shape read by
+    /// Marshals standings back into a <see cref="LuaTableRef"/>, mirroring the shape read by
     /// <c>LuaServerGamemode.ParseStandings</c>. Each entry is <c>{ playerId, position, finished }</c>.
     /// </summary>
-    private LuaTable MarshalStandings(RaceStanding[] standings)
+    private LuaTableRef MarshalStandings(RaceStanding[] standings)
     {
         var table = _state.CreateTable();
         var index = 1;
@@ -289,19 +289,19 @@ public sealed class LuaGamemode : BaseClientGamemode
     
     // ── Script invocation ──────────────────────────────────────────
 
-    private LuaValue[] Call(string name, params ReadOnlySpan<LuaValue> arguments)
+    private LuaRefValue[] Call(string name, params ReadOnlySpan<LuaRefValue> arguments)
     {
         if (_moduleTable == null ||
             !_moduleTable.TryGetValue(name, out var value) ||
-            !value.TryConvertLuaValue<LuaFunction>(out var function))
+            !value.TryConvertLuaValue<LuaFunctionRef>(out var function))
         {
-            return [LuaValue.Nil];
+            return [LuaRefValue.Nil];
         }
 
         try
         {
             var resultCount = _state.Call(function, arguments);
-            var values = new LuaValue[resultCount];
+            var values = new LuaRefValue[resultCount];
             for (var i = 0; i < resultCount; i++)
             {
                 values[i] = _state.ToLuaValue(-1 * i); // TODO double check this
@@ -313,6 +313,6 @@ public sealed class LuaGamemode : BaseClientGamemode
         {
             Logging.Error($"[LuaGamemode:{GamemodeId}] {name} failed: {ex.Message}", ex);
         }
-        return [LuaValue.Nil];
+        return [LuaRefValue.Nil];
     }
 }

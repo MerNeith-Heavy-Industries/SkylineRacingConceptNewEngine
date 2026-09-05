@@ -37,7 +37,7 @@ public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
@@ -53,7 +53,7 @@ public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<
         return false;
     }
 
-    bool ILuaUserData.TrySetIndex(LuauState state, LuaValue key, LuaValue value)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaRefValue key, LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
@@ -70,11 +70,11 @@ public class LuaView<T, TView>(IList<T> innerList, Func<T, TView> factory, Func<
         return false;
     }
     
-    IEnumerator<KeyValuePair<LuaValue, LuaValue>>? ILuaUserData.GetIterator(LuauState state)
+    IEnumerator<KeyValuePair<LuaRefValue, LuaRefValue>>? ILuaUserData.GetIterator(LuauState state)
     {
         for (var i = 0; i < Value.Count; i++)
         {
-            yield return new KeyValuePair<LuaValue, LuaValue>(i + 1, LuaHelpers.ToLuaValue(state, LuaProxies.GetOrAdd(this[i]!, factory)));
+            yield return new KeyValuePair<LuaRefValue, LuaRefValue>(i + 1, LuaHelpers.ToLuaValue(state, LuaProxies.GetOrAdd(this[i]!, factory)));
         }
     }
 

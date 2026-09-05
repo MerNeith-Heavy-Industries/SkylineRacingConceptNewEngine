@@ -1005,7 +1005,7 @@ public class SettingsMenu(WorldGame game)
     /// Apply a single setting change from JS. Key is the setting name,
     /// value is parsed from the JsonElement.
     /// </summary>
-    public static void ApplySetting(string key, LuaTable args)
+    public static void ApplySetting(string key, LuaTableRef args)
     {
         switch (key)
         {

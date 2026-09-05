@@ -194,7 +194,6 @@
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.osx-x64.csproj" />
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.win-arm64.csproj" />
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.win-x64.csproj" />
-        <Project Path="NuLua/src/NuLua/NuLua.csproj" />
     </Folder>
     <Folder Name="/NvgSharp/">
         <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj">

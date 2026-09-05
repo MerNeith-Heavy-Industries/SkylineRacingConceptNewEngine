@@ -9,7 +9,7 @@ namespace NFMWorldLibrary.Util;
 /// </summary>
 public static class LuaJson
 {
-    public static byte[] ToJson(LuaTable table)
+    public static byte[] ToJson(LuaTableRef table)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream))
@@ -20,13 +20,13 @@ public static class LuaJson
         return stream.ToArray();
     }
 
-    public static LuaTable FromJson(LuauState state, ReadOnlyMemory<byte> json)
+    public static LuaTableRef FromJson(LuauState state, ReadOnlyMemory<byte> json)
     {
         using var document = JsonDocument.Parse(json);
         return ReadElement(state, document.RootElement);
     }
 
-    private static void WriteTable(Utf8JsonWriter writer, LuaTable table)
+    private static void WriteTable(Utf8JsonWriter writer, LuaTableRef table)
     {
         writer.WriteStartObject();
         foreach (var (key, value) in table)
@@ -38,13 +38,13 @@ public static class LuaJson
         writer.WriteEndObject();
     }
 
-    private static void WriteValue(Utf8JsonWriter writer, string name, LuaValue value)
+    private static void WriteValue(Utf8JsonWriter writer, string name, LuaRefValue value)
     {
         if (value.TryConvertLuaValue<string>(out var s))
             writer.WriteString(name, s);
         else if (value.TryConvertLuaValue<bool>(out var b))
             writer.WriteBoolean(name, b);
-        else if (value.TryConvertLuaValue<LuaTable>(out var table))
+        else if (value.TryConvertLuaValue<LuaTableRef>(out var table))
         {
             writer.WritePropertyName(name);
             WriteTable(writer, table);
@@ -57,7 +57,7 @@ public static class LuaJson
             writer.WriteString(name, value.ToString());
     }
 
-    private static LuaTable ReadElement(LuauState state, JsonElement element)
+    private static LuaTableRef ReadElement(LuauState state, JsonElement element)
     {
         var table = state.CreateTable();
         switch (element.ValueKind)
@@ -76,14 +76,14 @@ public static class LuaJson
         return table;
     }
 
-    private static LuaValue ReadValue(LuauState state, JsonElement element) => element.ValueKind switch
+    private static LuaRefValue ReadValue(LuauState state, JsonElement element) => element.ValueKind switch
     {
-        JsonValueKind.String => LuaValue.FromString(element.GetString()!),
-        JsonValueKind.Number => LuaValue.FromNumber(element.GetDouble()),
-        JsonValueKind.True => LuaValue.FromBoolean(true),
-        JsonValueKind.False => LuaValue.FromBoolean(false),
-        JsonValueKind.Object => LuaValue.FromTable(ReadElement(state, element)),
-        JsonValueKind.Array => LuaValue.FromTable(ReadElement(state, element)),
-        _ => LuaValue.Nil,
+        JsonValueKind.String => LuaRefValue.FromString(element.GetString()!),
+        JsonValueKind.Number => LuaRefValue.FromNumber(element.GetDouble()),
+        JsonValueKind.True => LuaRefValue.FromBoolean(true),
+        JsonValueKind.False => LuaRefValue.FromBoolean(false),
+        JsonValueKind.Object => LuaRefValue.FromTable(ReadElement(state, element)),
+        JsonValueKind.Array => LuaRefValue.FromTable(ReadElement(state, element)),
+        _ => LuaRefValue.Nil,
     };
 }

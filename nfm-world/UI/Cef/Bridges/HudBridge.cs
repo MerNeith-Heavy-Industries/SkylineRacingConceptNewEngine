@@ -37,7 +37,7 @@ public sealed class HudBridge : PhaseBridge
     /// </summary>
     public bool IsSettingsOpen { get; private set; }
 
-    protected override void OnMessage(string type, LuaValue args)
+    protected override void OnMessage(string type, LuaRefValue args)
     {
         switch (type)
         {
