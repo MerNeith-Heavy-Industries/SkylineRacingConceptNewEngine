@@ -106,6 +106,7 @@
     <Project Path="NvgSharp/src/XNA/NvgSharp.FNA.Core.csproj" />
   </Folder>
   <Project Path="LibTessDotNet/LibTessDotNet/LibTessDotNet.csproj" />
+  <Project Path="Microsoft.UI.Reactor.Yoga/Microsoft.UI.Reactor.Yoga.csproj" />
   <Project Path="NanoSvgSharp.Test/NanoSvgSharp.Test.csproj" />
   <Project Path="NanoSvgSharp/NanoSvgSharp.csproj" />
   <Project Path="NAudio.Flac/NAudio.Flac/NAudio.Flac.csproj" />
