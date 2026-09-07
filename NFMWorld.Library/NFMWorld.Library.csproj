@@ -49,6 +49,7 @@
         <ProjectReference Include="..\NFMWorld.PhysicsFS\NFMWorld.PhysicsFS.csproj" />
         <ProjectReference Include="..\NFMWorld.Reactor.ObservableCollections\NFMWorld.Reactor.ObservableCollections.csproj" />
         <ProjectReference Include="..\NFMWorld.Sentry\NFMWorld.Sentry.csproj" />
+        <ProjectReference Include="..\NuLua\src\NuLua.Luau\NuLua.Luau.csproj" />
     </ItemGroup>
 
     <ItemGroup>

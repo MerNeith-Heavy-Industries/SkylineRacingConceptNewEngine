@@ -20,13 +20,13 @@ public struct f64Euler(f64AngleSingle yaw, f64AngleSingle pitch, f64AngleSingle 
         LuaUserDataMetamethods.ToString |
         LuaUserDataMetamethods.Index;
 
-    bool IPrimitive<f64Euler>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool IPrimitive<f64Euler>.TryGetIndex(LuauState state, LuaArgumentValue key, out LuaRefValue value)
     {
         if (key.TryRead<string>(out var strKey))
         {
-            if (strKey == "pitch") { value = LuaValue.FromPrimitive(Pitch); return true; }
-            if (strKey == "yaw") { value = LuaValue.FromPrimitive(Yaw); return true; }
-            if (strKey == "roll") { value = LuaValue.FromPrimitive(Roll); return true; }
+            if (strKey == "pitch") { value = LuaRefValue.FromPrimitive(Pitch); return true; }
+            if (strKey == "yaw") { value = LuaRefValue.FromPrimitive(Yaw); return true; }
+            if (strKey == "roll") { value = LuaRefValue.FromPrimitive(Roll); return true; }
         }
 
         value = default;

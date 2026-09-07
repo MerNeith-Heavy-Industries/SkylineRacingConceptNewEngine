@@ -24,12 +24,12 @@ public struct f64AngleSingle : IComparable, IComparable<f64AngleSingle>, IEquata
         LuaUserDataMetamethods.ToString |
         LuaUserDataMetamethods.Index;
 
-    bool IPrimitive<f64AngleSingle>.TryGetIndex(LuauState state, LuaValue key, out LuaValue value)
+    bool IPrimitive<f64AngleSingle>.TryGetIndex(LuauState state, LuaArgumentValue key, out LuaRefValue value)
     {
         if (key.TryRead<string>(out var strKey))
         {
-            if (strKey == "deg") { value = LuaValue.FromPrimitive(Degrees); return true; }
-            if (strKey == "rad") { value = LuaValue.FromPrimitive(Radians); return true; }
+            if (strKey == "deg") { value = LuaRefValue.FromPrimitive(Degrees); return true; }
+            if (strKey == "rad") { value = LuaRefValue.FromPrimitive(Radians); return true; }
         }
 
         value = default;

@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\FixedMathSharp\src\FixedMathSharp\FixedMathSharp.csproj" />
       <ProjectReference Include="..\Maxine.Extensions\Maxine.Extensions.Mathematics\Maxine.Extensions.Mathematics.csproj" />
+      <ProjectReference Include="..\NuLua\src\NuLua.Luau\NuLua.Luau.csproj" />
     </ItemGroup>
 
 </Project>

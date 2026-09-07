@@ -62,7 +62,7 @@ public static class LuaHelpers
             return LuaRefValue.FromFunction(func);
         if (value is LuaTableRef table)
             return LuaRefValue.FromTable(table);
-        if (value is ILuaState thread)
+        if (value is LuauState thread)
             return LuaRefValue.FromThread(thread);
         
         if (value is fix64 fixed64)
@@ -209,7 +209,59 @@ public static class LuaHelpers
         // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
         return value.TryRead(out outValue);
     }
+
+    public static bool TryConvertLuaValue<T>(this LuaArgumentValue value, [NotNullWhen(true)] out T? outValue)
+    {
+        if (typeof(T) == typeof(fix64))
+        {
+            if (value.TryReadPrimitive<fix64>(out var fixed64))
+            {
+                outValue = (T)(object)fixed64;
+                return true;
+            }
+
+            outValue = default!;
+            return false;
+        }
+        if (typeof(T) == typeof(f64Vector3))
+        {
+            if (value.TryReadPrimitive<f64Vector3>(out var fixed64))
+            {
+                outValue = (T)(object)fixed64;
+                return true;
+            }
+
+            outValue = default!;
+            return false;
+        }
+        if (typeof(T) == typeof(f64AngleSingle))
+        {
+            if (value.TryReadPrimitive<f64AngleSingle>(out var fixed64))
+            {
+                outValue = (T)(object)fixed64;
+                return true;
+            }
+
+            outValue = default!;
+            return false;
+        }
+        if (typeof(T) == typeof(f64Euler))
+        {
+            if (value.TryReadPrimitive<f64Euler>(out var fixed64))
+            {
+                outValue = (T)(object)fixed64;
+                return true;
+            }
+
+            outValue = default!;
+            return false;
+        }
+        
+        // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
+        return value.TryRead(out outValue);
+    }
     
+    [return: Move]
     public static LuaTableRef GamemodeConfigToLuaTable(LuauState state, IReadOnlyDictionary<string, object> dict)
     {
         var table = state.CreateTable();
