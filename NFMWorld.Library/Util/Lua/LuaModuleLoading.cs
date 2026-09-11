@@ -33,7 +33,8 @@ public static class LuaModuleLoading
         ArgumentNullException.ThrowIfNull(state);
         defaultSource ??= new VfsModuleSource(TheVFS.VFS, "vfs");
         RequireContext.Get(state).Reset(defaultSource);
-        state["require"] = LuaRefValue.FromFunction(state.CreateFunction(RequireFunc, 0));
+        using var requireFn = state.CreateFunction(RequireFunc, 0);
+        state["require"] = requireFn;
     }
 
     /// <summary>Registers a gamemode radpack so <c>require</c> calls from its scripts resolve within it.</summary>
@@ -127,7 +128,8 @@ public static class LuaModuleLoading
 
         var cacheValue = state[RequireContext.CacheGlobal];
         LuaTableRef cacheTable;
-        if (cacheValue.IsNil)
+        var freshCacheTable = cacheValue.IsNil;
+        if (freshCacheTable)
         {
             cacheTable = state.CreateTable();
             state[RequireContext.CacheGlobal] = cacheTable;
@@ -143,7 +145,7 @@ public static class LuaModuleLoading
             if (!cached.IsNil)
             {
                 state.Push(cached);
-                cached.Dispose();
+                cached.Return();
                 return 1;
             }
 
@@ -158,14 +160,22 @@ public static class LuaModuleLoading
             state.Push(moduleValue);
             // The module is now cached in `cacheTable` and on the stack, so the temporary
             // registry reference taken by ToLuaValue can be released.
-            moduleValue.Dispose();
+            moduleValue.Return();
             return 1;
         }
         finally
         {
+            // A freshly created cache table isn't backed by `cacheValue` (which was nil), so it
+            // needs its own registry release; an existing table is reached through `cacheValue`
+            // and released below.
+            if (freshCacheTable)
+            {
+                cacheTable.Return();
+            }
+
             // `cacheValue` is a per-call temporary wrapper around the persistent `_NFM_MODULES`
             // global; release its registry reference. No-op when the cache table was freshly created.
-            cacheValue.Dispose();
+            cacheValue.Return();
         }
     }
 
@@ -175,7 +185,7 @@ public static class LuaModuleLoading
     /// </summary>
     static string? GetCallerSource(LuauState state)
     {
-        if (state.Debug.TryGetStackInfo(1, LuaDebugInfoFields.Source, out var info))
+        if (state.TryGetStackInfo(1, LuaDebugInfoFields.Source, out var info))
         {
             return info.Source;
         }

@@ -33,9 +33,9 @@ public sealed class RequireContext
         // Route the lookup to the main state so registered module sources are found regardless of
         // which thread a require runs on.
         var root = state;
-        while (((ILuaState)root).From is { } parent)
+        while (root.From is { } parent)
         {
-            root = (LuauState)parent;
+            root = parent;
         }
 
         return _contexts.GetValue(root, static _ => new RequireContext());

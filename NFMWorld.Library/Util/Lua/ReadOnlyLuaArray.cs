@@ -77,7 +77,7 @@ public partial class ReadOnlyLuaArray<T> : ILuaUserData, IReadOnlyList<T>
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaArgumentValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))

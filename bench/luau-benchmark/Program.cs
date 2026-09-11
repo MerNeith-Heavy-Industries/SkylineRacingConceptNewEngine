@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using LuauBenchmark;
 using NFMWorldLibrary.Util;
 using NuLua;
@@ -22,7 +23,7 @@ var runs = ParseInt(args, 1, 3);
 // path (minidump: 0xC000001D, RIP poisoned to 0xAAAA...). As a stopgap, run on a dedicated
 // thread with a large stack reservation.
 const int MaxStackBytes = 512 * 1024 * 1024;
-Exception? runError = null;
+ExceptionDispatchInfo? runError = null;
 var runner = new Thread(
     () =>
     {
@@ -32,7 +33,7 @@ var runner = new Thread(
         }
         catch (Exception ex)
         {
-            runError = ex;
+            runError = ExceptionDispatchInfo.Capture(ex);
         }
     },
     MaxStackBytes
@@ -41,7 +42,7 @@ runner.Start();
 runner.Join();
 if (runError is not null)
 {
-    throw runError;
+    runError.Throw();
 }
 
 void Run(string scenario, int runs, string[] args)
@@ -215,6 +216,11 @@ static void RunHudRegime(BenchmarkHost host, string path, int frames, int runs, 
                     }
                 }
             }
+        }
+
+        foreach (var ret in rets)
+        {
+            ret.Return();
         }
     }
 

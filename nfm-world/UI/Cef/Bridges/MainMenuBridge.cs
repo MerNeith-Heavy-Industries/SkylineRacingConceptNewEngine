@@ -27,7 +27,7 @@ public sealed class MainMenuBridge : PhaseBridge
     /// </summary>
     public SettingsHandler Settings => _settings;
 
-    protected override void OnMessage(string type, LuaRefValue args)
+    protected override void OnMessage(string type, LuaArgumentValue args)
     {
         switch (type)
         {

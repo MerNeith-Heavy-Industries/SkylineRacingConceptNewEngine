@@ -101,7 +101,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
         var baseMethod = overloads[0];
 
         var argOffset = baseMethod.IsStatic || baseMethod.IsInstanceConstructor ? 0 : 1;
-        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc<global::NuLua.Luau.LuauState> {GetFunctionName(type, baseMethod)} = (state, args) =>");
+        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc {GetFunctionName(type, baseMethod)} = (state, args) =>");
         using (sb.Block(end: "};"))
         {
             if (overloads.Count == 1)
@@ -277,7 +277,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     /// <summary>Emits a static property/field index handler for the type table's metatable.</summary>
     private void EmitStaticIndex(IndentedStringBuilder sb)
     {
-        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc<global::NuLua.Luau.LuauState> {GetStaticMetamethodName(type, Metamethods.Index)} = (state, args) =>");
+        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc {GetStaticMetamethodName(type, Metamethods.Index)} = (state, args) =>");
         using (sb.Block(end: "};"))
         {
             sb.AppendLine("var key = args[1];");
@@ -301,7 +301,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     /// <summary>Emits a static property/field newindex handler for the type table's metatable.</summary>
     private void EmitStaticNewIndex(IndentedStringBuilder sb)
     {
-        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc<global::NuLua.Luau.LuauState> {GetStaticMetamethodName(type, Metamethods.NewIndex)} = (state, args) =>");
+        sb.AppendLine($"internal static readonly global::NuLua.LuaFunc {GetStaticMetamethodName(type, Metamethods.NewIndex)} = (state, args) =>");
         using (sb.Block(end: "};"))
         {
             sb.AppendLine("var key = args[1];");
@@ -337,24 +337,24 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     /// <summary>Emits the per-state type-table factory for a non-enum type.</summary>
     private void EmitTypeTableInit(IndentedStringBuilder sb)
     {
-        sb.AppendLine($"internal static global::NuLua.LuaTable {GetInitMethodName(type)}(global::NuLua.Luau.LuauState state)");
+        sb.AppendLine($"internal static global::NuLua.LuaTableRef {GetInitMethodName(type)}(global::NuLua.Luau.LuauState state)");
         using (sb.Block())
         {
             sb.AppendLine($"var typeTable = state.CreateTable(0, {type.StaticMethods.Count(IsMethodBindable) + type.Constructors.Count(IsMethodBindable) + type.InstanceMethods.Count(IsMethodBindable)});");
 
             foreach (var method in type.StaticMethods.Where(IsMethodBindable))
             {
-                sb.AppendLine($"typeTable[\"{method.LuaName}\"] = global::NuLua.LuaValue.FromFunction(state.CreateFunction({GetFunctionName(type, method)}));");
+                sb.AppendLine($"typeTable.InsertAndMove(\"{method.LuaName}\", global::NuLua.LuaRefValue.FromFunction(state.CreateFunction({GetFunctionName(type, method)})));");
             }
             foreach (var ctor in type.Constructors.Where(IsMethodBindable))
             {
-                sb.AppendLine($"typeTable[\"{ctor.LuaName}\"] = global::NuLua.LuaValue.FromFunction(state.CreateFunction({GetFunctionName(type, ctor)}));");
+                sb.AppendLine($"typeTable.InsertAndMove(\"{ctor.LuaName}\", global::NuLua.LuaRefValue.FromFunction(state.CreateFunction({GetFunctionName(type, ctor)})));");
             }
             // lua convention: static type table gets instance methods taking self as first parameter
             // it's very rare that you'd use these, but tooling expects it to be there
             foreach (var method in type.InstanceMethods.Where(IsMethodBindable))
             {
-                sb.AppendLine($"typeTable[\"{method.LuaName}\"] = global::NuLua.LuaValue.FromFunction(state.CreateFunction({GetFunctionName(type, method)}));");
+                sb.AppendLine($"typeTable.InsertAndMove(\"{method.LuaName}\", global::NuLua.LuaRefValue.FromFunction(state.CreateFunction({GetFunctionName(type, method)})));");
             }
 
             if (type.HasStaticIndex || type.HasStaticNewIndex)
@@ -362,11 +362,11 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
                 sb.AppendLine("var typeTable_metatable = state.CreateTable(0, 2);");
                 if (type.HasStaticIndex)
                 {
-                    sb.AppendLine($"typeTable_metatable[\"{Metamethods.Index}\"] = global::NuLua.LuaValue.FromFunction(state.CreateFunction({GetStaticMetamethodName(type, Metamethods.Index)}));");
+                    sb.AppendLine($"typeTable_metatable.InsertAndMove(\"{Metamethods.Index}\", global::NuLua.LuaRefValue.FromFunction(state.CreateFunction({GetStaticMetamethodName(type, Metamethods.Index)})));");
                 }
                 if (type.HasStaticNewIndex)
                 {
-                    sb.AppendLine($"typeTable_metatable[\"{Metamethods.NewIndex}\"] = global::NuLua.LuaValue.FromFunction(state.CreateFunction({GetStaticMetamethodName(type, Metamethods.NewIndex)}));");
+                    sb.AppendLine($"typeTable_metatable.InsertAndMove(\"{Metamethods.NewIndex}\", global::NuLua.LuaRefValue.FromFunction(state.CreateFunction({GetStaticMetamethodName(type, Metamethods.NewIndex)})));");
                 }
                 sb.AppendLine("state.PushValue(typeTable.Reference);");
                 sb.AppendLine("state.SetMetatable(-1, typeTable_metatable);");
@@ -380,13 +380,13 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
     /// <summary>Emits the per-state type-table factory for an enum (members created via CreateEnumUserData).</summary>
     private void EmitEnumTypeTable(IndentedStringBuilder sb)
     {
-        sb.AppendLine($"internal static global::NuLua.LuaTable {GetInitMethodName(type)}(global::NuLua.Luau.LuauState state)");
+        sb.AppendLine($"internal static global::NuLua.LuaTableRef {GetInitMethodName(type)}(global::NuLua.Luau.LuauState state)");
         using (sb.Block())
         {
             sb.AppendLine($"var typeTable = state.CreateTable(0, {type.EnumMembers.Length});");
             foreach (var member in type.EnumMembers)
             {
-                sb.AppendLine($"typeTable[\"{member.LuaName}\"] = global::NuLua.LuaValue.FromUserData(state.CreateEnumUserData({type.FullTypeName}.{member.Name}));");
+                sb.AppendLine($"typeTable.InsertAndMove(\"{member.LuaName}\", global::NuLua.LuaRefValue.FromUserData(state.CreateEnumUserData({type.FullTypeName}.{member.Name})));");
             }
             sb.AppendLine("return typeTable;");
         }
@@ -438,7 +438,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
 
     private void EmitTryGetIndex(IndentedStringBuilder sb)
     {
-        sb.AppendLine("public bool TryGetIndex(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue key, out global::NuLua.LuaValue value)");
+        sb.AppendLine("public bool TryGetIndex(global::NuLua.Luau.LuauState state, global::NuLua.LuaArgumentValue key, out global::NuLua.LuaRefValue value)");
         using (sb.Block())
         {
             sb.AppendLine("if (key.TryRead<string>(out var stringKey))");
@@ -454,7 +454,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
                 }
                 foreach (var method in type.InstanceMethods.Where(IsMethodBindable))
                 {
-                    sb.AppendLine($"if (stringKey == \"{method.LuaName}\") {{ value = global::NuLua.LuaValue.FromFunction(state.CreateFunction(global::{ns}.GeneratorGenerated.{GetFunctionName(type, method)})); return true; }}");
+                    sb.AppendLine($"if (stringKey == \"{method.LuaName}\") {{ value = global::NuLua.LuaRefValue.FromFunction(state.CreateFunction(global::{ns}.GeneratorGenerated.{GetFunctionName(type, method)})); return true; }}");
                 }
             }
             sb.AppendLine("value = default;");
@@ -464,7 +464,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
 
     private void EmitTrySetIndex(IndentedStringBuilder sb)
     {
-        sb.AppendLine("public bool TrySetIndex(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue key, global::NuLua.LuaValue value)");
+        sb.AppendLine("public bool TrySetIndex(global::NuLua.Luau.LuauState state, global::NuLua.LuaArgumentValue key, global::NuLua.LuaArgumentValue value)");
         using (sb.Block())
         {
             sb.AppendLine("if (key.TryRead<string>(out var stringKey))");
@@ -516,7 +516,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
         var isBoolReturn = OperatorIsBoolean(op.MetamethodName);
         var selfType = type.FullTypeName;
 
-        sb.Append($"public static {(isBoolReturn ? "bool" : "global::NuLua.LuaValue")} {methodName}(global::NuLua.Luau.LuauState state, {selfType} self");
+        sb.Append($"public static {(isBoolReturn ? "bool" : "global::NuLua.LuaRefValue")} {methodName}(global::NuLua.Luau.LuauState state, {selfType} self");
         if (!op.IsUnary)
         {
             sb.Append($", {selfType} other");
@@ -532,7 +532,7 @@ internal sealed class LuaBindingTypeGenerator(LuaTypeMetadata type, string ns) :
             else
             {
                 sb.AppendLine($"var result = {expr};");
-                sb.AppendLine($"return global::NuLua.LuaValue.FromUserData(state.CreateUserData(result));");
+                sb.AppendLine($"return global::NuLua.LuaRefValue.FromUserData(state.CreateUserData(result));");
             }
         }
     }
@@ -597,50 +597,50 @@ internal abstract class BaseLuaTypeGenerator
 {
     protected static string MarshalToLua(string state, string variable, BaseLuaTypeMetadata variableType)
     {
-        // Fixed-precision primitives → LuaValue.FromPrimitive (ids 0..3; metatables registered later).
-        if (variableType.IsFixed64) return $"global::NuLua.LuaValue.FromPrimitive(0, {variable})";
-        if (variableType.IsFixed64AngleSingle) return $"global::NuLua.LuaValue.FromPrimitive(1, {variable})";
-        if (variableType.IsFixed64Euler) return $"global::NuLua.LuaValue.FromPrimitive(2, {variable})";
-        if (variableType.IsFixed64Vector3) return $"global::NuLua.LuaValue.FromPrimitive(3, {variable})";
+        // Fixed-precision primitives → LuaRefValue.FromPrimitive (ids 0..3; metatables registered later).
+        if (variableType.IsFixed64) return $"global::NuLua.LuaRefValue.FromPrimitive(0, {variable})";
+        if (variableType.IsFixed64AngleSingle) return $"global::NuLua.LuaRefValue.FromPrimitive(1, {variable})";
+        if (variableType.IsFixed64Euler) return $"global::NuLua.LuaRefValue.FromPrimitive(2, {variable})";
+        if (variableType.IsFixed64Vector3) return $"global::NuLua.LuaRefValue.FromPrimitive(3, {variable})";
 
         // Nullable<T> marshals as the underlying value, or nil when null.
         if (variableType.IsNullableValueType)
         {
             var underlying = variableType.NullableUnderlyingType!;
             var inner = MarshalToLua(state, $"{variable}.Value", underlying);
-            return $"({variable}.HasValue ? {inner} : global::NuLua.LuaValue.Nil)";
+            return $"({variable}.HasValue ? {inner} : global::NuLua.LuaRefValue.Nil)";
         }
 
         // Enums → CreateEnumUserData.
         if (variableType.IsEnum)
-            return $"global::NuLua.LuaValue.FromUserData({state}.CreateEnumUserData({variable}))";
+            return $"global::NuLua.LuaRefValue.FromUserData({state}.CreateEnumUserData({variable}))";
 
         // Userdata: [LuaVisible] types + hand-written ILuaUserData<T>.
         if (variableType.IsILuaUserData || (variableType.HasLuaVisibleAttr && !variableType.IsOpenGeneric && !variableType.IsConstructedGeneric))
             if (variableType.IsValueType)
-                return $"global::NuLua.LuaValue.FromUserData({state}.CreateUserData({variable}))";
+                return $"global::NuLua.LuaRefValue.FromUserData({state}.CreateUserData({variable}))";
             else
-                return $"({variable} is not null ? global::NuLua.LuaValue.FromUserData({state}.CreateUserData({variable})) : global::NuLua.LuaValue.Nil)";
+                return $"({variable} is not null ? global::NuLua.LuaRefValue.FromUserData({state}.CreateUserData({variable})) : global::NuLua.LuaRefValue.Nil)";
 
         // Lua-native pass-through values.
         if (variableType.IsLuaValue) return variable;
-        if (variableType.IsLuaTable) return $"global::NuLua.LuaValue.FromTable({variable})";
-        if (variableType.IsLuaFunction) return $"global::NuLua.LuaValue.FromFunction({variable})";
-        if (variableType.IsLuaThread) return $"global::NuLua.LuaValue.FromThread({variable})";
+        if (variableType.IsLuaTable) return $"global::NuLua.LuaRefValue.FromTable({variable})";
+        if (variableType.IsLuaFunction) return $"global::NuLua.LuaRefValue.FromFunction({variable})";
+        if (variableType.IsLuaThread) return $"global::NuLua.LuaRefValue.FromThread({variable})";
 
         // Builtin scalars.
         switch (variableType.SpecialType)
         {
             case SpecialType.System_Boolean:
-                return $"global::NuLua.LuaValue.FromBoolean({variable})";
+                return $"global::NuLua.LuaRefValue.FromBoolean({variable})";
             case SpecialType.System_String:
-                return $"global::NuLua.LuaValue.FromString({variable})";
+                return $"global::NuLua.LuaRefValue.FromString({variable})";
             case SpecialType.System_Char:
-                return $"global::NuLua.LuaValue.FromString(({variable}).ToString())";
+                return $"global::NuLua.LuaRefValue.FromString(({variable}).ToString())";
             default:
                 // All remaining builtin numeric types marshall as numbers.
                 if (variableType.IsBuiltIn)
-                    return $"global::NuLua.LuaValue.FromNumber((double)({variable}))";
+                    return $"global::NuLua.LuaRefValue.FromNumber((double)({variable}))";
                 return variable;
         }
     }

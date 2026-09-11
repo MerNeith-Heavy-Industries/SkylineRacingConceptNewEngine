@@ -111,156 +111,136 @@ public static class LuaHelpers
         return false;
     }
 
-    /// <summary>Converts a <see cref="LuaRefValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
-    public static T ConvertLuaValue<T>(this LuaRefValue value)
+    extension(LuaRefValue value)
     {
-        if (typeof(T) == typeof(object))
+        /// <summary>Converts a <see cref="LuaRefValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
+        public T ConvertLuaValue<T>()
         {
-            if (value.TryReadPrimitive<fix64>(out var fixed64)) return (T)(object)fixed64;
-            if (value.TryReadPrimitive<f64Vector3>(out var f64Vector3)) return (T)(object)f64Vector3;
-            if (value.TryReadPrimitive<f64AngleSingle>(out var f64AngleSingle)) return (T)(object)f64AngleSingle;
-            if (value.TryReadPrimitive<f64Euler>(out var f64Euler)) return (T)(object)f64Euler;
+            return value.ConvertLuaValue<LuaRefValue, T>();
         }
 
-        if (typeof(T) == typeof(fix64))
+        public bool TryConvertLuaValue<T>([NotNullWhen(true)] out T? outValue)
         {
-            if (value.TryReadPrimitive<fix64>(out var fixed64)) return (T)(object)fixed64;
-            return default!;
-        }
-
-        if (typeof(T) == typeof(f64Vector3))
-        {
-            if (value.TryReadPrimitive<f64Vector3>(out var f64Vector3)) return (T)(object)f64Vector3;
-            return default!;
-        }
-
-        if (typeof(T) == typeof(f64AngleSingle))
-        {
-            if (value.TryReadPrimitive<f64AngleSingle>(out var f64AngleSingle)) return (T)(object)f64AngleSingle;
-            return default!;
-        }
-
-        if (typeof(T) == typeof(f64Euler))
-        {
-            if (value.TryReadPrimitive<f64Euler>(out var f64Euler)) return (T)(object)f64Euler;
-            return default!;
-        }
-
-        // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
-        if (value.TryConvertLuaValue<T>(out var result))
-            return result;
-
-        ThrowInvalidOperationException();
-        return default!;
-
-        void ThrowInvalidOperationException()
-        {
-            throw new InvalidOperationException($"Cannot convert {value.Type} to {typeof(T).Name}");
+            return value.TryConvertLuaValue<LuaRefValue, T>(out outValue);
         }
     }
 
-    public static bool TryConvertLuaValue<T>(this LuaRefValue value, [NotNullWhen(true)] out T? outValue)
+    extension(LuaArgumentValue value)
     {
-        if (typeof(T) == typeof(fix64))
+        /// <summary>Converts a <see cref="LuaArgumentValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
+        public T ConvertLuaValue<T>()
         {
-            if (value.TryReadPrimitive<fix64>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
+            return value.ConvertLuaValue<LuaArgumentValue, T>();
         }
-        if (typeof(T) == typeof(f64Vector3))
+
+        public bool TryConvertLuaValue<T>([NotNullWhen(true)] out T? outValue)
         {
-            if (value.TryReadPrimitive<f64Vector3>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
+            return value.TryConvertLuaValue<LuaArgumentValue, T>(out outValue);
         }
-        if (typeof(T) == typeof(f64AngleSingle))
+    }
+
+    extension<TSelf>(TSelf value) where TSelf : ILuaValue<TSelf>, allows ref struct
+    {
+        public bool TryConvertLuaValue<T>([NotNullWhen(true)] out T? outValue)
         {
-            if (value.TryReadPrimitive<f64AngleSingle>(out var fixed64))
+            if (typeof(T) == typeof(fix64))
             {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
+                if (value.TryReadPrimitive<fix64>(out var fixed64))
+                {
+                    outValue = (T)(object)fixed64;
+                    return true;
+                }
 
-            outValue = default!;
-            return false;
-        }
-        if (typeof(T) == typeof(f64Euler))
-        {
-            if (value.TryReadPrimitive<f64Euler>(out var fixed64))
+                outValue = default!;
+                return false;
+            }
+            if (typeof(T) == typeof(f64Vector3))
             {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
+                if (value.TryReadPrimitive<f64Vector3>(out var fixed64))
+                {
+                    outValue = (T)(object)fixed64;
+                    return true;
+                }
 
-            outValue = default!;
-            return false;
-        }
+                outValue = default!;
+                return false;
+            }
+            if (typeof(T) == typeof(f64AngleSingle))
+            {
+                if (value.TryReadPrimitive<f64AngleSingle>(out var fixed64))
+                {
+                    outValue = (T)(object)fixed64;
+                    return true;
+                }
+
+                outValue = default!;
+                return false;
+            }
+            if (typeof(T) == typeof(f64Euler))
+            {
+                if (value.TryReadPrimitive<f64Euler>(out var fixed64))
+                {
+                    outValue = (T)(object)fixed64;
+                    return true;
+                }
+
+                outValue = default!;
+                return false;
+            }
         
-        // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
-        return value.TryRead(out outValue);
+            // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
+            return value.TryRead(out outValue);
+        }
+
+        /// <summary>Converts a <see cref="LuaRefValue"/> to <typeparamref name="T"/> with flexible coercion.</summary>
+        public T ConvertLuaValue<T>()
+        {
+            if (typeof(T) == typeof(object))
+            {
+                if (value.TryReadPrimitive<fix64>(out var fixed64)) return (T)(object)fixed64;
+                if (value.TryReadPrimitive<f64Vector3>(out var f64Vector3)) return (T)(object)f64Vector3;
+                if (value.TryReadPrimitive<f64AngleSingle>(out var f64AngleSingle)) return (T)(object)f64AngleSingle;
+                if (value.TryReadPrimitive<f64Euler>(out var f64Euler)) return (T)(object)f64Euler;
+            }
+
+            if (typeof(T) == typeof(fix64))
+            {
+                if (value.TryReadPrimitive<fix64>(out var fixed64)) return (T)(object)fixed64;
+                return default!;
+            }
+
+            if (typeof(T) == typeof(f64Vector3))
+            {
+                if (value.TryReadPrimitive<f64Vector3>(out var f64Vector3)) return (T)(object)f64Vector3;
+                return default!;
+            }
+
+            if (typeof(T) == typeof(f64AngleSingle))
+            {
+                if (value.TryReadPrimitive<f64AngleSingle>(out var f64AngleSingle)) return (T)(object)f64AngleSingle;
+                return default!;
+            }
+
+            if (typeof(T) == typeof(f64Euler))
+            {
+                if (value.TryReadPrimitive<f64Euler>(out var f64Euler)) return (T)(object)f64Euler;
+                return default!;
+            }
+
+            // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
+            if (value.TryConvertLuaValue<TSelf, T>(out var result))
+                return result;
+
+            ThrowInvalidOperationException(value);
+            return default!;
+
+            static void ThrowInvalidOperationException(TSelf value)
+            {
+                throw new InvalidOperationException($"Cannot convert {value.Type} to {typeof(T).Name}");
+            }
+        }
     }
 
-    public static bool TryConvertLuaValue<T>(this LuaArgumentValue value, [NotNullWhen(true)] out T? outValue)
-    {
-        if (typeof(T) == typeof(fix64))
-        {
-            if (value.TryReadPrimitive<fix64>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
-        }
-        if (typeof(T) == typeof(f64Vector3))
-        {
-            if (value.TryReadPrimitive<f64Vector3>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
-        }
-        if (typeof(T) == typeof(f64AngleSingle))
-        {
-            if (value.TryReadPrimitive<f64AngleSingle>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
-        }
-        if (typeof(T) == typeof(f64Euler))
-        {
-            if (value.TryReadPrimitive<f64Euler>(out var fixed64))
-            {
-                outValue = (T)(object)fixed64;
-                return true;
-            }
-
-            outValue = default!;
-            return false;
-        }
-        
-        // Let LuaValue's own conversion handle it (supports double, string, bool, etc.)
-        return value.TryRead(out outValue);
-    }
-    
     [return: Move]
     public static LuaTableRef GamemodeConfigToLuaTable(LuauState state, IReadOnlyDictionary<string, object> dict)
     {

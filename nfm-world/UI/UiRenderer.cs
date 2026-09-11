@@ -38,7 +38,7 @@ public class UiRenderer : IDisposable
         return () => _toLuaHandlers.TryRemove(KeyValuePair.Create(key, (@event, callback)));
     }
 
-    private void Call(string method, LuaRefValue payload)
+    private void Call(string method, LuaArgumentValue payload)
     {
         // Dispatch to the first registered handler.
         // Only one phase is active at a time, so we dispatch to whichever handler is registered.
@@ -70,7 +70,7 @@ public class UiRenderer : IDisposable
     /// <summary>
     /// Delegate for handling Lua → C# messages.
     /// </summary>
-    public delegate void MessageHandler(string method, LuaRefValue payload);
+    public delegate void MessageHandler(string method, LuaArgumentValue payload);
 
     /// <summary>
     /// Register a per-phase message handler. Only one handler per phase ID is allowed.

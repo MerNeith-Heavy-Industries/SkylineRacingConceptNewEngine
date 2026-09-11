@@ -135,9 +135,6 @@
             <BuildType Project="Release" />
         </Project>
     </Folder>
-    <Folder Name="/Lua-CSharp/sandbox/">
-        <Project Path="Lua-CSharp/sandbox/CallProfile/CallProfile.csproj" />
-    </Folder>
     <Folder Name="/Lua-CSharp/src/" />
     <Folder Name="/Maxine.Extensions/">
         <Project Path="Maxine.Extensions/Maxine.Extensions.Mathematics.Tests/Maxine.Extensions.Mathematics.Tests.csproj">
@@ -194,6 +191,9 @@
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.osx-x64.csproj" />
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.win-arm64.csproj" />
         <Project Path="NuLua/src/NuLua.Runtime.Luau/NuLua.Runtime.Luau.win-x64.csproj" />
+      <Project Path="NuLua/tests/NuLua.Tests.Interop/NuLua.Tests.Interop.csproj" />
+      <Project Path="NuLua/tests/NuLua.Tests/NuLua.Tests.csproj" />
+      <Project Path="NuLua/tools/CodeGen/CodeGen.csproj" />
     </Folder>
     <Folder Name="/NvgSharp/">
         <Project Path="NvgSharp/src/NvgSharp.Text/NvgSharp.Text.FNA.Core.csproj">

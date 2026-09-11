@@ -33,10 +33,10 @@ public partial class LuaDictionary<TKey, TValue> : ILuaUserData, IDictionary<TKe
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaArgumentValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
-        if (LuaHelpers.TryConvertLuaValue<TKey>(key, out var typedKey))
+        if (key.TryConvertLuaValue<TKey>(out var typedKey))
         {
             value = LuaHelpers.ToLuaValue(state, this[typedKey]);
             return true;
@@ -46,11 +46,11 @@ public partial class LuaDictionary<TKey, TValue> : ILuaUserData, IDictionary<TKe
         return false;
     }
 
-    bool ILuaUserData.TrySetIndex(LuauState state, LuaRefValue key, LuaRefValue value)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaArgumentValue key, LuaArgumentValue value)
     {
-        if (LuaHelpers.TryConvertLuaValue<TKey>(key, out var typedKey))
+        if (key.TryConvertLuaValue<TKey>(out var typedKey))
         {
-            if (LuaHelpers.TryConvertLuaValue<TValue>(value, out var typedValue))
+            if (value.TryConvertLuaValue<TValue>(out var typedValue))
             {
                 this[typedKey] = typedValue;
                 return true;

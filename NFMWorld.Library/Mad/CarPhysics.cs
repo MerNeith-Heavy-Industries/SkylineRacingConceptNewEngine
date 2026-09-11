@@ -3159,7 +3159,7 @@ public readonly struct Array2D<T>(int rows, int columns) : IEnumerable<T>, ILuaU
         LuaUserDataMetamethods.Iter |
         LuaUserDataMetamethods.Length;
 
-    bool ILuaUserData.TryGetIndex(LuauState state, LuaRefValue key, out LuaRefValue value)
+    bool ILuaUserData.TryGetIndex(LuauState state, LuaArgumentValue key, out LuaRefValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))
@@ -3175,7 +3175,7 @@ public readonly struct Array2D<T>(int rows, int columns) : IEnumerable<T>, ILuaU
         return false;
     }
 
-    bool ILuaUserData.TrySetIndex(LuauState state, LuaRefValue key, LuaRefValue value)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaArgumentValue key, LuaArgumentValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))

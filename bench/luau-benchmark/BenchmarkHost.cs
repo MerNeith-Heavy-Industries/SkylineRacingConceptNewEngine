@@ -54,7 +54,7 @@ public sealed class BenchmarkHost
         // captures the `UiLib` global at module-load time.
         LuaUiLibrary.Register(_state, SetActiveRoot, Call, OnEvent);
 
-        var react = LoadReact();
+        using var react = LoadReact();
         _state["React"] = react;
 
         RegisterBenchGlobals();
@@ -64,7 +64,7 @@ public sealed class BenchmarkHost
 
     void SetActiveRoot(View view) => ActiveRoot = view;
 
-    void Call(string method, LuaRefValue payload) { }
+    void Call(string method, LuaArgumentValue payload) { }
 
     Action OnEvent(string @event, Action<LuaRefValue> callback)
     {
@@ -105,23 +105,29 @@ public sealed class BenchmarkHost
 
     void RegisterBenchGlobals()
     {
-        _state["__bench_push"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
+        using var pushFn = _state.CreateFunction((state, args) =>
         {
             var evt = args[0].ConvertLuaValue<string>();
             var payload = args[1];
-            PushEvent(evt, payload);
+            using var payloadValue = payload.Read<LuaRefValue>();
+            PushEvent(evt, payloadValue);
             return state.Return();
-        }));
-        _state["__bench_flush"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
+        });
+        _state["__bench_push"] = pushFn;
+
+        using var flushFn = _state.CreateFunction((state, args) =>
         {
             FlushPendingTasks();
             return state.Return();
-        }));
-        _state["__bench_reset_stats"] = LuaRefValue.FromFunction(_state.CreateFunction((state, args) =>
+        });
+        _state["__bench_flush"] = flushFn;
+
+        using var resetStatsFn = _state.CreateFunction((state, args) =>
         {
             LuaUiHostStats.Reset();
             return state.Return();
-        }));
+        });
+        _state["__bench_reset_stats"] = resetStatsFn;
     }
 
     // ---- Script loading ------------------------------------------------------
@@ -152,6 +158,8 @@ public sealed class BenchmarkHost
         var sw = Stopwatch.StartNew();
         var results = CallFunction(_state, runFunction, args);
         sw.Stop();
+
+        runFn.Return();
 
         double cpu = double.NaN;
         if (results.Length > 0 && results[0].TryConvertLuaValue<double>(out var c))

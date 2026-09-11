@@ -107,7 +107,7 @@ public partial class LuaArray<T> : ILuaUserData, IList<T>, IReadOnlyList<T>
         return false;
     }
 
-    bool ILuaUserData.TrySetIndex(LuauState state, LuaRefValue key, LuaRefValue value)
+    bool ILuaUserData.TrySetIndex(LuauState state, LuaArgumentValue key, LuaArgumentValue value)
     {
         // Integer key → array index (Lua is 1-indexed)
         if (key.TryConvertLuaValue<double>(out var num) && LuaHelpers.IsLuaIndex(num, out var index))

@@ -10,7 +10,7 @@ public sealed class TestPhaseBridge() : PhaseBridge("test")
 {
     public override bool EnableInput => true;
 
-    protected override void OnMessage(string type, LuaRefValue args)
+    protected override void OnMessage(string type, LuaArgumentValue args)
     {
         switch (type)
         {

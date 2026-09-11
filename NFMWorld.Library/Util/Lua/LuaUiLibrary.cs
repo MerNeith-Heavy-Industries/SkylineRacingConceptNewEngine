@@ -12,34 +12,34 @@ namespace NFMWorldLibrary.Util;
 
 public static class LuaUiLibrary
 {
-    public static void Register(LuauState state, Action<View> setActiveRoot, Action<string, LuaRefValue> call,
+    public static void Register(LuauState state, Action<View> setActiveRoot, Action<string, LuaArgumentValue> call,
         Func<string, Action<LuaRefValue>, Action> onEvent)
     {
-        var library = state.CreateTable();
-        library["createRoot"] = state.CreateFunction(CreateRoot);
-        library["createInstance"] = state.CreateFunction(CreateInstance);
-        library["createTextInstance"] = state.CreateFunction(CreateTextInstance);
-        library["appendChild"] = state.CreateFunction(AppendChild);
-        library["insertBefore"] = state.CreateFunction(InsertBefore);
-        library["removeChild"] = state.CreateFunction(RemoveChild);
-        library["setProperty"] = state.CreateFunction(SetProperty);
-        library["commitTextUpdate"] = state.CreateFunction(CommitTextUpdate);
-        library["setActiveRoot"] = state.CreateFunction((_, args) =>
+        using var library = state.CreateTable();
+        library.InsertAndMove("createRoot", state.CreateFunction(CreateRoot));
+        library.InsertAndMove("createInstance", state.CreateFunction(CreateInstance));
+        library.InsertAndMove("createTextInstance", state.CreateFunction(CreateTextInstance));
+        library.InsertAndMove("appendChild", state.CreateFunction(AppendChild));
+        library.InsertAndMove("insertBefore", state.CreateFunction(InsertBefore));
+        library.InsertAndMove("removeChild", state.CreateFunction(RemoveChild));
+        library.InsertAndMove("setProperty", state.CreateFunction(SetProperty));
+        library.InsertAndMove("commitTextUpdate", state.CreateFunction(CommitTextUpdate));
+        library.InsertAndMove("setActiveRoot", state.CreateFunction((_, args) =>
         {
             var view = args[0].ConvertLuaValue<View>();
             setActiveRoot(view);
 
             return state.Return();
-        });
-        library["call"] = state.CreateFunction((_, args) =>
+        }));
+        library.InsertAndMove("call", state.CreateFunction((_, args) =>
         {
             var method = args[0].ConvertLuaValue<string>();
             var payload = args[1];
             call(method, payload);
 
             return state.Return();
-        });
-        library["onEvent"] = state.CreateFunction((substate, args) =>
+        }));
+        library.InsertAndMove("onEvent", state.CreateFunction((substate, args) =>
         {
             var @event = args[0].ConvertLuaValue<string>();
             var callback = args[1].ConvertLuaValue<LuaFunctionRef>();
@@ -48,14 +48,15 @@ public static class LuaUiLibrary
             {
                 state.Call(callback, value);
             });
-            
+
             return state.Return(substate.CreateFunction((substate1, args1) =>
             {
                 unregister();
-                return state.Return();
+                callback.Return();
+                return substate1.Return();
             }));
-        });
-        library["defer"] = state.CreateFunction((substate, args) =>
+        }));
+        library.InsertAndMove("defer", state.CreateFunction((substate, args) =>
         {
             var callback = args[0].ConvertLuaValue<LuaFunctionRef>();
 
@@ -63,24 +64,28 @@ public static class LuaUiLibrary
             // it runs in GameThreadContext.ExecutePendingTasks() at the end
             // of the frame's Update, so every setState in a frame coalesces
             // into a single deferred re-render (scheduler batching).
-            GameThreadContext.Current.Post(_ => { state.Call(callback); }, null);
+            GameThreadContext.Current.Post(_ =>
+            {
+                state.Call(callback);
+                callback.Return();
+            }, null);
 
             return state.Return();
-        });
+        }));
 
         state["UiLib"] = library;
     }
 
-    internal static readonly LuaFunc<LuauState> CreateRoot = (state, args) =>
+    internal static readonly LuaFunc CreateRoot = (state, args) =>
     {
         return state.Return(LuaHelpers.ToLuaValue(state, new View()));
     };
 
-    internal static readonly LuaFunc<LuauState> CreateInstance = (state, args) =>
+    internal static readonly LuaFunc CreateInstance = (state, args) =>
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateInstanceCount++;
         var vtype = args[0].ConvertLuaValue<string>();
-        var props = args[1].ConvertLuaValue<LuaTableRef>();
+        using var props = args[1].ConvertLuaValue<LuaTableRef>();
         
         Logging.Debug($"createInstance {vtype}");
 
@@ -147,7 +152,7 @@ public static class LuaUiLibrary
         throw new InvalidOperationException($"Unknown vnode type {vtype}");
     };
 
-    internal static readonly LuaFunc<LuauState> CreateTextInstance = (state, args) =>
+    internal static readonly LuaFunc CreateTextInstance = (state, args) =>
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.CreateTextCount++;
         var text = args[0].ConvertLuaValue<string>();
@@ -157,7 +162,7 @@ public static class LuaUiLibrary
         return state.Return(LuaHelpers.ToLuaValue(state, new TextNode() { Text = text }));
     };
 
-    internal static readonly LuaFunc<LuauState> AppendChild = (state, args) =>
+    internal static readonly LuaFunc AppendChild = (state, args) =>
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = args[0].ConvertLuaValue<Node>();
@@ -179,7 +184,7 @@ public static class LuaUiLibrary
         return state.Return();
     };
 
-    internal static readonly LuaFunc<LuauState> InsertBefore = (state, args) =>
+    internal static readonly LuaFunc InsertBefore = (state, args) =>
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = args[0].ConvertLuaValue<Node>();
@@ -205,7 +210,7 @@ public static class LuaUiLibrary
         return state.Return();
     };
 
-    internal static readonly LuaFunc<LuauState> RemoveChild = (state, args) =>
+    internal static readonly LuaFunc RemoveChild = (state, args) =>
     {
         if (LuaUiHostStats.Enabled) LuaUiHostStats.StructureCount++;
         var parent = args[0].ConvertLuaValue<Node>();
@@ -223,7 +228,7 @@ public static class LuaUiLibrary
         return state.Return();
     };
 
-    internal static readonly LuaFunc<LuauState> SetProperty = (state, args) =>
+    internal static readonly LuaFunc SetProperty = (state, args) =>
     {
         var t0 = LuaUiHostStats.Enabled ? Stopwatch.GetTimestamp() : 0;
         var instance = args[0].ConvertLuaValue<Node>();
@@ -246,7 +251,7 @@ public static class LuaUiLibrary
         return state.Return();
     };
 
-    internal static readonly LuaFunc<LuauState> CommitTextUpdate = (state, args) =>
+    internal static readonly LuaFunc CommitTextUpdate = (state, args) =>
     {
         var t0 = LuaUiHostStats.Enabled ? Stopwatch.GetTimestamp() : 0;
         var textInstance = args[0].ConvertLuaValue<TextNode>();
@@ -266,14 +271,14 @@ public static class LuaUiLibrary
         return state.Return();
     };
 
-    private static void AssignComponentProperty(string key, LuaRefValue rawvalue, Component cmp, LuauState state)
+    private static void AssignComponentProperty<T>(string key, T rawvalue, Component cmp, LuauState state) where T : ILuaValue<T>, allows ref struct
     {
         switch (key)
         {
-            case "name" when rawvalue.TryConvertLuaValue<string>(out var str) :
+            case "name" when rawvalue.TryConvertLuaValue<T, string>(out var str) :
                 cmp.Name = str;
                 break;
-            case "style" when rawvalue.TryConvertLuaValue<LuaTableRef>(out var value):
+            case "style" when rawvalue.TryConvertLuaValue<T, LuaTableRef>(out var value):
                 cmp.Styles = AssignStylesProps(value);
                 if (cmp is Text text)
                 {
@@ -284,20 +289,22 @@ public static class LuaUiLibrary
                     textInput.TextStyles = AssignTextStylesProps(value);
                     textInput.TextInputStyles = AssignTextInputStylesProps(value);
                 }
+                value.Return();
                 break;
-            case "onanimationframebegan" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onanimationframebegan" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.AnimationFrameBegan = () =>
                 {
                     state.Call(func, []);
                 };
+                func.Return();
                 break;
-            case "active" when rawvalue.TryConvertLuaValue<bool>(out var b):
+            case "active" when rawvalue.TryConvertLuaValue<T, bool>(out var b):
                 cmp.IsActive = b;
                 break;
-            case "focused" when rawvalue.TryConvertLuaValue<bool>(out var b):
+            case "focused" when rawvalue.TryConvertLuaValue<T, bool>(out var b):
                 cmp.IsFocused = b;
                 break;
-            case "tabindex" when rawvalue.TryConvertLuaValue<int>(out var i):
+            case "tabindex" when rawvalue.TryConvertLuaValue<T, int>(out var i):
                 cmp.IsFocusable = true;
                 cmp.TabIndex = i;
                 break;
@@ -309,49 +316,55 @@ public static class LuaUiLibrary
             // multiple times, popping several menu pages at once). These event
             // props map one-to-one to a single host delegate, so clearing first
             // is correct.
-            case "onmousedown" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmousedown" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MousePressed = null;
                 cmp.MousePressed += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmouseup" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmouseup" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseReleased = null;
                 cmp.MouseReleased += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmousedrag" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmousedrag" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseDragged = null;
                 cmp.MouseDragged += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmousescroll" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmousescroll" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseScrolled = null;
                 cmp.MouseScrolled += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmousemove" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmousemove" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseMoved = null;
                 cmp.MouseMoved += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmouseenter" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmouseenter" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseEntered = null;
                 cmp.MouseEntered += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onmouseleave" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onmouseleave" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.MouseLeft = null;
                 cmp.MouseLeft += @event =>
                 {
@@ -359,67 +372,75 @@ public static class LuaUiLibrary
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                     Logging.Debug("MouseLeave: " + stopwatch.Elapsed);
                 };
+                func.Return();
                 break;
-            case "onkeytype" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onkeytype" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.KeyTyped = null;
                 cmp.KeyTyped += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onkeydown" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onkeydown" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.KeyPressed = null;
                 cmp.KeyPressed += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onkeyup" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onkeyup" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.KeyReleased = null;
                 cmp.KeyReleased += @event =>
                 {
                     state.Call(func, [LuaHelpers.ToLuaValue(state, @event)]);
                 };
+                func.Return();
                 break;
-            case "onfocus" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onfocus" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.Focused = null;
                 cmp.Focused += () =>
                 {
                     state.Call(func, []);
                 };
+                func.Return();
                 break;
-            case "onblur" when rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onblur" when rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 cmp.Unfocused = null;
                 cmp.Unfocused += () =>
                 {
                     state.Call(func, []);
                 };
+                func.Return();
                 break;
-            case "src" when cmp is Image image && rawvalue.TryConvertLuaValue<string>(out var str):
+            case "src" when cmp is Image image && rawvalue.TryConvertLuaValue<T, string>(out var str):
                 image.ImageData = G.LoadImage(str);
                 break;
-            case "scale" when cmp is Image image && rawvalue.TryConvertLuaValue<float>(out var f):
+            case "scale" when cmp is Image image && rawvalue.TryConvertLuaValue<T, float>(out var f):
                 image.Scale = f;
                 break;
-            case "value" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<string>(out var str):
+            case "value" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<T, string>(out var str):
                 textInput.SetText(str);
                 break;
-            case "placeholder" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<string>(out var str):
+            case "placeholder" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<T, string>(out var str):
                 textInput.Placeholder = str;
                 break;
-            case "onsubmit" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onsubmit" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 textInput.Submitted = null;
                 textInput.Submitted += value =>
                 {
                     state.Call(func, [value]);
                 };
+                func.Return();
                 break;
-            case "onchange" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<LuaFunctionRef>(out var func):
+            case "onchange" when cmp is TextInput textInput && rawvalue.TryConvertLuaValue<T, LuaFunctionRef>(out var func):
                 textInput.TextChanged = null;
                 textInput.TextChanged += value =>
                 {
                     state.Call(func, [value]);
                 };
+                func.Return();
                 break;
         }
     }

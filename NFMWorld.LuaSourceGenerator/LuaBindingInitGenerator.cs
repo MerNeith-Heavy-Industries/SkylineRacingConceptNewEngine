@@ -47,15 +47,15 @@ internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata>
     /// <summary>Emits the shared generated runtime helpers (once, on the GeneratorGenerated partial).</summary>
     private void EmitHelpers(IndentedStringBuilder sb)
     {
-        sb.AppendLine("internal static void PushValue(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue value)");
+        sb.AppendLine("internal static void PushValue(global::NuLua.Luau.LuauState state, global::NuLua.LuaRefValue value)");
         using (sb.Block())
         {
             sb.AppendLine("state.Push(value);");
-            sb.AppendLine("value.Dispose();");
+            sb.AppendLine("value.Return();");
         }
         sb.AppendLine();
 
-        sb.AppendLine("internal static T ReadArg<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue value, int index)");
+        sb.AppendLine("internal static T ReadArg<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaArgumentValue value, int index)");
         using (sb.Block())
         {
             sb.AppendLine("if (value.TryRead<T>(out var result)) return result;");
@@ -64,17 +64,7 @@ internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata>
         }
         sb.AppendLine();
 
-        sb.AppendLine("internal static T? ReadArgRef<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue value, int index) where T : class");
-        using (sb.Block())
-        {
-            sb.AppendLine("if (value.Type is global::NuLua.LuaValueType.Nil) return null;");
-            sb.AppendLine("if (value.TryRead<T>(out var result)) return result;");
-            sb.AppendLine("state.RaiseError($\"bad argument #{index} (expected {typeof(T).Name})\");");
-            sb.AppendLine("throw new global::System.InvalidOperationException(\"unreachable\");");
-        }
-        sb.AppendLine();
-
-        sb.AppendLine("internal static T? ReadArgNullable<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaValue value, int index) where T : struct");
+        sb.AppendLine("internal static T? ReadArgRef<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaArgumentValue value, int index) where T : class");
         using (sb.Block())
         {
             sb.AppendLine("if (value.Type is global::NuLua.LuaValueType.Nil) return null;");
@@ -84,7 +74,17 @@ internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata>
         }
         sb.AppendLine();
 
-        sb.AppendLine("internal static bool TryConvertNullable<T>(global::NuLua.LuaValue value, out T? result) where T : struct");
+        sb.AppendLine("internal static T? ReadArgNullable<T>(global::NuLua.Luau.LuauState state, global::NuLua.LuaArgumentValue value, int index) where T : struct");
+        using (sb.Block())
+        {
+            sb.AppendLine("if (value.Type is global::NuLua.LuaValueType.Nil) return null;");
+            sb.AppendLine("if (value.TryRead<T>(out var result)) return result;");
+            sb.AppendLine("state.RaiseError($\"bad argument #{index} (expected {typeof(T).Name})\");");
+            sb.AppendLine("throw new global::System.InvalidOperationException(\"unreachable\");");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("internal static bool TryConvertNullable<T>(global::NuLua.LuaArgumentValue value, out T? result) where T : struct");
         using (sb.Block())
         {
             sb.AppendLine("if (value.Type is global::NuLua.LuaValueType.Nil)");
@@ -112,7 +112,9 @@ internal sealed class LuaBindingInitGenerator(IReadOnlyList<BaseLuaTypeMetadata>
         {
             foreach (var type in types)
             {
-                sb.AppendLine($"state[\"{type.LuaName}\"] = global::NuLua.LuaValue.FromTable(global::{ns}.GeneratorGenerated.{GetInitMethodName(type)}(state));");
+                sb.AppendLine($"var {GetInitMethodName(type)} = global::{ns}.GeneratorGenerated.{GetInitMethodName(type)}(state);");
+                sb.AppendLine($"state[\"{type.LuaName}\"] = global::NuLua.LuaRefValue.FromTable({GetInitMethodName(type)});");
+                sb.AppendLine($"{GetInitMethodName(type)}.Return();");
             }
         }
     }

@@ -153,7 +153,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// <param name="payload">
     /// The first argument from Lua.
     /// </param>
-    protected abstract void OnMessage(string type, LuaRefValue payload);
+    protected abstract void OnMessage(string type, LuaArgumentValue payload);
 
     /// <summary>
     /// Called after the bridge is successfully registered and the page URL
@@ -170,7 +170,7 @@ public abstract class PhaseBridge(string phaseId) : IDisposable
     /// Dispatch an incoming JS message. Packages the raw args into a JsonElement
     /// for subclasses to consume.
     /// </summary>
-    private void DispatchMessage(string messageType, LuaRefValue payload)
+    private void DispatchMessage(string messageType, LuaArgumentValue payload)
     {
         // Try sub-handlers first; if any consumes the message, stop.
         foreach (var handler in SubHandlers)

@@ -26,7 +26,7 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── ISubHandler ──────────────────────────────────────────────
 
-    public bool TryHandleMessage(string type, LuaRefValue args)
+    public bool TryHandleMessage(string type, LuaArgumentValue args)
     {
         switch (type)
         {
@@ -34,7 +34,7 @@ public sealed class SettingsHandler : ISubHandler
                 PushInitialState();
                 return true;
             case "applySetting":
-                ApplySettingFromJs(args);
+                ApplySettingFromLua(args);
                 return true;
             case "saveConfig":
                 var requireRestart = SettingsMenu.SaveConfigAndCheckRestart();
@@ -142,7 +142,7 @@ public sealed class SettingsHandler : ISubHandler
 
     // ── Private helpers ───────────────────────────────────────────
 
-    private void ApplySettingFromJs(LuaRefValue args)
+    private void ApplySettingFromLua(LuaArgumentValue args)
     {
         if (!args.TryConvertLuaValue<LuaTableRef>(out var a) || !a.TryGetValue("key", out var keyProp))
             return;
@@ -151,7 +151,7 @@ public sealed class SettingsHandler : ISubHandler
         SettingsMenu.ApplySetting(key, a);
     }
 
-    private void HandleResetDefaults(LuaRefValue args)
+    private void HandleResetDefaults(LuaArgumentValue args)
     {
         if (!args.TryConvertLuaValue<LuaTableRef>(out var a) || !a.TryGetValue("section", out var sectionProp))
             return;

@@ -4,7 +4,7 @@ namespace NFMWorld.UI.Cef.Bridges;
 
 public class DummyBridge() : PhaseBridge("empty")
 {
-    protected override void OnMessage(string type, LuaRefValue args)
+    protected override void OnMessage(string type, LuaArgumentValue args)
     {
     }
 }
